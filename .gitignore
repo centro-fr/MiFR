@@ -1,0 +1,31 @@
+# Dependencias (todas las de front y back, en el node_modules compartido)
+node_modules/
+
+# Builds compilados
+dist/
+build/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Prisma
+back/prisma/*.db
+back/prisma/migrations/dev.db*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / SO
+.DS_Store
+.vscode/
+.idea/
+
+# Cobertura de tests
+coverage/
+
+# Vite (cache local del front)
+front/.vite/

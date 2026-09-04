@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Build compilado
+dist/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Prisma
+prisma/*.db
+prisma/migrations/dev.db*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / SO
+.DS_Store
+.vscode/
+.idea/
+
+# Cobertura de tests (si en algún momento agregan tests)
+coverage/

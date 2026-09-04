@@ -1,0 +1,15 @@
+{
+  "name": "MiFR",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "dev:front": "pnpm --filter front dev",
+    "dev:back": "pnpm --filter back dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.2"
+}
