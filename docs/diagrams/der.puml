@@ -1,0 +1,396 @@
+@startuml DER_CentroEntrenamientoFR
+
+' configuracion general
+!theme plain
+hide circle
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+
+' estilo de las entidades (tablas)
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #4B5563
+  ArrowColor #6B7280
+  ArrowThickness 1.5
+  FontSize 14
+  FontStyle bold
+  FontColor #111827
+  AttributeFontSize 13
+  AttributeFontColor #374151
+}
+
+' estilo de los paquetes (módulos)
+skinparam package {
+  BackgroundColor #d2d4d4
+  BorderColor #E5E7EB
+  FontColor #6B7280
+  FontSize 14
+  FontStyle bold
+}
+
+' colores de los estereotipos
+skinparam class<<Identidad>> {
+    BorderColor #2563EB
+    HeaderBackgroundColor #DBEAFE
+}
+skinparam class<<Servicio>> {
+    BorderColor #059669
+    HeaderBackgroundColor #D1FAE5
+}
+skinparam class<<Personas>> {
+    BorderColor #7C3AED
+    HeaderBackgroundColor #EDE9FE
+}
+skinparam class<<Honorarios>> {
+    BorderColor #D97706
+    HeaderBackgroundColor #FEF3C7
+}
+skinparam class<<Inscripciones>> {
+    BorderColor #DC2626
+    HeaderBackgroundColor #FEE2E2
+}
+skinparam class<<Pagos>> {
+    BorderColor #0284C7
+    HeaderBackgroundColor #E0F2FE
+}
+skinparam class<<Rutinas>> {
+    BorderColor #4F46E5
+    HeaderBackgroundColor #E0E7FF
+}
+skinparam class<<Notificaciones>> {
+    BorderColor #DB2777
+    HeaderBackgroundColor #FCE7F3
+}
+
+' definición de paquetes y entidades
+
+package "IDENTIDAD Y ACCESO" {
+  entity "usuarios" as usuarios <<Identidad>> {
+    * <color:#DAA520><&key></color> id_usuario : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> google_id : <color:#9CA3AF>UK</color>
+    <color:#9CA3AF><&link-intact></color> email : <color:#9CA3AF>UK</color>
+    nombre
+    apellido
+    <color:#9CA3AF><&link-intact></color> dni : <color:#9CA3AF>UK</color>
+    telefono
+    fecha_nacimiento
+    direccion
+    estado : <color:#000000><<ACTIVO|INACTIVO>></color>
+    fecha_alta
+    fecha_actualizacion
+  }
+  entity "usuario_roles" as usuario_roles <<Identidad>> {
+    * <color:#DAA520><&key></color> id_usuario : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> rol : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    fecha_asignacion
+  }
+}
+
+package "SERVICIO ENTRENAMIENTO" {
+  entity "actividades" as actividades <<Servicio>> {
+    * <color:#DAA520><&key></color> id_actividad : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> codigo : <color:#9CA3AF>UK</color>
+    nombre
+    descripcion
+    activo
+  }
+  entity "horarios" as horarios <<Servicio>> {
+    * <color:#DAA520><&key></color> id_horario : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_actividad : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_profesora : <color:#9CA3AF>FK</color>
+    dia_semana
+    hora_inicio
+    hora_fin
+    cupo_maximo
+    fecha_alta
+    fecha_baja
+  }
+  entity "planes" as planes <<Servicio>> {
+    * <color:#DAA520><&key></color> id_plan : <color:#DAA520>PK</color>
+    --
+    tipo : <color:#000000><<MENSUAL|CLASE_SUELTA>></color>
+    nombre
+    descripcion
+    clases_por_semana
+    dias_gracia
+    profesora_unica
+    fecha_alta
+    fecha_baja
+  }
+  entity "plan_precios" as plan_precios <<Servicio>> {
+    * <color:#DAA520><&key></color> id_plan_precio : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_plan : <color:#9CA3AF>FK</color>
+    precio
+    fecha_vigencia_desde
+    fecha_vigencia_hasta
+  }
+  entity "promociones" as promociones <<Servicio>> {
+    * <color:#DAA520><&key></color> id_promocion : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> codigo : <color:#9CA3AF>UK</color>
+    nombre
+    tipo_descuento : <color:#000000><<PORCENTAJE|MONTO_FIJO>></color>
+    valor
+    fecha_desde
+    fecha_hasta
+    activo
+  }
+  entity "promocion_planes" as promocion_planes <<Oferta>> {
+    * <color:#DAA520><&key></color> id_promocion : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_plan : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+  }
+}
+
+package "PERSONAS DEL NEGOCIO" {
+  entity "alumnos" as alumnos <<Personas>> {
+    * <color:#DAA520><&key></color> id_alumno : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_usuario : <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>*
+    <color:#9CA3AF><&link-intact></color> id_usuario_responsable : <color:#9CA3AF>FK</color>
+    cont_emerg_nombre
+    cont_emerg_telefono
+    observaciones
+    estado : <color:#000000><<ACTIVO|INACTIVO|BAJA>></color>
+    fecha_alta
+    fecha_baja
+  }
+  entity "profesoras" as profesoras <<Personas>> {
+    * <color:#DAA520><&key></color> id_profesora : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_usuario : <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
+    especialidad
+    fecha_alta
+    fecha_baja
+  }
+}
+
+package "HONORARIOS" {
+  entity "liquidaciones" as liquidaciones <<Honorarios>> {
+    * <color:#DAA520><&key></color> id_liquidacion : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_profesora : <color:#9CA3AF>FK</color>
+    periodo_desde
+    periodo_hasta
+    fecha_liquidacion
+    monto_total
+    estado : <color:#000000><<BORRADOR|CERRADA|PAGADA>></color>
+  }
+  entity "liquidacion_detalles" as liquidacion_detalles <<Honorarios>> {
+    * <color:#DAA520><&key></color> id_liq_detalle : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_liquidacion : <color:#9CA3AF>FK</color>
+    concepto : <color:#000000><<ALUMNO_A_CARGO|CLASE_SUPLIDA|DESCUENTO_AUSENCIA>></color>
+    <color:#9CA3AF><&link-intact></color> id_inscripcion : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_clase : <color:#9CA3AF>FK</color>
+    monto
+  }
+}
+
+package "INSCRIPCIONES Y CLASES" {
+  entity "inscripciones" as inscripciones <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_alumno : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_plan : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_plan_precio : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_promocion : <color:#9CA3AF>FK</color>
+    fecha_inicio
+    fecha_fin_estimado
+    estado : <color:#000000><<PREINSCRIPTA|ACTIVA|BAJA>></color>
+    motivo_baja : <color:#000000><<ABANDONO|MUDANZA|SALUD|ECONOMICO|CAMBIO_PLAN|OTRO>></color>
+    observaciones
+    fecha_alta
+    fecha_baja
+  }
+  entity "inscripcion_horarios" as inscripcion_horarios <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_horario : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    fecha_desde
+    fecha_hasta
+  }
+  entity "clases" as clases <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_horario : <color:#9CA3AF>FK</color>
+    fecha_clase
+    <color:#9CA3AF><&link-intact></color> id_prof_dictante : <color:#9CA3AF>FK</color>
+    estado : <color:#000000><<PROGRAMADA|DICTADA|CANCELADA>></color>
+    fecha_cierre_asist
+    observaciones
+  }
+  entity "suplencias" as suplencias <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_prof_ausente : <color:#9CA3AF>FK</color>
+    motivo
+    fecha_registro
+    <color:#9CA3AF><&link-intact></color> id_usuario_registra : <color:#9CA3AF>FK</color>
+  }
+  entity "asistencias" as asistencias <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_alumno : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_inscripcion : <color:#9CA3AF>FK</color>
+    asistio
+    fecha_registro
+    <color:#9CA3AF><&link-intact></color> id_usuario_registra : <color:#9CA3AF>FK</color>
+    observaciones
+  }
+}
+
+package "CUOTAS Y PAGOS" {
+  entity "cuotas" as cuotas <<Pagos>> {
+    * <color:#DAA520><&key></color> id_cuota : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_inscripcion : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> numero_cuota : <color:#9CA3AF>UK</color>
+    fecha_generacion
+    fecha_vencimiento
+    monto
+  }
+  entity "pagos" as pagos <<Pagos>> {
+    * <color:#DAA520><&key></color> id_pago : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_cuota : <color:#9CA3AF>FK</color>
+    forma_pago : <color:#000000><<EFECTIVO|TRANSFERENCIA>></color>
+    estado : <color:#000000><<PENDIENTE|CONFIRMADO|RECHAZADO>></color>
+    monto
+    fecha_pago
+    <color:#9CA3AF><&link-intact></color> id_usuario_registra : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_profesora_cobra : <color:#9CA3AF>FK</color>
+    rendido
+    fecha_rendicion
+    <color:#9CA3AF><&link-intact></color> id_usuario_confirma : <color:#9CA3AF>FK</color>
+    fecha_confirmacion
+    observaciones
+  }
+}
+
+package "RUTINAS Y PROGRESO" {
+  entity "rutinas" as rutinas <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_rutina : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_alumno : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_profesora : <color:#9CA3AF>FK</color>
+    nombre
+    fecha_desde
+    fecha_hasta
+    contenido
+    observaciones
+  }
+  entity "registros_progreso" as registros_progreso <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_registro : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_alumno : <color:#9CA3AF>FK</color>
+    <color:#9CA3AF><&link-intact></color> id_profesora : <color:#9CA3AF>FK</color>
+    fecha
+    observaciones
+  }
+  entity "tipos_medida" as tipos_medida <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_tipo_medida : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> codigo : <color:#9CA3AF>UK</color>
+    unidad
+  }
+  entity "medidas_corporales" as medidas_corporales <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_registro : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_tipo_medida : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    valor
+  }
+}
+
+package "NOTIFICACIONES E INSIGNIAS" {
+  entity "notificaciones" as notificaciones <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_notificacion : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> id_usuario : <color:#9CA3AF>FK</color>
+    tipo : <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|BIENVENIDA|CLASE_CANCELADA>></color>
+    <color:#9CA3AF><&link-intact></color> id_cuota : <color:#9CA3AF>FK</color>
+    mensaje
+    canal
+    fecha_generacion
+    fecha_envio
+    estado_envio : <color:#000000><<PENDIENTE|ENVIADA|ERROR>></color>
+    leida
+  }
+  entity "insignias" as insignias <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_insignia : <color:#DAA520>PK</color>
+    --
+    <color:#9CA3AF><&link-intact></color> codigo : <color:#9CA3AF>UK</color>
+    nombre
+    descripcion
+    criterio
+  }
+  entity "alumno_insignias" as alumno_insignias <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_alumno : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_insignia : <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    fecha_obtencion
+  }
+}
+
+' relaciones 
+usuarios ||--|{ usuario_roles : "id_usuario"
+usuarios ||--o| alumnos : "id_usuario"
+usuarios ||--o{ alumnos : "id_usuario_responsable"
+usuarios ||--o| profesoras : "id_usuario"
+
+actividades ||--|{ horarios : "id_actividad"
+profesoras ||--|{ horarios : "id_profesora"
+
+planes ||--|{ plan_precios : "id_plan"
+promociones ||--|{ promocion_planes : "id_promocion"
+planes ||--|{ promocion_planes : "id_plan"
+
+alumnos ||--|{ inscripciones : "id_alumno"
+planes ||--|{ inscripciones : "id_plan"
+plan_precios ||--|{ inscripciones : "id_plan_precio"
+promociones ||--o{ inscripciones : "id_promocion"
+
+inscripciones ||--|{ inscripcion_horarios : "id_inscripcion"
+horarios ||--|{ inscripcion_horarios : "id_horario"
+horarios ||--|{ clases : "id_horario"
+
+profesoras ||--|{ clases : "id_prof_dictante"
+clases ||--o| suplencias : "id_clase"
+profesoras ||--|{ suplencias : "id_prof_ausente"
+
+clases ||--|{ asistencias : "id_clase"
+inscripciones ||--|{ asistencias : "id_inscripcion"
+
+inscripciones ||--|{ cuotas : "id_inscripcion"
+cuotas ||--|{ pagos : "id_cuota"
+
+profesoras ||--o{ pagos : "id_profesora_cobra"
+profesoras ||--|{ liquidaciones : "id_profesora"
+
+liquidaciones ||--|{ liquidacion_detalles : "id_liquidacion"
+inscripciones ||--o{ liquidacion_detalles : "id_inscripcion"
+clases ||--o{ liquidacion_detalles : "id_clase"
+
+alumnos ||--|{ rutinas : "id_alumno"
+profesoras ||--|{ rutinas : "id_profesora"
+
+alumnos ||--|{ registros_progreso : "id_alumno"
+profesoras ||--|{ registros_progreso : "id_profesora"
+registros_progreso ||--|{ medidas_corporales : "id_registro"
+tipos_medida ||--|{ medidas_corporales : "id_tipo_medida"
+
+usuarios ||--|{ notificaciones : "id_usuario"
+cuotas ||--o{ notificaciones : "id_cuota"
+
+alumnos ||--|{ alumno_insignias : "id_alumno"
+insignias ||--|{ alumno_insignias : "id_insignia"
+
+@enduml
