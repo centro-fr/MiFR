@@ -1,0 +1,486 @@
+@startuml DER_CentroEntrenamientoFR
+
+' configuracion general
+!theme plain
+hide circle
+left to right direction
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+
+' estilo de las entidades (tablas)
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #4B5563
+  ArrowColor #6B7280
+  ArrowThickness 1.5
+  FontSize 14
+  FontStyle bold
+  FontColor #111827
+  AttributeFontSize 13
+  AttributeFontColor #374151
+}
+
+' estilo de los paquetes (módulos)
+skinparam package {
+  BackgroundColor #d2d4d4
+  BorderColor #E5E7EB
+  FontColor #6B7280
+  FontSize 14
+  FontStyle bold
+}
+
+' colores de los estereotipos
+skinparam class<<Identidad>> {
+    BorderColor #2563EB
+    HeaderBackgroundColor #DBEAFE
+}
+skinparam class<<Servicio>> {
+    BorderColor #059669
+    HeaderBackgroundColor #D1FAE5
+}
+skinparam class<<Personas>> {
+    BorderColor #7C3AED
+    HeaderBackgroundColor #EDE9FE
+}
+skinparam class<<Honorarios>> {
+    BorderColor #D97706
+    HeaderBackgroundColor #FEF3C7
+}
+skinparam class<<Inscripciones>> {
+    BorderColor #DC2626
+    HeaderBackgroundColor #FEE2E2
+}
+skinparam class<<Pagos>> {
+    BorderColor #0284C7
+    HeaderBackgroundColor #E0F2FE
+}
+skinparam class<<Rutinas>> {
+    BorderColor #4F46E5
+    HeaderBackgroundColor #E0E7FF
+}
+skinparam class<<Notificaciones>> {
+    BorderColor #DB2777
+    HeaderBackgroundColor #FCE7F3
+}
+
+' definicion de paquetes y entidades
+
+package "IDENTIDAD Y ACCESO" {
+  entity "usuarios" as usuarios <<Identidad>> {
+    * <color:#DAA520><&key></color> id_usuario : SERIAL <color:#DAA520>PK</color>
+    --
+      <color:#9CA3AF><&link-intact></color> google_id : VARCHAR(255) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>NULL hasta el 1er login; NULL en menores</size></color>
+      <color:#9CA3AF><&link-intact></color> email : VARCHAR(120) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>NULL en menores a cargo de tutor</size></color>
+    * nombre : VARCHAR(60)
+    * apellido : VARCHAR(60)
+      <color:#9CA3AF><&link-intact></color> dni : VARCHAR(10) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>solo digitos</size></color>
+      telefono : VARCHAR(20)
+    * fecha_nacimiento : DATE
+      direccion : VARCHAR(120)
+    * estado : ENUM <color:#000000><<ACTIVO|INACTIVO>></color>
+    * fecha_alta : TIMESTAMP
+    * fecha_actualizacion : TIMESTAMP
+  }
+  entity "roles" as roles <<Identidad>> {
+    * <color:#DAA520><&key></color> id_rol : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : ENUM <color:#000000><<PROPIETARIA|PROFESORA|ALUMNO|TUTOR>></color> <color:#9CA3AF>UK</color>
+    * nombre : VARCHAR(40)
+      descripcion : VARCHAR(150)
+  }
+  entity "usuario_roles" as usuario_roles <<Identidad>> {
+    * <color:#DAA520><&key></color> id_usuario : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_rol : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * fecha_asignacion : TIMESTAMP
+  }
+  entity "permisos" as permisos <<Identidad>> {
+    * <color:#DAA520><&key></color> id_permiso : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(50) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>ej. PAGOS_CONFIRMAR</size></color>
+    * modulo : VARCHAR(30)
+      descripcion : VARCHAR(150)
+  }
+  entity "rol_permisos" as rol_permisos <<Identidad>> {
+    * <color:#DAA520><&key></color> id_rol : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_permiso : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * fecha_asignacion : TIMESTAMP
+  }
+}
+
+package "SERVICIO ENTRENAMIENTO" {
+  entity "actividades" as actividades <<Servicio>> {
+    * <color:#DAA520><&key></color> id_actividad : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(20) <color:#9CA3AF>UK</color>
+    * nombre : VARCHAR(60)
+      descripcion : VARCHAR(255)
+    * modalidad : ENUM <color:#000000><<GRUPAL|PERSONALIZADA>></color>
+      cupo_maximo : SMALLINT <color:#6B7280><size:11>> 0; obligatorio si PERSONALIZADA</size></color>
+    * activo : BOOLEAN
+  }
+  entity "horarios" as horarios <<Servicio>> {
+    * <color:#DAA520><&key></color> id_horario : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_actividad : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * dia_semana : SMALLINT <color:#6B7280><size:11>1=Lun .. 7=Dom</size></color>
+    * hora_inicio : TIME
+    * hora_fin : TIME <color:#6B7280><size:11>> hora_inicio</size></color>
+      cupo_maximo : SMALLINT <color:#6B7280><size:11>> 0; NULL = toma el de la actividad</size></color>
+    * fecha_alta : DATE
+      fecha_baja : DATE
+  }
+  entity "planes" as planes <<Servicio>> {
+    * <color:#DAA520><&key></color> id_plan : SERIAL <color:#DAA520>PK</color>
+    --
+    * tipo : ENUM <color:#000000><<MENSUAL|CLASE_SUELTA>></color>
+    * nombre : VARCHAR(40)
+      descripcion : VARCHAR(255)
+      clases_por_semana : SMALLINT <color:#6B7280><size:11>1..7; NULL si CLASE_SUELTA</size></color>
+    * dias_gracia : SMALLINT <color:#6B7280><size:11>>= 0; 0 si CLASE_SUELTA</size></color>
+      <color:#9CA3AF><&link-intact></color> id_actividad_exclusiva : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>ej. Plan Kids</size></color>
+    * profesora_unica : BOOLEAN
+    * fecha_alta : DATE
+      fecha_baja : DATE
+  }
+  entity "plan_precios" as plan_precios <<Servicio>> {
+    * <color:#DAA520><&key></color> id_plan_precio : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_plan : INTEGER <color:#9CA3AF>FK</color>
+    * precio : NUMERIC(10,2) <color:#6B7280><size:11>> 0</size></color>
+    * fecha_vigencia_desde : DATE
+      fecha_vigencia_hasta : DATE <color:#6B7280><size:11>NULL = vigente</size></color>
+  }
+  entity "promociones" as promociones <<Servicio>> {
+    * <color:#DAA520><&key></color> id_promocion : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(20) <color:#9CA3AF>UK</color>
+    * nombre : VARCHAR(60)
+    * tipo_descuento : ENUM <color:#000000><<PORCENTAJE|MONTO_FIJO>></color>
+    * valor : NUMERIC(10,2) <color:#6B7280><size:11>> 0; <= 100 si PORCENTAJE</size></color>
+    * fecha_desde : DATE
+    * fecha_hasta : DATE <color:#6B7280><size:11>>= fecha_desde</size></color>
+    * activo : BOOLEAN
+  }
+  entity "promocion_planes" as promocion_planes <<Servicio>> {
+    * <color:#DAA520><&key></color> id_promocion : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_plan : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+  }
+  entity "parametros_sistema" as parametros_sistema <<Servicio>> {
+    * <color:#DAA520><&key></color> clave : VARCHAR(50) <color:#DAA520>PK</color> <color:#6B7280><size:11>ej. DIAS_AVISO_VENCIMIENTO</size></color>
+    --
+    * valor : VARCHAR(100)
+    * tipo_dato : ENUM <color:#000000><<ENTERO|DECIMAL|TEXTO|BOOLEANO>></color>
+      descripcion : VARCHAR(150)
+    * fecha_actualizacion : TIMESTAMP
+  }
+}
+
+package "PERSONAS DEL NEGOCIO" {
+  entity "alumnos" as alumnos <<Personas>> {
+    * <color:#DAA520><&key></color> id_alumno : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
+      <color:#9CA3AF><&link-intact></color> id_usuario_responsable : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>tutor; obligatorio si es menor</size></color>
+      cont_emerg_nombre : VARCHAR(80)
+      cont_emerg_telefono : VARCHAR(20)
+    * apto_medico : BOOLEAN <color:#6B7280><size:11>default false</size></color>
+      fecha_apto_medico : DATE
+      observaciones : VARCHAR(500)
+    * estado : ENUM <color:#000000><<ACTIVO|INACTIVO|BAJA>></color>
+    * fecha_alta : TIMESTAMP
+      fecha_baja : TIMESTAMP
+  }
+  entity "profesoras" as profesoras <<Personas>> {
+    * <color:#DAA520><&key></color> id_profesora : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
+      especialidad : VARCHAR(80)
+    * fecha_alta : DATE
+      fecha_baja : DATE
+  }
+}
+
+package "HONORARIOS" {
+  entity "tarifas_honorario" as tarifas_honorario <<Honorarios>> {
+    * <color:#DAA520><&key></color> id_tarifa : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * concepto : ENUM <color:#000000><<ALUMNO_A_CARGO|HORA_SUPLENCIA>></color>
+      <color:#9CA3AF><&link-intact></color> id_plan : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>NULL = aplica a todos los planes</size></color>
+    * tipo_valor : ENUM <color:#000000><<PORCENTAJE|MONTO_FIJO>></color>
+    * valor : NUMERIC(10,2) <color:#6B7280><size:11>> 0; <= 100 si PORCENTAJE</size></color>
+    * fecha_vigencia_desde : DATE
+      fecha_vigencia_hasta : DATE <color:#6B7280><size:11>NULL = vigente</size></color>
+  }
+  entity "liquidaciones" as liquidaciones <<Honorarios>> {
+    * <color:#DAA520><&key></color> id_liquidacion : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * periodo_desde : DATE
+    * periodo_hasta : DATE <color:#6B7280><size:11>> periodo_desde</size></color>
+    * fecha_liquidacion : TIMESTAMP
+    * monto_total : NUMERIC(12,2)
+    * estado : ENUM <color:#000000><<BORRADOR|CERRADA|PAGADA>></color>
+  }
+  entity "liquidacion_detalles" as liquidacion_detalles <<Honorarios>> {
+    * <color:#DAA520><&key></color> id_liq_detalle : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_liquidacion : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_tarifa : INTEGER <color:#9CA3AF>FK</color>
+    * concepto : ENUM <color:#000000><<ALUMNO_A_CARGO|CLASE_SUPLIDA|DESCUENTO_AUSENCIA>></color>
+      <color:#9CA3AF><&link-intact></color> id_inscripcion : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>obligatorio si ALUMNO_A_CARGO</size></color>
+      <color:#9CA3AF><&link-intact></color> id_clase : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>obligatorio si CLASE_SUPLIDA / DESCUENTO_AUSENCIA</size></color>
+    * monto : NUMERIC(10,2) <color:#6B7280><size:11>< 0 si DESCUENTO_AUSENCIA</size></color>
+  }
+}
+
+package "INSCRIPCIONES Y CLASES" {
+  entity "inscripciones" as inscripciones <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_alumno : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_plan : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_plan_precio : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>profesora a cargo</size></color>
+      <color:#9CA3AF><&link-intact></color> id_promocion : INTEGER <color:#9CA3AF>FK</color>
+    * sin_cargo : BOOLEAN <color:#6B7280><size:11>true: profesora que entrena; no genera honorarios</size></color>
+    * fecha_inicio : DATE
+      fecha_fin_estimado : DATE
+    * estado : ENUM <color:#000000><<PREINSCRIPTA|ACTIVA|BAJA>></color>
+      motivo_baja : ENUM <color:#000000><<ABANDONO|MUDANZA|SALUD|ECONOMICO|CAMBIO_PLAN|OTRO>></color> <color:#6B7280><size:11>obligatorio si BAJA</size></color>
+      observaciones : VARCHAR(500)
+    * fecha_alta : TIMESTAMP
+      fecha_baja : TIMESTAMP
+  }
+  entity "inscripcion_horarios" as inscripcion_horarios <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_horario : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * fecha_desde : DATE
+      fecha_hasta : DATE
+  }
+  entity "clases" as clases <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_horario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color>
+    * <color:#9CA3AF><&link-intact></color> fecha_clase : DATE <color:#9CA3AF>UK(1)</color>
+    * <color:#9CA3AF><&link-intact></color> id_prof_dictante : INTEGER <color:#9CA3AF>FK</color>
+    * estado : ENUM <color:#000000><<PROGRAMADA|DICTADA|CANCELADA>></color>
+      fecha_cierre_asist : TIMESTAMP
+      observaciones : VARCHAR(255)
+  }
+  entity "suplencias" as suplencias <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_prof_ausente : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+      motivo : VARCHAR(255)
+    * fecha_registro : TIMESTAMP
+    * <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color>
+  }
+  entity "asistencias" as asistencias <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_clase : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_alumno : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_inscripcion : INTEGER <color:#9CA3AF>FK</color>
+    * asistio : BOOLEAN
+    * fecha_registro : TIMESTAMP
+      <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>NULL si lo registro el cierre automatico</size></color>
+      observaciones : VARCHAR(255)
+  }
+}
+
+package "CUOTAS Y PAGOS" {
+  entity "cuotas" as cuotas <<Pagos>> {
+    * <color:#DAA520><&key></color> id_cuota : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_inscripcion : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color>
+    * <color:#9CA3AF><&link-intact></color> numero_cuota : SMALLINT <color:#9CA3AF>UK(1)</color> <color:#6B7280><size:11>>= 1</size></color>
+    * fecha_generacion : TIMESTAMP
+    * fecha_vencimiento : DATE
+    * monto : NUMERIC(10,2) <color:#6B7280><size:11>>= 0</size></color>
+  }
+  entity "pagos" as pagos <<Pagos>> {
+    * <color:#DAA520><&key></color> id_pago : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color>
+    * forma_pago : ENUM <color:#000000><<EFECTIVO|TRANSFERENCIA>></color>
+    * estado : ENUM <color:#000000><<PENDIENTE|CONFIRMADO|RECHAZADO>></color>
+    * monto : NUMERIC(10,2) <color:#6B7280><size:11>> 0</size></color>
+    * fecha_pago : TIMESTAMP
+      titular_cuenta_origen : VARCHAR(80) <color:#6B7280><size:11>solo TRANSFERENCIA</size></color>
+      fecha_hora_transferencia : TIMESTAMP <color:#6B7280><size:11>solo TRANSFERENCIA</size></color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color>
+      <color:#9CA3AF><&link-intact></color> id_profesora_cobra : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>solo EFECTIVO</size></color>
+    * rendido : BOOLEAN
+      fecha_rendicion : TIMESTAMP
+      <color:#9CA3AF><&link-intact></color> id_usuario_confirma : INTEGER <color:#9CA3AF>FK</color>
+      fecha_confirmacion : TIMESTAMP
+      motivo_rechazo : VARCHAR(255) <color:#6B7280><size:11>obligatorio si RECHAZADO</size></color>
+      observaciones : VARCHAR(255)
+  }
+}
+
+package "RUTINAS Y PROGRESO" {
+  entity "rutinas" as rutinas <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_rutina : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_alumno : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * nombre : VARCHAR(60)
+    * fecha_desde : DATE
+      fecha_hasta : DATE
+    * contenido : TEXT
+      observaciones : VARCHAR(500)
+  }
+  entity "rutina_ejercicios" as rutina_ejercicios <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_ejercicio : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_rutina : INTEGER <color:#9CA3AF>FK</color>
+    * orden : SMALLINT <color:#6B7280><size:11>> 0</size></color>
+    * nombre_ejercicio : VARCHAR(80)
+    * series : SMALLINT <color:#6B7280><size:11>> 0</size></color>
+    * repeticiones : VARCHAR(20) <color:#6B7280><size:11>texto libre: '12-15','AMRAP','30 seg'</size></color>
+      peso_sugerido : VARCHAR(20) <color:#6B7280><size:11>texto libre: '5kg','corporal'</size></color>
+      observaciones : VARCHAR(255)
+  }
+  entity "registros_progreso" as registros_progreso <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_registro : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_alumno : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * fecha : DATE
+      observaciones : VARCHAR(500)
+  }
+  entity "tipos_medida" as tipos_medida <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_tipo_medida : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(20) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>ej. PESO, CINTURA</size></color>
+    * unidad : VARCHAR(10) <color:#6B7280><size:11>ej. kg, cm</size></color>
+  }
+  entity "medidas_corporales" as medidas_corporales <<Rutinas>> {
+    * <color:#DAA520><&key></color> id_registro : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_tipo_medida : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * valor : NUMERIC(6,2) <color:#6B7280><size:11>> 0</size></color>
+  }
+}
+
+package "NOTIFICACIONES E INSIGNIAS" {
+  entity "notificaciones" as notificaciones <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_notificacion : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>
+    * tipo : ENUM <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|RESUMEN_DIARIO|BIENVENIDA|CLASE_CANCELADA>></color>
+      <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>solo avisos de cuota</size></color>
+    * mensaje : VARCHAR(1000)
+    * fecha_generacion : TIMESTAMP
+      fecha_envio : TIMESTAMP
+    * estado_envio : ENUM <color:#000000><<PENDIENTE|ENVIADA|ERROR>></color>
+    * leida : BOOLEAN
+  }
+  entity "insignias" as insignias <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_insignia : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(30) <color:#9CA3AF>UK</color>
+    * nombre : VARCHAR(60)
+      descripcion : VARCHAR(255)
+    * tipo_criterio : ENUM <color:#000000><<RACHA|ASISTENCIAS_TOTALES>></color>
+    * valor_umbral : SMALLINT <color:#6B7280><size:11>> 0</size></color>
+  }
+  entity "alumno_insignias" as alumno_insignias <<Notificaciones>> {
+    * <color:#DAA520><&key></color> id_alumno : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_insignia : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * fecha_obtencion : TIMESTAMP
+  }
+}
+
+' relaciones
+' identidad y acceso
+usuarios ||--|{ usuario_roles : "id_usuario"
+roles ||--o{ usuario_roles : "id_rol"
+roles ||--o{ rol_permisos : "id_rol"
+permisos ||--o{ rol_permisos : "id_permiso"
+usuarios ||--o| alumnos : "id_usuario"
+usuarios |o--o{ alumnos : "id_usuario_responsable"
+usuarios ||--o| profesoras : "id_usuario"
+
+' servicio entrenamiento
+actividades ||--o{ horarios : "id_actividad"
+profesoras ||--o{ horarios : "id_profesora"
+actividades |o--o{ planes : "id_actividad_exclusiva"
+planes ||--|{ plan_precios : "id_plan"
+promociones ||--|{ promocion_planes : "id_promocion"
+planes ||--o{ promocion_planes : "id_plan"
+
+' inscripciones y clases
+alumnos ||--|{ inscripciones : "id_alumno"
+planes ||--o{ inscripciones : "id_plan"
+plan_precios ||--o{ inscripciones : "id_plan_precio"
+profesoras ||--o{ inscripciones : "id_profesora"
+promociones |o--o{ inscripciones : "id_promocion"
+inscripciones ||--|{ inscripcion_horarios : "id_inscripcion"
+horarios ||--o{ inscripcion_horarios : "id_horario"
+horarios ||--o{ clases : "id_horario"
+profesoras ||--o{ clases : "id_prof_dictante"
+clases ||--o{ suplencias : "id_clase"
+profesoras ||--o{ suplencias : "id_prof_ausente"
+usuarios ||--o{ suplencias : "id_usuario_registra"
+clases ||--o{ asistencias : "id_clase"
+alumnos ||--o{ asistencias : "id_alumno"
+inscripciones ||--o{ asistencias : "id_inscripcion"
+usuarios |o--o{ asistencias : "id_usuario_registra"
+
+' cuotas y pagos
+inscripciones ||--o{ cuotas : "id_inscripcion"
+cuotas ||--o{ pagos : "id_cuota"
+usuarios ||--o{ pagos : "id_usuario_registra"
+usuarios |o--o{ pagos : "id_usuario_confirma"
+profesoras |o--o{ pagos : "id_profesora_cobra"
+
+' honorarios
+profesoras ||--o{ tarifas_honorario : "id_profesora"
+planes |o--o{ tarifas_honorario : "id_plan"
+profesoras ||--o{ liquidaciones : "id_profesora"
+liquidaciones ||--|{ liquidacion_detalles : "id_liquidacion"
+tarifas_honorario ||--o{ liquidacion_detalles : "id_tarifa"
+inscripciones |o--o{ liquidacion_detalles : "id_inscripcion"
+clases |o--o{ liquidacion_detalles : "id_clase"
+
+' rutinas y progreso
+alumnos ||--o{ rutinas : "id_alumno"
+profesoras ||--o{ rutinas : "id_profesora"
+rutinas ||--o{ rutina_ejercicios : "id_rutina"
+alumnos ||--o{ registros_progreso : "id_alumno"
+profesoras ||--o{ registros_progreso : "id_profesora"
+registros_progreso ||--|{ medidas_corporales : "id_registro"
+tipos_medida ||--o{ medidas_corporales : "id_tipo_medida"
+
+' notificaciones e insignias
+usuarios ||--o{ notificaciones : "id_usuario"
+cuotas |o--o{ notificaciones : "id_cuota"
+alumnos ||--o{ alumno_insignias : "id_alumno"
+insignias ||--o{ alumno_insignias : "id_insignia"
+
+legend bottom left
+  <size:12><b>CONVENCIONES DEL DER</b></size>
+  |= Simbolo |= Significado |
+  | <b>*</b> | Atributo obligatorio (NOT NULL). Sin asterisco admite NULL |
+  | <color:#DAA520><&key></color> PK | Clave primaria (si hay dos, es compuesta) |
+  | <color:#9CA3AF><&link-intact></color> FK | Clave foranea |
+  | <color:#9CA3AF><&link-intact></color> UK | Unicidad simple |
+  | <color:#9CA3AF><&link-intact></color> UK(1) | Unicidad compuesta: los atributos marcados UK(1) son unicos en conjunto |
+  | ENUM <<A/B>> | Tipo enumerado de PostgreSQL con sus valores posibles |
+  | <color:#6B7280>texto gris</color> | Dominio o restriccion (CHECK / regla de negocio) |
+  | SERIAL | INTEGER autoincremental |
+endlegend
+
+@enduml
