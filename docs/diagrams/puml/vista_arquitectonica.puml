@@ -7,6 +7,8 @@ skinparam roundCorner 8
 skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 11
 skinparam linetype ortho
+skinparam nodesep 25
+skinparam ranksep 45
 
 skinparam package {
   BackgroundColor<<layer>> #F8F9FA
@@ -20,6 +22,12 @@ skinparam package {
   BorderThickness<<subsystem>> 1.2
   FontColor<<subsystem>> #212529
   FontStyle<<subsystem>> bold
+
+  BackgroundColor<<subsystem_np>> #E7F0FA
+  BorderColor<<subsystem_np>> #1971C2
+  BorderThickness<<subsystem_np>> 1.2
+  FontColor<<subsystem_np>> #212529
+  FontStyle<<subsystem_np>> bold
 }
 
 skinparam component {
@@ -37,6 +45,20 @@ skinparam component {
   BorderColor<<programado>> #D97706
   BorderThickness<<programado>> 1.2
   FontColor<<programado>> #78350F
+
+  BackgroundColor<<fachada>> #FFFFFF
+  BorderColor<<fachada>> #C92A2A
+  BorderThickness<<fachada>> 2
+  FontColor<<fachada>> #212529
+  FontStyle<<fachada>> bold
+
+  BackgroundColor<<externo>> #E6F4EA
+  BorderColor<<externo>> #2F9E44
+  BorderThickness<<externo>> 1.2
+  FontColor<<externo>> #1B4332
+
+  BackgroundColor<<presentacion>> #FFFFFF
+  BorderColor<<presentacion>> #495057
 }
 
 skinparam interface {
@@ -69,44 +91,54 @@ skinparam port {
 ' 1. CAPA PRESENTACION WEB
 ' ============================================================
 package "CapaPresentacionWeb" as CapaPresentacionWeb <<layer>> {
-  interface "ILogicaUsuarios"       as IP_Usuarios      
-  interface "ILogicaPlanes"         as IP_Planes        
-  interface "ILogicaActividades"    as IP_Actividades   
-  interface "ILogicaAlumnos"        as IP_Alumnos       
-  interface "ILogicaProfesores"     as IP_Profesores    
-  interface "ILogicaInscripciones"  as IP_Inscripciones 
-  interface "ILogicaClases"         as IP_Clases        
-  interface "ILogicaHonorarios"     as IP_Honorarios    
-  interface "ILogicaCuotasPagos"    as IP_CuotasPagos   
-  interface "ILogicaRutinas"        as IP_Rutinas       
-  interface "ILogicaNotificaciones" as IP_Notificaciones
-
-  component "UsuariosPresWeb"       as UsuariosPresWeb
-  component "PlanesPreciosPresWeb"  as PlanesPreciosPresWeb
-  component "ActividadesPresWeb"    as ActividadesPresWeb
-  component "AlumnosPresWeb"        as AlumnosPresWeb
-  component "ProfesoresPresWeb"     as ProfesoresPresWeb
-
-  component "InscripcionesPresWeb"  as InscripcionesPresWeb
-  component "ClasesPresWeb"         as ClasesPresWeb
-  component "HonorariosPresWeb"     as HonorariosPresWeb
-  component "CuotasPagosPresWeb"    as CuotasPagosPresWeb
-  component "RutinasPresWeb"        as RutinasPresWeb
+  component "UsuariosPresWeb"       as UsuariosPresWeb      
+  component "ConfiguracionPresWeb"  as ConfiguracionPresWeb 
+  component "PlanesPreciosPresWeb"  as PlanesPreciosPresWeb 
+  component "ActividadesPresWeb"    as ActividadesPresWeb   
+  component "AlumnosPresWeb"        as AlumnosPresWeb       
+  component "ProfesoresPresWeb"     as ProfesoresPresWeb    
+  component "InscripcionesPresWeb"  as InscripcionesPresWeb 
+  component "ClasesPresWeb"         as ClasesPresWeb        
+  component "HonorariosPresWeb"     as HonorariosPresWeb    
+  component "CuotasPagosPresWeb"    as CuotasPagosPresWeb   
+  component "RutinasPresWeb"        as RutinasPresWeb       
   component "NotificacionesPresWeb" as NotificacionesPresWeb
+  component "InsigniasPresWeb"      as InsigniasPresWeb  
+  component "InformesPresWeb"       as InformesPresWeb      
+  component "PanelPublicoPresWeb"   as PanelPublicoPresWeb  
 
+  interface "IAutenticacion"        as IP_Autenticacion
+  interface "ILogicaUsuarios"       as IP_Usuarios
+  interface "ILogicaServicioEntrenamiento" as IP_ServicioEntrenamiento
+  interface "ILogicaPersonas"       as IP_Personas
+  interface "ILogicaInscripcionesYClases" as IP_InscripcionesYClases
+  interface "ILogicaHonorarios"     as IP_Honorarios
+  interface "ILogicaCuotasPagos"    as IP_CuotasPagos
+  interface "ILogicaRutinas"        as IP_Rutinas
+  interface "ILogicaNotificaciones" as IP_Notificaciones
+  interface "ILogicaInsignia"       as IP_Insignia
+  interface "ILogicaInformes"       as IP_Informes
+  interface "ILogicaPanelPublico"   as IP_PanelPublico
+
+  UsuariosPresWeb       --( IP_Autenticacion
   UsuariosPresWeb       --( IP_Usuarios
-  PlanesPreciosPresWeb  --( IP_Planes
-  ActividadesPresWeb    --( IP_Actividades
-  AlumnosPresWeb        --( IP_Alumnos
-  ProfesoresPresWeb     --( IP_Profesores
-  InscripcionesPresWeb  --( IP_Inscripciones
-  ClasesPresWeb         --( IP_Clases
+  ConfiguracionPresWeb  --( IP_ServicioEntrenamiento
+  PlanesPreciosPresWeb  --( IP_ServicioEntrenamiento
+  ActividadesPresWeb    --( IP_ServicioEntrenamiento
+  AlumnosPresWeb        --( IP_Personas
+  ProfesoresPresWeb     --( IP_Personas
+  InscripcionesPresWeb  --( IP_InscripcionesYClases
+  ClasesPresWeb         --( IP_InscripcionesYClases
   HonorariosPresWeb     --( IP_Honorarios
   CuotasPagosPresWeb    --( IP_CuotasPagos
   RutinasPresWeb        --( IP_Rutinas
   NotificacionesPresWeb --( IP_Notificaciones
+  InsigniasPresWeb      --( IP_Insignia
+  InformesPresWeb       --( IP_Informes
+  PanelPublicoPresWeb   --( IP_PanelPublico
 
-  UsuariosPresWeb       -[hidden]right-> PlanesPreciosPresWeb
+  UsuariosPresWeb       -[hidden]right-> ConfiguracionPresWeb
+  ConfiguracionPresWeb  -[hidden]right-> PlanesPreciosPresWeb
   PlanesPreciosPresWeb  -[hidden]right-> ActividadesPresWeb
   ActividadesPresWeb    -[hidden]right-> AlumnosPresWeb
   AlumnosPresWeb        -[hidden]right-> ProfesoresPresWeb
@@ -116,6 +148,9 @@ package "CapaPresentacionWeb" as CapaPresentacionWeb <<layer>> {
   HonorariosPresWeb     -[hidden]right-> CuotasPagosPresWeb
   CuotasPagosPresWeb    -[hidden]right-> RutinasPresWeb
   RutinasPresWeb        -[hidden]right-> NotificacionesPresWeb
+  NotificacionesPresWeb -[hidden]right-> InsigniasPresWeb
+  InsigniasPresWeb      -[hidden]right-> InformesPresWeb
+  InformesPresWeb       -[hidden]right-> PanelPublicoPresWeb
 }
 
 ' ============================================================
@@ -123,338 +158,502 @@ package "CapaPresentacionWeb" as CapaPresentacionWeb <<layer>> {
 ' ============================================================
 package "CapaLogicaNegocioPersistente" as CapaLogicaNegocioPersistente <<layer>> {
 
+  ' ---------------- GestionUsuarios ----------------
   package "GestionUsuarios" as GestionUsuarios <<subsystem>> {
-    interface "ILogica\nUsuarios"          as I_LogicaUsuarios
-    interface "IAutenticacion"           as I_Autenticacion
-    interface "IAutenticacion\nGoogleAuth" as I_AutenticacionGoogleAuth
-    interface "IAutorizacion"            as I_Autorizacion
-    component "Usuario" as Usuario
-    component "Sesion"  as Sesion
-    component "Permiso" as Permiso <<no_persistente>>
+    interface "IAutenticacion"  as I_Autenticacion
+    interface "ILogicaUsuarios" as I_LogicaUsuarios
+    interface "IInfoUsuarios"   as I_InfoUsuarios
+    interface "IAutenticacion\nGoogleAuth" as R_GU_GoogleAuth
+    interface "IAutorizacion"   as I_Autorizacion
 
-    I_LogicaUsuarios -[hidden]down-> Usuario
-    Usuario -up- I_LogicaUsuarios
-    I_Autenticacion -[hidden]down-> Sesion
-    Sesion  -up- I_Autenticacion
-    Sesion  -left( I_AutenticacionGoogleAuth
+    component "Sesion"     as Sesion <<no_persistente>>
+    component "Usuario"    as Usuario
+    component "Rol"        as Rol
 
-    Sesion  -[hidden]right-> Usuario
-    Sesion  .right.> Usuario
+    Sesion   -up- I_Autenticacion
+    Usuario  -up- I_LogicaUsuarios
+    Usuario  -right- I_InfoUsuarios
+    Sesion   -left( R_GU_GoogleAuth
+    Rol      -down- I_Autorizacion
 
-    Usuario .down.> Permiso
-    Permiso -down- I_Autorizacion
+    Sesion   .right.> Usuario
+    Usuario  .right.> Rol
   }
 
+  ' ---------------- GestionServicioEntrenamiento ----------------
   package "GestionServicioEntrenamiento" as GestionServicioEntrenamiento <<subsystem>> {
-    interface "ILogica\nPlanes"      as I_LogicaPlanes
-    interface "ILogica\nActividades" as I_LogicaActividades
-    component "Plan"       as Plan
-    component "PlanPrecio" as PlanPrecio
-    component "Promocion"  as Promocion
-    component "Actividad"  as Actividad
-    component "Horario"    as Horario
+    interface "ILogicaServicioEntrenamiento" as I_LogicaServicioEntrenamiento
+    interface "IInfoPlanes"          as I_InfoPlanes
+    interface "IInfoHorarios"        as I_InfoHorarios
+    interface "IInfoParametros"      as I_InfoParametros
+    interface "IInfoProfesores"      as R_GSE_InfoProfesores
 
-    I_LogicaPlanes -[hidden]down-> Plan
-    Plan      -up- I_LogicaPlanes
-    I_LogicaActividades -[hidden]down-> Actividad
-    Actividad -up- I_LogicaActividades
-    PlanPrecio ..> Plan
-    Promocion  ..> Plan
-    Horario    ..> Actividad
+    component "ParametroSistema" as ParametroSistema
+    component "Plan"          as Plan
+    component "Promocion"     as Promocion
+    component "Actividad"     as Actividad
+    component "Horario"       as Horario
+
+    ParametroSistema -up- I_LogicaServicioEntrenamiento
+    Plan             -up- I_LogicaServicioEntrenamiento
+    Actividad        -up- I_LogicaServicioEntrenamiento
+    ParametroSistema -down- I_InfoParametros
+    Plan      -left- I_InfoPlanes
+    Horario   -down- I_InfoHorarios
+    Horario   -right( R_GSE_InfoProfesores
+
+    Plan       .right.> Promocion
+    Plan          ..> Actividad : exclusiva
+    Horario       ..> Actividad
+
+    ParametroSistema -[hidden]right-> Plan
     Plan       -[hidden]right-> Actividad
-    Plan       -[hidden]down-> PlanPrecio
-    PlanPrecio -[hidden]right-> Promocion
-    Promocion  -[hidden]right-> Horario
+    Plan       -[hidden]down-> Promocion
     Actividad  -[hidden]down-> Horario
 
     portout " " as p_aut_gse
     portout " " as p_autz_gse
-    PlanPrecio -[hidden]down-> p_aut_gse
-    Horario    -[hidden]down-> p_autz_gse
+    Horario -[hidden]down-> p_aut_gse
+    p_aut_gse -[hidden]right-> p_autz_gse
   }
 
-  interface "IAutenticacion" as I_Aut_GSE 
-  component "   "            as gse_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GSE
   interface "IAutorizacion"  as I_Autz_GSE
-
   p_aut_gse  -down-( I_Aut_GSE
   p_autz_gse -down-( I_Autz_GSE
-  I_Aut_GSE  -[hidden]right-> gse_spacer
-  gse_spacer -[hidden]right-> I_Autz_GSE
 
+  ' ---------------- GestionPersonas ----------------
   package "GestionPersonas" as GestionPersonas <<subsystem>> {
-    interface "ILogica\nAlumnos"    as I_LogicaAlumnos
-    interface "ILogica\nProfesores" as I_LogicaProfesores
+    interface "ILogicaPersonas"      as I_LogicaPersonas
+    interface "IInfoAlumnos"        as I_InfoAlumnos
+    interface "IInfoProfesores"     as I_InfoProfesores
+    interface "IInfoUsuarios"       as R_GP_InfoUsuarios
+
     component "Alumno"   as Alumno
     component "Profesor" as Profesor
 
-    I_LogicaAlumnos -down- Alumno
-    I_LogicaProfesores -down- Profesor
-    Alumno -[hidden]right-> Profesor
+    Alumno   -up- I_LogicaPersonas
+    Profesor -up- I_LogicaPersonas
+    Alumno   -down- I_InfoAlumnos
+    Profesor -down- I_InfoProfesores
+
+    portout " " as p_infousuarios_gp
+    p_infousuarios_gp -down-( R_GP_InfoUsuarios
+    Alumno   -[hidden]up-> p_infousuarios_gp
+    Profesor -[hidden]up-> p_infousuarios_gp
+
+    Alumno   -[hidden]right-> Profesor
 
     portout " " as p_aut_gp
     portout " " as p_autz_gp
-    Alumno   -[hidden]down-> p_aut_gp
-    Profesor -[hidden]down-> p_autz_gp
+    Profesor -[hidden]down-> p_aut_gp
+    p_aut_gp -[hidden]right-> p_autz_gp
   }
 
-  interface "IAutenticacion" as I_Aut_GP 
-  component "   "            as gp_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GP
   interface "IAutorizacion"  as I_Autz_GP
-
   p_aut_gp  -down-( I_Aut_GP
   p_autz_gp -down-( I_Autz_GP
-  I_Aut_GP  -[hidden]right-> gp_spacer
-  gp_spacer -[hidden]right-> I_Autz_GP
 
+  ' ---------------- GestionInscripcionesYClases ----------------
   package "GestionInscripcionesYClases" as GestionInscripcionesYClases <<subsystem>> {
-    interface "ILogicaInscripciones" as I_LogicaInscripciones
-    interface "ILogicaClases"        as I_LogicaClases
+    interface "ILogicaInscripcionesYClases" as I_LogicaInscripcionesYClases
+    interface "IInfoInscripciones"   as I_InfoInscripciones
+    interface "IInfoClases"          as I_InfoClases
     interface "IInfoAsistencia"      as I_InfoAsistencia
+    interface "IInfoAlumnos"         as R_GIC_InfoAlumnos
+    interface "IInfoPlanes"          as R_GIC_InfoPlanes
+    interface "IInfoProfesores"      as R_GIC_InfoProfesores
+    interface "IInfoHorarios"        as R_GIC_InfoHorarios
+    interface "ICalculoCupo"         as R_GIC_CalculoCupo
+    interface "IInfoParametros"      as R_GIC_InfoParametros
+
     component "Inscripcion"        as Inscripcion
-    component "InscripcionHorario" as InscripcionHorario
     component "Clase"              as Clase
     component "Suplencia"          as Suplencia
     component "Asistencia"         as Asistencia
+    component "CierreAsistencia"   as CierreAsistencia <<programado>>
 
-    I_LogicaInscripciones -[hidden]down-> Inscripcion
-    Inscripcion -up- I_LogicaInscripciones
-    I_LogicaClases -[hidden]down-> Clase
-    Clase       -up- I_LogicaClases
-    InscripcionHorario ..> Inscripcion
+    Inscripcion -up- I_LogicaInscripcionesYClases
+    Clase       -up- I_LogicaInscripcionesYClases
+    Inscripcion -left- I_InfoInscripciones
+    Clase       -right- I_InfoClases
+    Asistencia  -right- I_InfoAsistencia
+
+    Inscripcion        -left( R_GIC_InfoAlumnos
+    Inscripcion        -left( R_GIC_InfoPlanes
+    Inscripcion        -left( R_GIC_InfoHorarios
+    Inscripcion        -down( R_GIC_CalculoCupo
+    Clase              -right( R_GIC_InfoProfesores
+    CierreAsistencia   -down( R_GIC_InfoParametros
+
     Suplencia          ..> Clase
     Asistencia         ..> Clase
-    Inscripcion        -[hidden]right-> Clase
-    Inscripcion        -[hidden]down-> InscripcionHorario
-    Clase              -[hidden]down-> Suplencia
-    Suplencia          -[hidden]right-> Asistencia
-    Asistencia         -right- I_InfoAsistencia
+    Asistencia         ..> Inscripcion
+    CierreAsistencia   ..> Asistencia
+
+    Inscripcion -[hidden]right-> Clase
+    Clase       -[hidden]down-> Suplencia
+    Suplencia   -[hidden]right-> Asistencia
+    Asistencia  -[hidden]down-> CierreAsistencia
 
     portout " " as p_aut_gic
     portout " " as p_autz_gic
-    InscripcionHorario -[hidden]down-> p_aut_gic
-    Asistencia         -[hidden]down-> p_autz_gic
+    CierreAsistencia -[hidden]down-> p_aut_gic
+    p_aut_gic -[hidden]right-> p_autz_gic
   }
 
-  interface "IAutenticacion" as I_Aut_GIC 
-  component "   "            as gic_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GIC
   interface "IAutorizacion"  as I_Autz_GIC
-
   p_aut_gic  -down-( I_Aut_GIC
   p_autz_gic -down-( I_Autz_GIC
-  I_Aut_GIC  -[hidden]right-> gic_spacer
-  gic_spacer -[hidden]right-> I_Autz_GIC
 
+  ' ---------------- GestionHonorarios ----------------
   package "GestionHonorarios" as GestionHonorarios <<subsystem>> {
     interface "ILogicaHonorarios"  as I_LogicaHonorarios
-    interface "ICalculoHonorarios" as IL_CalculoHonorarios
-    component "Liquidacion"        as Liquidacion
-    component "LiquidacionDetalle" as LiquidacionDetalle
+    interface "ICalculoHonorarios" as R_GH_CalculoHonorarios
+    interface "IInfoCuotas"        as R_GH_InfoCuotas
+    interface "IInfoInscripciones" as R_GH_InfoInscripciones
+    interface "IInfoClases"        as R_GH_InfoClases
+    interface "IInfoProfesores"    as R_GH_InfoProfesores
+    interface "IInfoPlanes"        as R_GH_InfoPlanes
 
-    I_LogicaHonorarios -[hidden]down-> Liquidacion
+    component "Liquidacion"        as Liquidacion
+    component "TarifaHonorario"    as TarifaHonorario
+
     Liquidacion        -up- I_LogicaHonorarios
-    LiquidacionDetalle ..> Liquidacion
-    Liquidacion        -right( IL_CalculoHonorarios
-    Liquidacion        -[hidden]down-> LiquidacionDetalle
+    Liquidacion        -right( R_GH_CalculoHonorarios
+    Liquidacion        -left( R_GH_InfoCuotas
+    Liquidacion        -left( R_GH_InfoInscripciones
+    Liquidacion        -down( R_GH_InfoClases
+    TarifaHonorario    -right( R_GH_InfoProfesores
+    TarifaHonorario    -down( R_GH_InfoPlanes
+
+    Liquidacion ..> TarifaHonorario
+    Liquidacion -[hidden]right-> TarifaHonorario
 
     portout " " as p_aut_gh
     portout " " as p_autz_gh
-    LiquidacionDetalle -[hidden]down-> p_aut_gh
-    LiquidacionDetalle -[hidden]down-> p_autz_gh
-    p_aut_gh           -[hidden]right-> p_autz_gh
+    TarifaHonorario -[hidden]down-> p_aut_gh
+    p_aut_gh -[hidden]right-> p_autz_gh
   }
 
-  interface "IAutenticacion" as I_Aut_GH 
-  component "   "            as gh_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GH
   interface "IAutorizacion"  as I_Autz_GH
-
-  I_Aut_GH  -[hidden]right-> gh_spacer
-  gh_spacer -[hidden]right-> I_Autz_GH
-
-  p_aut_gh  -[hidden]down-> I_Aut_GH
-  p_autz_gh -[hidden]down-> I_Autz_GH
-
   p_aut_gh  -down-( I_Aut_GH
   p_autz_gh -down-( I_Autz_GH
 
+  ' ---------------- GestionCuotasYPagos ----------------
   package "GestionCuotasYPagos" as GestionCuotasYPagos <<subsystem>> {
-    interface "ILogicaCuotasPagos"  as I_LogicaCuotasPagos
-    interface "ICalculoVencimiento" as IL_CalculoVencimiento
-    interface "IInfoCuotas"         as I_InfoCuotas
-    component "Cuota" as Cuota
-    component "Pago"  as Pago
+    interface "ILogicaCuotasPagos"   as I_LogicaCuotasPagos
+    interface "IInfoCuotas"          as I_InfoCuotas
+    interface "IInfoPagos"           as I_InfoPagos
+    interface "ICalculoVencimiento"  as R_GCP_CalculoVencimiento
+    interface "ICalculoHabilitacion" as R_GCP_CalculoHabilitacion
+    interface "IInfoInscripciones"   as R_GCP_InfoInscripciones
+    interface "IInfoProfesores"      as R_GCP_InfoProfesores
 
-    I_LogicaCuotasPagos -[hidden]down-> Pago
+    component "Pago"  as Pago
+    component "Cuota" as Cuota
+
     Pago  -up- I_LogicaCuotasPagos
-    Pago  ..> Cuota
-    Pago  -right( IL_CalculoVencimiento
-    Pago  -[hidden]down-> Cuota
+    Cuota -up- I_LogicaCuotasPagos
+    Pago  -right- I_InfoPagos
     Cuota -right- I_InfoCuotas
+    Pago  -left( R_GCP_InfoProfesores
+    Cuota -left( R_GCP_InfoInscripciones
+    Cuota -down( R_GCP_CalculoVencimiento
+    Cuota -down( R_GCP_CalculoHabilitacion
+
+    Pago ..> Cuota
 
     portout " " as p_aut_gcp
     portout " " as p_autz_gcp
-    Cuota        -[hidden]down-> p_aut_gcp
-    p_aut_gcp    -[hidden]right-> p_autz_gcp
+    Cuota -[hidden]down-> p_aut_gcp
+    p_aut_gcp -[hidden]right-> p_autz_gcp
   }
 
-  interface "IAutenticacion" as I_Aut_GCP 
-  component "   "            as gcp_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GCP
   interface "IAutorizacion"  as I_Autz_GCP
-
-  I_Aut_GCP  -[hidden]right-> gcp_spacer
-  gcp_spacer -[hidden]right-> I_Autz_GCP
-
-  p_aut_gcp  -[hidden]down-> I_Aut_GCP
-  p_autz_gcp -[hidden]down-> I_Autz_GCP
-
   p_aut_gcp  -down-( I_Aut_GCP
   p_autz_gcp -down-( I_Autz_GCP
 
+  ' ---------------- GestionRutinasYProgreso ----------------
   package "GestionRutinasYProgreso" as GestionRutinasYProgreso <<subsystem>> {
-    interface "ILogicaRutinas"   as I_LogicaRutinas
+    interface "ILogicaRutinas"  as I_LogicaRutinas
+    interface "IInfoAlumnos"    as R_GRP_InfoAlumnos
+    interface "IInfoProfesores" as R_GRP_InfoProfesores
+
     component "Rutina"           as Rutina
     component "RegistroProgreso" as RegistroProgreso
-    component "MedidaCorporal"   as MedidaCorporal
 
-    I_LogicaRutinas -[hidden]down-> Rutina
-    Rutina -up- I_LogicaRutinas
-    MedidaCorporal ..> RegistroProgreso
-    Rutina           -[hidden]left-> RegistroProgreso
-    RegistroProgreso -[hidden]down-> MedidaCorporal
+    Rutina           -up- I_LogicaRutinas
+    RegistroProgreso -up- I_LogicaRutinas
 
-    component " " as grp_bottom_spacer #transparent;line:transparent
-    MedidaCorporal    -[hidden]right-> grp_bottom_spacer
-    Rutina            -[hidden]down-> grp_bottom_spacer
+    portout " " as p_infoalumnos_grp
+    portout " " as p_infoprofesores_grp
+    p_infoalumnos_grp    -down-( R_GRP_InfoAlumnos
+    p_infoprofesores_grp -down-( R_GRP_InfoProfesores
+    Rutina           -[hidden]up-> p_infoalumnos_grp
+    RegistroProgreso -[hidden]up-> p_infoalumnos_grp
+    Rutina           -[hidden]up-> p_infoprofesores_grp
+    RegistroProgreso -[hidden]up-> p_infoprofesores_grp
+
+    Rutina           -[hidden]right-> RegistroProgreso
 
     portout " " as p_aut_grp
     portout " " as p_autz_grp
-    MedidaCorporal    -[hidden]down-> p_aut_grp
-    grp_bottom_spacer -[hidden]down-> p_autz_grp
-    p_aut_grp         -[hidden]right-> p_autz_grp
+    RegistroProgreso -[hidden]down-> p_aut_grp
+    p_aut_grp -[hidden]right-> p_autz_grp
   }
 
-  interface "IAutenticacion" as I_Aut_GRP 
-  component "   "            as grp_spacer #transparent;line:transparent
+  interface "IAutenticacion" as I_Aut_GRP
   interface "IAutorizacion"  as I_Autz_GRP
-
   p_aut_grp  -down-( I_Aut_GRP
   p_autz_grp -down-( I_Autz_GRP
-  I_Aut_GRP  -[hidden]right-> grp_spacer
-  grp_spacer -[hidden]right-> I_Autz_GRP
 
-  package "GestionNotificacionesEInsignias" as GestionNotificacionesEInsignias <<subsystem>> {
+  ' ---------------- GestionNotificaciones ----------------
+  package "GestionNotificaciones" as GestionNotificaciones <<subsystem>> {
     interface "ILogicaNotificaciones" as I_LogicaNotificaciones
-    interface "IInfoAsistencia"       as I_InfoAsistencia_Req 
-    interface "IInfoCuotas"           as I_InfoCuotas_Req     
+    interface "IInfoUsuarios"         as R_GN_InfoUsuarios
+    interface "IInfoCuotas"           as R_GN_InfoCuotas
+    interface "IInfoPagos"            as R_GN_InfoPagos
+    interface "IInfoClases"           as R_GN_InfoClases
+    interface "IInfoParametros"       as R_GN_InfoParametros
+
     component "Notificacion"               as Notificacion
     component "PlanificadorNotificaciones" as PlanificadorNotificaciones <<programado>>
-    component "Insignia"                   as Insignia
-    component "AlumnoInsignia"             as AlumnoInsignia
+    component "ResumenDiarioPropietaria"   as ResumenDiarioPropietaria <<programado>>
 
-    interface "IAutenticacion" as I_Aut_Notif
-    interface "IAutorizacion"  as I_Autz_Ins  
+    Notificacion -up- I_LogicaNotificaciones
 
-    I_LogicaNotificaciones -[hidden]down-> Notificacion
-    Notificacion   -up- I_LogicaNotificaciones
-    AlumnoInsignia ..> Insignia
-    AlumnoInsignia -right( I_InfoAsistencia_Req
-    Notificacion   -left( I_Aut_Notif
-    PlanificadorNotificaciones -right( I_InfoCuotas_Req
+    Notificacion   -left( R_GN_InfoUsuarios
+    PlanificadorNotificaciones -down( R_GN_InfoClases
+    PlanificadorNotificaciones -down( R_GN_InfoParametros
+    ResumenDiarioPropietaria   -down( R_GN_InfoPagos
+
+    portout " " as p_infocuotas_gn
+    p_infocuotas_gn -down-( R_GN_InfoCuotas
+    PlanificadorNotificaciones -[hidden]up-> p_infocuotas_gn
+    ResumenDiarioPropietaria   -[hidden]up-> p_infocuotas_gn
+
     PlanificadorNotificaciones ..> Notificacion
-    Insignia       -right( I_Autz_Ins
+    ResumenDiarioPropietaria   ..> Notificacion
 
-    Notificacion   -[hidden]right-> Insignia
-    Insignia       -[hidden]down-> AlumnoInsignia
-    Notificacion   -[hidden]down-> PlanificadorNotificaciones
+    Notificacion -[hidden]down-> PlanificadorNotificaciones
+    PlanificadorNotificaciones -[hidden]right-> ResumenDiarioPropietaria
+
+    portout " " as p_aut_gn
+    portout " " as p_autz_gn
+    ResumenDiarioPropietaria -[hidden]down-> p_aut_gn
+    p_aut_gn -[hidden]right-> p_autz_gn
   }
 
-  ' Orden horizontal de subsistemas (alineados con la capa de presentacion)
-  GestionUsuarios                -[hidden]right-> GestionServicioEntrenamiento
-  GestionServicioEntrenamiento   -[hidden]right-> GestionPersonas
-  GestionPersonas                -[hidden]right-> GestionInscripcionesYClases
-  GestionInscripcionesYClases    -[hidden]right-> GestionHonorarios
-  GestionHonorarios              -[hidden]right-> GestionCuotasYPagos
-  GestionCuotasYPagos            -[hidden]right-> GestionRutinasYProgreso
-  GestionRutinasYProgreso        -[hidden]right-> GestionNotificacionesEInsignias
+  interface "IAutenticacion" as I_Aut_GN
+  interface "IAutorizacion"  as I_Autz_GN
+  p_aut_gn  -down-( I_Aut_GN
+  p_autz_gn -down-( I_Autz_GN
 
-  ' Puertos hacia administracion de datos en el borde inferior
+  ' ---------------- GestionInsignias ----------------
+  package "GestionInsignias" as GestionInsignias <<subsystem>> {
+    interface "ILogicaInsignia"       as I_LogicaInsignia
+    interface "IInfoAsistencia"       as R_GI_InfoAsistencia
+    interface "ICalculoRachaRanking"  as R_GI_CalculoRachaRanking
+
+    component "Insignia" as Insignia
+
+    Insignia -up- I_LogicaInsignia
+    Insignia -right( R_GI_InfoAsistencia
+    Insignia -right( R_GI_CalculoRachaRanking
+
+    portout " " as p_aut_gi
+    portout " " as p_autz_gi
+    Insignia -[hidden]down-> p_aut_gi
+    p_aut_gi -[hidden]right-> p_autz_gi
+  }
+
+  interface "IAutenticacion" as I_Aut_GI
+  interface "IAutorizacion"  as I_Autz_GI
+  p_aut_gi  -down-( I_Aut_GI
+  p_autz_gi -down-( I_Autz_GI
+
+  ' Orden horizontal de subsistemas
+  GestionUsuarios              -[hidden]right-> GestionServicioEntrenamiento
+  GestionServicioEntrenamiento -[hidden]right-> GestionPersonas
+  GestionPersonas              -[hidden]right-> GestionInscripcionesYClases
+  GestionInscripcionesYClases  -[hidden]right-> GestionHonorarios
+  GestionHonorarios            -[hidden]right-> GestionCuotasYPagos
+  GestionCuotasYPagos          -[hidden]right-> GestionRutinasYProgreso
+  GestionRutinasYProgreso      -[hidden]right-> GestionNotificaciones
+  GestionNotificaciones        -[hidden]right-> GestionInsignias
+
+  ' Puertos hacia la capa de administracion de datos
   portout " " as port_des
-  portout " " as p_mid_spacer #transparent;line:transparent
   portout " " as port_mat
-  port_des     -[hidden]right-> p_mid_spacer
-  p_mid_spacer -[hidden]right-> port_mat
-  I_Aut_GRP    -[hidden]down-> port_des
-  I_Autz_GRP   -[hidden]down-> port_mat
 }
 
 ' ============================================================
 ' 3. CAPA LOGICA DE NEGOCIO NO PERSISTENTE
 ' ============================================================
 package "CapaLogicaNegocioNoPersistente" as CapaLogicaNegocioNoPersistente <<layer>> {
-  package "CalculosDeNegocio" as CalculosDeNegocio <<subsystem>> {
-    interface "ICalculoVencimiento"        as I_CalculoVencimiento
-    interface "ICalculoHonorarios"         as I_CalculoHonorarios
-    component "CalculadorVencimientoCuota" as CalcVenc
-    component "CalculadorHonorarios"       as CalcHon
-    CalcVenc -up- I_CalculoVencimiento
-    CalcHon  -up- I_CalculoHonorarios
-    CalcVenc -[hidden]right-> CalcHon
+
+  package "CalculosDeNegocio" as CalculosDeNegocio <<subsystem_np>> {
+    interface "ICalculoVencimiento"  as I_CalculoVencimiento
+    interface "ICalculoHabilitacion" as I_CalculoHabilitacion
+    interface "ICalculoCupo"         as I_CalculoCupo
+    interface "ICalculoHonorarios"   as I_CalculoHonorarios
+    interface "ICalculoRachaRanking" as I_CalculoRachaRanking
+
+    component "CalculadorVencimientoCuota" as CalcVenc    <<no_persistente>>
+    component "CalculadorHabilitacion"     as CalcHab     <<no_persistente>>
+    component "CalculadorCupo"             as CalcCupo    <<no_persistente>>
+    component "CalculadorHonorarios"       as CalcHon     <<no_persistente>>
+    component "CalculadorRachaRanking"     as CalcRacha   <<no_persistente>>
+
+    CalcVenc  -up- I_CalculoVencimiento
+    CalcHab   -up- I_CalculoHabilitacion
+    CalcCupo  -up- I_CalculoCupo
+    CalcHon   -up- I_CalculoHonorarios
+    CalcRacha -up- I_CalculoRachaRanking
+
+    CalcVenc -[hidden]right-> CalcHab
+    CalcHab  -[hidden]right-> CalcCupo
+    CalcCupo -[hidden]right-> CalcHon
+    CalcHon  -[hidden]right-> CalcRacha
   }
+
+  package "Reportes" as ReportesYEstadisticas <<subsystem_np>> {
+    interface "ILogicaInformes"     as I_LogicaInformes
+    interface "IInfoAsistencia"     as R_RE_InfoAsistencia
+    interface "IInfoCuotas"         as R_RE_InfoCuotas
+    interface "IInfoAlumnos"        as R_RE_InfoAlumnos
+    interface "IInfoParametros"     as R_RE_InfoParametros
+    interface "IInfoInscripciones"  as R_RE_InfoInscripciones
+    interface "IInfoPlanes"         as R_RE_InfoPlanes
+    interface "IInfoHorarios"       as R_RE_InfoHorarios
+
+    component "GeneradorInformes"            as GeneradorInformes            <<no_persistente>>
+    component "DetectorInactividad" as DetectorInactividad <<no_persistente>>
+
+    GeneradorInformes -up- I_LogicaInformes
+    GeneradorInformes ..> DetectorInactividad
+
+    GeneradorInformes            -left( R_RE_InfoAlumnos
+    GeneradorInformes            -down( R_RE_InfoPlanes
+    GeneradorInformes            -down( R_RE_InfoInscripciones
+    GeneradorInformes            -down( R_RE_InfoHorarios
+    DetectorInactividad -down( R_RE_InfoAsistencia
+    DetectorInactividad -down( R_RE_InfoParametros
+
+    portout " " as p_infocuotas_re
+    p_infocuotas_re -down-( R_RE_InfoCuotas
+    GeneradorInformes   -[hidden]up-> p_infocuotas_re
+    DetectorInactividad -[hidden]up-> p_infocuotas_re
+
+    GeneradorInformes -[hidden]right-> DetectorInactividad
+
+    portout " " as p_aut_re
+    portout " " as p_autz_re
+  }
+  interface "IAutenticacion" as I_Aut_RE
+  interface "IAutorizacion"  as I_Autz_RE
+  p_aut_re  -down-( I_Aut_RE
+  p_autz_re -down-( I_Autz_RE
+
+  package "DifusionPublica" as DifusionPublica <<subsystem_np>> {
+    interface "ILogicaPanelPublico" as I_LogicaPanelPublico
+    interface "IInfoHorarios"       as R_DP_InfoHorarios
+    interface "IInfoInscripciones"  as R_DP_InfoInscripciones
+    interface "IInfoPlanes"         as R_DP_InfoPlanes
+    interface "ICalculoCupo"        as R_DP_CalculoCupo
+
+    component "PanelDisponibilidad" as PanelDisponibilidad <<no_persistente>>
+
+    PanelDisponibilidad -up- I_LogicaPanelPublico
+    PanelDisponibilidad -down( R_DP_InfoHorarios
+    PanelDisponibilidad -down( R_DP_InfoInscripciones
+    PanelDisponibilidad -down( R_DP_InfoPlanes
+    PanelDisponibilidad -down( R_DP_CalculoCupo
+  }
+
+  note bottom of DifusionPublica
+    Acceso publico:
+    no requiere autenticacion
+  end note
+
+  CalculosDeNegocio     -[hidden]down-> ReportesYEstadisticas
+  ReportesYEstadisticas -[hidden]right-> DifusionPublica
 }
 
 ' ============================================================
-' 4. CAPA DE ADMINISTRACION DE DATOS
+' 4. SISTEMAS EXTERNOS
+' ============================================================
+package "SistemasExternos" as SistemasExternos <<layer>> {
+  interface "IAutenticacion\nGoogleAuth" as IE_GoogleAuth
+
+  component "Google Identity Services"    as GoogleIdentity <<externo>>
+
+  GoogleIdentity -up- IE_GoogleAuth
+
+  note bottom of GoogleIdentity
+    Usado para el login
+    (US-01)
+  end note
+}
+
+' ============================================================
+' 5. CAPA DE ADMINISTRACION DE DATOS
 ' ============================================================
 package "CapaAdministracionDatos" as CapaAdministracionDatos <<layer>> {
-  interface "IDesmaterializar\n " as IA_Desmaterializar
-  interface " "                as cad_spacer <<hidden>>
-  interface "IMaterializar\n "    as IA_Materializar
+  interface "IDesmaterializar" as IA_Desmaterializar
+  interface "IMaterializar"    as IA_Materializar
 
   component "Persistencia" as Persistencia <<subsystem>>
-  database "BaseDeDatos"   as BaseDeDatos  <<database>>
+  database "PostgreSQL"    as BaseDeDatos
 
   IA_Desmaterializar -down- Persistencia
   IA_Materializar    -down- Persistencia
   Persistencia ..right-> BaseDeDatos
-  component " " as cad_box #transparent;line:transparent
-  IA_Desmaterializar -[hidden]right-> cad_box
-  cad_box -[hidden]right-> IA_Materializar
+  IA_Desmaterializar -[hidden]right-> IA_Materializar
 
   note right of Persistencia
     Realizado por Prisma Client
-  endnote
+  end note
 }
 
-' relaciones entre capas
+' ============================================================
+' Relaciones entre capas (ubicacion)
+' ============================================================
+IP_Autenticacion  -[hidden]down-> I_Autenticacion
 IP_Usuarios       -[hidden]down-> I_LogicaUsuarios
-IP_Planes         -[hidden]down-> I_LogicaPlanes
-IP_Actividades    -[hidden]down-> I_LogicaActividades
-IP_Alumnos        -[hidden]down-> I_LogicaAlumnos
-IP_Profesores     -[hidden]down-> I_LogicaProfesores
-IP_Inscripciones  -[hidden]down-> I_LogicaInscripciones
-IP_Clases         -[hidden]down-> I_LogicaClases
+IP_ServicioEntrenamiento     -[hidden]down-> I_LogicaServicioEntrenamiento
+IP_Personas       -[hidden]down-> I_LogicaPersonas
+IP_InscripcionesYClases  -[hidden]down-> I_LogicaInscripcionesYClases
 IP_Honorarios     -[hidden]down-> I_LogicaHonorarios
 IP_CuotasPagos    -[hidden]down-> I_LogicaCuotasPagos
 IP_Rutinas        -[hidden]down-> I_LogicaRutinas
 IP_Notificaciones -[hidden]down-> I_LogicaNotificaciones
+IP_Insignia       -[hidden]down-> I_LogicaInsignia
 
-CapaLogicaNegocioPersistente -[hidden]right-> CapaLogicaNegocioNoPersistente
+I_Aut_GSE  -[hidden]down-> I_CalculoVencimiento
+I_Autz_GH  -[hidden]down-> port_des
+I_Aut_GCP  -[hidden]down-> port_mat
+I_Autz_GI -[hidden]down-> IE_GoogleAuth
 
 port_des -down-( IA_Desmaterializar
 port_mat -down-( IA_Materializar
-port_des -[hidden]down-> IA_Desmaterializar
-port_mat -[hidden]down-> IA_Materializar
 
 legend bottom left
   <size:12><b>LEYENDA DEL DISENO ARQUITECTONICO</b></size>
   |= Estilo / Simbolo |= Elemento |= Descripcion y Semantica |
-  |<#FCDCDC>| **Componente Persistente** | Componente con estado persistido en base de datos PostgreSQL |
+  |<#FCDCDC>| **Componente Persistente** | Componente con estado persistido en PostgreSQL (una tabla del DER) |
   |<#D0E2F4>| **Componente No Persistente** | Logica y estado en memoria / DTOs, sin tabla propia en BD |
   |<#FDF4E3>| **Componente Programado** | Tarea diferida o asincrona disparada por temporizador interno |
-  | <b>-(O</b> | **Interfaz Provista (Lollipop)** | Contrato de operaciones que el componente expone a otros |
-  | <b>-(</b>  | **Interfaz Requerida (Socket)** | Dependencia de servicios externos que el componente consume |
-  | <b>[ ]</b> | **Puerto de Capa (UML 2.0)** | Punto de acceso explicito para persistencia ORM (Prisma) |
-  | <b>Transversal</b> | **Autenticacion / Autorizacion** | Provistas por GestionUsuarios y consumidas por todos los subsistemas de negocio |
+  |<#E6F4EA>| **Sistema Externo** | Servicio de terceros consumido por el sistema |
+  | <b>-O</b> | **Interfaz Provista (Lollipop)** | Contrato de operaciones que el componente expone a otros |
+  | <b>-(</b>  | **Interfaz Requerida (Socket)** | Se conecta con la interfaz provista del mismo nombre en otro subsistema o capa |
+  | <b>[ ]</b> | **Puerto** | Punto de acceso explicito del subsistema (autenticacion/autorizacion y persistencia ORM) |
+  | <b>Transversal</b> | **Autenticacion / Autorizacion** | Provistas por GestionUsuarios y consumidas por los subsistemas de negocio (excepto DifusionPublica) |
 endlegend
 
 @enduml
