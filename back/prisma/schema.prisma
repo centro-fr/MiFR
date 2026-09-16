@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum estado_usuario {
+  ACTIVO
+  INACTIVO
+}
+
+enum rol {
+  PROPIETARIO
+  PROFESORA
+  ALUMNO
+}
+
+model usuarios {
+  id_usuario          String         @id @default(uuid())
+  google_id           String?        @unique
+  email                String         @unique
+  nombre               String
+  apellido             String
+  dni                  String?        @unique
+  telefono             String?
+  fecha_nacimiento     DateTime?
+  direccion            String?
+  estado               estado_usuario @default(ACTIVO)
+  fecha_alta           DateTime       @default(now())
+  fecha_actualizacion  DateTime       @updatedAt
+
+  roles usuario_roles[]
+}
+
+model usuario_roles {
+  id_usuario       String
+  rol              rol
+  fecha_asignacion DateTime @default(now())
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@id([id_usuario, rol])
+}
