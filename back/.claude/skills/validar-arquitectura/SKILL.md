@@ -1,0 +1,55 @@
+---
+name: validar-arquitectura
+description: Audita el backend contra los diagramas y las reglas del proyecto, sin modificar nada. Verifica que el esquema coincida con el DER, que los nombres salgan de la vista arquitectónica y que se respeten las reglas de instanciación, persistencia e interfaces. Usar antes de integrar una rama o al revisar código.
+---
+
+# Validar la arquitectura
+
+Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corrige nada. Si algo amerita corrección, se propone al final y se espera confirmación.
+
+## Qué verificar
+
+### Contra el DER (`docs/diagrams/der.puml`)
+
+- Cada modelo de `prisma/schema.prisma` existe en el DER.
+- Los atributos coinciden en nombre y tipo, y los opcionales también.
+- Los enumerados tienen exactamente los mismos valores, sin agregados ni faltantes.
+- Las relaciones y cardinalidades se corresponden.
+
+### Contra la vista arquitectónica (`docs/diagrams/vista_arquitectonica.puml`)
+
+- Cada carpeta de `src/modules/` corresponde a un subsistema del diagrama.
+- Cada componente del diagrama que ya esté implementado tiene su subcarpeta.
+- Cada interfaz que el diagrama nombra existe como `interface/i-*.ts` con el nombre correspondiente.
+- No hay módulos en el código que el diagrama no prevea.
+
+### Contra las reglas del proyecto
+
+- No hay `new` de clases concretas fuera de `src/index.ts`.
+- `prisma` solo se importa en archivos `*.repository.ts` y en `shared/db/client.ts`.
+- Cada service que tiene interfaz la implementa con `implements`.
+- Las dependencias entre componentes se tipan contra interfaces, no contra clases concretas.
+- No hay `any` ni `console.log` de depuración.
+- No hay comentarios que narren cambios (`// se agregó`, `// modificado`, `// antes era`) ni bloques de código comentado.
+- Toda ruta que recibe cuerpo o parámetros pasa por `validate({ ... })`.
+- Los handlers asincrónicos están envueltos en `asyncHandler`.
+- No hay secretos escritos en el código.
+
+## Formato del reporte
+
+Agrupar por severidad y ser concreto:
+
+```
+BLOQUEANTE  src/modules/x/x.service.ts:14  importa prisma directamente; mover la consulta al repositorio
+ATENCION    prisma/schema.prisma:52         enum estado_pago no tiene RECHAZADO, el DER si (der.puml:266)
+MENOR       src/modules/x/x.controller.ts:8 usa any en el parametro input
+```
+
+Si no hay hallazgos, decirlo en una línea. No inflar el reporte con observaciones de estilo que no cambian el comportamiento.
+
+## Deuda ya conocida
+
+Estas dos ya están documentadas y no hace falta volver a reportarlas como hallazgos nuevos, solo confirmar si siguen:
+
+- `permiso.service.ts` importa `prisma` sin repositorio intermedio.
+- `PORT` se usa en `index.ts` pero no está en `.env.example`.
