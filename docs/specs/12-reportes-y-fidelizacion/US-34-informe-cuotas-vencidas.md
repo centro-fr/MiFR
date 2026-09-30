@@ -1,18 +1,22 @@
 # US-34 – Informe de cuotas vencidas
 
 ## 1. Información general
+
 - **Épica:** Reportes y Fidelización
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la propietaria generar informes de cuotas vencidas filtrables por período, alumno o profesor/a, para tener visibilidad de la cobranza pendiente.
 
 ## 3. Descripción
+
 Como propietaria, quiero generar informes de cuotas vencidas filtrables por período, alumno o profesor/a, para tener visibilidad de la cobranza pendiente.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando informe)
 - [ ] Selección de filtros (período, alumno, profesor/a)
 - [ ] Informe generado con resultados
@@ -23,7 +27,9 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - [ ] Empty (sin cuotas vencidas para los filtros seleccionados)
 
 ## 5. Datos que necesita
-### Datos que muestra (informe):
+
+### Datos que muestra (informe)
+
 - Período del informe
 - Filtros aplicados
 - Resumen general:
@@ -43,19 +49,22 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
   - Cantidad de alumnos con deuda
   - Monto total adeudado
 
-### Datos de filtros:
+### Datos de filtros
+
 - Período (rango de fechas o mes)
 - Alumno específico (opcional)
 - Profesor/a específico/a (opcional)
 - Plan (opcional)
 - Combinación de filtros (permitida)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Informe consolidado
 - Exportación a PDF / Excel
 - Historial de informes (opcional)
 
 ## 6. Acciones del usuario
+
 - Seleccionar filtros (período, alumno, profesor/a)
 - Ver el informe generado
 - Expandir el detalle por alumno
@@ -65,6 +74,7 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - Ver informes de períodos anteriores (opcional)
 
 ## 7. Reglas de negocio
+
 - Debe listar **únicamente alumnos con cuota vencida al momento de la consulta**.
 - Solo la **propietaria** puede acceder a este informe.
 - El informe es **informativo**, no modifica datos.
@@ -78,6 +88,7 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - El detalle incluye información de contacto para facilitar la gestión de cobranza.
 
 ## 8. Criterios de aceptación
+
 - [ ] Filtro por profesora con alumnos vencidos → lista correcta
 - [ ] Filtro en un período sin vencidos → lista vacía
 - [ ] El monto total adeudado se calcula correctamente
@@ -88,6 +99,7 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - [ ] Los alumnos dados de baja no aparecen por defecto
 
 ## 9. Casos borde / Errores
+
 - Período sin cuotas vencidas → mostrar "sin datos"
 - Alumno con deuda de varios períodos → mostrar el total adeudado
 - Alumno con deuda en más de un plan → sumar los montos
@@ -97,6 +109,7 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - Muchos datos → paginación o resumen por bloques
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para el filtro de estado)
 - US-11, US-12, US-13 (planes, precios y promociones)
@@ -106,6 +119,7 @@ Como propietaria, quiero generar informes de cuotas vencidas filtrables por per�
 - Backend: endpoint de informe de vencidos con filtros + exportación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

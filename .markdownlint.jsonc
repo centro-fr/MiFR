@@ -1,0 +1,8 @@
+// Reglas de markdownlint del repo (las usan la extensión del editor y markdownlint-cli2).
+{
+  "default": true,
+  // Largo de línea: la documentación es prosa y tablas; no se corta a 80 columnas.
+  "MD013": false,
+  // Títulos repetidos permitidos si están bajo distintos padres (ej. "Hecho" en cada US).
+  "MD024": { "siblings_only": true }
+}

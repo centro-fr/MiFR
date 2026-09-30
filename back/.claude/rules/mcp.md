@@ -7,7 +7,7 @@ Por ahora el proyecto usa dos.
 Es la herramienta por defecto para explorar código, antes de ponerse a leer archivos a mano. Mantiene un grafo del repositorio, así que responde preguntas de estructura sin recorrer carpetas.
 
 | Para | Usar |
-|---|---|
+| --- | --- |
 | Encontrar una función, clase o ruta | `search_graph` con patrón de nombre |
 | Seguir una cadena de llamadas | `trace_path` |
 | Ver el código exacto de un símbolo | `get_code_snippet` |

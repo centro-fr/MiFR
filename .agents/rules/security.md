@@ -1,6 +1,7 @@
 # Reglas de Ciberseguridad y Buenas Prácticas Web
 
 ## Principios de Seguridad (Security by Design)
+
 1. **Confianza Cero en el Cliente**:
    - Toda entrada debe ser validada y sanitizada estrictamente en el backend (DTOs, schemas con Zod/Joi).
    - El cliente solo refleja permisos para UX; el backend aplica la autorización inmutable.

@@ -6,6 +6,7 @@ Estamos construyendo **MiFR**, un sistema de gestión para el **Centro de Entren
 El sistema maneja alumnos, clases grupales y personalizadas, asistencia, pagos, honorarios, rutina y progreso físico, notificaciones y reportes.
 
 ### Roles del sistema
+
 - **Propietaria**: acceso total, gestiona configuración, pagos, honorarios, reportes.
 - **Profesora**: gestiona sus clases, toma asistencia, carga rutina y progreso.
 - **Alumno / Tutor**: consulta su plan, asistencias, progreso; renueva su plan; informa transferencias.
@@ -13,11 +14,14 @@ El sistema maneja alumnos, clases grupales y personalizadas, asistencia, pagos, 
 Una misma persona puede tener más de un rol simultáneamente (ej: propietaria que también dicta clases).
 
 ### Tipo de actividad
+
 Las actividades del centro se dividen en dos tipos:
+
 - **Clase grupal**: cupo configurable u opcional.
 - **Clase personalizada**: cupo máximo obligatorio, sin días de gracia.
 
 ### Terminología clave (obligatorio respetar)
+
 - **NO usar "pago"** en la interfaz. El sistema no procesa pagos.
 - Usar **"transferencia"** o **"aviso de transferencia"**.
 - Usar **"pendiente de verificación"** (no "pendiente de confirmación").
@@ -34,6 +38,7 @@ Ver glosario completo en `docs/design/PROMPTS-STITCH.md`.
 ## 2. Stack tecnológico obligatorio
 
 ### Frontend
+
 - **React + TypeScript** (modo estricto)
 - **Vite** como bundler
 - **Tailwind CSS** para estilos
@@ -47,6 +52,7 @@ Ver glosario completo en `docs/design/PROMPTS-STITCH.md`.
 - **MSW (Mock Service Worker)** para mocks durante el desarrollo
 
 ### Librerías complementarias
+
 - **Sonner** (o similar) para toasts y notificaciones
 - **Lucide React** para íconos
 - **Recharts** o **Chart.js** para gráficos (dashboards y reportes)
@@ -54,13 +60,15 @@ Ver glosario completo en `docs/design/PROMPTS-STITCH.md`.
 - **date-fns** o **dayjs** para manejo de fechas
 
 ### Herramientas de calidad
+
 - ESLint + Prettier
 - Husky (pre-commit hooks)
 - TypeScript estricto (evitar `any`)
 
 ### Justificación por librería
+
 | Librería | Por qué |
-|----------|---------|
+| ---------- | --------- |
 | **React Query** | Cache inteligente, invalidación automática, optimistic updates |
 | **Zustand** | Estado global simple sin boilerplate de Redux |
 | **React Hook Form** | Formularios performantes y con buen manejo de validaciones |
@@ -73,7 +81,7 @@ Ver glosario completo en `docs/design/PROMPTS-STITCH.md`.
 
 ## 3. Estructura de carpetas
 
-```
+```text
 front/
 ├── public/
 ├── src/
@@ -123,7 +131,7 @@ front/
 ## 5. Convenciones de nombres
 
 | Tipo | Convención | Ejemplo |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | Archivos | kebab-case | `take-attendance.tsx` |
 | Componentes | PascalCase | `TakeAttendance` |
 | Hooks | camelCase con `use` | `useAttendance` |
@@ -140,7 +148,7 @@ front/
 Usar **siempre** estos colores en la interfaz:
 
 | Nombre | HEX | RGB | Uso |
-|--------|-----|-----|-----|
+| -------- | ----- | ----- | ----- |
 | Rosa FR (primary) | `#E91E82` | `rgb(233, 30, 130)` | Botones principales, acentos, badges activos |
 | Rosa oscuro (primary dark) | `#BC1266` | `rgb(188, 18, 102)` | Hover, estados activos, degradados |
 | Negro azulado (dark) | `#181C26` | `rgb(24, 28, 38)` | Texto principal, fondos oscuros |
@@ -148,21 +156,25 @@ Usar **siempre** estos colores en la interfaz:
 Configurar en `tailwind.config.js` como `primary`, `primary-dark`, `dark`.
 
 **Estados de cuota (badges):**
+
 - Al día → verde (#10B981)
 - Por vencer → amarillo (#F59E0B)
 - Vencida → rojo (#EF4444)
 
 **Estados de actividad (badges):**
+
 - Grupal → azul (#3B82F6)
 - Personalizada → violeta (#8B5CF6)
 
 **Estados de transferencia:**
+
 - Sin informar → gris (#6B7280)
 - Pendiente de verificación → amarillo (#F59E0B)
 - Verificada/Aprobada → verde (#10B981)
 - Rechazada → rojo (#EF4444)
 
 **Estados de rendición de efectivo:**
+
 - Al día → verde (#10B981)
 - Atención (>15 días) → amarillo (#F59E0B)
 - Urgente (>30 días) → rojo (#EF4444)
@@ -195,6 +207,7 @@ Toda pantalla que consuma datos debe manejar:
 - **Sin permisos** (si aplica): mensaje claro de acceso restringido.
 
 **Estados adicionales para pantallas específicas:**
+
 - **Guardando**: botón con spinner + "Guardando..."
 - **Confirmación**: modal antes de acciones destructivas
 - **Éxito**: toast de confirmación
@@ -246,16 +259,19 @@ Ver `docs/design/MENUS.md` para los menús exactos por rol.
 ## 12. Formularios y validación
 
 ### React Hook Form
+
 - Usar `useForm` para el manejo del estado del formulario.
 - Evitar re-renders innecesarios con `Controller` cuando sea necesario.
 - Definir `defaultValues` y `mode: 'onBlur'` o `mode: 'onChange'` según el caso.
 
 ### Zod
+
 - Definir esquemas en `src/features/<dominio>/schemas/`.
 - Compartir esquemas con backend cuando sea posible.
 - Usar `zodResolver` de `@hookform/resolvers` para integrar con React Hook Form.
 
 ### Buenas prácticas
+
 - **Mensajes de error en español**, claros y accionables.
 - **Validación en tiempo real** donde tenga sentido.
 - **Feedback inmediato** al usuario (toasts, mensajes inline).
@@ -277,6 +293,7 @@ Ver `docs/design/MENUS.md` para los menús exactos por rol.
 - **Toasts** para notificaciones breves (usar Sonner o similar).
 
 ### Reglas de legibilidad (obligatorias)
+
 - **Desktop (1440px)**: ancho máximo 1200-1280px, centrado.
 - **Mobile (390px)**: padding lateral 16-20px.
 - **Nunca scroll horizontal.**
@@ -308,6 +325,7 @@ Ver `docs/design/MENUS.md` para los menús exactos por rol.
 ## 16. Cuando el backend esté listo
 
 Para cada feature:
+
 1. **Reemplazar el baseURL** en Axios.
 2. **Eliminar o desactivar** el handler de MSW correspondiente.
 3. **Verificar que los types** sigan coincidiendo con el contrato real.
@@ -347,6 +365,7 @@ Para cada feature:
 ## 19. Responsive
 
 Antes de implementar cualquier pantalla, consultá `docs/RESPONSIVE.md` para saber:
+
 - Qué formato es prioritario (mobile, desktop o ambos)
 - Qué patrones de adaptación aplicar
 - Qué casos de testing responsive ejecutar
@@ -356,22 +375,26 @@ Antes de implementar cualquier pantalla, consultá `docs/RESPONSIVE.md` para sab
 ## 20. Librerías específicas (detalle)
 
 ### Zustand
+
 - Usar para **estado global liviano** (ej: usuario logueado, filtros persistentes).
 - Evitar sobreuso: si el estado se puede manejar con React Query o useState local, preferirlo.
 - Stores en `src/stores/` (uno por dominio).
 
 ### React Hook Form
+
 - Usar `useForm` con `zodResolver` para integración con Zod.
 - Definir `defaultValues` siempre.
 - Usar `mode: 'onBlur'` para formularios grandes y `mode: 'onChange'` para validaciones en tiempo real.
 
 ### Zod
+
 - Definir esquemas en `src/features/<dominio>/schemas/`.
 - Nombrar esquemas como `alumnoSchema`, `pagoSchema`, etc.
 - Compartir esquemas con el backend cuando sea posible (idealmente en un paquete compartido).
 - Inferir tipos con `z.infer<typeof schema>`.
 
 ### React Query
+
 - Definir hooks por dominio: `useAlumnos`, `useAsistencia`, etc.
 - Configurar `staleTime` según la frecuencia de actualización:
   - Datos estáticos (planes, actividades): 5-10 minutos.

@@ -1,18 +1,22 @@
 # US-31 – Insignias y racha de asistencia
 
 ## 1. Información general
+
 - **Épica:** Portal del Alumno
 - **Prioridad:** Baja
 - **Actor principal:** Alumno
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir al alumno recibir insignias y ver su racha de asistencia en su panel, para sentirse motivado a sostener su rutina.
 
 ## 3. Descripción
+
 Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, para sentirme motivado a sostener mi rutina.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando racha e insignias)
 - [ ] Vista de racha actual
 - [ ] Listado de insignias obtenidas
@@ -23,27 +27,33 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - [ ] Empty (alumno sin racha activa ni insignias)
 
 ## 5. Datos que necesita
-### Datos que muestra (racha):
+
+### Datos que muestra (racha)
+
 - Racha actual (cantidad de clases consecutivas asistidas)
 - Fecha de inicio de la racha
 - Mejor racha histórica
 - Próximo hito (por ejemplo: "3 clases para llegar a 10")
 
-### Datos que muestra (insignias):
+### Datos que muestra (insignias)
+
 - Insignias obtenidas (con fecha de obtención)
 - Insignias bloqueadas (con descripción de cómo obtenerlas)
 - Progreso hacia la próxima insignia (opcional)
 
-### Datos de configuración:
+### Datos de configuración
+
 - Criterios de otorgamiento de insignias (definidos con la propietaria durante el desarrollo)
 - Tipos de insignias (por racha, por asistencia perfecta, por hitos especiales, etc.)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Racha actualizada automáticamente al registrar asistencia
 - Insignias otorgadas automáticamente según criterios
 - Historial de rachas e insignias
 
 ## 6. Acciones del usuario
+
 - Ver su racha actual
 - Ver su mejor racha histórica
 - Ver sus insignias obtenidas
@@ -52,6 +62,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - Ver el detalle de una insignia
 
 ## 7. Reglas de negocio
+
 - La racha se calcula sobre **clases seguidas sin faltar**, según historial de asistencia.
 - Una **inasistencia corta la racha** y la reinicia a cero.
 - El criterio de otorgamiento de insignias **queda a definir con la propietaria durante el desarrollo**.
@@ -65,6 +76,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - Las insignias se muestran con íconos distintivos y colores de la marca.
 
 ## 8. Criterios de aceptación
+
 - [ ] Racha activa tras varias asistencias consecutivas → incrementa correctamente
 - [ ] Corte de racha tras una inasistencia → la racha vuelve a cero
 - [ ] Obtención de insignia al cumplir el criterio → se otorga automáticamente
@@ -74,6 +86,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - [ ] La mejor racha histórica se conserva
 
 ## 9. Casos borde / Errores
+
 - Alumno recién inscripto sin racha ni insignias → estados vacíos claros
 - Alumno con racha de 0 (nunca asistió) → mostrar mensaje motivacional
 - Alumno con racha cortada recientemente → mostrar mensaje de ánimo
@@ -82,6 +95,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - Insignia otorgada pero no visible por error → registrar log y reintentar
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica: un alumno dado de baja no accede)
 - US-20, US-21 (asistencia e inasistencias, base para el cálculo de racha)
@@ -91,6 +105,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - Backend: servicio de cálculo de racha + servicio de otorgamiento de insignias
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI (mobile-first):

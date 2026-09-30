@@ -1,18 +1,22 @@
 # US-11 – Alta y edición de planes vigentes
 
 ## 1. Información general
+
 - **Épica:** Planes y Precios
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 2
 
 ## 2. Objetivo
+
 Permitir crear y editar los planes vigentes del centro, vinculándolos a una actividad (grupal o personalizada), a una profesora y, cuando corresponda, a una frecuencia semanal, para establecer la oferta comercial.
 
 ## 3. Descripción
+
 Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una actividad (grupal o personalizada), a una profesora y, cuando corresponda, a una frecuencia semanal, para establecer la oferta comercial. En el caso de las clases personalizadas el plan deberá respetar el cupo máximo definido en la actividad.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando planes y datos auxiliares)
 - [ ] Listado de planes vigentes
 - [ ] Formulario de alta de plan
@@ -25,7 +29,9 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - [ ] Empty (no hay planes cargados)
 
 ## 5. Datos que necesita
-### Datos que muestra (listado):
+
+### Datos que muestra (listado)
+
 - Nombre del plan (Particular, Básico, Intermedio, 5 días, Premium, Kids)
 - Actividad asociada (con su tipo: grupal / personalizada)
 - Profesora asociada
@@ -34,7 +40,8 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Estado (vigente / no vigente)
 - Cantidad de alumnos activos en el plan (opcional)
 
-### Datos que se cargan / editan:
+### Datos que se cargan / editan
+
 - Nombre del plan (obligatorio)
 - Actividad asociada (obligatorio) — hereda el tipo (grupal / personalizada)
 - Profesora asociada (obligatorio)
@@ -44,11 +51,13 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Descripción (opcional)
 - Estado (vigente / no vigente)
 
-### Datos que NO se pueden editar directamente:
+### Datos que NO se pueden editar directamente
+
 - Precio histórico (se gestiona por vigencias, ver US-12)
 - Cuotas ya cobradas
 
 ## 6. Acciones del usuario
+
 - Ver el listado de planes vigentes
 - Crear un nuevo plan
 - Editar un plan existente
@@ -58,6 +67,7 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Asociar o cambiar la profesora del plan
 
 ## 7. Reglas de negocio
+
 - El plan debe estar asociado a **una actividad** (que ya tiene definido su tipo: grupal o personalizada).
 - El plan debe estar asociado a **una profesora**.
 - En los planes con frecuencia semanal, la frecuencia debe ser un número entero positivo (1 a 7 días).
@@ -69,6 +79,7 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Los planes estándar esperados: Particular, Básico, Intermedio, 5 días, Premium, Kids.
 
 ## 8. Criterios de aceptación
+
 - [ ] Alta de un plan nuevo con actividad (con su tipo) y profesora asociadas → se guarda correctamente
 - [ ] Edición de un plan existente cambiando su frecuencia semanal → se guarda correctamente
 - [ ] Intento de crear un plan sin actividad o sin profesora → falla (campos obligatorios)
@@ -77,6 +88,7 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - [ ] El tipo de actividad (grupal/personalizada) se muestra claramente en el listado
 
 ## 9. Casos borde / Errores
+
 - Plan sin actividad asociada → no permitir guardar
 - Profesora dada de baja con planes asociados → advertir y requerir reasignación
 - Actividad dada de baja con planes asociados → no permitir o advertir
@@ -86,6 +98,7 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Error de red al guardar
 
 ## 10. Dependencias
+
 - US-01, US-02 (solo propietaria puede acceder)
 - US-03 (actividades, que definen el tipo grupal/personalizada)
 - US-04 (profesoras y horarios asignados)
@@ -96,6 +109,7 @@ Como propietaria, quiero crear y editar los planes vigentes vinculándolos a una
 - Backend: CRUD de planes + validaciones de cupo y vigencia
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta
 - Recomendación de UI:

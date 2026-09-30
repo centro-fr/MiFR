@@ -20,7 +20,7 @@ Genera un componente siguiendo exactamente la estructura de `modules/gestion-usu
 En `src/modules/<subsistema>/<componente>/`:
 
 | Archivo | Contenido |
-|---|---|
+| --- | --- |
 | `interface/i-logica-<componente>s.ts` | La interfaz con el nombre del diagrama, con un comentario arriba que la vincule al componente y aclare qué queda afuera |
 | `<x>.types.ts` | Re-exporta los tipos de Prisma con nombres de dominio |
 | `<x>.schemas.ts` | Esquemas Zod de entrada, con los tipos inferidos exportados |

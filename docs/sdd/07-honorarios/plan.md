@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Servicio de Liquidaciones (`LiquidacionService`):
   - Ejecuta el cálculo reuniendo inscripciones activas vinculadas a los horarios de cada profesora durante el rango de fechas `[periodo_desde, periodo_hasta]`.
   - Cruza con la tabla `suplencias` para generar ítems de crédito y débito.
@@ -14,6 +15,7 @@
   - Endpoint de consulta personal `/profesora/mis-honorarios` protegido con `requirePermission('honorarios.ver_propios')`, inyectando automáticamente el `id_profesora` del token de sesión.
 
 ### 1.2. Frontend
+
 - Pantalla para la Propietaria (`/admin/honorarios`):
   - Selector de mes/año (date picker mensual).
   - Tarjetas de resumen (Total liquidado, Cantidad de profesoras, Total suplencias).
@@ -65,6 +67,7 @@ CREATE TABLE liquidacion_detalles (
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Liquidaciones (`/api/v1/honorarios`)
+
 - `GET /api/v1/honorarios/informe?mes=2026-09`: Devuelve la liquidación consolidada para la Propietaria.
 - `GET /api/v1/honorarios/mis-liquidaciones`: Devuelve únicamente las liquidaciones de la profesora autenticada.
 - `POST /api/v1/honorarios/liquidar`: Dispara el cálculo automático para el mes indicado.
@@ -72,6 +75,7 @@ CREATE TABLE liquidacion_detalles (
 - `GET /api/v1/honorarios/exportar?mes=2026-09&formato=pdf|xlsx`: Descarga el archivo de liquidación.
 
 ### 3.2. Suplencias (`/api/v1/suplencias`)
+
 - `GET /api/v1/suplencias`: Lista suplencias por rango de fecha.
 - `POST /api/v1/suplencias`: Registra una suplencia vinculada a una clase.
   - Body: `{ "id_clase": 20, "id_prof_ausente": 3, "motivo": "Certificado médico" }`
@@ -79,5 +83,6 @@ CREATE TABLE liquidacion_detalles (
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Solo usuarios con rol `PROPIETARIA` pueden acceder al informe global.
 - El endpoint individual de la profesora valida a nivel de SQL `WHERE id_profesora = req.user.id_profesora`, impidiendo parameter tampering.

@@ -1,18 +1,22 @@
 # US-37 – Mapa de calor de ocupación de horarios
 
 ## 1. Información general
+
 - **Épica:** Reportes y Fidelización
 - **Prioridad:** Baja
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la propietaria visualizar la ocupación de horarios mediante un mapa de calor, para detectar franjas con baja o alta demanda y optimizar la grilla de actividades.
 
 ## 3. Descripción
+
 Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con baja demanda y optimizar la grilla de actividades.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando datos de ocupación)
 - [ ] Selección de filtros (período, actividad, profesor/a)
 - [ ] Mapa de calor con celdas coloreadas
@@ -24,7 +28,9 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - [ ] Empty (sin datos para el período seleccionado)
 
 ## 5. Datos que necesita
-### Datos que muestra (mapa de calor):
+
+### Datos que muestra (mapa de calor)
+
 - Eje X: días de la semana (Lunes a Domingo)
 - Eje Y: franjas horarias (por ejemplo, cada hora o cada bloque de clase)
 - Cada celda representa la ocupación de un horario:
@@ -33,7 +39,8 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
   - Porcentaje de ocupación
   - Actividad (si aplica)
 
-### Datos de configuración:
+### Datos de configuración
+
 - Escala de colores:
   - Verde: menos del 60% ocupado (libre)
   - Amarillo: entre 60% y 84% ocupado (moderado)
@@ -42,18 +49,21 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
   - Gris: sin actividad programada
 - Granularidad horaria (por hora o por bloque)
 
-### Datos de filtros:
+### Datos de filtros
+
 - Período (semana actual, mes, rango personalizado)
 - Actividad específica (opcional)
 - Profesor/a específico/a (opcional)
 - Tipo de actividad (grupal / personalizada, opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Mapa de calor consolidado
 - Detalle al hacer hover / tap en una celda
 - Exportación (opcional)
 
 ## 6. Acciones del usuario
+
 - Ver el mapa de calor de ocupación
 - Filtrar por período, actividad o profesor/a
 - Ver el detalle de una celda específica
@@ -62,6 +72,7 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - Ver estadísticas por franja horaria (opcional)
 
 ## 7. Reglas de negocio
+
 - El color de cada celda se calcula sobre **cupo máximo vs. inscriptos**.
 - Escala de colores:
   - **Libre**: menos del 60% ocupado
@@ -78,6 +89,7 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - Las clases personalizadas también se incluyen (con su cupo específico).
 
 ## 8. Criterios de aceptación
+
 - [ ] Horario con ocupación menor al 60% → color "libre" (verde)
 - [ ] Horario con ocupación 100% → color "completo" (rojo)
 - [ ] Horario sin actividad → color "sin actividad" (gris)
@@ -88,6 +100,7 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - [ ] Solo la propietaria accede al mapa de calor
 
 ## 9. Casos borde / Errores
+
 - Sin horarios cargados → mapa vacío con mensaje
 - Sin inscriptos en el período → todas las celdas en verde o gris
 - Actividad con cupo 0 → no debería existir (validado en US-03)
@@ -97,6 +110,7 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - Hover / tap no disponible en mobile → adaptar a tap con modal de detalle
 
 ## 10. Dependencias
+
 - US-03 (actividades y cupos)
 - US-04 (horarios y profesoras)
 - US-05, US-07 (alumnos e inscripciones)
@@ -106,6 +120,7 @@ Como propietaria, quiero visualizar un mapa de calor, para detectar franjas con 
 - Backend: endpoint de mapa de calor + cálculo de ocupación por celda
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta
 - Recomendación de UI:

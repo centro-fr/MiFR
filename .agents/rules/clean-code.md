@@ -1,6 +1,7 @@
 # Reglas de Código Limpio y Principios de Diseño
 
 ## Principios Fundamentales
+
 1. **Legibilidad y Expresividad**:
    - Nombres que revelen la intención clara del negocio.
    - Funciones compactas (< 25-30 líneas) orientadas a una única responsabilidad (SRP).

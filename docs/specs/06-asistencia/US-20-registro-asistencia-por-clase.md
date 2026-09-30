@@ -1,18 +1,22 @@
 # US-20 – Registro de asistencia por clase
 
 ## 1. Información general
+
 - **Épica:** Asistencia
 - **Prioridad:** Alta
 - **Actor principal:** Profesora
 - **Sprint sugerido:** Sprint 3
 
 ## 2. Objetivo
+
 Permitir a la profesora visualizar la lista de inscriptos y registrar la asistencia desde su celular en cada clase, para controlar el ingreso de manera ágil sin tarjetas de papel.
 
 ## 3. Descripción
+
 Como profesora, quiero visualizar la lista de inscriptos y registrar la asistencia desde mi celular en cada clase para controlar el ingreso de manera ágil sin tarjetas de papel.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando lista de inscriptos)
 - [ ] Lista de clases del día (home de la profesora)
 - [ ] Lista de inscriptos de una clase
@@ -25,29 +29,35 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - [ ] Confirmación al cerrar la ventana de asistencia
 
 ## 5. Datos que necesita
-### Datos que muestra (lista de clases del día):
+
+### Datos que muestra (lista de clases del día)
+
 - Actividad (nombre y tipo: grupal / personalizada)
 - Horario (inicio y fin)
 - Cupo máximo y cantidad de inscriptos
 - Estado de la ventana de asistencia (abierta / cerrada)
 
-### Datos que muestra (lista de inscriptos):
+### Datos que muestra (lista de inscriptos)
+
 - Nombre y apellido del alumno
 - Estado de cuota (al día / por vencer / vencida)
 - Estado de asistencia: `sin_marcar` | `presente` | `ausente`
 - Observaciones (si las hubiera)
 - Peso y talla (si corresponde)
 
-### Datos que se cargan:
+### Datos que se cargan
+
 - Estado de asistencia por alumno: `presente` o `ausente`
 
-### Datos que se generan:
+### Datos que se generan
+
 - Registro de asistencia por alumno
 - Fecha y hora del marcado
 - Profesora que tomó asistencia
 - Base para US-21 (inasistencias automáticas)
 
 ## 6. Acciones del usuario
+
 - Ver las clases del día (home de la profesora)
 - Seleccionar una clase
 - Ver la lista de inscriptos
@@ -58,6 +68,7 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - Consultar asistencias de clases anteriores (opcional)
 
 ## 7. Reglas de negocio
+
 - Debe mostrar la **lista de inscriptos en el horario correspondiente**.
 - Debe permitir **marcar presente sin que el alumno necesite celular propio**.
 - Solo se puede tomar asistencia de **clases del día** (no de días futuros ni pasados, salvo corrección).
@@ -70,6 +81,7 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - Un alumno con pago pendiente de confirmación **sí aparece** (puede asistir).
 
 ## 8. Criterios de aceptación
+
 - [ ] Marcar presente a un alumno inscripto en el horario → se guarda correctamente
 - [ ] Intentar marcar presente a un alumno no inscripto en ese horario → no aparece en la lista
 - [ ] Un alumno con cuota vencida aparece con advertencia visual
@@ -79,6 +91,7 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - [ ] Un alumno dado de baja no aparece en la lista
 
 ## 9. Casos borde / Errores
+
 - Profesora sin clases asignadas hoy → mostrar mensaje claro
 - Clase sin inscriptos → mostrar estado vacío
 - Error de red al marcar asistencia → permitir reintentar
@@ -88,6 +101,7 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - Clase personalizada con un solo alumno → mostrar la lista con ese alumno
 
 ## 10. Dependencias
+
 - US-03, US-04 (actividades y horarios)
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para excluir alumnos dados de baja)
@@ -97,6 +111,7 @@ Como profesora, quiero visualizar la lista de inscriptos y registrar la asistenc
 - Backend: endpoint de listado de clases del día + endpoint de registro de asistencia
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta (es una de las pantallas más críticas operativamente)
 - Recomendación de UI (mobile-first):
