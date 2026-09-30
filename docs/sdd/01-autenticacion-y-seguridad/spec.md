@@ -37,7 +37,7 @@ Proveer un mecanismo centralizado, moderno y seguro de identificación, autentic
 - El sistema no crea usuarios automáticamente tras un login exitoso de Google.
 - Al validar el token de Google, el backend buscará el correo en la base de datos de usuarios (`usuarios.email`).
 - Si el correo **no está registrado**, se denegará el acceso informando claramente al usuario que su cuenta no se encuentra habilitada en el centro.
-- Si el usuario existe pero su estado es `INACTIVO` o `BAJA`, se denegará el acceso informando que la cuenta está deshabilitada.
+- Si el usuario existe pero su estado es `INACTIVO` (el DER solo define `ACTIVO` e `INACTIVO`), se denegará el acceso informando que la cuenta está deshabilitada.
 - En el primer login exitoso de un usuario pre-registrado, el sistema asociará de forma permanente su identificador único de Google (`google_id`) a su registro.
 
 #### RF-03: Sesión segura y recuperación de contexto
@@ -124,7 +124,7 @@ Proveer un mecanismo centralizado, moderno y seguro de identificación, autentic
 | :--- | :--- |
 | **Popup bloqueado por el navegador** | La interfaz debe detectar el bloqueo y mostrar un aviso al usuario indicando habilitar popups o usar redirección estándar. |
 | **Token de Google expirado o corrupto** | El backend responde HTTP 401 con código `INVALID_GOOGLE_TOKEN`. El cliente descarta cualquier estado previo y solicita reautenticar. |
-| **Usuario con estado `INACTIVO` o `BAJA`** | El backend rechaza la autenticación informando que el usuario ha sido suspendido o dado de baja. |
+| **Usuario con estado `INACTIVO`** | El backend rechaza la autenticación informando que el usuario ha sido suspendido o dado de baja. |
 | **Falla de conectividad con servidores de Google** | El backend maneja el timeout/error y responde HTTP 503 con mensaje de reintento temporal amigable. |
 | **Error de red al guardar la matriz de permisos** | La UI conserva el estado editado previamente, muestra un toast de error con opción "Reintentar" y no pierde los cambios sin advertir. |
 | **Usuario con sesión activa navegando a `/login`** | Se detecta la sesión activa y se redirige automáticamente al dashboard principal correspondiente a su rol. |

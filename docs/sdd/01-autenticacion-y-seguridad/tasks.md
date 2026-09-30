@@ -7,14 +7,14 @@ Tareas técnicas, secuenciales y verificables para implementar la especificació
 ## Fase 1: Base de Datos y Modelado RBAC
 
 - [ ] **1.1. Script de migración / DDL de tablas de seguridad e identidad**
-  - Crear o actualizar las tablas en la base de datos: `usuarios`, `roles`, `usuario_roles`, `modulos`, `permisos`, `rol_permisos`.
-  - Configurar claves primarias compuestas, índices únicos en `email` y `google_id`, y constraints de integridad referencial con `ON DELETE CASCADE / RESTRICT`.
+  - Crear o actualizar las tablas **según el DER** (que no se modifica): `usuarios`, `roles`, `usuario_roles`, `permisos`, `rol_permisos`. No hay tabla `modulos`: el módulo es la columna `permisos.modulo`.
+  - Claves primarias compuestas en `usuario_roles` y `rol_permisos`; únicos en `usuarios.email`, `usuarios.google_id`, `usuarios.dni`, `roles.codigo` y `permisos.codigo`; FK `ON DELETE NO ACTION` con los nombres del SQL de EA.
   - *Criterio de verificación*: Ejecutar la migración en la base de datos y verificar con `\d` o inspección de esquema que todas las tablas y relaciones existan correctamente.
 
 - [ ] **1.2. Carga inicial de datos (Seeds / Semillas)**
   - Insertar los roles base: `PROPIETARIA`, `PROFESORA`, `ALUMNO`, `TUTOR`.
-  - Insertar el catálogo de módulos iniciales (`SEGURIDAD`, `ALUMNOS`, `HORARIOS`, `PLANES`, `HONORARIOS`, `ASISTENCIAS`, `RUTINAS`).
-  - Insertar los permisos del sistema con la marca `es_critico_propietaria` en aquellos esenciales (`seguridad.matriz.ver`, `seguridad.matriz.editar`, `honorarios.ver_todos`).
+  - Insertar los permisos del sistema con su `modulo` (`SEGURIDAD`, `ALUMNOS`, `HORARIOS`, `PLANES`, `HONORARIOS`, `ASISTENCIAS`, `RUTINAS`).
+  - Definir en el backend la constante de permisos críticos de la Propietaria (`SEGURIDAD_MATRIZ_VER`, `SEGURIDAD_MATRIZ_EDITAR`, `HONORARIOS_VER_TODOS`) y otorgárselos en el seed.
   - Poblar las asignaciones por defecto en `rol_permisos`.
   - Crear un usuario de prueba con rol `PROPIETARIA` y un usuario con roles combinados `PROPIETARIA` + `PROFESORA`.
   - *Criterio de verificación*: Consultar la tabla `rol_permisos` y verificar que la matriz inicial esté cargada de forma coherente.
@@ -59,9 +59,9 @@ Tareas técnicas, secuenciales y verificables para implementar la especificació
   - *Criterio de verificación*: Probar endpoints protegidos con un usuario que tiene el permiso (retorna 200) y uno que no lo tiene (retorna HTTP 403 Forbidden).
 
 - [ ] **3.2. Implementar endpoints de administración de matriz de permisos**
-  - Implementar `GET /api/v1/seguridad/matriz`: protegido con `requirePermission('seguridad.matriz.ver')`, devuelve roles, módulos, permisos y el estado actual de la matriz.
-  - Implementar `PUT /api/v1/seguridad/matriz`: protegido con `requirePermission('seguridad.matriz.editar')`, actualiza las relaciones en `rol_permisos`.
-  - Validar inmutabilidad de permisos críticos: si el payload intenta quitar un permiso con `es_critico_propietaria = true` al rol `PROPIETARIA`, abortar con error HTTP 400.
+  - Implementar `GET /api/v1/seguridad/matriz`: protegido con `requirePermission('SEGURIDAD_MATRIZ_VER')`, devuelve roles, permisos agrupados por `permisos.modulo` y el estado actual de la matriz.
+  - Implementar `PUT /api/v1/seguridad/matriz`: protegido con `requirePermission('SEGURIDAD_MATRIZ_EDITAR')`, inserta o borra filas de `rol_permisos`.
+  - Validar inmutabilidad de permisos críticos: si el payload intenta quitarle al rol `PROPIETARIA` un permiso de la lista de críticos, abortar con error HTTP 400.
   - *Criterio de verificación*: Test que intente remover un permiso crítico de la propietaria y verifique que sea rechazado con HTTP 400.
 
 ---
