@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Generación de instancias de `clases` basada en `horarios` semanales:
   - Generador bajo demanda o proceso cron semanal que instancia los registros de `clases` correspondientes a la semana en curso.
 - Cierre de asistencia:
@@ -14,6 +15,7 @@
   - `asistencia.reabrir`: Exclusivo `PROPIETARIA`.
 
 ### 1.2. Frontend
+
 - Vista Mobile First para profesoras (`/profesora/clases-hoy`):
   - Tarjetas de clases con indicador de progreso (ej: "8/12 presentes").
   - Botón "Comenzar clase / Tomar Asistencia".
@@ -58,20 +60,24 @@ CREATE INDEX idx_clases_fecha ON clases(fecha_clase, id_prof_dictante);
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Clases (`/api/v1/clases`)
+
 - `GET /api/v1/clases/hoy`: Devuelve las clases del día para la profesora autenticada (o todas si es Propietaria).
 - `GET /api/v1/clases/:id/inscriptos`: Devuelve la lista de alumnos inscriptos en ese horario, su estado de asistencia actual y su estado de cuota (`AL_DIA`, `EN_GRACIA`, `VENCIDO`).
 - `POST /api/v1/clases/:id/cerrar`: Cierra la clase y genera inasistencias automáticas.
 - `POST /api/v1/clases/:id/reabrir`: Solo Propietaria.
 
 ### 3.2. Asistencias (`/api/v1/asistencias`)
+
 - `POST /api/v1/asistencias`:
   - Body: `{ "id_clase": 15, "marcas": [ { "id_alumno": 1, "asistio": true }, { "id_alumno": 2, "asistio": false } ] }`
 
 ### 3.3. Detección de Inactivos (`/api/v1/asistencias/inactivos`)
+
 - `GET /api/v1/asistencias/inactivos`: Devuelve lista de alumnos con $\ge 3$ faltas seguidas o sin asistencia en los últimos 14 días.
 
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Una profesora solo puede registrar asistencia en clases donde ella sea la `id_prof_dictante` (o suplente asignada según US-24).
 - Se prohíbe la alteración de registros de asistencia una vez cerrada la clase, evitando manipulaciones que impacten en la liquidación de honorarios.

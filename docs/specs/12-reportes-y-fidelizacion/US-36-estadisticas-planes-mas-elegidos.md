@@ -1,18 +1,22 @@
 # US-36 – Estadísticas de planes más elegidos
 
 ## 1. Información general
+
 - **Épica:** Reportes y Fidelización
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la propietaria visualizar un reporte de los planes más elegidos por los alumnos, para entender qué oferta comercial funciona mejor y ajustar precios o promociones.
 
 ## 3. Descripción
+
 Como propietaria, quiero visualizar un reporte de los planes más elegidos por los alumnos, para entender qué oferta comercial funciona mejor y ajustar precios o promociones.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando estadísticas)
 - [ ] Selección de filtros (período, actividad, profesor/a)
 - [ ] Gráfico de planes más elegidos
@@ -24,12 +28,15 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - [ ] Empty (sin datos para el período seleccionado)
 
 ## 5. Datos que necesita
-### Datos que muestra (gráfico):
+
+### Datos que muestra (gráfico)
+
 - Cantidad de alumnos activos por plan (barras o torta)
 - Ordenado de mayor a menor
 - Porcentaje que representa cada plan sobre el total
 
-### Datos que muestra (tabla):
+### Datos que muestra (tabla)
+
 - Nombre del plan
 - Actividad asociada (con tipo: grupal / personalizada)
 - Profesora asociada
@@ -38,19 +45,22 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - Precio vigente
 - Ingreso estimado mensual (cantidad × precio)
 
-### Datos de filtros:
+### Datos de filtros
+
 - Período (rango de fechas o mes)
 - Actividad (opcional)
 - Profesor/a (opcional)
 - Tipo de plan (grupal / personalizada, opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Gráfico de planes más elegidos
 - Tabla de detalle
 - Exportación a PDF / Excel
 - Historial de consultas (opcional)
 
 ## 6. Acciones del usuario
+
 - Seleccionar filtros (período, actividad, profesor/a)
 - Ver el gráfico de planes más elegidos
 - Ver la tabla con el detalle numérico
@@ -59,6 +69,7 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - Ver el detalle de un plan específico (opcional)
 
 ## 7. Reglas de negocio
+
 - Debe contar **alumnos activos por plan**, ordenado de mayor a menor.
 - Solo la **propietaria** puede acceder a estas estadísticas.
 - Se consideran solo alumnos **activos** (no dados de baja ni pre-inscripciones).
@@ -70,6 +81,7 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - Se puede comparar la distribución entre planes grupales y personalizadas (opcional).
 
 ## 8. Criterios de aceptación
+
 - [ ] Reporte con varios planes activos → orden correcto (mayor a menor)
 - [ ] Reporte con un plan sin alumnos → aparece con cero
 - [ ] El gráfico se ve correctamente en desktop y mobile
@@ -80,6 +92,7 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - [ ] Solo se cuentan alumnos activos (no pre-inscripciones ni bajas)
 
 ## 9. Casos borde / Errores
+
 - Sin planes cargados → mostrar mensaje claro
 - Todos los planes con cero alumnos → mostrar gráfico vacío
 - Plan con muchos alumnos → ajustar escala
@@ -89,6 +102,7 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - Alumno con múltiples planes → definir política de conteo
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para excluir alumnos dados de baja)
 - US-11 (planes vigentes)
@@ -98,6 +112,7 @@ Como propietaria, quiero visualizar un reporte de los planes más elegidos por l
 - Backend: endpoint de estadísticas + agrupación por plan + exportación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

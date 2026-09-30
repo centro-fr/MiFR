@@ -1,18 +1,22 @@
 # US-04 – Asignación de profesoras y horarios a actividades
 
 ## 1. Información general
+
 - **Épica:** Configuración Base
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 1
 
 ## 2. Objetivo
+
 Permitir a la propietaria asignar profesoras y horarios a cada actividad (grupal o personalizada) para mantener organizado el cronograma semanal del centro.
 
 ## 3. Descripción
+
 Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal o personalizada) para mantener organizado el cronograma semanal, permitiendo que una misma disciplina se dicte en distintos horarios y con distintas profesoras.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando actividades, profesoras y horarios)
 - [ ] Vista de cronograma / listado de horarios
 - [ ] Formulario de alta / edición de horario
@@ -23,7 +27,9 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - [ ] Empty (no hay horarios cargados)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Actividad (nombre + tipo: grupal/personalizada)
 - Profesora asignada
 - Día de la semana
@@ -31,7 +37,8 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - Cupo máximo (heredado de la actividad o sobrescrito)
 - Cantidad de inscriptos actuales (opcional)
 
-### Datos que se cargan / editan:
+### Datos que se cargan / editan
+
 - Actividad (obligatorio)
 - Profesora (obligatorio – debe tener rol “profesora”)
 - Día de la semana (obligatorio)
@@ -40,6 +47,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - Cupo máximo (opcional – si no se carga, usa el de la actividad)
 
 ## 6. Acciones del usuario
+
 - Ver el cronograma semanal de horarios
 - Crear nuevo horario
 - Editar un horario existente
@@ -47,6 +55,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - Filtrar por actividad o por profesora
 
 ## 7. Reglas de negocio
+
 - La asignación de profesora se hace solo sobre usuarios que ya tengan el rol “Profesora”.
 - Un profesor/a puede dictar varias actividades en distintos horarios.
 - **No se permite** asignar dos actividades a la misma profesora en el mismo día y horario (evitar superposición).
@@ -55,6 +64,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - No se debe poder eliminar un horario que ya tenga alumnos inscriptos a futuro (o se debe advertir claramente).
 
 ## 8. Criterios de aceptación
+
 - [ ] Asignar una profesora existente a un horario libre → se permite
 - [ ] Intentar asignar una profesora a dos horarios que se superponen → falla
 - [ ] Intentar asignar un usuario sin rol “profesora” → falla
@@ -62,6 +72,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - [ ] El sistema muestra claramente el tipo de actividad (grupal/personalizada) en el horario
 
 ## 9. Casos borde / Errores
+
 - Superposición de horarios de la misma profesora
 - Hora de fin anterior a la hora de inicio
 - Intentar eliminar un horario con alumnos inscriptos
@@ -69,12 +80,14 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - Error de red al guardar
 
 ## 10. Dependencias
+
 - US-01 y US-02 (autenticación y permisos)
 - US-03 (deben existir actividades cargadas)
 - Backend: endpoints de horarios + validación de superposición
 - Listado de usuarios con rol Profesora
 
 ## 11. Notas de implementación (Front)
+
 - Se puede hacer primero con mocks
 - Complejidad: Media-Alta (por la validación de superposición y la vista de cronograma)
 - Recomendación de UI:

@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Agregación y Métricas de Gamificación:
   - Servicio `GamificacionService`: Tras el evento `ClaseCerradaEvent`, evalúa si los alumnos presentes cumplen condiciones de insignias configuradas en `insignias.criterio`.
   - Motor de consulta de ranking con agregación SQL (`COUNT(a.asistio) WHERE a.asistio = TRUE GROUP BY a.id_alumno`).
@@ -10,6 +11,7 @@
   - Si un usuario tiene rol `TUTOR`, el endpoint `/portal/resumen` admite query parameter opcional `?id_alumno=X`, validando previamente que el tutor sea `id_usuario_responsable` del alumno solicitado.
 
 ### 1.2. Frontend
+
 - Single Page Application responsive optimizada para móviles (PWA ready):
   - Dashboard del Alumno:
     - Tarjeta de Membresía con indicador de semáforo de cuota.
@@ -51,6 +53,7 @@ CREATE INDEX idx_alumno_insignias ON alumno_insignias(id_alumno);
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Portal del Alumno (`/api/v1/portal`)
+
 - `GET /api/v1/portal/resumen`: Devuelve datos consolidados del alumno autenticado (plan, cuota actual, próximas clases de la semana, racha actual e insignias recientes).
 - `GET /api/v1/portal/asistencias`: Historial de clases asistidas y faltas justificadas/injustificadas.
 - `GET /api/v1/portal/ranking?mes=2026-09`: Tabla de posiciones de asistencia con nombres anonimizados (`"Laura G."`).
@@ -59,5 +62,6 @@ CREATE INDEX idx_alumno_insignias ON alumno_insignias(id_alumno);
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Solo usuarios con rol `ALUMNO` o `TUTOR` (y Propietaria en modo supervisión) pueden acceder a los endpoints del portal.
 - Privacidad en el Ranking: En cumplimiento de protección de datos personales, no se exponen correos, teléfonos ni apellidos completos en la tabla pública de posiciones.
