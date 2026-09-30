@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** solo está implementado el subsistema `gestion-usuarios` (usuario, sesión, permiso). Los otros ocho subsistemas del diagrama de arquitectura todavía no tienen carpeta.
+**Estado actual:** solo está implementado el subsistema `gestion-usuarios` (usuario, sesión, rol). Los otros ocho subsistemas del diagrama de arquitectura todavía no tienen carpeta.
 
 ## Comandos
 
@@ -28,6 +28,9 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 src/
   index.ts    composition root: unico lugar donde se hace `new` de clases concretas
   app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
+  modules/<subsistema>/
+      interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación)
+      <subsistema>.service.ts         (la realiza pasando cada operación a su componente)
   modules/<subsistema>/<componente>/
       interface/       i-*.ts
       __tests__/       *.test.ts

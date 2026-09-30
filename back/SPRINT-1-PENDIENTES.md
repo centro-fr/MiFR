@@ -4,8 +4,8 @@ Sprint 1: **Autenticación, Accesos y Configuración Base** (según `docs/v.1.1 
 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-01 | Inicio de sesión con Google Auth | Casi completa | Francisco |
-| US-02 | Definición de permisos por rol | Solo el modelo de datos | Francisco |
+| US-01 | Inicio de sesión con Google Auth | Completa | Francisco |
+| US-02 | Definición de permisos por rol | Completa | Francisco |
 | US-03 | Alta y administración de actividades y cupos | No empezada | Integrante 2 |
 | US-04 | Asignación de profesoras y horarios | No empezada | Integrante 2 |
 
@@ -23,7 +23,7 @@ Francisco ya hizo US-01 (login, esquema de identidad según el DER, tests), así
 Cómo trabajar en paralelo sin bloquearse:
 
 1. **Francisco** arranca por `requierePermiso` y el catálogo de permisos, que es lo que necesita el otro integrante.
-2. **Integrante 2** arranca por US-03 protegiendo las rutas con `requiereRol("PROPIETARIA")`, que ya existe. Cuando `requierePermiso` esté listo, se cambia por el permiso correspondiente (ej. `ACTIVIDADES_EDITAR`).
+2. **Integrante 2** protege las rutas de US-03 y US-04 con `requierePermiso` (ya está listo; ver los códigos al final de US-02).
 3. Los códigos de permiso de actividades y horarios los define Francisco en el catálogo; Integrante 2 le pasa qué acciones necesita.
 4. Las **diferencias a decidir** (final del archivo) se resuelven entre los dos antes de mergear a `dev`.
 
@@ -36,7 +36,7 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Hecho (US-01)
 
 - [x] Tablas `usuarios`, `roles` y `usuario_roles` según el DER.
-- [x] `POST /api/auth/google`: verifica el `id_token` con Google (`google-auth-library`) y emite un JWT propio con los roles.
+- [x] `POST /api/v1/auth/google`: verifica el `id_token` con Google (`google-auth-library`) y emite un JWT propio con los roles.
 - [x] Solo entra quien ya fue dado de alta (sin auto-registro); vinculación de `google_id` por email en el primer login.
 - [x] Usuario `INACTIVO` → 403; token de Google inválido → 401; no registrado → 403 `USUARIO_NO_REGISTRADO`.
 - [x] Middlewares `requiereSesion` y `requiereRol`.
@@ -44,9 +44,10 @@ Cómo trabajar en paralelo sin bloquearse:
 
 ### Pendiente (US-01)
 
-- [ ] **`GET /api/auth/me`**: devuelve el perfil, los roles y los permisos efectivos del usuario de la sesión (RF-03 del SDD). El front lo necesita para recuperar la sesión al recargar.
-- [ ] **`POST /api/auth/logout`** (figura en el SDD). Con JWT sin estado alcanza con que el front descarte el token; tiene sentido si se pasa a cookie `httpOnly`, que la spec menciona como preferible.
-- [ ] **Auditoría de logins fallidos** (RNF-04): el DER no tiene tabla para esto. Decidir si se agrega al DER o, por ahora, alcanza con los logs.
+- [x] **`GET /api/v1/auth/me`**: devuelve el usuario, los roles y los permisos efectivos (RF-03 del SDD). Relee el usuario de la base: si lo dieron de baja después del login responde 403.
+- [x] **`POST /api/v1/auth/logout`** (figura en el SDD). Con JWT sin estado solo confirma; el front descarta el token. Queda listo para cuando se pase a cookie `httpOnly`.
+- [x] **Auditoría** (RNF-04): decidido, por ahora va a los logs y el DER no cambia. `shared/utils/auditoria.ts` escribe una línea JSON por evento: login de un correo no registrado o de un usuario inactivo, cambios de la matriz, asignación y baja de roles, y cambios de estado de un usuario.
+- [x] **`GET` y `PATCH /api/v1/usuarios/:id`**: cada usuario ve y edita sus propios datos; para los de otro hace falta `USUARIOS_VER` o `USUARIOS_EDITAR`. Cambiar el `estado` siempre pide `USUARIOS_EDITAR`, aunque sea el propio.
 
 ---
 
@@ -57,18 +58,24 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Hecho (US-02)
 
 - [x] Tablas `permisos` y `rol_permisos` según el DER.
-- [x] `PermisoService.tienePermiso(usuario, codigo)`: unión de los permisos de todos los roles del usuario (multi-rol).
+- [x] `RolService.tienePermiso(idUsuario, codigo)`: unión de los permisos de todos los roles del usuario (multi-rol).
 
 ### Pendiente (US-02)
 
-- [ ] **Catálogo de permisos en el seed**: definir los códigos por módulo (ej. `ACTIVIDADES_EDITAR`, `HONORARIOS_VER`, `SEGURIDAD_MATRIZ_EDITAR`) y la matriz inicial `rol_permisos` por rol. Hoy la tabla `permisos` está vacía.
-- [ ] **Middleware `requierePermiso("CODIGO")`**: hoy las rutas solo controlan el rol (`requiereRol("PROPIETARIA")`); la spec pide validar el permiso en el back.
-- [ ] **`GET /api/seguridad/matriz`**: roles, permisos agrupados por `modulo` y estado actual de la matriz. Solo propietaria.
-- [ ] **`PUT /api/seguridad/matriz`**: actualiza `rol_permisos`. Solo propietaria.
-- [ ] **Regla**: a la propietaria no se le pueden quitar los permisos críticos (administración de permisos, finanzas).
-- [ ] **Regla**: los datos financieros (honorarios, rendición de efectivo, reportes de cobranza) solo los ve la propietaria.
-- [ ] **Permisos efectivos en la respuesta del login y de `/me`**, para que el front arme `usePermissions()` y `<Can>`.
-- [ ] Tests del middleware, de la matriz y de los permisos críticos.
+- [x] **Catálogo de permisos**: `rol/rol.catalogo.ts` define los códigos por módulo (`SEGURIDAD`, `USUARIOS`, `ACTIVIDADES`, `HORARIOS`, `ALUMNOS`, `PLANES`, `PAGOS`, `HONORARIOS`, `ASISTENCIAS`, `RUTINAS`, `REPORTES`), los críticos, los exclusivos de la propietaria y la matriz inicial. El seed lo carga en `permisos` y `rol_permisos`; volver a correrlo no pisa los cambios que haya hecho la propietaria.
+- [x] **Middleware `requierePermiso(autorizacion, "CODIGO")`** en `shared/middlewares/auth.ts`. Decide con los roles de la base, no con los del JWT, así un cambio en la matriz rige desde la próxima petición. Las rutas de usuarios ya lo usan (`USUARIOS_VER`, `USUARIOS_EDITAR`).
+- [x] **`GET /api/v1/seguridad/matriz`**: roles, permisos agrupados por `modulo` (con `critico`) y la matriz por rol. Rol `PROPIETARIA` + `SEGURIDAD_MATRIZ_VER`.
+- [x] **`PUT /api/v1/seguridad/matriz`**: body `{ cambios: [{ rol, permiso, otorgado }] }`; inserta o borra filas de `rol_permisos` en una transacción. Rol `PROPIETARIA` + `SEGURIDAD_MATRIZ_EDITAR`.
+- [x] **Regla**: a la propietaria no se le pueden quitar los permisos críticos → 400 `PERMISO_CRITICO_INMUTABLE`.
+- [x] **Regla**: los permisos financieros y de seguridad no se le pueden otorgar a otro rol → 400 `PERMISO_EXCLUSIVO_PROPIETARIA`.
+- [x] **Permisos efectivos en la respuesta del login y de `/me`** (`permisos: string[]`), para `usePermissions()` y `<Can>`.
+- [x] Tests del middleware, del catálogo, del service de la matriz, de las rutas y de los permisos críticos.
+
+Permisos disponibles para US-03 y US-04: `ACTIVIDADES_VER`, `ACTIVIDADES_EDITAR`, `HORARIOS_VER`, `HORARIOS_EDITAR`. Uso:
+
+```ts
+router.post("/", requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"), validate({ body: ... }), asyncHandler(...));
+```
 
 ---
 
@@ -81,7 +88,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 ### Pendiente (US-03)
 
 - [ ] Modelo `actividades` en Prisma + migración (con los CHECK del SQL de EA: `ck_actividades_modalidad`, `ck_actividades_x1`, `ck_actividades_x2`).
-- [ ] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica (`ILogicaServicioEntrenamiento`).
+- [ ] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica. `ILogicaServicioEntrenamiento` es del subsistema: va en `gestion-servicio-entrenamiento/interface/` y la realiza `gestion-servicio-entrenamiento.service.ts`, como `GestionUsuariosService` (ver `.claude/rules/patrones.md`, Facade).
 - [ ] Endpoints: listar (con filtro / búsqueda), obtener, crear, editar, baja lógica (`activo = false`).
 - [ ] **Reglas**:
   - [ ] La modalidad es obligatoria.
@@ -124,7 +131,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 
 **Responsables:** los dos
 
-- [ ] **Prefijo de la API**: el SDD usa `/api/v1/...` y el código usa `/api/...`.
+- [x] **Prefijo de la API**: decidido, **`/api/v1`** como en el SDD. `app.ts` monta todas las rutas bajo ese prefijo; los módulos nuevos se agregan al router `api` de `app.ts`.
 - [x] **Tabla `modulos`**: decidido, **no se crea**. El DER se mantiene como está: el módulo de cada permiso es la columna `permisos.modulo`. La matriz de US-02 agrupa los permisos por ese campo.
-- [ ] **Nombre del componente**: en la vista arquitectónica es `Rol` y en el código la carpeta es `permiso/`.
-- [ ] **Presentación → `IAutenticacion`**: el login usa `IAutenticacion`, pero en la vista arquitectónica de EA ningún componente de presentación la requiere. Agregar en EA que `UsuarioPresWeb` requiere `IAutenticacion`.
+- [x] **Nombre del componente**: decidido, **manda el diagrama**. La carpeta es `rol/` y las clases `RolService` y `RolRepository`.
+- [x] **Presentación → `IAutenticacion` / `IAutorizacion`**: decidido, **EA no cambia**. La presentación solo usa `ILogicaUsuarios`, que en el diagrama provee el subsistema. `gestion-usuarios/gestion-usuarios.service.ts` la realiza y reparte a `Sesion`, `Usuario` y `Rol`: login, `/me`, usuarios y matriz pasan por ahí. `IAutenticacion` e `IAutorizacion` quedan para los middlewares y los otros subsistemas.

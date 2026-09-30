@@ -12,6 +12,12 @@ Esta lista salió de analizar `der.puml`, `vista_arquitectonica.puml` y los docu
 
 Es el modelo a seguir para cualquier integración externa futura (pasarela de pagos, envío de notificaciones): la librería se envuelve, el dominio no se entera.
 
+### Facade — la interfaz `ILogica*` de cada subsistema
+
+`gestion-usuarios/gestion-usuarios.service.ts`. En `vista_arquitectonica.puml` la interfaz `ILogicaUsuarios` la provee el subsistema `GestionUsuarios`, no uno de sus componentes, y es lo único que usa la capa de presentación. `GestionUsuariosService` la implementa pasando cada operación al componente dueño (`Sesion`, `Usuario` o `Rol`), sin reglas propias.
+
+Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y los controllers dependen de esa interfaz.
+
 ## A aplicar cuando se implemente el módulo
 
 ### Strategy — vencimiento de cuota según tipo de plan

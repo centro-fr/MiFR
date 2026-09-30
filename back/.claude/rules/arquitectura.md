@@ -13,8 +13,10 @@ Viven en `docs/diagrams/`.
 Define las capas, los componentes y los nombres de las interfaces. Es la fuente de los nombres del código:
 
 - Cada subsistema del diagrama es una carpeta en `src/modules/`: `GestionUsuarios` es `gestion-usuarios`.
-- Cada componente es una subcarpeta: `Usuario` es `usuario/`, `Sesion` es `sesion/`, `Permiso` es `permiso/`.
-- Cada interfaz del diagrama tiene su archivo: `ILogicaUsuarios` es `usuario/interface/i-logica-usuarios.ts`.
+- Cada componente es una subcarpeta: `Usuario` es `usuario/`, `Sesion` es `sesion/`, `Rol` es `rol/`. El nombre lo pone el diagrama, aunque el componente maneje también los permisos.
+- Cada interfaz del diagrama tiene su archivo, en la carpeta de quien la provee:
+  - Las que provee un componente van en el componente: `IAutorizacion` (provista por `Rol`) es `rol/interface/i-autorizacion.ts`.
+  - Las `ILogica*` las provee el subsistema entero, no un componente: van en la raíz del subsistema. `ILogicaUsuarios` es `gestion-usuarios/interface/i-logica-usuarios.ts` y la realiza `gestion-usuarios/gestion-usuarios.service.ts`, que pasa cada operación al componente dueño.
 
 Antes de crear un módulo, buscar su nombre en el diagrama. No inventar nombres.
 
@@ -32,11 +34,11 @@ Todavía no existen. Cuando se implementen los ciclos de vida descritos en `patr
 
 El diagrama organiza el sistema en cuatro capas. Sirve como mapa para ubicar código nuevo:
 
-1. **Capa de presentación web.** El frontend (`front/`). Consume las interfaces `ILogica*` a través de la API. No es parte de este paquete.
+1. **Capa de presentación web.** El frontend (`front/`). Consume las interfaces `ILogica*` a través de la API, y solo esas: los controllers reciben la `ILogica*` del subsistema, nunca `IAutenticacion` ni `IAutorizacion` (esas las usan los middlewares y los otros subsistemas). No es parte de este paquete.
 
 2. **Capa de lógica de negocio persistente.** Los subsistemas de `src/modules/`: gestión de usuarios, servicio de entrenamiento, personas, inscripciones y clases, honorarios, cuotas y pagos, rutinas y progreso, notificaciones e insignias. Cada uno expone sus interfaces `ILogica*` y consume `IAutenticacion` e `IAutorizacion`. Acá vive la lógica que necesita leer o escribir en la base.
 
-3. **Capa de lógica de negocio no persistente.** Los cálculos puros: `ICalculoVencimiento`, `ICalculoHonorarios`. No tocan la base, reciben datos y devuelven resultados. Cuando se implementen, van en un módulo propio y se testean sin mocks de persistencia. El componente `Permiso` también es no persistente en su decisión de permisos, aunque hoy lea roles.
+3. **Capa de lógica de negocio no persistente.** Los cálculos puros: `ICalculoVencimiento`, `ICalculoHonorarios`. No tocan la base, reciben datos y devuelven resultados. Cuando se implementen, van en un módulo propio y se testean sin mocks de persistencia. El componente `Rol` también es no persistente en su decisión de permisos, aunque hoy lea roles.
 
 4. **Capa de administración de datos.** `shared/db/client.ts` y PostgreSQL. Ver `persistencia.md`.
 

@@ -35,7 +35,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 - Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega.
 - Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
 - Envolver los handlers asincrónicos con `asyncHandler` para que los rechazos lleguen al manejador de errores.
-- Proteger las rutas con `requiereSesion(autenticacion)` y `requiereRol("PROPIETARIO")` en la definición de la ruta, no adentro del controller.
+- Proteger las rutas con `requiereSesion(autenticacion)` y `requierePermiso(autorizacion, "CODIGO")` en la definición de la ruta, no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `requiereRol` queda para lo que la spec ata a un rol y no a un permiso.
 - Instanciar solo en `index.ts`.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
