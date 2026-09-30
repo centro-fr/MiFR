@@ -3,22 +3,23 @@ import { UnauthorizedError } from "../../../../shared/errors/app-error.js";
 import { JwtService } from "../jwt.service.js";
 
 const usuario = {
-  id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  id_usuario: 1,
   google_id: "google-123",
   email: "test@example.com",
   nombre: "Ana",
   apellido: "Perez",
   dni: null,
   telefono: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),
   roles: [
     {
-      id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      rol: "PROPIETARIO" as const,
+      id_usuario: 1,
+      id_rol: 1,
+      rol: { id_rol: 1, codigo: "PROPIETARIA" as const, nombre: "Propietaria", descripcion: null },
       fecha_asignacion: new Date(),
     },
   ],
@@ -32,7 +33,7 @@ describe("JwtService", () => {
     const payload = jwtService.verificar(token);
 
     expect(payload.usuarioId).toBe(usuario.id_usuario);
-    expect(payload.roles).toEqual(["PROPIETARIO"]);
+    expect(payload.roles).toEqual(["PROPIETARIA"]);
   });
 
   it("lanza UnauthorizedError con un token firmado con otro secreto", () => {

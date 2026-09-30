@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { ILogicaUsuarios } from "./interface/i-logica-usuarios.js";
-import type { Rol } from "./user.types.js";
+import type { CodigoRol } from "./user.types.js";
 
 export function createUserController(usuarioService: ILogicaUsuarios) {
   return {
@@ -15,27 +15,27 @@ export function createUserController(usuarioService: ILogicaUsuarios) {
     },
 
     async obtenerPorId(req: Request, res: Response): Promise<void> {
-      const usuario = await usuarioService.obtenerPorId(req.params.id);
+      const usuario = await usuarioService.obtenerPorId(Number(req.params.id));
       res.status(200).json(usuario);
     },
 
     async actualizar(req: Request, res: Response): Promise<void> {
-      const usuario = await usuarioService.actualizar(req.params.id, req.body);
+      const usuario = await usuarioService.actualizar(Number(req.params.id), req.body);
       res.status(200).json(usuario);
     },
 
     async eliminar(req: Request, res: Response): Promise<void> {
-      await usuarioService.eliminar(req.params.id);
+      await usuarioService.eliminar(Number(req.params.id));
       res.status(204).send();
     },
 
     async asignarRol(req: Request, res: Response): Promise<void> {
-      const usuario = await usuarioService.asignarRol(req.params.id, req.body.rol);
+      const usuario = await usuarioService.asignarRol(Number(req.params.id), req.body.rol);
       res.status(201).json(usuario);
     },
 
     async quitarRol(req: Request, res: Response): Promise<void> {
-      const usuario = await usuarioService.quitarRol(req.params.id, req.params.rol as Rol);
+      const usuario = await usuarioService.quitarRol(Number(req.params.id), req.params.rol as CodigoRol);
       res.status(200).json(usuario);
     },
   };

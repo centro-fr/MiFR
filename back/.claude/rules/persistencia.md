@@ -33,8 +33,6 @@ Los fragmentos de consulta que se repiten se extraen a una constante del módulo
 
 Un repositorio no lanza errores de negocio ni valida: devuelve lo que hay, o `null`. Decidir que un `null` es un `NotFoundError` es trabajo del service.
 
-**Deuda conocida:** `permiso.service.ts` hoy llama a `prisma.usuario_roles` directamente, sin repositorio. Es una excepción a corregir, no el patrón a copiar. Cuando se toque ese módulo, extraer un `PermisoRepository`.
-
 ## Esquema y migraciones
 
 - El esquema vive en `prisma/schema.prisma` y tiene que reflejar `docs/diagrams/der.puml`: mismos atributos, mismos tipos, mismos valores de enumerado. Ver `arquitectura.md`.
@@ -49,8 +47,10 @@ Los tipos que genera Prisma se re-exportan con nombres de dominio en el `<x>.typ
 
 ```ts
 export type Usuario = usuarios;
-export type Rol = rol;
-export type UsuarioConRoles = usuarios & { roles: usuario_roles[] };
+export type Rol = roles;
+export type CodigoRol = codigo_rol;
+export type UsuarioRol = usuario_roles & { rol: Rol };
+export type UsuarioConRoles = Usuario & { roles: UsuarioRol[] };
 ```
 
 El resto del código importa desde ahí, no desde `@prisma/client`.

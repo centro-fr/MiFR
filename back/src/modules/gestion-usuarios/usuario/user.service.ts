@@ -3,7 +3,7 @@ import type { IAutorizacion } from "../permiso/interface/i-autorizacion.js";
 import type { ILogicaUsuarios } from "./interface/i-logica-usuarios.js";
 import type { UsuarioRepository } from "./user.repository.js";
 import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./user.schemas.js";
-import type { Rol, UsuarioConRoles } from "./user.types.js";
+import type { CodigoRol, UsuarioConRoles } from "./user.types.js";
 
 export class UsuarioService implements ILogicaUsuarios {
   constructor(
@@ -22,13 +22,13 @@ export class UsuarioService implements ILogicaUsuarios {
     return this.repositorio.listar();
   }
 
-  async obtenerPorId(id: string): Promise<UsuarioConRoles> {
+  async obtenerPorId(id: number): Promise<UsuarioConRoles> {
     const usuario = await this.repositorio.buscarPorId(id);
     if (!usuario) throw new NotFoundError("Usuario no encontrado");
     return usuario;
   }
 
-  async actualizar(id: string, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {
+  async actualizar(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {
     await this.obtenerPorId(id);
 
     if (input.dni) {
@@ -40,14 +40,14 @@ export class UsuarioService implements ILogicaUsuarios {
     return this.repositorio.actualizar(id, input);
   }
 
-  async eliminar(id: string): Promise<void> {
+  async eliminar(id: number): Promise<void> {
     await this.obtenerPorId(id);
     await this.repositorio.eliminar(id);
   }
 
-  async asignarRol(id: string, rol: Rol): Promise<UsuarioConRoles> {
+  async asignarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles> {
     const usuario = await this.obtenerPorId(id);
-    if (this.autorizacion.tienePermiso(usuario, rol)) {
+    if (this.autorizacion.tieneRol(usuario, rol)) {
       throw new ConflictError("El usuario ya tiene ese rol asignado");
     }
 
@@ -55,9 +55,9 @@ export class UsuarioService implements ILogicaUsuarios {
     return this.obtenerPorId(id);
   }
 
-  async quitarRol(id: string, rol: Rol): Promise<UsuarioConRoles> {
+  async quitarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles> {
     const usuario = await this.obtenerPorId(id);
-    if (!this.autorizacion.tienePermiso(usuario, rol)) {
+    if (!this.autorizacion.tieneRol(usuario, rol)) {
       throw new NotFoundError("El usuario no tiene ese rol asignado");
     }
 

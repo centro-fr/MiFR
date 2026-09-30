@@ -6,7 +6,7 @@ export function createSesionController(autenticacion: IAutenticacion) {
   return {
     async googleLogin(req: Request, res: Response): Promise<void> {
       const { token, usuario } = await autenticacion.iniciarSesion(req.body.id_token);
-      res.status(200).json({ token, usuario, roles: usuario.roles.map((r: UsuarioRol) => r.rol) });
+      res.status(200).json({ token, usuario, roles: usuario.roles.map((r: UsuarioRol) => r.rol.codigo) });
     },
   };
 }

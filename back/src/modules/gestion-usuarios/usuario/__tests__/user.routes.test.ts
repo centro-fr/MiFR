@@ -13,9 +13,11 @@ vi.mock("../../../../shared/db/client.js", () => ({
       delete: vi.fn(),
     },
     usuario_roles: {
-      findUnique: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
+    },
+    roles: {
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -24,12 +26,16 @@ const { prisma } = await import("../../../../shared/db/client.js");
 const { createApp } = await import("../../../../app.js");
 const { UsuarioRepository } = await import("../user.repository.js");
 const { UsuarioService } = await import("../user.service.js");
+const { PermisoRepository } = await import("../../permiso/permiso.repository.js");
 const { PermisoService } = await import("../../permiso/permiso.service.js");
 const { JwtService } = await import("../../sesion/jwt.service.js");
 
 const JWT_SECRET = "test-secret";
 const jwtService = new JwtService(JWT_SECRET, "1h");
-const usuarioService = new UsuarioService(new UsuarioRepository(), new PermisoService());
+const usuarioService = new UsuarioService(
+  new UsuarioRepository(),
+  new PermisoService(new PermisoRepository()),
+);
 // Estas pruebas ejercitan usuarios/roles; el login con Google se cubre en auth.
 const autenticacionStub = {
   verificarToken: (token: string) => jwtService.verificar(token),
@@ -41,14 +47,14 @@ function buildApp() {
 }
 
 const baseUsuario = {
-  id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  id_usuario: 1,
   google_id: "google-123",
   email: "test@example.com",
   nombre: "Ana",
   apellido: "Perez",
   dni: null,
   telefono: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
@@ -56,12 +62,14 @@ const baseUsuario = {
   roles: [],
 };
 
+const rolAlumno = { id_rol: 3, codigo: "ALUMNO" as const, nombre: "Alumno", descripcion: null };
+
 function tokenPropietario() {
-  return jwt.sign({ sub: baseUsuario.id_usuario, roles: ["PROPIETARIO"] }, JWT_SECRET);
+  return jwt.sign({ sub: String(baseUsuario.id_usuario), roles: ["PROPIETARIA"] }, JWT_SECRET);
 }
 
 function tokenAlumno() {
-  return jwt.sign({ sub: baseUsuario.id_usuario, roles: ["ALUMNO"] }, JWT_SECRET);
+  return jwt.sign({ sub: String(baseUsuario.id_usuario), roles: ["ALUMNO"] }, JWT_SECRET);
 }
 
 describe("autenticación de rutas de usuarios", () => {
@@ -98,6 +106,7 @@ describe("POST /api/usuarios", () => {
         email: "test@example.com",
         nombre: "Ana",
         apellido: "Perez",
+        fecha_nacimiento: "1990-01-01",
       });
 
     expect(response.status).toBe(201);
@@ -127,6 +136,7 @@ describe("POST /api/usuarios", () => {
         email: "test@example.com",
         nombre: "Ana",
         apellido: "Perez",
+        fecha_nacimiento: "1990-01-01",
       });
 
     expect(response.status).toBe(409);
@@ -150,10 +160,10 @@ describe("GET /api/usuarios/:id", () => {
     expect(response.status).toBe(404);
   });
 
-  it("responde 400 si el id no es un uuid válido", async () => {
+  it("responde 400 si el id no es un entero válido", async () => {
     const app = buildApp();
     const response = await request(app)
-      .get("/api/usuarios/no-es-uuid")
+      .get("/api/usuarios/no-es-numero")
       .set("Authorization", `Bearer ${tokenAlumno()}`);
 
     expect(response.status).toBe(400);
@@ -170,11 +180,12 @@ describe("POST /api/usuarios/:id/roles", () => {
       .mockResolvedValueOnce(baseUsuario)
       .mockResolvedValueOnce({
         ...baseUsuario,
-        roles: [{ rol: "ALUMNO", fecha_asignacion: new Date() }],
+        roles: [{ id_usuario: 1, id_rol: 3, rol: rolAlumno, fecha_asignacion: new Date() }],
       } as unknown as typeof baseUsuario);
+    vi.mocked(prisma.roles.findUnique).mockResolvedValue(rolAlumno);
     vi.mocked(prisma.usuario_roles.create).mockResolvedValue({
       id_usuario: baseUsuario.id_usuario,
-      rol: "ALUMNO",
+      id_rol: rolAlumno.id_rol,
       fecha_asignacion: new Date(),
     });
 

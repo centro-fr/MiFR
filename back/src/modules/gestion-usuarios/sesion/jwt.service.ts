@@ -12,7 +12,7 @@ export class JwtService {
 
   emitir(usuario: UsuarioConRoles): string {
     return jwt.sign(
-      { sub: usuario.id_usuario, roles: usuario.roles.map((r: UsuarioRol) => r.rol) },
+      { sub: String(usuario.id_usuario), roles: usuario.roles.map((r: UsuarioRol) => r.rol.codigo) },
       this.secreto,
       { expiresIn: this.expiraEn as jwt.SignOptions["expiresIn"] },
     );
@@ -21,7 +21,10 @@ export class JwtService {
   verificar(token: string): SesionPayload {
     try {
       const payload = jwt.verify(token, this.secreto) as { sub: string; roles: string[] };
-      return { usuarioId: payload.sub, roles: payload.roles };
+      const usuarioId = Number(payload.sub);
+      // Tokens emitidos antes de que id_usuario fuera SERIAL traen un uuid.
+      if (!Number.isInteger(usuarioId)) throw new Error("sub inválido");
+      return { usuarioId, roles: payload.roles };
     } catch {
       throw new UnauthorizedError("Token inválido o expirado");
     }

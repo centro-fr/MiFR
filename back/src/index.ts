@@ -3,13 +3,14 @@ import { createApp } from "./app.js";
 import { GoogleAutenticacion } from "./modules/gestion-usuarios/sesion/google-autenticacion.js";
 import { JwtService } from "./modules/gestion-usuarios/sesion/jwt.service.js";
 import { SesionService } from "./modules/gestion-usuarios/sesion/sesion.service.js";
+import { PermisoRepository } from "./modules/gestion-usuarios/permiso/permiso.repository.js";
 import { PermisoService } from "./modules/gestion-usuarios/permiso/permiso.service.js";
 import { UsuarioRepository } from "./modules/gestion-usuarios/usuario/user.repository.js";
 import { UsuarioService } from "./modules/gestion-usuarios/usuario/user.service.js";
 
 // Composition root: único lugar donde se instancian las clases concretas.
 const usuarioRepositorio = new UsuarioRepository();
-const permisoService = new PermisoService();
+const permisoService = new PermisoService(new PermisoRepository());
 const usuarioService = new UsuarioService(usuarioRepositorio, permisoService);
 
 const googleAutenticacion = new GoogleAutenticacion(process.env.GOOGLE_CLIENT_ID as string);

@@ -21,11 +21,11 @@ export function createUserRoutes(usuarioService: ILogicaUsuarios, autenticacion:
 
   router.post(
     "/",
-    requiereRol("PROPIETARIO"),
+    requiereRol("PROPIETARIA"),
     validate({ body: crearUsuarioSchema }),
     asyncHandler(controller.crear),
   );
-  router.get("/", requiereRol("PROPIETARIO"), asyncHandler(controller.listar));
+  router.get("/", requiereRol("PROPIETARIA"), asyncHandler(controller.listar));
   router.get("/:id", validate({ params: usuarioIdParamSchema }), asyncHandler(controller.obtenerPorId));
   router.patch(
     "/:id",
@@ -34,20 +34,20 @@ export function createUserRoutes(usuarioService: ILogicaUsuarios, autenticacion:
   );
   router.delete(
     "/:id",
-    requiereRol("PROPIETARIO"),
+    requiereRol("PROPIETARIA"),
     validate({ params: usuarioIdParamSchema }),
     asyncHandler(controller.eliminar),
   );
 
   router.post(
     "/:id/roles",
-    requiereRol("PROPIETARIO"),
+    requiereRol("PROPIETARIA"),
     validate({ params: usuarioIdParamSchema, body: asignarRolSchema }),
     asyncHandler(controller.asignarRol),
   );
   router.delete(
     "/:id/roles/:rol",
-    requiereRol("PROPIETARIO"),
+    requiereRol("PROPIETARIA"),
     validate({ params: rolParamSchema }),
     asyncHandler(controller.quitarRol),
   );

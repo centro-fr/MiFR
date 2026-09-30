@@ -3,7 +3,7 @@ import type { IAutenticacion } from "../../modules/gestion-usuarios/sesion/inter
 import { ForbiddenError, UnauthorizedError } from "../errors/app-error.js";
 
 export interface UsuarioAutenticado {
-  id_usuario: string;
+  id_usuario: number;
   roles: string[];
 }
 

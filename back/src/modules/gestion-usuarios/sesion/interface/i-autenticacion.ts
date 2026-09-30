@@ -1,7 +1,7 @@
 import type { UsuarioConRoles } from "../../usuario/user.types.js";
 
 export interface SesionPayload {
-  usuarioId: string;
+  usuarioId: number;
   roles: string[];
 }
 

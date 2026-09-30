@@ -7,22 +7,23 @@ import type { ILogicaUsuarios } from "../../usuario/interface/i-logica-usuarios.
 const usuarioServiceStub = {} as ILogicaUsuarios;
 
 const usuario = {
-  id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  id_usuario: 1,
   google_id: "google-123",
   email: "test@example.com",
   nombre: "Ana",
   apellido: "Perez",
   dni: null,
   telefono: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),
   roles: [
     {
-      id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      rol: "ALUMNO" as const,
+      id_usuario: 1,
+      id_rol: 3,
+      rol: { id_rol: 3, codigo: "ALUMNO" as const, nombre: "Alumno", descripcion: null },
       fecha_asignacion: new Date(),
     },
   ],

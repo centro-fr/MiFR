@@ -1,65 +1,98 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NotFoundError } from "../../../../shared/errors/app-error.js";
+import { PermisoService } from "../permiso.service.js";
+import type { PermisoRepository } from "../permiso.repository.js";
 
-vi.mock("../../../../shared/db/client.js", () => ({
-  prisma: {
-    usuario_roles: {
-      create: vi.fn(),
-      delete: vi.fn(),
-    },
-  },
-}));
-
-const { prisma } = await import("../../../../shared/db/client.js");
-const { PermisoService } = await import("../permiso.service.js");
+const rolPropietaria = {
+  id_rol: 1,
+  codigo: "PROPIETARIA" as const,
+  nombre: "Propietaria",
+  descripcion: null,
+};
+const rolAlumno = { id_rol: 3, codigo: "ALUMNO" as const, nombre: "Alumno", descripcion: null };
 
 const usuario = {
-  id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  id_usuario: 1,
   google_id: "google-123",
   email: "test@example.com",
   nombre: "Ana",
   apellido: "Perez",
   dni: null,
   telefono: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),
-  roles: [
-    {
-      id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      rol: "PROPIETARIO" as const,
-      fecha_asignacion: new Date(),
-    },
-  ],
+  roles: [{ id_usuario: 1, id_rol: 1, rol: rolPropietaria, fecha_asignacion: new Date() }],
 };
 
+function crearRepositorioMock() {
+  return {
+    buscarRolPorCodigo: vi.fn(),
+    asignarRol: vi.fn(),
+    quitarRol: vi.fn(),
+    contarRolesConPermiso: vi.fn(),
+  };
+}
+
 describe("PermisoService", () => {
-  let permisoService: InstanceType<typeof PermisoService>;
+  let repositorio: ReturnType<typeof crearRepositorioMock>;
+  let permisoService: PermisoService;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    permisoService = new PermisoService();
+    repositorio = crearRepositorioMock();
+    permisoService = new PermisoService(repositorio as unknown as PermisoRepository);
   });
 
-  it("tienePermiso detecta si el usuario tiene el rol", () => {
-    expect(permisoService.tienePermiso(usuario, "PROPIETARIO")).toBe(true);
-    expect(permisoService.tienePermiso(usuario, "PROFESORA")).toBe(false);
+  it("tieneRol detecta si el usuario tiene el rol", () => {
+    expect(permisoService.tieneRol(usuario, "PROPIETARIA")).toBe(true);
+    expect(permisoService.tieneRol(usuario, "PROFESORA")).toBe(false);
   });
 
-  it("asignarRol crea el registro en usuario_roles", async () => {
+  it("asignarRol busca el rol por código y crea el registro en usuario_roles", async () => {
+    repositorio.buscarRolPorCodigo.mockResolvedValue(rolAlumno);
+
     await permisoService.asignarRol(usuario.id_usuario, "ALUMNO");
 
-    expect(prisma.usuario_roles.create).toHaveBeenCalledWith({
-      data: { id_usuario: usuario.id_usuario, rol: "ALUMNO" },
-    });
+    expect(repositorio.buscarRolPorCodigo).toHaveBeenCalledWith("ALUMNO");
+    expect(repositorio.asignarRol).toHaveBeenCalledWith(usuario.id_usuario, rolAlumno.id_rol);
+  });
+
+  it("asignarRol lanza NotFoundError si el rol no está cargado en la tabla roles", async () => {
+    repositorio.buscarRolPorCodigo.mockResolvedValue(null);
+
+    await expect(permisoService.asignarRol(usuario.id_usuario, "TUTOR")).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    expect(repositorio.asignarRol).not.toHaveBeenCalled();
   });
 
   it("quitarRol elimina el registro de usuario_roles", async () => {
-    await permisoService.quitarRol(usuario.id_usuario, "PROPIETARIO");
+    repositorio.buscarRolPorCodigo.mockResolvedValue(rolPropietaria);
 
-    expect(prisma.usuario_roles.delete).toHaveBeenCalledWith({
-      where: { id_usuario_rol: { id_usuario: usuario.id_usuario, rol: "PROPIETARIO" } },
-    });
+    await permisoService.quitarRol(usuario.id_usuario, "PROPIETARIA");
+
+    expect(repositorio.quitarRol).toHaveBeenCalledWith(usuario.id_usuario, rolPropietaria.id_rol);
+  });
+
+  it("tienePermiso es true si alguno de sus roles otorga el permiso", async () => {
+    repositorio.contarRolesConPermiso.mockResolvedValue(1);
+
+    await expect(permisoService.tienePermiso(usuario, "PAGOS_CONFIRMAR")).resolves.toBe(true);
+    expect(repositorio.contarRolesConPermiso).toHaveBeenCalledWith([1], "PAGOS_CONFIRMAR");
+  });
+
+  it("tienePermiso es false si ningún rol otorga el permiso", async () => {
+    repositorio.contarRolesConPermiso.mockResolvedValue(0);
+
+    await expect(permisoService.tienePermiso(usuario, "PAGOS_CONFIRMAR")).resolves.toBe(false);
+  });
+
+  it("tienePermiso es false sin consultar la base si el usuario no tiene roles", async () => {
+    await expect(permisoService.tienePermiso({ ...usuario, roles: [] }, "PAGOS_CONFIRMAR")).resolves.toBe(
+      false,
+    );
+    expect(repositorio.contarRolesConPermiso).not.toHaveBeenCalled();
   });
 });

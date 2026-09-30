@@ -6,14 +6,14 @@ import type { UsuarioRepository } from "../user.repository.js";
 import type { UsuarioRol } from "../user.types.js";
 
 const baseUsuario = {
-  id_usuario: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  id_usuario: 1,
   google_id: "google-123",
   email: "test@example.com",
   nombre: "Ana",
   apellido: "Perez",
   dni: null,
   telefono: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
@@ -37,7 +37,7 @@ function crearRepositorioMock() {
 }
 
 function crearAutorizacionMock() {
-  return { asignarRol: vi.fn(), quitarRol: vi.fn(), tienePermiso: vi.fn() };
+  return { asignarRol: vi.fn(), quitarRol: vi.fn(), tieneRol: vi.fn(), tienePermiso: vi.fn() };
 }
 
 describe("UsuarioService", () => {
@@ -63,6 +63,7 @@ describe("UsuarioService", () => {
       email: "test@example.com",
       nombre: "Ana",
       apellido: "Perez",
+      fecha_nacimiento: new Date("1990-01-01"),
     });
 
     expect(resultado.email).toBe("test@example.com");
@@ -73,7 +74,13 @@ describe("UsuarioService", () => {
     repositorio.buscarPorEmailOGoogleId.mockResolvedValue(baseUsuario);
 
     await expect(
-      service.crear({ google_id: "google-123", email: "test@example.com", nombre: "Ana", apellido: "Perez" }),
+      service.crear({
+        google_id: "google-123",
+        email: "test@example.com",
+        nombre: "Ana",
+        apellido: "Perez",
+        fecha_nacimiento: new Date("1990-01-01"),
+      }),
     ).rejects.toBeInstanceOf(ConflictError);
 
     expect(repositorio.crear).not.toHaveBeenCalled();
@@ -113,7 +120,7 @@ describe("UsuarioService", () => {
 
   it("asignarRol delega en IAutorizacion si todavía no tiene el rol", async () => {
     repositorio.buscarPorId.mockResolvedValue(baseUsuario);
-    autorizacion.tienePermiso.mockReturnValue(false);
+    autorizacion.tieneRol.mockReturnValue(false);
 
     await service.asignarRol(baseUsuario.id_usuario, "ALUMNO");
 
@@ -122,7 +129,7 @@ describe("UsuarioService", () => {
 
   it("asignarRol lanza ConflictError si el rol ya esta asignado", async () => {
     repositorio.buscarPorId.mockResolvedValue(baseUsuario);
-    autorizacion.tienePermiso.mockReturnValue(true);
+    autorizacion.tieneRol.mockReturnValue(true);
 
     await expect(service.asignarRol(baseUsuario.id_usuario, "ALUMNO")).rejects.toBeInstanceOf(ConflictError);
     expect(autorizacion.asignarRol).not.toHaveBeenCalled();
@@ -130,7 +137,7 @@ describe("UsuarioService", () => {
 
   it("quitarRol delega en IAutorizacion si el usuario tiene el rol", async () => {
     repositorio.buscarPorId.mockResolvedValue(baseUsuario);
-    autorizacion.tienePermiso.mockReturnValue(true);
+    autorizacion.tieneRol.mockReturnValue(true);
 
     await service.quitarRol(baseUsuario.id_usuario, "ALUMNO");
 
@@ -139,7 +146,7 @@ describe("UsuarioService", () => {
 
   it("quitarRol lanza NotFoundError si el usuario no tiene ese rol", async () => {
     repositorio.buscarPorId.mockResolvedValue(baseUsuario);
-    autorizacion.tienePermiso.mockReturnValue(false);
+    autorizacion.tieneRol.mockReturnValue(false);
 
     await expect(service.quitarRol(baseUsuario.id_usuario, "ALUMNO")).rejects.toBeInstanceOf(NotFoundError);
   });

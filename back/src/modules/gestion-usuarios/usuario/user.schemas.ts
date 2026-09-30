@@ -1,24 +1,36 @@
 import { z } from "zod";
 
+// Largos y obligatoriedad según la tabla "usuarios" del DER.
+const CODIGOS_ROL = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"] as const;
+
+const nombre = z.string().trim().min(1).max(60);
+const dni = z
+  .string()
+  .trim()
+  .regex(/^\d{1,10}$/, "El dni debe tener solo dígitos (máximo 10)");
+const telefono = z.string().trim().min(1).max(20);
+const direccion = z.string().trim().min(1).max(120);
+
 export const crearUsuarioSchema = z.object({
-  google_id: z.string().trim().min(1).optional(),
-  email: z.string().trim().toLowerCase().email(),
-  nombre: z.string().trim().min(1),
-  apellido: z.string().trim().min(1),
-  dni: z.string().trim().min(1).optional(),
-  telefono: z.string().trim().min(1).optional(),
-  fecha_nacimiento: z.coerce.date().optional(),
-  direccion: z.string().trim().min(1).optional(),
+  google_id: z.string().trim().min(1).max(255).optional(),
+  // Opcional: los menores a cargo de un tutor no tienen email.
+  email: z.string().trim().toLowerCase().email().max(120).optional(),
+  nombre,
+  apellido: nombre,
+  dni: dni.optional(),
+  telefono: telefono.optional(),
+  fecha_nacimiento: z.coerce.date(),
+  direccion: direccion.optional(),
 });
 
 export const actualizarUsuarioSchema = z
   .object({
-    nombre: z.string().trim().min(1).optional(),
-    apellido: z.string().trim().min(1).optional(),
-    dni: z.string().trim().min(1).optional(),
-    telefono: z.string().trim().min(1).optional(),
+    nombre: nombre.optional(),
+    apellido: nombre.optional(),
+    dni: dni.optional(),
+    telefono: telefono.optional(),
     fecha_nacimiento: z.coerce.date().optional(),
-    direccion: z.string().trim().min(1).optional(),
+    direccion: direccion.optional(),
     estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
@@ -26,16 +38,15 @@ export const actualizarUsuarioSchema = z
   });
 
 export const usuarioIdParamSchema = z.object({
-  id: z.string().uuid("id inválido"),
+  id: z.coerce.number({ invalid_type_error: "id inválido" }).int("id inválido").positive("id inválido"),
 });
 
 export const asignarRolSchema = z.object({
-  rol: z.enum(["PROPIETARIO", "PROFESORA", "ALUMNO"]),
+  rol: z.enum(CODIGOS_ROL),
 });
 
-export const rolParamSchema = z.object({
-  id: z.string().uuid("id inválido"),
-  rol: z.enum(["PROPIETARIO", "PROFESORA", "ALUMNO"]),
+export const rolParamSchema = usuarioIdParamSchema.extend({
+  rol: z.enum(CODIGOS_ROL),
 });
 
 export type CrearUsuarioInput = z.infer<typeof crearUsuarioSchema>;
