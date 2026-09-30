@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Servicio Analítico (`ReportesService`):
   - Consultas SQL analíticas optimizadas utilizando funciones de agregación (`COUNT`, `SUM`, `AVG`, `FILTER (WHERE ...)`).
   - Exportador Documental unificado (`ExportService`): Generación de planillas Excel (`exceljs`) y documentos PDF (`pdfmake` o `puppeteer-core`/`pdfkit`) con cabecera y membrete de MiFR.
@@ -10,6 +11,7 @@
   - Endpoints analíticos protegidos con `requirePermission('reportes.ver_todos')` (reservado a `PROPIETARIA`).
 
 ### 1.2. Frontend
+
 - Módulo de Reportes `/admin/reportes` organizado por pestañas:
   1. **Asistencia**: Filtros de fecha, alumno, profesora; tabla con porcentajes y exportación.
   2. **Cobranzas y Morosidad**: Listado de cuotas impagas con semáforo de antigüedad y total adeudado.
@@ -73,6 +75,7 @@ GROUP BY h.id_horario, act.id_actividad;
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Reportes Operativos (`/api/v1/reportes`)
+
 - `GET /api/v1/reportes/asistencia?desde=&hasta=&id_profesora=&id_alumno=`: Datos para tabla y métricas consolidadas.
 - `GET /api/v1/reportes/cuotas-vencidas`: Nómina de morosos y total de deuda exigible.
 - `GET /api/v1/reportes/inscriptos-por-mes?anio=2026`: Altas mensuales agrupadas.
@@ -83,5 +86,6 @@ GROUP BY h.id_horario, act.id_actividad;
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Todos los endpoints de analítica y reportes exigen el rol `PROPIETARIA`.
 - Las exportaciones a PDF y Excel aplican los mismos filtros de seguridad para evitar fuga de información sensible.

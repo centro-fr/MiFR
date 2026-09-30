@@ -4,7 +4,7 @@
 
 Cuatro niveles. Los merges suben siempre en este orden, nunca se saltea un escalón.
 
-```
+```text
 main                          entregas estables
  └── dev                      integracion del equipo
       ├── <nombre>            rama personal, de vida larga, una por persona
@@ -46,7 +46,7 @@ git checkout dev && git merge <nombre>
 
 Conventional Commits con la descripción en español, en infinitivo, sin punto final.
 
-```
+```text
 feat(usuario): agregar validacion de rol
 fix(sesion): corregir expiracion del JWT
 docs(der): actualizar diagrama entidad-relacion
@@ -58,7 +58,7 @@ chore(deps): actualizar prisma a 6.x
 Tipos permitidos:
 
 | Tipo | Para qué |
-|---|---|
+| --- | --- |
 | `feat` | Funcionalidad nueva |
 | `fix` | Corrección de un error |
 | `docs` | Documentación y diagramas |

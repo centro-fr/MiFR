@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Módulo `pagos` y `cuotas` con transacciones de base de datos aisladas.
 - **Motor de Estados**:
   - Función de servicio pura `calcularEstadoHabilitacion(alumno, fecha)` que evalúa la última cuota generada, su fecha de vencimiento y los días de gracia del plan.
@@ -15,6 +16,7 @@
   - `pagos.rendiciones.gestionar`: Exclusivo `PROPIETARIA`.
 
 ### 1.2. Frontend
+
 - Modal de Cobro Rápido accesible desde la ficha del alumno o la lista de asistencia.
 - Panel de Aprobación de Transferencias con visualizador de comprobantes (zoom, rotación y previsualización de PDF/imagen en lightbox).
 - Pantalla de Rendición de Efectivo agrupada por profesora con totales acumulados y checkboxes de selección múltiple.
@@ -68,10 +70,12 @@ CREATE INDEX idx_pagos_rendicion ON pagos(id_profesora_cobra, rendido) WHERE for
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Cuotas (`/api/v1/cuotas`)
+
 - `GET /api/v1/cuotas`: Consulta de cuotas por alumno o por rango de vencimiento.
 - `GET /api/v1/alumnos/:id/estado-habilitacion`: Devuelve `{ "estado": "EN_GRACIA", "dias_restantes": 3, "fecha_vencimiento": "2026-09-15" }`.
 
 ### 3.2. Pagos (`/api/v1/pagos`)
+
 - `POST /api/v1/pagos/efectivo`:
   - Body: `{ "id_cuota": 10, "monto": 25000, "id_profesora_cobra": 2, "observaciones": "Cobro clase 18hs" }`
 - `POST /api/v1/pagos/transferencia`: Multipart form-data con `id_cuota`, `monto`, `fecha_transferencia` y archivo `comprobante`.
@@ -80,6 +84,7 @@ CREATE INDEX idx_pagos_rendicion ON pagos(id_profesora_cobra, rendido) WHERE for
 - `POST /api/v1/pagos/:id/rechazar`: `{ "motivo": "Comprobante ilegible / importe no acreditado" }`.
 
 ### 3.3. Rendiciones (`/api/v1/rendiciones`)
+
 - `GET /api/v1/rendiciones/pendientes`: Agrupado por profesora con suma de efectivo no rendido.
 - `POST /api/v1/rendiciones/confirmar`:
   - Body: `{ "id_profesora": 2, "pagos_ids": [12, 13, 14] }`
@@ -87,6 +92,7 @@ CREATE INDEX idx_pagos_rendicion ON pagos(id_profesora_cobra, rendido) WHERE for
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Las transferencias bancarias **solo** pueden ser aprobadas por usuarios con rol `PROPIETARIA`.
 - Las profesoras no pueden ver la recaudación total del centro ni liquidaciones ajenas; solo acceden a sus cobros propios y su efectivo pendiente de rendir.
 - Los comprobantes subidos se sirven bajo validación de sesión (no accesibles como archivos estáticos públicos sin token).

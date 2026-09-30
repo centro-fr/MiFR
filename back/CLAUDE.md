@@ -24,7 +24,7 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 
 ## Estructura
 
-```
+```text
 src/
   index.ts    composition root: unico lugar donde se hace `new` de clases concretas
   app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
@@ -41,7 +41,7 @@ prisma/       schema.prisma, migrations/, seed.ts
 
 Recorrido de una petición:
 
-```
+```text
 routes → validate(schemas) → controller → service (implementa I*) → repository → prisma
 ```
 
@@ -67,7 +67,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corresponda a la tarea.
 
 | Archivo | Cuándo leerlo |
-|---|---|
+| --- | --- |
 | `git.md` | Antes de crear una rama, commitear o integrar |
 | `arquitectura.md` | Al crear un módulo, o al dudar dónde va algo |
 | `patrones.md` | Antes de implementar cálculos, estados o ciclos de vida |

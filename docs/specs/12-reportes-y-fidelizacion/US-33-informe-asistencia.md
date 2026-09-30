@@ -1,18 +1,22 @@
 # US-33 – Informe de asistencia
 
 ## 1. Información general
+
 - **Épica:** Reportes y Fidelización
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la propietaria generar informes de asistencia filtrables por período, alumno o profesor/a, para tener visibilidad operativa periódica.
 
 ## 3. Descripción
+
 Como propietaria, quiero generar informes de asistencia filtrables por período, alumno o profesor/a, para tener visibilidad operativa periódica.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando informe)
 - [ ] Selección de filtros (período, alumno, profesor/a)
 - [ ] Informe generado con resultados
@@ -23,7 +27,9 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - [ ] Empty (sin datos para los filtros seleccionados)
 
 ## 5. Datos que necesita
-### Datos que muestra (informe):
+
+### Datos que muestra (informe)
+
 - Período del informe
 - Filtros aplicados
 - Resumen general:
@@ -44,19 +50,22 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
   - Asistencias totales
   - Porcentaje promedio
 
-### Datos de filtros:
+### Datos de filtros
+
 - Período (rango de fechas o mes)
 - Alumno específico (opcional)
 - Profesor/a específico/a (opcional)
 - Actividad (opcional)
 - Combinación de filtros (permitida)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Informe consolidado
 - Exportación a PDF / Excel
 - Historial de informes (opcional)
 
 ## 6. Acciones del usuario
+
 - Seleccionar filtros (período, alumno, profesor/a)
 - Ver el informe generado
 - Expandir el detalle por alumno o clase
@@ -65,6 +74,7 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - Ver informes de períodos anteriores (opcional)
 
 ## 7. Reglas de negocio
+
 - Debe permitir filtrar por **período, alumno o profesor/a de forma independiente o combinada**.
 - Solo la **propietaria** puede acceder a este informe.
 - El informe es **informativo**, no modifica datos.
@@ -77,6 +87,7 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - El informe debe actualizarse con los datos más recientes al momento de generarlo.
 
 ## 8. Criterios de aceptación
+
 - [ ] Filtro por alumno específico → muestra solo su historial
 - [ ] Filtro por período sin resultados → muestra "sin datos" sin error
 - [ ] Filtro por profesor/a → muestra solo los alumnos y clases de esa profesora
@@ -86,6 +97,7 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - [ ] Solo la propietaria accede al informe
 
 ## 9. Casos borde / Errores
+
 - Período sin clases → mostrar "sin datos"
 - Alumno sin asistencias en el período → mostrar 0%
 - Profesor/a sin clases en el período → no aparece o aparece con cero
@@ -95,6 +107,7 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - Muchos datos → paginación o resumen por bloques
 
 ## 10. Dependencias
+
 - US-03, US-04 (actividades y horarios)
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para el filtro de estado)
@@ -103,6 +116,7 @@ Como propietaria, quiero generar informes de asistencia filtrables por período,
 - Backend: endpoint de informe con filtros + exportación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta
 - Recomendación de UI:

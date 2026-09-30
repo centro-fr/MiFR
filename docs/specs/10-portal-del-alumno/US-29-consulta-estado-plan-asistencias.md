@@ -1,18 +1,22 @@
 # US-29 – Consulta de estado de plan, asistencias y próximas clases
 
 ## 1. Información general
+
 - **Épica:** Portal del Alumno
 - **Prioridad:** Media
 - **Actor principal:** Alumno
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir al alumno consultar desde su celular el estado de su plan, su historial de asistencias y sus próximas clases inscriptas, para llevar control de su actividad.
 
 ## 3. Descripción
+
 Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historial de asistencias y mis próximas clases inscriptas, para llevar control de mi actividad.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando datos del alumno)
 - [ ] Panel principal con resumen
 - [ ] Estado de cuota destacado
@@ -25,7 +29,9 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - [ ] Empty (alumno sin clases ni asistencias)
 
 ## 5. Datos que necesita
-### Datos que muestra (resumen):
+
+### Datos que muestra (resumen)
+
 - Nombre del alumno
 - Plan actual (nombre, tipo grupal/personalizada, frecuencia)
 - Estado de cuota: `al_dia` / `por_vencer` / `vencida` (con badge de color)
@@ -33,19 +39,22 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Días restantes o días vencidos
 - Profesora a cargo
 
-### Datos que muestra (próximas clases):
+### Datos que muestra (próximas clases)
+
 - Fecha y hora
 - Actividad
 - Profesora
 - Cupo disponible (si aplica)
 
-### Datos que muestra (historial de asistencias):
+### Datos que muestra (historial de asistencias)
+
 - Fecha de cada clase
 - Actividad
 - Estado: `presente` / `ausente`
 - Profesora
 
-### Datos que muestra (accesos rápidos):
+### Datos que muestra (accesos rápidos)
+
 - Botón "Renovar plan" (lleva a US-14)
 - Botón "Informar pago por transferencia" (lleva a US-16)
 - Botón "Mi progreso" (lleva a US-28)
@@ -53,6 +62,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Botón "Ranking" (lleva a US-30)
 
 ## 6. Acciones del usuario
+
 - Ver el estado de su plan y cuota
 - Ver sus próximas clases
 - Ver su historial de asistencias
@@ -63,6 +73,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Informar un pago por transferencia (redirige a US-16)
 
 ## 7. Reglas de negocio
+
 - Debe mostrar **estado de cuota, vencimiento, historial de asistencia y próximas clases en un solo panel**.
 - El alumno **solo ve su propia información** (o la de su hijo/a si es tutor).
 - Si el alumno es menor de edad, el **tutor** accede al panel.
@@ -75,6 +86,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Si hay una promoción vigente aplicable, mostrarla en el resumen del plan.
 
 ## 8. Criterios de aceptación
+
 - [ ] Consulta del panel con cuota al día y próximas clases cargadas → muestra todo correctamente
 - [ ] Consulta del panel de un alumno sin clases inscriptas → muestra sección vacía sin error
 - [ ] El alumno ve solo su propia información (no la de otros)
@@ -84,6 +96,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - [ ] El historial de asistencias se muestra ordenado por fecha descendente
 
 ## 9. Casos borde / Errores
+
 - Alumno recién inscripto sin historial ni clases futuras → estados vacíos claros
 - Alumno con cuota vencida → destacar con aviso y botón de renovación
 - Alumno con pago pendiente de confirmación → mostrar estado "pendiente de confirmación"
@@ -92,6 +105,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Alumno dado de baja → no accede al panel (o solo lectura del historial)
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica)
 - US-14 (renovación o cambio de plan)
@@ -104,6 +118,7 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - Backend: endpoint del panel del alumno consolidado
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta (es la pantalla principal del alumno)
 - Recomendación de UI (mobile-first):

@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Pila Tecnológica
+
 - **Backend**:
   - Runtime: Node.js 20+ con TypeScript (`back`).
   - Validación OAuth: `google-auth-library` para verificar de forma segura y server-side el Google ID Token (validación de firma criptográfica, emisor `iss`, audiencia `aud` con el `GOOGLE_CLIENT_ID` y timestamp `exp`).
@@ -35,7 +36,7 @@ Decisiones que se desprenden del DER:
 - **Estados de usuario:** solo `ACTIVO` e `INACTIVO`.
 - **Códigos de permiso** en mayúsculas con guion bajo, como el ejemplo del DER (`PAGOS_CONFIRMAR`): `SEGURIDAD_MATRIZ_VER`, `SEGURIDAD_MATRIZ_EDITAR`, `HONORARIOS_VER_TODOS`, etc.
 
-```
+```text
 +-------------------------+          +---------------------+
 |        usuarios         |          |        roles        |
 +-------------------------+          +---------------------+
@@ -137,17 +138,21 @@ Las FK son `ON DELETE NO ACTION`: para borrar un usuario primero se borran sus f
 ### 3.1. Autenticación (`/api/v1/auth`)
 
 #### `POST /api/v1/auth/google`
+
 Inicia sesión validando el token emitido por Google Identity Services.
 
 - **Headers**: `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "idToken": "eyJhbGciOiJSUzI1NiIs..."
   }
   ```
+
 - **Respuestas**:
   - `200 OK`:
+
     ```json
     {
       "token": "eyJhbGciOiJIUzI1Ni...",
@@ -166,14 +171,18 @@ Inicia sesión validando el token emitido por Google Identity Services.
       }
     }
     ```
+
   - `401 Unauthorized` / `403 Forbidden` (Usuario no pre-registrado):
+
     ```json
     {
       "codigo": "ACCESO_NO_HABILITADO",
       "mensaje": "El correo ingresado no se encuentra habilitado en el sistema. Contacte a la administración."
     }
     ```
+
   - `403 Forbidden` (Usuario inactivo):
+
     ```json
     {
       "codigo": "USUARIO_INACTIVO",
@@ -182,25 +191,33 @@ Inicia sesión validando el token emitido por Google Identity Services.
     ```
 
 #### `GET /api/v1/auth/me`
+
 Obtiene los datos del usuario autenticado actual y refresca sus permisos.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**: Mismo objeto de usuario que el endpoint de login.
 - **Respuesta 401 Unauthorized**: Token inválido o expirado.
 
 #### `POST /api/v1/auth/logout`
+
 Cierra la sesión y limpia cookies de sesión si aplica.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**: `{ "mensaje": "Sesión cerrada correctamente" }`
 
 ---
 
 ### 3.2. Gestión de Matriz de Permisos (`/api/v1/seguridad`)
+
 *Protegido: Requiere rol `PROPIETARIA` y permiso `SEGURIDAD_MATRIZ_EDITAR` / `SEGURIDAD_MATRIZ_VER`.*
 
 #### `GET /api/v1/seguridad/matriz`
+
 Devuelve los roles, los permisos agrupados por `permisos.modulo` y el estado actual de la matriz (filas de `rol_permisos`).
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**:
+
   ```json
   {
     "roles": [
@@ -236,14 +253,18 @@ Devuelve los roles, los permisos agrupados por `permisos.modulo` y el estado act
     }
   }
   ```
+
   - `modulos` no es una tabla: es el agrupamiento de `permisos` por su columna `modulo`.
   - `matriz` lista, por código de rol, los permisos que tienen fila en `rol_permisos`.
   - `critico` no se guarda en la base: se calcula con la lista de permisos críticos del backend (sección 5).
 
 #### `PUT /api/v1/seguridad/matriz`
+
 Actualiza la configuración de permisos para uno o más roles.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
+
   ```json
   {
     "cambios": [
@@ -255,10 +276,12 @@ Actualiza la configuración de permisos para uno o más roles.
     ]
   }
   ```
+
 - **Validaciones**:
   - `otorgado: true` inserta la fila en `rol_permisos` (con `fecha_asignacion`); `otorgado: false` la borra.
   - Si un cambio intenta quitarle al rol `PROPIETARIA` un permiso de la lista de críticos, el backend rechaza la petición con HTTP 400 (`PERMISO_CRITICO_INMUTABLE`).
 - **Respuesta 200 OK**:
+
   ```json
   {
     "mensaje": "Matriz de permisos actualizada exitosamente"
@@ -270,7 +293,8 @@ Actualiza la configuración de permisos para uno o más roles.
 ## 4. Flujos Principales
 
 ### 4.1. Flujo de Autenticación con Google GIS
-```
+
+```text
 [Usuario]                 [Frontend React]              [Backend Node API]          [Google GIS Auth]
    |                             |                              |                          |
    |--- 1. Clic en Google Login -|                              |                          |
@@ -295,7 +319,9 @@ Actualiza la configuración de permisos para uno o más roles.
 ```
 
 ### 4.2. Flujo de Consolidación de Permisos Multi-Rol
+
 Dado un usuario con roles $R = \{r_1, r_2, \dots, r_n\}$:
+
 1. Por cada rol $r_i$, se recuperan los permisos que tienen fila en `rol_permisos` (`usuario_roles` → `roles` → `rol_permisos` → `permisos`).
 2. El conjunto final de permisos efectivos del usuario es:
    $$P_{\text{efectivos}} = \bigcup_{i=1}^n P(r_i)$$

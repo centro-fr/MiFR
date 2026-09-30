@@ -10,7 +10,7 @@ Este directorio organiza de manera estructurada y verificable todas las épicas 
 
 Cada una de las 12 épicas del sistema cuenta con tres artefactos fundamentales:
 
-```
+```text
 docs/sdd/
 └── <xx-nombre-epica>/
     ├── spec.md   # Especificación Funcional: origen (US), objetivo, requisitos RF/RNF, criterios de aceptación (CA), casos borde y alcance.

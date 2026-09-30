@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Módulo `actividades` y `horarios` estructurado con arquitectura en capas (Controlador -> Servicio -> Repositorio).
 - **Validación de Solapamiento Horario**: Algoritmo ejecutado en el `HorarioService` antes de cualquier inserción o actualización:
   $$\text{Existe solapamiento si: } \text{dia\_semana} = D \land \text{id\_profesora} = P \land (\text{nueva\_inicio} < \text{existente\_fin}) \land (\text{nueva\_fin} > \text{existente\_inicio}) \land \text{id\_horario} \neq \text{actual}$$
@@ -10,6 +11,7 @@
 - **Protección de Rutas**: Endpoints protegidos con `requirePermission('configuracion.actividades.gestionar')` y `requirePermission('configuracion.horarios.gestionar')`.
 
 ### 1.2. Frontend
+
 - Interfaz gráfica en React con selector de vista:
   - **Grilla Semanal (Desktop)**: Calendario de columnas (Lunes a Domingo) con bloques horarios posicionados por hora, código de colores por disciplina y avatar de la profesora.
   - **Lista Agrupada (Mobile)**: Acordeón o pestañas por día de la semana.
@@ -56,6 +58,7 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Actividades (`/api/v1/actividades`)
+
 - `GET /api/v1/actividades`: Retorna lista de actividades (permite query params `?soloActivas=true&tipo=GRUPAL`).
 - `POST /api/v1/actividades`: Crea una actividad.
   - Body: `{ "codigo": "PILATES", "nombre": "Pilates Reformer", "tipo": "PERSONALIZADA", "cupo_maximo": 4, "descripcion": "..." }`
@@ -63,6 +66,7 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
 - `DELETE /api/v1/actividades/:id`: Baja lógica (`activo = false, fecha_baja = NOW()`). Valida que no tenga horarios vigentes con inscriptos.
 
 ### 3.2. Horarios y Cronograma (`/api/v1/horarios`)
+
 - `GET /api/v1/horarios`: Retorna grilla horaria con detalle poblado de actividad y profesora (`?id_actividad=&id_profesora=&dia=`).
 - `POST /api/v1/horarios`: Registra un nuevo bloque horario.
   - Body: `{ "id_actividad": 1, "id_profesora": 3, "dia_semana": "LUNES", "hora_inicio": "18:00", "hora_fin": "19:00", "cupo_maximo": null }`
@@ -75,7 +79,8 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
 ## 4. Flujos Principales
 
 ### 4.1. Creación de Horario con Detección de Solapamiento
-```
+
+```text
 [Propietaria]               [Frontend]                     [Backend API]                    [Base de Datos]
      |                          |                                |                                 |
      |--- 1. Define horario --->|                                |                                 |
@@ -93,6 +98,7 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
 ---
 
 ## 5. Consideraciones de Seguridad y Roles
+
 - Las operaciones de escritura (`POST`, `PUT`, `DELETE`) sobre actividades y horarios están reservadas a la `PROPIETARIA`.
 - Las `PROFESORAS` solo disponen de permisos de lectura para consultar su agenda personal.
 - La validación de que `id_profesora` pertenezca a un registro activo en la tabla `profesoras` es obligatoria a nivel de base de datos y regla de servicio.

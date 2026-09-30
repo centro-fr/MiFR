@@ -1,18 +1,22 @@
 # US-35 – Estadísticas de inscriptos por mes
 
 ## 1. Información general
+
 - **Épica:** Reportes y Fidelización
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la propietaria visualizar estadísticas de nuevas inscripciones agrupadas por mes, para identificar los períodos de mayor y menor demanda.
 
 ## 3. Descripción
+
 Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupadas por mes, para identificar los períodos de mayor y menor demanda.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando estadísticas)
 - [ ] Selección de rango de meses / año
 - [ ] Gráfico de barras con inscriptos por mes
@@ -24,30 +28,36 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - [ ] Empty (sin datos para el período seleccionado)
 
 ## 5. Datos que necesita
-### Datos que muestra (gráfico):
+
+### Datos que muestra (gráfico)
+
 - Cantidad de inscriptos por mes (barras)
 - Comparativa con meses anteriores
 - Tendencia (opcional)
 
-### Datos que muestra (tabla):
+### Datos que muestra (tabla)
+
 - Mes (nombre y año)
 - Cantidad de nuevas inscripciones
 - Comparación con el mes anterior (% o número)
 - Total acumulado del año (opcional)
 
-### Datos de filtros:
+### Datos de filtros
+
 - Año (dropdown, por defecto el actual)
 - Rango de meses (opcional)
 - Plan específico (opcional)
 - Profesor/a específico/a (opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Gráfico de estadísticas
 - Tabla de detalle
 - Exportación a PDF / Excel
 - Historial de consultas (opcional)
 
 ## 6. Acciones del usuario
+
 - Seleccionar el año o rango de meses
 - Ver el gráfico de inscriptos por mes
 - Ver la tabla con el detalle numérico
@@ -56,6 +66,7 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - Ver el detalle de un mes específico (opcional)
 
 ## 7. Reglas de negocio
+
 - Debe agrupar **altas definitivas de alumnos** (no pre-inscripciones) por mes calendario.
 - La fecha de referencia es la **fecha de alta definitiva** (US-07), no la fecha de pre-inscripción.
 - Solo la **propietaria** puede acceder a estas estadísticas.
@@ -67,6 +78,7 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - El período mínimo visible es el año calendario actual.
 
 ## 8. Criterios de aceptación
+
 - [ ] Visualización con datos de varios meses → agrupa correctamente
 - [ ] Mes sin inscripciones → muestra cero sin error
 - [ ] El gráfico se ve correctamente en desktop y mobile
@@ -77,6 +89,7 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - [ ] Solo se cuentan altas definitivas (no pre-inscripciones)
 
 ## 9. Casos borde / Errores
+
 - Año sin datos → mostrar gráfico vacío o mensaje
 - Mes con datos muy altos → ajustar escala del gráfico
 - Filtro por plan sin resultados → mensaje claro
@@ -85,6 +98,7 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - Año muy antiguo sin datos → mostrar "sin datos"
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones, especialmente la fecha de alta definitiva)
 - US-08 (baja lógica, para no contar reactivaciones como altas)
 - US-11 (planes, para los filtros)
@@ -92,6 +106,7 @@ Como propietaria, quiero visualizar estadísticas de nuevas inscripciones agrupa
 - Backend: endpoint de estadísticas + agrupación mensual + exportación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:
