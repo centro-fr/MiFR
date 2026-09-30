@@ -43,7 +43,7 @@ El diagrama organiza el sistema en cuatro capas. Sirve como mapa para ubicar có
 ## Dónde va cada cosa
 
 | Si estás escribiendo | Va en |
-|---|---|
+| --- | --- |
 | Reglas de negocio de un módulo | `modules/<subsistema>/<componente>/<x>.service.ts` |
 | Consultas a la base | `modules/.../<x>.repository.ts` |
 | Traducción HTTP (leer `req`, armar `res`) | `<x>.controller.ts` |

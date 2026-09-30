@@ -39,7 +39,7 @@ Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corri
 
 Agrupar por severidad y ser concreto:
 
-```
+```text
 BLOQUEANTE  src/modules/x/x.service.ts:14  importa prisma directamente; mover la consulta al repositorio
 ATENCION    prisma/schema.prisma:52         enum estado_pago no tiene RECHAZADO, el DER si (der.puml:266)
 MENOR       src/modules/x/x.controller.ts:8 usa any en el parametro input

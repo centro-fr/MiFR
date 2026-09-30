@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Modelado de precios mediante patrón **Temporal Table / SCD Tipo 2 (Slowly Changing Dimensions)**:
   - La tabla `planes` guarda datos estructurales inmutables.
   - La tabla `plan_precios` almacena tuplas `(id_plan, precio, fecha_vigencia_desde, fecha_vigencia_hasta)`.
@@ -12,6 +13,7 @@
 - Transacciones para cambios de plan (cierre de inscripción previa, apertura de nueva inscripción, enlace de nuevos horarios).
 
 ### 1.2. Frontend
+
 - Interfaz de catálogo en tarjetas comparativas tipo tabla de tarifas:
   - Frecuencia semanal, valor por mes, días de gracia, botón de "Actualizar Precio".
 - Modal de actualización de precio: selector de fecha desde cuándo aplica el nuevo monto.
@@ -70,6 +72,7 @@ CREATE TABLE promocion_planes (
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Planes (`/api/v1/planes`)
+
 - `GET /api/v1/planes`: Devuelve planes activos con su precio actualmente vigente.
 - `POST /api/v1/planes`: Crea un nuevo plan e inserta el precio inicial en `plan_precios`.
 - `PUT /api/v1/planes/:id`: Actualiza descripción, nombre, días de gracia o condiciones.
@@ -77,16 +80,19 @@ CREATE TABLE promocion_planes (
 - `DELETE /api/v1/planes/:id`: Desactiva lógicamente el plan.
 
 ### 3.2. Promociones (`/api/v1/promociones`)
+
 - `GET /api/v1/promociones`: Lista de promociones con filtro `?soloVigentes=true`.
 - `POST /api/v1/promociones`: Alta de promoción asociando array de `planes_ids`.
 - `PUT /api/v1/promociones/:id`: Edición o inactivación anticipada.
 
 ### 3.3. Cambios de Plan (`/api/v1/inscripciones/:id/cambio-plan`)
+
 - `POST /api/v1/inscripciones/:id/cambio-plan`:
   - Body: `{ "nuevo_id_plan": 3, "nuevos_horarios_ids": [4, 8], "fecha_inicio": "2026-10-01" }`
 
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Las operaciones de creación y cambio de precios requieren permiso `planes.precios.gestionar` (restringido a `PROPIETARIA`).
 - El cálculo de cuotas toma siempre el `id_plan_precio` histórico guardado en la inscripción o cuota, imposibilitando discrepancias retroactivas en auditorías contables.

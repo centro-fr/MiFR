@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend y Tareas Programadas
+
 - **Motor de Jobs**: Tareas programadas ejecutadas con `node-cron` o servicio de cron ligero integrado:
   - Job 1: `notificaciones-cuotas-vencimiento`: Se ejecuta diariamente a las 09:00 AM.
   - Job 2: `resumen-diario-propietaria`: Se ejecuta diariamente a las 08:00 AM.
@@ -14,6 +15,7 @@
   - Constraint o clave compuesta `(id_usuario, tipo, id_cuota, DATE(fecha_generacion))` para evitar envíos duplicados en un mismo día.
 
 ### 1.2. Frontend
+
 - Campanita de notificaciones en el Navbar para todos los usuarios logueados:
   - Contador de no leídas (`unreadCount`).
   - Dropdown desplegable con lista de notificaciones recientes y botón "Marcar como leída".
@@ -47,12 +49,15 @@ CREATE INDEX idx_notificaciones_pendientes ON notificaciones(estado_envio) WHERE
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Notificaciones de Usuario (`/api/v1/notificaciones`)
+
 - `GET /api/v1/notificaciones`: Lista las notificaciones del usuario logueado (`?soloNoLeidas=true`).
 - `PUT /api/v1/notificaciones/:id/leida`: Marca una notificación como leída.
 - `PUT /api/v1/notificaciones/marcar-todas-leidas`: Marca todas como leídas.
 
 ### 3.2. Resumen Diario de la Propietaria (`/api/v1/notificaciones/resumen-diario`)
+
 - `GET /api/v1/notificaciones/resumen-diario`: Devuelve las métricas en tiempo real del día:
+
   ```json
   {
     "transferencias_pendientes": { "cantidad": 4, "total_monto": 95000 },
@@ -64,5 +69,6 @@ CREATE INDEX idx_notificaciones_pendientes ON notificaciones(estado_envio) WHERE
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Las notificaciones son privadas e intransferibles: cada usuario solo puede ver las que tienen asignado su `id_usuario`.
 - El endpoint del resumen diario requiere permiso `seguridad.resumen_diario.ver`, restringido a la `PROPIETARIA`.

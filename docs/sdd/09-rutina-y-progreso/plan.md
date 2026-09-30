@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Módulos `rutinas` y `progreso`:
   - Almacenamiento estructurado del contenido de la rutina: formato JSONB o texto enriquecido estructurado (`{ dias: [ { dia: "Día 1 - Tren Superior", ejercicios: [ { nombre: "Press Banca", series: 4, repeticiones: "10-12", carga: "20kg", descanso: "90s" } ] } ] }`).
 - Normalización de medidas antropométricas:
@@ -13,6 +14,7 @@
   - `rutinas.ver_propias`: Alumno y Tutor responsable.
 
 ### 1.2. Frontend
+
 - Editor de Rutinas para Profesoras:
   - Constructor dinámico de bloques de entrenamiento por día y ejercicio.
 - Portal del Alumno / Vista de Progreso:
@@ -71,9 +73,11 @@ CREATE INDEX idx_progreso_alumno ON registros_progreso(id_alumno, fecha);
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Rutinas (`/api/v1/rutinas`)
+
 - `GET /api/v1/rutinas/alumno/:idAlumno`: Lista las rutinas de un alumno (la activa primero).
 - `POST /api/v1/rutinas`:
   - Body:
+
     ```json
     {
       "id_alumno": 4,
@@ -83,12 +87,15 @@ CREATE INDEX idx_progreso_alumno ON registros_progreso(id_alumno, fecha);
       "observaciones": "Priorizar técnica en sentadillas"
     }
     ```
+
 - `PUT /api/v1/rutinas/:id`: Modifica la rutina activa.
 
 ### 3.2. Progreso y Mediciones (`/api/v1/progreso`)
+
 - `GET /api/v1/progreso/alumno/:idAlumno`: Devuelve historial de registros con valores de medidas corporales asociados.
 - `POST /api/v1/progreso`:
   - Body:
+
     ```json
     {
       "id_alumno": 4,
@@ -104,5 +111,6 @@ CREATE INDEX idx_progreso_alumno ON registros_progreso(id_alumno, fecha);
 ---
 
 ## 4. Consideraciones de Seguridad y Roles
+
 - Inyección contextual de ID: cuando un alumno consulta `/api/v1/rutinas/mi-rutina`, el backend extrae el `id_alumno` del token de sesión garantizando que jamás pueda consultar rutinas ajenas.
 - Los tutores tienen acceso autorizado sobre los registros de sus alumnos asociados mediante validación de `id_usuario_responsable`.

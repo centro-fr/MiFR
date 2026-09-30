@@ -1,18 +1,22 @@
 # US-08 – Baja lógica de alumno
 
 ## 1. Información general
+
 - **Épica:** Alumnos e Inscripciones
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 2
 
 ## 2. Objetivo
+
 Dar de baja lógicamente a un alumno conservando todo su historial de pagos y asistencia, para poder reactivarlo si vuelve más adelante sin perder información.
 
 ## 3. Descripción
+
 Como propietaria, quiero dar de baja lógicamente a un alumno conservando su historial de pagos y asistencia, para poder reactivarlo si vuelve más adelante.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando ficha del alumno)
 - [ ] Ficha del alumno con datos e historial
 - [ ] Confirmación de baja (modal / diálogo)
@@ -22,7 +26,9 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - [ ] Ficha de alumno dado de baja (con opción de reactivar)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Nombre completo del alumno
 - Estado actual: `activo` / `pendiente` / `baja`
 - Plan y horarios asignados
@@ -31,17 +37,20 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - Fecha de alta
 - Fecha de baja (si corresponde)
 
-### Datos que se generan al dar de baja:
+### Datos que se generan al dar de baja
+
 - Estado: `baja`
 - Fecha de baja
 - Motivo de baja (opcional, texto libre)
 
-### Datos que se generan al reactivar:
+### Datos que se generan al reactivar
+
 - Estado: `activo`
 - Fecha de reactivación
 - Se reasigna al plan/horario actual si hay cupo (o queda pendiente de asignación)
 
 ## 6. Acciones del usuario
+
 - Ver ficha de un alumno activo
 - Iniciar baja lógica del alumno
 - Confirmar la baja
@@ -49,6 +58,7 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - Reactivar un alumno dado de baja
 
 ## 7. Reglas de negocio
+
 - La baja **no debe eliminar** el registro del alumno ni su historial de pagos/asistencia.
 - Un alumno dado de baja **no debe contar** como inscripto activo en ningún horario (no aparece en listas de asistencia, ni ocupa cupo).
 - Un alumno dado de baja **puede reactivarse** en cualquier momento.
@@ -58,6 +68,7 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - La baja es **lógica**, nunca física (no se hace DELETE en base de datos).
 
 ## 8. Criterios de aceptación
+
 - [ ] Baja de un alumno con historial de asistencia → el historial se conserva
 - [ ] Reactivación de un alumno dado de baja → vuelve a estado activo
 - [ ] Un alumno de baja no aparece en la lista de inscriptos para tomar asistencia
@@ -65,6 +76,7 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - [ ] El historial de pagos se mantiene visible después de la baja
 
 ## 9. Casos borde / Errores
+
 - Intentar dar de baja un alumno ya dado de baja → no permitir (o mostrar aviso)
 - Reactivar un alumno cuyo horario ya está completo (especialmente personalizadas)
 - Reactivar un alumno con deuda pendiente → advertir
@@ -73,6 +85,7 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - Error de red al dar de baja
 
 ## 10. Dependencias
+
 - US-05, US-06, US-07 (el alumno debe existir previamente)
 - US-09 (modificación de datos, relacionada)
 - US-10 (consulta y búsqueda, donde se verá el estado)
@@ -81,6 +94,7 @@ Como propietaria, quiero dar de baja lógicamente a un alumno conservando su his
 - Backend: endpoint de baja lógica + endpoint de reactivación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

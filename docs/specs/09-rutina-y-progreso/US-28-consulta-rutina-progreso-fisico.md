@@ -1,18 +1,22 @@
 # US-28 – Consulta de rutina y progreso físico
 
 ## 1. Información general
+
 - **Épica:** Rutina y Progreso
 - **Prioridad:** Baja
 - **Actor principal:** Alumno
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir al alumno consultar su rutina y sus registros de progreso físico desde su celular, para ver su evolución a lo largo del tiempo.
 
 ## 3. Descripción
+
 Como alumno, quiero consultar mi rutina y mis registros de progreso físico desde mi celular para ver mi evolución a lo largo del tiempo.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando rutina y mediciones)
 - [ ] Vista de rutina actual
 - [ ] Historial de mediciones
@@ -22,7 +26,9 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - [ ] Empty (sin rutina asignada o sin mediciones)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Rutina actual:
   - Nombre
   - Ejercicios / actividades
@@ -38,12 +44,14 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
   - Peso a lo largo del tiempo
   - Otras medidas (opcional)
 
-### Datos que NO se muestran:
+### Datos que NO se muestran
+
 - Rutinas o mediciones de otros alumnos
 - Datos internos de la profesora
 - Observaciones privadas de la profesora
 
 ## 6. Acciones del usuario
+
 - Ver su rutina actual
 - Ver el historial de mediciones
 - Ver el gráfico de evolución (opcional)
@@ -52,6 +60,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - (No puede editar ni eliminar: solo consultar)
 
 ## 7. Reglas de negocio
+
 - El alumno **solo debe ver su propia** rutina y mediciones, **no las de otros**.
 - Si el alumno es menor de edad, el **tutor** es quien accede (mismo criterio que el resto del sistema).
 - El alumno **no puede editar** la rutina ni las mediciones (solo la profesora o la propietaria).
@@ -62,6 +71,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - La información debe ser **mobile-first**, con lectura cómoda desde el celular.
 
 ## 8. Criterios de aceptación
+
 - [ ] Consulta de rutina propia → se muestra correctamente
 - [ ] Intento de consulta de la rutina de otro alumno → falla (acceso restringido)
 - [ ] Historial de mediciones ordenado por fecha descendente
@@ -71,6 +81,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - [ ] El tutor de un alumno menor accede a la información del menor
 
 ## 9. Casos borde / Errores
+
 - Alumno recién inscripto sin rutina ni mediciones → estados vacíos claros
 - Muchas mediciones → paginación o scroll infinito
 - Medición con datos incompletos (por ejemplo, sin peso) → mostrar lo que haya
@@ -78,6 +89,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - Acceso desde un dispositivo sin conexión → mensaje claro
 
 ## 10. Dependencias
+
 - US-27 (carga de rutina y mediciones por parte de la profesora)
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica: un alumno dado de baja no accede)
@@ -87,6 +99,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 - Backend: endpoint de consulta de rutina y mediciones del alumno logueado
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Baja
 - Recomendación de UI (mobile-first):

@@ -1,18 +1,22 @@
 # US-16 – Registro de pago por transferencia
 
 ## 1. Información general
+
 - **Épica:** Pagos y Cuotas
 - **Prioridad:** Alta
 - **Actor principal:** Alumno
 - **Sprint sugerido:** Sprint 3
 
 ## 2. Objetivo
+
 Permitir al alumno informar que hizo una transferencia bancaria (fuera del sistema) en cualquier momento del ciclo (primera cuota, renovación o cuota vencida), sin necesidad de adjuntar comprobante, para que la propietaria la verifique y confirme.
 
 ## 3. Descripción
+
 Como alumno, quiero informar una transferencia bancaria que hice para abonar mi cuota (primera cuota, renovación o cuota vencida), sin necesidad de adjuntar comprobante.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando datos del plan y cuota)
 - [ ] Formulario de aviso de transferencia
 - [ ] Confirmación de envío
@@ -23,28 +27,34 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - [ ] Listado de mis transferencias
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Plan actual del alumno
 - Monto esperado (con precio vigente y promoción si aplica)
 - Datos bancarios del centro (CBU / alias / titular)
 - Estado de cuota actual
 - Fecha de vencimiento
 
-### Datos que se cargan:
+### Datos que se cargan
+
 - Monto de la transferencia (obligatorio)
 - Fecha de la transferencia (obligatoria)
 - Observaciones (opcional)
 
-### Datos que NO se cargan:
+### Datos que NO se cargan
+
 - Comprobante (no se adjunta archivo)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Estado del aviso: `pendiente de verificación`
 - Fecha de carga del aviso
 - Registro en el historial del alumno
 - Notificación a la propietaria (para revisión en US-17)
 
 ## 6. Acciones del usuario
+
 - Ver los datos bancarios del centro
 - Ver el monto esperado
 - Completar los datos del aviso (monto + fecha)
@@ -53,6 +63,7 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - Cancelar la operación
 
 ## 7. Reglas de negocio
+
 - El alumno puede informar una transferencia en cualquier momento del ciclo:
   - **Primera cuota** (alumno nuevo, pre-inscripto).
   - **Renovación** (alumno activo que renueva su plan).
@@ -66,6 +77,7 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - La transferencia queda asociada al alumno y al período.
 
 ## 8. Criterios de aceptación
+
 - [ ] El alumno puede informar una transferencia en cualquier momento del ciclo (primera cuota, renovación, cuota vencida).
 - [ ] El alumno informa la transferencia indicando **monto** y **fecha** (sin adjuntar archivo).
 - [ ] La transferencia queda en estado **"pendiente de verificación"** hasta la revisión de la propietaria.
@@ -75,6 +87,7 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - [ ] Los datos bancarios del centro (CBU/alias/titular) se muestran para que el alumno haga la transferencia.
 
 ## 9. Casos borde / Errores
+
 - Monto ingresado distinto al esperado → advertir pero permitir (o requerir nota).
 - Alumno sin plan activo → no permitir informar transferencia.
 - Alumno dado de baja → no permitir informar transferencia.
@@ -82,6 +95,7 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - Alumno que informa una transferencia que no hizo (la propietaria puede rechazarla en US-17).
 
 ## 10. Dependencias
+
 - US-11, US-12, US-13 (plan, precio vigente y promoción)
 - US-14 (renovación o cambio de plan, que puede disparar la transferencia)
 - US-17 (aprobación o rechazo de transferencias por parte de la propietaria)
@@ -91,6 +105,7 @@ Como alumno, quiero informar una transferencia bancaria que hice para abonar mi 
 - Backend: endpoint de registro de aviso de transferencia + notificación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media (sin manejo de archivos)
 - Recomendación de UI:

@@ -66,7 +66,7 @@ Cuando salga el soporte, se configura ESLint 9 con `typescript-eslint` y `eslint
 Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 
 | Variable | Para qué |
-|---|---|
+| --- | --- |
 | `DATABASE_URL` | Conexión a PostgreSQL |
 | `GOOGLE_CLIENT_ID` | Validación del token de Google |
 | `JWT_SECRET` | Firma del token propio |

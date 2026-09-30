@@ -11,7 +11,7 @@ Este documento define **qué ve cada rol en el menú de navegación** de MiFR, t
 ## Roles del sistema
 
 | Rol | Descripción |
-|-----|-------------|
+| ----- | ------------- |
 | **Alumno / Tutor** | Usuario final que asiste a clases |
 | **Profesora** | Dicta clases y toma asistencia |
 | **Propietaria** | Administra el centro (acceso total) |
@@ -26,7 +26,7 @@ Una misma persona puede tener más de un rol (ej: propietaria que también dicta
 ### Mobile (bottom nav, 5 ítems)
 
 | # | Ítem | Ícono | Pantalla que abre |
-|---|------|-------|-------------------|
+| --- | ------ | ------- | ------------------- |
 | 1 | **Inicio** | home | Panel principal (US-29) |
 | 2 | **Mi plan** | tarjeta | Estado del plan y renovación (US-14, US-29) |
 | 3 | **Progreso** | gráfico | Rutina y evolución física (US-27, US-28) |
@@ -36,7 +36,7 @@ Una misma persona puede tener más de un rol (ej: propietaria que también dicta
 ### Desktop (sidebar, 5 ítems + secundarios)
 
 | # | Ítem | Ícono | Pantalla que abre |
-|---|------|-------|-------------------|
+| --- | ------ | ------- | ------------------- |
 | 1 | Inicio | home | Panel principal |
 | 2 | Mi plan | tarjeta | Estado del plan |
 | 3 | Progreso | gráfico | Rutina y evolución |
@@ -48,6 +48,7 @@ Una misma persona puede tener más de un rol (ej: propietaria que también dicta
 ### Menú hamburguesa (mobile)
 
 Acceso a opciones secundarias (esquina superior derecha):
+
 - Configuración
 - Ayuda
 - Términos y privacidad
@@ -60,7 +61,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 ### Mobile (bottom nav, 5 ítems)
 
 | # | Ítem | Ícono | Pantalla que abre |
-|---|------|-------|-------------------|
+| --- | ------ | ------- | ------------------- |
 | 1 | **Hoy** | reloj/calendario | Clases del día (US-20) |
 | 2 | **Mis clases** | libro/lista | Historial de clases y asistencias |
 | 3 | **Alumnos** | usuarios | Alumnos a su cargo (US-10) |
@@ -70,7 +71,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 ### Desktop (sidebar, 5 ítems + secundarios)
 
 | # | Ítem | Ícono | Pantalla que abre |
-|---|------|-------|-------------------|
+| --- | ------ | ------- | ------------------- |
 | 1 | Hoy | reloj | Clases del día |
 | 2 | Mis clases | libro | Historial |
 | 3 | Alumnos | usuarios | Alumnos a cargo |
@@ -100,7 +101,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 ### Desktop (sidebar, 10 ítems)
 
 | # | Ítem | Ícono | Pantalla que abre |
-|---|------|-------|-------------------|
+| --- | ------ | ------- | ------------------- |
 | 1 | **Dashboard** | home | Resumen general (KPIs, alertas) |
 | 2 | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
 | 3 | **Actividades y Horarios** | calendario | Actividades + cronograma (US-03, US-04) |
@@ -136,7 +137,7 @@ Mismos 10 ítems que desktop, pero en un drawer que se abre con el botón hambur
 ### Header (mobile y desktop)
 
 | # | Ítem | Qué muestra |
-|---|------|-------------|
+| --- | ------ | ------------- |
 | 1 | **Inicio** | Landing con info del centro |
 | 2 | **Disponibilidad** | Panel público con cupos disponibles (US-32) |
 | 3 | **Precios** | Planes disponibles (sin login) |
@@ -159,7 +160,7 @@ Mismos 10 ítems que desktop, pero en un drawer que se abre con el botón hambur
 ## 📊 Resumen visual de menús
 
 | Rol | Mobile | Desktop | Ítems principales |
-|-----|--------|---------|-------------------|
+| ----- | -------- | --------- | ------------------- |
 | **Alumno** | Bottom nav (5) + hamburguesa | Sidebar (5 + secundarios) | Inicio, Mi plan, Progreso, Comunidad, Perfil |
 | **Profesora** | Bottom nav (5) + hamburguesa | Sidebar (5 + secundarios) | Hoy, Mis clases, Alumnos, Cobros, Perfil |
 | **Propietaria** | Drawer lateral (10) | Sidebar (10) | Dashboard, Alumnos, Actividades, Planes, Pagos, Asistencia, Honorarios, Notificaciones, Reportes, Configuración |
@@ -170,7 +171,7 @@ Mismos 10 ítems que desktop, pero en un drawer que se abre con el botón hambur
 ## 🎨 Convención del botón hamburguesa
 
 | Rol | Botón | Drawer |
-|-----|-------|--------|
+| ----- | ------- | -------- |
 | Alumno (mobile) | Derecha | Derecha |
 | Profesora (mobile) | Derecha | Derecha |
 | Propietaria (mobile) | Izquierda | Izquierda |
@@ -193,6 +194,7 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 ## 📌 Reglas de legibilidad (para todas las pantallas)
 
 ### Desktop (1440px)
+
 - Ancho máximo del contenido: **1200-1280px**, centrado
 - Sidebar fija a la izquierda (**250-280px**)
 - Padding del contenido: **32-48px**
@@ -200,6 +202,7 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 - Tipografía: mínimo 14px secundario, 16px normal, 18-24px títulos
 
 ### Mobile (390px)
+
 - Padding lateral: **16-20px**
 - Bottom nav fija al pie (no scrollable)
 - Botones mínimo **44x44px**
@@ -207,6 +210,7 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 - Tablas → cards apiladas
 
 ### Universales
+
 - Nunca scroll horizontal
 - Texto nunca cortado
 - No usar texto menor a 14px

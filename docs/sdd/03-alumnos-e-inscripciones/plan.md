@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Arquitectura orientada a eventos internos (EventEmitter de Node.js o dispatchers de dominio):
   - Evento `PagoConfirmadoEvent` -> desencadena el handler `ActivarInscripcionHandler` que transiciona `alumnos.estado` de `PENDIENTE` a `ACTIVO` y crea la asociación `usuario_roles` correspondiente.
 - Transacciones ACID (`db.transaction`) al crear pre-inscripciones (insert en `usuarios`, `alumnos`, `inscripciones`, `inscripcion_horarios`).
@@ -13,6 +14,7 @@
   - `alumnos.baja`: Solo Propietaria.
 
 ### 1.2. Frontend
+
 - Formulario wizard de alta / pre-inscripción en 3 pasos:
   1. Datos del Alumno (cálculo reactivo de edad mediante `date-fns` o helper; renderizado condicional del bloque "Datos del Tutor").
   2. Selección de Plan, Actividad, Horarios y Profesora.
@@ -71,10 +73,12 @@ CREATE INDEX idx_inscripciones_alumno ON inscripciones(id_alumno, estado);
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Alumnos (`/api/v1/alumnos`)
+
 - `GET /api/v1/alumnos`: Búsqueda con paginación (`?q=&estado=&id_plan=&id_profesora=&page=1&limit=20`).
 - `GET /api/v1/alumnos/:id`: Ficha consolidada (datos personales, tutor, inscripción actual, historial de cuotas y asistencias).
 - `POST /api/v1/alumnos/pre-inscripcion`:
   - Body:
+
     ```json
     {
       "alumno": { "nombre": "Tomás", "apellido": "Pérez", "dni": "45123999", "fecha_nacimiento": "2010-05-12", "telefono": "351...", "cont_emerg_nombre": "Carlos", "cont_emerg_telefono": "351..." },
@@ -84,6 +88,7 @@ CREATE INDEX idx_inscripciones_alumno ON inscripciones(id_alumno, estado);
       "horarios_ids": [3, 7]
     }
     ```
+
 - `PUT /api/v1/alumnos/:id`: Actualización de datos del alumno y tutor.
 - `POST /api/v1/alumnos/:id/baja`: Baja lógica (`{ "motivo": "ECONOMICO", "observaciones": "..." }`).
 - `POST /api/v1/alumnos/:id/reactivar`: Reactivación con re-asignación de plan/horarios.
@@ -91,7 +96,8 @@ CREATE INDEX idx_inscripciones_alumno ON inscripciones(id_alumno, estado);
 ---
 
 ## 4. Flujo de Alta Definitiva por Primer Pago
-```
+
+```text
 [Propietaria/Profesora]       [Módulo Pagos]               [Módulo Alumnos]               [Base de Datos]
          |                          |                             |                              |
          |--- 1. Registra pago ---->|                             |                              |
@@ -108,6 +114,7 @@ CREATE INDEX idx_inscripciones_alumno ON inscripciones(id_alumno, estado);
 ---
 
 ## 5. Consideraciones de Seguridad y Roles
+
 - Solo la `PROPIETARIA` tiene potestad para ejecutar la baja lógica de un alumno.
 - Las `PROFESORAS` solo pueden consultar datos de alumnos asignados a sus horarios cuando se filtre por su alcance, preservando privacidad de datos de otros cursos.
 - Protección estricta de datos de menores: las comunicaciones por correo y teléfono se dirigen al tutor asociado.

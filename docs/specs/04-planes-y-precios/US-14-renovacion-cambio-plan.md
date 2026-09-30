@@ -1,18 +1,22 @@
 # US-14 – Renovación o cambio de plan
 
 ## 1. Información general
+
 - **Épica:** Planes y Precios
 - **Prioridad:** Media
 - **Actor principal:** Alumno
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir al alumno renovar su clase suelta al finalizar o cambiar a un plan mensual, y pagar la renovación por efectivo o transferencia, para adaptar su frecuencia de asistencia según su conveniencia.
 
 ## 3. Descripción
+
 Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un plan mensual, y pagar la renovación por efectivo o transferencia, para adaptar mi frecuencia de asistencia según mi conveniencia.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando plan actual y opciones disponibles)
 - [ ] Panel del alumno con plan actual
 - [ ] Opciones de renovación o cambio de plan
@@ -25,7 +29,9 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - [ ] Empty (sin planes disponibles para el cambio)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Plan actual del alumno (nombre, tipo, frecuencia, precio)
 - Estado de cuota actual (al día / por vencer / vencida)
 - Fecha de vencimiento
@@ -33,7 +39,8 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Condiciones del cambio (fecha de inicio, si aplica promoción, etc.)
 - Medios de pago disponibles (efectivo / transferencia)
 
-### Datos que se cargan / seleccionan:
+### Datos que se cargan / seleccionan
+
 - Plan nuevo (obligatorio, si es cambio)
 - Confirmación de renovación (si es renovación)
 - Fecha de inicio deseada (si aplica)
@@ -41,7 +48,8 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
   - **Efectivo** (se registra presencialmente, US-15)
   - **Transferencia** (se informa desde el panel, US-16)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Nuevo estado de cuota
 - Fecha de vencimiento del nuevo plan
 - Registro de la renovación o cambio
@@ -49,6 +57,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Si es transferencia: pago pendiente de confirmación
 
 ## 6. Acciones del usuario
+
 - Ver su plan actual
 - Ver los planes disponibles para cambio
 - Renovar el plan actual (ej: clase suelta → nueva clase suelta)
@@ -58,6 +67,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Cancelar la operación
 
 ## 7. Reglas de negocio
+
 - Se puede **renovar una clase suelta** al finalizar (nueva clase suelta).
 - Se puede **migrar de clase suelta a plan mensual**.
 - Se puede **cambiar entre planes mensuales** (si el sistema lo permite según configuración).
@@ -74,6 +84,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Si el pago es rechazado, el alumno vuelve al estado anterior.
 
 ## 8. Criterios de aceptación
+
 - [ ] Renovación de clase suelta ya vencida → se permite, genera nueva habilitación
 - [ ] Cambio de clase suelta a plan mensual → se permite, conserva historial
 - [ ] Cambio de plan con promoción vigente → aplica el descuento correspondiente
@@ -86,6 +97,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - [ ] El alumno puede asistir a clase mientras el pago está pendiente (si es renovación)
 
 ## 9. Casos borde / Errores
+
 - Alumno sin plan activo (pre-inscripción) → no puede renovar ni cambiar
 - Cambio de plan a uno que no está vigente → no permitir
 - Alumno con deuda pendiente que intenta cambiar de plan → advertir o bloquear (según política)
@@ -95,6 +107,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Transferencia rechazada → el alumno vuelve al estado anterior
 
 ## 10. Dependencias
+
 - US-11 (planes vigentes, para el cambio)
 - US-12 (precios vigentes, para calcular el nuevo precio)
 - US-13 (promociones, si aplica al nuevo plan)
@@ -106,6 +119,7 @@ Como alumno, quiero poder renovar mi clase suelta al finalizar o cambiar a un pl
 - Backend: endpoint de cambio de plan + validaciones de cupo y vigencia + creación de pago pendiente
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta
 - Recomendación de UI:

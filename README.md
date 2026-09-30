@@ -37,7 +37,7 @@ cd front && pnpm dev
 
 ## Estructura
 
-```
+```text
 MiFR/
 ├── back/          API en Node + TypeScript
 │   └── src/       código fuente
@@ -83,4 +83,4 @@ Los archivos `.env` están ignorados por Git. Cuando el proyecto los necesite, s
 - `docs/diagrams/usuario/usuario-der.puml` — diagrama entidad-relación de Usuario, Perfil y Alumno
 - `docs/diagrams/usuario/usuario-der-explicacion.md` — casos de uso que explican ese modelo
 
-Los diagramas `.puml` se pueden ver con la extensión PlantUML de VS Code o en https://plantuml.com/
+Los diagramas `.puml` se pueden ver con la extensión PlantUML de VS Code o en <https://plantuml.com/>

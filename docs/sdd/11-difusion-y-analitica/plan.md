@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend
+
 - Endpoint público desprovisto de middlewares de autenticación (`/api/v1/publico/disponibilidad`).
 - Consulta agregada optimizada que calcula vacantes mediante `LEFT JOIN` con `inscripcion_horarios` de inscripciones activas.
 - Estrategia de caché:
@@ -10,6 +11,7 @@
   - Rate limiting específico para endpoints públicos con `express-rate-limit` para prevenir scraping agresivo.
 
 ### 1.2. Frontend
+
 - Landing page pública `/disponibilidad`:
   - Diseño visualmente llamativo con paleta corporativa MiFR (modo oscuro moderno o estética fitness premium).
   - Componente Hero con "Próxima Clase a Comenzar" y contador de vacantes.
@@ -50,8 +52,10 @@ GROUP BY a.id_actividad, h.id_horario, u.id_usuario;
 ## 3. Endpoints y Contratos de API
 
 ### 3.1. Panel Público (`/api/v1/publico`)
+
 - `GET /api/v1/publico/disponibilidad`:
   - Respuesta 200 OK:
+
     ```json
     {
       "proxima_clase": {
@@ -81,5 +85,6 @@ GROUP BY a.id_actividad, h.id_horario, u.id_usuario;
 ---
 
 ## 4. Consideraciones de Seguridad
+
 - Endpoint completamente de solo lectura (`GET`).
 - Bloqueo absoluto de cualquier dato personal de clientes o histórico financiero.
