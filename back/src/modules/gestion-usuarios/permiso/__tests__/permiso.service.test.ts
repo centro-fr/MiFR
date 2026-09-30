@@ -95,4 +95,37 @@ describe("PermisoService", () => {
     );
     expect(repositorio.contarRolesConPermiso).not.toHaveBeenCalled();
   });
+
+  it("quitarRol lanza NotFoundError si el rol no está cargado en la tabla roles", async () => {
+    repositorio.buscarRolPorCodigo.mockResolvedValue(null);
+
+    await expect(permisoService.quitarRol(usuario.id_usuario, "TUTOR")).rejects.toBeInstanceOf(NotFoundError);
+    expect(repositorio.quitarRol).not.toHaveBeenCalled();
+  });
+
+  it("tieneRol es false si el usuario no tiene roles", () => {
+    expect(permisoService.tieneRol({ ...usuario, roles: [] }, "ALUMNO")).toBe(false);
+  });
+
+  it("tieneRol reconoce cualquiera de los roles de un usuario multi-rol", () => {
+    const multiRol = {
+      ...usuario,
+      roles: [...usuario.roles, { id_usuario: 1, id_rol: 3, rol: rolAlumno, fecha_asignacion: new Date() }],
+    };
+
+    expect(permisoService.tieneRol(multiRol, "PROPIETARIA")).toBe(true);
+    expect(permisoService.tieneRol(multiRol, "ALUMNO")).toBe(true);
+    expect(permisoService.tieneRol(multiRol, "TUTOR")).toBe(false);
+  });
+
+  it("tienePermiso consulta con todos los roles del usuario multi-rol (unión de permisos)", async () => {
+    const multiRol = {
+      ...usuario,
+      roles: [...usuario.roles, { id_usuario: 1, id_rol: 3, rol: rolAlumno, fecha_asignacion: new Date() }],
+    };
+    repositorio.contarRolesConPermiso.mockResolvedValue(1);
+
+    await expect(permisoService.tienePermiso(multiRol, "RUTINAS_VER")).resolves.toBe(true);
+    expect(repositorio.contarRolesConPermiso).toHaveBeenCalledWith([1, 3], "RUTINAS_VER");
+  });
 });

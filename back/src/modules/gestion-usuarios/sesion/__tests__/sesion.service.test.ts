@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ForbiddenError, UsuarioNoRegistradoError } from "../../../../shared/errors/app-error.js";
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  UsuarioNoRegistradoError,
+} from "../../../../shared/errors/app-error.js";
 import { SesionService } from "../sesion.service.js";
 import { JwtService } from "../jwt.service.js";
 import type { UsuarioRepository } from "../../usuario/user.repository.js";
@@ -101,5 +105,70 @@ describe("SesionService", () => {
     repositorio.buscarPorGoogleId.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
 
     await expect(sesion.iniciarSesion("id-token-valido")).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("iniciarSesion no busca por email si ya encontró el google_id", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue(usuarioExistente);
+
+    await sesion.iniciarSesion("id-token-valido");
+
+    expect(repositorio.buscarPorGoogleId).toHaveBeenCalledWith("google-123");
+    expect(repositorio.buscarPorEmail).not.toHaveBeenCalled();
+  });
+
+  it("iniciarSesion busca por el email que devuelve Google si no encuentra el google_id", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue(null);
+    repositorio.buscarPorEmail.mockResolvedValue(null);
+
+    await expect(sesion.iniciarSesion("id-token-valido")).rejects.toThrow();
+
+    expect(repositorio.buscarPorEmail).toHaveBeenCalledWith("test@example.com");
+  });
+
+  it("iniciarSesion devuelve un JWT propio con el id_usuario y los códigos de rol", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue(usuarioExistente);
+
+    const { token } = await sesion.iniciarSesion("id-token-valido");
+
+    expect(new JwtService("test-secret").verificar(token)).toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+  });
+
+  it("iniciarSesion propaga el UnauthorizedError si Google rechaza el id_token", async () => {
+    vi.mocked(googleAuth.verificarToken).mockRejectedValue(new UnauthorizedError("Token de Google inválido"));
+
+    await expect(sesion.iniciarSesion("token-falso")).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(repositorio.buscarPorGoogleId).not.toHaveBeenCalled();
+    expect(repositorio.buscarPorEmail).not.toHaveBeenCalled();
+  });
+
+  it("iniciarSesion lanza ForbiddenError si el usuario encontrado por email está inactivo", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue(null);
+    repositorio.buscarPorEmail.mockResolvedValue({
+      ...usuarioExistente,
+      google_id: null,
+      estado: "INACTIVO",
+    });
+    repositorio.vincularGoogleId.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
+
+    await expect(sesion.iniciarSesion("id-token-valido")).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("iniciarSesion permite entrar a un usuario sin roles asignados", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue({ ...usuarioExistente, roles: [] });
+
+    const { token } = await sesion.iniciarSesion("id-token-valido");
+
+    expect(new JwtService("test-secret").verificar(token).roles).toEqual([]);
+  });
+
+  it("verificarToken valida el JWT propio emitido en el login", async () => {
+    repositorio.buscarPorGoogleId.mockResolvedValue(usuarioExistente);
+    const { token } = await sesion.iniciarSesion("id-token-valido");
+
+    expect(sesion.verificarToken(token)).toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+  });
+
+  it("verificarToken lanza UnauthorizedError con un token inválido", () => {
+    expect(() => sesion.verificarToken("no-es-un-jwt")).toThrow(UnauthorizedError);
   });
 });
