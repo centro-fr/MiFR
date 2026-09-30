@@ -162,7 +162,7 @@ Toda pantalla que consuma datos debe manejar:
 
 ## 10. Comunicación con el backend
 
-- **Base URL configurable** por variable de entorno (`VITE_API_URL`).
+- **Todas las llamadas usan rutas relativas `/api/...`.** El navegador solo habla con el Servidor Web (front), que reenvía `/api` al back (vista de despliegue). La URL del back se configura en `API_URL` (sin prefijo `VITE_`, no llega al navegador).
 - **Axios con interceptores**:
   - Agregar token de autenticación automáticamente.
   - Manejo centralizado de errores (401 → logout, 403 → acceso denegado).
