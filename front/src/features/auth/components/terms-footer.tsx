@@ -1,0 +1,41 @@
+interface TermsFooterProps {
+  onOpenLegal: (type: "terms" | "privacy") => void;
+  variant?: "desktop" | "mobile";
+}
+
+export function TermsFooter({ onOpenLegal, variant = "desktop" }: TermsFooterProps) {
+  if (variant === "mobile") {
+    return (
+      <footer className="border-t border-slate-100 pt-4 text-center">
+        <p className="text-[12px] leading-tight text-slate-500">
+          Al ingresar aceptás nuestros{" "}
+          <FooterLink label="Términos" onClick={() => onOpenLegal("terms")} /> y{" "}
+          <FooterLink label="Política de Privacidad" onClick={() => onOpenLegal("privacy")} />.
+        </p>
+        <div aria-hidden="true" className="mx-auto mt-4 h-1 w-32 rounded-full bg-slate-300" />
+      </footer>
+    );
+  }
+
+  return (
+    <footer className="w-full max-w-[420px] pt-6 text-center text-slate-400">
+      <p className="text-[12px] leading-relaxed">
+        Al ingresar aceptás nuestros <FooterLink label="Términos" onClick={() => onOpenLegal("terms")} /> y{" "}
+        <FooterLink label="Política de Privacidad" onClick={() => onOpenLegal("privacy")} />.
+      </p>
+      <p className="mt-1 font-mono text-[11px]">Centro de Entrenamiento FR © 2026 • Todos los derechos reservados</p>
+    </footer>
+  );
+}
+
+function FooterLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-h-[44px] font-semibold text-primary-dark underline decoration-primary-dark/30 hover:text-primary"
+    >
+      {label}
+    </button>
+  );
+}
