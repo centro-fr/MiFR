@@ -1,11 +1,12 @@
 import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
-import type { IAutorizacion } from "../permiso/interface/i-autorizacion.js";
-import type { ILogicaUsuarios } from "./interface/i-logica-usuarios.js";
+import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { UsuarioRepository } from "./user.repository.js";
 import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./user.schemas.js";
 import type { CodigoRol, UsuarioConRoles } from "./user.types.js";
 
-export class UsuarioService implements ILogicaUsuarios {
+// Componente "Usuario": alta, baja, modificación y roles de los usuarios. La presentación
+// llega a él por ILogicaUsuarios (GestionUsuariosService), no directamente.
+export class UsuarioService {
   constructor(
     private readonly repositorio: UsuarioRepository,
     private readonly autorizacion: IAutorizacion,

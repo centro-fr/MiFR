@@ -6,10 +6,19 @@ import {
   UnauthorizedError,
   UsuarioNoRegistradoError,
 } from "../../../../shared/errors/app-error.js";
+import { JwtService } from "../jwt.service.js";
 import type { IAutenticacion } from "../interface/i-autenticacion.js";
-import type { ILogicaUsuarios } from "../../usuario/interface/i-logica-usuarios.js";
+import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
+import type { ILogicaUsuarios } from "../../interface/i-logica-usuarios.js";
 
-const usuarioServiceStub = {} as ILogicaUsuarios;
+// La presentación llega al login por ILogicaUsuarios; IAutenticacion solo valida el JWT.
+const gestionUsuarios = { iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+const gestionUsuariosStub = gestionUsuarios as unknown as ILogicaUsuarios;
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+const autorizacionStub = {} as IAutorizacion;
 
 const usuario = {
   id_usuario: 1,
@@ -34,18 +43,22 @@ const usuario = {
   ],
 };
 
-describe("POST /api/auth/google", () => {
+describe("POST /api/v1/auth/google", () => {
   let autenticacion: IAutenticacion;
 
   beforeEach(() => {
-    autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn() };
+    autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
   });
 
   it("responde 200 con token y usuario si el id_token es válido", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockResolvedValue({ token: "jwt-fake", usuario });
+    gestionUsuarios.iniciarSesion.mockResolvedValue({ token: "jwt-fake", usuario, permisos: [] });
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(response.status).toBe(200);
     expect(response.body.usuario.email).toBe("test@example.com");
@@ -53,20 +66,45 @@ describe("POST /api/auth/google", () => {
     expect(response.body.roles).toEqual(["ALUMNO"]);
   });
 
+  it("devuelve los permisos efectivos para que el front arme el menú", async () => {
+    gestionUsuarios.iniciarSesion.mockResolvedValue({
+      token: "jwt-fake",
+      usuario,
+      permisos: ["ACTIVIDADES_VER", "HORARIOS_VER"],
+    });
+
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
+
+    expect(response.body.permisos).toEqual(["ACTIVIDADES_VER", "HORARIOS_VER"]);
+  });
+
   it("responde 400 sin id_token", async () => {
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({});
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({});
 
     expect(response.status).toBe(400);
   });
 
   it("pasa el id_token recibido (sin espacios) a iniciarSesion", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockResolvedValue({ token: "jwt-fake", usuario });
+    gestionUsuarios.iniciarSesion.mockResolvedValue({ token: "jwt-fake", usuario, permisos: [] });
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    await request(app).post("/api/auth/google").send({ id_token: "  token-valido  " });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    await request(app).post("/api/v1/auth/google").send({ id_token: "  token-valido  " });
 
-    expect(autenticacion.iniciarSesion).toHaveBeenCalledWith("token-valido");
+    expect(gestionUsuarios.iniciarSesion).toHaveBeenCalledWith("token-valido");
   });
 
   it("devuelve los códigos de todos los roles de un usuario multi-rol", async () => {
@@ -82,10 +120,18 @@ describe("POST /api/auth/google", () => {
         },
       ],
     };
-    vi.mocked(autenticacion.iniciarSesion).mockResolvedValue({ token: "jwt-fake", usuario: multiRol });
+    gestionUsuarios.iniciarSesion.mockResolvedValue({
+      token: "jwt-fake",
+      usuario: multiRol,
+      permisos: [],
+    });
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(response.body.roles).toEqual(["ALUMNO", "PROFESORA"]);
   });
@@ -95,41 +141,55 @@ describe("POST /api/auth/google", () => {
     ["solo espacios", { id_token: "   " }],
     ["que no es texto", { id_token: 123 }],
   ])("responde 400 con un id_token %s", async (_caso, body) => {
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send(body);
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send(body);
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
-    expect(autenticacion.iniciarSesion).not.toHaveBeenCalled();
+    expect(gestionUsuarios.iniciarSesion).not.toHaveBeenCalled();
   });
 
   it("responde 401 si Google rechaza el id_token", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockRejectedValue(
-      new UnauthorizedError("Token de Google inválido"),
-    );
+    gestionUsuarios.iniciarSesion.mockRejectedValue(new UnauthorizedError("Token de Google inválido"));
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-falso" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-falso" });
 
     expect(response.status).toBe(401);
     expect(response.body.error).toEqual({ code: "UNAUTHORIZED", message: "Token de Google inválido" });
   });
 
   it("responde 403 USUARIO_NO_REGISTRADO si nadie lo dio de alta", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockRejectedValue(new UsuarioNoRegistradoError());
+    gestionUsuarios.iniciarSesion.mockRejectedValue(new UsuarioNoRegistradoError());
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe("USUARIO_NO_REGISTRADO");
   });
 
   it("responde 403 FORBIDDEN si el usuario está inactivo", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockRejectedValue(new ForbiddenError("Usuario inactivo"));
+    gestionUsuarios.iniciarSesion.mockRejectedValue(new ForbiddenError("Usuario inactivo"));
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(response.status).toBe(403);
     expect(response.body.error).toEqual({ code: "FORBIDDEN", message: "Usuario inactivo" });
@@ -137,12 +197,14 @@ describe("POST /api/auth/google", () => {
 
   it("responde 500 sin exponer el detalle si falla algo inesperado (ej. la base)", async () => {
     const consola = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(autenticacion.iniciarSesion).mockRejectedValue(
-      new Error("connect ECONNREFUSED 127.0.0.1:5432"),
-    );
+    gestionUsuarios.iniciarSesion.mockRejectedValue(new Error("connect ECONNREFUSED 127.0.0.1:5432"));
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    const response = await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    const response = await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(response.status).toBe(500);
     expect(response.body.error).toEqual({ code: "INTERNAL_ERROR", message: "Error interno del servidor" });
@@ -150,43 +212,119 @@ describe("POST /api/auth/google", () => {
   });
 
   it("el login no requiere un JWT previo", async () => {
-    vi.mocked(autenticacion.iniciarSesion).mockResolvedValue({ token: "jwt-fake", usuario });
+    gestionUsuarios.iniciarSesion.mockResolvedValue({ token: "jwt-fake", usuario, permisos: [] });
 
-    const app = createApp({ usuarioService: usuarioServiceStub, autenticacion });
-    await request(app).post("/api/auth/google").send({ id_token: "token-valido" });
+    const app = createApp({
+      gestionUsuarios: gestionUsuariosStub,
+      autenticacion,
+      autorizacion: autorizacionStub,
+    });
+    await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
     expect(autenticacion.verificarToken).not.toHaveBeenCalled();
   });
 });
 
+describe("sesión activa", () => {
+  const jwtService = new JwtService("test-secret", "1h");
+  let autenticacion: IAutenticacion;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(() => {
+    autenticacion = {
+      verificarToken: (token: string) => jwtService.verificar(token),
+      iniciarSesion: vi.fn(),
+      obtenerPerfil: vi.fn(),
+    };
+    app = createApp({ gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub });
+  });
+
+  function token() {
+    return `Bearer ${jwtService.emitir(usuario)}`;
+  }
+
+  describe("GET /api/v1/auth/me", () => {
+    it("responde 200 con el usuario, sus roles y sus permisos efectivos", async () => {
+      gestionUsuarios.obtenerPerfil.mockResolvedValue({ usuario, permisos: ["RUTINAS_VER"] });
+
+      const response = await request(app).get("/api/v1/auth/me").set("Authorization", token());
+
+      expect(response.status).toBe(200);
+      expect(response.body.usuario.email).toBe("test@example.com");
+      expect(response.body.roles).toEqual(["ALUMNO"]);
+      expect(response.body.permisos).toEqual(["RUTINAS_VER"]);
+      expect(response.body.token).toBeUndefined();
+      expect(gestionUsuarios.obtenerPerfil).toHaveBeenCalledWith(1);
+    });
+
+    it("responde 401 sin token", async () => {
+      const response = await request(app).get("/api/v1/auth/me");
+
+      expect(response.status).toBe(401);
+      expect(gestionUsuarios.obtenerPerfil).not.toHaveBeenCalled();
+    });
+
+    it("responde 401 con un token vencido", async () => {
+      const vencido = new JwtService("test-secret", "-1s").emitir(usuario);
+
+      const response = await request(app).get("/api/v1/auth/me").set("Authorization", `Bearer ${vencido}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it("responde 403 si el usuario fue dado de baja después del login", async () => {
+      gestionUsuarios.obtenerPerfil.mockRejectedValue(new ForbiddenError("Usuario inactivo"));
+
+      const response = await request(app).get("/api/v1/auth/me").set("Authorization", token());
+
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe("POST /api/v1/auth/logout", () => {
+    it("responde 200 con la sesión iniciada", async () => {
+      const response = await request(app).post("/api/v1/auth/logout").set("Authorization", token());
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ mensaje: "Sesión cerrada correctamente" });
+    });
+
+    it("responde 401 sin token", async () => {
+      const response = await request(app).post("/api/v1/auth/logout");
+
+      expect(response.status).toBe(401);
+    });
+  });
+});
+
 describe("rutas generales de la app", () => {
-  const autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn() };
+  const autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
 
   it("GET /health responde 200", async () => {
-    const response = await request(createApp({ usuarioService: usuarioServiceStub, autenticacion })).get(
-      "/health",
-    );
+    const response = await request(
+      createApp({ gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub }),
+    ).get("/health");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: "ok" });
   });
 
   it("una ruta inexistente responde 404 NOT_FOUND", async () => {
-    const response = await request(createApp({ usuarioService: usuarioServiceStub, autenticacion })).get(
-      "/api/no-existe",
-    );
+    const response = await request(
+      createApp({ gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub }),
+    ).get("/api/v1/no-existe");
 
     expect(response.status).toBe(404);
     expect(response.body.error).toEqual({
       code: "NOT_FOUND",
-      message: "Ruta GET /api/no-existe no encontrada",
+      message: "Ruta GET /api/v1/no-existe no encontrada",
     });
   });
 
-  it("GET /api/auth/google no existe (solo POST)", async () => {
-    const response = await request(createApp({ usuarioService: usuarioServiceStub, autenticacion })).get(
-      "/api/auth/google",
-    );
+  it("GET /api/v1/auth/google no existe (solo POST)", async () => {
+    const response = await request(
+      createApp({ gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub }),
+    ).get("/api/v1/auth/google");
 
     expect(response.status).toBe(404);
   });

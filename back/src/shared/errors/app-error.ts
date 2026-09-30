@@ -41,6 +41,26 @@ export class UsuarioNoRegistradoError extends AppError {
   }
 }
 
+export class PermisoCriticoInmutableError extends AppError {
+  constructor(codigoPermiso: string) {
+    super(
+      400,
+      `El permiso ${codigoPermiso} es crítico y no se le puede quitar a la propietaria`,
+      "PERMISO_CRITICO_INMUTABLE",
+    );
+  }
+}
+
+export class PermisoExclusivoPropietariaError extends AppError {
+  constructor(codigoPermiso: string) {
+    super(
+      400,
+      `El permiso ${codigoPermiso} es exclusivo de la propietaria y no se puede otorgar a otro rol`,
+      "PERMISO_EXCLUSIVO_PROPIETARIA",
+    );
+  }
+}
+
 export class ValidationError extends AppError {
   constructor(
     message = "Datos inválidos",

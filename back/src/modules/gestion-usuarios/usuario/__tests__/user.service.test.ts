@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
 import { UsuarioService } from "../user.service.js";
-import type { IAutorizacion } from "../../permiso/interface/i-autorizacion.js";
+import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
 import type { UsuarioRepository } from "../user.repository.js";
 import type { UsuarioConRoles } from "../user.types.js";
 

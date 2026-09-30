@@ -1,15 +1,18 @@
 import cors from "cors";
-import express, { type Express } from "express";
+import express, { Router, type Express } from "express";
+import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
+import { createRolRoutes } from "./modules/gestion-usuarios/rol/rol.routes.js";
 import { createSesionRoutes } from "./modules/gestion-usuarios/sesion/sesion.routes.js";
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
-import type { ILogicaUsuarios } from "./modules/gestion-usuarios/usuario/interface/i-logica-usuarios.js";
+import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
 import { createUserRoutes } from "./modules/gestion-usuarios/usuario/user.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
 
 export interface AppDependencies {
-  usuarioService: ILogicaUsuarios;
+  gestionUsuarios: ILogicaUsuarios;
   autenticacion: IAutenticacion;
+  autorizacion: IAutorizacion;
 }
 
 export function createApp(deps: AppDependencies): Express {
@@ -20,8 +23,13 @@ export function createApp(deps: AppDependencies): Express {
   app.use(requestLogger);
 
   app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
-  app.use("/api/auth", createSesionRoutes(deps.autenticacion));
-  app.use("/api/usuarios", createUserRoutes(deps.usuarioService, deps.autenticacion));
+
+  // Prefijo versionado del SDD: un cambio incompatible de contrato se publica como /api/v2.
+  const api = Router();
+  api.use("/auth", createSesionRoutes(deps.gestionUsuarios, deps.autenticacion));
+  api.use("/usuarios", createUserRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
+  api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
+  app.use("/api/v1", api);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

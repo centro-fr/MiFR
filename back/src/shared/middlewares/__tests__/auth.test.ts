@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextFunction, Request, Response } from "express";
 import { ForbiddenError, UnauthorizedError } from "../../errors/app-error.js";
-import { requiereRol, requiereSesion } from "../auth.js";
+import { requierePermiso, requiereRol, requiereSesion } from "../auth.js";
+import type { IAutorizacion } from "../../../modules/gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../../modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 
 function crearRequest(cambios: Partial<Request> = {}): Request {
@@ -18,6 +19,7 @@ describe("requiereSesion", () => {
     autenticacion = {
       verificarToken: vi.fn().mockReturnValue({ usuarioId: 1, roles: ["PROPIETARIA"] }),
       iniciarSesion: vi.fn(),
+      obtenerPerfil: vi.fn(),
     };
     next = vi.fn();
   });
@@ -105,5 +107,53 @@ describe("requiereRol", () => {
 
   it("requiereRol lanza UnauthorizedError si no pasó antes por requiereSesion", () => {
     expect(() => requiereRol("PROPIETARIA")(crearRequest(), res, next)).toThrow(UnauthorizedError);
+  });
+});
+
+describe("requierePermiso", () => {
+  let autorizacion: { tienePermiso: ReturnType<typeof vi.fn> };
+  let next: NextFunction;
+
+  function middleware() {
+    return requierePermiso(autorizacion as unknown as IAutorizacion, "ACTIVIDADES_EDITAR");
+  }
+
+  beforeEach(() => {
+    autorizacion = { tienePermiso: vi.fn() };
+    next = vi.fn();
+  });
+
+  it("requierePermiso consulta el permiso con el id del usuario de la sesión y deja pasar", async () => {
+    autorizacion.tienePermiso.mockResolvedValue(true);
+    const req = crearRequest({ usuario: { id_usuario: 7, roles: ["PROFESORA"] } });
+
+    middleware()(req, res, next);
+
+    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(undefined));
+    expect(autorizacion.tienePermiso).toHaveBeenCalledWith(7, "ACTIVIDADES_EDITAR");
+  });
+
+  it("requierePermiso pasa un ForbiddenError si ninguno de sus roles otorga el permiso", async () => {
+    autorizacion.tienePermiso.mockResolvedValue(false);
+    const req = crearRequest({ usuario: { id_usuario: 7, roles: ["ALUMNO"] } });
+
+    middleware()(req, res, next);
+
+    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError)));
+  });
+
+  it("requierePermiso pasa el error al manejador si falla la consulta", async () => {
+    const falla = new Error("connect ECONNREFUSED");
+    autorizacion.tienePermiso.mockRejectedValue(falla);
+    const req = crearRequest({ usuario: { id_usuario: 7, roles: ["PROPIETARIA"] } });
+
+    middleware()(req, res, next);
+
+    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(falla));
+  });
+
+  it("requierePermiso lanza UnauthorizedError si no pasó antes por requiereSesion", () => {
+    expect(() => middleware()(crearRequest(), res, next)).toThrow(UnauthorizedError);
+    expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
   });
 });
