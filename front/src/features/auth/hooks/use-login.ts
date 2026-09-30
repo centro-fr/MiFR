@@ -7,13 +7,20 @@ interface LoginVariables {
   idToken: string;
 }
 
+function readErrorCode(error: unknown): string | undefined {
+  if (!isAxiosError(error)) return undefined;
+  const data = error.response?.data as { error?: { code?: string }; codigo?: string } | undefined;
+  // Contrato real del back: { error: { code } }. Se mantiene "codigo" por compatibilidad con mocks viejos.
+  return data?.error?.code ?? data?.codigo;
+}
+
 function mapLoginError(error: unknown): AuthErrorCode {
   if (isAxiosError(error)) {
     if (!error.response) return "RED_ERROR";
-    const codigo = error.response.data?.codigo as string | undefined;
-    if (codigo === "ACCESO_NO_HABILITADO") return "ACCESO_NO_HABILITADO";
-    if (codigo === "USUARIO_INACTIVO") return "USUARIO_INACTIVO";
-    if (codigo === "INVALID_GOOGLE_TOKEN") return "INVALID_GOOGLE_TOKEN";
+    const codigo = readErrorCode(error);
+    if (codigo === "USUARIO_NO_REGISTRADO" || codigo === "ACCESO_NO_HABILITADO") return "ACCESO_NO_HABILITADO";
+    if (codigo === "FORBIDDEN" || codigo === "USUARIO_INACTIVO") return "USUARIO_INACTIVO";
+    if (codigo === "UNAUTHORIZED" || codigo === "INVALID_GOOGLE_TOKEN") return "INVALID_GOOGLE_TOKEN";
     if (error.response.status >= 500) return "RED_ERROR";
     return "RED_ERROR";
   }

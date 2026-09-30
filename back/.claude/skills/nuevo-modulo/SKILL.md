@@ -21,7 +21,7 @@ En `src/modules/<subsistema>/<componente>/`:
 
 | Archivo | Contenido |
 | --- | --- |
-| `interface/i-logica-<componente>s.ts` | La interfaz con el nombre del diagrama, con un comentario arriba que la vincule al componente y aclare qué queda afuera |
+| `interface/i-*.ts` | La interfaz que el diagrama le asigna al componente, con un comentario arriba que la vincule y aclare qué queda afuera. Las `ILogica*` son del subsistema: van en `<subsistema>/interface/` y las realiza `<subsistema>/<subsistema>.service.ts` |
 | `<x>.types.ts` | Re-exporta los tipos de Prisma con nombres de dominio |
 | `<x>.schemas.ts` | Esquemas Zod de entrada, con los tipos inferidos exportados |
 | `<x>.repository.ts` | Clase con métodos en español; único lugar que importa `prisma` |
@@ -32,7 +32,7 @@ En `src/modules/<subsistema>/<componente>/`:
 
 Después, el cableado:
 
-- En `app.ts`: agregar la dependencia a `AppDependencies` tipada contra la interfaz, y montar el router con `app.use("/api/<recurso>", create<X>Routes(...))`.
+- En `app.ts`: agregar la dependencia a `AppDependencies` tipada contra la interfaz, y montar el router en el router versionado con `api.use("/<recurso>", create<X>Routes(...))`, que queda bajo `/api/v1`.
 - En `index.ts`: instanciar el repositorio y el service, y pasarlos a `createApp`.
 
 ## Reglas a respetar

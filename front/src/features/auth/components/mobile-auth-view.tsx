@@ -1,8 +1,7 @@
+import type { ReactNode } from "react";
 import { AuthStateBanner } from "@/features/auth/components/auth-state-banner";
 import { GoogleAuthButton } from "@/features/auth/components/google-auth-button";
-import { TermsFooter } from "@/features/auth/components/terms-footer";
 import type { AuthErrorCode } from "@/types/auth";
-import { cn } from "@/utils/cn";
 
 interface MobileAuthViewProps {
   errorCode: AuthErrorCode | null;
@@ -11,97 +10,88 @@ interface MobileAuthViewProps {
   onRetry: () => void;
   onContact: () => void;
   onOpenLegal: (type: "terms" | "privacy") => void;
+  overlay?: ReactNode;
 }
 
-const STATUS_BADGES: Record<string, { label: string; classes: string }> = {
-  default: { label: "Acceso", classes: "bg-rose-50 text-primary" },
-  loading: { label: "Validando", classes: "bg-blue-50 text-blue-600" },
-  access: { label: "Sin Acceso", classes: "bg-rose-50 text-rose-600" },
-  error: { label: "Error", classes: "bg-amber-50 text-amber-700" },
-};
-
-export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onContact, onOpenLegal }: MobileAuthViewProps) {
+// Réplica fiel de Stitch 5188 — Mobile 390px: header mínimo, logo centrado,
+// botón Google 54px, banners ámbar/rosa, sin footers extensos.
+export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onContact, onOpenLegal, overlay }: MobileAuthViewProps) {
   const isAccessDenied = errorCode === "ACCESO_NO_HABILITADO" || errorCode === "USUARIO_INACTIVO";
-  const status = isLoading ? "loading" : isAccessDenied ? "access" : errorCode ? "error" : "default";
-  const badge = STATUS_BADGES[status];
+  const showRetry = errorCode !== null && !isLoading;
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-bg-light">
-      <div className="flex items-center justify-between border-b border-slate-100 px-6 pb-3 pt-4">
-        <div className="flex items-center gap-2">
+    <div className="flex min-h-dvh w-full flex-col bg-white">
+      {/* Header mínimo público: solo logo (Stitch) */}
+      <header className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
+        <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-primary-dark text-[10px] font-black text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-dark to-primary text-xs font-extrabold tracking-wider text-white shadow-sm"
           >
             FR
           </span>
-          <span className="text-sm font-extrabold text-dark">MiFR</span>
+          <span className="text-sm font-extrabold tracking-tight text-dark">MiFR</span>
         </div>
-        <span className={cn("rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", badge.classes)}>
-          {badge.label}
-        </span>
-      </div>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Acceso</span>
+      </header>
 
-      <div className="flex flex-1 flex-col justify-between px-6 py-6">
-        <div className="flex flex-col items-center pt-6 text-center">
-          <div className="relative mb-5">
-            <div aria-hidden="true" className="absolute inset-0 rounded-3xl bg-primary opacity-40 blur-lg" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/30 bg-gradient-to-tr from-primary via-[#d81673] to-primary-dark text-2xl font-black tracking-tight text-white shadow-xl">
-              MiFR
-            </div>
+      {/* Contenido central */}
+      <div className="flex flex-1 flex-col justify-center px-6 py-8">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-[#FF4D9E] text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50">
+            FR
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-dark">MiFR</h1>
-          <p className="mt-1 text-[11px] font-extrabold uppercase tracking-widest text-primary">Centro de Entrenamiento</p>
-          <p aria-live="polite" className="mt-2.5 max-w-[280px] text-sm leading-relaxed text-slate-500">
-            {isLoading
-              ? "Verificando credenciales seguras con Google Identity Services..."
-              : "Tu espacio para seguir entrenamientos, clases y tu progreso diario."}
+          <h1 className="text-2xl font-extrabold tracking-tight text-dark">MiFR</h1>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Centro de Entrenamiento FR
           </p>
         </div>
 
-        <div className="my-auto space-y-4 py-6">
-          {errorCode && !isLoading && <AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} />}
+        <div className="mx-auto mt-8 w-full max-w-[342px]">
+          {errorCode && !isLoading && <div className="mb-4"><AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} /></div>}
           <GoogleAuthButton
             isLoading={isLoading}
             onLogin={onLogin}
             onRetry={onRetry}
             hasError={errorCode !== null}
             isConnectionError={!isAccessDenied}
+            overlay={overlay}
           />
-          {!errorCode && !isLoading && (
-            <>
-              <p className="text-center text-[14px] text-slate-500">Usá tu cuenta de Google</p>
-              <p className="flex items-center justify-center gap-2 pt-3 text-xs text-slate-400">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500" />
-                Conexión segura SSL
-              </p>
-            </>
-          )}
-          {isLoading && (
-            <>
-              <p className="flex items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 p-2.5 text-xs text-primary-dark">
-                <span aria-hidden="true" className="h-2 w-2 animate-ping rounded-full bg-primary" />
-                <span className="font-medium">Autenticando usuario...</span>
-              </p>
-              <p className="text-center text-[14px] text-slate-400">Por favor espere unos segundos...</p>
-            </>
+          <p className="mt-4 text-center text-xs font-medium text-slate-400">
+            {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
+          </p>
+          {showRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 min-h-[44px] w-full text-center text-xs font-semibold text-slate-600 hover:text-dark"
+            >
+              ← Cancelar y volver al inicio
+            </button>
           )}
           {isAccessDenied && !isLoading && (
-            <p className="pt-2 text-center">
-              <span className="text-xs text-slate-500">¿Sos nuevo en el centro? </span>
-              <button
-                type="button"
-                onClick={onContact}
-                className="mt-1 block min-h-[44px] w-full text-[13px] font-bold text-primary underline decoration-primary/40 hover:text-primary-dark"
-              >
-                Contactar administración MiFR
-              </button>
-            </p>
+            <button
+              type="button"
+              onClick={onContact}
+              className="mt-2 min-h-[44px] w-full text-center text-xs font-bold text-primary-dark hover:text-primary"
+            >
+              Contactar administración para solicitar acceso
+            </button>
           )}
         </div>
-
-        <TermsFooter onOpenLegal={onOpenLegal} variant="mobile" />
       </div>
+
+      {/* Home indicator + legal mínimo (una línea, Stitch: sin footers extensos) */}
+      <div className="flex justify-center bg-white pb-3">
+        <div aria-hidden="true" className="h-1 w-32 rounded-full bg-slate-300" />
+      </div>
+      <footer className="border-t border-slate-100 px-6 py-3 text-center">
+        <p className="text-[11px] text-slate-400">
+          <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-600">Términos</button>
+          {" · "}
+          <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-600">Privacidad</button>
+        </p>
+      </footer>
     </div>
   );
 }

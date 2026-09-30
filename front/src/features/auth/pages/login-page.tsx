@@ -1,10 +1,12 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { toast } from "sonner";
 import { ContactModal } from "@/components/modals/contact-modal";
 import { LegalModal } from "@/components/modals/legal-modal";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
+import { GisOfficialOverlay } from "@/features/auth/components/gis-official-overlay";
 import { LoginHero } from "@/features/auth/components/login-hero";
 import { MobileAuthView } from "@/features/auth/components/mobile-auth-view";
 import { mapLoginError, useLogin } from "@/features/auth/hooks/use-login";
@@ -57,9 +59,9 @@ function useLoginFlow() {
 
 type Flow = ReturnType<typeof useLoginFlow>;
 
-function LoginLayout({ flow, onLogin }: { flow: Flow; onLogin: () => void }) {
+function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => void; overlay?: ReactNode }) {
   return (
-    <main className="min-h-dvh bg-canvas">
+    <main className="h-dvh w-full overflow-x-clip bg-canvas">
       <div className="lg:hidden">
         <MobileAuthView
           errorCode={flow.errorCode}
@@ -68,11 +70,12 @@ function LoginLayout({ flow, onLogin }: { flow: Flow; onLogin: () => void }) {
           onRetry={onLogin}
           onContact={() => flow.setIsContactOpen(true)}
           onOpenLegal={(type) => flow.setLegalType(type)}
+          overlay={overlay}
         />
       </div>
 
-      <div className="mx-auto hidden max-w-[1440px] lg:block lg:px-6 lg:py-8">
-        <div className="flex min-h-[760px] overflow-hidden rounded-3xl border border-white/10 bg-dark shadow-2xl">
+      <div className="hidden h-dvh w-full lg:block">
+        <div className="flex h-full w-full bg-white">
           <LoginHero />
           <DesktopAuthPanel
             errorCode={flow.errorCode}
@@ -81,6 +84,7 @@ function LoginLayout({ flow, onLogin }: { flow: Flow; onLogin: () => void }) {
             onRetry={onLogin}
             onContact={() => flow.setIsContactOpen(true)}
             onOpenLegal={(type) => flow.setLegalType(type)}
+            overlay={overlay}
           />
         </div>
       </div>
@@ -98,12 +102,15 @@ function MockLoginPage() {
 
 function GoogleLoginInner() {
   const flow = useLoginFlow();
-  const googleLogin = useGoogleLogin({
-    flow: "implicit",
-    onSuccess: (response) => void flow.startLogin(() => Promise.resolve(response.access_token)),
-    onError: () => flow.cancelLogin(),
-  });
-  return <LoginLayout flow={flow} onLogin={() => googleLogin()} />;
+  // La credencial (ID token JWT) la emite el botón oficial de GIS, montado
+  // invisible sobre nuestro botón Stitch. El back la verifica con verifyIdToken.
+  const overlay = (
+    <GisOfficialOverlay
+      onCredential={(credential) => void flow.startLogin(() => Promise.resolve(credential))}
+      onError={() => flow.cancelLogin()}
+    />
+  );
+  return <LoginLayout flow={flow} onLogin={() => undefined} overlay={overlay} />;
 }
 
 export function LoginPage() {

@@ -1,6 +1,0 @@
-{
-  "name": "MiFR - Centro de Entrenamiento",
-  "description": "Portal de acceso y autenticación para MiFR Athletic Hub con vistas interactivas Desktop (1440px) y Mobile (390px) en 4 estados.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

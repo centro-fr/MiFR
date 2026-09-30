@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getMe, postGoogleLogin, postLogout } from "@/features/auth/api/auth-api";
+import { clearSessionToken } from "@/features/auth/api/session-token";
 import { AuthContext } from "@/features/auth/hooks/auth-context";
 import type { AuthContextValue } from "@/features/auth/hooks/auth-context";
 import type { AuthUser } from "@/types/auth";
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await postLogout();
     } finally {
+      clearSessionToken();
       setUser(null);
       queryClient.clear();
     }

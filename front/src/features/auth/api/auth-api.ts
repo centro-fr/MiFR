@@ -1,15 +1,18 @@
 import { apiClient } from "@/api/client";
-import { authResponseSchema } from "@/features/auth/schemas/auth";
-import type { AuthResponse } from "@/types/auth";
+import { normalizeSession } from "@/features/auth/schemas/auth";
+import { setSessionToken } from "@/features/auth/api/session-token";
+import type { AuthResponse, AuthUser } from "@/types/auth";
 
 export async function postGoogleLogin(idToken: string): Promise<AuthResponse> {
-  const { data } = await apiClient.post("/auth/google", { idToken });
-  return authResponseSchema.parse(data);
+  const { data } = await apiClient.post("/auth/google", { id_token: idToken });
+  const session = normalizeSession(data);
+  setSessionToken(session.token);
+  return session;
 }
 
-export async function getMe(): Promise<AuthResponse["usuario"]> {
+export async function getMe(): Promise<AuthUser> {
   const { data } = await apiClient.get("/auth/me");
-  return authResponseSchema.shape.usuario.parse(data.usuario ?? data);
+  return normalizeSession(data).usuario;
 }
 
 export async function postLogout(): Promise<void> {

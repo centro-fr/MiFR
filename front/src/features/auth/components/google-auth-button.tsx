@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { RotateCw } from "lucide-react";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -9,12 +10,15 @@ interface GoogleAuthButtonProps {
   onRetry: () => void;
   hasError: boolean;
   isConnectionError: boolean;
+  // Overlay del botón oficial de GIS (modo real): va encima del botón custom
+  // para abrir el popup de Google manteniendo el diseño Stitch.
+  overlay?: ReactNode;
 }
 
 const BASE_CLASSES =
-  "flex min-h-[48px] h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-full border px-6 text-sm font-semibold transition-all duration-200 min-[390px]:min-h-[52px] min-[390px]:h-[52px] min-[390px]:text-[15px]";
+  "flex h-[60px] min-h-[56px] w-full cursor-pointer items-center justify-center gap-3.5 rounded-2xl border px-8 text-base font-semibold transition-all duration-200";
 
-export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConnectionError }: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConnectionError, overlay }: GoogleAuthButtonProps) {
   if (isLoading) {
     return (
       <div
@@ -39,13 +43,16 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
   }
 
   return (
-    <button
-      type="button"
-      onClick={hasError ? onRetry : onLogin}
-      className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30")}
-    >
-      <GoogleIcon className="h-5 w-5 shrink-0" />
-      <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
-    </button>
+    <span className="relative block w-full">
+      <button
+        type="button"
+        onClick={hasError ? onRetry : onLogin}
+        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30")}
+      >
+        <GoogleIcon className="h-5 w-5 shrink-0" />
+        <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
+      </button>
+      {!isLoading && overlay}
+    </span>
   );
 }

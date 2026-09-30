@@ -1,82 +1,105 @@
 import { http, HttpResponse, delay } from "msw";
-import type { AuthUser } from "@/types/auth";
+import type { AuthUser, RoleCode } from "@/types/auth";
 
-const mockUsers: Record<string, AuthUser> = {
+// Mock alineado al contrato real del back (módulo sesion):
+// POST /auth/google { id_token } → { token, usuario, roles, permisos }
+// GET  /auth/me (Bearer)          → { usuario, roles, permisos }
+// Errores: { error: { code, message } }
+
+interface MockProfile {
+  usuario: AuthUser & { estado: string };
+}
+
+const MOCK_JWT = "mock-jwt-token";
+
+const mockUsers: Record<string, MockProfile> = {
   "laura.propietaria@gmail.com": {
-    id_usuario: 1,
-    email: "laura.propietaria@gmail.com",
-    nombre: "Laura",
-    apellido: "Gómez",
-    roles: ["PROPIETARIA", "PROFESORA"],
-    permisos: ["seguridad.matriz.ver", "clases.asistencia.marcar"],
+    usuario: {
+      id_usuario: 1,
+      email: "laura.propietaria@gmail.com",
+      nombre: "Laura",
+      apellido: "Gómez",
+      estado: "ACTIVO",
+      roles: ["PROPIETARIA", "PROFESORA"] as RoleCode[],
+      permisos: ["seguridad.matriz.ver", "clases.asistencia.marcar"],
+    },
   },
   "maria.profesora@gmail.com": {
-    id_usuario: 2,
-    email: "maria.profesora@gmail.com",
-    nombre: "María",
-    apellido: "Pérez",
-    roles: ["PROFESORA"],
-    permisos: ["clases.asistencia.marcar"],
+    usuario: {
+      id_usuario: 2,
+      email: "maria.profesora@gmail.com",
+      nombre: "María",
+      apellido: "Pérez",
+      estado: "ACTIVO",
+      roles: ["PROFESORA"] as RoleCode[],
+      permisos: ["clases.asistencia.marcar"],
+    },
   },
   "juan.alumno@gmail.com": {
-    id_usuario: 3,
-    email: "juan.alumno@gmail.com",
-    nombre: "Juan",
-    apellido: "López",
-    roles: ["ALUMNO"],
-    permisos: ["rutinas.ver"],
+    usuario: {
+      id_usuario: 3,
+      email: "juan.alumno@gmail.com",
+      nombre: "Juan",
+      apellido: "López",
+      estado: "ACTIVO",
+      roles: ["ALUMNO"] as RoleCode[],
+      permisos: ["rutinas.ver"],
+    },
   },
 };
 
-let currentUser: AuthUser | null = null;
+let currentUser: MockProfile | null = null;
 
-function resolveUserFromToken(idToken: string | undefined): AuthUser | null {
-  if (!idToken || idToken === "mock-google-id-token") return mockUsers["laura.propietaria@gmail.com"];
-  if (idToken === "mock-no-registrado") return null;
-  if (idToken === "mock-inactivo") {
-    return {
-      id_usuario: 99,
-      email: "inactivo@gmail.com",
-      nombre: "Inactivo",
-      apellido: "Test",
-      roles: ["ALUMNO"],
-      permisos: [],
-    };
-  }
-  return mockUsers["laura.propietaria@gmail.com"];
+function sessionPayload(profile: MockProfile) {
+  const usuario = profile.usuario;
+  return { token: MOCK_JWT, usuario, roles: usuario.roles, permisos: usuario.permisos };
 }
 
 export const authHandlers = [
   http.post("*/auth/google", async ({ request }) => {
     await delay(800);
-    const body = (await request.json()) as { idToken?: string };
-    const user = resolveUserFromToken(body.idToken);
+    const body = (await request.json()) as { id_token?: string; idToken?: string };
+    const idToken = body.id_token ?? body.idToken;
 
-    if (body.idToken === "mock-inactivo") {
+    if (idToken === "mock-inactivo") {
       return HttpResponse.json(
-        { codigo: "USUARIO_INACTIVO", mensaje: "Su cuenta se encuentra inactiva o dada de baja." },
+        { error: { code: "FORBIDDEN", message: "Usuario inactivo" } },
         { status: 403 },
       );
     }
-    if (!user) {
+    if (idToken === "mock-invalido" || !idToken) {
+      return HttpResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Token de Google inválido" } },
+        { status: 401 },
+      );
+    }
+    if (idToken === "mock-no-registrado") {
       return HttpResponse.json(
         {
-          codigo: "ACCESO_NO_HABILITADO",
-          mensaje: "El correo ingresado no se encuentra habilitado en el sistema. Contacte a la administración.",
+          error: {
+            code: "USUARIO_NO_REGISTRADO",
+            message: "El correo ingresado no se encuentra habilitado en el sistema. Contacte a la administración.",
+          },
         },
         { status: 403 },
       );
     }
-    currentUser = user;
-    return HttpResponse.json({ token: "mock-jwt-token", usuario: user }, { status: 200 });
+    currentUser = mockUsers["laura.propietaria@gmail.com"];
+    return HttpResponse.json(sessionPayload(currentUser), { status: 200 });
   }),
 
-  http.get("*/auth/me", async () => {
+  http.get("*/auth/me", async ({ request }) => {
     await delay(300);
-    if (!currentUser) {
-      return HttpResponse.json({ codigo: "NO_AUTENTICADO", mensaje: "Sin sesión activa." }, { status: 401 });
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${MOCK_JWT}` || !currentUser) {
+      return HttpResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Sin sesión activa." } },
+        { status: 401 },
+      );
     }
-    return HttpResponse.json({ usuario: currentUser }, { status: 200 });
+    const payload = sessionPayload(currentUser);
+    const perfil = { usuario: payload.usuario, roles: payload.roles, permisos: payload.permisos };
+    return HttpResponse.json(perfil, { status: 200 });
   }),
 
   http.post("*/auth/logout", async () => {

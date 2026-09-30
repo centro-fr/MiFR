@@ -1,9 +1,10 @@
 interface TermsFooterProps {
   onOpenLegal: (type: "terms" | "privacy") => void;
+  onContact?: () => void;
   variant?: "desktop" | "mobile";
 }
 
-export function TermsFooter({ onOpenLegal, variant = "desktop" }: TermsFooterProps) {
+export function TermsFooter({ onOpenLegal, onContact, variant = "desktop" }: TermsFooterProps) {
   if (variant === "mobile") {
     return (
       <footer className="border-t border-slate-100 pt-4 text-center">
@@ -12,7 +13,16 @@ export function TermsFooter({ onOpenLegal, variant = "desktop" }: TermsFooterPro
           <FooterLink label="Términos" onClick={() => onOpenLegal("terms")} /> y{" "}
           <FooterLink label="Política de Privacidad" onClick={() => onOpenLegal("privacy")} />.
         </p>
-        <div aria-hidden="true" className="mx-auto mt-4 h-1 w-32 rounded-full bg-slate-300" />
+        {onContact && (
+          <button
+            type="button"
+            onClick={onContact}
+            className="mt-1 min-h-[44px] text-[13px] font-semibold text-primary-dark hover:text-primary"
+          >
+            Contactar administración
+          </button>
+        )}
+        <div aria-hidden="true" className="mx-auto mt-2 h-1 w-32 rounded-full bg-slate-300" />
       </footer>
     );
   }
