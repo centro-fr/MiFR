@@ -1,18 +1,22 @@
 # US-17 – Aprobación o rechazo de transferencias
 
 ## 1. Información general
+
 - **Épica:** Pagos y Cuotas
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 3
 
 ## 2. Objetivo
+
 Permitir a la propietaria verificar y aprobar o rechazar las transferencias informadas por los alumnos, en un plazo de 24 horas, para validar los ingresos y actualizar el estado de los alumnos.
 
 ## 3. Descripción
+
 Como propietaria, quiero verificar y aprobar o rechazar las transferencias bancarias informadas por los alumnos, en un plazo de 24 horas, para validar los ingresos de dinero y actualizar el estado de los alumnos.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando transferencias pendientes)
 - [ ] Listado de transferencias pendientes de verificación
 - [ ] Detalle de una transferencia
@@ -24,7 +28,9 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - [ ] Empty (no hay transferencias pendientes)
 
 ## 5. Datos que necesita
-### Datos que muestra (listado):
+
+### Datos que muestra (listado)
+
 - Alumno (nombre y apellido)
 - Plan asociado
 - Monto de la transferencia
@@ -34,19 +40,23 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - Tipo de pago: primera cuota / renovación / cuota vencida
 - Estado: `pendiente` / `aprobada` / `rechazada`
 
-### Datos del detalle:
+### Datos del detalle
+
 - Todos los datos del listado
 - Observaciones del alumno (si las hubiera)
 - Historial del alumno (pagos previos, estado de cuota)
 - Promoción aplicada (si corresponde)
 
-### Datos que se cargan al rechazar:
+### Datos que se cargan al rechazar
+
 - Motivo del rechazo (obligatorio, texto)
 
-### Datos que NO se muestran:
+### Datos que NO se muestran
+
 - Comprobante adjunto (no aplica)
 
 ## 6. Acciones del usuario
+
 - Ver el listado de transferencias pendientes
 - Abrir el detalle de una transferencia
 - Verificar el ingreso del dinero en su extracto bancario (fuera del sistema)
@@ -56,6 +66,7 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - Ordenar por antigüedad (para priorizar las que están por vencer las 24hs)
 
 ## 7. Reglas de negocio
+
 - La propietaria debe verificar y aprobar o rechazar cada transferencia **dentro de las 24 horas** desde la carga.
 - La propietaria **verifica el ingreso del dinero en su cuenta bancaria** (extracto, homebanking) antes de aprobar.
 - Al **aprobarse**, el estado de cuota del alumno se actualiza automáticamente (pasa a "al día").
@@ -70,6 +81,7 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - **No se registra ni se muestra comprobante.** La verificación del ingreso es responsabilidad de la propietaria contra su extracto bancario.
 
 ## 8. Criterios de aceptación
+
 - [ ] Aprobación de una transferencia pendiente → el alumno pasa a "al día"
 - [ ] Aprobación de una transferencia de primera cuota → se dispara el alta definitiva del alumno
 - [ ] Rechazo de una transferencia → el alumno vuelve a estado "vencida" o "pendiente de pago"
@@ -80,6 +92,7 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - [ ] La propietaria puede verificar el ingreso sin necesidad de un comprobante adjunto
 
 ## 9. Casos borde / Errores
+
 - Monto distinto al esperado → advertir y requerir confirmación
 - Transferencia duplicada (mismo alumno, mismo monto, misma fecha) → advertir
 - Error al actualizar el estado del alumno → no confirmar la aprobación hasta que se complete
@@ -89,6 +102,7 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - Transferencia que no se encuentra en el extracto bancario → rechazar con motivo "No se encontró la transferencia en el extracto"
 
 ## 10. Dependencias
+
 - US-11, US-12, US-13 (plan, precio vigente y promoción)
 - US-16 (informe de la transferencia por parte del alumno)
 - US-07 (alta definitiva, si es un alumno nuevo)
@@ -98,6 +112,7 @@ Como propietaria, quiero verificar y aprobar o rechazar las transferencias banca
 - Backend: endpoint de aprobación/rechazo + actualización de estado + notificación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

@@ -1,18 +1,22 @@
 # US-09 – Modificación de datos de alumno
 
 ## 1. Información general
+
 - **Épica:** Alumnos e Inscripciones
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria o Profesora
 - **Sprint sugerido:** Sprint 2
 
 ## 2. Objetivo
+
 Permitir modificar los datos personales, de contacto o de plan de un alumno ya registrado, para mantener su información actualizada sin afectar cuotas ya cobradas.
 
 ## 3. Descripción
+
 Como propietaria o profesora, quiero modificar los datos personales, de contacto o de plan de un alumno ya registrado, para mantener su información actualizada.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando ficha del alumno)
 - [ ] Ficha del alumno en modo lectura
 - [ ] Formulario de edición (campos habilitados)
@@ -23,7 +27,9 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - [ ] Confirmación al cambiar de plan (advertencia sobre cuotas ya cobradas)
 
 ## 5. Datos que necesita
-### Datos que muestra (ficha del alumno):
+
+### Datos que muestra (ficha del alumno)
+
 - Nombre completo
 - Fecha de nacimiento / edad
 - Teléfono de contacto
@@ -35,7 +41,8 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Estado (activo / pendiente / baja)
 - Peso y talla (si corresponde)
 
-### Datos que se pueden editar:
+### Datos que se pueden editar
+
 - Datos personales: nombre, fecha de nacimiento, teléfonos, email
 - Datos de contacto de emergencia
 - Datos del tutor (si es menor)
@@ -44,12 +51,14 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Peso y talla
 - Observaciones
 
-### Datos que NO se pueden editar:
+### Datos que NO se pueden editar
+
 - Cuotas ya cobradas (historial de pagos)
 - Historial de asistencia
 - Fecha de alta original
 
 ## 6. Acciones del usuario
+
 - Ver la ficha del alumno en modo lectura
 - Entrar en modo edición
 - Modificar datos personales
@@ -60,6 +69,7 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Cancelar edición
 
 ## 7. Reglas de negocio
+
 - Se deben poder editar los datos personales, de contacto y el plan asignado.
 - **No se debe permitir modificar cuotas ya cobradas** al cambiar de plan: las cuotas anteriores quedan intactas.
 - El cambio de plan aplica solo hacia adelante (a partir de la fecha de cambio o del próximo ciclo).
@@ -69,6 +79,7 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Todo cambio debe quedar registrado (fecha + usuario que lo modificó) para trazabilidad.
 
 ## 8. Criterios de aceptación
+
 - [ ] Modificación del teléfono de un alumno existente → se guarda correctamente
 - [ ] Cambio de plan de un alumno con cuotas ya pagas → las cuotas anteriores no se alteran
 - [ ] Cambio de plan cuando el nuevo plan no tiene cupo (personalizada) → falla con mensaje claro
@@ -77,6 +88,7 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - [ ] Historial de pagos y asistencia permanecen inmutables tras la edición
 
 ## 9. Casos borde / Errores
+
 - Cambio de plan a uno que ya no está vigente → no permitir
 - Cambio de plan con cuotas pendientes de pago → advertir
 - Editar fecha de nacimiento que cambie la condición de menor/mayor de edad → revisar si requiere tutor
@@ -85,6 +97,7 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Dos usuarios editando simultáneamente → mostrar conflicto (opcional para MVP)
 
 ## 10. Dependencias
+
 - US-05, US-06, US-07 (el alumno debe existir)
 - US-08 (baja lógica, para el manejo de estados)
 - US-10 (consulta y búsqueda, desde donde se accede a la ficha)
@@ -93,6 +106,7 @@ Como propietaria o profesora, quiero modificar los datos personales, de contacto
 - Backend: endpoint de actualización de alumno + validación de reglas de negocio
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

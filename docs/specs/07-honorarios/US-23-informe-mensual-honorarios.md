@@ -1,18 +1,22 @@
 # US-23 – Informe mensual automático de honorarios
 
 ## 1. Información general
+
 - **Épica:** Honorarios
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 4
 
 ## 2. Objetivo
+
 Generar automáticamente un informe mensual con los honorarios de cada profesora según sus alumnos a cargo, para agilizar la liquidación sin cálculos manuales.
 
 ## 3. Descripción
+
 Como propietaria, quiero generar un informe mensual automático con los honorarios de cada profesora según sus alumnos a cargo para agilizar la liquidación sin cálculos manuales.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando informe)
 - [ ] Selección de mes / período
 - [ ] Informe generado con detalle por profesora
@@ -23,7 +27,9 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - [ ] Empty (sin datos para el período seleccionado)
 
 ## 5. Datos que necesita
-### Datos que muestra (informe):
+
+### Datos que muestra (informe)
+
 - Período del informe (mes)
 - Total general de honorarios
 - Por profesora:
@@ -34,16 +40,19 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
   - Suplencias registradas (US-24) si aplica
   - Total a liquidar
 
-### Datos de configuración:
+### Datos de configuración
+
 - Valor del honorario por inscripto (configurable por la propietaria)
 - Reglas de cálculo (por inscripto, asista o no)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Informe mensual consolidado
 - Exportación a PDF / Excel
 - Historial de informes generados (opcional)
 
 ## 6. Acciones del usuario
+
 - Seleccionar el mes / período del informe
 - Ver el informe consolidado
 - Expandir el detalle por profesora
@@ -52,6 +61,7 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - (Opcional) Ajustar manualmente un honorario
 
 ## 7. Reglas de negocio
+
 - **Se cobra por inscripto, asista o no.**
 - El informe es **solo informativo** y **visible únicamente por la propietaria**.
 - Se calcula por período mensual (mes calendario o el período configurado).
@@ -65,6 +75,7 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - Los alumnos con clase suelta también se cuentan (según política).
 
 ## 8. Criterios de aceptación
+
 - [ ] Cálculo de honorarios de una profesora con alumnos inscriptos que faltaron → se cuentan igual
 - [ ] Acceso de una profesora al informe de honorarios → falla (acceso restringido)
 - [ ] El informe muestra el detalle por profesora y por alumno
@@ -74,6 +85,7 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - [ ] El informe refleja solo el período seleccionado
 
 ## 9. Casos borde / Errores
+
 - Profesora sin alumnos a cargo en el período → honorario cero
 - Alumno que cambió de profesora en el medio del mes → definir política (por defecto, se cuenta donde estuvo más tiempo)
 - Alumno que se dio de baja durante el mes → definir política (configurable)
@@ -82,6 +94,7 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - Error de red al cargar el informe
 
 ## 10. Dependencias
+
 - US-03, US-04 (actividades y horarios)
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para excluir alumnos dados de baja)
@@ -90,6 +103,7 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - Backend: job de cálculo mensual + endpoint de informe + exportación
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta (por el cálculo y las reglas de negocio)
 - Recomendación de UI:

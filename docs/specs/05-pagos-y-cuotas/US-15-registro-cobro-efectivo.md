@@ -1,18 +1,22 @@
 # US-15 – Registro de cobro en efectivo
 
 ## 1. Información general
+
 - **Épica:** Pagos y Cuotas
 - **Prioridad:** Alta
 - **Actor principal:** Profesora o Propietaria
 - **Sprint sugerido:** Sprint 3
 
 ## 2. Objetivo
+
 Permitir registrar el cobro de una cuota en efectivo, actualizando automáticamente el estado del alumno y generando el comprobante correspondiente.
 
 ## 3. Descripción
+
 Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo para actualizar el estado del alumno y generar el comprobante correspondiente.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando datos del alumno y cuota)
 - [ ] Formulario de registro de cobro
 - [ ] Confirmación del cobro
@@ -23,7 +27,9 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - [ ] Comprobante generado (vista / descarga)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Nombre del alumno
 - Plan actual
 - Estado de cuota actual (al día / por vencer / vencida)
@@ -32,13 +38,15 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - Profesora a cargo (si aplica)
 - Promoción aplicada (si corresponde)
 
-### Datos que se cargan:
+### Datos que se cargan
+
 - Monto cobrado (obligatorio, por defecto el de la cuota)
 - Fecha del cobro (por defecto hoy)
 - Período cubierto (mes, clase suelta, etc.)
 - Observaciones (opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Nuevo estado de cuota: `al día`
 - Fecha de vencimiento actualizada
 - Comprobante de pago (número, fecha, monto, alumno, plan)
@@ -46,6 +54,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - Registro de efectivo pendiente de rendición (US-19)
 
 ## 6. Acciones del usuario
+
 - Buscar al alumno por nombre, DNI o desde el listado
 - Ver el estado actual de su cuota
 - Registrar el cobro en efectivo
@@ -54,6 +63,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - Cancelar la operación
 
 ## 7. Reglas de negocio
+
 - El pago en efectivo lo registra **la profesora a cargo o la propietaria**.
 - Al confirmarse el cobro, se debe **actualizar automáticamente el estado de cuota** del alumno (de vencida o por vencer → al día).
 - Se debe **generar un comprobante** con: número, fecha, monto, alumno, plan, período, quién cobró.
@@ -65,6 +75,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - El cobro queda asociado al período correspondiente.
 
 ## 8. Criterios de aceptación
+
 - [ ] Registro de cobro en efectivo de una cuota vencida → el alumno pasa a "al día"
 - [ ] Registro de cobro sin monto ingresado → falla (campo obligatorio)
 - [ ] El comprobante se genera correctamente con todos los datos
@@ -73,6 +84,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - [ ] El historial del alumno refleja el nuevo cobro
 
 ## 9. Casos borde / Errores
+
 - Monto cobrado distinto al de la cuota → advertir y requerir confirmación
 - Alumno con deuda de varios períodos → permitir seleccionar qué período se está pagando
 - Alumno dado de baja → no permitir cobro (o advertir)
@@ -81,6 +93,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - Error de red al guardar
 
 ## 10. Dependencias
+
 - US-09, US-10 (búsqueda y ficha del alumno)
 - US-11, US-12, US-13 (plan, precio vigente y promoción)
 - US-18 (estado de habilitación que se actualiza)
@@ -89,6 +102,7 @@ Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo
 - Backend: endpoint de registro de cobro + generación de comprobante
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

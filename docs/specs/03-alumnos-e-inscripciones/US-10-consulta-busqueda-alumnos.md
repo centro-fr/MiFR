@@ -1,18 +1,22 @@
 # US-10 – Consulta y búsqueda de alumnos
 
 ## 1. Información general
+
 - **Épica:** Alumnos e Inscripciones
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria o Profesora
 - **Sprint sugerido:** Sprint 2
 
 ## 2. Objetivo
+
 Permitir buscar y consultar la ficha de cualquier alumno registrado (datos, plan, estado de cuota e historial) para resolver consultas operativas del día a día de forma rápida.
 
 ## 3. Descripción
+
 Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier alumno registrado (datos, plan, estado de cuota e historial), para resolver consultas operativas del día a día.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando listado de alumnos)
 - [ ] Listado completo de alumnos
 - [ ] Búsqueda activa con resultados
@@ -22,7 +26,9 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - [ ] Empty (no hay alumnos cargados en el sistema)
 
 ## 5. Datos que necesita
-### Datos del listado:
+
+### Datos del listado
+
 - Nombre y apellido
 - DNI o identificador
 - Estado (activo / pendiente / baja)
@@ -31,7 +37,8 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Teléfono de contacto
 - Profesora a cargo (opcional)
 
-### Datos de la ficha del alumno:
+### Datos de la ficha del alumno
+
 - Nombre completo
 - Fecha de nacimiento / edad
 - Teléfonos (contacto y emergencia)
@@ -46,7 +53,8 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Peso y talla (si corresponde)
 - Observaciones
 
-### Filtros disponibles:
+### Filtros disponibles
+
 - Por estado (activo / pendiente / baja)
 - Por plan
 - Por profesora
@@ -54,6 +62,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Por actividad
 
 ## 6. Acciones del usuario
+
 - Ver listado completo de alumnos
 - Buscar por nombre, DNI o identificador
 - Filtrar por estado, plan, profesora o estado de cuota
@@ -62,6 +71,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - (Opcional) Exportar el listado filtrado
 
 ## 7. Reglas de negocio
+
 - La búsqueda debe permitir coincidencias parciales por nombre (búsqueda incremental).
 - Debe permitir buscar por DNI o identificador exacto.
 - La ficha debe mostrar **datos, plan, estado de cuota e historial de asistencia en una sola vista** (o en pestañas accesibles sin recargar).
@@ -71,6 +81,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Los datos financieros (historial de pagos) son visibles solo para la propietaria.
 
 ## 8. Criterios de aceptación
+
 - [ ] Búsqueda por nombre parcial → muestra coincidencias correctamente
 - [ ] Búsqueda de un alumno inexistente → sin resultados con mensaje claro
 - [ ] Búsqueda por DNI exacto → muestra el alumno correspondiente
@@ -80,6 +91,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - [ ] La propietaria ve todos los alumnos y su historial completo de pagos
 
 ## 9. Casos borde / Errores
+
 - Búsqueda con caracteres especiales o acentos → debe funcionar correctamente
 - Muchos resultados → paginación o scroll infinito
 - Alumno sin plan asignado (pre-inscripción) → mostrar claramente su estado
@@ -88,6 +100,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Búsqueda muy amplia (ej: "a") que devuelve demasiados resultados
 
 ## 10. Dependencias
+
 - US-05, US-06, US-07 (los alumnos deben existir)
 - US-08 (baja lógica, para el filtro de estado)
 - US-09 (modificación de datos, desde la ficha)
@@ -97,6 +110,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Backend: endpoints de listado, búsqueda, filtros y ficha detallada
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

@@ -1,18 +1,22 @@
 # US-27 – Carga de rutina y evolución física
 
 ## 1. Información general
+
 - **Épica:** Rutina y Progreso
 - **Prioridad:** Baja
 - **Actor principal:** Profesora
 - **Sprint sugerido:** Sprint 5
 
 ## 2. Objetivo
+
 Permitir a la profesora cargar la rutina y el registro de evolución física (peso y medidas) de un alumno, para hacer el seguimiento de sus metas.
 
 ## 3. Descripción
+
 Como profesora, quiero cargar la rutina y el registro de evolución física (peso y medidas) de un alumno para hacer el seguimiento de sus metas.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando datos del alumno)
 - [ ] Selección de alumno
 - [ ] Vista de rutina actual y evolución
@@ -25,13 +29,16 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - [ ] Empty (alumno sin rutina ni mediciones)
 
 ## 5. Datos que necesita
-### Datos que muestra:
+
+### Datos que muestra
+
 - Nombre del alumno
 - Rutina actual (si existe)
 - Historial de mediciones (peso, medidas por fecha)
 - Gráfico de evolución (opcional para MVP)
 
-### Datos que se cargan (rutina):
+### Datos que se cargan (rutina)
+
 - Alumno (obligatorio)
 - Nombre de la rutina (opcional)
 - Ejercicios / actividades (texto libre o estructurado)
@@ -39,20 +46,23 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Duración o período (opcional)
 - Observaciones (opcional)
 
-### Datos que se cargan (medición):
+### Datos que se cargan (medición)
+
 - Alumno (obligatorio)
 - Fecha (obligatoria, por defecto hoy)
 - Peso (obligatorio)
 - Medidas: cintura, cadera, pecho, brazos, piernas (opcionales según disciplina)
 - Observaciones (opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Registro de rutina
 - Registro de medición
 - Historial de evolución del alumno
 - Base para gráficos de progreso (US-28)
 
 ## 6. Acciones del usuario
+
 - Buscar y seleccionar un alumno
 - Ver la rutina actual
 - Cargar una nueva rutina
@@ -63,6 +73,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Ver el gráfico de evolución (opcional)
 
 ## 7. Reglas de negocio
+
 - La rutina y las mediciones se asocian al **alumno** y a la **profesora** que las cargó.
 - Las mediciones se registran **por fecha**, permitiendo múltiples entradas a lo largo del tiempo.
 - Una profesora solo puede cargar rutina y mediciones de los alumnos **a su cargo** (restringido por permisos).
@@ -74,6 +85,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Las mediciones deben estar en unidades consistentes (kg, cm).
 
 ## 8. Criterios de aceptación
+
 - [ ] Carga de una nueva medición de peso → se agrega al historial
 - [ ] Carga de rutina sin seleccionar alumno → falla
 - [ ] Carga de medición con peso negativo o cero → falla
@@ -83,6 +95,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - [ ] Se puede editar una medición existente (con trazabilidad)
 
 ## 9. Casos borde / Errores
+
 - Alumno sin rutina previa → mostrar estado vacío con botón para cargar
 - Alumno con muchas mediciones → paginación o scroll
 - Medición duplicada (misma fecha, mismo alumno) → advertir y permitir sobrescribir o crear nueva
@@ -91,6 +104,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Valores de medidas fuera de rango razonable → advertir
 
 ## 10. Dependencias
+
 - US-05, US-07 (alumnos e inscripciones)
 - US-08 (baja lógica, para excluir alumnos dados de baja)
 - US-10 (búsqueda y ficha del alumno)
@@ -99,6 +113,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Backend: CRUD de rutinas + CRUD de mediciones + historial
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

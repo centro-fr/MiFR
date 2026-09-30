@@ -1,18 +1,22 @@
 # US-22 – Detección de alumnos inactivos con cuota al día
 
 ## 1. Información general
+
 - **Épica:** Asistencia
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 4
 
 ## 2. Objetivo
+
 Detectar automáticamente a los alumnos inactivos que dejaron de asistir a pesar de tener la cuota al día, para coordinar acciones de retención temprana.
 
 ## 3. Descripción
+
 Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron de asistir a pesar de tener la cuota al día para coordinar acciones de retención temprana.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando listado de inactivos)
 - [ ] Listado de alumnos inactivos con cuota al día
 - [ ] Detalle de un alumno inactivo
@@ -24,7 +28,9 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - [ ] Filtros por cantidad de inasistencias o período
 
 ## 5. Datos que necesita
-### Datos que muestra (listado):
+
+### Datos que muestra (listado)
+
 - Nombre y apellido del alumno
 - Profesora a cargo
 - Plan actual
@@ -35,14 +41,17 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - Tutor (si es menor de edad)
 - Estado de gestión: `pendiente` | `contactado` | `gestionado` | `ignorado`
 
-### Datos de configuración:
+### Datos de configuración
+
 - Cantidad de inasistencias consecutivas para considerar inactivo (parámetro configurable, por defecto 3)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Lista de alumnos detectados como inactivos
 - Registro de acciones de retención (opcional para MVP)
 
 ## 6. Acciones del usuario
+
 - Ver el listado de alumnos inactivos
 - Filtrar por profesora, plan o cantidad de inasistencias
 - Ver el detalle del alumno (ficha completa)
@@ -52,6 +61,7 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - Ver historial de gestión (opcional)
 
 ## 7. Reglas de negocio
+
 - Se considera **inactivo** a un alumno con **X inasistencias consecutivas** (parámetro configurable, por defecto 3) **y cuota al día**.
 - Los alumnos con **cuota vencida** no aparecen en este listado (son otro caso, se gestionan en cobranza).
 - Solo se cuentan las inasistencias **consecutivas** (una asistencia corta la racha).
@@ -62,6 +72,7 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - Los alumnos dados de baja no aparecen.
 
 ## 8. Criterios de aceptación
+
 - [ ] Alumno con cuota al día y 3+ inasistencias consecutivas → aparece como inactivo
 - [ ] Alumno con cuota vencida y varias inasistencias → no aparece en este listado
 - [ ] Alumno con inasistencias no consecutivas → no aparece
@@ -71,6 +82,7 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - [ ] El listado se actualiza automáticamente
 
 ## 9. Casos borde / Errores
+
 - Alumno sin historial de asistencia → no aplicar (recién inscripto)
 - Alumno con clase suelta → no aplica (no tiene racha semanal)
 - Alumno con plan suspendido temporalmente → definir política
@@ -79,6 +91,7 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - Error de red al cargar el listado
 
 ## 10. Dependencias
+
 - US-10 (búsqueda y ficha del alumno)
 - US-18 (estado de habilitación, que filtra cuota al día)
 - US-20, US-21 (registro de asistencia e inasistencias)
@@ -87,6 +100,7 @@ Como propietaria, quiero detectar automáticamente alumnos inactivos que dejaron
 - Backend: job de detección + endpoint de listado + configuración del parámetro
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media-Alta (por el cálculo de inasistencias consecutivas)
 - Recomendación de UI:

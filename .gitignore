@@ -29,3 +29,6 @@ coverage/
 
 # Vite (cache local del front)
 front/.vite/
+
+# Archivos de bloqueo de Enterprise Architect
+*.ldb

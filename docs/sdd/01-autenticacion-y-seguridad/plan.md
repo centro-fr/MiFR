@@ -3,6 +3,7 @@
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Pila Tecnológica
+
 - **Backend**:
   - Runtime: Node.js 20+ con TypeScript (`back`).
   - Validación OAuth: `google-auth-library` para verificar de forma segura y server-side el Google ID Token (validación de firma criptográfica, emisor `iss`, audiencia `aud` con el `GOOGLE_CLIENT_ID` y timestamp `exp`).
@@ -24,121 +25,111 @@
 
 ## 2. Modelo de Datos
 
-El diseño se basa en la especificación del DER (`docs/diagrams/der.puml`), extendiendo el subsistema de Identidad y Acceso para soportar la matriz dinámica de roles y permisos (RBAC).
+El modelo es **exactamente el del DER** (`docs/diagrams/puml/der.puml` y `docs/diagrams/enterprise_architect/DER - Centro de Entrenamiento FR.sql`), paquete *Identidad y Acceso*. **El DER no se modifica para este plan**: la matriz de roles y permisos (RBAC) se resuelve con sus tablas tal como están.
 
-```
-                      +-------------------+
-                      |     usuarios      |
-                      +-------------------+
-                      | PK id_usuario     |
-                      |    google_id (UK) |
-                      |    email (UK)     |
-                      |    nombre         |
-                      |    apellido       |
-                      |    estado         |
-                      +---------+---------+
-                                | 1
-                                |
-                                | N
-                      +---------+---------+
-                      |   usuario_roles   |
-                      +-------------------+
-                      | PK,FK id_usuario  |
-                      | PK,FK codigo_rol  |
-                      |       fecha_asig  |
-                      +---------+---------+
-                                | N
-                                |
-                                | 1
-                      +---------+---------+
-                      |       roles       |
-                      +-------------------+
-                      | PK codigo_rol     |
-                      |    nombre         |
-                      |    descripcion    |
-                      +---------+---------+
-                                | 1
-                                |
-                                | N
-                      +---------+---------+        +----------------------+
-                      |   rol_permisos    |        |       modulos        |
-                      +-------------------+        +----------------------+
-                      | PK,FK codigo_rol  |        | PK codigo_modulo     |
-                      | PK,FK cod_permiso |        |    nombre            |
-                      |       permitido   |        +----------+-----------+
-                      +---------+---------+                   | 1
-                                | N                           |
-                                +--------------+              | N
-                                               | 1            |
-                                      +--------+--------------+--------+
-                                      |            permisos            |
-                                      +--------------------------------+
-                                      | PK codigo_permiso              |
-                                      | FK codigo_modulo               |
-                                      |    nombre                      |
-                                      |    descripcion                 |
-                                      |    es_critico_propietaria (BOL)|
-                                      +--------------------------------+
+Decisiones que se desprenden del DER:
+
+- **No hay tabla `modulos`.** El módulo de cada permiso es la columna `permisos.modulo` (`VARCHAR(30)`, ej. `SEGURIDAD`, `ALUMNOS`, `HORARIOS`, `PLANES`, `HONORARIOS`, `ASISTENCIAS`, `RUTINAS`). La matriz agrupa los permisos por ese campo.
+- **Un permiso está otorgado a un rol si existe la fila en `rol_permisos`.** No hay columna `permitido`: otorgar es insertar la fila y quitar es borrarla.
+- **Los permisos críticos de la Propietaria no son una columna.** El DER no tiene `es_critico_propietaria`; la lista de permisos críticos es una constante del backend (ver sección 5).
+- **Roles e ids numéricos.** `roles` y `permisos` tienen PK `SERIAL` (`id_rol`, `id_permiso`) y un `codigo` único. Los códigos de rol son `PROPIETARIA`, `PROFESORA`, `ALUMNO`, `TUTOR`.
+- **Estados de usuario:** solo `ACTIVO` e `INACTIVO`.
+- **Códigos de permiso** en mayúsculas con guion bajo, como el ejemplo del DER (`PAGOS_CONFIRMAR`): `SEGURIDAD_MATRIZ_VER`, `SEGURIDAD_MATRIZ_EDITAR`, `HONORARIOS_VER_TODOS`, etc.
+
+```text
++-------------------------+          +---------------------+
+|        usuarios         |          |        roles        |
++-------------------------+          +---------------------+
+| PK id_usuario (SERIAL)  |          | PK id_rol (SERIAL)  |
+|    google_id (UK, NULL) |          |    codigo (UK)      |
+|    email (UK, NULL)     |          |    nombre           |
+|    nombre, apellido     |          |    descripcion      |
+|    dni (UK), telefono   |          +----+-----------+----+
+|    fecha_nacimiento     |               | 1         | 1
+|    direccion, estado    |               |           |
+|    fecha_alta           |               | N         | N
+|    fecha_actualizacion  |   +-----------+---+   +---+-------------------+
++-----------+-------------+   | usuario_roles |   |     rol_permisos      |
+            | 1               +---------------+   +-----------------------+
+            +---------------->| PK,FK id_usuario  | PK,FK id_rol          |
+                         N    | PK,FK id_rol  |   | PK,FK id_permiso      |
+                              | fecha_asignacion  | fecha_asignacion      |
+                              +---------------+   +-----------+-----------+
+                                                              | N
+                                                              |
+                                                              | 1
+                                                  +-----------+-----------+
+                                                  |       permisos        |
+                                                  +-----------------------+
+                                                  | PK id_permiso (SERIAL)|
+                                                  |    codigo (UK)        |
+                                                  |    modulo             |
+                                                  |    descripcion        |
+                                                  +-----------------------+
 ```
 
-### 2.1. Definición de Tablas (DDL Sugerido)
+### 2.1. Definición de Tablas (según el DER)
+
+Tipos, largos y nombres de constraints tomados del SQL que exporta EA. Los `UNIQUE` son los marcados como UK en `der.puml`. En el backend se implementa con Prisma (`back/prisma/schema.prisma`).
 
 ```sql
--- 1. Tabla de Usuarios (Sincronizada con el DER de MiFR)
 CREATE TABLE usuarios (
-    id_usuario SERIAL PRIMARY KEY,
-    google_id VARCHAR(100) UNIQUE NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    dni VARCHAR(20) UNIQUE NULL,
-    telefono VARCHAR(30) NULL,
-    fecha_nacimiento DATE NULL,
-    direccion VARCHAR(255) NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'ACTIVO' CHECK (estado IN ('ACTIVO', 'INACTIVO', 'BAJA')),
-    fecha_alta TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_usuario          SERIAL NOT NULL,
+    google_id           VARCHAR(255) NULL,   -- NULL hasta el 1er login; NULL en menores
+    email               VARCHAR(120) NULL,   -- NULL en menores a cargo de tutor
+    nombre              VARCHAR(60)  NOT NULL,
+    apellido            VARCHAR(60)  NOT NULL,
+    dni                 VARCHAR(10)  NULL,   -- solo digitos
+    telefono            VARCHAR(20)  NULL,
+    fecha_nacimiento    DATE         NOT NULL,
+    direccion           VARCHAR(120) NULL,
+    estado              VARCHAR(8)   NOT NULL, -- ACTIVO / INACTIVO
+    fecha_alta          TIMESTAMP    NOT NULL,
+    fecha_actualizacion TIMESTAMP    NOT NULL,
+    CONSTRAINT "PK_usuarios" PRIMARY KEY (id_usuario),
+    CONSTRAINT ck_usuarios_estado CHECK (estado IN ('ACTIVO', 'INACTIVO')),
+    UNIQUE (google_id), UNIQUE (email), UNIQUE (dni)
 );
 
--- 2. Catálogo de Roles
 CREATE TABLE roles (
-    codigo_rol VARCHAR(30) PRIMARY KEY, -- 'PROPIETARIA', 'PROFESORA', 'ALUMNO', 'TUTOR'
-    nombre VARCHAR(50) NOT NULL,
-    descripcion TEXT NULL
+    id_rol      SERIAL NOT NULL,
+    codigo      VARCHAR(11)  NOT NULL, -- PROPIETARIA / PROFESORA / ALUMNO / TUTOR
+    nombre      VARCHAR(40)  NOT NULL,
+    descripcion VARCHAR(150) NULL,
+    CONSTRAINT "PK_roles" PRIMARY KEY (id_rol),
+    CONSTRAINT ck_roles_codigo CHECK (codigo IN ('PROPIETARIA', 'PROFESORA', 'ALUMNO', 'TUTOR')),
+    UNIQUE (codigo)
 );
 
--- 3. Asignación N:M de Usuarios a Roles (Soporte Multi-Rol)
 CREATE TABLE usuario_roles (
-    id_usuario INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
-    codigo_rol VARCHAR(30) NOT NULL REFERENCES roles(codigo_rol) ON DELETE RESTRICT,
-    fecha_asignacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_usuario, codigo_rol)
+    id_usuario       INTEGER   NOT NULL,
+    id_rol           INTEGER   NOT NULL,
+    fecha_asignacion TIMESTAMP NOT NULL,
+    CONSTRAINT "PK_usuario_roles" PRIMARY KEY (id_usuario, id_rol),
+    CONSTRAINT "FK_usuario_roles_usuarios" FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario),
+    CONSTRAINT "FK_usuario_roles_roles" FOREIGN KEY (id_rol) REFERENCES roles (id_rol)
 );
 
--- 4. Catálogo de Módulos del Sistema
-CREATE TABLE modulos (
-    codigo_modulo VARCHAR(30) PRIMARY KEY, -- 'SEGURIDAD', 'ALUMNOS', 'HORARIOS', 'PLANES', 'HONORARIOS', etc.
-    nombre VARCHAR(50) NOT NULL,
-    orden INT NOT NULL DEFAULT 0
-);
-
--- 5. Catálogo de Permisos Granulares
 CREATE TABLE permisos (
-    codigo_permiso VARCHAR(60) PRIMARY KEY, -- 'seguridad.matriz.ver', 'seguridad.matriz.editar', 'honorarios.ver_todos', etc.
-    codigo_modulo VARCHAR(30) NOT NULL REFERENCES modulos(codigo_modulo),
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT NULL,
-    es_critico_propietaria BOOLEAN NOT NULL DEFAULT FALSE -- Si es TRUE, el rol PROPIETARIA no puede perderlo
+    id_permiso  SERIAL NOT NULL,
+    codigo      VARCHAR(50)  NOT NULL, -- ej. PAGOS_CONFIRMAR
+    modulo      VARCHAR(30)  NOT NULL, -- agrupa los permisos en la matriz (no hay tabla modulos)
+    descripcion VARCHAR(150) NULL,
+    CONSTRAINT "PK_permisos" PRIMARY KEY (id_permiso),
+    UNIQUE (codigo)
 );
 
--- 6. Asignación de Permisos por Rol (Matriz Dinámica)
 CREATE TABLE rol_permisos (
-    codigo_rol VARCHAR(30) NOT NULL REFERENCES roles(codigo_rol) ON DELETE CASCADE,
-    codigo_permiso VARCHAR(60) NOT NULL REFERENCES permisos(codigo_permiso) ON DELETE CASCADE,
-    permitido BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (codigo_rol, codigo_permiso)
+    id_rol           INTEGER   NOT NULL,
+    id_permiso       INTEGER   NOT NULL,
+    fecha_asignacion TIMESTAMP NOT NULL,
+    CONSTRAINT "PK_rol_permisos" PRIMARY KEY (id_rol, id_permiso),
+    CONSTRAINT "FK_rol_permisos_roles" FOREIGN KEY (id_rol) REFERENCES roles (id_rol),
+    CONSTRAINT "FK_rol_permisos_permisos" FOREIGN KEY (id_permiso) REFERENCES permisos (id_permiso)
 );
 ```
+
+Las FK son `ON DELETE NO ACTION`: para borrar un usuario primero se borran sus filas de `usuario_roles`.
 
 ---
 
@@ -147,17 +138,21 @@ CREATE TABLE rol_permisos (
 ### 3.1. Autenticación (`/api/v1/auth`)
 
 #### `POST /api/v1/auth/google`
+
 Inicia sesión validando el token emitido por Google Identity Services.
 
 - **Headers**: `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "idToken": "eyJhbGciOiJSUzI1NiIs..."
   }
   ```
+
 - **Respuestas**:
   - `200 OK`:
+
     ```json
     {
       "token": "eyJhbGciOiJIUzI1Ni...",
@@ -168,22 +163,26 @@ Inicia sesión validando el token emitido por Google Identity Services.
         "apellido": "Gómez",
         "roles": ["PROPIETARIA", "PROFESORA"],
         "permisos": [
-          "seguridad.matriz.ver",
-          "seguridad.matriz.editar",
-          "honorarios.ver_todos",
-          "clases.asistencia.marcar"
+          "SEGURIDAD_MATRIZ_VER",
+          "SEGURIDAD_MATRIZ_EDITAR",
+          "HONORARIOS_VER_TODOS",
+          "CLASES_ASISTENCIA_MARCAR"
         ]
       }
     }
     ```
+
   - `401 Unauthorized` / `403 Forbidden` (Usuario no pre-registrado):
+
     ```json
     {
       "codigo": "ACCESO_NO_HABILITADO",
       "mensaje": "El correo ingresado no se encuentra habilitado en el sistema. Contacte a la administración."
     }
     ```
+
   - `403 Forbidden` (Usuario inactivo):
+
     ```json
     {
       "codigo": "USUARIO_INACTIVO",
@@ -192,85 +191,97 @@ Inicia sesión validando el token emitido por Google Identity Services.
     ```
 
 #### `GET /api/v1/auth/me`
+
 Obtiene los datos del usuario autenticado actual y refresca sus permisos.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**: Mismo objeto de usuario que el endpoint de login.
 - **Respuesta 401 Unauthorized**: Token inválido o expirado.
 
 #### `POST /api/v1/auth/logout`
+
 Cierra la sesión y limpia cookies de sesión si aplica.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**: `{ "mensaje": "Sesión cerrada correctamente" }`
 
 ---
 
 ### 3.2. Gestión de Matriz de Permisos (`/api/v1/seguridad`)
-*Protegido: Requiere rol `PROPIETARIA` y permiso `seguridad.matriz.editar` / `seguridad.matriz.ver`.*
+
+*Protegido: Requiere rol `PROPIETARIA` y permiso `SEGURIDAD_MATRIZ_EDITAR` / `SEGURIDAD_MATRIZ_VER`.*
 
 #### `GET /api/v1/seguridad/matriz`
-Devuelve la lista completa de roles, módulos, permisos y el estado actual de la matriz.
+
+Devuelve los roles, los permisos agrupados por `permisos.modulo` y el estado actual de la matriz (filas de `rol_permisos`).
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta 200 OK**:
+
   ```json
   {
     "roles": [
-      { "codigo_rol": "PROPIETARIA", "nombre": "Propietaria" },
-      { "codigo_rol": "PROFESORA", "nombre": "Profesora" },
-      { "codigo_rol": "ALUMNO", "nombre": "Alumno" }
+      { "id_rol": 1, "codigo": "PROPIETARIA", "nombre": "Propietaria" },
+      { "id_rol": 2, "codigo": "PROFESORA", "nombre": "Profesora" },
+      { "id_rol": 3, "codigo": "ALUMNO", "nombre": "Alumno" },
+      { "id_rol": 4, "codigo": "TUTOR", "nombre": "Tutor" }
     ],
     "modulos": [
       {
-        "codigo_modulo": "HONORARIOS",
-        "nombre": "Honorarios y Liquidaciones",
+        "modulo": "HONORARIOS",
         "permisos": [
           {
-            "codigo_permiso": "honorarios.ver_todos",
-            "nombre": "Ver liquidaciones generales",
-            "es_critico_propietaria": true
+            "id_permiso": 10,
+            "codigo": "HONORARIOS_VER_TODOS",
+            "descripcion": "Ver liquidaciones generales",
+            "critico": true
           },
           {
-            "codigo_permiso": "honorarios.ver_propios",
-            "nombre": "Ver únicamente honorarios propios",
-            "es_critico_propietaria": false
+            "id_permiso": 11,
+            "codigo": "HONORARIOS_VER_PROPIOS",
+            "descripcion": "Ver únicamente honorarios propios",
+            "critico": false
           }
         ]
       }
     ],
     "matriz": {
-      "PROPIETARIA": {
-        "honorarios.ver_todos": true,
-        "honorarios.ver_propios": true
-      },
-      "PROFESORA": {
-        "honorarios.ver_todos": false,
-        "honorarios.ver_propios": true
-      },
-      "ALUMNO": {
-        "honorarios.ver_todos": false,
-        "honorarios.ver_propios": false
-      }
+      "PROPIETARIA": ["HONORARIOS_VER_TODOS", "HONORARIOS_VER_PROPIOS"],
+      "PROFESORA": ["HONORARIOS_VER_PROPIOS"],
+      "ALUMNO": [],
+      "TUTOR": []
     }
   }
   ```
 
+  - `modulos` no es una tabla: es el agrupamiento de `permisos` por su columna `modulo`.
+  - `matriz` lista, por código de rol, los permisos que tienen fila en `rol_permisos`.
+  - `critico` no se guarda en la base: se calcula con la lista de permisos críticos del backend (sección 5).
+
 #### `PUT /api/v1/seguridad/matriz`
+
 Actualiza la configuración de permisos para uno o más roles.
+
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
+
   ```json
   {
     "cambios": [
       {
-        "codigo_rol": "PROFESORA",
-        "codigo_permiso": "alumnos.rutinas.crear",
-        "permitido": true
+        "rol": "PROFESORA",
+        "permiso": "ALUMNOS_RUTINAS_CREAR",
+        "otorgado": true
       }
     ]
   }
   ```
+
 - **Validaciones**:
-  - Si un cambio intenta setear `permitido = false` para un permiso con `es_critico_propietaria = true` en el rol `PROPIETARIA`, el backend rechaza la petición con HTTP 400 (`PERMISO_CRITICO_INMUTABLE`).
+  - `otorgado: true` inserta la fila en `rol_permisos` (con `fecha_asignacion`); `otorgado: false` la borra.
+  - Si un cambio intenta quitarle al rol `PROPIETARIA` un permiso de la lista de críticos, el backend rechaza la petición con HTTP 400 (`PERMISO_CRITICO_INMUTABLE`).
 - **Respuesta 200 OK**:
+
   ```json
   {
     "mensaje": "Matriz de permisos actualizada exitosamente"
@@ -282,7 +293,8 @@ Actualiza la configuración de permisos para uno o más roles.
 ## 4. Flujos Principales
 
 ### 4.1. Flujo de Autenticación con Google GIS
-```
+
+```text
 [Usuario]                 [Frontend React]              [Backend Node API]          [Google GIS Auth]
    |                             |                              |                          |
    |--- 1. Clic en Google Login -|                              |                          |
@@ -307,8 +319,10 @@ Actualiza la configuración de permisos para uno o más roles.
 ```
 
 ### 4.2. Flujo de Consolidación de Permisos Multi-Rol
+
 Dado un usuario con roles $R = \{r_1, r_2, \dots, r_n\}$:
-1. Por cada rol $r_i$, se recuperan los permisos asignados donde `permitido = true`.
+
+1. Por cada rol $r_i$, se recuperan los permisos que tienen fila en `rol_permisos` (`usuario_roles` → `roles` → `rol_permisos` → `permisos`).
 2. El conjunto final de permisos efectivos del usuario es:
    $$P_{\text{efectivos}} = \bigcup_{i=1}^n P(r_i)$$
 3. Se trata de una unión no conflictiva: si cualquiera de sus roles tiene permitido el acceso a una acción, el usuario la tiene concedida.
@@ -321,10 +335,11 @@ Dado un usuario con roles $R = \{r_1, r_2, \dots, r_n\}$:
    - **Frontend**: Oculta enlaces del menú lateral y deshabilita botones que el usuario no puede utilizar para evitar frustración visual.
    - **Backend**: **Nunca** confiar en el cliente. Cada endpoint valida de forma atómica y estricta el token y los permisos requeridos.
 2. **Inmutabilidad de Permisos Críticos**:
-   - Para prevenir situaciones de auto-bloqueo o pérdida accidental de acceso al sistema, la Propietaria no puede auto-despojarse ni despojar a su rol de permisos de administración del sistema (`seguridad.*`) ni de visualización de finanzas.
+   - Para prevenir situaciones de auto-bloqueo o pérdida accidental de acceso al sistema, la Propietaria no puede auto-despojarse ni despojar a su rol de permisos de administración del sistema (`SEGURIDAD_*`) ni de visualización de finanzas.
+   - Como el DER no tiene una columna para marcarlos, la lista de permisos críticos es una **constante del backend** (ej. `SEGURIDAD_MATRIZ_VER`, `SEGURIDAD_MATRIZ_EDITAR`, `HONORARIOS_VER_TODOS`). El seed se los otorga a `PROPIETARIA` y el `PUT` de la matriz no permite quitarlos.
 3. **Aislamiento de Información Financiera**:
-   - `honorarios.ver_todos`: Reservado exclusivamente para la Propietaria.
-   - `honorarios.ver_propios`: Permite a una profesora ver solo registros donde `id_profesora = usuario.id_profesora`.
+   - `HONORARIOS_VER_TODOS`: Reservado exclusivamente para la Propietaria.
+   - `HONORARIOS_VER_PROPIOS`: Permite a una profesora ver solo registros donde `id_profesora = usuario.id_profesora`.
 4. **Validación Criptográfica de Tokens**:
    - Se valida el campo `aud` del ID token de Google para asegurar que fue emitido específicamente para la aplicación MiFR (evitando que tokens válidos de otras apps sean utilizados).
 5. **Mitigación de Ataques Comunes**:

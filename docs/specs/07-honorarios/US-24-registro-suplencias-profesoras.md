@@ -1,18 +1,22 @@
 # US-24 – Registro de suplencias entre profesoras
 
 ## 1. Información general
+
 - **Épica:** Honorarios
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
 - **Sprint sugerido:** Sprint 4
 
 ## 2. Objetivo
+
 Permitir registrar suplencias entre profesoras para liquidar por separado las clases cubiertas y descontarlas de la profesora ausente.
 
 ## 3. Descripción
+
 Como propietaria, quiero registrar suplencias entre profesoras para liquidar por separado las clases cubiertas y descontarlas de la ausente.
 
 ## 4. Estados de la pantalla / flujo
+
 - [ ] Loading (cargando clases y profesoras)
 - [ ] Listado de suplencias registradas
 - [ ] Formulario de alta de suplencia
@@ -25,7 +29,9 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - [ ] Empty (no hay suplencias registradas)
 
 ## 5. Datos que necesita
-### Datos que muestra (listado):
+
+### Datos que muestra (listado)
+
 - Fecha de la clase
 - Actividad / horario
 - Profesora titular
@@ -33,7 +39,8 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Estado: `activa` / `cancelada`
 - Observaciones
 
-### Datos que se cargan / editan:
+### Datos que se cargan / editan
+
 - Fecha de la clase (obligatoria)
 - Horario / actividad (obligatorio)
 - Profesora titular (obligatoria)
@@ -41,7 +48,8 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Motivo (opcional)
 - Observaciones (opcional)
 
-### Datos que se generan:
+### Datos que se generan
+
 - Registro de suplencia
 - Ajuste en el cálculo de honorarios (US-23):
   - Se descuenta de la titular
@@ -49,6 +57,7 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Trazabilidad de la suplencia
 
 ## 6. Acciones del usuario
+
 - Ver el listado de suplencias registradas
 - Registrar una nueva suplencia
 - Editar una suplencia existente (si no está liquidada)
@@ -57,6 +66,7 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Ver impacto en honorarios (opcional)
 
 ## 7. Reglas de negocio
+
 - Las clases cubiertas por suplencia **se liquidan a la profesora suplente**, no a la titular.
 - **No se puede** registrar una suplencia con la misma profesora como titular y suplente.
 - La profesora suplente debe tener el rol "Profesora" (US-01/US-02).
@@ -68,6 +78,7 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Si hay múltiples suplencias en el mismo horario, definir prioridad (la más reciente aplica).
 
 ## 8. Criterios de aceptación
+
 - [ ] Registro de una suplencia de una clase → se descuenta de la titular y se suma a la suplente
 - [ ] Intento de registrar una suplencia con la misma profesora como titular y suplente → falla
 - [ ] Intento de registrar una suplencia con una profesora sin rol → falla
@@ -76,6 +87,7 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - [ ] El listado permite filtrar por fecha, profesora o actividad
 
 ## 9. Casos borde / Errores
+
 - Suplencia registrada en una fecha futura → permitir, pero advertir
 - Suplencia registrada en una fecha muy antigua (ya liquidada) → advertir
 - Profesora titular dada de baja → permitir registrar suplencia retroactiva
@@ -84,12 +96,14 @@ Como propietaria, quiero registrar suplencias entre profesoras para liquidar por
 - Eliminar una suplencia ya reflejada en un informe cerrado → bloquear o requerir confirmación especial
 
 ## 10. Dependencias
+
 - US-01, US-02 (permisos: solo propietaria)
 - US-03, US-04 (actividades y horarios)
 - US-23 (informe mensual de honorarios, que consume las suplencias)
 - Backend: CRUD de suplencias + integración con cálculo de honorarios
 
 ## 11. Notas de implementación (Front)
+
 - Se puede implementar completamente con mocks
 - Complejidad: Media
 - Recomendación de UI:

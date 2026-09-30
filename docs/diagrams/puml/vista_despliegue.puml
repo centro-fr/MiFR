@@ -1,0 +1,68 @@
+@startuml Vista_Despliegue_MiFR
+title Diagrama de Despliegue - Centro de Entrenamiento FR
+
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam nodesep 60
+skinparam ranksep 50
+skinparam linetype polyline
+
+skinparam node {
+  BackgroundColor #F1F3F5
+  BorderColor #495057
+  FontStyle bold
+
+  BackgroundColor<<web client>> #BFDDF2
+  BorderColor<<web client>> #1971C2
+
+  BackgroundColor<<external>> #BFDDF2
+  BorderColor<<external>> #1971C2
+}
+
+skinparam component {
+  BackgroundColor #FCE8E6
+  BorderColor #868E96
+
+  BackgroundColor<<library>> #E2A6DE
+  BorderColor<<library>> #862E9C
+}
+
+node "Cliente Web" as cliente <<web client>> {
+  component "Navegador" as navegador
+}
+
+node "Servidor Web" as servidorWeb <<nube>> {
+  component "Capa de Presentacion" as presentacion
+  component "Web Server" as webServer
+  component "Google Identity Services" as gis <<library>>
+}
+
+node "Google Auth" as google <<external>> {
+  component "API OAuth 2.0" as apiGoogle
+}
+
+node "Servidor de Aplicaciones" as servidorApp <<nube>> {
+  component "Capa de Logica de Negocio" as logica
+  component "Prisma ORM" as prisma <<library>>
+  component "google-auth-library" as googleAuthLibrary <<library>>
+}
+
+node "Servidor de BD" as servidorBD <<nube>> {
+  component "PostgreSQL" as postgres
+}
+
+' orden interno de los componentes
+presentacion -[hidden]right- webServer
+presentacion -[hidden]down- gis
+logica -[hidden]right- prisma
+logica -[hidden]down- googleAuthLibrary
+
+cliente -- servidorWeb : HTTPS
+servidorWeb -right- google : HTTPS\n(inicio de sesion,\nobtiene id_token)
+servidorWeb -- servidorApp : HTTPS / REST\n(POST /api/auth/google,\nJWT propio)
+servidorApp -up- google : HTTPS\n(verifica id_token)
+servidorApp -- servidorBD : TCP/5432
+
+@enduml
