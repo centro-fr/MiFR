@@ -33,7 +33,7 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Francisco
 
-### Hecho
+### Hecho (US-01)
 
 - [x] Tablas `usuarios`, `roles` y `usuario_roles` según el DER.
 - [x] `POST /api/auth/google`: verifica el `id_token` con Google (`google-auth-library`) y emite un JWT propio con los roles.
@@ -42,7 +42,7 @@ Cómo trabajar en paralelo sin bloquearse:
 - [x] Middlewares `requiereSesion` y `requiereRol`.
 - [x] Tests unitarios.
 
-### Pendiente
+### Pendiente (US-01)
 
 - [ ] **`GET /api/auth/me`**: devuelve el perfil, los roles y los permisos efectivos del usuario de la sesión (RF-03 del SDD). El front lo necesita para recuperar la sesión al recargar.
 - [ ] **`POST /api/auth/logout`** (figura en el SDD). Con JWT sin estado alcanza con que el front descarte el token; tiene sentido si se pasa a cookie `httpOnly`, que la spec menciona como preferible.
@@ -54,12 +54,12 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Francisco
 
-### Hecho
+### Hecho (US-02)
 
 - [x] Tablas `permisos` y `rol_permisos` según el DER.
 - [x] `PermisoService.tienePermiso(usuario, codigo)`: unión de los permisos de todos los roles del usuario (multi-rol).
 
-### Pendiente
+### Pendiente (US-02)
 
 - [ ] **Catálogo de permisos en el seed**: definir los códigos por módulo (ej. `ACTIVIDADES_EDITAR`, `HONORARIOS_VER`, `SEGURIDAD_MATRIZ_EDITAR`) y la matriz inicial `rol_permisos` por rol. Hoy la tabla `permisos` está vacía.
 - [ ] **Middleware `requierePermiso("CODIGO")`**: hoy las rutas solo controlan el rol (`requiereRol("PROPIETARIA")`); la spec pide validar el permiso en el back.
@@ -78,7 +78,7 @@ Cómo trabajar en paralelo sin bloquearse:
 
 La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `modalidad GRUPAL|PERSONALIZADA`, `cupo_maximo`, `activo`), pero no en `schema.prisma`.
 
-### Pendiente
+### Pendiente (US-03)
 
 - [ ] Modelo `actividades` en Prisma + migración (con los CHECK del SQL de EA: `ck_actividades_modalidad`, `ck_actividades_x1`, `ck_actividades_x2`).
 - [ ] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica (`ILogicaServicioEntrenamiento`).
@@ -102,7 +102,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 
 `horarios.id_profesora` referencia a la tabla `profesoras`, no a `usuarios`. En la vista arquitectónica, `Horario` requiere `IInfoProfesores` de `GestionPersonas`.
 
-### Pendiente
+### Pendiente (US-04)
 
 - [ ] Modelos `profesoras` y `horarios` en Prisma + migración, según el DER.
 - [ ] Módulo mínimo `modules/gestion-personas/profesor/` que provea `IInfoProfesores` (alta de profesora vinculada a un usuario con rol `PROFESORA`, listado).
