@@ -3,10 +3,11 @@ import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { UsuarioRepository } from "./user.repository.js";
 import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./user.schemas.js";
 import type { CodigoRol, UsuarioConRoles } from "./user.types.js";
+import type { IInfoUsuarios } from "./interface/i-info-usuarios.js";
 
 // Componente "Usuario": alta, baja, modificación y roles de los usuarios. La presentación
 // llega a él por ILogicaUsuarios (GestionUsuariosService), no directamente.
-export class UsuarioService {
+export class UsuarioService implements IInfoUsuarios {
   constructor(
     private readonly repositorio: UsuarioRepository,
     private readonly autorizacion: IAutorizacion,

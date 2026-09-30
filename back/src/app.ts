@@ -6,11 +6,18 @@ import { createSesionRoutes } from "./modules/gestion-usuarios/sesion/sesion.rou
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
 import { createUserRoutes } from "./modules/gestion-usuarios/usuario/user.routes.js";
+import { createActividadRoutes } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.routes.js";
+import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
+import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profesor.routes.js";
+import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
+import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
 
 export interface AppDependencies {
   gestionUsuarios: ILogicaUsuarios;
+  gestionPersonas: ILogicaPersonas;
+  gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -29,6 +36,15 @@ export function createApp(deps: AppDependencies): Express {
   api.use("/auth", createSesionRoutes(deps.gestionUsuarios, deps.autenticacion));
   api.use("/usuarios", createUserRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
+  api.use(
+    "/actividades",
+    createActividadRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
+  );
+  api.use("/profesoras", createProfesorRoutes(deps.gestionPersonas, deps.autenticacion, deps.autorizacion));
+  api.use(
+    "/horarios",
+    createHorarioRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
+  );
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

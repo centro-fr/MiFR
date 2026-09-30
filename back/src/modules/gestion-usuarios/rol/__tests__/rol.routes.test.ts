@@ -1,12 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
-import { createApp } from "../../../../app.js";
+import { createApp as crearAppBase } from "../../../../app.js";
 import { PermisoCriticoInmutableError } from "../../../../shared/errors/app-error.js";
 import { JwtService } from "../../sesion/jwt.service.js";
 import type { IAutenticacion } from "../../sesion/interface/i-autenticacion.js";
 import type { ILogicaUsuarios } from "../../interface/i-logica-usuarios.js";
 import type { IAutorizacion } from "../interface/i-autorizacion.js";
+import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
+
+function createApp(
+  dependencias: Omit<Parameters<typeof crearAppBase>[0], "gestionServicioEntrenamiento" | "gestionPersonas">,
+) {
+  return crearAppBase({
+    ...dependencias,
+    gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
+    gestionPersonas: {} as unknown as ILogicaPersonas,
+  });
+}
 
 const JWT_SECRET = "test-secret";
 const jwtService = new JwtService(JWT_SECRET, "1h");

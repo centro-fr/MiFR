@@ -8,6 +8,14 @@ import { RolRepository } from "./modules/gestion-usuarios/rol/rol.repository.js"
 import { RolService } from "./modules/gestion-usuarios/rol/rol.service.js";
 import { UsuarioRepository } from "./modules/gestion-usuarios/usuario/user.repository.js";
 import { UsuarioService } from "./modules/gestion-usuarios/usuario/user.service.js";
+import { ActividadRepository } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.repository.js";
+import { ActividadService } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.service.js";
+import { GestionServicioEntrenamientoService } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.service.js";
+import { ProfesorRepository } from "./modules/gestion-personas/profesor/profesor.repository.js";
+import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.service.js";
+import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
+import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
+import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
 
 // Composition root: único lugar donde se instancian las clases concretas.
 const usuarioRepositorio = new UsuarioRepository();
@@ -20,7 +28,23 @@ const autenticacion = new SesionService(usuarioRepositorio, googleAutenticacion,
 
 const gestionUsuarios = new GestionUsuariosService(usuarioService, autenticacion, rolService);
 
-const app = createApp({ gestionUsuarios, autenticacion, autorizacion: rolService });
+const actividadRepository = new ActividadRepository();
+const actividadService = new ActividadService(actividadRepository);
+const profesorService = new ProfesorService(new ProfesorRepository(), usuarioService, rolService);
+const horarioService = new HorarioService(new HorarioRepository(), actividadService, profesorService);
+const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
+  actividadService,
+  horarioService,
+);
+const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
+
+const app = createApp({
+  gestionUsuarios,
+  gestionPersonas,
+  gestionServicioEntrenamiento,
+  autenticacion,
+  autorizacion: rolService,
+});
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {

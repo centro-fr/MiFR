@@ -6,8 +6,8 @@ Sprint 1: **Autenticación, Accesos y Configuración Base** (según `docs/v.1.1 
 | --- | --- | --- | --- |
 | US-01 | Inicio de sesión con Google Auth | Completa | Francisco |
 | US-02 | Definición de permisos por rol | Completa | Francisco |
-| US-03 | Alta y administración de actividades y cupos | No empezada | Integrante 2 |
-| US-04 | Asignación de profesoras y horarios | No empezada | Integrante 2 |
+| US-03 | Alta y administración de actividades y cupos | Completa | Nicolas |
+| US-04 | Asignación de profesoras y horarios | Completa | Nicolas |
 
 Fuentes: `docs/specs/01-*` y `docs/specs/02-*`, y `docs/sdd/01-*/tasks.md` y `docs/sdd/02-*/tasks.md` (en `main`).
 
@@ -87,19 +87,19 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 
 ### Pendiente (US-03)
 
-- [ ] Modelo `actividades` en Prisma + migración (con los CHECK del SQL de EA: `ck_actividades_modalidad`, `ck_actividades_x1`, `ck_actividades_x2`).
-- [ ] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica. `ILogicaServicioEntrenamiento` es del subsistema: va en `gestion-servicio-entrenamiento/interface/` y la realiza `gestion-servicio-entrenamiento.service.ts`, como `GestionUsuariosService` (ver `.claude/rules/patrones.md`, Facade).
-- [ ] Endpoints: listar (con filtro / búsqueda), obtener, crear, editar, baja lógica (`activo = false`).
+- [x] Modelo `actividades` en Prisma + migración (con los CHECK del SQL de EA: `ck_actividades_modalidad`, `ck_actividades_x1`, `ck_actividades_x2`).
+- [x] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica. `ILogicaServicioEntrenamiento` es del subsistema: va en `gestion-servicio-entrenamiento/interface/` y la realiza `gestion-servicio-entrenamiento.service.ts`, como `GestionUsuariosService` (ver `.claude/rules/patrones.md`, Facade).
+- [x] Endpoints: listar (con filtro / búsqueda), obtener, crear, editar, baja lógica (`activo = false`).
 - [ ] **Reglas**:
-  - [ ] La modalidad es obligatoria.
-  - [ ] En `PERSONALIZADA` el cupo máximo es obligatorio; en `GRUPAL` es opcional.
-  - [ ] Cupo máximo mayor a 0.
-  - [ ] Sin `codigo` duplicado (UK del DER).
-  - [ ] Se puede cambiar la modalidad de una actividad existente.
-  - [ ] La baja no borra el historial de clases dictadas.
-  - [ ] Al dar de baja una actividad con horarios activos, advertir. La parte de "alumnos inscriptos" depende de inscripciones (Sprint 2).
-- [ ] Protegido con permiso (US-02); solo propietaria.
-- [ ] Tests del service y de las rutas.
+  - [x] La modalidad es obligatoria.
+  - [x] En `PERSONALIZADA` el cupo máximo es obligatorio; en `GRUPAL` es opcional.
+  - [x] Cupo máximo mayor a 0.
+  - [x] Sin `codigo` duplicado (UK del DER).
+  - [x] Se puede cambiar la modalidad de una actividad existente.
+  - [x] La baja no borra el historial de clases dictadas.
+  - [x] Al dar de baja una actividad con horarios activos, advertir. La parte de "alumnos inscriptos" depende de inscripciones (Sprint 2).
+- [x] Protegido con permiso (US-02); solo propietaria.
+- [x] Tests del service y de las rutas.
 
 ---
 
@@ -111,19 +111,19 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 
 ### Pendiente (US-04)
 
-- [ ] Modelos `profesoras` y `horarios` en Prisma + migración, según el DER.
-- [ ] Módulo mínimo `modules/gestion-personas/profesor/` que provea `IInfoProfesores` (alta de profesora vinculada a un usuario con rol `PROFESORA`, listado).
-- [ ] Módulo `modules/gestion-servicio-entrenamiento/horario/` con CRUD y filtros por actividad y por profesora.
+- [x] Modelos `profesoras` y `horarios` en Prisma + migración, según el DER.
+- [x] Módulo mínimo `modules/gestion-personas/profesor/` que provea `IInfoProfesores` (alta de profesora vinculada a un usuario con rol `PROFESORA`, listado).
+- [x] Módulo `modules/gestion-servicio-entrenamiento/horario/` con CRUD y filtros por actividad y por profesora.
 - [ ] **Reglas**:
-  - [ ] Solo se asignan usuarios con rol `PROFESORA`.
-  - [ ] La misma profesora no puede tener dos horarios superpuestos el mismo día.
-  - [ ] `hora_fin` posterior a `hora_inicio`.
-  - [ ] El cupo se hereda de la actividad y se puede sobrescribir en el horario.
-  - [ ] Una misma actividad puede tener varios horarios con distintas profesoras.
-  - [ ] Baja de horario (`fecha_baja`); advertir si tiene alumnos inscriptos (depende de Sprint 2).
-  - [ ] Qué pasa con los horarios de una profesora dada de baja.
-- [ ] Protegido con permiso (US-02); solo propietaria.
-- [ ] Tests del service (especialmente la superposición) y de las rutas.
+  - [x] Solo se asignan usuarios con rol `PROFESORA`.
+  - [x] La misma profesora no puede tener dos horarios superpuestos el mismo día.
+  - [x] `hora_fin` posterior a `hora_inicio`.
+  - [x] El cupo se hereda de la actividad y se puede sobrescribir en el horario.
+  - [x] Una misma actividad puede tener varios horarios con distintas profesoras.
+  - [x] Baja de horario (`fecha_baja`); advertir si tiene alumnos inscriptos (depende de Sprint 2).
+  - [x] Una profesora no puede darse de baja mientras tenga horarios activos; primero se dan de baja los horarios y se conserva el historial.
+- [x] Protegido con permiso (US-02); solo propietaria.
+- [x] Tests del service (especialmente la superposición) y de las rutas.
 
 ---
 

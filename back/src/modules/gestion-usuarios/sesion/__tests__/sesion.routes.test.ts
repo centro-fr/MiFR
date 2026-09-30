@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
-import { createApp } from "../../../../app.js";
+import { createApp as crearAppBase } from "../../../../app.js";
 import {
   ForbiddenError,
   UnauthorizedError,
@@ -10,6 +10,18 @@ import { JwtService } from "../jwt.service.js";
 import type { IAutenticacion } from "../interface/i-autenticacion.js";
 import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
 import type { ILogicaUsuarios } from "../../interface/i-logica-usuarios.js";
+import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
+
+function createApp(
+  dependencias: Omit<Parameters<typeof crearAppBase>[0], "gestionServicioEntrenamiento" | "gestionPersonas">,
+) {
+  return crearAppBase({
+    ...dependencias,
+    gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
+    gestionPersonas: {} as unknown as ILogicaPersonas,
+  });
+}
 
 // La presentación llega al login por ILogicaUsuarios; IAutenticacion solo valida el JWT.
 const gestionUsuarios = { iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };

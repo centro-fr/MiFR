@@ -41,7 +41,8 @@ model usuarios {
   fecha_alta          DateTime       @default(now()) @db.Timestamp(6)
   fecha_actualizacion DateTime       @updatedAt @db.Timestamp(6)
 
-  roles usuario_roles[]
+  roles     usuario_roles[]
+  profesora profesoras?
 }
 
 model roles {
@@ -87,4 +88,54 @@ model rol_permisos {
   @@id([id_rol, id_permiso], map: "PK_rol_permisos")
   @@index([id_rol], map: "IXFK_rol_permisos_roles")
   @@index([id_permiso], map: "IXFK_rol_permisos_permisos")
+}
+
+// ============================================================
+// SERVICIO DE ENTRENAMIENTO
+// ============================================================
+
+enum modalidad_actividad {
+  GRUPAL
+  PERSONALIZADA
+}
+
+model actividades {
+  id_actividad Int                 @id(map: "PK_actividades") @default(autoincrement())
+  codigo       String              @unique @db.VarChar(20)
+  nombre       String              @db.VarChar(60)
+  descripcion  String?             @db.VarChar(255)
+  modalidad    modalidad_actividad
+  cupo_maximo  Int?                @db.SmallInt
+  activo       Boolean
+
+  horarios horarios[]
+}
+
+model profesoras {
+  id_profesora Int       @id(map: "PK_profesoras") @default(autoincrement())
+  id_usuario   Int       @unique(map: "UK_profesoras_id_usuario")
+  especialidad String?   @db.VarChar(80)
+  fecha_alta   DateTime  @default(now()) @db.Date
+  fecha_baja   DateTime? @db.Date
+
+  usuario  usuarios  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  horarios horarios[]
+}
+
+model horarios {
+  id_horario   Int       @id(map: "PK_horarios") @default(autoincrement())
+  id_actividad Int
+  id_profesora Int
+  dia_semana   Int       @db.SmallInt
+  hora_inicio  DateTime  @db.Time(6)
+  hora_fin     DateTime  @db.Time(6)
+  cupo_maximo  Int?      @db.SmallInt
+  fecha_alta   DateTime  @default(now()) @db.Date
+  fecha_baja   DateTime? @db.Date
+
+  actividad actividades @relation(fields: [id_actividad], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_actividades")
+  profesora profesoras  @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_profesoras")
+
+  @@index([id_actividad], map: "IXFK_horarios_actividades")
+  @@index([id_profesora], map: "IXFK_horarios_profesoras")
 }
