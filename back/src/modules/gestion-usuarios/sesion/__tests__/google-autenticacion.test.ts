@@ -42,4 +42,10 @@ describe("GoogleAutenticacion", () => {
 
     await expect(autenticacion.verificarToken("token-invalido")).rejects.toBeInstanceOf(UnauthorizedError);
   });
+
+  it("lanza UnauthorizedError si Google rechaza la firma del token", async () => {
+    verifyIdToken.mockRejectedValue(new Error("Wrong number of segments in token"));
+
+    await expect(autenticacion.verificarToken("token-malformado")).rejects.toBeInstanceOf(UnauthorizedError);
+  });
 });

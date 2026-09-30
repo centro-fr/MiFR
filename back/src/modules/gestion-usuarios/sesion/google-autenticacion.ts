@@ -10,7 +10,10 @@ export class GoogleAutenticacion implements IAutenticacionGoogleAuth {
   }
 
   async verificarToken(idToken: string): Promise<DatosGoogle> {
-    const ticket = await this.client.verifyIdToken({ idToken, audience: this.googleClientId });
+    // verifyIdToken lanza si la firma, el audience o la expiración no son válidos.
+    const ticket = await this.client.verifyIdToken({ idToken, audience: this.googleClientId }).catch(() => {
+      throw new UnauthorizedError("Token de Google inválido");
+    });
     const payload = ticket.getPayload();
     if (!payload?.sub || !payload.email) throw new UnauthorizedError("Token de Google inválido");
 
