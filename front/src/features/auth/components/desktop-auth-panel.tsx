@@ -20,19 +20,19 @@ export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onCon
   const showRetry = errorCode !== null && !isLoading;
 
   return (
-    <div className="flex w-full flex-col items-center justify-center overflow-y-auto bg-white px-8 py-10 lg:h-full lg:w-1/2 lg:px-12">
-      <div className="flex w-full max-w-[440px] flex-col items-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark to-primary text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50">
+    <div className="flex w-full flex-col items-center justify-center overflow-y-auto bg-white px-8 py-8 lg:h-full lg:w-1/2 lg:px-12">
+      <div className="flex w-full max-w-[460px] flex-col items-center">
+        <div className="mb-3 flex h-[120px] w-[120px] items-center justify-center rounded-[28px] bg-gradient-to-tr from-primary-dark to-primary text-[34px] font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50">
           FR
         </div>
-        <h2 className="text-center text-3xl font-extrabold tracking-tight text-dark">MiFR</h2>
-        <p className="mt-2 text-center text-sm font-bold uppercase tracking-widest text-slate-500">
+        <h2 className="text-center text-[44px] font-extrabold leading-none tracking-tight text-dark">MiFR</h2>
+        <p className="mt-2 text-center text-[15px] font-bold uppercase tracking-[0.18em] text-slate-700">
           Centro de Entrenamiento FR
         </p>
-        <div aria-hidden="true" className="my-5 h-0.5 w-12 rounded-full bg-slate-100" />
+        <div aria-hidden="true" className="my-3 h-0.5 w-16 rounded-full bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
         {errorCode && !isLoading && (
-          <div className="mb-5 w-full">
+          <div className="mb-3 w-full">
             <AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} />
           </div>
         )}
@@ -43,15 +43,16 @@ export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onCon
           hasError={errorCode !== null}
           isConnectionError={!isAccessDenied}
           overlay={overlay}
+          className="lg:h-[76px] lg:px-10 lg:text-lg"
         />
-        <p className="mt-4 text-center text-sm font-medium text-slate-500">
+        <p className="mt-3 text-center text-[15px] font-medium text-slate-500">
           {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
         </p>
         {showRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="mt-3 min-h-[44px] w-full text-center text-sm font-semibold text-slate-600 hover:text-dark"
+            className="mt-2 min-h-[44px] w-full text-center text-sm font-semibold text-slate-600 hover:text-dark"
           >
             ← Volver al estado principal
           </button>
@@ -60,14 +61,14 @@ export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onCon
           <button
             type="button"
             onClick={onContact}
-            className="mt-2 min-h-[44px] w-full text-center text-sm font-bold text-primary-dark hover:text-primary"
+            className="mt-1 min-h-[44px] w-full text-center text-sm font-bold text-primary-dark hover:text-primary"
           >
             Contactar administración para solicitar acceso
           </button>
         )}
 
-        <footer className="mt-5 border-t border-slate-100 pt-3 text-center">
-          <p className="text-xs text-slate-500">
+        <footer className="mt-3 border-t border-slate-100 pt-2 text-center">
+          <p className="text-[13px] text-slate-500">
             <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700">Términos</button>
             {" · "}
             <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700">Privacidad</button>

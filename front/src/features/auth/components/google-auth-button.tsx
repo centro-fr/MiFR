@@ -13,12 +13,13 @@ interface GoogleAuthButtonProps {
   // Overlay del botón oficial de GIS (modo real): va encima del botón custom
   // para abrir el popup de Google manteniendo el diseño Stitch.
   overlay?: ReactNode;
+  className?: string;
 }
 
 const BASE_CLASSES =
-  "flex h-[60px] min-h-[56px] w-full cursor-pointer items-center justify-center gap-3.5 rounded-2xl border px-8 text-base font-semibold transition-all duration-200";
+  "flex h-[64px] min-h-[56px] w-full cursor-pointer items-center justify-center gap-3.5 rounded-2xl border px-8 text-[17px] font-semibold transition-all duration-200";
 
-export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConnectionError, overlay }: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConnectionError, overlay, className }: GoogleAuthButtonProps) {
   if (isLoading) {
     return (
       <div
@@ -47,7 +48,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
       <button
         type="button"
         onClick={hasError ? onRetry : onLogin}
-        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30")}
+        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30", className)}
       >
         <GoogleIcon className="h-5 w-5 shrink-0" />
         <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>

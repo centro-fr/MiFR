@@ -16,11 +16,7 @@ export function LoginHero() {
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-xl">
-        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-pink-500/20 bg-pink-500/10 px-3.5 py-1.5 text-xs font-semibold text-pink-300">
-          <span aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-          Acceso Unificado Multirrol
-        </p>
-        <h1 className="text-4xl font-extrabold leading-[1.15] tracking-tight text-white lg:text-5xl">
+        <h1 className="animate-hero-enter text-4xl font-extrabold leading-[1.15] tracking-tight text-white lg:text-5xl">
           Tu espacio de entrenamiento{" "}
           <span className="bg-gradient-to-r from-primary via-[#FF4D9E] to-pink-200 bg-clip-text text-transparent">
             inteligente.

@@ -75,8 +75,12 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
       </div>
 
       <div className="hidden h-dvh w-full lg:block">
-        <div className="flex h-full w-full bg-white">
+        <div className="relative flex h-full w-full bg-white">
           <LoginHero />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-1/2 z-10 -translate-x-1/2">
+            <div className="h-full w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent" />
+            <div className="absolute inset-y-0 -left-8 w-16 bg-gradient-to-r from-transparent via-primary/[0.06] to-transparent blur-lg" />
+          </div>
           <DesktopAuthPanel
             errorCode={flow.errorCode}
             isLoading={flow.isLoading}

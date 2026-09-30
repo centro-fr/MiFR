@@ -22,7 +22,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
   return (
     <div className="flex min-h-dvh w-full flex-col bg-white">
       {/* Header mínimo público: solo logo (Stitch) */}
-      <header className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
+      <header className="flex items-center border-b border-slate-100 bg-white px-6 py-4">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -32,7 +32,6 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
           </span>
           <span className="text-sm font-extrabold tracking-tight text-dark">MiFR</span>
         </div>
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Acceso</span>
       </header>
 
       {/* Contenido central */}
@@ -57,7 +56,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
             isConnectionError={!isAccessDenied}
             overlay={overlay}
           />
-          <p className="mt-4 text-center text-xs font-medium text-slate-400">
+          <p className="mt-4 text-center text-xs font-medium text-slate-500">
             {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
           </p>
           {showRetry && (
@@ -82,14 +81,14 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
       </div>
 
       {/* Home indicator + legal mínimo (una línea, Stitch: sin footers extensos) */}
-      <div className="flex justify-center bg-white pb-3">
+      <div className="flex justify-center bg-white pb-2">
         <div aria-hidden="true" className="h-1 w-32 rounded-full bg-slate-300" />
       </div>
-      <footer className="border-t border-slate-100 px-6 py-3 text-center">
-        <p className="text-[11px] text-slate-400">
-          <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-600">Términos</button>
+      <footer className="border-t border-slate-100 px-6 pb-3 pt-2 text-center">
+        <p className="text-[11px] text-slate-500">
+          <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700">Términos</button>
           {" · "}
-          <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-600">Privacidad</button>
+          <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700">Privacidad</button>
         </p>
       </footer>
     </div>

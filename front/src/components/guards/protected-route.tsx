@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { SessionSplash } from "@/components/guards/session-splash";
 import { homePathForRoles } from "@/types/auth";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -7,11 +8,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-canvas" aria-busy="true" aria-live="polite">
-        <p className="text-sm text-slate-300">Cargando sesión...</p>
-      </main>
-    );
+    return <SessionSplash />;
   }
 
   if (!user) {
@@ -25,11 +22,7 @@ export function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-canvas" aria-busy="true" aria-live="polite">
-        <p className="text-sm text-slate-300">Cargando sesión...</p>
-      </main>
-    );
+    return <SessionSplash />;
   }
 
   if (user) {
