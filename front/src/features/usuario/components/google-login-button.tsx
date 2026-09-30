@@ -29,7 +29,7 @@ function cargarGoogleIdentityServices(): Promise<void> {
 }
 
 // Componente de UsuarioPresWeb. Google Identity Services obtiene el id_token
-// y se lo pasa al back a través del Servidor Web (/api/auth/google).
+// y se lo pasa al back a través del Servidor Web (/api/v1/auth/google).
 // El token NO se guarda en localStorage, solo en memoria (estado de React).
 export function GoogleLoginButton() {
   const btnRef = useRef<HTMLDivElement>(null);
