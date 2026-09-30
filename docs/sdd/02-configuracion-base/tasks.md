@@ -1,0 +1,60 @@
+# Tareas de Implementación: Configuración Base
+
+Tareas técnicas, secuenciales y verificables para implementar la épica **Configuración Base** (US-03 y US-04).
+
+---
+
+## Fase 1: Persistencia y Migraciones
+
+- [ ] **1.1. Tablas `actividades` y `horarios`**
+  - Crear script de migración SQL para `actividades` (soporte de enum o check para `tipo: GRUPAL / PERSONALIZADA`, cupo_maximo, activo, fecha_alta, fecha_baja).
+  - Crear script de migración para `horarios` con FKs hacia `actividades` y `profesoras`, constraint `hora_fin > hora_inicio` e índices optimizados.
+  - *Criterio de verificación*: Migración aplicada con éxito y verificación de constraints contra inserciones inválidas directas en SQL.
+
+- [ ] **1.2. Datos semilla de prueba**
+  - Insertar actividades de prueba: una grupal (ej: "Funcional Grupal") y una personalizada (ej: "Pilates Reformer" con cupo 4).
+  - Insertar registros de profesoras de prueba para pruebas de asignación.
+  - *Criterio de verificación*: `SELECT * FROM actividades` retorna los registros iniciales con sus tipos respectivos.
+
+---
+
+## Fase 2: Backend – Servicios y Endpoints
+
+- [ ] **2.1. Módulo y CRUD de Actividades (US-03)**
+  - Implementar `ActividadController`, `ActividadService`, `ActividadRepository`.
+  - Validar regla de negocio: si `tipo == 'PERSONALIZADA'`, `cupo_maximo` debe ser > 0.
+  - Implementar borrado lógico en `DELETE /actividades/:id` con verificación previa de dependencias en horarios.
+  - *Criterio de verificación*: Pruebas automatizadas de creación grupal sin cupo y rechazo en personalizada sin cupo.
+
+- [ ] **2.2. Algoritmo de detección de solapamiento y CRUD de Horarios (US-04)**
+  - Implementar método en `HorarioService` para verificar colisión temporal de una profesora en el mismo día.
+  - Validar que el usuario asignado tenga rol `PROFESORA` activo.
+  - Implementar endpoints `GET /horarios` (con filtros) y `POST /horarios`.
+  - Implementar `DELETE /horarios/:id` (baja lógica).
+  - *Criterio de verificación*: Test unitario que simula dos horarios superpuestos para la misma profesora y verifica que devuelva error 409.
+
+---
+
+## Fase 3: Frontend – Interfaces y Vistas
+
+- [ ] **3.1. Pantalla de Gestión de Actividades (US-03)**
+  - Crear vista `/admin/actividades` con listado de tarjetas/tabla y badge de estado (Activa / Inactiva).
+  - Crear modal o formulario de alta/edición de actividad con selector de tipo (Grupal / Personalizada).
+  - Manejar reactivamente la obligatoriedad del campo "Cupo máximo" al cambiar de tipo.
+  - *Criterio de verificación*: En el formulario, al seleccionar "Personalizada" el input de cupo se marca como obligatorio y valida número mayor a cero.
+
+- [ ] **3.2. Grilla Semanal de Horarios y Cronograma (US-04)**
+  - Crear componente de cronograma semanal `/admin/horarios` con vista desktop (columnas Lunes a Domingo) y mobile (acordeón/lista).
+  - Mostrar tarjetas de clase con nombre de actividad, color identificador, horario, cupo y profesora asignada.
+  - Implementar modal de asignación de horario con select de actividades y select de profesoras activas.
+  - Mostrar feedback visual inmediato en caso de error de superposición retornado por el backend.
+  - *Criterio de verificación*: La grilla dibuja las clases en su día y franja horaria correspondiente sin descuadres visuales.
+
+---
+
+## Fase 4: Validación End-to-End y Criterios de Aceptación
+
+- [ ] **4.1. Verificación CA-01 y CA-02**: Crear actividad grupal sin cupo y personalizada con cupo validado.
+- [ ] **4.2. Verificación CA-03**: Probar inactivación de actividad sin dependencias y con dependencias activas.
+- [ ] **4.3. Verificación CA-04 y CA-05**: Asignar profesora a horario y verificar rechazo al intentar solapar con otro bloque.
+- [ ] **4.4. Verificación CA-06 y CA-07**: Validar que solo usuarios con rol profesora puedan seleccionarse y comprobar sobrescritura de cupo en el horario.
