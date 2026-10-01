@@ -21,7 +21,18 @@ const mockUsers: Record<string, MockProfile> = {
       apellido: "Gómez",
       estado: "ACTIVO",
       roles: ["PROPIETARIA", "PROFESORA"] as RoleCode[],
-      permisos: ["seguridad.matriz.ver", "clases.asistencia.marcar"],
+      permisos: [
+        "SEGURIDAD_MATRIZ_VER",
+        "SEGURIDAD_MATRIZ_EDITAR",
+        "USUARIOS_VER",
+        "USUARIOS_EDITAR",
+        "HORARIOS_VER",
+        "ALUMNOS_VER",
+        "ASISTENCIAS_MARCAR",
+        "RUTINAS_VER",
+        "RUTINAS_EDITAR",
+        "HONORARIOS_VER_PROPIOS",
+      ],
     },
   },
   "maria.profesora@gmail.com": {
@@ -32,7 +43,7 @@ const mockUsers: Record<string, MockProfile> = {
       apellido: "Pérez",
       estado: "ACTIVO",
       roles: ["PROFESORA"] as RoleCode[],
-      permisos: ["clases.asistencia.marcar"],
+      permisos: ["HORARIOS_VER", "ALUMNOS_VER", "ASISTENCIAS_MARCAR", "RUTINAS_VER", "RUTINAS_EDITAR", "HONORARIOS_VER_PROPIOS"],
     },
   },
   "juan.alumno@gmail.com": {
@@ -43,12 +54,15 @@ const mockUsers: Record<string, MockProfile> = {
       apellido: "López",
       estado: "ACTIVO",
       roles: ["ALUMNO"] as RoleCode[],
-      permisos: ["rutinas.ver"],
+      permisos: ["RUTINAS_VER"],
     },
   },
 };
 
-let currentUser: MockProfile | null = null;
+// Sesión iniciada por defecto como propietaria (modo mock/dev): entrar
+// directo a /app/* funciona sin pasar por el login. "Cerrar sesión" la
+// vacía y permite probar el flujo de login desde cero.
+let currentUser: MockProfile | null = mockUsers["laura.propietaria@gmail.com"];
 
 function sessionPayload(profile: MockProfile) {
   const usuario = profile.usuario;
