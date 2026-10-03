@@ -25,9 +25,22 @@ export class UsuarioService implements IInfoUsuarios {
   }
 
   async obtenerPorId(id: number): Promise<UsuarioConRoles> {
-    const usuario = await this.repositorio.buscarPorId(id);
+    const usuario = await this.buscarPorId(id);
     if (!usuario) throw new NotFoundError("Usuario no encontrado");
     return usuario;
+  }
+
+  buscarPorId(id: number): Promise<UsuarioConRoles | null> {
+    return this.repositorio.buscarPorId(id);
+  }
+
+  // Quien fue dado de alta con su email y sin google_id queda vinculado en su primer login.
+  async identificarPorGoogle(googleId: string, email: string): Promise<UsuarioConRoles | null> {
+    const porGoogleId = await this.repositorio.buscarPorGoogleId(googleId);
+    if (porGoogleId) return porGoogleId;
+
+    const porEmail = await this.repositorio.buscarPorEmail(email);
+    return porEmail ? this.repositorio.vincularGoogleId(porEmail.id_usuario, googleId) : null;
   }
 
   async actualizar(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {

@@ -19,13 +19,12 @@ import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario
 import { generarDocumentoOpenApi } from "./openapi.js";
 
 // Composition root: único lugar donde se instancian las clases concretas.
-const usuarioRepositorio = new UsuarioRepository();
 const rolService = new RolService(new RolRepository());
-const usuarioService = new UsuarioService(usuarioRepositorio, rolService);
+const usuarioService = new UsuarioService(new UsuarioRepository(), rolService);
 
 const googleAutenticacion = new GoogleAutenticacion(process.env.GOOGLE_CLIENT_ID as string);
 const jwtService = new JwtService(process.env.JWT_SECRET as string, process.env.JWT_EXPIRES_IN ?? "8h");
-const autenticacion = new SesionService(usuarioRepositorio, googleAutenticacion, jwtService, rolService);
+const autenticacion = new SesionService(usuarioService, googleAutenticacion, jwtService, rolService);
 
 const gestionUsuarios = new GestionUsuariosService(usuarioService, autenticacion, rolService);
 

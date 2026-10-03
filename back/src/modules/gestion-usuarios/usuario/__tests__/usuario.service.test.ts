@@ -130,6 +130,48 @@ describe("UsuarioService", () => {
     });
   });
 
+  describe("buscarPorId", () => {
+    it("buscarPorId devuelve null si no existe, sin lanzar", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+
+      await expect(service.buscarPorId(99)).resolves.toBeNull();
+    });
+  });
+
+  describe("identificarPorGoogle", () => {
+    it("identificarPorGoogle devuelve el usuario con ese google_id sin buscar por email", async () => {
+      repositorio.buscarPorGoogleId.mockResolvedValue(crearUsuario());
+
+      await expect(service.identificarPorGoogle("google-123", "test@example.com")).resolves.toMatchObject({
+        id_usuario: 1,
+      });
+      expect(repositorio.buscarPorGoogleId).toHaveBeenCalledWith("google-123");
+      expect(repositorio.buscarPorEmail).not.toHaveBeenCalled();
+      expect(repositorio.vincularGoogleId).not.toHaveBeenCalled();
+    });
+
+    it("identificarPorGoogle vincula el google_id al usuario precargado con ese email", async () => {
+      repositorio.buscarPorGoogleId.mockResolvedValue(null);
+      repositorio.buscarPorEmail.mockResolvedValue(crearUsuario({ google_id: null }));
+      repositorio.vincularGoogleId.mockResolvedValue(crearUsuario({ google_id: "google-123" }));
+
+      const usuario = await service.identificarPorGoogle("google-123", "test@example.com");
+
+      expect(repositorio.buscarPorEmail).toHaveBeenCalledWith("test@example.com");
+      expect(repositorio.vincularGoogleId).toHaveBeenCalledWith(1, "google-123");
+      expect(usuario?.google_id).toBe("google-123");
+    });
+
+    it("identificarPorGoogle devuelve null si no hay usuario con ese google_id ni ese email", async () => {
+      repositorio.buscarPorGoogleId.mockResolvedValue(null);
+      repositorio.buscarPorEmail.mockResolvedValue(null);
+
+      await expect(service.identificarPorGoogle("google-123", "test@example.com")).resolves.toBeNull();
+      expect(repositorio.vincularGoogleId).not.toHaveBeenCalled();
+      expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+  });
+
   describe("actualizar", () => {
     it("actualizar actualiza campos permitidos", async () => {
       repositorio.buscarPorId.mockResolvedValue(crearUsuario());
