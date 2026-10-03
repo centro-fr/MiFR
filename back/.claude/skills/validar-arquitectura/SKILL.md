@@ -49,7 +49,6 @@ Si no hay hallazgos, decirlo en una línea. No inflar el reporte con observacion
 
 ## Deuda ya conocida
 
-Estas dos ya están documentadas y no hace falta volver a reportarlas como hallazgos nuevos, solo confirmar si siguen:
+Esta ya está documentada y no hace falta volver a reportarla como hallazgo nuevo, solo confirmar si siguen:
 
-- `permiso.service.ts` importa `prisma` sin repositorio intermedio.
 - `PORT` se usa en `index.ts` pero no está en `.env.example`.

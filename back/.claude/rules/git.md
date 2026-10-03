@@ -50,7 +50,7 @@ Conventional Commits con la descripción en español, en infinitivo, sin punto f
 feat(usuario): agregar validacion de rol
 fix(sesion): corregir expiracion del JWT
 docs(der): actualizar diagrama entidad-relacion
-test(permiso): cubrir caso de usuario sin roles
+test(rol): cubrir caso de usuario sin roles
 refactor(usuario): extraer mapeo de roles al repositorio
 chore(deps): actualizar prisma a 6.x
 ```
@@ -67,7 +67,7 @@ Tipos permitidos:
 | `chore` | Dependencias, configuración, tareas de mantenimiento |
 | `style` | Formato que no altera el comportamiento |
 
-El ámbito entre paréntesis es el módulo o área afectada: `usuario`, `sesion`, `permiso`, `der`, `deps`.
+El ámbito entre paréntesis es el módulo o área afectada: `usuario`, `sesion`, `rol`, `der`, `deps`.
 
 Un commit es un cambio con sentido propio. No mezclar un refactor con una funcionalidad nueva: son dos commits. Si el mensaje necesita un "y", probablemente sean dos commits.
 

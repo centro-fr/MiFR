@@ -1,3 +1,4 @@
+
 # Testing
 
 Vitest, configurado en `vitest.config.ts` con `environment: "node"` y `globals: false`.

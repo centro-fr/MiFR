@@ -1,0 +1,415 @@
+### Pruebas manuales US-03 y US-04
+#
+# Preparacion:
+# 1. Levantar la API desde la raiz: corepack pnpm --dir back dev
+# 2. Reemplazar los tokens de Google y los ID de usuarios de prueba.
+# 3. El usuario de la propietaria debe existir y tener rol PROPIETARIA.
+# 4. Los usuarios profesora deben existir y tener rol PROFESORA.
+# 5. El usuario sin rol profesora debe existir y no tener ese rol.
+# 6. Ejecutar los requests en orden. Las variables de respuesta capturan los ID.
+#
+# Las altas de perfiles de profesora solo se ejecutan una vez por usuario: id_usuario
+# es unico. Para repetir el flujo, usar usuarios de prueba nuevos o tomar un perfil
+# existente desde GET /profesoras y reemplazar las referencias necesarias.
+# No guardar tokens reales en este archivo ni commitearlos.
+
+@baseUrl = http://localhost:3000/api/v1
+@googleIdTokenPropietaria = REEMPLAZAR_CON_ID_TOKEN_GOOGLE
+@googleIdTokenProfesora = REEMPLAZAR_CON_ID_TOKEN_GOOGLE
+@idUsuarioProfesora1 = 0
+@idUsuarioProfesora2 = 0
+@idUsuarioSinRolProfesora = 0
+@codigoActividadGrupal = GRP-{{$timestamp}}
+@codigoActividadPersonalizada = PER-{{$timestamp}}
+
+### Sin sesion: debe responder 401
+GET {{baseUrl}}/actividades
+
+### Iniciar sesion como propietaria
+# @name loginPropietaria
+POST {{baseUrl}}/auth/google
+Content-Type: application/json
+
+{
+  "id_token": "{{googleIdTokenPropietaria}}"
+}
+
+### Iniciar sesion como profesora
+# @name loginProfesora
+POST {{baseUrl}}/auth/google
+Content-Type: application/json
+
+{
+  "id_token": "{{googleIdTokenProfesora}}"
+}
+
+### Variables de sesion obtenidas de las respuestas anteriores
+@tokenPropietaria = {{loginPropietaria.response.body.$.token}}
+@tokenProfesora = {{loginProfesora.response.body.$.token}}
+
+### Verificar usuarios disponibles y sus roles
+GET {{baseUrl}}/usuarios
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: listar actividades
+GET {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: crear actividad grupal sin cupo (debe responder 201)
+# @name crearActividadGrupal
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "{{codigoActividadGrupal}}",
+  "nombre": "Actividad grupal de prueba",
+  "descripcion": "Creada desde REST Client",
+  "modalidad": "GRUPAL"
+}
+
+### ID de la actividad grupal creada
+@actividadGrupalId = {{crearActividadGrupal.response.body.$.id_actividad}}
+
+### US-03: buscar actividades por codigo o nombre
+GET {{baseUrl}}/actividades?busqueda={{crearActividadGrupal.response.body.$.codigo}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: crear actividad personalizada con cupo (debe responder 201)
+# @name crearActividadPersonalizada
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "{{codigoActividadPersonalizada}}",
+  "nombre": "Actividad personalizada de prueba",
+  "modalidad": "PERSONALIZADA",
+  "cupo_maximo": 12
+}
+
+### ID de la actividad personalizada creada
+@actividadPersonalizadaId = {{crearActividadPersonalizada.response.body.$.id_actividad}}
+
+### US-03: PERSONALIZADA sin cupo (debe responder 400)
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "P-{{$timestamp}}",
+  "nombre": "Personalizada sin cupo",
+  "modalidad": "PERSONALIZADA"
+}
+
+### US-03: cupo cero (debe responder 400)
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "Z0-{{$timestamp}}",
+  "nombre": "Cupo cero",
+  "modalidad": "GRUPAL",
+  "cupo_maximo": 0
+}
+
+### US-03: cupo superior a SMALLINT (debe responder 400)
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "ZH-{{$timestamp}}",
+  "nombre": "Cupo fuera de rango",
+  "modalidad": "GRUPAL",
+  "cupo_maximo": 32768
+}
+
+### US-03: codigo duplicado (debe responder 409)
+POST {{baseUrl}}/actividades
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "codigo": "{{crearActividadGrupal.response.body.$.codigo}}",
+  "nombre": "Duplicada",
+  "modalidad": "GRUPAL"
+}
+
+### US-03: obtener por ID (debe responder 200)
+GET {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: cambiar a PERSONALIZADA sin cupo (debe responder 409)
+PATCH {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "modalidad": "PERSONALIZADA"
+}
+
+### US-03: cambiar modalidad con cupo (debe responder 200)
+PATCH {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "modalidad": "PERSONALIZADA",
+  "cupo_maximo": 10
+}
+
+### US-03: una profesora no puede editar actividades (debe responder 403)
+PATCH {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenProfesora}}
+Content-Type: application/json
+
+{
+  "nombre": "Edicion no autorizada"
+}
+
+### US-04: listar perfiles de profesoras activas
+GET {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: crear perfil para usuario con rol PROFESORA (debe responder 201)
+# @name crearPerfilProfesora1
+POST {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_usuario": {{idUsuarioProfesora1}},
+  "especialidad": "Funcional"
+}
+
+### ID del perfil creado
+@profesoraId1 = {{crearPerfilProfesora1.response.body.$.id_profesora}}
+
+### US-04: crear perfil para una segunda profesora (debe responder 201)
+# @name crearPerfilProfesora2
+POST {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_usuario": {{idUsuarioProfesora2}},
+  "especialidad": "Musculacion"
+}
+
+### ID del segundo perfil
+@profesoraId2 = {{crearPerfilProfesora2.response.body.$.id_profesora}}
+
+### US-04: perfil duplicado para el mismo usuario (debe responder 409)
+POST {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_usuario": {{idUsuarioProfesora1}}
+}
+
+### US-04: usuario sin rol PROFESORA (debe responder 409)
+POST {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_usuario": {{idUsuarioSinRolProfesora}}
+}
+
+### US-04: una profesora no puede crear perfiles (debe responder 403)
+POST {{baseUrl}}/profesoras
+Authorization: Bearer {{tokenProfesora}}
+Content-Type: application/json
+
+{
+  "id_usuario": {{idUsuarioProfesora1}}
+}
+
+### US-04: crear horario (el cupo efectivo debe heredarse: 10)
+# @name crearHorarioPrincipal
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 1,
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### ID del horario principal
+@horarioPrincipalId = {{crearHorarioPrincipal.response.body.$.id_horario}}
+
+### US-04: solapamiento de la misma profesora y dia (debe responder 409)
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 1,
+  "hora_inicio": "09:30",
+  "hora_fin": "10:30"
+}
+
+### US-04: horario consecutivo (debe responder 201)
+# @name crearHorarioConsecutivo
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 1,
+  "hora_inicio": "10:00",
+  "hora_fin": "11:00"
+}
+
+### ID del segundo horario
+@horarioConsecutivoId = {{crearHorarioConsecutivo.response.body.$.id_horario}}
+
+### US-04: misma actividad con otra profesora y misma franja (debe responder 201)
+# @name crearHorarioSegundaProfesora
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId2}},
+  "dia_semana": 1,
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### ID del horario de la segunda profesora
+@horarioSegundaProfesoraId = {{crearHorarioSegundaProfesora.response.body.$.id_horario}}
+
+### US-04: hora fin igual o anterior al inicio (debe responder 400)
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 2,
+  "hora_inicio": "10:00",
+  "hora_fin": "10:00"
+}
+
+### US-04: dia fuera de rango (debe responder 400)
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 8,
+  "hora_inicio": "10:00",
+  "hora_fin": "11:00"
+}
+
+### US-04: filtrar por actividad y profesora
+GET {{baseUrl}}/horarios?id_actividad={{actividadGrupalId}}&id_profesora={{profesoraId1}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: obtener un horario por ID
+GET {{baseUrl}}/horarios/{{horarioPrincipalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: editar para crear un solapamiento (debe responder 409)
+PATCH {{baseUrl}}/horarios/{{horarioConsecutivoId}}
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "hora_inicio": "09:45"
+}
+
+### US-04: editar el cupo propio (debe responder 200 y mostrar cupo efectivo 5)
+PATCH {{baseUrl}}/horarios/{{horarioConsecutivoId}}
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "cupo_maximo": 5
+}
+
+### US-04: quitar el cupo propio y volver a heredar el de la actividad (debe responder 200)
+PATCH {{baseUrl}}/horarios/{{horarioConsecutivoId}}
+Authorization: Bearer {{tokenPropietaria}}
+Content-Type: application/json
+
+{
+  "cupo_maximo": null
+}
+
+### US-04: una profesora no puede crear horarios (debe responder 403)
+POST {{baseUrl}}/horarios
+Authorization: Bearer {{tokenProfesora}}
+Content-Type: application/json
+
+{
+  "id_actividad": {{actividadGrupalId}},
+  "id_profesora": {{profesoraId1}},
+  "dia_semana": 3,
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### US-03: dar de baja actividad con horarios activos (debe responder 200 con advertencia)
+DELETE {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: la baja logica conserva la actividad (activo debe ser false)
+GET {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: no se puede dar de baja profesora con horarios activos (debe responder 409)
+DELETE {{baseUrl}}/profesoras/{{profesoraId1}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: baja logica del horario principal (debe responder 200 y advertir por inscripciones)
+DELETE {{baseUrl}}/horarios/{{horarioPrincipalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: baja logica del horario consecutivo
+DELETE {{baseUrl}}/horarios/{{horarioConsecutivoId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: baja logica del horario de la segunda profesora
+DELETE {{baseUrl}}/horarios/{{horarioSegundaProfesoraId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: el listado activo ya no debe mostrar los horarios dados de baja
+GET {{baseUrl}}/horarios?id_actividad={{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: el detalle conserva el horario dado de baja y fecha_baja
+GET {{baseUrl}}/horarios/{{horarioPrincipalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: baja de profesora despues de dar de baja sus horarios (debe responder 200)
+DELETE {{baseUrl}}/profesoras/{{profesoraId1}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-04: baja de la segunda profesora despues de dar de baja su horario
+DELETE {{baseUrl}}/profesoras/{{profesoraId2}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: actividad ya dada de baja (debe responder 409)
+DELETE {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: dar de baja actividad sin horarios asociados (sin advertencia)
+DELETE {{baseUrl}}/actividades/{{actividadPersonalizadaId}}
+Authorization: Bearer {{tokenPropietaria}}
