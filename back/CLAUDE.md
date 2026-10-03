@@ -20,7 +20,7 @@ pnpm prisma:studio    # explorar la base
 pnpm db:seed          # cargar datos de prueba
 ```
 
-La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). Tiene una etapa `migraciones`, que corre `prisma migrate deploy` y termina, y una etapa `produccion` con solo las dependencias de producción, que corre como el usuario `node`.
+La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.
 
 No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la versión del proyecto. Por ahora la red de seguridad son `tsc` con `strict` y los tests. Ver `.claude/rules/documentacion.md`.
 

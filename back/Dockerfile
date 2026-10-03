@@ -17,16 +17,12 @@ FROM dependencias AS build
 COPY back/ back/
 RUN pnpm --filter back prisma:generate && pnpm --filter back build
 
-# Corre las migraciones pendientes y termina. Usa la imagen de build porque necesita el CLI de
-# Prisma, que es dependencia de desarrollo y no está en la imagen final.
-FROM build AS migraciones
-WORKDIR /app/back
-CMD ["pnpm", "exec", "prisma", "migrate", "deploy"]
-
-# pnpm deploy arma en /prod un node_modules aislado solo con dependencias de producción. El cliente
-# de Prisma se vuelve a generar ahí con el CLI de la etapa de build, que no viaja a la imagen final.
+# pnpm deploy arma en /prod un node_modules aislado solo con dependencias de producción, y el
+# cliente de Prisma se vuelve a generar ahí.
 FROM build AS dependencias-produccion
-RUN pnpm --filter back deploy --prod --legacy /prod   && cd /prod && /app/back/node_modules/.bin/prisma generate --schema prisma/schema.prisma
+RUN pnpm --filter back deploy --prod --legacy /prod \
+  && cd /prod \
+  && ./node_modules/.bin/prisma generate --schema prisma/schema.prisma
 
 FROM node:22-alpine AS produccion
 RUN apk add --no-cache openssl
@@ -34,8 +30,14 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=dependencias-produccion --chown=node:node /prod/node_modules ./node_modules
 COPY --from=dependencias-produccion --chown=node:node /prod/package.json ./package.json
+COPY --from=dependencias-produccion --chown=node:node /prod/prisma ./prisma
 COPY --from=build --chown=node:node /app/back/dist ./dist
 USER node
 EXPOSE 3000
-HEALTHCHECK --interval=10s --timeout=3s --retries=5   CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/health" > /dev/null || exit 1
-CMD ["node", "dist/index.js"]
+# start-period da margen a las migraciones antes de contar los chequeos fallidos.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=60s --retries=5 \
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/health" > /dev/null || exit 1
+# Las migraciones corren al arrancar porque el plan gratuito de Render no permite un comando
+# previo al deploy. Con una sola instancia no hay carrera; si falla una migración, la API no arranca.
+# exec deja a node como PID 1 para que reciba el SIGTERM del orquestador.
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && exec node dist/index.js"]
