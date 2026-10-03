@@ -1,29 +1,26 @@
+import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { RolRepository } from "../rol.repository.js";
 
-vi.mock("../../../../shared/db/client.js", () => ({
-  prisma: {
-    roles: { findUnique: vi.fn(), findMany: vi.fn() },
-    usuario_roles: { create: vi.fn(), delete: vi.fn() },
-    permisos: { findMany: vi.fn() },
-    rol_permisos: {
-      count: vi.fn(),
-      findMany: vi.fn(),
-      createMany: vi.fn().mockReturnValue("otorgar"),
-      deleteMany: vi.fn().mockReturnValue("quitar"),
-    },
-    $transaction: vi.fn(),
+const prisma = {
+  roles: { findUnique: vi.fn(), findMany: vi.fn() },
+  usuario_roles: { create: vi.fn(), delete: vi.fn() },
+  permisos: { findMany: vi.fn() },
+  rol_permisos: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+    createMany: vi.fn().mockReturnValue("otorgar"),
+    deleteMany: vi.fn().mockReturnValue("quitar"),
   },
-}));
-
-const { prisma } = await import("../../../../shared/db/client.js");
-const { RolRepository } = await import("../rol.repository.js");
+  $transaction: vi.fn(),
+};
 
 describe("RolRepository", () => {
-  let repositorio: InstanceType<typeof RolRepository>;
+  let repositorio: RolRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    repositorio = new RolRepository();
+    repositorio = new RolRepository(prisma as unknown as PrismaClient);
   });
 
   it("buscarRolPorCodigo busca en la tabla roles por codigo", async () => {

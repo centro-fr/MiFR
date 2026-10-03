@@ -25,8 +25,8 @@ Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corri
 
 ### Contra las reglas del proyecto
 
-- No hay `new` de clases concretas fuera de `src/index.ts`.
-- `prisma` solo se importa en archivos `*.repository.ts` y en `shared/db/client.ts`.
+- No hay `new` de clases concretas fuera de `src/index.ts`, tampoco de librerías (`PrismaClient`, `OAuth2Client`, etc.). `prisma/seed.ts` queda afuera porque es otro punto de entrada.
+- `PrismaClient` solo lo recibe por constructor un `*.repository.ts`; ningún service ni controller lo usa.
 - Cada service que tiene interfaz la implementa con `implements`.
 - Las dependencias entre componentes se tipan contra interfaces, no contra clases concretas.
 - No hay `any` ni `console.log` de depuración.
@@ -40,7 +40,7 @@ Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corri
 Agrupar por severidad y ser concreto:
 
 ```text
-BLOQUEANTE  src/modules/x/x.service.ts:14  importa prisma directamente; mover la consulta al repositorio
+BLOQUEANTE  src/modules/x/x.service.ts:14  usa el cliente de Prisma directamente; mover la consulta al repositorio
 ATENCION    prisma/schema.prisma:52         enum estado_pago no tiene RECHAZADO, el DER si (der.puml:266)
 MENOR       src/modules/x/x.controller.ts:8 usa any en el parametro input
 ```

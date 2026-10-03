@@ -24,7 +24,7 @@ En `src/modules/<subsistema>/<componente>/`:
 | `interface/i-*.ts` | La interfaz que el diagrama le asigna al componente, con un comentario arriba que la vincule y aclare qué queda afuera. Las `ILogica*` son del subsistema: van en `<subsistema>/interface/` y las realiza `<subsistema>/<subsistema>.service.ts` |
 | `<x>.types.ts` | Re-exporta los tipos de Prisma con nombres de dominio |
 | `<x>.schemas.ts` | Esquemas Zod de entrada, con los tipos inferidos exportados |
-| `<x>.repository.ts` | Clase con métodos en español; único lugar que importa `prisma` |
+| `<x>.repository.ts` | Clase con métodos en español; recibe `PrismaClient` por constructor y es el único que lo usa |
 | `<x>.service.ts` | Clase que implementa la interfaz; recibe repositorio y dependencias por constructor |
 | `<x>.controller.ts` | `create<X>Controller(service)` que devuelve el objeto de handlers |
 | `<x>.routes.ts` | `create<X>Routes(service, autenticacion)` que devuelve el `Router` |
@@ -33,13 +33,13 @@ En `src/modules/<subsistema>/<componente>/`:
 Después, el cableado:
 
 - En `app.ts`: agregar la dependencia a `AppDependencies` tipada contra la interfaz, y montar el router en el router versionado con `api.use("/<recurso>", create<X>Routes(...))`, que queda bajo `/api/v1`.
-- En `index.ts`: instanciar el repositorio y el service, y pasarlos a `createApp`.
+- En `index.ts`: instanciar el repositorio con el `prisma` que ya está creado ahí, después el service, y pasarlos a `createApp`.
 
 ## Reglas a respetar
 
 - Todo en español: nombres de métodos, mensajes de error, nombres de tests.
 - El service implementa la interfaz explícitamente y recibe sus dependencias por constructor.
-- El repositorio es el único que importa `prisma`. Devuelve `null`; no lanza errores de negocio.
+- El repositorio es el único que usa el cliente de Prisma, recibido por constructor. Devuelve `null`; no lanza errores de negocio.
 - El service traduce el `null` en `NotFoundError` y valida las reglas del dominio con los errores de `shared/errors/app-error.ts`.
 - Las rutas llevan `requiereSesion`, el `requiereRol` que corresponda, `validate({ ... })` y `asyncHandler`.
 - El controller solo lee de `req`, llama al service y responde. Sin lógica.

@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UnauthorizedError } from "../../../../shared/errors/app-error.js";
 
+import type { OAuth2Client } from "google-auth-library";
+import { GoogleAutenticacion } from "../google-autenticacion.js";
+
 const verifyIdToken = vi.fn();
-
-vi.mock("google-auth-library", () => ({
-  OAuth2Client: vi.fn().mockImplementation(() => ({ verifyIdToken })),
-}));
-
-const { GoogleAutenticacion } = await import("../google-autenticacion.js");
 
 const googlePayload = {
   sub: "google-123",
@@ -17,11 +14,11 @@ const googlePayload = {
 };
 
 describe("GoogleAutenticacion", () => {
-  let autenticacion: InstanceType<typeof GoogleAutenticacion>;
+  let autenticacion: GoogleAutenticacion;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    autenticacion = new GoogleAutenticacion("test-client-id");
+    autenticacion = new GoogleAutenticacion({ verifyIdToken } as unknown as OAuth2Client, "test-client-id");
   });
 
   it("verificarToken devuelve los datos del payload de Google", async () => {

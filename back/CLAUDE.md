@@ -37,7 +37,7 @@ src/
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
       <x>.openapi.ts                  (documentación Swagger de sus rutas)
-  openapi.ts  arma el documento OpenAPI juntando los <x>.openapi.ts de cada componente
+  openapi.ts  registra en un OpenAPIRegistry los <x>.openapi.ts de cada componente
   shared/     transversal: db/  errors/  middlewares/  openapi/  utils/
 prisma/       schema.prisma, migrations/, seed.ts
 ```
@@ -54,7 +54,7 @@ routes → validate(schemas) → controller → service (implementa I*) → repo
 
 Fuera de producción, la API publica Swagger UI en `/api/v1/docs` y el documento en `/api/v1/docs/openapi.json`. Con `NODE_ENV=production` no se publica.
 
-El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; `src/openapi.ts` los junta. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
+El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; `src/openapi.ts` los junta e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
 
 Los errores se lanzan como subclases de `AppError` y los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
 
@@ -64,8 +64,8 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 
 1. Todo se escribe en español: identificadores, comentarios, mensajes de error, tests y commits.
 2. El código sigue a los diagramas de `docs/diagrams/`. Para apartarse, primero se actualiza el diagrama.
-3. Solo `index.ts` instancia clases concretas. Donde hay interfaz, se depende de la interfaz.
-4. `prisma` se importa únicamente dentro de un repositorio. Un service nunca lo toca.
+3. Solo `index.ts` instancia clases concretas, incluidas las de librerías (`PrismaClient`, `OAuth2Client`, el generador de OpenAPI). Donde hay interfaz, se depende de la interfaz. La única otra excepción es `prisma/seed.ts`, que es un programa aparte con su propio punto de entrada.
+4. El cliente de Prisma lo recibe por constructor solo un repositorio. Un service nunca lo toca.
 5. Nunca se commitea directo sobre `main` ni sobre `dev`.
 6. Los commits no mencionan herramientas de IA: sin coautores, sin enlaces de sesión, sin etiquetas de generación automática.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.

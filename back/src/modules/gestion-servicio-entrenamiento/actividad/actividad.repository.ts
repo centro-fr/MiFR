@@ -1,11 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../../shared/db/client.js";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ActualizarActividadInput, CrearActividadInput } from "./actividad.schemas.js";
 import type { Actividad, FiltroActividad } from "./actividad.types.js";
 
 export class ActividadRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   async crear(input: CrearActividadInput): Promise<Actividad> {
-    return prisma.actividades.create({
+    return this.prisma.actividades.create({
       data: {
         ...input,
         activo: true,
@@ -23,33 +24,33 @@ export class ActividadRepository {
       ];
     }
 
-    return prisma.actividades.findMany({
+    return this.prisma.actividades.findMany({
       where,
       orderBy: { nombre: "asc" },
     });
   }
 
   async buscarPorId(id: number): Promise<Actividad | null> {
-    return prisma.actividades.findUnique({
+    return this.prisma.actividades.findUnique({
       where: { id_actividad: id },
     });
   }
 
   async buscarPorCodigo(codigo: string): Promise<Actividad | null> {
-    return prisma.actividades.findUnique({
+    return this.prisma.actividades.findUnique({
       where: { codigo },
     });
   }
 
   async actualizar(id: number, input: ActualizarActividadInput): Promise<Actividad> {
-    return prisma.actividades.update({
+    return this.prisma.actividades.update({
       where: { id_actividad: id },
       data: input,
     });
   }
 
   bajaLogica(id: number): Promise<Actividad> {
-    return prisma.actividades.update({
+    return this.prisma.actividades.update({
       where: { id_actividad: id },
       data: { activo: false },
     });

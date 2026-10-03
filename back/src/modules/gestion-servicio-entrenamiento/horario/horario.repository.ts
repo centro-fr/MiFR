@@ -1,5 +1,4 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../../shared/db/client.js";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schemas.js";
 import type { FiltroHorario, HorarioConDatos } from "./horario.types.js";
 
@@ -58,8 +57,10 @@ function mapearHoras(input: ActualizarHorarioInput): Prisma.horariosUncheckedUpd
 }
 
 export class HorarioRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   crear(input: CrearHorarioInput): Promise<HorarioConDatos | null> {
-    return prisma.$transaction(async (transaccion) => {
+    return this.prisma.$transaction(async (transaccion) => {
       await bloquearAgenda(transaccion, input.id_profesora, input.dia_semana);
       if (await existeSuperposicion(transaccion, input)) return null;
 
@@ -75,7 +76,7 @@ export class HorarioRepository {
   }
 
   listar(filtro: FiltroHorario): Promise<HorarioConDatos[]> {
-    return prisma.horarios.findMany({
+    return this.prisma.horarios.findMany({
       where: { fecha_baja: null, ...filtro },
       include: CON_DATOS,
       orderBy: [{ dia_semana: "asc" }, { hora_inicio: "asc" }],
@@ -83,17 +84,17 @@ export class HorarioRepository {
   }
 
   buscarPorId(id: number): Promise<HorarioConDatos | null> {
-    return prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
+    return this.prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }
 
   tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return prisma.horarios
+    return this.prisma.horarios
       .count({ where: { id_actividad: idActividad, fecha_baja: null } })
       .then((cantidad) => cantidad > 0);
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
-    return prisma.horarios
+    return this.prisma.horarios
       .count({ where: { id_profesora: idProfesora, fecha_baja: null } })
       .then((cantidad) => cantidad > 0);
   }
@@ -103,7 +104,7 @@ export class HorarioRepository {
     input: ActualizarHorarioInput,
     criterio: CriterioSuperposicion,
   ): Promise<HorarioConDatos | null> {
-    return prisma.$transaction(async (transaccion) => {
+    return this.prisma.$transaction(async (transaccion) => {
       await bloquearAgenda(transaccion, criterio.id_profesora, criterio.dia_semana);
       if (await existeSuperposicion(transaccion, criterio, id)) return null;
 
@@ -116,7 +117,7 @@ export class HorarioRepository {
   }
 
   darDeBaja(id: number): Promise<HorarioConDatos> {
-    return prisma.horarios.update({
+    return this.prisma.horarios.update({
       where: { id_horario: id },
       data: { fecha_baja: new Date() },
       include: CON_DATOS,

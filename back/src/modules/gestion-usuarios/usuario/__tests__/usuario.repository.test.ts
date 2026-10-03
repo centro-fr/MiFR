@@ -1,32 +1,29 @@
+import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { UsuarioRepository } from "../usuario.repository.js";
 
-vi.mock("../../../../shared/db/client.js", () => ({
-  prisma: {
-    usuarios: {
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    usuario_roles: { deleteMany: vi.fn() },
-    $transaction: vi.fn(),
+const prisma = {
+  usuarios: {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
-}));
-
-const { prisma } = await import("../../../../shared/db/client.js");
-const { UsuarioRepository } = await import("../usuario.repository.js");
+  usuario_roles: { deleteMany: vi.fn() },
+  $transaction: vi.fn(),
+};
 
 // Todas las consultas traen los roles con su fila de la tabla roles (usuario_roles -> roles).
 const CON_ROLES = { include: { roles: { include: { rol: true } } } };
 
 describe("UsuarioRepository", () => {
-  let repositorio: InstanceType<typeof UsuarioRepository>;
+  let repositorio: UsuarioRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    repositorio = new UsuarioRepository();
+    repositorio = new UsuarioRepository(prisma as unknown as PrismaClient);
   });
 
   it("buscarPorId busca por id_usuario numérico e incluye los roles", async () => {

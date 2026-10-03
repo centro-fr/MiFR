@@ -8,18 +8,22 @@ Está documentado en el comentario de `shared/db/client.ts` y en la nota de la c
 
 ## El cliente
 
-`shared/db/client.ts` exporta un singleton de `PrismaClient`, creado de forma perezosa y guardado en `globalThis` fuera de producción para que el recargado en caliente de `tsx watch` no abra una conexión nueva en cada cambio.
+`index.ts` crea **una sola instancia** de `PrismaClient`, con las opciones que arma `opcionesDelClientePrisma` de `shared/db/client.ts`, y se la pasa por constructor a cada repositorio. Una sola instancia es un solo pool de conexiones para todo el proceso.
+
+No hace falta guardarla en `globalThis` para el modo desarrollo: `tsx watch` reinicia el proceso entero en cada cambio, así que no se acumulan clientes.
 
 Es el único punto de acceso a la base.
 
 ## Repositorios
 
-**`prisma` se importa únicamente dentro de un repositorio.** Un service nunca lo toca; pide los datos al repositorio que le inyectaron.
+**El cliente de Prisma solo lo recibe un repositorio, por constructor.** Un service nunca lo toca; pide los datos al repositorio que le inyectaron. En los tests del repositorio se le pasa un objeto con los métodos de Prisma mockeados, sin `vi.mock` de módulos.
 
 El repositorio es la traducción entre Prisma y el dominio. Sus métodos van en español y describen la intención, no la consulta:
 
 ```ts
 export class UsuarioRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   buscarPorId(id: string): Promise<UsuarioConRoles | null> { ... }
   buscarPorGoogleId(googleId: string): Promise<UsuarioConRoles | null> { ... }
   listar(): Promise<UsuarioConRoles[]> { ... }

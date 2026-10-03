@@ -92,4 +92,4 @@ Conviene nombrarlas bien, sobre todo al documentar o defender el trabajo:
 - **La inyección de dependencias por constructor** es la aplicación del principio de inversión de dependencias, no un patrón de diseño.
 - **`createApp`, `createUsuarioRoutes`, `createUsuarioController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
 - **`AppError` y sus subclases** son herencia simple para tipar errores HTTP.
-- **El singleton de Prisma** en `shared/db/client.ts` sí es Singleton, pero resuelto con un módulo y `globalThis`, no con la implementación clásica de constructor privado.
+- **La instancia única de `PrismaClient`** no es el patrón Singleton: nada impide crear otra. Es una sola porque la crea una sola vez el composition root (`index.ts`) y la reparte por constructor.

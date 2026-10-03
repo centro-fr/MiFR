@@ -40,7 +40,7 @@ El diagrama organiza el sistema en cuatro capas. Sirve como mapa para ubicar có
 
 3. **Capa de lógica de negocio no persistente.** Los cálculos puros: `ICalculoVencimiento`, `ICalculoHonorarios`. No tocan la base, reciben datos y devuelven resultados. Cuando se implementen, van en un módulo propio y se testean sin mocks de persistencia. El componente `Rol` también es no persistente en su decisión de permisos, aunque hoy lea roles.
 
-4. **Capa de administración de datos.** `shared/db/client.ts` y PostgreSQL. Ver `persistencia.md`.
+4. **Capa de administración de datos.** `PrismaClient` (lo crea `index.ts` con las opciones de `shared/db/client.ts`) y PostgreSQL. Ver `persistencia.md`.
 
 ## Dónde va cada cosa
 

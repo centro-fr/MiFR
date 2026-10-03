@@ -1,7 +1,7 @@
 import {
   extendZodWithOpenApi,
-  OpenApiGeneratorV3,
-  OpenAPIRegistry,
+  type OpenApiGeneratorV3,
+  type OpenAPIRegistry,
   type ResponseConfig,
 } from "@asteasolutions/zod-to-openapi";
 import { z, type ZodTypeAny } from "zod";
@@ -39,15 +39,13 @@ type CodigoError = keyof typeof DESCRIPCION_ERRORES;
 
 export const fechaSchema = z.string().datetime().openapi({ example: "2026-10-03T00:00:00.000Z" });
 
-export function crearRegistro(): OpenAPIRegistry {
-  const registro = new OpenAPIRegistry();
+export function registrarSeguridadBearer(registro: OpenAPIRegistry): void {
   registro.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
     scheme: "bearer",
     bearerFormat: "JWT",
     description: "Token que devuelve POST /auth/google",
   });
-  return registro;
 }
 
 export function cuerpoJson(schema: ZodTypeAny) {

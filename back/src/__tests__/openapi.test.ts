@@ -1,7 +1,15 @@
+import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp, type AppDependencies } from "../app.js";
-import { generarDocumentoOpenApi } from "../openapi.js";
+import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "../openapi.js";
+import type { DocumentoOpenApi } from "../shared/openapi/registro.js";
+
+function generarDocumentoOpenApi(): DocumentoOpenApi {
+  const registro = new OpenAPIRegistry();
+  registrarDocumentacionApi(registro);
+  return new OpenApiGeneratorV3(registro.definitions).generateDocument(CONFIGURACION_DOCUMENTO_API);
+}
 
 const OPERACIONES_ESPERADAS = [
   "post /auth/google",
@@ -31,7 +39,7 @@ const OPERACIONES_ESPERADAS = [
   "delete /horarios/{id}",
 ];
 
-function listarOperaciones(documento: ReturnType<typeof generarDocumentoOpenApi>): string[] {
+function listarOperaciones(documento: DocumentoOpenApi): string[] {
   return Object.entries(documento.paths).flatMap(([ruta, operaciones]) =>
     Object.keys(operaciones).map((metodo) => `${metodo} ${ruta}`),
   );
@@ -40,13 +48,13 @@ function listarOperaciones(documento: ReturnType<typeof generarDocumentoOpenApi>
 const depsSinUso = {} as AppDependencies;
 
 describe("documentación OpenAPI", () => {
-  it("generarDocumentoOpenApi documenta todas las operaciones de la API v1", () => {
+  it("registrarDocumentacionApi documenta todas las operaciones de la API v1", () => {
     const documento = generarDocumentoOpenApi();
 
     expect(listarOperaciones(documento).sort()).toEqual([...OPERACIONES_ESPERADAS].sort());
   });
 
-  it("generarDocumentoOpenApi exige el token Bearer en todo menos el login", () => {
+  it("registrarDocumentacionApi exige el token Bearer en todo menos el login", () => {
     const documento = generarDocumentoOpenApi();
     const sinSeguridad = Object.entries(documento.paths).flatMap(([ruta, operaciones]) =>
       Object.entries(operaciones as Record<string, { security?: unknown[] }>)

@@ -1,13 +1,12 @@
-import { OAuth2Client } from "google-auth-library";
+import type { OAuth2Client } from "google-auth-library";
 import { UnauthorizedError } from "../../../shared/errors/app-error.js";
 import type { DatosGoogle, IAutenticacionGoogleAuth } from "./interface/i-autenticacion-google-auth.js";
 
 export class GoogleAutenticacion implements IAutenticacionGoogleAuth {
-  private readonly client: OAuth2Client;
-
-  constructor(private readonly googleClientId: string) {
-    this.client = new OAuth2Client(googleClientId);
-  }
+  constructor(
+    private readonly client: OAuth2Client,
+    private readonly googleClientId: string,
+  ) {}
 
   async verificarToken(idToken: string): Promise<DatosGoogle> {
     // verifyIdToken lanza si la firma, el audience o la expiración no son válidos.
