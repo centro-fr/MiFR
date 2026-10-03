@@ -16,7 +16,11 @@ export function siguienteNivel(nivel: NivelAcceso): NivelAcceso {
   return ((nivel + 1) % 3) as NivelAcceso;
 }
 
-// Permisos exclusivos de la propietaria (espejo del back). No se otorgan a otros roles.
+// Permisos exclusivos de la propietaria.
+// NOTA: los códigos (p. ej. PAGOS_*) son contrato interno con el back, no texto
+// visible. La UI nunca debe mostrar "pago": ver etiquetas.ts y glosario.
+// TODO(back): exponer `exclusivo` por permiso en GET /seguridad/matriz para
+// no duplicar esta lista en el front.
 export const EXCLUSIVOS_PROPIETARIA = new Set([
   "SEGURIDAD_MATRIZ_VER",
   "SEGURIDAD_MATRIZ_EDITAR",

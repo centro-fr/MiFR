@@ -12,19 +12,19 @@ interface NivelPillProps {
 
 const ESTILOS: Record<NivelAcceso, { clases: string; texto: string; textoCorto: string; Icono: typeof Check }> = {
   0: {
-    clases: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+    clases: "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100",
     texto: "Puede ver y modificar",
     textoCorto: "Ver y modificar",
     Icono: Check,
   },
   1: {
-    clases: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
+    clases: "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100",
     texto: "Solo puede ver",
     textoCorto: "Solo ver",
     Icono: Eye,
   },
   [2]: {
-    clases: "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200",
+    clases: "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200",
     texto: "Sin acceso",
     textoCorto: "Sin acceso",
     Icono: X,
@@ -57,7 +57,7 @@ export function NivelPill({ nivel, bloqueado, corto, onCiclar, etiqueta }: Nivel
       title={`${etiqueta}: clic para cambiar`}
       aria-label={`${etiqueta}: ${texto}. Activar para cambiar de nivel`}
       className={cn(
-        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors lg:min-h-[32px]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         clases,
       )}

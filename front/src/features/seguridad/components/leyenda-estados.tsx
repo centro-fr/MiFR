@@ -3,9 +3,9 @@ import { Check, Eye, X } from "lucide-react";
 // Leyenda de los 3 estados resultantes (lenguaje Stitch): combinan los
 // switches *_VER y *_EDITAR de cada módulo.
 const ESTADOS = [
-  { icono: Check, texto: "Puede ver y modificar", clases: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { icono: Eye, texto: "Solo puede ver", clases: "bg-amber-50 text-amber-700 border-amber-200" },
-  { icono: X, texto: "Sin acceso", clases: "bg-slate-100 text-slate-500 border-slate-200" },
+  { icono: Check, texto: "Puede ver y modificar", clases: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  { icono: Eye, texto: "Solo puede ver", clases: "bg-amber-50 text-amber-800 border-amber-200" },
+  { icono: X, texto: "Sin acceso", clases: "bg-slate-100 text-slate-600 border-slate-200" },
 ] as const;
 
 export function LeyendaEstados() {

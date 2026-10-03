@@ -11,11 +11,12 @@ interface ModuloCardsProps {
   nivelDe: (rol: RoleCode, modulo: string) => NivelAcceso;
   bloqueoDe: (rol: RoleCode, modulo: string) => string | null;
   onCiclar: (rol: RoleCode, modulo: string) => void;
+  rolInicial?: RoleCode;
 }
 
 // Mobile (Stitch: matriz simplificada): pestañas por rol + filas por módulo.
-export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: ModuloCardsProps) {
-  const [rolActivo, setRolActivo] = useState<RoleCode>("PROFESORA");
+export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar, rolInicial }: ModuloCardsProps) {
+  const [rolActivo, setRolActivo] = useState<RoleCode>(rolInicial ?? roles[0]?.codigo ?? "PROPIETARIA");
 
   return (
     <div className="flex flex-col gap-3">
@@ -28,7 +29,7 @@ export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Mo
             aria-selected={rolActivo === rol.codigo}
             onClick={() => setRolActivo(rol.codigo)}
             className={cn(
-              "min-h-[44px] shrink-0 rounded-full border px-4 text-sm font-bold",
+              "min-h-[44px] shrink-0 rounded-full border px-4 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               rolActivo === rol.codigo
                 ? "border-primary bg-primary text-white"
                 : "border-slate-300 bg-white text-slate-600",
@@ -43,8 +44,8 @@ export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Mo
         {modulos.map((modulo) => (
           <li key={modulo} className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-extrabold text-slate-900">{etiquetaModulo(modulo)}</p>
-              <p className="truncate text-xs text-slate-400">{descripcionModulo(modulo)}</p>
+              <p className="text-sm font-extrabold text-slate-900">{etiquetaModulo(modulo)}</p>
+              <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500">{descripcionModulo(modulo)}</p>
             </div>
             <NivelPill
               corto

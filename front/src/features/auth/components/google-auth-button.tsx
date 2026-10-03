@@ -10,8 +10,8 @@ interface GoogleAuthButtonProps {
   onRetry: () => void;
   hasError: boolean;
   isConnectionError: boolean;
-  // Overlay del botón oficial de GIS (modo real): va encima del botón custom
-  // para abrir el popup de Google manteniendo el diseño Stitch.
+  // Overlay del botón oficial de GIS (modo real): es el único interactivo
+  // para que el tab vaya directo al botón de Google, sin doble parada.
   overlay?: ReactNode;
   className?: string;
 }
@@ -43,6 +43,22 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
     );
   }
 
+  // Modo real (overlay): el visual no es focuseable, el interactivo es GIS.
+  if (overlay) {
+    return (
+      <span className="relative block w-full">
+        <span
+          aria-hidden="true"
+          className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google", className)}
+        >
+          <GoogleIcon className="h-5 w-5 shrink-0" />
+          <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
+        </span>
+        {overlay}
+      </span>
+    );
+  }
+
   return (
     <span className="relative block w-full">
       <button
@@ -53,7 +69,6 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
         <GoogleIcon className="h-5 w-5 shrink-0" />
         <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
       </button>
-      {!isLoading && overlay}
     </span>
   );
 }

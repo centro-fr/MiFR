@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -34,9 +34,24 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
     };
   }, [menuAbierto]);
 
+  const cerrarMenu = useCallback(() => setMenuAbierto(false), []);
+  const abrirMenu = useCallback(() => setMenuAbierto(true), []);
+  const handleLogout = useCallback(() => {
+    setMenuAbierto(false);
+    void logout();
+  }, [logout]);
+
+  const navItems = useMemo(
+    () =>
+      ITEMS_PROPIETARIA.map(({ etiqueta, icono: Icono, to, activo }) => {
+        const esActivo = activo ?? (to !== undefined && location.pathname === to);
+        return { etiqueta, Icono, to, esActivo };
+      }),
+    [location.pathname],
+  );
+
   function renderNavItems(onItemClick?: () => void) {
-    return ITEMS_PROPIETARIA.map(({ etiqueta, icono: Icono, to, activo }) => {
-      const esActivo = activo ?? (to !== undefined && location.pathname === to);
+    return navItems.map(({ etiqueta, Icono, to, esActivo }) => {
       const clases = cn(
         "flex min-h-[44px] items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors",
         esActivo ? "bg-primary/10 text-primary-dark" : "text-slate-600 hover:bg-slate-100",
@@ -72,13 +87,13 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-[#F8FAFC] text-slate-900 lg:flex-row">
+    <div className="flex min-h-dvh w-full flex-col bg-bg-light text-slate-900 lg:flex-row">
       {/* ================= HEADER MOBILE ================= */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setMenuAbierto(true)}
+            onClick={abrirMenu}
             aria-label="Abrir menú de navegación"
             aria-expanded={menuAbierto}
             className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 transition-colors hover:bg-slate-100 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-primary"
@@ -111,10 +126,11 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           className="fixed inset-0 z-50 lg:hidden"
         >
           {/* Backdrop con desenfoque suave */}
-          <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setMenuAbierto(false)}
-            aria-hidden="true"
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={cerrarMenu}
+            className="fixed inset-0 cursor-default bg-slate-900/60 backdrop-blur-xs transition-opacity"
           />
 
           {/* Drawer contenedor deslizable */}
@@ -137,7 +153,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
               </div>
               <button
                 type="button"
-                onClick={() => setMenuAbierto(false)}
+                onClick={cerrarMenu}
                 aria-label="Cerrar menú"
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 active:bg-slate-200"
               >
@@ -150,7 +166,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
               aria-label="Navegación móvil"
               className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
             >
-              {renderNavItems(() => setMenuAbierto(false))}
+              {renderNavItems(cerrarMenu)}
             </nav>
 
             {/* Footer con usuario y cerrar sesión */}
@@ -162,10 +178,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
               )}
               <button
                 type="button"
-                onClick={() => {
-                  setMenuAbierto(false);
-                  void logout();
-                }}
+                onClick={handleLogout}
                 className="mt-1 flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100"
               >
                 <LogOut aria-hidden="true" className="h-5 w-5 shrink-0" />
@@ -207,7 +220,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           )}
           <button
             type="button"
-            onClick={() => void logout()}
+            onClick={handleLogout}
             className="mt-1 flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100"
           >
             <LogOut aria-hidden="true" className="h-5 w-5 shrink-0" />

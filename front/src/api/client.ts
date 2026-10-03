@@ -9,8 +9,9 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// El JWT vive solo en memoria (nunca en localStorage) y viaja como Bearer,
-// como exige el back (requiereSesion). RNF-02 del SDD de autenticación.
+// El JWT vive en memoria + sessionStorage versionado (nunca en localStorage
+// persistente) y viaja como Bearer, como exige el back (requiereSesion).
+// TODO(back): migrar a cookie httpOnly + refresh para eliminar XSS persistente.
 apiClient.interceptors.request.use((config) => {
   const token = getSessionToken();
   if (token) config.headers.set("Authorization", `Bearer ${token}`);

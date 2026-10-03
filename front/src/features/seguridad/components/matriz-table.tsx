@@ -35,8 +35,8 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <table className="w-full border-collapse text-left">
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      <table className="w-full min-w-[720px] border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
             <th scope="col" className="min-w-[280px] px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500">

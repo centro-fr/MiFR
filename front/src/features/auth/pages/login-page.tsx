@@ -45,6 +45,10 @@ function useLoginFlow() {
     if (!loginMutation.isPending) setErrorCode("POPUP_CANCELADO");
   }
 
+  function clearError() {
+    if (!loginMutation.isPending) setErrorCode(null);
+  }
+
   return {
     errorCode,
     isLoading: loginMutation.isPending,
@@ -54,6 +58,7 @@ function useLoginFlow() {
     setLegalType,
     startLogin,
     cancelLogin,
+    clearError,
   };
 }
 
@@ -68,6 +73,7 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
           isLoading={flow.isLoading}
           onLogin={onLogin}
           onRetry={onLogin}
+          onClear={flow.clearError}
           onContact={() => flow.setIsContactOpen(true)}
           onOpenLegal={(type) => flow.setLegalType(type)}
           overlay={overlay}
@@ -86,6 +92,7 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
             isLoading={flow.isLoading}
             onLogin={onLogin}
             onRetry={onLogin}
+            onClear={flow.clearError}
             onContact={() => flow.setIsContactOpen(true)}
             onOpenLegal={(type) => flow.setLegalType(type)}
             overlay={overlay}

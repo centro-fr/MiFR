@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(import.meta.dirname, './src'),
       },
     },
+    // Mitiga barrel imports (lucide-react): pre-bundling + chunk manual.
+    optimizeDeps: { include: ["lucide-react", "@tanstack/react-query"] },
+    build: { chunkSizeWarningLimit: 600 },
     server: { proxy, headers },
     preview: { proxy, headers },
   }

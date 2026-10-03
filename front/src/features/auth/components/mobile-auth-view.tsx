@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { AuthStateBanner } from "@/features/auth/components/auth-state-banner";
-import { GoogleAuthButton } from "@/features/auth/components/google-auth-button";
+import { AuthFormBlock } from "@/features/auth/components/auth-form-block";
 import type { AuthErrorCode } from "@/types/auth";
 
 interface MobileAuthViewProps {
@@ -8,6 +7,7 @@ interface MobileAuthViewProps {
   isLoading: boolean;
   onLogin: () => void;
   onRetry: () => void;
+  onClear: () => void;
   onContact: () => void;
   onOpenLegal: (type: "terms" | "privacy") => void;
   overlay?: ReactNode;
@@ -15,10 +15,7 @@ interface MobileAuthViewProps {
 
 // Réplica fiel de Stitch 5188 — Mobile 390px: header mínimo, logo centrado,
 // botón Google 54px, banners ámbar/rosa, sin footers extensos.
-export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onContact, onOpenLegal, overlay }: MobileAuthViewProps) {
-  const isAccessDenied = errorCode === "ACCESO_NO_HABILITADO" || errorCode === "USUARIO_INACTIVO";
-  const showRetry = errorCode !== null && !isLoading;
-
+export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear, onContact, onOpenLegal, overlay }: MobileAuthViewProps) {
   return (
     <div className="flex min-h-dvh w-full flex-col bg-white">
       {/* Header mínimo público: solo logo (Stitch) */}
@@ -37,46 +34,30 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
       {/* Contenido central */}
       <div className="flex flex-1 flex-col justify-center px-6 py-8">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-[#FF4D9E] text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50">
+          <div
+            aria-hidden="true"
+            className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-primary-dark text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50"
+          >
             FR
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-dark">MiFR</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Centro de Entrenamiento FR
           </p>
         </div>
 
         <div className="mx-auto mt-8 w-full max-w-[342px]">
-          {errorCode && !isLoading && <div className="mb-4"><AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} /></div>}
-          <GoogleAuthButton
+          <AuthFormBlock
+            errorCode={errorCode}
             isLoading={isLoading}
             onLogin={onLogin}
             onRetry={onRetry}
-            hasError={errorCode !== null}
-            isConnectionError={!isAccessDenied}
+            onClear={onClear}
+            onContact={onContact}
             overlay={overlay}
+            hintClassName="text-xs"
+            actionClassName="text-xs"
           />
-          <p className="mt-4 text-center text-xs font-medium text-slate-500">
-            {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
-          </p>
-          {showRetry && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="mt-3 min-h-[44px] w-full text-center text-xs font-semibold text-slate-600 hover:text-dark"
-            >
-              ← Cancelar y volver al inicio
-            </button>
-          )}
-          {isAccessDenied && !isLoading && (
-            <button
-              type="button"
-              onClick={onContact}
-              className="mt-2 min-h-[44px] w-full text-center text-xs font-bold text-primary-dark hover:text-primary"
-            >
-              Contactar administración para solicitar acceso
-            </button>
-          )}
         </div>
       </div>
 
@@ -85,7 +66,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onConta
         <div aria-hidden="true" className="h-1 w-32 rounded-full bg-slate-300" />
       </div>
       <footer className="border-t border-slate-100 px-6 pb-3 pt-2 text-center">
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-600">
           <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700">Términos</button>
           {" · "}
           <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700">Privacidad</button>

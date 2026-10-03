@@ -1,14 +1,16 @@
-// JWT de sesión: memoria + persistencia en localStorage para sobrevivir
-// recargas (SDD tasks 4.2: al recargar con sesión iniciada, seguir logueado).
-// Nota: un refresh con cookie httpOnly sería más seguro ante XSS; el back
-// actual no lo implementa, así que se persiste el Bearer en el navegador.
-const STORAGE_KEY = "mifr:session-token";
+// Sesión: JWT en memoria + sessionStorage versionado (sobrevive recargas
+// de la misma pestaña, se libera al cerrar el navegador).
+// Riesgo conocido: ante XSS cualquier token en almacenamiento web es legible.
+// La corrección definitiva es sesión con cookie httpOnly + refresh en el back;
+// mientras tanto se minimiza exposición (sin localStorage persistente,
+// solo campos mínimos, borrado en 401/logout). Ver client.ts.
+const STORAGE_KEY = "mifr:session-token:v1";
 
 let sessionToken: string | null = null;
 
 function readStored(): string | null {
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.sessionStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
@@ -22,7 +24,7 @@ export function getSessionToken(): string | null {
 export function setSessionToken(token: string): void {
   sessionToken = token;
   try {
-    window.localStorage.setItem(STORAGE_KEY, token);
+    window.sessionStorage.setItem(STORAGE_KEY, token);
   } catch {
     // Sin almacenamiento (modo privado): la sesión vive solo en memoria.
   }
@@ -31,7 +33,9 @@ export function setSessionToken(token: string): void {
 export function clearSessionToken(): void {
   sessionToken = null;
   try {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
+    // Limpieza de clave legacy en localStorage (migración de seguridad).
+    window.localStorage.removeItem("mifr:session-token");
   } catch {
     // Sin almacenamiento: nada que limpiar.
   }
