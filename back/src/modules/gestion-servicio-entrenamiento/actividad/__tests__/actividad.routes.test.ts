@@ -6,6 +6,7 @@ import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-au
 import type { ILogicaUsuarios } from "../../../gestion-usuarios/interface/i-logica-usuarios.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
 import type { ILogicaServicioEntrenamiento } from "../../interface/i-logica-servicio-entrenamiento.js";
+import { ConflictError } from "../../../../shared/errors/app-error.js";
 import type { Actividad } from "../actividad.types.js";
 
 const actividad: Actividad = {
@@ -129,17 +130,27 @@ describe("rutas de actividades", () => {
   });
 
   it("da de baja una actividad sin eliminar su historial", async () => {
-    logica.darDeBajaActividad.mockResolvedValue({
-      actividad: { ...actividad, activo: false },
-      advertencia: "Atención: La actividad puede tener horarios activos.",
-    });
+    logica.darDeBajaActividad.mockResolvedValue({ ...actividad, activo: false });
 
     const respuesta = await request(app)
       .delete("/api/v1/actividades/1")
       .set("Authorization", "Bearer propietaria");
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.actividad.activo).toBe(false);
+    expect(respuesta.body.activo).toBe(false);
     expect(logica.darDeBajaActividad).toHaveBeenCalledWith(1);
+  });
+
+  it("responde 409 si la actividad todavía tiene horarios activos", async () => {
+    logica.darDeBajaActividad.mockRejectedValue(
+      new ConflictError("La actividad tiene horarios activos: hay que darlos de baja antes que la actividad"),
+    );
+
+    const respuesta = await request(app)
+      .delete("/api/v1/actividades/1")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(respuesta.status).toBe(409);
+    expect(respuesta.body.error.message).toContain("horarios activos");
   });
 });

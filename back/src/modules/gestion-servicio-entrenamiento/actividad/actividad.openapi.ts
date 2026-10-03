@@ -25,16 +25,6 @@ export const actividadSchema = z
   })
   .openapi("Actividad");
 
-const actividadConAdvertenciaSchema = z
-  .object({
-    actividad: actividadSchema,
-    advertencia: z
-      .string()
-      .optional()
-      .openapi({ description: "Presente si también se dieron de baja horarios activos" }),
-  })
-  .openapi("ActividadConAdvertencia");
-
 export function registrarDocumentacionActividades(registro: OpenAPIRegistry): void {
   const tags = ["Actividades"];
   const security = SEGURIDAD_BEARER;
@@ -102,10 +92,11 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
     summary: "Dar de baja una actividad",
     description:
       "Requiere el rol PROPIETARIA y el permiso `ACTIVIDADES_EDITAR`. " +
-      "Baja lógica: también da de baja sus horarios activos, en la misma transacción.",
+      "Baja lógica. Responde 409 si la actividad ya está dada de baja o si todavía tiene horarios " +
+      "activos, que hay que dar de baja antes.",
     request: { params: actividadIdParamSchema },
     responses: {
-      200: respuestaJson("Actividad dada de baja", actividadConAdvertenciaSchema),
+      200: respuestaJson("Actividad dada de baja", actividadSchema),
       ...respuestasDeError(400, 401, 403, 404, 409),
     },
   });

@@ -1,7 +1,7 @@
 import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { ActividadRepository } from "./actividad.repository.js";
 import type { ActualizarActividadInput, CrearActividadInput } from "./actividad.schemas.js";
-import type { Actividad, ActividadConAdvertencia, FiltroActividad } from "./actividad.types.js";
+import type { Actividad, FiltroActividad } from "./actividad.types.js";
 import type { IInfoActividades } from "./interface/i-info-actividades.js";
 
 export class ActividadService implements IInfoActividades {
@@ -48,19 +48,12 @@ export class ActividadService implements IInfoActividades {
     return this.repositorio.actualizar(id, input);
   }
 
-  async darDeBaja(id: number): Promise<ActividadConAdvertencia> {
+  async darDeBaja(id: number): Promise<Actividad> {
     const actividad = await this.obtenerPorId(id);
     if (!actividad.activo) {
       throw new ConflictError("La actividad ya está dada de baja");
     }
 
-    const resultado = await this.repositorio.darDeBajaConHorarios(id);
-
-    return {
-      actividad: resultado.actividad,
-      ...(resultado.horariosDadosDeBaja > 0
-        ? { advertencia: "Los horarios activos asociados también fueron dados de baja." }
-        : {}),
-    };
+    return this.repositorio.bajaLogica(id);
   }
 }

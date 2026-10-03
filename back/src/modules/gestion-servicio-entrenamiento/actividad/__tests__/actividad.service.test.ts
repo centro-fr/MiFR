@@ -11,7 +11,7 @@ function crearRepositorioMock() {
     buscarPorId: vi.fn(),
     buscarPorCodigo: vi.fn(),
     actualizar: vi.fn(),
-    darDeBajaConHorarios: vi.fn(),
+    bajaLogica: vi.fn(),
   };
 }
 
@@ -96,28 +96,19 @@ describe("ActividadService", () => {
     expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
-  it("darDeBaja desactiva la actividad y sus horarios en cascada", async () => {
+  it("darDeBaja hace la baja lógica de la actividad", async () => {
     repositorio.buscarPorId.mockResolvedValue(actividadBase);
-    repositorio.darDeBajaConHorarios.mockResolvedValue({
-      actividad: { ...actividadBase, activo: false },
-      horariosDadosDeBaja: 2,
-    });
+    repositorio.bajaLogica.mockResolvedValue({ ...actividadBase, activo: false });
 
-    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({
-      actividad: { activo: false },
-      advertencia: "Los horarios activos asociados también fueron dados de baja.",
-    });
-    expect(repositorio.darDeBajaConHorarios).toHaveBeenCalledWith(1);
+    await expect(servicio.darDeBaja(1)).resolves.toEqual({ ...actividadBase, activo: false });
+    expect(repositorio.bajaLogica).toHaveBeenCalledWith(1);
   });
 
-  it("darDeBaja no devuelve advertencia si no había horarios activos", async () => {
-    repositorio.buscarPorId.mockResolvedValue(actividadBase);
-    repositorio.darDeBajaConHorarios.mockResolvedValue({
-      actividad: { ...actividadBase, activo: false },
-      horariosDadosDeBaja: 0,
-    });
+  it("darDeBaja lanza NotFoundError si la actividad no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
 
-    await expect(servicio.darDeBaja(1)).resolves.toEqual({ actividad: { ...actividadBase, activo: false } });
+    await expect(servicio.darDeBaja(1)).rejects.toThrow(NotFoundError);
+    expect(repositorio.bajaLogica).not.toHaveBeenCalled();
   });
 
   it("darDeBaja lanza ConflictError si ya está dada de baja", async () => {

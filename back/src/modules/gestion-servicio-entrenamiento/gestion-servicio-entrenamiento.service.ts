@@ -1,7 +1,8 @@
+import { ConflictError } from "../../shared/errors/app-error.js";
 import type { ILogicaServicioEntrenamiento } from "./interface/i-logica-servicio-entrenamiento.js";
 import type { ActividadService } from "./actividad/actividad.service.js";
 import type { ActualizarActividadInput, CrearActividadInput } from "./actividad/actividad.schemas.js";
-import type { Actividad, ActividadConAdvertencia, FiltroActividad } from "./actividad/actividad.types.js";
+import type { Actividad, FiltroActividad } from "./actividad/actividad.types.js";
 import type { HorarioService } from "./horario/horario.service.js";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario/horario.schemas.js";
 import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "./horario/horario.types.js";
@@ -29,7 +30,14 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.actividades.actualizar(id, input);
   }
 
-  darDeBajaActividad(id: number): Promise<ActividadConAdvertencia> {
+  // US-03 / CA-03: la baja solo procede sin horarios activos. Actividad no conoce a Horario en
+  // la vista arquitectónica, así que el subsistema es quien cruza los dos componentes.
+  async darDeBajaActividad(id: number): Promise<Actividad> {
+    if (await this.horarios.tieneActivosDeActividad(id)) {
+      throw new ConflictError(
+        "La actividad tiene horarios activos: hay que darlos de baja antes que la actividad",
+      );
+    }
     return this.actividades.darDeBaja(id);
   }
 

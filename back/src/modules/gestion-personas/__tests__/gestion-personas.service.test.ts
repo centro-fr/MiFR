@@ -12,6 +12,7 @@ describe("GestionPersonasService", () => {
   beforeEach(() => {
     profesoras = { darDeBaja: vi.fn() };
     horarios = {
+      tieneActivosDeActividad: vi.fn(),
       tieneActivosDeProfesora: vi.fn().mockResolvedValue(false),
     };
     servicio = new GestionPersonasService(profesoras as ProfesorService, horarios);

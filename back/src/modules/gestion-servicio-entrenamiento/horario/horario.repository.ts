@@ -86,6 +86,12 @@ export class HorarioRepository {
     return prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }
 
+  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
+    return prisma.horarios
+      .count({ where: { id_actividad: idActividad, fecha_baja: null } })
+      .then((cantidad) => cantidad > 0);
+  }
+
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
     return prisma.horarios
       .count({ where: { id_profesora: idProfesora, fecha_baja: null } })

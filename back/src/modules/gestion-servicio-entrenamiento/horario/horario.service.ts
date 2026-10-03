@@ -77,6 +77,10 @@ export class HorarioService implements IInfoHorarios {
     };
   }
 
+  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
+    return this.repositorio.tieneActivosDeActividad(idActividad);
+  }
+
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
     return this.repositorio.tieneActivosDeProfesora(idProfesora);
   }

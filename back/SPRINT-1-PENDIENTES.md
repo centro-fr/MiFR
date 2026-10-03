@@ -97,7 +97,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
   - [x] Sin `codigo` duplicado (UK del DER).
   - [x] Se puede cambiar la modalidad de una actividad existente.
   - [x] La baja no borra el historial de clases dictadas.
-  - [x] Al dar de baja una actividad con horarios activos, advertir. La parte de "alumnos inscriptos" depende de inscripciones (Sprint 2).
+  - [x] Una actividad con horarios activos no se puede dar de baja (409): primero se dan de baja sus horarios (CA-03). Cuando existan inscripciones (Sprint 2) se revisa si el bloqueo se limita a horarios con alumnos inscriptos.
 - [x] Protegido con permiso (US-02); solo propietaria.
 - [x] Tests del service y de las rutas.
 

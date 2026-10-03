@@ -366,11 +366,11 @@ Content-Type: application/json
   "hora_fin": "10:00"
 }
 
-### US-03: dar de baja actividad con horarios activos (debe responder 200 con advertencia)
+### US-03: no se puede dar de baja una actividad con horarios activos (debe responder 409)
 DELETE {{baseUrl}}/actividades/{{actividadGrupalId}}
 Authorization: Bearer {{tokenPropietaria}}
 
-### US-03: la baja logica conserva la actividad (activo debe ser false)
+### US-03: la actividad sigue activa despues del rechazo (activo debe ser true)
 GET {{baseUrl}}/actividades/{{actividadGrupalId}}
 Authorization: Bearer {{tokenPropietaria}}
 
@@ -406,10 +406,18 @@ Authorization: Bearer {{tokenPropietaria}}
 DELETE {{baseUrl}}/profesoras/{{profesoraId2}}
 Authorization: Bearer {{tokenPropietaria}}
 
+### US-03: baja de la actividad despues de dar de baja sus horarios (debe responder 200)
+DELETE {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
+### US-03: la baja logica conserva la actividad (activo debe ser false)
+GET {{baseUrl}}/actividades/{{actividadGrupalId}}
+Authorization: Bearer {{tokenPropietaria}}
+
 ### US-03: actividad ya dada de baja (debe responder 409)
 DELETE {{baseUrl}}/actividades/{{actividadGrupalId}}
 Authorization: Bearer {{tokenPropietaria}}
 
-### US-03: dar de baja actividad sin horarios asociados (sin advertencia)
+### US-03: dar de baja actividad sin horarios asociados (debe responder 200)
 DELETE {{baseUrl}}/actividades/{{actividadPersonalizadaId}}
 Authorization: Bearer {{tokenPropietaria}}
