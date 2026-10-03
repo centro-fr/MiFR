@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// IDENTIDAD Y ACCESO (der.puml / DER - Centro de Entrenamiento FR.sql)
+// Nombres de PK, FK e indices iguales a los del SQL de EA.
+// ============================================================
+
+enum estado_usuario {
+  ACTIVO
+  INACTIVO
+}
+
+enum codigo_rol {
+  PROPIETARIA
+  PROFESORA
+  ALUMNO
+  TUTOR
+}
+
+model usuarios {
+  id_usuario          Int            @id(map: "PK_usuarios") @default(autoincrement())
+  // NULL hasta el 1er login; NULL en menores
+  google_id           String?        @unique @db.VarChar(255)
+  // NULL en menores a cargo de tutor
+  email               String?        @unique @db.VarChar(120)
+  nombre              String         @db.VarChar(60)
+  apellido            String         @db.VarChar(60)
+  // solo digitos
+  dni                 String?        @unique @db.VarChar(10)
+  telefono            String?        @db.VarChar(20)
+  fecha_nacimiento    DateTime       @db.Date
+  direccion           String?        @db.VarChar(120)
+  estado              estado_usuario @default(ACTIVO)
+  fecha_alta          DateTime       @default(now()) @db.Timestamp(6)
+  fecha_actualizacion DateTime       @updatedAt @db.Timestamp(6)
+
+  roles usuario_roles[]
+}
+
+model roles {
+  id_rol      Int        @id(map: "PK_roles") @default(autoincrement())
+  codigo      codigo_rol @unique
+  nombre      String     @db.VarChar(40)
+  descripcion String?    @db.VarChar(150)
+
+  usuarios usuario_roles[]
+  permisos rol_permisos[]
+}
+
+model usuario_roles {
+  id_usuario       Int
+  id_rol           Int
+  fecha_asignacion DateTime @default(now()) @db.Timestamp(6)
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_usuario_roles_usuarios")
+  rol     roles    @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "FK_usuario_roles_roles")
+
+  @@id([id_usuario, id_rol], map: "PK_usuario_roles")
+  @@index([id_rol], map: "IXFK_usuario_roles_roles")
+}
+
+model permisos {
+  id_permiso  Int     @id(map: "PK_permisos") @default(autoincrement())
+  // ej. PAGOS_CONFIRMAR
+  codigo      String  @unique @db.VarChar(50)
+  modulo      String  @db.VarChar(30)
+  descripcion String? @db.VarChar(150)
+
+  roles rol_permisos[]
+}
+
+model rol_permisos {
+  id_rol           Int
+  id_permiso       Int
+  fecha_asignacion DateTime @default(now()) @db.Timestamp(6)
+
+  rol     roles    @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "FK_rol_permisos_roles")
+  permiso permisos @relation(fields: [id_permiso], references: [id_permiso], onDelete: NoAction, onUpdate: NoAction, map: "FK_rol_permisos_permisos")
+
+  @@id([id_rol, id_permiso], map: "PK_rol_permisos")
+  @@index([id_rol], map: "IXFK_rol_permisos_roles")
+  @@index([id_permiso], map: "IXFK_rol_permisos_permisos")
+}

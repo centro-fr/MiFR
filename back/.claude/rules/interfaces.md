@@ -2,16 +2,18 @@
 
 ## Convención
 
-- Van en `interface/`, dentro de la carpeta del componente.
+- Van en `interface/`, dentro de la carpeta de quien la provee según el diagrama: el componente (`rol/interface/i-autorizacion.ts`) o, para las `ILogica*`, el subsistema (`gestion-usuarios/interface/i-logica-usuarios.ts`).
 - El archivo se llama `i-nombre-en-kebab.ts`; el tipo exportado es `IPascalCase`.
 - Lleva arriba un comentario corto que la vincula al componente del diagrama de arquitectura y aclara qué queda afuera.
 
 ```ts
-// Componente "Usuario": CRUD + asignación de roles. La decisión de permisos
-// (componente "Permiso") es una dependencia externa, no vive acá.
+// Interfaz del subsistema GestionUsuarios en la vista arquitectónica: es lo único que ve la
+// capa de presentación (UsuarioPresWeb). Reúne lo que ofrecen sus componentes Sesion,
+// Usuario y Rol; IAutenticacion e IAutorizacion quedan para los otros subsistemas.
 export interface ILogicaUsuarios {
+  iniciarSesion(idToken: string): Promise<SesionIniciada>;
   crear(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
-  listar(): Promise<UsuarioConRoles[]>;
+  obtenerMatriz(): Promise<MatrizPermisos>;
   // ...
 }
 ```
@@ -23,15 +25,17 @@ Las que existen hoy: `ILogicaUsuarios`, `IAutenticacion`, `IAutenticacionGoogleA
 El service la implementa explícitamente:
 
 ```ts
-export class UsuarioService implements ILogicaUsuarios { ... }
+export class GestionUsuariosService implements ILogicaUsuarios { ... }
+export class RolService implements IAutorizacion { ... }
 ```
 
 Y quien lo consume depende de la interfaz, no de la clase:
 
 ```ts
 export interface AppDependencies {
-  usuarioService: ILogicaUsuarios;
+  gestionUsuarios: ILogicaUsuarios;
   autenticacion: IAutenticacion;
+  autorizacion: IAutorizacion;
 }
 ```
 
