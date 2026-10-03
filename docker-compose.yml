@@ -17,5 +17,40 @@ services:
       timeout: 5s
       retries: 5
 
+  migraciones:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+      target: migraciones
+    container_name: mifr-migraciones
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+      target: produccion
+    container_name: mifr-api
+    restart: unless-stopped
+    # GOOGLE_CLIENT_ID, JWT_SECRET y JWT_EXPIRES_IN salen de back/.env; lo de abajo tiene prioridad.
+    env_file:
+      - back/.env
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
+      NODE_ENV: ${API_NODE_ENV:-production}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migraciones:
+        condition: service_completed_successfully
+
 volumes:
   mifr-db-data:

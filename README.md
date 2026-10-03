@@ -37,6 +37,28 @@ cd front && pnpm dev
 
 Con la API levantada fuera de producción, la documentación Swagger queda en `http://localhost:3000/api/v1/docs` y el documento OpenAPI en `http://localhost:3000/api/v1/docs/openapi.json`.
 
+### Con Docker Compose
+
+`docker-compose.yml` levanta tres servicios:
+
+| Servicio | Qué hace |
+| :--- | :--- |
+| `db` | PostgreSQL 16, publicado en el puerto `55432` del host |
+| `migraciones` | Aplica las migraciones pendientes de Prisma y termina |
+| `api` | El backend compilado, publicado en el puerto `3000` del host |
+
+La API arranca recién cuando la base está sana y las migraciones terminaron bien. Toma `GOOGLE_CLIENT_ID`, `JWT_SECRET` y `JWT_EXPIRES_IN` de `back/.env`, así que ese archivo tiene que existir (se copia de `back/.env.example`). `DATABASE_URL` la define el compose para apuntar al servicio `db`.
+
+```bash
+docker compose up -d --build        # construye y levanta todo
+docker compose logs -f api          # ver los logs de la API
+docker compose up -d db             # solo la base, para trabajar con pnpm dev:back
+```
+
+Por defecto la API corre con `NODE_ENV=production`, sin Swagger. Para verlo en el contenedor: `API_NODE_ENV=development docker compose up -d api`.
+
+No se puede tener `pnpm dev:back` y el servicio `api` corriendo a la vez: los dos usan el puerto `3000`.
+
 ## Estructura
 
 ```text
@@ -64,7 +86,7 @@ MiFR/
 | Script | Descripción |
 | :--- | :--- |
 | `pnpm dev` | Ejecuta `src/index.ts` con recarga automática |
-| `pnpm build` | Compila TypeScript a `dist/` |
+| `pnpm build` | Compila TypeScript a `dist/`, sin los tests |
 | `pnpm start` | Ejecuta la versión compilada |
 
 ### front

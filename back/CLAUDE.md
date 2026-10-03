@@ -10,7 +10,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 ```bash
 pnpm dev              # tsx watch src/index.ts
-pnpm build            # tsc
+pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
 pnpm test             # vitest run
 pnpm format           # prettier --write .
 pnpm format:check     # prettier --check .
@@ -19,6 +19,8 @@ pnpm prisma:migrate   # crear y aplicar migracion
 pnpm prisma:studio    # explorar la base
 pnpm db:seed          # cargar datos de prueba
 ```
+
+La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). Tiene una etapa `migraciones`, que corre `prisma migrate deploy` y termina, y una etapa `produccion` con solo las dependencias de producción, que corre como el usuario `node`.
 
 No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la versión del proyecto. Por ahora la red de seguridad son `tsc` con `strict` y los tests. Ver `.claude/rules/documentacion.md`.
 
