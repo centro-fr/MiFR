@@ -49,6 +49,4 @@ Si no hay hallazgos, decirlo en una línea. No inflar el reporte con observacion
 
 ## Deuda ya conocida
 
-Esta ya está documentada y no hace falta volver a reportarla como hallazgo nuevo, solo confirmar si siguen:
-
-- `PORT` se usa en `index.ts` pero no está en `.env.example`.
+No hay deuda conocida pendiente. Si aparece, se anota acá para no reportarla como hallazgo nuevo en cada auditoría.

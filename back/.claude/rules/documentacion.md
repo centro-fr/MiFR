@@ -76,5 +76,3 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.
-
-**Pendiente:** `PORT` se usa en `index.ts` pero todavía no figura en `.env.example`.
