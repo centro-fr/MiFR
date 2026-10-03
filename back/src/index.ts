@@ -21,6 +21,7 @@ import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/hora
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
 import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "./openapi.js";
 import { opcionesDelClientePrisma } from "./shared/db/client.js";
+import { leerOrigenesPermitidos } from "./shared/utils/origenes-permitidos.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 
 // Composition root: único lugar donde se instancian las clases concretas.
@@ -52,6 +53,13 @@ function generarDocumentacionApi(): DocumentoOpenApi {
 }
 
 const esProduccion = process.env.NODE_ENV === "production";
+const origenesPermitidos = leerOrigenesPermitidos(process.env.CORS_ORIGENES);
+
+// En producción no se arranca con CORS abierto: mejor fallar al inicio que publicar la API a cualquier origen.
+if (esProduccion && !origenesPermitidos) {
+  console.error("Falta CORS_ORIGENES: con NODE_ENV=production hay que indicar los orígenes permitidos");
+  process.exit(1);
+}
 
 const app = createApp(
   {
@@ -61,7 +69,7 @@ const app = createApp(
     autenticacion,
     autorizacion: rolService,
   },
-  { documentacionApi: esProduccion ? undefined : generarDocumentacionApi() },
+  { documentacionApi: esProduccion ? undefined : generarDocumentacionApi(), origenesPermitidos },
 );
 
 const port = Number(process.env.PORT ?? 3000);

@@ -73,6 +73,7 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `JWT_SECRET` | Firma del token propio |
 | `JWT_EXPIRES_IN` | Vigencia del token, por defecto `8h` |
 | `PORT` | Puerto de la API, por defecto `3000` |
-| `NODE_ENV` | Con `production` no se publica la documentación Swagger |
+| `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
+| `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.

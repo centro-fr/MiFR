@@ -27,12 +27,14 @@ export interface AppDependencies {
 export interface AppOpciones {
   // Sin documento no se publica Swagger: index.ts decide no exponerlo en producción.
   documentacionApi?: DocumentoOpenApi;
+  // Sin lista se acepta cualquier origen, que solo sirve en desarrollo.
+  origenesPermitidos?: string[];
 }
 
 export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
   const app = express();
 
-  app.use(cors());
+  app.use(cors(opciones.origenesPermitidos ? { origin: opciones.origenesPermitidos } : undefined));
   app.use(express.json());
   app.use(requestLogger);
 
