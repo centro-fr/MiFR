@@ -1,4 +1,4 @@
-import type { UsuarioConRoles } from "../../usuario/user.types.js";
+import type { UsuarioConRoles } from "../../usuario/usuario.types.js";
 
 export interface SesionPayload {
   usuarioId: number;

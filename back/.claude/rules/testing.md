@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 ## Ubicación y nombres
 
 - Los tests van en `__tests__/`, dentro de la carpeta del componente que prueban.
-- El archivo se llama como lo que prueba, con sufijo `.test.ts`: `user.service.test.ts`, `sesion.routes.test.ts`.
+- El archivo se llama como lo que prueba, con sufijo `.test.ts`: `usuario.service.test.ts`, `sesion.routes.test.ts`.
 - Los nombres de los tests van en español y describen el comportamiento, empezando por el método:
 
 ```ts

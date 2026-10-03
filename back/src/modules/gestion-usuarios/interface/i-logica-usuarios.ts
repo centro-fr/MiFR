@@ -1,8 +1,8 @@
 import type { CambioPermiso } from "../rol/rol.schemas.js";
 import type { MatrizPermisos } from "../rol/rol.types.js";
 import type { PerfilSesion, SesionIniciada } from "../sesion/interface/i-autenticacion.js";
-import type { ActualizarUsuarioInput, CrearUsuarioInput } from "../usuario/user.schemas.js";
-import type { CodigoRol, UsuarioConRoles } from "../usuario/user.types.js";
+import type { ActualizarUsuarioInput, CrearUsuarioInput } from "../usuario/usuario.schemas.js";
+import type { CodigoRol, UsuarioConRoles } from "../usuario/usuario.types.js";
 
 // Interfaz del subsistema GestionUsuarios en la vista arquitectónica: es lo único que ve la
 // capa de presentación (UsuarioPresWeb). Reúne lo que ofrecen sus componentes Sesion,

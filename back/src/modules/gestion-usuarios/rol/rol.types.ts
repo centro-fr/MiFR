@@ -1,5 +1,5 @@
 import type { permisos } from "@prisma/client";
-import type { CodigoRol } from "../usuario/user.types.js";
+import type { CodigoRol } from "../usuario/usuario.types.js";
 
 export type Permiso = permisos;
 

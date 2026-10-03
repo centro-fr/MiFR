@@ -8,7 +8,7 @@ import { esPermisoCritico, esPermisoExclusivoPropietaria } from "./rol.catalogo.
 import type { RolRepository } from "./rol.repository.js";
 import type { CambioPermiso } from "./rol.schemas.js";
 import type { ClavePermisoRol, MatrizPermisos, PermisoDeMatriz } from "./rol.types.js";
-import type { CodigoRol, Rol, UsuarioConRoles } from "../usuario/user.types.js";
+import type { CodigoRol, Rol, UsuarioConRoles } from "../usuario/usuario.types.js";
 
 export class RolService implements IAutorizacion {
   constructor(private readonly repositorio: RolRepository) {}

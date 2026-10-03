@@ -3,9 +3,9 @@ import type { IAutorizacion } from "./rol/interface/i-autorizacion.js";
 import type { CambioPermiso } from "./rol/rol.schemas.js";
 import type { MatrizPermisos } from "./rol/rol.types.js";
 import type { IAutenticacion, PerfilSesion, SesionIniciada } from "./sesion/interface/i-autenticacion.js";
-import type { UsuarioService } from "./usuario/user.service.js";
-import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./usuario/user.schemas.js";
-import type { CodigoRol, UsuarioConRoles } from "./usuario/user.types.js";
+import type { UsuarioService } from "./usuario/usuario.service.js";
+import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./usuario/usuario.schemas.js";
+import type { CodigoRol, UsuarioConRoles } from "./usuario/usuario.types.js";
 
 // Realiza ILogicaUsuarios, que en el diagrama la provee el subsistema y no un componente:
 // pasa cada operación al componente dueño (Sesion, Usuario o Rol) y no agrega reglas propias.

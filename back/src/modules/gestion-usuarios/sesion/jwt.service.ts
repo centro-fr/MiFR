@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { UnauthorizedError } from "../../../shared/errors/app-error.js";
-import type { UsuarioConRoles, UsuarioRol } from "../usuario/user.types.js";
+import type { UsuarioConRoles, UsuarioRol } from "../usuario/usuario.types.js";
 import type { SesionPayload } from "./interface/i-autenticacion.js";
 
 // Detalle interno del componente Sesion: solo firma/verifica el JWT propio.

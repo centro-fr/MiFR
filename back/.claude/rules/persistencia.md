@@ -29,7 +29,7 @@ export class UsuarioRepository {
 }
 ```
 
-Los fragmentos de consulta que se repiten se extraen a una constante del módulo, como `CON_ROLES` en `user.repository.ts`.
+Los fragmentos de consulta que se repiten se extraen a una constante del módulo, como `CON_ROLES` en `usuario.repository.ts`.
 
 Un repositorio no lanza errores de negocio ni valida: devuelve lo que hay, o `null`. Decidir que un `null` es un `NotFoundError` es trabajo del service.
 

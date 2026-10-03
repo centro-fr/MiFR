@@ -1,4 +1,4 @@
-import type { CodigoRol, UsuarioConRoles } from "../../usuario/user.types.js";
+import type { CodigoRol, UsuarioConRoles } from "../../usuario/usuario.types.js";
 import type { CambioPermiso } from "../rol.schemas.js";
 import type { MatrizPermisos } from "../rol.types.js";
 

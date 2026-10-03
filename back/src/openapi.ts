@@ -4,7 +4,7 @@ import { registrarDocumentacionActividades } from "./modules/gestion-servicio-en
 import { registrarDocumentacionHorarios } from "./modules/gestion-servicio-entrenamiento/horario/horario.openapi.js";
 import { registrarDocumentacionSeguridad } from "./modules/gestion-usuarios/rol/rol.openapi.js";
 import { registrarDocumentacionSesion } from "./modules/gestion-usuarios/sesion/sesion.openapi.js";
-import { registrarDocumentacionUsuarios } from "./modules/gestion-usuarios/usuario/user.openapi.js";
+import { registrarDocumentacionUsuarios } from "./modules/gestion-usuarios/usuario/usuario.openapi.js";
 import { crearRegistro, type DocumentoOpenApi } from "./shared/openapi/registro.js";
 
 export function generarDocumentoOpenApi(): DocumentoOpenApi {

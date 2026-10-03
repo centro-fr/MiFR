@@ -7,7 +7,7 @@ import { JwtService } from "../../sesion/jwt.service.js";
 import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../sesion/interface/i-autenticacion.js";
 import type { ILogicaUsuarios } from "../../interface/i-logica-usuarios.js";
-import type { UsuarioConRoles } from "../user.types.js";
+import type { UsuarioConRoles } from "../usuario.types.js";
 import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
 

@@ -81,8 +81,8 @@ Lo que sí queda por resolver, y es más importante que la discusión del patró
 
 Conviene nombrarlas bien, sobre todo al documentar o defender el trabajo:
 
-- **Repository** (`user.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
+- **Repository** (`usuario.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
 - **La inyección de dependencias por constructor** es la aplicación del principio de inversión de dependencias, no un patrón de diseño.
-- **`createApp`, `createUserRoutes`, `createUserController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
+- **`createApp`, `createUsuarioRoutes`, `createUsuarioController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
 - **`AppError` y sus subclases** son herencia simple para tipar errores HTTP.
 - **El singleton de Prisma** en `shared/db/client.ts` sí es Singleton, pero resuelto con un módulo y `globalThis`, no con la implementación clásica de constructor privado.

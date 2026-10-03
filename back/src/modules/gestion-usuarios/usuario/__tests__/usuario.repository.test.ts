@@ -16,7 +16,7 @@ vi.mock("../../../../shared/db/client.js", () => ({
 }));
 
 const { prisma } = await import("../../../../shared/db/client.js");
-const { UsuarioRepository } = await import("../user.repository.js");
+const { UsuarioRepository } = await import("../usuario.repository.js");
 
 // Todas las consultas traen los roles con su fila de la tabla roles (usuario_roles -> roles).
 const CON_ROLES = { include: { roles: { include: { rol: true } } } };

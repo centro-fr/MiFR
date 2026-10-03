@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
 import type { PerfilSesion } from "./interface/i-autenticacion.js";
-import type { UsuarioRol } from "../usuario/user.types.js";
+import type { UsuarioRol } from "../usuario/usuario.types.js";
 
 function respuestaPerfil({ usuario, permisos }: PerfilSesion) {
   return { usuario, roles: usuario.roles.map((r: UsuarioRol) => r.rol.codigo), permisos };

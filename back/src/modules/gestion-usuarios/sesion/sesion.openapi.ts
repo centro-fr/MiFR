@@ -6,7 +6,7 @@ import {
   respuestasDeError,
   SEGURIDAD_BEARER,
 } from "../../../shared/openapi/registro.js";
-import { usuarioConRolesSchema } from "../usuario/user.openapi.js";
+import { usuarioConRolesSchema } from "../usuario/usuario.openapi.js";
 import { googleLoginSchema } from "./sesion.schemas.js";
 
 const perfilSesionSchema = z

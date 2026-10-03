@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GestionUsuariosService } from "../gestion-usuarios.service.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../sesion/interface/i-autenticacion.js";
-import type { UsuarioService } from "../usuario/user.service.js";
+import type { UsuarioService } from "../usuario/usuario.service.js";
 
 function crearComponentesMock() {
   return {

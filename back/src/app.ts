@@ -5,7 +5,7 @@ import { createRolRoutes } from "./modules/gestion-usuarios/rol/rol.routes.js";
 import { createSesionRoutes } from "./modules/gestion-usuarios/sesion/sesion.routes.js";
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
-import { createUserRoutes } from "./modules/gestion-usuarios/usuario/user.routes.js";
+import { createUsuarioRoutes } from "./modules/gestion-usuarios/usuario/usuario.routes.js";
 import { createActividadRoutes } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profesor.routes.js";
@@ -44,7 +44,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
   api.use("/auth", createSesionRoutes(deps.gestionUsuarios, deps.autenticacion));
-  api.use("/usuarios", createUserRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
+  api.use("/usuarios", createUsuarioRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use(
     "/actividades",

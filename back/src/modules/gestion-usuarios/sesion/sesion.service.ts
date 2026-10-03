@@ -5,7 +5,7 @@ import {
 } from "../../../shared/errors/app-error.js";
 import { auditar } from "../../../shared/utils/auditoria.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
-import type { UsuarioRepository } from "../usuario/user.repository.js";
+import type { UsuarioRepository } from "../usuario/usuario.repository.js";
 import type {
   IAutenticacion,
   PerfilSesion,

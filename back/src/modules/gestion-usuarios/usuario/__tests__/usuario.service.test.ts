@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
-import { UsuarioService } from "../user.service.js";
+import { UsuarioService } from "../usuario.service.js";
 import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
-import type { UsuarioRepository } from "../user.repository.js";
-import type { UsuarioConRoles } from "../user.types.js";
+import type { UsuarioRepository } from "../usuario.repository.js";
+import type { UsuarioConRoles } from "../usuario.types.js";
 
 const rolAlumno = { id_rol: 3, codigo: "ALUMNO" as const, nombre: "Alumno", descripcion: null };
 

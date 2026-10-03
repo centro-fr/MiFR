@@ -1,8 +1,8 @@
 import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
-import type { UsuarioRepository } from "./user.repository.js";
-import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./user.schemas.js";
-import type { CodigoRol, UsuarioConRoles } from "./user.types.js";
+import type { UsuarioRepository } from "./usuario.repository.js";
+import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./usuario.schemas.js";
+import type { CodigoRol, UsuarioConRoles } from "./usuario.types.js";
 import type { IInfoUsuarios } from "./interface/i-info-usuarios.js";
 
 // Componente "Usuario": alta, baja, modificación y roles de los usuarios. La presentación

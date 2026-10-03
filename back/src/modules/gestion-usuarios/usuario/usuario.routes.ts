@@ -4,7 +4,7 @@ import { validate } from "../../../shared/middlewares/validate.js";
 import { asyncHandler } from "../../../shared/utils/async-handler.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../sesion/interface/i-autenticacion.js";
-import { createUserController } from "./user.controller.js";
+import { createUsuarioController } from "./usuario.controller.js";
 import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
 import {
   actualizarUsuarioSchema,
@@ -12,7 +12,7 @@ import {
   crearUsuarioSchema,
   rolParamSchema,
   usuarioIdParamSchema,
-} from "./user.schemas.js";
+} from "./usuario.schemas.js";
 
 // El estado da de baja o reactiva la cuenta: ni el propio usuario lo cambia sin permiso.
 function requierePermisoParaCambiarEstado(autorizacion: IAutorizacion) {
@@ -24,13 +24,13 @@ function requierePermisoParaCambiarEstado(autorizacion: IAutorizacion) {
   };
 }
 
-export function createUserRoutes(
+export function createUsuarioRoutes(
   gestionUsuarios: ILogicaUsuarios,
   autenticacion: IAutenticacion,
   autorizacion: IAutorizacion,
 ): Router {
   const router = Router();
-  const controller = createUserController(gestionUsuarios);
+  const controller = createUsuarioController(gestionUsuarios);
 
   router.use(requiereSesion(autenticacion));
 

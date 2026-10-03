@@ -13,7 +13,7 @@ import {
   crearUsuarioSchema,
   rolParamSchema,
   usuarioIdParamSchema,
-} from "./user.schemas.js";
+} from "./usuario.schemas.js";
 
 const codigoRolSchema = z.enum(["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"]);
 

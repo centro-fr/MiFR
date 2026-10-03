@@ -5,7 +5,7 @@ import {
   crearUsuarioSchema,
   rolParamSchema,
   usuarioIdParamSchema,
-} from "../user.schemas.js";
+} from "../usuario.schemas.js";
 
 // Las reglas de validación reflejan la tabla "usuarios" y "roles" del DER.
 const minimo = { nombre: "Ana", apellido: "Perez", fecha_nacimiento: "1990-01-01" };

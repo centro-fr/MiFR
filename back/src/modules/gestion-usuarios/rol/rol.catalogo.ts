@@ -1,4 +1,4 @@
-import type { CodigoRol } from "../usuario/user.types.js";
+import type { CodigoRol } from "../usuario/usuario.types.js";
 
 // Catálogo de permisos del sistema: lo carga el seed en la tabla `permisos` y lo usan
 // las rutas en requierePermiso. El módulo es la columna permisos.modulo (el DER no

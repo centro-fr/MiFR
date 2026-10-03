@@ -7,7 +7,7 @@ import {
 import { SesionService } from "../sesion.service.js";
 import { JwtService } from "../jwt.service.js";
 import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
-import type { UsuarioRepository } from "../../usuario/user.repository.js";
+import type { UsuarioRepository } from "../../usuario/usuario.repository.js";
 import type { IAutenticacionGoogleAuth } from "../interface/i-autenticacion-google-auth.js";
 
 const googlePayload = {

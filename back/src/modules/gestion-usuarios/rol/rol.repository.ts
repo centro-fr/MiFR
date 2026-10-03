@@ -1,5 +1,5 @@
 import { prisma } from "../../../shared/db/client.js";
-import type { CodigoRol, Rol } from "../usuario/user.types.js";
+import type { CodigoRol, Rol } from "../usuario/usuario.types.js";
 import type { AsignacionPermiso, ClavePermisoRol, Permiso } from "./rol.types.js";
 
 export class RolRepository {

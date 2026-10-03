@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import jwt from "jsonwebtoken";
 import { UnauthorizedError } from "../../../../shared/errors/app-error.js";
 import { JwtService } from "../jwt.service.js";
-import type { UsuarioConRoles } from "../../usuario/user.types.js";
+import type { UsuarioConRoles } from "../../usuario/usuario.types.js";
 
 const SECRETO = "test-secret";
 

@@ -1,6 +1,6 @@
 import { prisma } from "../../../shared/db/client.js";
-import type { CrearUsuarioInput } from "./user.schemas.js";
-import type { UsuarioConRoles } from "./user.types.js";
+import type { CrearUsuarioInput } from "./usuario.schemas.js";
+import type { UsuarioConRoles } from "./usuario.types.js";
 
 const CON_ROLES = { include: { roles: { include: { rol: true } } } } as const;
 
