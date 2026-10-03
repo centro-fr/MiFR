@@ -18,6 +18,13 @@ Es el modelo a seguir para cualquier integración externa futura (pasarela de pa
 
 Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y los controllers dependen de esa interfaz.
 
+**Única excepción a "sin reglas propias":** una regla que cruza dos componentes que el diagrama no conecta entre sí. Va en la fachada, porque el subsistema es el único que ve a los dos, y nunca en uno de los componentes, porque eso agregaría una dependencia que el diagrama no tiene. Los dos casos actuales:
+
+- `GestionServicioEntrenamientoService.darDeBajaActividad` consulta `IInfoHorarios` antes de dar de baja la actividad (CA-03). `Actividad` no depende de `Horario`, y además `Horario` ya depende de `IInfoActividades`, así que la dependencia inversa armaría un ciclo.
+- `GestionPersonasService.darDeBajaProfesora` consulta `IInfoHorarios`, que en el diagrama requiere el subsistema `GestionPersonas` y no el componente `Profesor`.
+
+La regla se limita a coordinar: consulta un componente y, según el resultado, llama al otro o lanza el error. Si empieza a acumular lógica propia, es señal de que falta un componente en el diagrama.
+
 ## A aplicar cuando se implemente el módulo
 
 ### Strategy — vencimiento de cuota según tipo de plan
