@@ -36,7 +36,9 @@ src/
       __tests__/       *.test.ts
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
-  shared/     transversal: db/  errors/  middlewares/  utils/
+      <x>.openapi.ts                  (documentación Swagger de sus rutas)
+  openapi.ts  arma el documento OpenAPI juntando los <x>.openapi.ts de cada componente
+  shared/     transversal: db/  errors/  middlewares/  openapi/  utils/
 prisma/       schema.prisma, migrations/, seed.ts
 ```
 
@@ -47,6 +49,12 @@ Recorrido de una petición:
 ```text
 routes → validate(schemas) → controller → service (implementa I*) → repository → prisma
 ```
+
+## Documentación de la API (Swagger)
+
+Fuera de producción, la API publica Swagger UI en `/api/v1/docs` y el documento en `/api/v1/docs/openapi.json`. Con `NODE_ENV=production` no se publica.
+
+El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; `src/openapi.ts` los junta. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
 
 Los errores se lanzan como subclases de `AppError` y los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
 

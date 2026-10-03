@@ -39,6 +39,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 - Instanciar solo en `index.ts`.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
+- Documentar cada ruta nueva en el `<x>.openapi.ts` de su componente, reusando los esquemas de `<x>.schemas.ts`, con los permisos que exige y los errores que puede devolver.
 
 ## Malas prácticas
 
@@ -72,6 +73,7 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `JWT_SECRET` | Firma del token propio |
 | `JWT_EXPIRES_IN` | Vigencia del token, por defecto `8h` |
 | `PORT` | Puerto de la API, por defecto `3000` |
+| `NODE_ENV` | Con `production` no se publica la documentación Swagger |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.
 

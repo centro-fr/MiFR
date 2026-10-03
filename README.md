@@ -35,6 +35,8 @@ cd back && pnpm dev
 cd front && pnpm dev
 ```
 
+Con la API levantada fuera de producción, la documentación Swagger queda en `http://localhost:3000/api/v1/docs` y el documento OpenAPI en `http://localhost:3000/api/v1/docs/openapi.json`.
+
 ## Estructura
 
 ```text
