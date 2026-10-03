@@ -39,15 +39,14 @@ Con la API levantada fuera de producción, la documentación Swagger queda en `h
 
 ### Con Docker Compose
 
-`docker-compose.yml` levanta tres servicios:
+`docker-compose.yml` levanta dos servicios:
 
 | Servicio | Qué hace |
 | :--- | :--- |
 | `db` | PostgreSQL 16, publicado en el puerto `55432` del host |
-| `migraciones` | Aplica las migraciones pendientes de Prisma y termina |
-| `api` | El backend compilado, publicado en el puerto `3000` del host |
+| `api` | El backend compilado, publicado en el puerto `3000` del host. Al arrancar aplica las migraciones pendientes de Prisma |
 
-La API arranca recién cuando la base está sana y las migraciones terminaron bien. Toma `GOOGLE_CLIENT_ID`, `JWT_SECRET` y `JWT_EXPIRES_IN` de `back/.env`, así que ese archivo tiene que existir (se copia de `back/.env.example`). `DATABASE_URL` la define el compose para apuntar al servicio `db`.
+La API arranca cuando la base está sana. Es la misma imagen que se va a publicar en Render (ver `back/DESPLIEGUE.md`). Toma `GOOGLE_CLIENT_ID`, `JWT_SECRET` y `JWT_EXPIRES_IN` de `back/.env`, así que ese archivo tiene que existir (se copia de `back/.env.example`). `DATABASE_URL` la define el compose para apuntar al servicio `db`.
 
 ```bash
 docker compose up -d --build        # construye y levanta todo
@@ -55,9 +54,13 @@ docker compose logs -f api          # ver los logs de la API
 docker compose up -d db             # solo la base, para trabajar con pnpm dev:back
 ```
 
-Por defecto la API corre con `NODE_ENV=production`, sin Swagger. Para verlo en el contenedor: `API_NODE_ENV=development docker compose up -d api`.
+Por defecto la API corre con `NODE_ENV=production`, sin Swagger y aceptando pedidos solo desde `http://localhost:5173` (el front con Vite). Para ver Swagger en el contenedor: `API_NODE_ENV=development docker compose up -d api`. Para aceptar otro origen: `CORS_ORIGENES=<url> docker compose up -d api`.
 
 No se puede tener `pnpm dev:back` y el servicio `api` corriendo a la vez: los dos usan el puerto `3000`.
+
+### Publicación
+
+Todavía no está publicado. El plan (front en Netlify, API en Render, base en Neon, todos gratuitos) y los pasos están en [`back/DESPLIEGUE.md`](back/DESPLIEGUE.md).
 
 ## Estructura
 
