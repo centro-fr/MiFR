@@ -17,12 +17,16 @@ function convertirHora(hora: string): Date {
   return new Date(Date.UTC(1970, 0, 1, horas, minutos));
 }
 
+// La clave lleva el prefijo "agenda-profesora" para no chocar con otros advisory locks que se
+// agreguen. Va con $executeRaw porque pg_advisory_xact_lock devuelve void y $queryRaw no puede
+// deserializarlo.
 async function bloquearAgenda(
   transaccion: Prisma.TransactionClient,
   idProfesora: number,
   diaSemana: number,
 ): Promise<void> {
-  await transaccion.$queryRaw`SELECT pg_advisory_xact_lock(${idProfesora}, ${diaSemana})`;
+  const clave = `agenda-profesora:${idProfesora}:${diaSemana}`;
+  await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
 }
 
 async function existeSuperposicion(
