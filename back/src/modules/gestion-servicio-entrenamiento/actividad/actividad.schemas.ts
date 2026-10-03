@@ -4,7 +4,7 @@ const codigo = z.string().trim().min(1).max(20);
 const nombre = z.string().trim().min(1).max(60);
 const descripcion = z.string().trim().max(255).optional();
 const modalidad = z.enum(["GRUPAL", "PERSONALIZADA"]);
-const cupo_maximo = z.number().int().positive().max(32767).optional();
+const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
 
 export const crearActividadSchema = z
   .object({

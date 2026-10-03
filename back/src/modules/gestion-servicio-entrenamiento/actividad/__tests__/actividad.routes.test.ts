@@ -116,6 +116,18 @@ describe("rutas de actividades", () => {
     expect(logica.actualizarActividad).toHaveBeenCalledWith(1, { nombre: "Crossfit avanzado" });
   });
 
+  it("permite quitar el cupo al pasar a GRUPAL", async () => {
+    logica.actualizarActividad.mockResolvedValue({ ...actividad, modalidad: "GRUPAL", cupo_maximo: null });
+
+    const respuesta = await request(app)
+      .patch("/api/v1/actividades/1")
+      .set("Authorization", "Bearer propietaria")
+      .send({ modalidad: "GRUPAL", cupo_maximo: null });
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.actualizarActividad).toHaveBeenCalledWith(1, { modalidad: "GRUPAL", cupo_maximo: null });
+  });
+
   it("da de baja una actividad sin eliminar su historial", async () => {
     logica.darDeBajaActividad.mockResolvedValue({
       actividad: { ...actividad, activo: false },

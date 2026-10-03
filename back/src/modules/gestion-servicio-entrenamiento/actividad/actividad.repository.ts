@@ -48,10 +48,19 @@ export class ActividadRepository {
     });
   }
 
-  async bajaLogica(id: number): Promise<Actividad> {
-    return prisma.actividades.update({
-      where: { id_actividad: id },
-      data: { activo: false },
-    });
+  async darDeBajaConHorarios(id: number): Promise<{ actividad: Actividad; horariosDadosDeBaja: number }> {
+    const fechaBaja = new Date();
+    const [resultadoHorarios, actividad] = await prisma.$transaction([
+      prisma.horarios.updateMany({
+        where: { id_actividad: id, fecha_baja: null },
+        data: { fecha_baja: fechaBaja },
+      }),
+      prisma.actividades.update({
+        where: { id_actividad: id },
+        data: { activo: false },
+      }),
+    ]);
+
+    return { actividad, horariosDadosDeBaja: resultadoHorarios.count };
   }
 }

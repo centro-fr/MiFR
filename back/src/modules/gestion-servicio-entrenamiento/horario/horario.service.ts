@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { IInfoActividades } from "../actividad/interface/i-info-actividades.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schemas.js";
@@ -26,9 +26,10 @@ export class HorarioService implements IInfoHorarios {
     const actividad = await this.obtenerActividadActiva(input.id_actividad);
     await this.obtenerProfesoraActiva(input.id_profesora);
     this.validarCupo(actividad.modalidad, input.cupo_maximo ?? actividad.cupo_maximo);
-    await this.validarSuperposicion(input.id_profesora, input.dia_semana, input.hora_inicio, input.hora_fin);
 
-    return this.conCupoEfectivo(await this.repositorio.crear(input));
+    const horario = await this.repositorio.crear(input);
+    if (!horario) throw new ConflictError("La profesora ya tiene un horario superpuesto ese día");
+    return this.conCupoEfectivo(horario);
   }
 
   async listar(filtro: FiltroHorario): Promise<HorarioRespuesta[]> {
@@ -51,14 +52,20 @@ export class HorarioService implements IInfoHorarios {
     await this.obtenerProfesoraActiva(idProfesora);
 
     if (horaFin <= horaInicio) {
-      throw new ConflictError("La hora de fin debe ser posterior a la hora de inicio");
+      throw new ValidationError("La hora de fin debe ser posterior a la hora de inicio");
     }
 
     const cupoMaximo = input.cupo_maximo !== undefined ? input.cupo_maximo : actual.cupo_maximo;
     this.validarCupo(actividad.modalidad, cupoMaximo ?? actividad.cupo_maximo);
-    await this.validarSuperposicion(idProfesora, diaSemana, horaInicio, horaFin, id);
 
-    return this.conCupoEfectivo(await this.repositorio.actualizar(id, input));
+    const horario = await this.repositorio.actualizar(id, input, {
+      id_profesora: idProfesora,
+      dia_semana: diaSemana,
+      hora_inicio: horaInicio,
+      hora_fin: horaFin,
+    });
+    if (!horario) throw new ConflictError("La profesora ya tiene un horario superpuesto ese día");
+    return this.conCupoEfectivo(horario);
   }
 
   async darDeBaja(id: number): Promise<HorarioConAdvertencia> {
@@ -68,10 +75,6 @@ export class HorarioService implements IInfoHorarios {
       advertencia:
         "No se verificaron inscripciones futuras; el módulo de inscripciones aún no está disponible.",
     };
-  }
-
-  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return this.repositorio.tieneActivosDeActividad(idActividad);
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
@@ -102,26 +105,9 @@ export class HorarioService implements IInfoHorarios {
     return horario;
   }
 
-  private async validarSuperposicion(
-    idProfesora: number,
-    diaSemana: number,
-    horaInicio: string,
-    horaFin: string,
-    excluirId?: number,
-  ): Promise<void> {
-    const existente = await this.repositorio.buscarSuperposicion(
-      idProfesora,
-      diaSemana,
-      horaInicio,
-      horaFin,
-      excluirId,
-    );
-    if (existente) throw new ConflictError("La profesora ya tiene un horario superpuesto ese día");
-  }
-
   private validarCupo(modalidad: string, cupoMaximo: number | null): void {
     if (modalidad === "PERSONALIZADA" && cupoMaximo === null) {
-      throw new ConflictError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
+      throw new ValidationError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
     }
   }
 

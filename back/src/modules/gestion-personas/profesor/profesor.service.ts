@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { CrearProfesoraInput } from "./profesor.schemas.js";
@@ -15,8 +15,11 @@ export class ProfesorService implements IInfoProfesores {
 
   async crear(input: CrearProfesoraInput): Promise<Profesora> {
     const usuario = await this.usuarios.obtenerPorId(input.id_usuario);
+    if (usuario.estado !== "ACTIVO") {
+      throw new ValidationError("No se puede crear una profesora para un usuario inactivo");
+    }
     if (!this.autorizacion.tieneRol(usuario, "PROFESORA")) {
-      throw new ConflictError("El usuario debe tener asignado el rol PROFESORA");
+      throw new ValidationError("El usuario debe tener asignado el rol PROFESORA");
     }
     if (await this.repositorio.buscarPorUsuarioId(input.id_usuario)) {
       throw new ConflictError("El usuario ya tiene un perfil de profesora");
@@ -30,7 +33,7 @@ export class ProfesorService implements IInfoProfesores {
     if (!profesora || profesora.fecha_baja !== null) return null;
 
     const usuario = await this.usuarios.obtenerPorId(profesora.id_usuario);
-    return this.autorizacion.tieneRol(usuario, "PROFESORA") ? profesora : null;
+    return usuario.estado === "ACTIVO" && this.autorizacion.tieneRol(usuario, "PROFESORA") ? profesora : null;
   }
 
   listar(): Promise<Profesora[]> {

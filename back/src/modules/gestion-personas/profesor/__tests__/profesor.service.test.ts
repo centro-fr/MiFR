@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, ValidationError } from "../../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { ProfesorRepository } from "../profesor.repository.js";
@@ -31,7 +31,9 @@ describe("ProfesorService", () => {
 
   beforeEach(() => {
     repositorio = crearRepositorioMock();
-    usuarios = { obtenerPorId: vi.fn().mockResolvedValue({ id_usuario: 5 }) } as unknown as IInfoUsuarios;
+    usuarios = {
+      obtenerPorId: vi.fn().mockResolvedValue({ id_usuario: 5, estado: "ACTIVO" }),
+    } as unknown as IInfoUsuarios;
     autorizacion = { tieneRol: vi.fn().mockReturnValue(true) } as unknown as IAutorizacion;
     servicio = new ProfesorService(repositorio as unknown as ProfesorRepository, usuarios, autorizacion);
   });
@@ -42,14 +44,28 @@ describe("ProfesorService", () => {
     repositorio.crear.mockResolvedValue(perfil);
 
     await expect(servicio.crear(input)).resolves.toEqual(perfil);
-    expect(autorizacion.tieneRol).toHaveBeenCalledWith({ id_usuario: 5 }, "PROFESORA");
+    expect(autorizacion.tieneRol).toHaveBeenCalledWith({ id_usuario: 5, estado: "ACTIVO" }, "PROFESORA");
   });
 
-  it("crear rechaza un usuario que no tiene el rol PROFESORA", async () => {
+  it("crear rechaza con ValidationError un usuario que no tiene el rol PROFESORA", async () => {
     vi.mocked(autorizacion.tieneRol).mockReturnValue(false);
 
-    await expect(servicio.crear({ id_usuario: 5 })).rejects.toThrow(ConflictError);
+    await expect(servicio.crear({ id_usuario: 5 })).rejects.toThrow(ValidationError);
     expect(repositorio.crear).not.toHaveBeenCalled();
+  });
+
+  it("crear rechaza usuarios inactivos", async () => {
+    vi.mocked(usuarios.obtenerPorId).mockResolvedValue({ id_usuario: 5, estado: "INACTIVO" } as never);
+
+    await expect(servicio.crear({ id_usuario: 5 })).rejects.toThrow(ValidationError);
+    expect(repositorio.crear).not.toHaveBeenCalled();
+  });
+
+  it("buscarPorId oculta profesoras cuyo usuario está inactivo", async () => {
+    repositorio.buscarPorId.mockResolvedValue(perfil);
+    vi.mocked(usuarios.obtenerPorId).mockResolvedValue({ id_usuario: 5, estado: "INACTIVO" } as never);
+
+    await expect(servicio.buscarPorId(1)).resolves.toBeNull();
   });
 
   it("crear rechaza un perfil duplicado", async () => {

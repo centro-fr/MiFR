@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error.js";
 import type { IInfoActividades } from "../../actividad/interface/i-info-actividades.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { HorarioRepository } from "../horario.repository.js";
@@ -11,8 +11,6 @@ function crearRepositorioMock() {
     crear: vi.fn(),
     listar: vi.fn(),
     buscarPorId: vi.fn(),
-    buscarSuperposicion: vi.fn(),
-    tieneActivosDeActividad: vi.fn(),
     actualizar: vi.fn(),
     darDeBaja: vi.fn(),
   };
@@ -59,7 +57,6 @@ describe("HorarioService", () => {
     actividades = { buscarPorId: vi.fn().mockResolvedValue(actividad) };
     profesoras = { buscarPorId: vi.fn().mockResolvedValue(profesora), listar: vi.fn() };
     servicio = new HorarioService(repositorio as unknown as HorarioRepository, actividades, profesoras);
-    repositorio.buscarSuperposicion.mockResolvedValue(null);
   });
 
   it("crear guarda un horario y devuelve el cupo heredado", async () => {
@@ -77,7 +74,7 @@ describe("HorarioService", () => {
   });
 
   it("crear rechaza un horario superpuesto de la misma profesora", async () => {
-    repositorio.buscarSuperposicion.mockResolvedValue(horarioBase);
+    repositorio.crear.mockResolvedValue(null);
 
     await expect(
       servicio.crear({
@@ -101,7 +98,13 @@ describe("HorarioService", () => {
       hora_fin: "11:00",
     });
 
-    expect(repositorio.buscarSuperposicion).toHaveBeenCalledWith(1, 1, "10:00", "11:00", undefined);
+    expect(repositorio.crear).toHaveBeenCalledWith({
+      id_actividad: 1,
+      id_profesora: 1,
+      dia_semana: 1,
+      hora_inicio: "10:00",
+      hora_fin: "11:00",
+    });
   });
 
   it("crear rechaza una actividad inexistente o inactiva", async () => {
@@ -132,7 +135,7 @@ describe("HorarioService", () => {
     ).rejects.toThrow(NotFoundError);
   });
 
-  it("actualizar excluye el horario actual al validar superposición", async () => {
+  it("actualizar valida el solapamiento excluyendo el horario actual", async () => {
     repositorio.buscarPorId.mockResolvedValue(horarioBase);
     repositorio.actualizar.mockResolvedValue({
       ...horarioBase,
@@ -141,7 +144,30 @@ describe("HorarioService", () => {
 
     await servicio.actualizar(1, { hora_fin: "10:30" });
 
-    expect(repositorio.buscarSuperposicion).toHaveBeenCalledWith(1, 1, "09:00", "10:30", 1);
+    expect(repositorio.actualizar).toHaveBeenCalledWith(
+      1,
+      { hora_fin: "10:30" },
+      {
+        id_profesora: 1,
+        dia_semana: 1,
+        hora_inicio: "09:00",
+        hora_fin: "10:30",
+      },
+    );
+  });
+
+  it("actualizar rechaza un solapamiento detectado dentro de la transacción", async () => {
+    repositorio.buscarPorId.mockResolvedValue(horarioBase);
+    repositorio.actualizar.mockResolvedValue(null);
+
+    await expect(servicio.actualizar(1, { hora_fin: "10:30" })).rejects.toThrow(ConflictError);
+  });
+
+  it("actualizar devuelve ValidationError si la hora de fin no es posterior", async () => {
+    repositorio.buscarPorId.mockResolvedValue(horarioBase);
+
+    await expect(servicio.actualizar(1, { hora_fin: "09:00" })).rejects.toThrow(ValidationError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
   it("darDeBaja conserva el registro y advierte sobre inscripciones pendientes de módulo", async () => {

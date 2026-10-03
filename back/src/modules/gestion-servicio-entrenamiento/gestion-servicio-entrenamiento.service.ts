@@ -30,9 +30,7 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
   }
 
   darDeBajaActividad(id: number): Promise<ActividadConAdvertencia> {
-    return this.horarios
-      .tieneActivosDeActividad(id)
-      .then((tieneHorarios) => this.actividades.darDeBaja(id, tieneHorarios));
+    return this.actividades.darDeBaja(id);
   }
 
   crearHorario(input: CrearHorarioInput): Promise<HorarioRespuesta> {

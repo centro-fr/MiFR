@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error.js";
 import { ActividadService } from "../actividad.service.js";
 import type { ActividadRepository } from "../actividad.repository.js";
 import type { Actividad, FiltroActividad } from "../actividad.types.js";
@@ -11,7 +11,7 @@ function crearRepositorioMock() {
     buscarPorId: vi.fn(),
     buscarPorCodigo: vi.fn(),
     actualizar: vi.fn(),
-    bajaLogica: vi.fn(),
+    darDeBajaConHorarios: vi.fn(),
   };
 }
 
@@ -74,25 +74,55 @@ describe("ActividadService", () => {
     });
   });
 
-  it("actualizar lanza ConflictError si PERSONALIZADA queda sin cupo", async () => {
+  it("actualizar lanza ValidationError si PERSONALIZADA queda sin cupo", async () => {
     repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, modalidad: "GRUPAL", cupo_maximo: null });
 
-    await expect(servicio.actualizar(1, { modalidad: "PERSONALIZADA" })).rejects.toThrow(ConflictError);
+    await expect(servicio.actualizar(1, { modalidad: "PERSONALIZADA" })).rejects.toThrow(ValidationError);
   });
 
-  it("darDeBaja desactiva la actividad y devuelve la advertencia", async () => {
-    repositorio.buscarPorId.mockResolvedValue(actividadBase);
-    repositorio.bajaLogica.mockResolvedValue({ ...actividadBase, activo: false });
+  it("actualizar permite quitar el cupo al pasar a GRUPAL", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, modalidad: "PERSONALIZADA" });
+    repositorio.actualizar.mockResolvedValue({ ...actividadBase, cupo_maximo: null });
 
-    await expect(servicio.darDeBaja(1, true)).resolves.toMatchObject({
-      actividad: { activo: false },
-      advertencia: expect.any(String),
+    await servicio.actualizar(1, { modalidad: "GRUPAL", cupo_maximo: null });
+
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { modalidad: "GRUPAL", cupo_maximo: null });
+  });
+
+  it("actualizar rechaza actividades inactivas", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, activo: false });
+
+    await expect(servicio.actualizar(1, { nombre: "Nuevo nombre" })).rejects.toThrow(NotFoundError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("darDeBaja desactiva la actividad y sus horarios en cascada", async () => {
+    repositorio.buscarPorId.mockResolvedValue(actividadBase);
+    repositorio.darDeBajaConHorarios.mockResolvedValue({
+      actividad: { ...actividadBase, activo: false },
+      horariosDadosDeBaja: 2,
     });
+
+    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({
+      actividad: { activo: false },
+      advertencia: "Los horarios activos asociados también fueron dados de baja.",
+    });
+    expect(repositorio.darDeBajaConHorarios).toHaveBeenCalledWith(1);
+  });
+
+  it("darDeBaja no devuelve advertencia si no había horarios activos", async () => {
+    repositorio.buscarPorId.mockResolvedValue(actividadBase);
+    repositorio.darDeBajaConHorarios.mockResolvedValue({
+      actividad: { ...actividadBase, activo: false },
+      horariosDadosDeBaja: 0,
+    });
+
+    await expect(servicio.darDeBaja(1)).resolves.toEqual({ actividad: { ...actividadBase, activo: false } });
   });
 
   it("darDeBaja lanza ConflictError si ya está dada de baja", async () => {
     repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, activo: false });
 
-    await expect(servicio.darDeBaja(1, false)).rejects.toThrow(ConflictError);
+    await expect(servicio.darDeBaja(1)).rejects.toThrow(ConflictError);
   });
 });

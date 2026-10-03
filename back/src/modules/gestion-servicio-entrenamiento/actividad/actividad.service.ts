@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { ActividadRepository } from "./actividad.repository.js";
 import type { ActualizarActividadInput, CrearActividadInput } from "./actividad.schemas.js";
 import type { Actividad, ActividadConAdvertencia, FiltroActividad } from "./actividad.types.js";
@@ -34,29 +34,32 @@ export class ActividadService implements IInfoActividades {
 
   async actualizar(id: number, input: ActualizarActividadInput): Promise<Actividad> {
     const actividad = await this.obtenerPorId(id);
+    if (!actividad.activo) {
+      throw new NotFoundError("Actividad no encontrada o inactiva");
+    }
 
     const nuevaModalidad = input.modalidad ?? actividad.modalidad;
     const nuevoCupo = input.cupo_maximo !== undefined ? input.cupo_maximo : actividad.cupo_maximo;
 
     if (nuevaModalidad === "PERSONALIZADA" && nuevoCupo == null) {
-      throw new ConflictError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
+      throw new ValidationError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
     }
 
     return this.repositorio.actualizar(id, input);
   }
 
-  async darDeBaja(id: number, tieneHorariosActivos: boolean): Promise<ActividadConAdvertencia> {
+  async darDeBaja(id: number): Promise<ActividadConAdvertencia> {
     const actividad = await this.obtenerPorId(id);
     if (!actividad.activo) {
       throw new ConflictError("La actividad ya está dada de baja");
     }
 
-    const actividadActualizada = await this.repositorio.bajaLogica(id);
+    const resultado = await this.repositorio.darDeBajaConHorarios(id);
 
     return {
-      actividad: actividadActualizada,
-      ...(tieneHorariosActivos
-        ? { advertencia: "La actividad tiene horarios activos que deben revisarse antes de darla de baja." }
+      actividad: resultado.actividad,
+      ...(resultado.horariosDadosDeBaja > 0
+        ? { advertencia: "Los horarios activos asociados también fueron dados de baja." }
         : {}),
     };
   }
