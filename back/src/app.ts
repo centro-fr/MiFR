@@ -12,6 +12,8 @@ import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profes
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
+import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
+import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
 
 export interface AppDependencies {
@@ -22,7 +24,12 @@ export interface AppDependencies {
   autorizacion: IAutorizacion;
 }
 
-export function createApp(deps: AppDependencies): Express {
+export interface AppOpciones {
+  // Sin documento no se publica Swagger: index.ts decide no exponerlo en producción.
+  documentacionApi?: DocumentoOpenApi;
+}
+
+export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
   const app = express();
 
   app.use(cors());
@@ -33,6 +40,9 @@ export function createApp(deps: AppDependencies): Express {
 
   // Prefijo versionado del SDD: un cambio incompatible de contrato se publica como /api/v2.
   const api = Router();
+  if (opciones.documentacionApi) {
+    api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
+  }
   api.use("/auth", createSesionRoutes(deps.gestionUsuarios, deps.autenticacion));
   api.use("/usuarios", createUserRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));

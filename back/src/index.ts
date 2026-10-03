@@ -16,6 +16,7 @@ import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.se
 import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
 import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
+import { generarDocumentoOpenApi } from "./openapi.js";
 
 // Composition root: único lugar donde se instancian las clases concretas.
 const usuarioRepositorio = new UsuarioRepository();
@@ -38,13 +39,18 @@ const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
 );
 const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
 
-const app = createApp({
-  gestionUsuarios,
-  gestionPersonas,
-  gestionServicioEntrenamiento,
-  autenticacion,
-  autorizacion: rolService,
-});
+const esProduccion = process.env.NODE_ENV === "production";
+
+const app = createApp(
+  {
+    gestionUsuarios,
+    gestionPersonas,
+    gestionServicioEntrenamiento,
+    autenticacion,
+    autorizacion: rolService,
+  },
+  { documentacionApi: esProduccion ? undefined : generarDocumentoOpenApi() },
+);
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
