@@ -131,16 +131,20 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     component "Horario"           as Horario
     interface "IInfoParametros" as I_InfoParametros
     interface "IInfoPlanes"     as I_InfoPlanes
+    interface "IInfoActividades" as I_InfoActividades
     interface "IInfoHorarios"   as I_InfoHorarios
     interface "IInfoProfesores" as R_GSE_InfoProfesores
+    interface "IInfoActividades" as R_GSE_InfoActividades
 
     ParametrosSistema -down- I_InfoParametros
     Plan    -right- I_InfoPlanes
+    Actividad -down- I_InfoActividades
     Horario -left- I_InfoHorarios
     Horario -right-( R_GSE_InfoProfesores
+    Horario -down-( R_GSE_InfoActividades
     Plan    ..> Promocion
     Plan    ..> Actividad
-    Horario ..> Actividad
+    Horario ..> I_InfoActividades
   }
   interface "ILogicaServicioEntrenamiento" as I_LogicaServicioEntrenamiento
   interface "IAutenticacion" as R_GSE_Aut
@@ -163,10 +167,12 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "ILogicaPersonas" as I_LogicaPersonas
   interface "IAutorizacion"   as R_GP_Autz
   interface "IInfoUsuarios"   as R_GP_InfoUsuarios
+  interface "IInfoHorarios"   as R_GP_InfoHorarios
   interface "IAutenticacion"  as R_GP_Aut
   GestionPersonas       -down- I_LogicaPersonas
   GestionPersonas         -down-( R_GP_Autz
   GestionPersonas -down-( R_GP_InfoUsuarios
+  GestionPersonas -down-( R_GP_InfoHorarios
   GestionPersonas          -down-( R_GP_Aut
 
   ' ---------------- GestionRutinasYProgreso ----------------

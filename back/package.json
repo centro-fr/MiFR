@@ -7,16 +7,19 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "token": "tsx prisma/generar-token.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,12 +29,16 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "google-auth-library": "^9.15.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
+    "prisma": "^6.19.3",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -40,8 +47,9 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^26.4.1",
     "@types/supertest": "^6.0.2",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@vitest/coverage-v8": "3.2.7",
     "prettier": "^3.9.6",
-    "prisma": "^6.19.3",
     "supertest": "^7.0.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",

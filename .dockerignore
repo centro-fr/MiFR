@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.agents
+.vscode
+docs
+front
+**/__tests__
+back/rest-client
+back/.claude
+*.md

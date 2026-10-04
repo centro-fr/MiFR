@@ -1,0 +1,64 @@
+import type { PrismaClient } from "@prisma/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ProfesorRepository } from "../profesor.repository.js";
+
+// 23:30 del 4 de octubre en Argentina: en UTC ya es el 5.
+const AHORA = new Date("2026-10-05T02:30:00Z");
+const HOY_EN_ARGENTINA = new Date("2026-10-04T00:00:00Z");
+
+const prisma = {
+  profesoras: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+};
+
+describe("ProfesorRepository", () => {
+  let repositorio: ProfesorRepository;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(AHORA);
+    repositorio = new ProfesorRepository(prisma as unknown as PrismaClient);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("crear da de alta el perfil con los datos recibidos y la fecha de hoy en Argentina", async () => {
+    await repositorio.crear({ id_usuario: 5, especialidad: "Pilates" });
+
+    expect(prisma.profesoras.create).toHaveBeenCalledWith({
+      data: { id_usuario: 5, especialidad: "Pilates", fecha_alta: HOY_EN_ARGENTINA },
+    });
+  });
+
+  it("buscarPorId busca por id_profesora", async () => {
+    await repositorio.buscarPorId(3);
+
+    expect(prisma.profesoras.findUnique).toHaveBeenCalledWith({ where: { id_profesora: 3 } });
+  });
+
+  it("buscarPorUsuarioId busca por la clave única id_usuario", async () => {
+    await repositorio.buscarPorUsuarioId(5);
+
+    expect(prisma.profesoras.findUnique).toHaveBeenCalledWith({ where: { id_usuario: 5 } });
+  });
+
+  it("listar trae solo las profesoras sin fecha de baja", async () => {
+    await repositorio.listar();
+
+    expect(prisma.profesoras.findMany).toHaveBeenCalledWith({
+      where: { fecha_baja: null },
+      orderBy: { id_profesora: "asc" },
+    });
+  });
+
+  it("darDeBaja registra la fecha de hoy en Argentina sin borrar el perfil", async () => {
+    await repositorio.darDeBaja(3);
+
+    expect(prisma.profesoras.update).toHaveBeenCalledWith({
+      where: { id_profesora: 3 },
+      data: { fecha_baja: HOY_EN_ARGENTINA },
+    });
+  });
+});

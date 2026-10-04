@@ -1,0 +1,26 @@
+# Blueprint de Render para publicar la API. Todavía no está en uso: ver back/DESPLIEGUE.md.
+# La base de datos no va acá: es de Neon, porque la base gratuita de Render se borra a los 30 días.
+services:
+  - name: mifr-api
+    type: web
+    runtime: docker
+    plan: free
+    # Misma región que la base de Neon (AWS us-east-1) para que cada consulta no cruce el continente.
+    region: virginia
+    dockerfilePath: ./back/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render pide estos valores al crear el Blueprint; no quedan escritos en el repositorio.
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: CORS_ORIGENES
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h

@@ -1,3 +1,4 @@
+
 # Testing
 
 Vitest, configurado en `vitest.config.ts` con `environment: "node"` y `globals: false`.
@@ -11,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 ## Ubicación y nombres
 
 - Los tests van en `__tests__/`, dentro de la carpeta del componente que prueban.
-- El archivo se llama como lo que prueba, con sufijo `.test.ts`: `user.service.test.ts`, `sesion.routes.test.ts`.
+- El archivo se llama como lo que prueba, con sufijo `.test.ts`: `usuario.service.test.ts`, `sesion.routes.test.ts`.
 - Los nombres de los tests van en español y describen el comportamiento, empezando por el método:
 
 ```ts
@@ -56,3 +57,5 @@ Al inyectarlos, el cast va contra el tipo real: `repositorio as unknown as Usuar
 Toda lógica nueva de un service viene con su test en el mismo commit. Como mínimo, por cada método con decisiones: el camino feliz y cada error que pueda lanzar.
 
 Antes de integrar la rama de trabajo, `pnpm test` tiene que pasar entero.
+
+`pnpm test:coverage` mide la cobertura. Hoy es del 100% en sentencias, ramas y funciones, sin contar las interfaces, los tipos ni `index.ts` (que no tienen lógica o la cubren las pruebas de punta a punta). Si un cambio deja líneas sin cubrir, el reporte las lista: o falta un test o sobra código.

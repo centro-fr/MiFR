@@ -12,6 +12,19 @@ Esta lista salió de analizar `der.puml`, `vista_arquitectonica.puml` y los docu
 
 Es el modelo a seguir para cualquier integración externa futura (pasarela de pagos, envío de notificaciones): la librería se envuelve, el dominio no se entera.
 
+### Facade — la interfaz `ILogica*` de cada subsistema
+
+`gestion-usuarios/gestion-usuarios.service.ts`. En `vista_arquitectonica.puml` la interfaz `ILogicaUsuarios` la provee el subsistema `GestionUsuarios`, no uno de sus componentes, y es lo único que usa la capa de presentación. `GestionUsuariosService` la implementa pasando cada operación al componente dueño (`Sesion`, `Usuario` o `Rol`), sin reglas propias.
+
+Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y los controllers dependen de esa interfaz.
+
+**Única excepción a "sin reglas propias":** una regla que cruza dos componentes que el diagrama no conecta entre sí. Va en la fachada, porque el subsistema es el único que ve a los dos, y nunca en uno de los componentes, porque eso agregaría una dependencia que el diagrama no tiene. Los dos casos actuales:
+
+- `GestionServicioEntrenamientoService.darDeBajaActividad` consulta `IInfoHorarios` antes de dar de baja la actividad (CA-03). `Actividad` no depende de `Horario`, y además `Horario` ya depende de `IInfoActividades`, así que la dependencia inversa armaría un ciclo.
+- `GestionPersonasService.darDeBajaProfesora` consulta `IInfoHorarios`, que en el diagrama requiere el subsistema `GestionPersonas` y no el componente `Profesor`.
+
+La regla se limita a coordinar: consulta un componente y, según el resultado, llama al otro o lanza el error. Si empieza a acumular lógica propia, es señal de que falta un componente en el diagrama.
+
 ## A aplicar cuando se implemente el módulo
 
 ### Strategy — vencimiento de cuota según tipo de plan
@@ -75,8 +88,8 @@ Lo que sí queda por resolver, y es más importante que la discusión del patró
 
 Conviene nombrarlas bien, sobre todo al documentar o defender el trabajo:
 
-- **Repository** (`user.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
+- **Repository** (`usuario.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
 - **La inyección de dependencias por constructor** es la aplicación del principio de inversión de dependencias, no un patrón de diseño.
-- **`createApp`, `createUserRoutes`, `createUserController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
+- **`createApp`, `createUsuarioRoutes`, `createUsuarioController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
 - **`AppError` y sus subclases** son herencia simple para tipar errores HTTP.
-- **El singleton de Prisma** en `shared/db/client.ts` sí es Singleton, pero resuelto con un módulo y `globalThis`, no con la implementación clásica de constructor privado.
+- **La instancia única de `PrismaClient`** no es el patrón Singleton: nada impide crear otra. Es una sola porque la crea una sola vez el composition root (`index.ts`) y la reparte por constructor.
