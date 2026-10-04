@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mifr
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - mifr-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,6 +16,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+      target: produccion
+    container_name: mifr-api
+    restart: unless-stopped
+    # Igual que en Render: al arrancar aplica las migraciones pendientes y después levanta la API.
+    # GOOGLE_CLIENT_ID, JWT_SECRET, JWT_EXPIRES_IN y NODE_ENV salen de back/.env; lo de abajo tiene
+    # prioridad. Sin NODE_ENV en back/.env la imagen corre en production, como en Render.
+    env_file:
+      - back/.env
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
+      PORT: 3000
+      CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:5173,http://localhost:3001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   mifr-db-data:

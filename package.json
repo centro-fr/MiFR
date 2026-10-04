@@ -5,6 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
+    "dev": "pnpm --filter front dev",
     "dev:front": "pnpm --filter front dev",
     "dev:back": "pnpm --filter back dev"
   },

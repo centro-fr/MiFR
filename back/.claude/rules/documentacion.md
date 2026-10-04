@@ -7,9 +7,9 @@
 **Sí se comenta el porqué**, cuando no es evidente: una restricción del negocio, una decisión que sorprendería a quien lea, el vínculo con un componente del diagrama. Los dos ejemplos buenos que ya están en el repositorio:
 
 ```ts
-// Este singleton es la realización del componente "Persistencia" de la vista
-// arquitectónica (CapaAdministracionDatos): Prisma Client ya expone IMaterializar
-// (create/update/delete) e IDesmaterializar (findUnique/findFirst/findMany)...
+// PrismaClient es la realización del componente "Persistencia" de la vista arquitectónica
+// (CapaAdministracionDatos): ya expone IMaterializar (create/update/delete) e IDesmaterializar
+// (findUnique/findFirst/findMany) sobre BaseDeDatos (Postgres)...
 ```
 
 ```ts
@@ -35,15 +35,17 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 - Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega.
 - Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
 - Envolver los handlers asincrónicos con `asyncHandler` para que los rechazos lleguen al manejador de errores.
-- Proteger las rutas con `requiereSesion(autenticacion)` y `requiereRol("PROPIETARIO")` en la definición de la ruta, no adentro del controller.
-- Instanciar solo en `index.ts`.
+- Proteger las rutas con `requiereSesion(autenticacion)` y `requierePermiso(autorizacion, "CODIGO")` en la definición de la ruta, no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `requiereRol` queda para lo que la spec ata a un rol y no a un permiso.
+- Instanciar solo en `index.ts`, también las clases de librerías: quien las usa las recibe por constructor.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
+- Para el "hoy" de una columna `DATE` (altas, bajas, vencimientos) usar `fechaActualArgentina()` de `shared/utils/fecha-argentina.ts`, nunca `new Date()`: el servidor y la base corren en UTC, y Prisma guarda el día UTC, que desde las 21:00 de Argentina ya es el siguiente. Los `TIMESTAMP` siguen en UTC.
+- Documentar cada ruta nueva en el `<x>.openapi.ts` de su componente, reusando los esquemas de `<x>.schemas.ts`, con los permisos que exige y los errores que puede devolver.
 
 ## Malas prácticas
 
 - `any`. Si el tipo no se sabe, `unknown` y estrechar.
-- Importar `prisma` fuera de un repositorio.
+- Usar el cliente de Prisma fuera de un repositorio.
 - Hacer `new` de una clase concreta fuera de `index.ts`.
 - Poner lógica de negocio en un controller, en una ruta o en un middleware.
 - Devolver la entidad cruda cuando tiene campos que el cliente no debería ver.
@@ -72,7 +74,7 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `JWT_SECRET` | Firma del token propio |
 | `JWT_EXPIRES_IN` | Vigencia del token, por defecto `8h` |
 | `PORT` | Puerto de la API, por defecto `3000` |
+| `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
+| `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.
-
-**Pendiente:** `PORT` se usa en `index.ts` pero todavía no figura en `.env.example`.
