@@ -17,7 +17,8 @@ pnpm format:check     # prettier --check .
 pnpm prisma:generate  # regenerar el cliente tras tocar el schema
 pnpm prisma:migrate   # crear y aplicar migracion
 pnpm prisma:studio    # explorar la base
-pnpm db:seed          # cargar datos de prueba
+pnpm db:seed          # roles, permisos y la primera propietaria (también en producción)
+pnpm db:seed:demo     # datos de prueba, solo contra una base local
 ```
 
 La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.

@@ -25,12 +25,12 @@ services:
     container_name: mifr-api
     restart: unless-stopped
     # Igual que en Render: al arrancar aplica las migraciones pendientes y después levanta la API.
-    # GOOGLE_CLIENT_ID, JWT_SECRET y JWT_EXPIRES_IN salen de back/.env; lo de abajo tiene prioridad.
+    # GOOGLE_CLIENT_ID, JWT_SECRET, JWT_EXPIRES_IN y NODE_ENV salen de back/.env; lo de abajo tiene
+    # prioridad. Sin NODE_ENV en back/.env la imagen corre en production, como en Render.
     env_file:
       - back/.env
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
-      NODE_ENV: ${API_NODE_ENV:-production}
       PORT: 3000
       CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:5173}
     ports:

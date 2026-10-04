@@ -54,7 +54,17 @@ docker compose logs -f api          # ver los logs de la API
 docker compose up -d db             # solo la base, para trabajar con pnpm dev:back
 ```
 
-Por defecto la API corre con `NODE_ENV=production`, sin Swagger y aceptando pedidos solo desde `http://localhost:5173` (el front con Vite). Para ver Swagger en el contenedor: `API_NODE_ENV=development docker compose up -d api`. Para aceptar otro origen: `CORS_ORIGENES=<url> docker compose up -d api`.
+El modo de la API sale de `NODE_ENV` en `back/.env`. El `.env.example` trae `development`, que publica Swagger en `http://localhost:3000/api/v1/docs`. Si se borra la variable, el contenedor corre en `production`, sin Swagger, igual que en Render. En los dos casos solo acepta pedidos desde `http://localhost:5173` (el front con Vite); para otro origen: `CORS_ORIGENES=<url> docker compose up -d api`.
+
+Después de cambiar `back/.env` hay que recrear el contenedor: `docker compose up -d api`.
+
+Para cargar datos de prueba en la base local (profesoras, actividades, horarios y un usuario con los roles PROPIETARIA y PROFESORA), después del seed principal:
+
+```bash
+pnpm --filter back db:seed:demo -- [email-de-google-para-el-usuario-multirol]
+```
+
+Solo corre contra una base local: si `DATABASE_URL` apunta a otro host, se niega.
 
 No se puede tener `pnpm dev:back` y el servicio `api` corriendo a la vez: los dos usan el puerto `3000`.
 
@@ -91,6 +101,8 @@ MiFR/
 | `pnpm dev` | Ejecuta `src/index.ts` con recarga automática |
 | `pnpm build` | Compila TypeScript a `dist/`, sin los tests |
 | `pnpm start` | Ejecuta la versión compilada |
+| `pnpm db:seed` | Carga roles, permisos y la primera propietaria |
+| `pnpm db:seed:demo` | Carga datos de prueba en la base local |
 
 ### front
 

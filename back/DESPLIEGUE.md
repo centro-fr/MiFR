@@ -38,7 +38,7 @@ Alternativas descartadas: Koyeb no se duerme, pero desde febrero de 2026 pide ta
 
 `docker compose up -d --build` levanta la base y la API con la misma imagen que se va a publicar, y la API aplica las migraciones al arrancar, igual que en Render. Los detalles están en el `README.md` de la raíz.
 
-Para probar la API como en producción pero con Swagger: `API_NODE_ENV=development docker compose up -d api`.
+El modo sale de `NODE_ENV` en `back/.env`: con `development` se publica Swagger, y sin la variable el contenedor corre en `production`, exactamente como en Render. Los datos de prueba de `db:seed:demo` son solo para la base local: en Neon se corre únicamente `db:seed`.
 
 ## Pasos para publicar
 
