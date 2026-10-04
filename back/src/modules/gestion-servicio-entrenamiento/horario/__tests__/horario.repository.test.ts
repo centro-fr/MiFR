@@ -1,10 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HorarioRepository } from "../horario.repository.js";
 
 function hora(horas: number, minutos = 0): Date {
   return new Date(Date.UTC(1970, 0, 1, horas, minutos));
 }
+
+// 23:30 del 4 de octubre en Argentina: en UTC ya es el 5.
+const AHORA = new Date("2026-10-05T02:30:00Z");
+const HOY_EN_ARGENTINA = new Date("2026-10-04T00:00:00Z");
 
 const transaccion = {
   $executeRaw: vi.fn(),
@@ -23,8 +27,14 @@ describe("HorarioRepository", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(AHORA);
     transaccion.horarios.findFirst.mockResolvedValue(null);
     repositorio = new HorarioRepository(prisma as unknown as PrismaClient);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("crear bloquea la agenda de esa profesora y ese día antes de buscar superposiciones", async () => {
@@ -53,12 +63,12 @@ describe("HorarioRepository", () => {
     });
   });
 
-  it("crear guarda las horas como TIME sobre 1970-01-01 y devuelve el horario con sus datos", async () => {
+  it("crear guarda las horas como TIME sobre 1970-01-01, el alta con la fecha de hoy en Argentina y devuelve el horario", async () => {
     transaccion.horarios.create.mockResolvedValue({ id_horario: 9 });
 
     await expect(repositorio.crear(nuevo)).resolves.toEqual({ id_horario: 9 });
     expect(transaccion.horarios.create).toHaveBeenCalledWith({
-      data: { ...nuevo, hora_inicio: hora(18), hora_fin: hora(19) },
+      data: { ...nuevo, hora_inicio: hora(18), hora_fin: hora(19), fecha_alta: HOY_EN_ARGENTINA },
       include: CON_DATOS,
     });
   });
@@ -138,12 +148,12 @@ describe("HorarioRepository", () => {
     expect(prisma.horarios.count).toHaveBeenCalledWith({ where });
   });
 
-  it("darDeBaja registra la fecha de baja sin borrar el horario", async () => {
+  it("darDeBaja registra la fecha de hoy en Argentina sin borrar el horario", async () => {
     await repositorio.darDeBaja(7);
 
     expect(prisma.horarios.update).toHaveBeenCalledWith({
       where: { id_horario: 7 },
-      data: { fecha_baja: expect.any(Date) },
+      data: { fecha_baja: HOY_EN_ARGENTINA },
       include: CON_DATOS,
     });
   });

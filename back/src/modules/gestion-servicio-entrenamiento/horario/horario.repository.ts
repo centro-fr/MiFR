@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schemas.js";
+import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { FiltroHorario, HorarioConDatos } from "./horario.types.js";
 
 const CON_DATOS = { actividad: true, profesora: true } satisfies Prisma.horariosInclude;
@@ -69,6 +70,7 @@ export class HorarioRepository {
           ...input,
           hora_inicio: convertirHora(input.hora_inicio),
           hora_fin: convertirHora(input.hora_fin),
+          fecha_alta: fechaActualArgentina(),
         },
         include: CON_DATOS,
       });
@@ -119,7 +121,7 @@ export class HorarioRepository {
   darDeBaja(id: number): Promise<HorarioConDatos> {
     return this.prisma.horarios.update({
       where: { id_horario: id },
-      data: { fecha_baja: new Date() },
+      data: { fecha_baja: fechaActualArgentina() },
       include: CON_DATOS,
     });
   }

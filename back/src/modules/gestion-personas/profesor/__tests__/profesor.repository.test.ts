@@ -1,6 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProfesorRepository } from "../profesor.repository.js";
+
+// 23:30 del 4 de octubre en Argentina: en UTC ya es el 5.
+const AHORA = new Date("2026-10-05T02:30:00Z");
+const HOY_EN_ARGENTINA = new Date("2026-10-04T00:00:00Z");
 
 const prisma = {
   profesoras: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
@@ -11,14 +15,20 @@ describe("ProfesorRepository", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(AHORA);
     repositorio = new ProfesorRepository(prisma as unknown as PrismaClient);
   });
 
-  it("crear da de alta el perfil con los datos recibidos", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("crear da de alta el perfil con los datos recibidos y la fecha de hoy en Argentina", async () => {
     await repositorio.crear({ id_usuario: 5, especialidad: "Pilates" });
 
     expect(prisma.profesoras.create).toHaveBeenCalledWith({
-      data: { id_usuario: 5, especialidad: "Pilates" },
+      data: { id_usuario: 5, especialidad: "Pilates", fecha_alta: HOY_EN_ARGENTINA },
     });
   });
 
@@ -43,12 +53,12 @@ describe("ProfesorRepository", () => {
     });
   });
 
-  it("darDeBaja registra la fecha de baja sin borrar el perfil", async () => {
+  it("darDeBaja registra la fecha de hoy en Argentina sin borrar el perfil", async () => {
     await repositorio.darDeBaja(3);
 
     expect(prisma.profesoras.update).toHaveBeenCalledWith({
       where: { id_profesora: 3 },
-      data: { fecha_baja: expect.any(Date) },
+      data: { fecha_baja: HOY_EN_ARGENTINA },
     });
   });
 });

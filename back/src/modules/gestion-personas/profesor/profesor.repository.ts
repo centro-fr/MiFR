@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { CrearProfesoraInput } from "./profesor.schemas.js";
 import type { Profesora } from "./profesor.types.js";
 
@@ -6,7 +7,7 @@ export class ProfesorRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   crear(input: CrearProfesoraInput): Promise<Profesora> {
-    return this.prisma.profesoras.create({ data: input });
+    return this.prisma.profesoras.create({ data: { ...input, fecha_alta: fechaActualArgentina() } });
   }
 
   buscarPorId(id: number): Promise<Profesora | null> {
@@ -27,7 +28,7 @@ export class ProfesorRepository {
   darDeBaja(id: number): Promise<Profesora> {
     return this.prisma.profesoras.update({
       where: { id_profesora: id },
-      data: { fecha_baja: new Date() },
+      data: { fecha_baja: fechaActualArgentina() },
     });
   }
 }
