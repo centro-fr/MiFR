@@ -153,4 +153,37 @@ describe("rutas de actividades", () => {
     expect(respuesta.status).toBe(409);
     expect(respuesta.body.error.message).toContain("horarios activos");
   });
+
+  it("obtiene una actividad por id con permiso de lectura", async () => {
+    logica.obtenerActividadPorId.mockResolvedValue(actividad);
+
+    const respuesta = await request(app)
+      .get("/api/v1/actividades/1")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.obtenerActividadPorId).toHaveBeenCalledWith(1);
+  });
+
+  it("CA-02 responde 400 al crear una PERSONALIZADA sin cupo", async () => {
+    const respuesta = await request(app)
+      .post("/api/v1/actividades")
+      .set("Authorization", "Bearer propietaria")
+      .send({ codigo: "PERS", nombre: "Personalizada", modalidad: "PERSONALIZADA" });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.details.fieldErrors.cupo_maximo).toBeDefined();
+    expect(logica.crearActividad).not.toHaveBeenCalled();
+  });
+
+  it("CA-01 crea una GRUPAL sin cupo", async () => {
+    logica.crearActividad.mockResolvedValue({ ...actividad, cupo_maximo: null });
+
+    const respuesta = await request(app)
+      .post("/api/v1/actividades")
+      .set("Authorization", "Bearer propietaria")
+      .send({ codigo: "GRUP", nombre: "Grupal", modalidad: "GRUPAL" });
+
+    expect(respuesta.status).toBe(201);
+  });
 });

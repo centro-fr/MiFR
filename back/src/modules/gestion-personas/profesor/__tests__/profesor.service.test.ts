@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, ValidationError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { ProfesorRepository } from "../profesor.repository.js";
@@ -87,5 +87,44 @@ describe("ProfesorService", () => {
     repositorio.buscarPorId.mockResolvedValue({ ...perfil, fecha_baja: new Date() });
 
     await expect(servicio.darDeBaja(1)).rejects.toThrow(ConflictError);
+  });
+
+  it("buscarPorId devuelve la profesora si está activa y su usuario tiene el rol", async () => {
+    repositorio.buscarPorId.mockResolvedValue(perfil);
+
+    await expect(servicio.buscarPorId(1)).resolves.toEqual(perfil);
+  });
+
+  it("buscarPorId devuelve null si la profesora no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.buscarPorId(99)).resolves.toBeNull();
+  });
+
+  it("buscarPorId devuelve null si la profesora está dada de baja, sin consultar al usuario", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...perfil, fecha_baja: new Date() });
+
+    await expect(servicio.buscarPorId(1)).resolves.toBeNull();
+    expect(usuarios.obtenerPorId).not.toHaveBeenCalled();
+  });
+
+  it("buscarPorId devuelve null si a su usuario le quitaron el rol PROFESORA", async () => {
+    repositorio.buscarPorId.mockResolvedValue(perfil);
+    vi.mocked(autorizacion.tieneRol).mockReturnValue(false);
+
+    await expect(servicio.buscarPorId(1)).resolves.toBeNull();
+  });
+
+  it("listar devuelve las profesoras del repositorio", async () => {
+    repositorio.listar.mockResolvedValue([perfil]);
+
+    await expect(servicio.listar()).resolves.toEqual([perfil]);
+  });
+
+  it("darDeBaja lanza NotFoundError si la profesora no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.darDeBaja(99)).rejects.toThrow(NotFoundError);
+    expect(repositorio.darDeBaja).not.toHaveBeenCalled();
   });
 });

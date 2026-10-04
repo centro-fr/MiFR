@@ -104,4 +104,25 @@ describe("RolRepository", () => {
     expect(prisma.rol_permisos.deleteMany).not.toHaveBeenCalled();
     expect(prisma.$transaction).toHaveBeenCalledWith(["otorgar"]);
   });
+
+  it("aplicarCambios no arma el alta si solo hay permisos para quitar", async () => {
+    await repositorio.aplicarCambios([], [{ id_rol: 2, id_permiso: 7 }]);
+
+    expect(prisma.rol_permisos.createMany).not.toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalledWith(["quitar"]);
+  });
+
+  it("listarRoles ordena por id_rol", async () => {
+    await repositorio.listarRoles();
+
+    expect(prisma.roles.findMany).toHaveBeenCalledWith({ orderBy: { id_rol: "asc" } });
+  });
+
+  it("listarAsignaciones trae solo los códigos de rol y de permiso", async () => {
+    await repositorio.listarAsignaciones();
+
+    expect(prisma.rol_permisos.findMany).toHaveBeenCalledWith({
+      select: { rol: { select: { codigo: true } }, permiso: { select: { codigo: true } } },
+    });
+  });
 });

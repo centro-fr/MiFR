@@ -13,6 +13,8 @@ function crearRepositorioMock() {
     buscarPorId: vi.fn(),
     actualizar: vi.fn(),
     darDeBaja: vi.fn(),
+    tieneActivosDeActividad: vi.fn(),
+    tieneActivosDeProfesora: vi.fn(),
   };
 }
 
@@ -177,6 +179,116 @@ describe("HorarioService", () => {
     await expect(servicio.darDeBaja(1)).resolves.toMatchObject({
       horario: { fecha_baja: expect.any(Date) },
       advertencia: expect.stringContaining("inscripciones futuras"),
+    });
+  });
+
+  it("listar devuelve los horarios con su cupo efectivo", async () => {
+    repositorio.listar.mockResolvedValue([horarioBase, { ...horarioBase, id_horario: 2, cupo_maximo: 8 }]);
+
+    const horarios = await servicio.listar({ id_actividad: 1 });
+
+    expect(repositorio.listar).toHaveBeenCalledWith({ id_actividad: 1 });
+    expect(horarios.map((h) => h.cupo_maximo_efectivo)).toEqual([20, 8]);
+  });
+
+  it("obtenerPorId devuelve también un horario dado de baja, para consultar el historial", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, fecha_baja: new Date() });
+
+    await expect(servicio.obtenerPorId(1)).resolves.toMatchObject({ id_horario: 1 });
+  });
+
+  it("obtenerPorId lanza NotFoundError si no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.obtenerPorId(99)).rejects.toThrow(NotFoundError);
+  });
+
+  it("actualizar conserva día, horas y cupo actuales para los campos que no se envían", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, cupo_maximo: 12 });
+    repositorio.actualizar.mockResolvedValue({ ...horarioBase, cupo_maximo: 12, id_profesora: 2 });
+
+    await expect(servicio.actualizar(1, { id_profesora: 2 })).resolves.toMatchObject({
+      cupo_maximo_efectivo: 12,
+    });
+    expect(repositorio.actualizar).toHaveBeenCalledWith(
+      1,
+      { id_profesora: 2 },
+      { id_profesora: 2, dia_semana: 1, hora_inicio: "09:00", hora_fin: "10:00" },
+    );
+  });
+
+  it("actualizar lanza NotFoundError si el horario no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.actualizar(99, { hora_fin: "11:00" })).rejects.toThrow(NotFoundError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("actualizar lanza ConflictError si el horario ya está dado de baja", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, fecha_baja: new Date() });
+
+    await expect(servicio.actualizar(1, { hora_fin: "11:00" })).rejects.toThrow(ConflictError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("actualizar exige cupo si la actividad es PERSONALIZADA y no tiene cupo propio", async () => {
+    repositorio.buscarPorId.mockResolvedValue(horarioBase);
+    vi.mocked(actividades.buscarPorId).mockResolvedValue({
+      ...actividad,
+      modalidad: "PERSONALIZADA",
+      cupo_maximo: null,
+    });
+
+    await expect(servicio.actualizar(1, { hora_fin: "11:00" })).rejects.toThrow(ValidationError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("crear exige cupo si la actividad es PERSONALIZADA y no tiene cupo propio", async () => {
+    vi.mocked(actividades.buscarPorId).mockResolvedValue({
+      ...actividad,
+      modalidad: "PERSONALIZADA",
+      cupo_maximo: null,
+    });
+
+    await expect(
+      servicio.crear({
+        id_actividad: 1,
+        id_profesora: 1,
+        dia_semana: 2,
+        hora_inicio: "09:00",
+        hora_fin: "10:00",
+      }),
+    ).rejects.toThrow(ValidationError);
+    expect(repositorio.crear).not.toHaveBeenCalled();
+  });
+
+  it("darDeBaja lanza ConflictError si el horario ya estaba dado de baja", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, fecha_baja: new Date() });
+
+    await expect(servicio.darDeBaja(1)).rejects.toThrow(ConflictError);
+    expect(repositorio.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("tieneActivosDeActividad consulta al repositorio", async () => {
+    repositorio.tieneActivosDeActividad.mockResolvedValue(true);
+
+    await expect(servicio.tieneActivosDeActividad(7)).resolves.toBe(true);
+    expect(repositorio.tieneActivosDeActividad).toHaveBeenCalledWith(7);
+  });
+
+  it("tieneActivosDeProfesora consulta al repositorio", async () => {
+    repositorio.tieneActivosDeProfesora.mockResolvedValue(false);
+
+    await expect(servicio.tieneActivosDeProfesora(7)).resolves.toBe(false);
+    expect(repositorio.tieneActivosDeProfesora).toHaveBeenCalledWith(7);
+  });
+
+  it("actualizar usa el cupo que se envía en lugar del actual", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, cupo_maximo: 12 });
+    repositorio.actualizar.mockResolvedValue({ ...horarioBase, cupo_maximo: 6 });
+
+    await expect(servicio.actualizar(1, { cupo_maximo: 6 })).resolves.toMatchObject({
+      cupo_maximo_efectivo: 6,
     });
   });
 });

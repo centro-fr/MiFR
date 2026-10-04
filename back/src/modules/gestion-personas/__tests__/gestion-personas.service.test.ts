@@ -32,3 +32,18 @@ describe("GestionPersonasService", () => {
     expect(profesoras.darDeBaja).not.toHaveBeenCalled();
   });
 });
+
+describe("GestionPersonasService delega en Profesor", () => {
+  it("crearProfesora y listarProfesoras llegan al componente Profesor", async () => {
+    const profesoras = {
+      crear: vi.fn().mockResolvedValue({ id_profesora: 1 }),
+      listar: vi.fn().mockResolvedValue([]),
+    };
+    const horarios = { tieneActivosDeActividad: vi.fn(), tieneActivosDeProfesora: vi.fn() };
+    const servicio = new GestionPersonasService(profesoras as unknown as ProfesorService, horarios);
+
+    await expect(servicio.crearProfesora({ id_usuario: 5 })).resolves.toEqual({ id_profesora: 1 });
+    await expect(servicio.listarProfesoras()).resolves.toEqual([]);
+    expect(profesoras.crear).toHaveBeenCalledWith({ id_usuario: 5 });
+  });
+});

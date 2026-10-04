@@ -44,3 +44,41 @@ describe("GestionServicioEntrenamientoService", () => {
     expect(actividades.darDeBaja).not.toHaveBeenCalled();
   });
 });
+
+describe("GestionServicioEntrenamientoService delega cada operación al componente dueño", () => {
+  const actividades = {
+    crear: vi.fn().mockResolvedValue("resultado"),
+    listar: vi.fn().mockResolvedValue("resultado"),
+    obtenerPorId: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+  };
+  const horarios = {
+    crear: vi.fn().mockResolvedValue("resultado"),
+    listar: vi.fn().mockResolvedValue("resultado"),
+    obtenerPorId: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+    darDeBaja: vi.fn().mockResolvedValue("resultado"),
+  };
+  const servicio = new GestionServicioEntrenamientoService(
+    actividades as unknown as ActividadService,
+    horarios as unknown as HorarioService,
+  );
+  const cuerpo = { nombre: "X" };
+
+  it.each([
+    ["crearActividad", [cuerpo], actividades.crear],
+    ["listarActividades", [{ busqueda: "yo" }], actividades.listar],
+    ["obtenerActividadPorId", [3], actividades.obtenerPorId],
+    ["actualizarActividad", [3, cuerpo], actividades.actualizar],
+    ["crearHorario", [cuerpo], horarios.crear],
+    ["listarHorarios", [{ id_actividad: 3 }], horarios.listar],
+    ["obtenerHorarioPorId", [3], horarios.obtenerPorId],
+    ["actualizarHorario", [3, cuerpo], horarios.actualizar],
+    ["darDeBajaHorario", [3], horarios.darDeBaja],
+  ] as const)("%s", async (operacion, argumentos, destino) => {
+    const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
+
+    await expect(metodo.apply(servicio, [...argumentos])).resolves.toBe("resultado");
+    expect(destino).toHaveBeenCalledWith(...argumentos);
+  });
+});

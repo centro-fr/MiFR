@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../../../../app.js";
+import { ConflictError } from "../../../../shared/errors/app-error.js";
 import type { IAutenticacion } from "../../../gestion-usuarios/sesion/interface/i-autenticacion.js";
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { ILogicaUsuarios } from "../../../gestion-usuarios/interface/i-logica-usuarios.js";
@@ -78,5 +79,38 @@ describe("rutas de profesoras", () => {
 
     expect(respuesta.status).toBe(403);
     expect(logica.darDeBajaProfesora).not.toHaveBeenCalled();
+  });
+
+  it("da de baja una profesora para la propietaria", async () => {
+    logica.darDeBajaProfesora.mockResolvedValue({ id_profesora: 3, fecha_baja: "2026-10-04" });
+
+    const respuesta = await request(app)
+      .delete("/api/v1/profesoras/3")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.darDeBajaProfesora).toHaveBeenCalledWith(3);
+  });
+
+  it("responde 409 si la profesora todavía tiene horarios activos", async () => {
+    logica.darDeBajaProfesora.mockRejectedValue(
+      new ConflictError("Debe dar de baja los horarios activos antes que a la profesora"),
+    );
+
+    const respuesta = await request(app)
+      .delete("/api/v1/profesoras/3")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(respuesta.status).toBe(409);
+  });
+
+  it("responde 400 si el alta no trae un id_usuario válido", async () => {
+    const respuesta = await request(app)
+      .post("/api/v1/profesoras")
+      .set("Authorization", "Bearer propietaria")
+      .send({ id_usuario: "cinco" });
+
+    expect(respuesta.status).toBe(400);
+    expect(logica.crearProfesora).not.toHaveBeenCalled();
   });
 });

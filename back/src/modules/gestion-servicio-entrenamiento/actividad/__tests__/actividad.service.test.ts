@@ -116,4 +116,34 @@ describe("ActividadService", () => {
 
     await expect(servicio.darDeBaja(1)).rejects.toThrow(ConflictError);
   });
+
+  it("actualizar conserva la modalidad actual si solo cambia el nombre", async () => {
+    repositorio.buscarPorId.mockResolvedValue({
+      ...actividadBase,
+      modalidad: "PERSONALIZADA",
+      cupo_maximo: 4,
+    });
+    repositorio.actualizar.mockResolvedValue({ ...actividadBase, nombre: "Nuevo" });
+
+    await servicio.actualizar(1, { nombre: "Nuevo" });
+
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { nombre: "Nuevo" });
+  });
+
+  it("actualizar rechaza quitar el cupo a una PERSONALIZADA sin cambiar la modalidad", async () => {
+    repositorio.buscarPorId.mockResolvedValue({
+      ...actividadBase,
+      modalidad: "PERSONALIZADA",
+      cupo_maximo: 4,
+    });
+
+    await expect(servicio.actualizar(1, { cupo_maximo: null })).rejects.toThrow(ValidationError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("buscarPorId devuelve null sin lanzar si no existe, para que Horario decida", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.buscarPorId(99)).resolves.toBeNull();
+  });
 });
