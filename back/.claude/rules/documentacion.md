@@ -39,6 +39,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 - Instanciar solo en `index.ts`, también las clases de librerías: quien las usa las recibe por constructor.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
+- Para el "hoy" de una columna `DATE` (altas, bajas, vencimientos) usar `fechaActualArgentina()` de `shared/utils/fecha-argentina.ts`, nunca `new Date()`: el servidor y la base corren en UTC, y Prisma guarda el día UTC, que desde las 21:00 de Argentina ya es el siguiente. Los `TIMESTAMP` siguen en UTC.
 - Documentar cada ruta nueva en el `<x>.openapi.ts` de su componente, reusando los esquemas de `<x>.schemas.ts`, con los permisos que exige y los errores que puede devolver.
 
 ## Malas prácticas
