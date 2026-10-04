@@ -17,21 +17,22 @@ describe("requiereSesion", () => {
 
   beforeEach(() => {
     autenticacion = {
-      verificarToken: vi.fn().mockReturnValue({ usuarioId: 1, roles: ["PROPIETARIA"] }),
+      validarSesion: vi.fn().mockResolvedValue({ usuarioId: 1, roles: ["PROPIETARIA"] }),
       iniciarSesion: vi.fn(),
       obtenerPerfil: vi.fn(),
     };
     next = vi.fn();
   });
 
-  it("requiereSesion carga req.usuario con el id y los roles del JWT y sigue", () => {
+  it("requiereSesion carga req.usuario con el id y los roles vigentes y sigue", async () => {
     const req = crearRequest({ headers: { authorization: "Bearer token-valido" } });
 
     requiereSesion(autenticacion)(req, res, next);
 
-    expect(autenticacion.verificarToken).toHaveBeenCalledWith("token-valido");
+    await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
+    expect(autenticacion.validarSesion).toHaveBeenCalledWith("token-valido");
     expect(req.usuario).toEqual({ id_usuario: 1, roles: ["PROPIETARIA"] });
-    expect(next).toHaveBeenCalledOnce();
+    expect(next).toHaveBeenCalledWith();
   });
 
   it("requiereSesion lanza UnauthorizedError sin header Authorization", () => {
@@ -45,19 +46,21 @@ describe("requiereSesion", () => {
       const req = crearRequest({ headers: { authorization } });
 
       expect(() => requiereSesion(autenticacion)(req, res, next)).toThrow(UnauthorizedError);
-      expect(autenticacion.verificarToken).not.toHaveBeenCalled();
+      expect(autenticacion.validarSesion).not.toHaveBeenCalled();
     },
   );
 
-  it("requiereSesion propaga el error si el token es inválido", () => {
-    vi.mocked(autenticacion.verificarToken).mockImplementation(() => {
-      throw new UnauthorizedError("Token inválido o expirado");
-    });
-    const req = crearRequest({ headers: { authorization: "Bearer vencido" } });
+  it.each([
+    ["el token es inválido", new UnauthorizedError("Token inválido o expirado")],
+    ["el usuario fue dado de baja", new ForbiddenError("Usuario inactivo")],
+  ])("requiereSesion pasa el error a next si %s", async (_caso, error) => {
+    vi.mocked(autenticacion.validarSesion).mockRejectedValue(error);
+    const req = crearRequest({ headers: { authorization: "Bearer token" } });
 
-    expect(() => requiereSesion(autenticacion)(req, res, next)).toThrow("Token inválido o expirado");
+    requiereSesion(autenticacion)(req, res, next);
+
+    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(error));
     expect(req.usuario).toBeUndefined();
-    expect(next).not.toHaveBeenCalled();
   });
 });
 

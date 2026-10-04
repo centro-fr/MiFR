@@ -6,6 +6,7 @@ import {
 import { auditar } from "../../../shared/utils/auditoria.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../usuario/interface/i-info-usuarios.js";
+import type { UsuarioConRoles } from "../usuario/usuario.types.js";
 import type {
   IAutenticacion,
   PerfilSesion,
@@ -45,17 +46,24 @@ export class SesionService implements IAutenticacion {
     return { token: this.jwtService.emitir(usuario), usuario, permisos };
   }
 
-  // Se relee de la base: el JWT puede haber quedado viejo si le cambiaron los roles,
-  // la matriz o si lo dieron de baja después del login.
   async obtenerPerfil(idUsuario: number): Promise<PerfilSesion> {
-    const usuario = await this.usuarios.buscarPorId(idUsuario);
-    if (!usuario) throw new UnauthorizedError("La sesión ya no es válida");
-    if (usuario.estado === "INACTIVO") throw new ForbiddenError("Usuario inactivo");
-
+    const usuario = await this.usuarioActivo(idUsuario);
     return { usuario, permisos: await this.autorizacion.permisosEfectivos(idUsuario) };
   }
 
-  verificarToken(token: string): SesionPayload {
-    return this.jwtService.verificar(token);
+  // El JWT solo prueba quién es. Los roles y el estado se releen de la base en cada pedido:
+  // si después del login le quitaron un rol o lo dieron de baja, rige desde el próximo pedido
+  // y no recién cuando vence el token.
+  async validarSesion(token: string): Promise<SesionPayload> {
+    const { usuarioId } = this.jwtService.verificar(token);
+    const usuario = await this.usuarioActivo(usuarioId);
+    return { usuarioId, roles: usuario.roles.map((r) => r.rol.codigo) };
+  }
+
+  private async usuarioActivo(idUsuario: number): Promise<UsuarioConRoles> {
+    const usuario = await this.usuarios.buscarPorId(idUsuario);
+    if (!usuario) throw new UnauthorizedError("La sesión ya no es válida");
+    if (usuario.estado === "INACTIVO") throw new ForbiddenError("Usuario inactivo");
+    return usuario;
   }
 }

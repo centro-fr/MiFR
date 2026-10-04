@@ -42,7 +42,7 @@ describe("rutas de actividades", () => {
     } as unknown as IAutorizacion;
 
     const autenticacion = {
-      verificarToken: (token: string) => ({
+      validarSesion: async (token: string) => ({
         usuarioId: token === "propietaria" ? 1 : 2,
         roles: token === "propietaria" ? ["PROPIETARIA"] : ["PROFESORA"],
       }),

@@ -27,7 +27,7 @@ describe("rutas de horarios", () => {
     logica = crearLogicaMock();
     autorizacion = { tienePermiso: vi.fn().mockResolvedValue(true) } as unknown as IAutorizacion;
     const autenticacion = {
-      verificarToken: (token: string) => ({
+      validarSesion: async (token: string) => ({
         usuarioId: token === "propietaria" ? 1 : 2,
         roles: token === "propietaria" ? ["PROPIETARIA"] : ["PROFESORA"],
       }),

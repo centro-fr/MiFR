@@ -59,7 +59,7 @@ describe("POST /api/v1/auth/google", () => {
   let autenticacion: IAutenticacion;
 
   beforeEach(() => {
-    autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+    autenticacion = { validarSesion: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
   });
 
   it("responde 200 con token y usuario si el id_token es válido", async () => {
@@ -233,7 +233,7 @@ describe("POST /api/v1/auth/google", () => {
     });
     await request(app).post("/api/v1/auth/google").send({ id_token: "token-valido" });
 
-    expect(autenticacion.verificarToken).not.toHaveBeenCalled();
+    expect(autenticacion.validarSesion).not.toHaveBeenCalled();
   });
 });
 
@@ -244,7 +244,7 @@ describe("sesión activa", () => {
 
   beforeEach(() => {
     autenticacion = {
-      verificarToken: (token: string) => jwtService.verificar(token),
+      validarSesion: async (token: string) => jwtService.verificar(token),
       iniciarSesion: vi.fn(),
       obtenerPerfil: vi.fn(),
     };
@@ -310,7 +310,7 @@ describe("sesión activa", () => {
 });
 
 describe("rutas generales de la app", () => {
-  const autenticacion = { verificarToken: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+  const autenticacion = { validarSesion: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
 
   it("GET /health responde 200", async () => {
     const response = await request(

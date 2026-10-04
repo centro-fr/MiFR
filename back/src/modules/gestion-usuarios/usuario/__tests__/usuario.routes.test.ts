@@ -27,7 +27,7 @@ const jwtService = new JwtService(JWT_SECRET, "1h");
 // Las rutas se prueban contra el contrato HTTP: el service va mockeado y la
 // sesión se valida con el JwtService real (mismo secreto que los tokens de prueba).
 const autenticacion: IAutenticacion = {
-  verificarToken: (token: string) => jwtService.verificar(token),
+  validarSesion: async (token: string) => jwtService.verificar(token),
   iniciarSesion: vi.fn(),
   obtenerPerfil: vi.fn(),
 };

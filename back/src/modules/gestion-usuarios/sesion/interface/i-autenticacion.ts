@@ -22,5 +22,5 @@ export interface SesionIniciada extends PerfilSesion {
 export interface IAutenticacion {
   iniciarSesion(idToken: string): Promise<SesionIniciada>;
   obtenerPerfil(idUsuario: number): Promise<PerfilSesion>;
-  verificarToken(token: string): SesionPayload;
+  validarSesion(token: string): Promise<SesionPayload>;
 }

@@ -24,9 +24,13 @@ export function requiereSesion(autenticacion: IAutenticacion) {
     if (!header?.startsWith("Bearer ")) throw new UnauthorizedError("Token no provisto");
 
     const token = header.slice("Bearer ".length);
-    const { usuarioId, roles } = autenticacion.verificarToken(token);
-    req.usuario = { id_usuario: usuarioId, roles };
-    next();
+    autenticacion
+      .validarSesion(token)
+      .then(({ usuarioId, roles }) => {
+        req.usuario = { id_usuario: usuarioId, roles };
+        next();
+      })
+      .catch(next);
   };
 }
 

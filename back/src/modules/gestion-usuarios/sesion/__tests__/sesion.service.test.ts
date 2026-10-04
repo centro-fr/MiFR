@@ -117,15 +117,39 @@ describe("SesionService", () => {
     expect(new JwtService("test-secret").verificar(token).roles).toEqual([]);
   });
 
-  it("verificarToken valida el JWT propio emitido en el login", async () => {
+  it("validarSesion valida el JWT propio y devuelve los roles actuales de la base", async () => {
     usuarios.identificarPorGoogle.mockResolvedValue(usuarioExistente);
     const { token } = await sesion.iniciarSesion("id-token-valido");
+    usuarios.buscarPorId.mockResolvedValue(usuarioExistente);
 
-    expect(sesion.verificarToken(token)).toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+    await expect(sesion.validarSesion(token)).resolves.toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+    expect(usuarios.buscarPorId).toHaveBeenCalledWith(1);
   });
 
-  it("verificarToken lanza UnauthorizedError con un token inválido", () => {
-    expect(() => sesion.verificarToken("no-es-un-jwt")).toThrow(UnauthorizedError);
+  it("validarSesion usa los roles de la base aunque el token diga otros", async () => {
+    const token = new JwtService("test-secret").emitir({ ...usuarioExistente, roles: [] });
+    usuarios.buscarPorId.mockResolvedValue(usuarioExistente);
+
+    await expect(sesion.validarSesion(token)).resolves.toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+  });
+
+  it("validarSesion lanza UnauthorizedError con un token inválido", async () => {
+    await expect(sesion.validarSesion("no-es-un-jwt")).rejects.toBeInstanceOf(UnauthorizedError);
+    expect(usuarios.buscarPorId).not.toHaveBeenCalled();
+  });
+
+  it("validarSesion lanza UnauthorizedError si el usuario del token ya no existe", async () => {
+    const token = new JwtService("test-secret").emitir(usuarioExistente);
+    usuarios.buscarPorId.mockResolvedValue(null);
+
+    await expect(sesion.validarSesion(token)).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  it("validarSesion lanza ForbiddenError si dieron de baja al usuario después del login", async () => {
+    const token = new JwtService("test-secret").emitir(usuarioExistente);
+    usuarios.buscarPorId.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
+
+    await expect(sesion.validarSesion(token)).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it("iniciarSesion devuelve los permisos efectivos del usuario", async () => {

@@ -18,7 +18,7 @@ function crearComponentesMock() {
     sesion: {
       iniciarSesion: vi.fn().mockResolvedValue("sesion.iniciarSesion"),
       obtenerPerfil: vi.fn().mockResolvedValue("sesion.obtenerPerfil"),
-      verificarToken: vi.fn(),
+      validarSesion: vi.fn(),
     },
     autorizacion: {
       obtenerMatriz: vi.fn().mockResolvedValue("autorizacion.obtenerMatriz"),
