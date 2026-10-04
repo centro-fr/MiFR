@@ -90,7 +90,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 - [x] Modelo `actividades` en Prisma + migración (con los CHECK del SQL de EA: `ck_actividades_modalidad`, `ck_actividades_x1`, `ck_actividades_x2`).
 - [x] Módulo `modules/gestion-servicio-entrenamiento/actividad/` (repository, service, controller, routes, schemas) con su interfaz según la vista arquitectónica. `ILogicaServicioEntrenamiento` es del subsistema: va en `gestion-servicio-entrenamiento/interface/` y la realiza `gestion-servicio-entrenamiento.service.ts`, como `GestionUsuariosService` (ver `.claude/rules/patrones.md`, Facade).
 - [x] Endpoints: listar (con filtro / búsqueda), obtener, crear, editar, baja lógica (`activo = false`).
-- [ ] **Reglas**:
+- [x] **Reglas**:
   - [x] La modalidad es obligatoria.
   - [x] En `PERSONALIZADA` el cupo máximo es obligatorio; en `GRUPAL` es opcional.
   - [x] Cupo máximo mayor a 0.
@@ -114,7 +114,7 @@ La tabla `actividades` ya está en el DER (`codigo`, `nombre`, `descripcion`, `m
 - [x] Modelos `profesoras` y `horarios` en Prisma + migración, según el DER.
 - [x] Módulo mínimo `modules/gestion-personas/profesor/` que provea `IInfoProfesores` (alta de profesora vinculada a un usuario con rol `PROFESORA`, listado).
 - [x] Módulo `modules/gestion-servicio-entrenamiento/horario/` con CRUD y filtros por actividad y por profesora.
-- [ ] **Reglas**:
+- [x] **Reglas**:
   - [x] Solo se asignan usuarios con rol `PROFESORA`.
   - [x] La misma profesora no puede tener dos horarios superpuestos el mismo día.
   - [x] `hora_fin` posterior a `hora_inicio`.
