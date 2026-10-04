@@ -31,7 +31,13 @@ export function registrarDocumentacionSesion(registro: OpenAPIRegistry): void {
     security: [],
     summary: "Iniciar sesión con Google",
     description: "Recibe el `id_token` de Google Identity Services. Solo ingresan usuarios ya dados de alta.",
-    request: { body: cuerpoJson(googleLoginSchema.openapi("GoogleLogin")) },
+    request: {
+      body: cuerpoJson(
+        googleLoginSchema.openapi("GoogleLogin", {
+          example: { id_token: "<id_token que entrega Google Identity Services en el front>" },
+        }),
+      ),
+    },
     responses: {
       200: respuestaJson("Sesión iniciada", sesionIniciadaSchema),
       ...respuestasDeError(400, 401, 403),

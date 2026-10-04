@@ -56,7 +56,13 @@ export function registrarDocumentacionSeguridad(registro: OpenAPIRegistry): void
     description:
       "Requiere el rol PROPIETARIA y el permiso `SEGURIDAD_MATRIZ_EDITAR`. " +
       "Los permisos críticos no se le pueden quitar a la propietaria.",
-    request: { body: cuerpoJson(actualizarMatrizSchema.openapi("ActualizarMatriz")) },
+    request: {
+      body: cuerpoJson(
+        actualizarMatrizSchema.openapi("ActualizarMatriz", {
+          example: { cambios: [{ rol: "PROFESORA", permiso: "USUARIOS_VER", otorgado: true }] },
+        }),
+      ),
+    },
     responses: {
       200: respuestaJson("Matriz actualizada", z.object({ mensaje: z.string() })),
       ...respuestasDeError(400, 401, 403, 404),

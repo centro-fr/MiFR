@@ -53,7 +53,18 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
     description:
       "Requiere el rol PROPIETARIA y el permiso `ACTIVIDADES_EDITAR`. " +
       "`cupo_maximo` es obligatorio para la modalidad PERSONALIZADA.",
-    request: { body: cuerpoJson(crearActividadSchema.openapi("CrearActividad")) },
+    request: {
+      body: cuerpoJson(
+        crearActividadSchema.openapi("CrearActividad", {
+          example: {
+            codigo: "YOGA",
+            nombre: "Yoga",
+            descripcion: "Clase grupal de yoga",
+            modalidad: "GRUPAL",
+          },
+        }),
+      ),
+    },
     responses: { 201: actividad, ...respuestasDeError(400, 401, 403, 409) },
   });
 
@@ -79,7 +90,11 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
       "`cupo_maximo: null` quita el cupo, salvo en la modalidad PERSONALIZADA.",
     request: {
       params: actividadIdParamSchema,
-      body: cuerpoJson(actualizarActividadSchema.openapi("ActualizarActividad")),
+      body: cuerpoJson(
+        actualizarActividadSchema.openapi("ActualizarActividad", {
+          example: { modalidad: "PERSONALIZADA", cupo_maximo: 4 },
+        }),
+      ),
     },
     responses: { 200: actividad, ...respuestasDeError(400, 401, 403, 404) },
   });

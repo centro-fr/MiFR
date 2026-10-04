@@ -5,6 +5,7 @@ import { registrarDocumentacionHorarios } from "./modules/gestion-servicio-entre
 import { registrarDocumentacionSeguridad } from "./modules/gestion-usuarios/rol/rol.openapi.js";
 import { registrarDocumentacionSesion } from "./modules/gestion-usuarios/sesion/sesion.openapi.js";
 import { registrarDocumentacionUsuarios } from "./modules/gestion-usuarios/usuario/usuario.openapi.js";
+import { GUIA_DE_PRUEBA } from "./openapi-guia.js";
 import { registrarSeguridadBearer } from "./shared/openapi/registro.js";
 
 export const CONFIGURACION_DOCUMENTO_API = {
@@ -12,7 +13,7 @@ export const CONFIGURACION_DOCUMENTO_API = {
   info: {
     title: "MiFR API",
     version: "1.0.0",
-    description: "API del sistema de gestión del centro de entrenamiento MiFR.",
+    description: GUIA_DE_PRUEBA,
   },
   servers: [{ url: "/api/v1" }],
 };

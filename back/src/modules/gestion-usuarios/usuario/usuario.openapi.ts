@@ -59,7 +59,19 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     security,
     summary: "Dar de alta un usuario",
     description: "Requiere el permiso `USUARIOS_EDITAR`.",
-    request: { body: cuerpoJson(crearUsuarioSchema.openapi("CrearUsuario")) },
+    request: {
+      body: cuerpoJson(
+        crearUsuarioSchema.openapi("CrearUsuario", {
+          example: {
+            email: "nueva.profesora@example.com",
+            nombre: "Nora",
+            apellido: "Pérez",
+            dni: "30111222",
+            fecha_nacimiento: new Date("1995-03-03"),
+          },
+        }),
+      ),
+    },
     responses: { 201: usuario, ...respuestasDeError(400, 401, 403, 409) },
   });
 
@@ -98,7 +110,9 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
       "Cambiar `estado` requiere siempre `USUARIOS_EDITAR`.",
     request: {
       params: usuarioIdParamSchema,
-      body: cuerpoJson(actualizarUsuarioSchema.openapi("ActualizarUsuario")),
+      body: cuerpoJson(
+        actualizarUsuarioSchema.openapi("ActualizarUsuario", { example: { telefono: "3510000000" } }),
+      ),
     },
     responses: { 200: usuario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
@@ -123,7 +137,10 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     security,
     summary: "Asignar un rol a un usuario",
     description: "Requiere el permiso `USUARIOS_EDITAR`.",
-    request: { params: usuarioIdParamSchema, body: cuerpoJson(asignarRolSchema.openapi("AsignarRol")) },
+    request: {
+      params: usuarioIdParamSchema,
+      body: cuerpoJson(asignarRolSchema.openapi("AsignarRol", { example: { rol: "PROFESORA" } })),
+    },
     responses: { 201: usuario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 

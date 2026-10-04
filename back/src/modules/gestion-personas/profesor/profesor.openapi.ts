@@ -46,7 +46,13 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
     description:
       "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. " +
       "El usuario tiene que estar activo y tener el rol PROFESORA.",
-    request: { body: cuerpoJson(crearProfesoraSchema.openapi("CrearProfesora")) },
+    request: {
+      body: cuerpoJson(
+        crearProfesoraSchema.openapi("CrearProfesora", {
+          example: { id_usuario: 2, especialidad: "Pilates" },
+        }),
+      ),
+    },
     responses: { 201: profesora, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 

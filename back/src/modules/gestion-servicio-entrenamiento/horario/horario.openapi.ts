@@ -76,7 +76,19 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     security,
     summary: "Dar de alta un horario",
     description: `Requiere el rol PROPIETARIA y el permiso \`HORARIOS_EDITAR\`. ${reglas}`,
-    request: { body: cuerpoJson(crearHorarioSchema.openapi("CrearHorario")) },
+    request: {
+      body: cuerpoJson(
+        crearHorarioSchema.openapi("CrearHorario", {
+          example: {
+            id_actividad: 1,
+            id_profesora: 1,
+            dia_semana: 1,
+            hora_inicio: "18:00",
+            hora_fin: "19:00",
+          },
+        }),
+      ),
+    },
     responses: { 201: horario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 
@@ -100,7 +112,11 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     description: `Requiere el rol PROPIETARIA y el permiso \`HORARIOS_EDITAR\`. ${reglas}`,
     request: {
       params: horarioIdParamSchema,
-      body: cuerpoJson(actualizarHorarioSchema.openapi("ActualizarHorario")),
+      body: cuerpoJson(
+        actualizarHorarioSchema.openapi("ActualizarHorario", {
+          example: { hora_inicio: "18:30", hora_fin: "19:30" },
+        }),
+      ),
     },
     responses: { 200: horario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
