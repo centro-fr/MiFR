@@ -6,6 +6,9 @@ import { LoginPage } from "@/features/auth/pages/login-page";
 import { PermisosPage } from "@/features/seguridad/pages/permisos-page";
 import { NotFoundPage, OwnerDashboardPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
 
+// Importación de tu nueva página de Actividades (US-03)
+import { ActividadesPage } from "@/pages/ActividadesPage"; 
+
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
   { path: "/seguridad/permisos", element: <Navigate to="/app/seguridad/permisos" replace /> },
@@ -40,6 +43,13 @@ export const router = createBrowserRouter([
         <StudentHomePage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/app/actividades",
+    element: 
+        
+        <ActividadesPage />
+    
   },
   {
     path: "/app/seguridad/permisos",
