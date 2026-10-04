@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { iniciarSesionConGoogle } from "../../../api/usuario";
-import type { SesionActiva } from "../../../types/usuario";
+import { useAuth } from "../../../hooks/useAuth";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
-// El script de Google y su initialize() se ejecutan una sola vez por página,
-// aunque React monte el componente más de una vez (StrictMode en desarrollo).
 let gisListo: Promise<void> | null = null;
 let alRecibirCredencial: (credential: string) => void = () => {};
 
@@ -15,7 +12,7 @@ function cargarGoogleIdentityServices(): Promise<void> {
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.onload = () => {
-      // @ts-expect-error -- lib de Google, sin tipos instalados
+      // @ts-expect-error -- librería oficial de Google GIS sin tipos instalados
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: (response: { credential: string }) => alRecibirCredencial(response.credential),
@@ -28,63 +25,166 @@ function cargarGoogleIdentityServices(): Promise<void> {
   return gisListo;
 }
 
-// Componente de UsuarioPresWeb. Google Identity Services obtiene el id_token
-// y se lo pasa al back a través del Servidor Web (/api/v1/auth/google).
-// El token NO se guarda en localStorage, solo en memoria (estado de React).
 export function GoogleLoginButton() {
   const btnRef = useRef<HTMLDivElement>(null);
-  const [sesion, setSesion] = useState<SesionActiva | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { loginConGoogle, loginConToken, error: errorAuth, cargando: cargandoAuth } = useAuth();
+
+  const [cargandoLocal, setCargandoLocal] = useState<boolean>(false);
+  const [errorLocal, setErrorLocal] = useState<string | null>(null);
+  const [pestaña, setPestaña] = useState<"google" | "manual">("google");
+  const [tokenManual, setTokenManual] = useState<string>("");
+
+  const error = errorLocal ?? errorAuth;
+  const cargando = cargandoLocal || cargandoAuth;
 
   useEffect(() => {
     let montado = true;
-    alRecibirCredencial = async (credential) => {
+
+    alRecibirCredencial = async (credential: string) => {
+      setCargandoLocal(true);
+      setErrorLocal(null);
       try {
-        const nuevaSesion = await iniciarSesionConGoogle(credential);
-        if (!montado) return;
-        setSesion(nuevaSesion);
-        setError(null);
+        await loginConGoogle(credential);
       } catch (err) {
-        if (montado) setError(err instanceof Error ? err.message : "Error desconocido");
+        if (montado) {
+          setErrorLocal(err instanceof Error ? err.message : "Error al iniciar sesión con Google");
+        }
+      } finally {
+        if (montado) setCargandoLocal(false);
       }
     };
 
     cargarGoogleIdentityServices()
       .then(() => {
         if (!montado || !btnRef.current) return;
-        // @ts-expect-error -- lib de Google, sin tipos instalados
-        window.google.accounts.id.renderButton(btnRef.current, { theme: "outline", size: "large" });
+        // @ts-expect-error -- librería oficial de Google GIS
+        window.google.accounts.id.renderButton(btnRef.current, {
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "pill",
+          locale: "es",
+        });
       })
-      .catch((err: Error) => montado && setError(err.message));
+      .catch((err: Error) => montado && setErrorLocal(err.message));
 
     return () => {
       montado = false;
     };
-  }, []);
+  }, [loginConGoogle]);
 
-  function cerrarSesion() {
-    setSesion(null);
-    setError(null);
-    // Evita que Google re-loguee solo con la última cuenta usada.
-    // @ts-expect-error -- lib de Google, sin tipos instalados
-    window.google?.accounts.id.disableAutoSelect();
+  async function probarTokenManual(e: React.FormEvent) {
+    e.preventDefault();
+    const tokenLimpio = tokenManual.trim();
+    if (!tokenLimpio) {
+      setErrorLocal("Por favor ingresá un token JWT");
+      return;
+    }
+
+    setCargandoLocal(true);
+    setErrorLocal(null);
+
+    try {
+      await loginConToken(tokenLimpio);
+    } catch (err) {
+      setErrorLocal(err instanceof Error ? err.message : "Token inválido o expirado");
+    } finally {
+      setCargandoLocal(false);
+    }
   }
 
   return (
-    <div style={{ textAlign: "center" }}>
-      {/* Se mantiene siempre montado: Google renderiza el botón acá una sola vez. */}
-      <div ref={btnRef} style={{ display: sesion ? "none" : "inline-block" }} />
-      {sesion && (
-        <div>
-          <p>
-            Hola, {sesion.usuario.nombre} {sesion.usuario.apellido} ({sesion.roles.join(", ") || "sin rol"})
-          </p>
-          <button type="button" onClick={cerrarSesion}>
-            Cerrar sesión
-          </button>
-        </div>
-      )}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="login-card-wrapper">
+      <div className="auth-container">
+        <header className="auth-header">
+          <span className="brand-badge">MiFR</span>
+          <h1 className="auth-title">Centro de Entrenamiento FR</h1>
+          <p className="auth-subtitle">Portal de Acceso y Gestión de Identidad</p>
+        </header>
+
+        <main className="auth-body">
+          {error && (
+            <div className="alert-error" role="alert">
+              <span style={{ fontSize: "18px" }}>⚠️</span>
+              <div>
+                <strong>Error: </strong>
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="tabs-container">
+            <button
+              type="button"
+              className={`tab-btn ${pestaña === "google" ? "active" : ""}`}
+              onClick={() => {
+                setPestaña("google");
+                setErrorLocal(null);
+              }}
+            >
+              Google Auth (US-01)
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${pestaña === "manual" ? "active" : ""}`}
+              onClick={() => {
+                setPestaña("manual");
+                setErrorLocal(null);
+              }}
+            >
+              Token Directo (Dev)
+            </button>
+          </div>
+
+          {cargando && (
+            <div className="loading-state">
+              <span className="spinner" />
+              <span>Validando credenciales con el servidor...</span>
+            </div>
+          )}
+
+          {/* Pestaña Google */}
+          {pestaña === "google" && (
+            <div
+              style={{
+                display: cargando ? "none" : "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px",
+                padding: "16px 0",
+              }}
+            >
+              <p style={{ margin: 0, fontSize: "14px", color: "var(--color-text-muted)", textAlign: "center" }}>
+                Iniciá sesión con tu cuenta de Google habilitada en el centro:
+              </p>
+              <div ref={btnRef} />
+              <span style={{ fontSize: "12px", color: "var(--color-text-muted)", textAlign: "center" }}>
+                El sistema no utiliza contraseñas locales y verifica tu pre-registro en la base de datos.
+              </span>
+            </div>
+          )}
+
+          {/* Pestaña Manual (para desarrolladores con token emitido por CLI) */}
+          {pestaña === "manual" && !cargando && (
+            <form onSubmit={probarTokenManual} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <label htmlFor="token-input" style={{ fontSize: "13px", fontWeight: 600 }}>
+                Pegar token JWT (generado con <code>corepack pnpm --filter back token</code>):
+              </label>
+              <textarea
+                id="token-input"
+                className="dev-token-input"
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ..."
+                value={tokenManual}
+                onChange={(e) => setTokenManual(e.target.value)}
+                rows={3}
+              />
+              <button type="submit" className="btn btn-primary">
+                Cargar Sesión (/auth/me)
+              </button>
+            </form>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
