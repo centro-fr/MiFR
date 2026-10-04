@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    server: { proxy, headers },
+    server: { port: 3001, proxy, headers },
     preview: { proxy, headers },
   }
 })
