@@ -109,9 +109,11 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Eliminar un usuario",
-    description: "Requiere el permiso `USUARIOS_EDITAR`.",
+    description:
+      "Requiere el permiso `USUARIOS_EDITAR`. Responde 409 si el usuario tiene registros asociados " +
+      "(por ejemplo, un perfil de profesora): en ese caso se da de baja cambiando su `estado`.",
     request: { params: usuarioIdParamSchema },
-    responses: { 204: { description: "Usuario eliminado" }, ...respuestasDeError(400, 401, 403, 404) },
+    responses: { 204: { description: "Usuario eliminado" }, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 
   registro.registerPath({

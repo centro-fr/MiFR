@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UsuarioRepository } from "../usuario.repository.js";
 
@@ -133,5 +133,25 @@ describe("UsuarioRepository", () => {
     expect(prisma.usuario_roles.deleteMany).toHaveBeenCalledWith({ where: { id_usuario: 1 } });
     expect(prisma.usuarios.delete).toHaveBeenCalledWith({ where: { id_usuario: 1 } });
     expect(prisma.$transaction).toHaveBeenCalledWith(["borrar-roles", "borrar-usuario"]);
+  });
+
+  it("eliminar devuelve true si borró el usuario", async () => {
+    vi.mocked(prisma.$transaction).mockResolvedValue([] as never);
+
+    await expect(repositorio.eliminar(1)).resolves.toBe(true);
+  });
+
+  it("eliminar devuelve false si otra tabla todavía referencia al usuario (P2003)", async () => {
+    vi.mocked(prisma.$transaction).mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("FK", { code: "P2003", clientVersion: "test" }),
+    );
+
+    await expect(repositorio.eliminar(1)).resolves.toBe(false);
+  });
+
+  it("eliminar propaga cualquier otro error de la base", async () => {
+    vi.mocked(prisma.$transaction).mockRejectedValue(new Error("conexión caída"));
+
+    await expect(repositorio.eliminar(1)).rejects.toThrow("conexión caída");
   });
 });

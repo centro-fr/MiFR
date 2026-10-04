@@ -57,7 +57,11 @@ export class UsuarioService implements IInfoUsuarios {
 
   async eliminar(id: number): Promise<void> {
     await this.obtenerPorId(id);
-    await this.repositorio.eliminar(id);
+    if (!(await this.repositorio.eliminar(id))) {
+      throw new ConflictError(
+        "El usuario tiene registros asociados y no se puede eliminar; para darlo de baja, cambiá su estado a INACTIVO",
+      );
+    }
   }
 
   async asignarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles> {

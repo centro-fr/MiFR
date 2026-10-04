@@ -230,10 +230,18 @@ describe("UsuarioService", () => {
   describe("eliminar", () => {
     it("eliminar elimina un usuario existente", async () => {
       repositorio.buscarPorId.mockResolvedValue(crearUsuario());
+      repositorio.eliminar.mockResolvedValue(true);
 
       await service.eliminar(1);
 
       expect(repositorio.eliminar).toHaveBeenCalledWith(1);
+    });
+
+    it("eliminar lanza ConflictError si el usuario tiene registros asociados", async () => {
+      repositorio.buscarPorId.mockResolvedValue(crearUsuario());
+      repositorio.eliminar.mockResolvedValue(false);
+
+      await expect(service.eliminar(1)).rejects.toBeInstanceOf(ConflictError);
     });
 
     it("eliminar lanza NotFoundError si el usuario no existe", async () => {

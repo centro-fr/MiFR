@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import type { CrearUsuarioInput } from "./usuario.schemas.js";
 import type { UsuarioConRoles } from "./usuario.types.js";
 
@@ -51,10 +51,18 @@ export class UsuarioRepository {
   }
 
   // La FK de usuario_roles es ON DELETE NO ACTION (DER): primero se quitan sus roles.
-  async eliminar(id: number): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.usuario_roles.deleteMany({ where: { id_usuario: id } }),
-      this.prisma.usuarios.delete({ where: { id_usuario: id } }),
-    ]);
+  // Devuelve false si otra tabla (profesoras, y más adelante alumnos o pagos) todavía apunta al
+  // usuario: las FK son NO ACTION y Postgres rechaza el borrado con el código P2003 de Prisma.
+  async eliminar(id: number): Promise<boolean> {
+    try {
+      await this.prisma.$transaction([
+        this.prisma.usuario_roles.deleteMany({ where: { id_usuario: id } }),
+        this.prisma.usuarios.delete({ where: { id_usuario: id } }),
+      ]);
+      return true;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") return false;
+      throw error;
+    }
   }
 }
