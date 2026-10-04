@@ -1,5 +1,6 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
+import helmet from "helmet";
 import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
 import { createRolRoutes } from "./modules/gestion-usuarios/rol/rol.routes.js";
 import { createSesionRoutes } from "./modules/gestion-usuarios/sesion/sesion.routes.js";
@@ -34,6 +35,8 @@ export interface AppOpciones {
 export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
   const app = express();
 
+  // Cabeceras de seguridad (nosniff, X-Frame-Options, CSP, HSTS) y sin X-Powered-By.
+  app.use(helmet());
   app.use(cors(opciones.origenesPermitidos ? { origin: opciones.origenesPermitidos } : undefined));
   app.use(express.json());
   app.use(requestLogger);
