@@ -6,11 +6,15 @@ Los límites de los planes gratuitos son los vigentes en octubre de 2026. Convie
 
 ## Arquitectura
 
+Sigue la vista de despliegue (`docs/diagrams/puml/vista_despliegue.puml`): el navegador solo habla con el Servidor Web, y el Servidor Web reenvía los pedidos de la API al Servidor de Aplicaciones.
+
 ```text
-Navegador ──► Netlify (front, sitio estático)
-    │
-    └──────► Render (API, contenedor Docker) ──► Neon (PostgreSQL)
+Navegador ──HTTPS──► Netlify ──HTTPS /api/*──► Render ──TCP 5432 + SSL──► Neon
+(Cliente Web)        (Servidor Web:            (Servidor de              (Servidor de BD)
+                      front + reenvío)          Aplicaciones: API)
 ```
+
+Para el navegador todo es un mismo origen, el dominio de Netlify: baja el front y llama a `/api/v1/...` ahí mismo, y Netlify reenvía esos pedidos a Render. Es lo mismo que hace Vite en desarrollo, así que el front no cambia.
 
 | Parte | Servicio | Plan gratuito | Por qué |
 | --- | --- | --- | --- |
@@ -20,7 +24,7 @@ Navegador ──► Netlify (front, sitio estático)
 
 Limitaciones que hay que conocer:
 
-- **La API se duerme** después de 15 minutos sin pedidos, y el primero que llega después tarda entre 30 y 60 segundos. Antes de mostrarle el sistema a alguien, conviene abrirlo un minuto antes.
+- **La API se duerme** después de 15 minutos sin pedidos, y el primero que llega después tarda entre 30 y 60 segundos. Netlify corta a los 26 segundos los pedidos que reenvía, así que ese primer pedido fallaría con un 504. Se evita manteniendo la API despierta: ver el paso 6.
 - **Neon también se apaga** a los 5 minutos sin uso y tarda alrededor de un segundo en volver.
 - Render incluye 5 GB de tráfico por mes en el plan gratuito. Para el uso previsto sobra.
 
@@ -31,7 +35,8 @@ Alternativas descartadas: Koyeb no se duerme, pero desde febrero de 2026 pide ta
 - **`back/Dockerfile`**: imagen de producción con solo las dependencias de producción, corriendo como el usuario `node`.
 - **Migraciones al arrancar**: el contenedor corre `prisma migrate deploy` y, si sale bien, levanta la API. Se hace así porque el comando previo al deploy de Render es solo para planes pagos. Con una sola instancia no hay problema de concurrencia, y si una migración falla la API no arranca.
 - **`render.yaml`** en la raíz: el Blueprint de Render con la configuración del servicio. Render lo lee al crear el servicio.
-- **CORS por variable**: `CORS_ORIGENES` lista los orígenes que pueden llamar a la API. Con `NODE_ENV=production` es obligatoria: si falta, la API no arranca.
+- **`netlify.toml`** en la raíz: build del front, reenvío de `/api/*` a Render, fallback de la SPA y cabeceras de seguridad del sitio.
+- **CORS por variable**: `CORS_ORIGENES` lista los orígenes que pueden llamar a la API. Con `NODE_ENV=production` es obligatoria: si falta, la API no arranca. Con el reenvío de Netlify el front no la necesita (todo es mismo origen), pero queda como red de seguridad con el dominio de Netlify.
 - **Swagger**: no se publica con `NODE_ENV=production`.
 
 ## Trabajar localmente con Docker
@@ -62,6 +67,7 @@ El modo sale de `NODE_ENV` en `back/.env`: con `development` se publica Swagger,
    `JWT_SECRET` lo genera Render solo, con un valor aleatorio. Ningún secreto se escribe en el repositorio.
 3. En el primer deploy, el contenedor aplica todas las migraciones sobre la base vacía.
 4. Probar `https://<servicio>.onrender.com/health`: tiene que responder `{"status":"ok"}`.
+5. Anotar la URL que asignó Render. Si no es `https://mifr-api.onrender.com`, corregirla en la regla de `/api/*` de `netlify.toml`.
 
 ### 3. Primera propietaria
 
@@ -79,26 +85,34 @@ En Google Cloud Console, en el client OAuth que usa el sistema, agregar la URL d
 
 ### 5. Front en Netlify
 
-Configuración del sitio:
+En Netlify, **Add new site → Import an existing project** y elegir el repositorio. Netlify lee el `netlify.toml` de la raíz:
 
 | Opción | Valor |
 | --- | --- |
 | Base directory | `front` |
 | Build command | `pnpm build` |
 | Publish directory | `front/dist` |
+| `/api/*` | Se reenvía a Render (`status = 200`: el navegador no ve la URL de Render) |
+| Cualquier otra ruta | Devuelve `index.html`, porque la SPA resuelve sus rutas en el navegador |
 
-Como es una SPA, Netlify tiene que devolver `index.html` para cualquier ruta. Se resuelve con un archivo `front/public/_redirects`:
+El front no necesita cambios: ya llama a `/api/v1/...` con rutas relativas. El nombre del sitio en Netlify define la URL (por ejemplo `https://mifr.netlify.app`), que va en `CORS_ORIGENES` de Render y en Google Cloud Console.
 
-```text
-/*  /index.html  200
-```
+### 6. Mantener la API despierta
 
-**Cómo llega el front a la API.** Hoy el front llama a rutas relativas (`/api/v1/...`) y en desarrollo Vite las redirige al backend. Publicado hay dos opciones:
+Con un monitor gratuito, por ejemplo UptimeRobot, crear un chequeo HTTP a `https://<servicio>.onrender.com/health` cada 10 minutos (Render la duerme a los 15).
 
-- **Llamar directo a Render (recomendada).** El front toma la URL de la API de una variable de entorno de Vite, por ejemplo `VITE_API_URL=https://<servicio>.onrender.com`, y la API acepta ese origen con `CORS_ORIGENES`. El token viaja en el header `Authorization`, así que no hay problemas de cookies entre dominios.
-- **Proxy de Netlify** (`/api/*  https://<servicio>.onrender.com/api/:splat  200` en `_redirects`). No hace falta CORS, pero Netlify corta los pedidos que pasan por el proxy a los 26 segundos, y el primer pedido después de que la API se durmió tarda más que eso: fallaría con un 504.
+- **Horas:** un servicio prendido todo el mes usa como mucho 744 horas, y el plan gratuito de Render da 750.
+- **Base:** `/health` no consulta la base, así que Neon igual se apaga cuando nadie usa el sistema y no gasta sus horas de cómputo.
+- **Directo a Render**, no a través de Netlify, para no gastar tráfico del sitio.
+- De paso, el monitor avisa por email si la API se cae.
 
-Este cambio en el front le corresponde al equipo de front.
+## Seguridad
+
+- **La protección está en la API, no en el camino.** Aunque el front pase por Netlify, la URL de Render sigue siendo pública. Lo que protege es que la API valida todo por su cuenta: verifica el JWT en cada pedido, relee en la base el estado y los roles del usuario, controla los permisos por ruta, valida cada entrada con Zod y manda cabeceras de seguridad con `helmet`.
+- **CORS no es control de acceso.** Solo decide qué sitios pueden leer las respuestas desde un navegador; con `curl` se puede llamar a la API igual.
+- **Sin CSRF hoy.** El token viaja en el header `Authorization`, que el navegador no manda solo. Si más adelante el token pasa a una cookie `httpOnly` (lo que pide AGENTS.md), tener todo en el mismo origen permite usar `SameSite=Lax` sin cookies entre dominios.
+- **Dónde guarda el token el front.** Si lo guarda en `localStorage`, un XSS en el front podría robarlo. Se mitiga con una Content-Security-Policy en `netlify.toml`, que permita Google Identity Services (`accounts.google.com`), y más adelante con la cookie `httpOnly`. Le corresponde al equipo de front; `netlify.toml` ya trae las cabeceras básicas.
+- **Límite de pedidos.** Si se agrega limitación por IP, hay que configurar `trust proxy` en Express: la IP que ve la API es la del proxy de Render o de Netlify, y la del cliente llega en `X-Forwarded-For`.
 
 ## Migraciones en producción
 
@@ -114,4 +128,6 @@ Este cambio en el front le corresponde al equipo de front.
 - [ ] `/health` responde en Render.
 - [ ] Primera propietaria cargada con el seed.
 - [ ] URL de Netlify agregada en Google Cloud Console.
-- [ ] Front con `_redirects` para la SPA y la URL de la API configurada.
+- [ ] URL de Render verificada en la regla de `/api/*` de `netlify.toml`.
+- [ ] Sitio de Netlify creado; `https://<sitio>/api/v1/auth/me` sin token responde 401 (llega a la API).
+- [ ] Monitor de `/health` cada 10 minutos.
