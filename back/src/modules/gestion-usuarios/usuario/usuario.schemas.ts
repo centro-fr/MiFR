@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 
 // Largos y obligatoriedad según la tabla "usuarios" del DER.
 const CODIGOS_ROL = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"] as const;
@@ -38,7 +39,7 @@ export const actualizarUsuarioSchema = z
   });
 
 export const usuarioIdParamSchema = z.object({
-  id: z.coerce.number({ invalid_type_error: "id inválido" }).int("id inválido").positive("id inválido"),
+  id: idDesdeTextoSchema,
 });
 
 export const asignarRolSchema = z.object({

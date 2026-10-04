@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 
 const codigo = z.string().trim().min(1).max(20);
 const nombre = z.string().trim().min(1).max(60);
@@ -31,7 +32,7 @@ export const actualizarActividadSchema = z
   });
 
 export const actividadIdParamSchema = z.object({
-  id: z.coerce.number({ invalid_type_error: "id inválido" }).int("id inválido").positive("id inválido"),
+  id: idDesdeTextoSchema,
 });
 
 export const listarActividadQuerySchema = z.object({

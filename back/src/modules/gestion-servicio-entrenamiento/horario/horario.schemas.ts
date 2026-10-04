@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 
 const hora = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm");
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
 
 export const crearHorarioSchema = z
   .object({
-    id_actividad: z.number().int().positive(),
-    id_profesora: z.number().int().positive(),
+    id_actividad: idSchema,
+    id_profesora: idSchema,
     dia_semana: z.number().int().min(1).max(7),
     hora_inicio: hora,
     hora_fin: hora,
@@ -19,8 +20,8 @@ export const crearHorarioSchema = z
 
 export const actualizarHorarioSchema = z
   .object({
-    id_actividad: z.number().int().positive().optional(),
-    id_profesora: z.number().int().positive().optional(),
+    id_actividad: idSchema.optional(),
+    id_profesora: idSchema.optional(),
     dia_semana: z.number().int().min(1).max(7).optional(),
     hora_inicio: hora.optional(),
     hora_fin: hora.optional(),
@@ -31,12 +32,12 @@ export const actualizarHorarioSchema = z
   });
 
 export const horarioIdParamSchema = z.object({
-  id: z.coerce.number().int().positive("id inválido"),
+  id: idDesdeTextoSchema,
 });
 
 export const listarHorarioQuerySchema = z.object({
-  id_actividad: z.coerce.number().int().positive().optional(),
-  id_profesora: z.coerce.number().int().positive().optional(),
+  id_actividad: idDesdeTextoSchema.optional(),
+  id_profesora: idDesdeTextoSchema.optional(),
 });
 
 export type CrearHorarioInput = z.infer<typeof crearHorarioSchema>;
