@@ -1,4 +1,4 @@
-# Sprint 1 – Pendientes del backend
+# Sprint 1 – Backend
 
 Sprint 1: **Autenticación, Accesos y Configuración Base** (según `docs/v.1.1 Sprint 0.pdf`).
 
