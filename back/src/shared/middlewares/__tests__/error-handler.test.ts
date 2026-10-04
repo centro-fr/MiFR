@@ -54,6 +54,38 @@ describe("errorHandler", () => {
     expect(res.json).toHaveBeenCalledWith({ error: { code, message: error.message } });
   });
 
+  it.each([
+    ["entity.parse.failed", 400, "JSON_INVALIDO"],
+    ["entity.too.large", 413, "CUERPO_DEMASIADO_GRANDE"],
+  ])("responde el 4xx de express.json() para %s", (type, status, code) => {
+    const error = Object.assign(new Error("detalle de body-parser"), { status, type });
+
+    errorHandler(error, req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(status);
+    expect(res.json.mock.calls[0][0].error.code).toBe(code);
+  });
+
+  it("responde el status de otro error 4xx del cliente sin exponer su mensaje", () => {
+    const error = Object.assign(new Error("charset no soportado: detalle interno"), { status: 415 });
+
+    errorHandler(error, req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(415);
+    expect(res.json).toHaveBeenCalledWith({
+      error: { code: "PETICION_INVALIDA", message: "La petición no se pudo procesar" },
+    });
+  });
+
+  it("no toma como error del cliente un status 5xx", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = Object.assign(new Error("caído"), { status: 503 });
+
+    errorHandler(error, req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
   it("responde 500 genérico ante un error inesperado y lo registra en consola", () => {
     const consola = vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("detalle interno que no debe salir");
