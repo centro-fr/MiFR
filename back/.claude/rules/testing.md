@@ -57,3 +57,5 @@ Al inyectarlos, el cast va contra el tipo real: `repositorio as unknown as Usuar
 Toda lógica nueva de un service viene con su test en el mismo commit. Como mínimo, por cada método con decisiones: el camino feliz y cada error que pueda lanzar.
 
 Antes de integrar la rama de trabajo, `pnpm test` tiene que pasar entero.
+
+`pnpm test:coverage` mide la cobertura. Hoy es del 100% en sentencias, ramas y funciones, sin contar las interfaces, los tipos ni `index.ts` (que no tienen lógica o la cubren las pruebas de punta a punta). Si un cambio deja líneas sin cubrir, el reporte las lista: o falta un test o sobra código.

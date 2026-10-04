@@ -12,6 +12,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 pnpm dev              # tsx watch src/index.ts
 pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
 pnpm test             # vitest run
+pnpm test:coverage    # vitest run --coverage (reporte en consola)
 pnpm format           # prettier --write .
 pnpm format:check     # prettier --check .
 pnpm prisma:generate  # regenerar el cliente tras tocar el schema
