@@ -1,7 +1,13 @@
-import { Providers } from "@/app/providers";
+import { Routes, Route } from 'react-router-dom';
+import { ActividadesPage } from './pages/ActividadesPage';
 
-function App() {
-  return <Providers />;
+export function App() {
+  return (
+    <Routes>
+      <Route path="/actividades" element={<ActividadesPage />} />
+      {/* Podés agregar el resto de tus rutas acá */}
+    </Routes>
+  );
 }
 
 export default App;
