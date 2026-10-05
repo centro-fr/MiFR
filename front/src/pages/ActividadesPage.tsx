@@ -15,6 +15,7 @@ const ACTIVIDADES_INICIALES: Actividad[] = [
 
 export const ActividadesPage: React.FC = () => {
   const [actividades, setActividades] = useState<Actividad[]>(ACTIVIDADES_INICIALES);
+  const [menuOpen, setMenuOpen] = useState(false);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [actividadEditar, setActividadEditar] = useState<Actividad | null>(null);
@@ -67,83 +68,245 @@ export const ActividadesPage: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-slate-50 min-h-screen text-slate-800 font-sans">
-      
-      {/* SIDEBAR OFICIAL PROPIETARIA (10 ÍTEMS) */}
-      <aside className="w-60 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 hidden lg:flex">
+    <div className="flex min-h-screen bg-slate-50 text-slate-800 font-sans">
+      {/* SIDEBAR DESKTOP */}
+      <aside className="hidden lg:flex w-60 shrink-0 bg-white border-r border-slate-200 p-4 flex-col justify-between">
         <div>
           <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-[#E91E82] text-white flex items-center justify-center font-black text-xs">FR</div>
+            <div className="w-8 h-8 rounded-lg bg-[#E91E82] text-white flex items-center justify-center font-black text-xs">
+              FR
+            </div>
             <div>
               <div className="font-extrabold text-xs text-[#181C26]">MiFR Centro</div>
-              <div className="text-[9px] font-bold text-[#E91E82] uppercase tracking-wider">Propietaria</div>
+              <div className="text-[9px] font-bold text-[#E91E82] uppercase tracking-wider">
+                Propietaria
+              </div>
             </div>
           </div>
-          
+
           <nav className="mt-4 space-y-1 text-xs font-semibold text-slate-600">
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Dashboard</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Alumnos</a>
-            
-            {/* Activo */}
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Dashboard</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Alumnos</a>
             <a href="#" className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#FDF2F7] text-[#E91E82] font-bold">
               <span>Actividades y Horarios</span>
-              <span className="w-1.5 h-3.5 bg-[#E91E82] rounded-full"></span>
+              <span className="w-1.5 h-3.5 bg-[#E91E82] rounded-full" />
             </a>
-
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Planes y Precios</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Pagos y Cuotas</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Asistencia</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Honorarios</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Notificaciones</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Reportes</a>
-            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Configuración</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Planes y Precios</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Pagos y Cuotas</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Asistencia</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Honorarios</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Notificaciones</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Reportes</a>
+            <a href="#" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100">Configuración</a>
           </nav>
         </div>
 
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center">MR</div>
+            <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center">
+              MR
+            </div>
             <div className="text-[11px] font-bold text-slate-800 leading-tight">Mariana FR</div>
           </div>
           <span className="text-[10px] text-slate-400 font-semibold">Propietaria</span>
         </div>
       </aside>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-50/50 h-screen overflow-y-auto">
-        
-        {/* TOP HEADER */}
-        <div className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
+      {/* MENÚ MOBILE */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMenuOpen(false)}
+          />
+
+          <aside className="absolute left-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl flex flex-col">
+            <div className="h-[60px] px-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#E91E82] text-white flex items-center justify-center font-black text-[11px]">
+                  FR
+                </div>
+                <div className="leading-none">
+                  <div className="font-extrabold text-[12px] text-[#181C26]">MiFR Centro</div>
+                  <div className="text-[8px] font-bold text-[#E91E82] uppercase tracking-wide mt-0.5">
+                    Propietaria
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Cerrar menú"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 text-lg"
+              >
+                ×
+              </button>
+            </div>
+
+            <nav className="p-3 space-y-1 text-sm font-semibold text-slate-600">
+              {['Dashboard', 'Alumnos'].map((item) => (
+                <a
+                  key={item}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); }}
+                  className="flex items-center px-3 py-3 rounded-lg hover:bg-slate-100"
+                >
+                  {item}
+                </a>
+              ))}
+
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); setMenuOpen(false); }}
+                className="flex items-center justify-between px-3 py-3 rounded-lg bg-[#FDF2F7] text-[#E91E82] font-bold"
+              >
+                <span>Actividades y Horarios</span>
+                <span className="w-1.5 h-3.5 bg-[#E91E82] rounded-full" />
+              </a>
+
+              {['Planes y Precios', 'Pagos y Cuotas', 'Asistencia', 'Honorarios', 'Notificaciones', 'Reportes', 'Configuración'].map((item) => (
+                <a
+                  key={item}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); setMenuOpen(false); }}
+                  className="flex items-center px-3 py-3 rounded-lg hover:bg-slate-100"
+                >
+                  {item}
+                </a>
+              ))}
+            </nav>
+
+            <div className="mt-auto p-4 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center">
+                  MR
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-800">Mariana FR</div>
+                  <div className="text-[10px] text-slate-400">Propietaria</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* CONTENIDO */}
+      <main className="flex-1 min-w-0 min-h-screen bg-slate-50">
+        {/* HEADER DESKTOP */}
+        <div className="hidden md:flex h-14 bg-white border-b border-slate-200 px-6 items-center justify-between">
           <div className="text-xs font-semibold text-slate-500">
-            <span>MiFR Centro</span> <span className="mx-1">/</span> <span className="text-slate-900 font-bold">Actividades</span>
+            <span>MiFR Centro</span>
+            <span className="mx-1">/</span>
+            <span className="text-slate-900 font-bold">Actividades</span>
           </div>
+
           <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Sistema en línea
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            Sistema en línea
           </span>
         </div>
 
-        {/* CABECERA Y ACCIÓN */}
-        <div className="p-6 md:p-8 space-y-6 flex-1">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black text-[#181C26] tracking-tight">Actividades</h2>
-                <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-pink-100 text-[#BC1266] border border-pink-200">
-                  {actividades.length} disciplinas oficiales
+        {/* HEADER MOBILE — inspirado en el Stitch */}
+        <header className="md:hidden h-[60px] bg-white border-b border-slate-200 px-4 flex items-center justify-between sticky top-0 z-20">
+          <button
+            type="button"
+            aria-label="Abrir menú"
+            onClick={() => setMenuOpen(true)}
+            className="w-8 h-8 flex items-center justify-center text-slate-500 active:bg-slate-100 rounded-lg"
+          >
+            <span className="text-xl leading-none">☰</span>
+          </button>
+
+          <div className="flex items-center gap-2.5 mr-auto ml-2">
+            <div className="w-8 h-8 rounded-lg bg-[#E91E82] text-white flex items-center justify-center font-black text-[11px]">
+              FR
+            </div>
+            <div className="leading-none">
+              <div className="font-extrabold text-[12px] text-[#181C26]">MiFR Centro</div>
+              <div className="text-[8px] font-bold text-[#E91E82] uppercase tracking-wide mt-0.5">
+                Propietaria
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleNueva}
+            type="button"
+            className="bg-[#E91E82] hover:bg-[#BC1266] text-white text-[11px] font-extrabold px-3 py-2 rounded-lg shadow-sm active:scale-95 transition-transform"
+          >
+            + Nueva
+          </button>
+        </header>
+
+        <div className="px-4 py-5 md:p-8 max-w-[1180px] mx-auto">
+          {/* CABECERA */}
+          <div className="flex items-start justify-between gap-3 mb-5 md:mb-6">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-[22px] md:text-2xl font-black text-[#181C26] tracking-tight">
+                  Actividades
+                </h1>
+                <span className="text-[10px] md:text-xs font-extrabold px-2.5 py-1 rounded-full bg-pink-100 text-[#BC1266] border border-pink-200">
+                  {actividades.length} activas
                 </span>
               </div>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="hidden md:block text-sm text-slate-600 mt-1">
                 Administrá las disciplinas y cupos del centro. Habilitadas para diagramar horarios y reservas.
               </p>
             </div>
 
-            <button onClick={handleNueva} className="bg-[#E91E82] hover:bg-[#BC1266] text-white text-xs font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-[#E91E82]/30 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 w-full md:w-auto justify-center">
+            {/* En desktop se conserva el botón grande */}
+            <button
+              onClick={handleNueva}
+              type="button"
+              className="hidden md:flex bg-[#E91E82] hover:bg-[#BC1266] text-white text-xs font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-[#E91E82]/30 items-center gap-2 cursor-pointer transition-transform active:scale-95"
+            >
               + Nueva actividad
             </button>
           </div>
 
-          {/* TABLA PRINCIPAL DE ALTA LEGIBILIDAD */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-12">
+          {/* MOBILE: CARDS */}
+          <div className="md:hidden space-y-3 pb-8">
+            {(['HIBRIDA', 'GRUPAL', 'INDIVIDUAL'] as const).map((grupo) => {
+              const items = agrupar(grupo);
+              if (!items.length) return null;
+
+              return (
+                <React.Fragment key={grupo}>
+                  {grupo === 'INDIVIDUAL' && (
+                    <div className="flex items-center gap-2 pt-2 pb-1">
+                      <span className="h-px flex-1 bg-amber-200" />
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-700">
+                        Personalizadas
+                      </span>
+                      <span className="h-px flex-1 bg-amber-200" />
+                    </div>
+                  )}
+
+                  {items.map((act) => (
+                    <ActividadCard
+                      key={act.id}
+                      act={act}
+                      colorBadge={
+                        grupo === 'HIBRIDA'
+                          ? 'pink'
+                          : grupo === 'GRUPAL'
+                            ? 'blue'
+                            : 'amber'
+                      }
+                      onEditar={() => handleEditar(act)}
+                      onBaja={() => handleBaja(act)}
+                    />
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP: TABLA */}
+          <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse min-w-[900px]">
                 <thead>
@@ -155,9 +318,8 @@ export const ActividadesPage: React.FC = () => {
                     <th className="py-4 px-6 text-right w-[10%]">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 font-medium">
 
-                  {/* GRUPO 1: HÍBRIDAS / GRUPALES Y PERSONALIZADAS */}
+                <tbody className="divide-y divide-slate-200 font-medium">
                   {agrupar('HIBRIDA').length > 0 && (
                     <>
                       <tr className="bg-pink-50/70 border-y border-pink-100 font-bold text-[#BC1266]">
@@ -166,12 +328,17 @@ export const ActividadesPage: React.FC = () => {
                         </td>
                       </tr>
                       {agrupar('HIBRIDA').map(act => (
-                        <FilaActividad key={act.id} act={act} colorBadge="pink" onEditar={() => handleEditar(act)} onBaja={() => handleBaja(act)} />
+                        <FilaActividad
+                          key={act.id}
+                          act={act}
+                          colorBadge="pink"
+                          onEditar={() => handleEditar(act)}
+                          onBaja={() => handleBaja(act)}
+                        />
                       ))}
                     </>
                   )}
 
-                  {/* GRUPO 2: ÚNICAMENTE GRUPALES */}
                   {agrupar('GRUPAL').length > 0 && (
                     <>
                       <tr className="bg-blue-50/70 border-y border-blue-100 font-bold text-blue-800">
@@ -180,12 +347,17 @@ export const ActividadesPage: React.FC = () => {
                         </td>
                       </tr>
                       {agrupar('GRUPAL').map(act => (
-                        <FilaActividad key={act.id} act={act} colorBadge="blue" onEditar={() => handleEditar(act)} onBaja={() => handleBaja(act)} />
+                        <FilaActividad
+                          key={act.id}
+                          act={act}
+                          colorBadge="blue"
+                          onEditar={() => handleEditar(act)}
+                          onBaja={() => handleBaja(act)}
+                        />
                       ))}
                     </>
                   )}
 
-                  {/* GRUPO 3: INDIVIDUALES O ESPECÍFICAS */}
                   {agrupar('INDIVIDUAL').length > 0 && (
                     <>
                       <tr className="bg-amber-50/80 border-y border-amber-200 font-bold text-amber-900">
@@ -194,30 +366,135 @@ export const ActividadesPage: React.FC = () => {
                         </td>
                       </tr>
                       {agrupar('INDIVIDUAL').map(act => (
-                        <FilaActividad key={act.id} act={act} colorBadge="amber" isRowAmber onEditar={() => handleEditar(act)} onBaja={() => handleBaja(act)} />
+                        <FilaActividad
+                          key={act.id}
+                          act={act}
+                          colorBadge="amber"
+                          isRowAmber
+                          onEditar={() => handleEditar(act)}
+                          onBaja={() => handleBaja(act)}
+                        />
                       ))}
                     </>
                   )}
-
                 </tbody>
               </table>
             </div>
 
-            {/* FOOTER TABLA */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 font-medium gap-2">
-              <div>Mostrando <strong>{actividades.length} actividades solicitadas</strong> en catálogo activo</div>
-              <div className="text-[11px] text-slate-500 font-semibold">Baja lógica protegida (los registros pasados preservan facturación y asistencia)</div>
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-medium gap-2">
+              <div>
+                Mostrando <strong>{actividades.length} actividades solicitadas</strong> en catálogo activo
+              </div>
+              <div className="text-[11px] text-slate-500 font-semibold">
+                Baja lógica protegida
+              </div>
             </div>
           </div>
-
         </div>
       </main>
 
       {/* MODALES */}
-      {isFormOpen && <ModalFormActividad actividad={actividadEditar} onClose={() => setIsFormOpen(false)} onSave={onGuardarForm} />}
-      {isDeleteOpen && actividadDarBaja && <ModalBajaLogica actividad={actividadDarBaja} onClose={() => setIsDeleteOpen(false)} onConfirm={onConfirmarBaja} />}
-      
+      {isFormOpen && (
+        <ModalFormActividad
+          actividad={actividadEditar}
+          onClose={() => setIsFormOpen(false)}
+          onSave={onGuardarForm}
+        />
+      )}
+
+      {isDeleteOpen && actividadDarBaja && (
+        <ModalBajaLogica
+          actividad={actividadDarBaja}
+          onClose={() => setIsDeleteOpen(false)}
+          onConfirm={onConfirmarBaja}
+        />
+      )}
     </div>
+  );
+}
+
+
+// --- SUB-COMPONENTE MOBILE ---
+const ActividadCard = ({
+  act,
+  colorBadge,
+  onEditar,
+  onBaja,
+}: {
+  act: Actividad;
+  colorBadge: 'pink' | 'blue' | 'amber';
+  onEditar: () => void;
+  onBaja: () => void;
+}) => {
+  const badgeClasses = {
+    pink: 'bg-[#FDF2F7] text-[#BC1266] border-[#F9A8D4]',
+    blue: 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]',
+    amber: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]',
+  };
+
+  return (
+    <article
+      className={`bg-white border rounded-xl p-3.5 shadow-sm ${
+        colorBadge === 'amber' ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span
+            className={`inline-flex px-2 py-1 rounded-md border text-[9px] font-extrabold leading-none ${badgeClasses[colorBadge]}`}
+          >
+            {act.tipoBadge}
+          </span>
+
+          <h2 className="text-[15px] font-black text-[#181C26] mt-2 leading-tight">
+            {act.nombre}
+          </h2>
+        </div>
+
+        {act.activa ? (
+          <span className="shrink-0 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-full text-[9px] font-extrabold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Activa
+          </span>
+        ) : (
+          <span className="shrink-0 bg-slate-100 text-slate-500 border border-slate-200 px-2 py-1 rounded-full text-[9px] font-extrabold">
+            Inactiva
+          </span>
+        )}
+      </div>
+
+      <p className="text-[11px] text-slate-600 mt-2 leading-relaxed line-clamp-3">
+        {act.descripcion}
+      </p>
+
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+        <div>
+          <div className="text-[9px] text-slate-400 font-semibold uppercase tracking-wide">
+            Cupo
+          </div>
+          <div className="text-[11px] text-slate-800 font-extrabold mt-0.5">
+            {act.cupo}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onEditar}
+            type="button"
+            className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold text-[10px] bg-white active:bg-slate-50"
+          >
+            Editar
+          </button>
+          <button
+            onClick={onBaja}
+            type="button"
+            className="px-2.5 py-1.5 rounded-lg border border-rose-200 text-rose-600 font-bold text-[10px] bg-white active:bg-rose-50"
+          >
+            Baja
+          </button>
+        </div>
+      </div>
+    </article>
   );
 };
 
