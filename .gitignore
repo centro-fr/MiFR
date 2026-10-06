@@ -1,6 +1,10 @@
 # Dependencias (todas las de front y back, en el node_modules compartido)
 node_modules/
 
+# El monorepo usa pnpm (pnpm-lock.yaml): un lockfile de npm o yarn quedaría desincronizado.
+package-lock.json
+yarn.lock
+
 # Builds compilados
 dist/
 build/
