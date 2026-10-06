@@ -3,7 +3,10 @@ import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schema
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { FiltroHorario, HorarioConDatos } from "./horario.types.js";
 
-const CON_DATOS = { actividad: true, profesora: true } satisfies Prisma.horariosInclude;
+const CON_DATOS = {
+  actividad: true,
+  profesora: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+} satisfies Prisma.horariosInclude;
 
 interface CriterioSuperposicion {
   id_profesora: number;
