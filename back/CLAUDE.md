@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** solo está implementado el subsistema `gestion-usuarios` (usuario, sesión, rol). Los otros ocho subsistemas del diagrama de arquitectura todavía no tienen carpeta.
+**Estado actual:** están implementados tres de los nueve subsistemas del diagrama de arquitectura, con lo que pide el sprint 1: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor) y `gestion-servicio-entrenamiento` (actividad, horario). Los otros seis todavía no tienen carpeta.
 
 ## Comandos
 
@@ -20,7 +20,10 @@ pnpm prisma:migrate   # crear y aplicar migracion
 pnpm prisma:studio    # explorar la base
 pnpm db:seed          # roles, permisos y la primera propietaria (también en producción)
 pnpm db:seed:demo     # datos de prueba, solo contra una base local
+pnpm token            # JWT de desarrollo para un usuario, para probar en Swagger
 ```
+
+Para entrar al front sin Google en desarrollo está `LOGIN_DESARROLLO=true`, que habilita `POST /auth/desarrollo` (ver el README de la raíz). Con `NODE_ENV=production` la API no arranca si está activa.
 
 La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.
 

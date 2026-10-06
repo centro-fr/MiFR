@@ -18,7 +18,7 @@ export interface ILogicaUsuarios {
 }
 ```
 
-Las que existen hoy: `ILogicaUsuarios`, `IAutenticacion`, `IAutenticacionGoogleAuth`, `IAutorizacion`.
+Las que existen hoy: `ILogicaUsuarios`, `ILogicaPersonas`, `ILogicaServicioEntrenamiento`, `IAutenticacion`, `IAutenticacionGoogleAuth`, `IAutorizacion`, `IInfoUsuarios`, `IInfoProfesores`, `IInfoActividades` e `IInfoHorarios`.
 
 ## Cómo se usan
 
