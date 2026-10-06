@@ -6,9 +6,11 @@ const MAXIMO_INTEGER = 2_147_483_647;
 
 export const idSchema = z.number().int().positive().max(MAXIMO_INTEGER);
 
-// Para params y query, que llegan como texto.
-export const idDesdeTextoSchema = z.coerce
-  .number({ invalid_type_error: "id inválido" })
-  .int("id inválido")
-  .positive("id inválido")
-  .max(MAXIMO_INTEGER, "id inválido");
+// Para params y query, que llegan como texto. Se exige el entero escrito en decimal y sin ceros
+// adelante: convertir con Number() aceptaba "0x10", "1e1", " 7 " o "5.", y así una misma
+// entidad respondía en varias URLs distintas.
+export const idDesdeTextoSchema = z
+  .string({ invalid_type_error: "id inválido" })
+  .regex(/^[1-9]\d{0,9}$/, "id inválido")
+  .transform(Number)
+  .pipe(z.number().max(MAXIMO_INTEGER, "id inválido"));

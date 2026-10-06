@@ -105,6 +105,22 @@ describe("rutas de actividades", () => {
     expect(logica.crearActividad).not.toHaveBeenCalled();
   });
 
+  // Sin validación, el carácter nulo llegaba a Postgres, que lo rechaza, y la API respondía 500.
+  it.each([
+    ["un nombre sin letras", { nombre: "-0" }],
+    ["un carácter nulo", { nombre: "Cross\u0000fit" }],
+    ["un cupo de -0", { cupo_maximo: -0 }],
+  ])("responde 400 y no llega al service con %s", async (_caso, cambio) => {
+    const respuesta = await request(app)
+      .post("/api/v1/actividades")
+      .set("Authorization", "Bearer propietaria")
+      .send({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL", ...cambio });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+    expect(logica.crearActividad).not.toHaveBeenCalled();
+  });
+
   it("actualiza una actividad", async () => {
     logica.actualizarActividad.mockResolvedValue({ ...actividad, nombre: "Crossfit avanzado" });
 

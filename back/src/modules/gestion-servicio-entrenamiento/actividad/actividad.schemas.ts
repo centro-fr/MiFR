@@ -1,9 +1,26 @@
 import { z } from "zod";
 import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
+import {
+  textoBusquedaSchema,
+  textoOpcionalSchema,
+  textoSchema,
+} from "../../../shared/utils/esquemas-texto.js";
 
-const codigo = z.string().trim().min(1).max(20);
-const nombre = z.string().trim().min(1).max(60);
-const descripcion = z.string().trim().max(255).optional();
+// El código identifica la actividad (es único y no se puede cambiar), así que se normaliza a
+// mayúsculas: "funcional" y "FUNCIONAL" son la misma actividad.
+const codigo = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .min(1)
+  .max(20)
+  .regex(
+    /^(?=.*[A-Z])[A-Z0-9_-]+$/,
+    "El código solo puede tener letras sin acento, números, guion y guion bajo, con al menos una letra",
+  );
+const nombre = textoSchema(60);
+// La descripción se carga en un textarea, por eso admite saltos de línea.
+const descripcion = textoOpcionalSchema(255, { multilinea: true }).optional();
 const modalidad = z.enum(["GRUPAL", "PERSONALIZADA"]);
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
 
@@ -36,7 +53,7 @@ export const actividadIdParamSchema = z.object({
 });
 
 export const listarActividadQuerySchema = z.object({
-  busqueda: z.string().trim().optional(),
+  busqueda: textoBusquedaSchema(60).optional(),
 });
 
 export type CrearActividadInput = z.infer<typeof crearActividadSchema>;
