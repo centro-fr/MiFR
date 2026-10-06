@@ -1,0 +1,39 @@
+/* =====================================================================
+   CONFIGURACIÓN — todo lo ajustable de la presentación modular está acá.
+   Lo comparten el índice y todas las filminas: un cambio impacta en todas.
+   ===================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap");
+
+:root {
+  /* Tiempos */
+  --tiempo-por-filmina: 8s;
+  --duracion-fade: 600ms;
+  --duracion-entrada-texto: 700ms;
+  --retraso-escalonado: 120ms;
+
+  /* Colores (acento = rosa FR, el primary del front) */
+  --color-acento: #e91e82;
+  --color-acento-oscuro: #bc1266;
+  --color-fondo-claro: #ffffff;
+  --color-fondo-oscuro: #0b1630;
+  --color-texto-sobre-claro: #181c26;
+  --color-texto-secundario-sobre-claro: #475569;
+  --color-texto-sobre-oscuro: #e2e8f0;
+  --color-texto-secundario-sobre-oscuro: #94a3b8;
+  --color-marco-dispositivo: #1e293b;
+  --color-barra-navegador: #111827;
+  --color-pantalla-mobile: #bc1266;
+  --color-pantalla-pc: #262a34;
+
+  /* Tipografía */
+  --fuente-titulo: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-subtitulo: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-texto: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --peso-titulo: 800;
+  --peso-subtitulo: 600;
+  --peso-texto: 400;
+  --tamano-titulo-portada: clamp(2rem, 6vw, 3.5rem);
+  --tamano-titulo: clamp(1.75rem, 4vw, 2.75rem);
+  --tamano-subtitulo: 0.9rem;
+  --tamano-texto: 1.05rem;
+}
