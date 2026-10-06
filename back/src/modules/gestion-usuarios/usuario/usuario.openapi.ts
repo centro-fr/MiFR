@@ -67,7 +67,7 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
             nombre: "Nora",
             apellido: "Pérez",
             dni: "30111222",
-            fecha_nacimiento: new Date("1995-03-03"),
+            fecha_nacimiento: "1995-03-03",
           },
         }),
       ),

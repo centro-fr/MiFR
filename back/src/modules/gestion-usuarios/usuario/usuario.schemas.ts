@@ -11,6 +11,14 @@ const dni = z
   .regex(/^\d{1,10}$/, "El dni debe tener solo dígitos (máximo 10)");
 const telefono = z.string().trim().min(1).max(20);
 const direccion = z.string().trim().min(1).max(120);
+// En JSON la fecha llega como texto. z.coerce.date() a secas también aceptaba null, 0 o true
+// y los convertía en 1970-01-01: primero se exige un texto con una fecha que exista en el
+// calendario (date y datetime ya lo validan) y recién después se convierte.
+const fecha_nacimiento = z
+  .union([z.string().date("La fecha no existe"), z.string().datetime({ message: "La fecha no existe" })], {
+    errorMap: () => ({ message: "La fecha debe tener formato AAAA-MM-DD" }),
+  })
+  .transform((valor) => new Date(valor));
 
 export const crearUsuarioSchema = z.object({
   google_id: z.string().trim().min(1).max(255).optional(),
@@ -20,7 +28,7 @@ export const crearUsuarioSchema = z.object({
   apellido: nombre,
   dni: dni.optional(),
   telefono: telefono.optional(),
-  fecha_nacimiento: z.coerce.date(),
+  fecha_nacimiento,
   direccion: direccion.optional(),
 });
 
@@ -30,7 +38,7 @@ export const actualizarUsuarioSchema = z
     apellido: nombre.optional(),
     dni: dni.optional(),
     telefono: telefono.optional(),
-    fecha_nacimiento: z.coerce.date().optional(),
+    fecha_nacimiento: fecha_nacimiento.optional(),
     direccion: direccion.optional(),
     estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
   })
@@ -52,4 +60,3 @@ export const rolParamSchema = usuarioIdParamSchema.extend({
 
 export type CrearUsuarioInput = z.infer<typeof crearUsuarioSchema>;
 export type ActualizarUsuarioInput = z.infer<typeof actualizarUsuarioSchema>;
-export type AsignarRolInput = z.infer<typeof asignarRolSchema>;
