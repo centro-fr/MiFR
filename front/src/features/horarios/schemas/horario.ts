@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { actividadApiSchema } from "@/features/actividades/schemas/actividad";
+import { HORA_APERTURA, HORA_CIERRE } from "@/features/horarios/utils/cronograma";
 
 // Contrato de /api/v1/profesoras y /api/v1/horarios (back: profesor.openapi.ts y horario.openapi.ts).
 
@@ -36,6 +37,34 @@ export const horarioConAdvertenciaApiSchema = z.object({
   horario: horarioApiSchema,
   advertencia: z.string(),
 });
+
+// Mismas reglas que crearHorarioSchema del back (horario.schemas.ts), con mensajes para el
+// formulario. La superposición de la profesora se valida aparte, contra el cronograma.
+const hora = z
+  .string()
+  .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm")
+  .refine((valor) => valor >= HORA_APERTURA && valor <= HORA_CIERRE, {
+    message: `Los horarios tienen que estar entre las ${HORA_APERTURA} y las ${HORA_CIERRE} hs.`,
+  });
+
+export const horarioFormSchema = z
+  .object({
+    actividadId: z.string().min(1, "Elegí una actividad."),
+    profesoraId: z.string().min(1, "Elegí una profesora."),
+    diaSemana: z.enum(["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]),
+    horaInicio: hora,
+    horaFin: hora,
+    cupoPropio: z
+      .number({ invalid_type_error: "El cupo tiene que ser un número." })
+      .int("El cupo tiene que ser un número entero.")
+      .positive("El cupo tiene que ser mayor a cero.")
+      .max(32767, "El cupo es demasiado grande.")
+      .nullable(),
+  })
+  .refine((datos) => datos.horaFin > datos.horaInicio, {
+    message: "La hora de fin debe ser posterior a la hora de inicio.",
+    path: ["horaFin"],
+  });
 
 // Cuerpo de POST /horarios. Las horas van como "HH:mm" y el día como 1 (lunes) a 7 (domingo).
 export interface GuardarHorarioBody {
