@@ -2,6 +2,7 @@
 // evento para poder filtrarlos. El DER no tiene tabla de auditoría y se decidió no agregarla.
 export type EventoSeguridad =
   | "LOGIN_NO_REGISTRADO"
+  | "LOGIN_DESARROLLO"
   | "LOGIN_USUARIO_INACTIVO"
   | "MATRIZ_PERMISOS_MODIFICADA"
   | "ROL_ASIGNADO"

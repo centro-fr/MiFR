@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Horario } from '../../../types/horarios';
 import { Users, Clock, Pencil, Trash2 } from 'lucide-react';
+import { textoCupo } from '../utils/cupo';
 
 export interface HorarioCardProps {
   horario: Horario;
@@ -15,10 +16,8 @@ export const HorarioCard: React.FC<HorarioCardProps> = ({
   onDelete,
   compact = false,
 }) => {
-  const theme = horario.profesoraTheme;
+  const theme = horario.tema;
   const isPersonalizada = horario.actividadTipo === 'PERSONALIZADA';
-  const inscriptos = horario.inscriptosActuales ?? horario.inscriptos ?? 0;
-  const cupo = horario.cupoMaximo ?? horario.cupo_maximo ?? 15;
 
   return (
     <div
@@ -88,25 +87,14 @@ export const HorarioCard: React.FC<HorarioCardProps> = ({
         </div>
       </div>
 
-      {/* Footer de la tarjeta: Cupos e inscriptos */}
+      {/* Footer de la tarjeta: cupo */}
       <div
-        className="mt-3 pt-2 border-t flex items-center justify-between text-xs text-slate-500"
+        className="mt-3 pt-2 border-t flex items-center gap-1.5 text-xs text-slate-500"
         style={{ borderColor: `${theme.border}90` }}
       >
-        <div className="flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5 text-slate-400" />
-          <span>
-            Cupo: <span className="font-semibold text-slate-700">{inscriptos}/{cupo}</span>
-          </span>
-        </div>
-        <span
-          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-          style={{
-            backgroundColor: theme.badgeBg,
-            color: theme.primary,
-          }}
-        >
-          {inscriptos >= cupo ? 'Completo' : `${inscriptos} insc.`}
+        <Users className="w-3.5 h-3.5 text-slate-400" />
+        <span>
+          Cupo: <span className="font-semibold text-slate-700">{textoCupo(horario.cupoMaximo)}</span>
         </span>
       </div>
     </div>

@@ -1,14 +1,13 @@
-export type GrupoActividad = 'HIBRIDA' | 'GRUPAL' | 'INDIVIDUAL';
-export type ModalidadAlta = 'grupal' | 'personalizada';
+// Actividad como la usa la interfaz. Sale de ActividadApi (features/actividades/schemas).
+
+export type ModalidadActividad = "GRUPAL" | "PERSONALIZADA";
 
 export interface Actividad {
   id: string;
+  codigo: string;
   nombre: string;
   descripcion: string;
-  tipoBadge: string;
-  cupo: string;
-  grupo: GrupoActividad;
-  activa: boolean;
-  turnosPendientes?: number; // Para el modal de baja lógica
-  alumnosInscriptos?: number;
+  modalidad: ModalidadActividad;
+  /** null = sin límite de cupo (solo en GRUPAL). */
+  cupoMaximo: number | null;
 }

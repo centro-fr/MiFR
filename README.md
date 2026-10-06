@@ -157,7 +157,10 @@ Los archivos `.env` están ignorados por Git. Cada paquete versiona un `.env.exa
 | | `PORT` | Puerto de la API, por defecto `3000` |
 | | `NODE_ENV` | Con `production` no se publica Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas |
+| | `LOGIN_DESARROLLO` | Solo desarrollo: con `true` habilita `POST /api/v1/auth/desarrollo` para entrar con el email de un usuario dado de alta, sin Google. Con `NODE_ENV=production` la API no arranca |
 | `front/.env` | `VITE_GOOGLE_CLIENT_ID` | Botón de inicio de sesión con Google |
+| | `VITE_LOGIN_DESARROLLO` | Con `true`, el login pide un email en lugar de Google. Necesita `LOGIN_DESARROLLO=true` en el back |
+| | `VITE_USE_MOCKS` | Con `true`, el front usa los mocks de MSW en lugar de la API real. Sin valor, usa la API |
 | | `API_URL` | Adónde reenvía `/api` el servidor de Vite, por defecto `http://localhost:3000` |
 
 ## Documentación

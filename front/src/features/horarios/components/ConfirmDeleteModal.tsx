@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Horario } from '../../../types/horarios';
-import { Trash2, X, Users } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -16,9 +16,6 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   onConfirm,
 }) => {
   if (!isOpen || !horario) return null;
-
-  const inscriptosCount = horario.inscriptosActuales ?? horario.inscriptos ?? 0;
-  const tieneInscriptos = inscriptosCount > 0;
 
   return (
     <div
@@ -68,18 +65,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             </div>
           </div>
 
-          {tieneInscriptos ? (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900">
-              <Users className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="leading-snug">
-                Hay <strong>{inscriptosCount} alumno{inscriptosCount > 1 ? 's' : ''} inscripto{inscriptosCount > 1 ? 's' : ''}</strong>. Quedarán como <em>sin clase asignada</em> para reubicarlos, sin perder su plan ni cuota.
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500">
-              Esta clase no tiene alumnos inscriptos. Se eliminará del cronograma.
-            </p>
-          )}
+          <p className="text-xs text-slate-500">
+            La baja es lógica: el horario sale del cronograma y queda en el historial.
+          </p>
         </div>
 
         {/* Footer */}

@@ -3,9 +3,8 @@ import { isAxiosError } from "axios";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import type { AuthErrorCode, AuthUser } from "@/types/auth";
 
-interface LoginVariables {
-  idToken: string;
-}
+// Con Google llega el id_token; con el login de desarrollo, solo el email.
+export type LoginVariables = { idToken: string } | { email: string };
 
 function readErrorCode(error: unknown): string | undefined {
   if (!isAxiosError(error)) return undefined;
@@ -28,9 +27,9 @@ function mapLoginError(error: unknown): AuthErrorCode {
 }
 
 export function useLogin() {
-  const { login } = useAuth();
+  const { login, loginDesarrollo } = useAuth();
   return useMutation<AuthUser, AuthErrorCode, LoginVariables>({
-    mutationFn: ({ idToken }) => login(idToken),
+    mutationFn: (variables) => ("email" in variables ? loginDesarrollo(variables.email) : login(variables.idToken)),
     retry: false,
   });
 }

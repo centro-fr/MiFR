@@ -1,5 +1,6 @@
 import React from 'react';
-import type { Actividad, Profesora, DiaSemana } from '../../../types/horarios';
+import type { Actividad } from '../../../types/actividad';
+import type { Profesora, DiaSemana } from '../../../types/horarios';
 import { Plus, Filter, Calendar as CalendarIcon, Dumbbell, User } from 'lucide-react';
 
 interface HorariosHeaderProps {

@@ -9,12 +9,15 @@ import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel"
 import { GisOfficialOverlay } from "@/features/auth/components/gis-official-overlay";
 import { LoginHero } from "@/features/auth/components/login-hero";
 import { MobileAuthView } from "@/features/auth/components/mobile-auth-view";
-import { mapLoginError, useLogin } from "@/features/auth/hooks/use-login";
+import { LoginDesarrolloPanel } from "@/features/auth/components/login-desarrollo-panel";
+import { mapLoginError, useLogin, type LoginVariables } from "@/features/auth/hooks/use-login";
 import type { LegalModalType } from "@/features/auth/schemas/contact";
 import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
-const USE_MOCKS = (import.meta.env.VITE_USE_MOCKS ?? "true") !== "false";
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
+// Requiere LOGIN_DESARROLLO=true en el back: sin eso la ruta no existe y el login falla.
+const LOGIN_DESARROLLO = import.meta.env.VITE_LOGIN_DESARROLLO === "true";
 
 function useLoginFlow() {
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null);
@@ -23,17 +26,17 @@ function useLoginFlow() {
   const loginMutation = useLogin();
   const navigate = useNavigate();
 
-  async function startLogin(getToken: () => Promise<string>) {
+  async function startLogin(obtenerCredencial: () => Promise<LoginVariables>) {
     setErrorCode(null);
-    let idToken: string;
+    let credencial: LoginVariables;
     try {
-      idToken = await getToken();
+      credencial = await obtenerCredencial();
     } catch {
       setErrorCode("POPUP_BLOQUEADO");
       return;
     }
     try {
-      const user = await loginMutation.mutateAsync({ idToken });
+      const user = await loginMutation.mutateAsync(credencial);
       toast.success(`Bienvenido, ${user.nombre}`);
       navigate(homePathForRoles(user.roles), { replace: true });
     } catch (error) {
@@ -108,7 +111,12 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
 
 function MockLoginPage() {
   const flow = useLoginFlow();
-  return <LoginLayout flow={flow} onLogin={() => void flow.startLogin(() => Promise.resolve("mock-google-id-token"))} />;
+  return (
+    <LoginLayout
+      flow={flow}
+      onLogin={() => void flow.startLogin(() => Promise.resolve({ idToken: "mock-google-id-token" }))}
+    />
+  );
 }
 
 function GoogleLoginInner() {
@@ -117,20 +125,45 @@ function GoogleLoginInner() {
   // invisible sobre nuestro botón Stitch. El back la verifica con verifyIdToken.
   const overlay = (
     <GisOfficialOverlay
-      onCredential={(credential) => void flow.startLogin(() => Promise.resolve(credential))}
+      onCredential={(credential) => void flow.startLogin(() => Promise.resolve({ idToken: credential }))}
       onError={() => flow.cancelLogin()}
     />
   );
   return <LoginLayout flow={flow} onLogin={() => undefined} overlay={overlay} />;
 }
 
+function LoginDesarrolloPage() {
+  const flow = useLoginFlow();
+  return (
+    <LoginDesarrolloPanel
+      errorCode={flow.errorCode}
+      isLoading={flow.isLoading}
+      onSubmit={(email) => void flow.startLogin(() => Promise.resolve({ email }))}
+    />
+  );
+}
+
 export function LoginPage() {
-  if (USE_MOCKS || !GOOGLE_CLIENT_ID) {
-    return <MockLoginPage />;
-  }
+  if (USE_MOCKS) return <MockLoginPage />;
+  if (LOGIN_DESARROLLO) return <LoginDesarrolloPage />;
+  if (!GOOGLE_CLIENT_ID) return <LoginSinConfigurar />;
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <GoogleLoginInner />
     </GoogleOAuthProvider>
+  );
+}
+
+// Sin client ID de Google y sin login de desarrollo no hay forma de entrar contra el back:
+// mejor decirlo que mostrar un botón que siempre falla.
+function LoginSinConfigurar() {
+  return (
+    <main className="flex h-dvh items-center justify-center bg-canvas px-4">
+      <p role="alert" className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+        Falta configurar el login: definí <code>VITE_GOOGLE_CLIENT_ID</code>, o en desarrollo{" "}
+        <code>VITE_LOGIN_DESARROLLO=true</code> (con <code>LOGIN_DESARROLLO=true</code> en el back) o{" "}
+        <code>VITE_USE_MOCKS=true</code>.
+      </p>
+    </main>
   );
 }

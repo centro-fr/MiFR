@@ -14,7 +14,7 @@ export interface RolMatriz {
 export interface PermisoMatriz {
   id_permiso: number;
   codigo: string;
-  descripcion: string;
+  descripcion: string | null;
   /** No se puede quitar a la propietaria (el back responde 400). */
   critico: boolean;
 }

@@ -14,6 +14,11 @@ export function createSesionController(gestionUsuarios: ILogicaUsuarios) {
       res.status(200).json({ token, ...respuestaPerfil(perfil) });
     },
 
+    async loginDesarrollo(req: Request, res: Response): Promise<void> {
+      const { token, ...perfil } = await gestionUsuarios.iniciarSesionDesarrollo(req.body.email);
+      res.status(200).json({ token, ...respuestaPerfil(perfil) });
+    },
+
     async me(req: Request, res: Response): Promise<void> {
       const perfil = await gestionUsuarios.obtenerPerfil(req.usuario!.id_usuario);
       res.status(200).json(respuestaPerfil(perfil));

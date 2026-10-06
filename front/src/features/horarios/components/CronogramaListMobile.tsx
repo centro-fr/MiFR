@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DiaSemana, Horario } from '../../../types/horarios';
 import { Plus, Clock, Users, Pencil, Trash2 } from 'lucide-react';
+import { textoCupo } from '../utils/cupo';
 
 interface CronogramaListMobileProps {
   horarios: Horario[];
@@ -124,11 +125,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
           </div>
         ) : (
           horariosDelDia.map((horario) => {
-            const theme = horario.profesoraTheme;
-            const inscriptos = horario.inscriptosActuales ?? horario.inscriptos ?? 0;
-            const cupo = horario.cupoMaximo || 20;
-            const disponibles = Math.max(0, cupo - inscriptos);
-            const porcentajeOcupacion = Math.min(100, Math.round((inscriptos / cupo) * 100));
+            const theme = horario.tema;
 
             return (
               <div
@@ -136,7 +133,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 onClick={() => onEdit(horario)}
                 className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 hover:shadow-md transition active:scale-[0.99] cursor-pointer flex flex-col gap-3 relative overflow-hidden"
               >
-                {/* Indicador de profesora */}
+                {/* Indicador de modalidad */}
                 <div
                   className="absolute left-0 top-0 bottom-0 w-1.5"
                   style={{ backgroundColor: theme.primary }}
@@ -180,41 +177,11 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                   </div>
                 </div>
 
-                {/* Capacidad y ocupación */}
-                <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-slate-600">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Inscriptos:</span>
-                      <strong className="text-slate-900">{inscriptos}</strong>
-                      <span className="text-slate-400">/ {cupo}</span>
-                    </div>
-
-                    <span
-                      className={`text-[11px] font-bold ${
-                        disponibles === 0
-                          ? 'text-red-600'
-                          : disponibles <= 3
-                          ? 'text-amber-600'
-                          : 'text-emerald-700'
-                      }`}
-                    >
-                      {disponibles === 0 ? 'Cupo lleno' : `${disponibles} libres`}
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        disponibles === 0
-                          ? 'bg-red-500'
-                          : disponibles <= 3
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
-                      }`}
-                      style={{ width: `${porcentajeOcupacion}%` }}
-                    />
-                  </div>
+                {/* Cupo */}
+                <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs text-slate-600">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Cupo:</span>
+                  <strong className="text-slate-900">{textoCupo(horario.cupoMaximo)}</strong>
                 </div>
 
                 {/* Acciones */}

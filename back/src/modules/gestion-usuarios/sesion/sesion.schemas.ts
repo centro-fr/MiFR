@@ -5,3 +5,7 @@ export const googleLoginSchema = z.object({
 });
 
 export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
+
+export const loginDesarrolloSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});

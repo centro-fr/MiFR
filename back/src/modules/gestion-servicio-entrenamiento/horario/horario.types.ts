@@ -1,7 +1,8 @@
-import type { actividades, horarios, profesoras } from "@prisma/client";
+import type { actividades, horarios } from "@prisma/client";
+import type { Profesora } from "../../gestion-personas/profesor/profesor.types.js";
 
 export type Horario = horarios;
-export type HorarioConDatos = Horario & { actividad: actividades; profesora: profesoras };
+export type HorarioConDatos = Horario & { actividad: actividades; profesora: Profesora };
 
 export interface FiltroHorario {
   id_actividad?: number;

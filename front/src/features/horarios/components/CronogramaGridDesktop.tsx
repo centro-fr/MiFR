@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import type { DiaSemana, Horario } from '../../../types/horarios';
-import { timeToMinutes } from '../hooks/useHorarios';
+import { timeToMinutes } from '../utils/cronograma';
+import { textoCupo } from '../utils/cupo';
 import { Plus, Pencil, Trash2, ArrowLeftRight, Move } from 'lucide-react';
 
 interface CronogramaGridDesktopProps {
@@ -206,7 +207,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                 );
                 const spanCount = Math.max(1, lastSlotIndex - slotIndex + 1);
                 const isSingleSlot = spanCount === 1;
-                const theme = horarioEnSlot.profesoraTheme;
+                const theme = horarioEnSlot.tema;
 
                 return (
                   <div
@@ -317,7 +318,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                                   color: theme.badgeText,
                                 }}
                               >
-                                {horarioEnSlot.profesoraNombre.replace('Prof. ', '')}
+                                {horarioEnSlot.profesoraNombre}
                               </span>
                               {!isFilterActive && (
                                 <span
@@ -374,16 +375,10 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                               </p>
                             </div>
 
-                            {/* Cupo e inscriptos alineados a la derecha */}
+                            {/* Cupo alineado a la derecha */}
                             <div className="text-right shrink-0 bg-white/80 backdrop-blur-2xs px-2 py-0.5 rounded-lg border border-black/5 shadow-2xs">
                               <div className="text-[9.5px] font-bold text-slate-700 leading-tight">
-                                Cupo: <strong className="text-slate-900">{horarioEnSlot.cupoMaximo}</strong>
-                              </div>
-                              <div
-                                className="font-black text-[11px] leading-tight"
-                                style={{ color: theme.primary }}
-                              >
-                                {horarioEnSlot.inscriptosActuales} insc.
+                                Cupo: <strong className="text-slate-900">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
                               </div>
                             </div>
                           </div>
@@ -402,7 +397,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                                     color: theme.badgeText,
                                   }}
                                 >
-                                  {horarioEnSlot.profesoraNombre.replace('Prof. ', '')}
+                                  {horarioEnSlot.profesoraNombre}
                                 </span>
                                 {!isFilterActive && (
                                   <span
@@ -457,15 +452,9 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           </div>
 
                           {/* Pie de tarjeta multislot */}
-                          <div className="flex items-center justify-between border-t border-black/10 mt-auto font-medium pointer-events-none text-[11px] pt-2">
+                          <div className="flex items-center border-t border-black/10 mt-auto font-medium pointer-events-none text-[11px] pt-2">
                             <span className="text-slate-700">
-                              Cupo: <strong className="text-slate-900 font-bold">{horarioEnSlot.cupoMaximo}</strong>
-                            </span>
-                            <span
-                              className="font-black text-xs"
-                              style={{ color: theme.primary }}
-                            >
-                              {horarioEnSlot.inscriptosActuales} insc.
+                              Cupo: <strong className="text-slate-900 font-bold">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
                             </span>
                           </div>
                         </>

@@ -27,23 +27,16 @@ export class SesionService implements IAutenticacion {
 
   async iniciarSesion(idToken: string): Promise<SesionIniciada> {
     const datos = await this.googleAuth.verificarToken(idToken);
-
     const usuario = await this.usuarios.identificarPorGoogle(datos.googleId, datos.email);
+    return this.abrirSesion(usuario, datos.email);
+  }
 
-    // No hay auto-registro: solo puede loguearse quien ya fue dado de alta
-    // (pre-inscripción de quien administra el centro/profesora + primer pago confirmado).
-    if (!usuario) {
-      auditar("LOGIN_NO_REGISTRADO", { email: datos.email });
-      throw new UsuarioNoRegistradoError();
-    }
-
-    if (usuario.estado === "INACTIVO") {
-      auditar("LOGIN_USUARIO_INACTIVO", { id_usuario: usuario.id_usuario, email: datos.email });
-      throw new ForbiddenError("Usuario inactivo");
-    }
-
-    const permisos = await this.autorizacion.permisosEfectivos(usuario.id_usuario);
-    return { token: this.jwtService.emitir(usuario), usuario, permisos };
+  // Mismas reglas que con Google, pero sin verificar la identidad: por eso solo se expone
+  // en desarrollo y cada ingreso queda auditado.
+  async iniciarSesionDesarrollo(email: string): Promise<SesionIniciada> {
+    const sesion = await this.abrirSesion(await this.usuarios.buscarPorEmail(email), email);
+    auditar("LOGIN_DESARROLLO", { id_usuario: sesion.usuario.id_usuario, email });
+    return sesion;
   }
 
   async obtenerPerfil(idUsuario: number): Promise<PerfilSesion> {
@@ -58,6 +51,23 @@ export class SesionService implements IAutenticacion {
     const { usuarioId } = this.jwtService.verificar(token);
     const usuario = await this.usuarioActivo(usuarioId);
     return { usuarioId, roles: usuario.roles.map((r) => r.rol.codigo) };
+  }
+
+  private async abrirSesion(usuario: UsuarioConRoles | null, email: string): Promise<SesionIniciada> {
+    // No hay auto-registro: solo puede loguearse quien ya fue dado de alta
+    // (pre-inscripción de quien administra el centro/profesora + primer pago confirmado).
+    if (!usuario) {
+      auditar("LOGIN_NO_REGISTRADO", { email });
+      throw new UsuarioNoRegistradoError();
+    }
+
+    if (usuario.estado === "INACTIVO") {
+      auditar("LOGIN_USUARIO_INACTIVO", { id_usuario: usuario.id_usuario, email });
+      throw new ForbiddenError("Usuario inactivo");
+    }
+
+    const permisos = await this.autorizacion.permisosEfectivos(usuario.id_usuario);
+    return { token: this.jwtService.emitir(usuario), usuario, permisos };
   }
 
   private async usuarioActivo(idUsuario: number): Promise<UsuarioConRoles> {

@@ -76,5 +76,6 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `PORT` | Puerto de la API, por defecto `3000` |
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
+| `LOGIN_DESARROLLO` | Con `true` habilita `POST /auth/desarrollo` (login por email, sin Google). Prohibida con `NODE_ENV=production`: la API no arranca |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.

@@ -59,6 +59,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 - La asignación de profesora se hace solo sobre usuarios que ya tengan el rol “Profesora”.
 - Un profesor/a puede dictar varias actividades en distintos horarios.
 - **No se permite** asignar dos actividades a la misma profesora en el mismo día y horario (evitar superposición).
+- Los horarios tienen que estar dentro del horario de atención del centro: de 07:00 a 20:00. Ninguna clase empieza antes de las 07:00 ni termina después de las 20:00.
 - Una misma actividad puede tener varios horarios y distintas profesoras.
 - El cupo máximo se hereda de la actividad (US-03), pero puede sobrescribirse en el horario si es necesario.
 - No se debe poder eliminar un horario que ya tenga alumnos inscriptos a futuro (o se debe advertir claramente).
@@ -67,6 +68,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 
 - [ ] Asignar una profesora existente a un horario libre → se permite
 - [ ] Intentar asignar una profesora a dos horarios que se superponen → falla
+- [ ] Crear o editar un horario que empieza antes de las 07:00 o termina después de las 20:00 → falla
 - [ ] Intentar asignar un usuario sin rol “profesora” → falla
 - [ ] Crear varios horarios para la misma actividad con distintas profesoras → se permite
 - [ ] El sistema muestra claramente el tipo de actividad (grupal/personalizada) en el horario
@@ -75,6 +77,7 @@ Como propietaria, quiero asignar profesoras y horarios a cada actividad (grupal 
 
 - Superposición de horarios de la misma profesora
 - Hora de fin anterior a la hora de inicio
+- Horario fuera del horario de atención del centro (07:00 a 20:00)
 - Intentar eliminar un horario con alumnos inscriptos
 - Profesora dada de baja que todavía tiene horarios asignados
 - Error de red al guardar

@@ -1,124 +1,57 @@
 import { http, HttpResponse, delay } from "msw";
-import type { AuthUser, RoleCode } from "@/types/auth";
+import { db } from "@/mocks/db";
+import { ID_USUARIO_SESION_INICIAL, type UsuarioSemilla } from "@/mocks/data/semilla";
+import { MOCK_JWT, errorApi, permisosDeRoles } from "@/mocks/handlers/respuestas";
+import { usuarioConRoles } from "@/mocks/handlers/serializar";
 
-// Mock alineado al contrato real del back (módulo sesion):
+// Mock del módulo sesion del back:
 // POST /auth/google { id_token } → { token, usuario, roles, permisos }
 // GET  /auth/me (Bearer)          → { usuario, roles, permisos }
-// Errores: { error: { code, message } }
+// Los id_token "mock-inactivo", "mock-invalido" y "mock-no-registrado" simulan los errores.
 
-interface MockProfile {
-  usuario: AuthUser & { estado: string };
+function perfil(usuario: UsuarioSemilla) {
+  return { usuario: usuarioConRoles(usuario), roles: usuario.roles, permisos: permisosDeRoles(usuario.roles) };
 }
 
-const MOCK_JWT = "mock-jwt-token";
-
-const mockUsers: Record<string, MockProfile> = {
-  "laura.propietaria@gmail.com": {
-    usuario: {
-      id_usuario: 1,
-      email: "laura.propietaria@gmail.com",
-      nombre: "Laura",
-      apellido: "Gómez",
-      estado: "ACTIVO",
-      roles: ["PROPIETARIA", "PROFESORA"] as RoleCode[],
-      permisos: [
-        "SEGURIDAD_MATRIZ_VER",
-        "SEGURIDAD_MATRIZ_EDITAR",
-        "USUARIOS_VER",
-        "USUARIOS_EDITAR",
-        "HORARIOS_VER",
-        "ALUMNOS_VER",
-        "ASISTENCIAS_MARCAR",
-        "RUTINAS_VER",
-        "RUTINAS_EDITAR",
-        "HONORARIOS_VER_PROPIOS",
-      ],
-    },
-  },
-  "maria.profesora@gmail.com": {
-    usuario: {
-      id_usuario: 2,
-      email: "maria.profesora@gmail.com",
-      nombre: "María",
-      apellido: "Pérez",
-      estado: "ACTIVO",
-      roles: ["PROFESORA"] as RoleCode[],
-      permisos: ["HORARIOS_VER", "ALUMNOS_VER", "ASISTENCIAS_MARCAR", "RUTINAS_VER", "RUTINAS_EDITAR", "HONORARIOS_VER_PROPIOS"],
-    },
-  },
-  "juan.alumno@gmail.com": {
-    usuario: {
-      id_usuario: 3,
-      email: "juan.alumno@gmail.com",
-      nombre: "Juan",
-      apellido: "López",
-      estado: "ACTIVO",
-      roles: ["ALUMNO"] as RoleCode[],
-      permisos: ["RUTINAS_VER"],
-    },
-  },
-};
-
-// Sesión iniciada por defecto como propietaria (modo mock/dev): entrar
-// directo a /app/* funciona sin pasar por el login. "Cerrar sesión" la
-// vacía y permite probar el flujo de login desde cero.
-let currentUser: MockProfile | null = mockUsers["laura.propietaria@gmail.com"];
-
-function sessionPayload(profile: MockProfile) {
-  const usuario = profile.usuario;
-  return { token: MOCK_JWT, usuario, roles: usuario.roles, permisos: usuario.permisos };
+function usuarioEnSesion(): UsuarioSemilla | undefined {
+  return db.usuarios.find((usuario) => usuario.id_usuario === db.idUsuarioSesion);
 }
 
 export const authHandlers = [
-  http.post("*/auth/google", async ({ request }) => {
+  http.post("*/api/v1/auth/google", async ({ request }) => {
     await delay(800);
-    const body = (await request.json()) as { id_token?: string; idToken?: string };
-    const idToken = body.id_token ?? body.idToken;
+    const { id_token: idToken } = (await request.json()) as { id_token?: string };
 
-    if (idToken === "mock-inactivo") {
-      return HttpResponse.json(
-        { error: { code: "FORBIDDEN", message: "Usuario inactivo" } },
-        { status: 403 },
-      );
-    }
-    if (idToken === "mock-invalido" || !idToken) {
-      return HttpResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Token de Google inválido" } },
-        { status: 401 },
-      );
-    }
+    if (!idToken) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    if (idToken === "mock-inactivo") return errorApi(403, "FORBIDDEN", "Usuario inactivo");
+    if (idToken === "mock-invalido") return errorApi(401, "UNAUTHORIZED", "Token de Google inválido");
     if (idToken === "mock-no-registrado") {
-      return HttpResponse.json(
-        {
-          error: {
-            code: "USUARIO_NO_REGISTRADO",
-            message: "El correo ingresado no se encuentra habilitado en el sistema. Contacte a la administración.",
-          },
-        },
-        { status: 403 },
+      return errorApi(
+        403,
+        "USUARIO_NO_REGISTRADO",
+        "No estás registrado en el sistema. Pedile a quien administra el centro que te dé de alta.",
       );
     }
-    currentUser = mockUsers["laura.propietaria@gmail.com"];
-    return HttpResponse.json(sessionPayload(currentUser), { status: 200 });
+
+    db.idUsuarioSesion = ID_USUARIO_SESION_INICIAL;
+    return HttpResponse.json({ token: MOCK_JWT, ...perfil(usuarioEnSesion()!) });
   }),
 
-  http.get("*/auth/me", async ({ request }) => {
+  http.get("*/api/v1/auth/me", async ({ request }) => {
     await delay(300);
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${MOCK_JWT}` || !currentUser) {
-      return HttpResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Sin sesión activa." } },
-        { status: 401 },
-      );
+    const usuario = usuarioEnSesion();
+    if (request.headers.get("authorization") !== `Bearer ${MOCK_JWT}` || !usuario) {
+      return errorApi(401, "UNAUTHORIZED", "Token no provisto");
     }
-    const payload = sessionPayload(currentUser);
-    const perfil = { usuario: payload.usuario, roles: payload.roles, permisos: payload.permisos };
-    return HttpResponse.json(perfil, { status: 200 });
+    return HttpResponse.json(perfil(usuario));
   }),
 
-  http.post("*/auth/logout", async () => {
+  http.post("*/api/v1/auth/logout", async ({ request }) => {
     await delay(200);
-    currentUser = null;
-    return HttpResponse.json({ mensaje: "Sesión cerrada correctamente" }, { status: 200 });
+    if (request.headers.get("authorization") !== `Bearer ${MOCK_JWT}`) {
+      return errorApi(401, "UNAUTHORIZED", "Token no provisto");
+    }
+    db.idUsuarioSesion = null;
+    return HttpResponse.json({ mensaje: "Sesión cerrada correctamente" });
   }),
 ];

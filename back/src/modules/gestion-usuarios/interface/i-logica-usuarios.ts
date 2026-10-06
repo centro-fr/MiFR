@@ -9,6 +9,7 @@ import type { CodigoRol, UsuarioConRoles } from "../usuario/usuario.types.js";
 // Usuario y Rol; IAutenticacion e IAutorizacion quedan para los otros subsistemas.
 export interface ILogicaUsuarios {
   iniciarSesion(idToken: string): Promise<SesionIniciada>;
+  iniciarSesionDesarrollo(email: string): Promise<SesionIniciada>;
   obtenerPerfil(idUsuario: number): Promise<PerfilSesion>;
 
   crear(input: CrearUsuarioInput): Promise<UsuarioConRoles>;

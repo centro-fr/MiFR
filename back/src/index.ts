@@ -46,9 +46,9 @@ const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
 );
 const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
 
-function generarDocumentacionApi(): DocumentoOpenApi {
+function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   const registro = new OpenAPIRegistry();
-  registrarDocumentacionApi(registro);
+  registrarDocumentacionApi(registro, { loginDesarrollo });
   return new OpenApiGeneratorV3(registro.definitions).generateDocument(CONFIGURACION_DOCUMENTO_API);
 }
 
@@ -61,6 +61,18 @@ if (esProduccion && !origenesPermitidos) {
   process.exit(1);
 }
 
+const loginDesarrollo = process.env.LOGIN_DESARROLLO === "true";
+
+// El login de desarrollo entra sin verificar la identidad con Google: en producción sería
+// una puerta abierta, así que el proceso no arranca.
+if (esProduccion && loginDesarrollo) {
+  console.error("LOGIN_DESARROLLO=true no está permitido con NODE_ENV=production");
+  process.exit(1);
+}
+if (loginDesarrollo) {
+  console.warn("LOGIN_DESARROLLO activo: POST /api/v1/auth/desarrollo permite entrar sin Google");
+}
+
 const app = createApp(
   {
     gestionUsuarios,
@@ -69,7 +81,11 @@ const app = createApp(
     autenticacion,
     autorizacion: rolService,
   },
-  { documentacionApi: esProduccion ? undefined : generarDocumentacionApi(), origenesPermitidos },
+  {
+    documentacionApi: esProduccion ? undefined : generarDocumentacionApi(loginDesarrollo),
+    origenesPermitidos,
+    loginDesarrollo,
+  },
 );
 
 const port = Number(process.env.PORT ?? 3000);

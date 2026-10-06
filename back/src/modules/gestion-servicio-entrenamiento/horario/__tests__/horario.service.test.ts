@@ -39,6 +39,7 @@ describe("HorarioService", () => {
     especialidad: null,
     fecha_alta: new Date("2026-09-30T00:00:00.000Z"),
     fecha_baja: null,
+    usuario: { nombre: "Lucía", apellido: "Gómez" },
   };
   const horarioBase: HorarioConDatos = {
     id_horario: 1,
