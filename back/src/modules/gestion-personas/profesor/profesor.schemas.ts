@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
+import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 
 export const crearProfesoraSchema = z.object({
   id_usuario: idSchema,
-  especialidad: z.string().trim().max(80).optional(),
+  especialidad: textoOpcionalSchema(80).optional(),
 });
 
 export const profesoraIdParamSchema = z.object({
