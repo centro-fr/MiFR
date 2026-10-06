@@ -106,7 +106,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 | 2 | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
 | 3 | **Actividades y Horarios** | calendario | Actividades + cronograma (US-03, US-04) |
 | 4 | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
-| 5 | **Pagos y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
+| 5 | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
 | 6 | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
 | 7 | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
 | 8 | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
@@ -121,7 +121,7 @@ Mismos 10 ítems que desktop, pero en un drawer que se abre con el botón hambur
 
 1. Dashboard
 2. Alumnos
-3. Pagos y Cuotas
+3. Cobros y Cuotas
 4. Actividades y Horarios
 5. Planes y Precios
 6. Asistencia
