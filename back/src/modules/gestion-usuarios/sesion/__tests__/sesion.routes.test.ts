@@ -15,16 +15,20 @@ import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logi
 
 function createApp(
   dependencias: Omit<Parameters<typeof crearAppBase>[0], "gestionServicioEntrenamiento" | "gestionPersonas">,
+  opciones?: Parameters<typeof crearAppBase>[1],
 ) {
-  return crearAppBase({
-    ...dependencias,
-    gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
-    gestionPersonas: {} as unknown as ILogicaPersonas,
-  });
+  return crearAppBase(
+    {
+      ...dependencias,
+      gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
+      gestionPersonas: {} as unknown as ILogicaPersonas,
+    },
+    opciones,
+  );
 }
 
 // La presentación llega al login por ILogicaUsuarios; IAutenticacion solo valida el JWT.
-const gestionUsuarios = { iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+const gestionUsuarios = { iniciarSesion: vi.fn(), iniciarSesionDesarrollo: vi.fn(), obtenerPerfil: vi.fn() };
 const gestionUsuariosStub = gestionUsuarios as unknown as ILogicaUsuarios;
 
 beforeEach(() => {
@@ -55,11 +59,71 @@ const usuario = {
   ],
 };
 
+describe("POST /api/v1/auth/desarrollo", () => {
+  const autenticacion = {
+    validarSesion: vi.fn(),
+    iniciarSesion: vi.fn(),
+    iniciarSesionDesarrollo: vi.fn(),
+    obtenerPerfil: vi.fn(),
+  };
+  const deps = { gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub };
+
+  it("no existe si la app no habilita el login de desarrollo", async () => {
+    const response = await request(createApp(deps))
+      .post("/api/v1/auth/desarrollo")
+      .send({ email: "test@example.com" });
+
+    expect(response.status).toBe(404);
+    expect(gestionUsuarios.iniciarSesionDesarrollo).not.toHaveBeenCalled();
+  });
+
+  it("responde 200 con la misma sesión que el login con Google cuando está habilitado", async () => {
+    gestionUsuarios.iniciarSesionDesarrollo.mockResolvedValue({
+      token: "jwt-fake",
+      usuario,
+      permisos: ["X"],
+    });
+
+    const response = await request(createApp(deps, { loginDesarrollo: true }))
+      .post("/api/v1/auth/desarrollo")
+      .send({ email: " Test@Example.com " });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ token: "jwt-fake", roles: ["ALUMNO"], permisos: ["X"] });
+    expect(gestionUsuarios.iniciarSesionDesarrollo).toHaveBeenCalledWith("test@example.com");
+  });
+
+  it("responde 400 si el email no es válido", async () => {
+    const response = await request(createApp(deps, { loginDesarrollo: true }))
+      .post("/api/v1/auth/desarrollo")
+      .send({ email: "no-es-un-email" });
+
+    expect(response.status).toBe(400);
+    expect(gestionUsuarios.iniciarSesionDesarrollo).not.toHaveBeenCalled();
+  });
+
+  it("responde 403 si el usuario no está dado de alta", async () => {
+    gestionUsuarios.iniciarSesionDesarrollo.mockRejectedValue(new UsuarioNoRegistradoError());
+
+    const response = await request(createApp(deps, { loginDesarrollo: true }))
+      .post("/api/v1/auth/desarrollo")
+      .send({ email: "nadie@example.com" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("USUARIO_NO_REGISTRADO");
+  });
+});
+
 describe("POST /api/v1/auth/google", () => {
   let autenticacion: IAutenticacion;
 
   beforeEach(() => {
-    autenticacion = { validarSesion: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+    autenticacion = {
+      validarSesion: vi.fn(),
+      iniciarSesion: vi.fn(),
+      iniciarSesionDesarrollo: vi.fn(),
+      obtenerPerfil: vi.fn(),
+    };
   });
 
   it("responde 200 con token y usuario si el id_token es válido", async () => {
@@ -246,6 +310,7 @@ describe("sesión activa", () => {
     autenticacion = {
       validarSesion: async (token: string) => jwtService.verificar(token),
       iniciarSesion: vi.fn(),
+      iniciarSesionDesarrollo: vi.fn(),
       obtenerPerfil: vi.fn(),
     };
     app = createApp({ gestionUsuarios: gestionUsuariosStub, autenticacion, autorizacion: autorizacionStub });
@@ -310,7 +375,12 @@ describe("sesión activa", () => {
 });
 
 describe("rutas generales de la app", () => {
-  const autenticacion = { validarSesion: vi.fn(), iniciarSesion: vi.fn(), obtenerPerfil: vi.fn() };
+  const autenticacion = {
+    validarSesion: vi.fn(),
+    iniciarSesion: vi.fn(),
+    iniciarSesionDesarrollo: vi.fn(),
+    obtenerPerfil: vi.fn(),
+  };
 
   it("GET /health responde 200", async () => {
     const response = await request(

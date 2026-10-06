@@ -54,6 +54,17 @@ describe("documentación OpenAPI", () => {
     expect(listarOperaciones(documento).sort()).toEqual([...OPERACIONES_ESPERADAS].sort());
   });
 
+  it("registrarDocumentacionApi documenta el login de desarrollo solo si está habilitado", () => {
+    const registro = new OpenAPIRegistry();
+    registrarDocumentacionApi(registro, { loginDesarrollo: true });
+    const documento = new OpenApiGeneratorV3(registro.definitions).generateDocument(
+      CONFIGURACION_DOCUMENTO_API,
+    );
+
+    expect(listarOperaciones(documento)).toContain("post /auth/desarrollo");
+    expect(listarOperaciones(generarDocumentoOpenApi())).not.toContain("post /auth/desarrollo");
+  });
+
   it("registrarDocumentacionApi exige el token Bearer en todo menos el login", () => {
     const documento = generarDocumentoOpenApi();
     const sinSeguridad = Object.entries(documento.paths).flatMap(([ruta, operaciones]) =>

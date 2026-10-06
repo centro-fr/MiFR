@@ -18,9 +18,13 @@ export const CONFIGURACION_DOCUMENTO_API = {
   servers: [{ url: "/api/v1" }],
 };
 
-export function registrarDocumentacionApi(registro: OpenAPIRegistry): void {
+// loginDesarrollo documenta POST /auth/desarrollo solo cuando la ruta existe.
+export function registrarDocumentacionApi(
+  registro: OpenAPIRegistry,
+  { loginDesarrollo = false }: { loginDesarrollo?: boolean } = {},
+): void {
   registrarSeguridadBearer(registro);
-  registrarDocumentacionSesion(registro);
+  registrarDocumentacionSesion(registro, { loginDesarrollo });
   registrarDocumentacionUsuarios(registro);
   registrarDocumentacionSeguridad(registro);
   registrarDocumentacionProfesoras(registro);

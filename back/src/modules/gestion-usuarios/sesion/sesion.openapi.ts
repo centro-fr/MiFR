@@ -7,7 +7,7 @@ import {
   SEGURIDAD_BEARER,
 } from "../../../shared/openapi/registro.js";
 import { usuarioConRolesSchema } from "../usuario/usuario.openapi.js";
-import { googleLoginSchema } from "./sesion.schemas.js";
+import { googleLoginSchema, loginDesarrolloSchema } from "./sesion.schemas.js";
 
 const perfilSesionSchema = z
   .object({
@@ -21,8 +21,33 @@ const sesionIniciadaSchema = perfilSesionSchema
   .extend({ token: z.string().openapi({ description: "JWT para el header Authorization: Bearer" }) })
   .openapi("SesionIniciada");
 
-export function registrarDocumentacionSesion(registro: OpenAPIRegistry): void {
+export function registrarDocumentacionSesion(
+  registro: OpenAPIRegistry,
+  { loginDesarrollo = false }: { loginDesarrollo?: boolean } = {},
+): void {
   const tags = ["Sesión"];
+
+  if (loginDesarrollo) {
+    registro.registerPath({
+      method: "post",
+      path: "/auth/desarrollo",
+      tags,
+      security: [],
+      summary: "Iniciar sesión sin Google (solo desarrollo)",
+      description:
+        "Existe solo con `LOGIN_DESARROLLO=true` y fuera de producción. Entra con el email de un usuario " +
+        "ya dado de alta y activo, con las mismas reglas que el login con Google, sin verificar la identidad.",
+      request: {
+        body: cuerpoJson(
+          loginDesarrolloSchema.openapi("LoginDesarrollo", { example: { email: "marina.sosa@example.com" } }),
+        ),
+      },
+      responses: {
+        200: respuestaJson("Sesión iniciada", sesionIniciadaSchema),
+        ...respuestasDeError(400, 403),
+      },
+    });
+  }
 
   registro.registerPath({
     method: "post",

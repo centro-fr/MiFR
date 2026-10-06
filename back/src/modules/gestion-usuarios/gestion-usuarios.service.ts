@@ -20,6 +20,10 @@ export class GestionUsuariosService implements ILogicaUsuarios {
     return this.sesion.iniciarSesion(idToken);
   }
 
+  iniciarSesionDesarrollo(email: string): Promise<SesionIniciada> {
+    return this.sesion.iniciarSesionDesarrollo(email);
+  }
+
   obtenerPerfil(idUsuario: number): Promise<PerfilSesion> {
     return this.sesion.obtenerPerfil(idUsuario);
   }

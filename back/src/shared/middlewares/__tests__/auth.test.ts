@@ -19,6 +19,7 @@ describe("requiereSesion", () => {
     autenticacion = {
       validarSesion: vi.fn().mockResolvedValue({ usuarioId: 1, roles: ["PROPIETARIA"] }),
       iniciarSesion: vi.fn(),
+      iniciarSesionDesarrollo: vi.fn(),
       obtenerPerfil: vi.fn(),
     };
     next = vi.fn();
