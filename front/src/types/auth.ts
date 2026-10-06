@@ -2,7 +2,7 @@ export type RoleCode = "PROPIETARIA" | "PROFESORA" | "ALUMNO" | "TUTOR";
 
 export interface AuthUser {
   id_usuario: number;
-  email: string;
+  email: string | null;
   nombre: string;
   apellido: string;
   roles: RoleCode[];

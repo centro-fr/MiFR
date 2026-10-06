@@ -15,10 +15,11 @@ export const roleSchema = z.enum(["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"]
 
 // El usuario de Prisma trae campos extra (google_id, estado, roles anidados...);
 // solo nos interesan identidad + los roles/permisos efectivos de nivel raíz.
+// El email es opcional en el DER (usuarios.email), así que el back puede mandarlo en null.
 const backendUsuarioSchema = z
   .object({
     id_usuario: z.number(),
-    email: z.string().email(),
+    email: z.string().nullable(),
     nombre: z.string(),
     apellido: z.string(),
   })
