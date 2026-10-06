@@ -1,4 +1,9 @@
 import { PrismaClient, type codigo_rol, type modalidad_actividad } from "@prisma/client";
+import {
+  CATALOGO_PERMISOS,
+  MATRIZ_INICIAL,
+  PERMISOS_CRITICOS,
+} from "../src/modules/gestion-usuarios/rol/rol.catalogo.js";
 
 // Datos de prueba de las tareas 1.2 del SDD de autenticación (usuario multi-rol) y de
 // configuración base (actividades, profesoras y horarios). Son para desarrollo: el seed
@@ -136,12 +141,47 @@ function verificarBaseLocal(): void {
   }
 }
 
+const ROLES_BASE: { codigo: codigo_rol; nombre: string; descripcion: string }[] = [
+  { codigo: "PROPIETARIA", nombre: "Propietaria", descripcion: "Administradora y dueña del centro de entrenamiento" },
+  { codigo: "PROFESORA", nombre: "Profesora", descripcion: "Instructora que dicta clases y gestiona asistencias y rutinas" },
+  { codigo: "ALUMNO", nombre: "Alumno", descripcion: "Persona que asiste al centro" },
+  { codigo: "TUTOR", nombre: "Tutor", descripcion: "Responsable de un alumno menor de edad" },
+];
+
+async function cargarRolesYPermisos(prisma: PrismaClient): Promise<void> {
+  for (const rol of ROLES_BASE) {
+    await prisma.roles.upsert({ where: { codigo: rol.codigo }, update: {}, create: rol });
+  }
+
+  const existentes = new Set(
+    (await prisma.permisos.findMany({ select: { codigo: true } })).map((p) => p.codigo),
+  );
+
+  for (const permiso of CATALOGO_PERMISOS) {
+    await prisma.permisos.upsert({
+      where: { codigo: permiso.codigo },
+      update: { modulo: permiso.modulo, descripcion: permiso.descripcion },
+      create: permiso,
+    });
+  }
+
+  const roles = await prisma.roles.findMany();
+  const permisos = await prisma.permisos.findMany();
+  const idPermiso = new Map(permisos.map((p) => [p.codigo, p.id_permiso]));
+
+  const filas = roles.flatMap((rol) =>
+    MATRIZ_INICIAL[rol.codigo]
+      .filter(
+        (codigo) =>
+          !existentes.has(codigo) || (rol.codigo === "PROPIETARIA" && PERMISOS_CRITICOS.includes(codigo)),
+      )
+      .map((codigo) => ({ id_rol: rol.id_rol, id_permiso: idPermiso.get(codigo) as number })),
+  );
+  await prisma.rol_permisos.createMany({ data: filas, skipDuplicates: true });
+}
+
 async function cargarUsuarios(prisma: PrismaClient, usuarios: UsuarioDemo[]): Promise<Map<string, number>> {
   const roles = await prisma.roles.findMany();
-  if (roles.length === 0) {
-    console.error("No hay roles cargados: corré primero pnpm --filter back db:seed.");
-    process.exit(1);
-  }
   const idRol = new Map(roles.map((rol) => [rol.codigo, rol.id_rol]));
   const idProfesoraPorEmail = new Map<string, number>();
 
@@ -216,6 +256,7 @@ async function main(prisma: PrismaClient): Promise<void> {
   const args = process.argv.slice(2).filter((arg) => arg !== "--");
   const emailMultirol = args[0] ?? "marina.sosa@example.com";
 
+  await cargarRolesYPermisos(prisma);
   const idProfesora = await cargarUsuarios(prisma, usuariosDemo(emailMultirol));
   const idActividad = await cargarActividades(prisma);
   const horariosCreados = await cargarHorarios(prisma, horariosDemo(emailMultirol), idActividad, idProfesora);
