@@ -14,7 +14,7 @@ export const roleSchema = z.enum(["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"]
 // El email es opcional en el DER (usuarios.email), así que el back puede mandarlo en null.
 const backendUsuarioSchema = z
   .object({
-    id_usuario: z.number(),
+    id_usuario: z.number().int(),
     email: z.string().nullable(),
     nombre: z.string(),
     apellido: z.string(),

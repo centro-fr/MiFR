@@ -14,7 +14,7 @@ export function LeyendaEstados() {
       {ESTADOS.map(({ icono: Icono, texto, clases }) => (
         <span
           key={texto}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${clases}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-semibold ${clases}`}
         >
           <Icono aria-hidden="true" className="h-3.5 w-3.5" />
           {texto}

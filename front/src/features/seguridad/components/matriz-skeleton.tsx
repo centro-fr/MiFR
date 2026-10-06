@@ -4,7 +4,7 @@ import { MatrizToolbar } from "@/features/seguridad/components/matriz-toolbar";
 export function MatrizSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy="true" aria-label="Cargando matriz de permisos">
-      <MatrizToolbar cambiosPendientes={0} isSaving={false} onGuardar={() => undefined} onDescartar={() => undefined} />
+      <MatrizToolbar />
       <div className="flex flex-col gap-3" aria-hidden="true">
         {[0, 1, 2].map((modulo) => (
           <div key={modulo} className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-surface-low">

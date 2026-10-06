@@ -106,6 +106,7 @@ export const useHorarios = () => {
     [borrador, oficiales],
   );
   const hayCambiosPendientes = pendientes.crear.length + pendientes.actualizar.length > 0;
+  const cantidadCambiosPendientes = pendientes.crear.length + pendientes.actualizar.length;
 
   const horariosFiltrados = useMemo(
     () =>
@@ -276,6 +277,7 @@ export const useHorarios = () => {
     intercambiarHorarios,
     validarSuperposicion,
     hayCambiosPendientes,
+    cantidadCambiosPendientes,
     guardando,
     guardarCambios,
     cancelarCambios,

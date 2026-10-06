@@ -55,7 +55,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 key={dia.id}
                 type="button"
                 onClick={() => setSelectedDay(dia.id)}
-                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer min-h-[44px] ${
                   isSelected
                     ? 'bg-[#E91E82] text-white shadow-xs scale-102'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300'
@@ -63,7 +63,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
               >
                 <span>{dia.label}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                  className={`text-xs px-1.5 py-0.5 rounded-full font-extrabold ${
                     isSelected ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-600'
                   }`}
                 >
@@ -82,7 +82,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
             <h3 className="text-sm font-extrabold text-[#181C26] uppercase tracking-wide">
               {selectedDay}
             </h3>
-            <span className="text-xs font-semibold text-slate-400">
+            <span className="text-sm font-semibold text-slate-400">
               ({horariosDelDia.length} {horariosDelDia.length === 1 ? 'clase' : 'clases'})
             </span>
           </div>
@@ -91,7 +91,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
             <button
               type="button"
               onClick={() => onAddForDay(selectedDay)}
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#E91E82] hover:text-[#BC1266] bg-pink-50 hover:bg-pink-100 px-2.5 py-1.5 rounded-lg transition cursor-pointer min-h-[36px]"
+              className="inline-flex items-center gap-1 text-sm font-bold text-[#E91E82] hover:text-[#BC1266] bg-pink-50 hover:bg-pink-100 px-2.5 py-1.5 rounded-lg transition cursor-pointer min-h-[44px]"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
               <span>Nueva clase</span>
@@ -107,7 +107,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
             <h4 className="text-sm font-bold text-slate-800">
               No hay clases programadas para este día
             </h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+            <p className="text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
               {isFilterActive
                 ? 'Ninguna clase coincide con los filtros activos para este día.'
                 : 'El salón se encuentra libre durante todo este día.'}
@@ -116,7 +116,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
               <button
                 type="button"
                 onClick={() => onAddForDay(selectedDay)}
-                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#E91E82] hover:bg-[#BC1266] shadow-xs transition cursor-pointer min-h-[44px]"
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#E91E82] hover:bg-[#BC1266] shadow-xs transition cursor-pointer min-h-[44px]"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Asignar primera clase a {selectedDay}</span>
@@ -141,7 +141,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
 
                 {/* Horario y profesora */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-sm font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
                     <Clock className="w-3.5 h-3.5 text-slate-500" />
                     <span>
                       {horario.horaInicio} - {horario.horaFin} hs
@@ -149,7 +149,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                   </div>
 
                   <span
-                    className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-2xs truncate max-w-[160px]"
+                    className="text-xs font-extrabold px-2.5 py-0.5 rounded-md shadow-2xs truncate max-w-[160px]"
                     style={{
                       backgroundColor: theme.badgeBg,
                       color: theme.badgeText,
@@ -166,7 +166,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                       {horario.actividadNombre}
                     </h4>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
+                      className={`text-xs font-bold px-2 py-0.5 rounded-md shrink-0 ${
                         horario.actividadTipo === 'PERSONALIZADA'
                           ? 'bg-purple-100 text-purple-800'
                           : 'bg-blue-100 text-blue-800'
@@ -178,7 +178,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 </div>
 
                 {/* Cupo */}
-                <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs text-slate-600">
+                <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-sm text-slate-600">
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>Cupo:</span>
                   <strong className="text-slate-900">{textoCupo(horario.cupoMaximo)}</strong>
@@ -192,7 +192,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                       e.stopPropagation();
                       onEdit(horario);
                     }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer min-h-[38px]"
+                    className="inline-flex items-center gap-1 text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer min-h-[44px]"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     <span>Editar</span>
@@ -204,7 +204,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                       e.stopPropagation();
                       onDelete(horario);
                     }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition cursor-pointer min-h-[38px]"
+                    className="inline-flex items-center gap-1 text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition cursor-pointer min-h-[44px]"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Eliminar</span>

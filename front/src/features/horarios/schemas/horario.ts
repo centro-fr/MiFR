@@ -49,8 +49,9 @@ const hora = z
 
 export const horarioFormSchema = z
   .object({
-    actividadId: z.string().min(1, "Elegí una actividad."),
-    profesoraId: z.string().min(1, "Elegí una profesora."),
+    // El back exige enteros positivos (idSchema): solo dígitos para no mandar NaN.
+    actividadId: z.string().regex(/^\d+$/, "Elegí una actividad."),
+    profesoraId: z.string().regex(/^\d+$/, "Elegí una profesora."),
     diaSemana: z.enum(["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]),
     horaInicio: hora,
     horaFin: hora,

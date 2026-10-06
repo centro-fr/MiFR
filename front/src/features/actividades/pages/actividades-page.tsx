@@ -103,6 +103,13 @@ export function ActividadesPage() {
   return (
     <OwnerLayout>
       <div className="px-4 py-5 md:p-8 max-w-[1180px] mx-auto w-full">
+        <div className="flex items-center gap-2 text-sm font-medium mb-2 select-none">
+          <span className="text-slate-400">MiFR Centro</span>
+          <span className="text-slate-300">/</span>
+          <span className="text-slate-600 font-semibold dark:text-slate-300">Actividades y Horarios</span>
+          <span className="text-slate-300">/</span>
+          <span className="text-[#E91E82] font-semibold">Actividades</span>
+        </div>
         <div className="flex items-start justify-between gap-3 mb-5 md:mb-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -218,14 +225,14 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
       <button
         type="button"
         onClick={() => onEditar(actividad)}
-        className="min-h-[44px] md:min-h-0 inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap px-3 md:px-2.5 md:py-1.5 rounded-lg border border-slate-200 hover:border-[#E91E82] text-slate-700 hover:text-[#E91E82] font-bold text-sm md:text-xs bg-white transition-colors dark:border-white/15 dark:bg-transparent dark:text-slate-200"
+        className="min-h-[44px] md:min-h-0 inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap px-3 md:px-2.5 md:py-1.5 rounded-lg border border-slate-200 hover:border-[#E91E82] text-slate-700 hover:text-[#E91E82] font-bold text-sm bg-white transition-colors dark:border-white/15 dark:bg-transparent dark:text-slate-200"
       >
         Editar
       </button>
       <button
         type="button"
         onClick={() => onBaja(actividad)}
-        className="min-h-[44px] md:min-h-0 inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap px-3 md:px-2.5 md:py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-600 hover:border-rose-600 hover:text-white font-bold text-sm md:text-xs bg-white transition-colors dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300"
+        className="min-h-[44px] md:min-h-0 inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap px-3 md:px-2.5 md:py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-600 hover:border-rose-600 hover:text-white font-bold text-sm bg-white transition-colors dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300"
       >
         Dar de baja
       </button>
@@ -240,7 +247,7 @@ function ActividadCard({ actividad, badge, ...acciones }: { actividad: Actividad
         {textoModalidad(actividad.modalidad)}
       </span>
       <h2 className="text-base font-black text-[#181C26] dark:text-white mt-2 leading-tight">{actividad.nombre}</h2>
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</p>
+      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</p>
       {actividad.descripcion && (
         <p className="text-sm text-slate-600 mt-2 leading-relaxed line-clamp-3 dark:text-slate-400">{actividad.descripcion}</p>
       )}
@@ -261,9 +268,9 @@ function TablaActividades({ actividades, acciones }: { actividades: Actividad[];
   return (
     <div className="hidden md:block bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden dark:bg-surface-low dark:border-white/10">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse min-w-[760px]">
+        <table className="w-full text-left text-sm border-collapse min-w-[760px]">
           <thead>
-            <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase text-[11px] tracking-wider border-b border-slate-200 dark:bg-white/5 dark:text-slate-200 dark:border-white/10">
+            <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase text-xs tracking-wider border-b border-slate-200 dark:bg-white/5 dark:text-slate-200 dark:border-white/10">
               <th scope="col" className="py-4 px-6 w-[50%]">Actividad</th>
               <th scope="col" className="py-4 px-4 w-[18%]">Modalidad</th>
               <th scope="col" className="py-4 px-4 w-[16%]">Cupo máximo</th>
@@ -276,7 +283,7 @@ function TablaActividades({ actividades, acciones }: { actividades: Actividad[];
               if (deLaSeccion.length === 0) return null;
               return [
                 <tr key={seccion.modalidad} className={`border-y font-bold ${seccion.encabezado}`}>
-                  <th scope="colgroup" colSpan={4} className="py-2.5 px-6 text-[11px] uppercase tracking-wider text-left">
+                  <th scope="colgroup" colSpan={4} className="py-2.5 px-6 text-xs uppercase tracking-wider text-left">
                     {seccion.titulo} ({deLaSeccion.length})
                   </th>
                 </tr>,
@@ -284,9 +291,9 @@ function TablaActividades({ actividades, acciones }: { actividades: Actividad[];
                   <tr key={actividad.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="py-4 px-6 align-top">
                       <div className="font-black text-sm text-[#181C26] dark:text-white">{actividad.nombre}</div>
-                      <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</div>
+                      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</div>
                       {actividad.descripcion && (
-                        <p className="text-xs text-slate-600 mt-1 leading-relaxed max-w-xl dark:text-slate-400">
+                        <p className="text-sm text-slate-600 mt-1 leading-relaxed max-w-xl dark:text-slate-400">
                           {actividad.descripcion}
                         </p>
                       )}

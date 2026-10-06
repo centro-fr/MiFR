@@ -68,13 +68,18 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-xs flex justify-end animate-overlay-in">
+    <div
+      onClick={(evento) => {
+        if (evento.target === evento.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-overlay-in"
+    >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-actividad-titulo"
-        className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-panel-in dark:bg-surface-low dark:border-white/10"
+        className="w-full max-w-[640px] my-auto max-h-[90dvh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-modal-in dark:bg-surface-low dark:border-white/10"
       >
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-white/5 dark:to-surface-low dark:border-white/10">
           <div>
@@ -87,7 +92,6 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            data-autofocus
             className="h-11 w-11 shrink-0 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 flex items-center justify-center transition-colors dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white"
           >
             <X aria-hidden="true" className="h-5 w-5" />
@@ -102,42 +106,46 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               </p>
             )}
 
-            <Campo
-              id="actividad-codigo"
-              etiqueta={<>Código <span className="text-[#E91E82]">*</span></>}
-              error={errores.codigo}
-            >
-              <input
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Campo
                 id="actividad-codigo"
-                type="text"
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                disabled={actividad !== null}
-                maxLength={20}
-                placeholder="Ej: FUNCIONAL"
-                aria-invalid={Boolean(errores.codigo)}
-                aria-describedby={errores.codigo ? "actividad-codigo-error" : undefined}
-                className={CLASE_INPUT}
-              />
-            </Campo>
+                etiqueta={<>Código <span className="text-[#E91E82]">*</span></>}
+                error={errores.codigo}
+              >
+                <input
+                  id="actividad-codigo"
+                  type="text"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                  disabled={actividad !== null}
+                  maxLength={20}
+                  placeholder="Ej: FUNCIONAL"
+                  aria-invalid={Boolean(errores.codigo)}
+                  aria-describedby={errores.codigo ? "actividad-codigo-error" : undefined}
+                  {...(actividad === null ? { "data-autofocus": true } : {})}
+                  className={CLASE_INPUT}
+                />
+              </Campo>
 
-            <Campo
-              id="actividad-nombre"
-              etiqueta={<>Nombre <span className="text-[#E91E82]">*</span></>}
-              error={errores.nombre}
-            >
-              <input
+              <Campo
                 id="actividad-nombre"
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                maxLength={60}
-                placeholder="Ej: Funcional Grupal"
-                aria-invalid={Boolean(errores.nombre)}
-                aria-describedby={errores.nombre ? "actividad-nombre-error" : undefined}
-                className={CLASE_INPUT}
-              />
-            </Campo>
+                etiqueta={<>Nombre <span className="text-[#E91E82]">*</span></>}
+                error={errores.nombre}
+              >
+                <input
+                  id="actividad-nombre"
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  maxLength={60}
+                  placeholder="Ej: Funcional Grupal"
+                  aria-invalid={Boolean(errores.nombre)}
+                  aria-describedby={errores.nombre ? "actividad-nombre-error" : undefined}
+                  {...(actividad !== null ? { "data-autofocus": true } : {})}
+                  className={CLASE_INPUT}
+                />
+              </Campo>
+            </div>
 
             <Campo
               id="actividad-descripcion"
@@ -205,7 +213,8 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
                 min={1}
                 max={32767}
                 value={cupo}
-                onChange={(e) => setCupo(e.target.value)}
+                // Solo dígitos: ni "-", ni "-0", ni "e" llegan al estado (Zod valida al guardar).
+                onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
                 aria-invalid={Boolean(errores.cupoMaximo)}
                 aria-describedby={errores.cupoMaximo ? "actividad-cupo-error" : undefined}
                 className={CLASE_INPUT}
@@ -213,18 +222,18 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             </Campo>
           </div>
 
-          <div className="shrink-0 border-t border-slate-100 bg-slate-50 p-6 flex items-center justify-end gap-3 dark:border-white/10 dark:bg-white/5">
+          <div className="shrink-0 border-t border-slate-100 bg-slate-50 p-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3 dark:border-white/10 dark:bg-white/5">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] px-5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
+              className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center px-5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardando}
-              className="min-h-[44px] bg-[#E91E82] hover:bg-[#BC1266] disabled:opacity-60 text-white px-6 rounded-xl text-sm font-extrabold shadow-md shadow-[#E91E82]/30 transition-all"
+              className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center bg-[#E91E82] hover:bg-[#BC1266] disabled:opacity-60 text-white px-6 rounded-xl text-sm font-extrabold shadow-md shadow-[#E91E82]/30 transition-all"
             >
               {guardando ? "Guardando..." : "Guardar actividad"}
             </button>

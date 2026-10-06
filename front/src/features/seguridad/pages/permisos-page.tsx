@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { PendingChangesDock } from "@/components/ui/pending-changes-dock";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { useDialogA11y } from "@/hooks/use-dialog-a11y";
 import { MatrizTable } from "@/features/seguridad/components/matriz-table";
 import { MatrizSkeleton } from "@/features/seguridad/components/matriz-skeleton";
 import { MatrizToolbar } from "@/features/seguridad/components/matriz-toolbar";
@@ -15,9 +14,6 @@ export function PermisosPage() {
   const matrizQuery = useMatriz();
   const actualizar = useActualizarMatriz();
   const editor = useMatrizEditor(matrizQuery.data);
-  const [confirmaDescarte, setConfirmaDescarte] = useState(false);
-  const descarteRef = useRef<HTMLDivElement>(null);
-  useDialogA11y({ active: confirmaDescarte, onClose: () => setConfirmaDescarte(false), dialogRef: descarteRef });
 
   const efectiva = matrizQuery.data;
 
@@ -42,14 +38,10 @@ export function PermisosPage() {
     });
   }
 
-  function pedirDescartar(): void {
-    if (editor.objetivos.size === 0 || actualizar.isPending) return;
-    setConfirmaDescarte(true);
-  }
-
   function descartar(): void {
+    if (editor.objetivos.size === 0 || actualizar.isPending) return;
     editor.descartar();
-    setConfirmaDescarte(false);
+    toast.info("Cambios descartados: se restauró la matriz oficial.");
   }
 
   if (matrizQuery.isPending) {
@@ -94,82 +86,35 @@ export function PermisosPage() {
 
   const roles = efectiva.roles.map(({ codigo, nombre }) => ({ codigo, nombre }));
   const modulos = efectiva.modulos.map((m) => m.modulo);
+  const cambiosPendientes = editor.objetivos.size;
 
   return (
     <OwnerLayout>
-      <MatrizToolbar
-        cambiosPendientes={editor.objetivos.size}
-        isSaving={actualizar.isPending}
-        onGuardar={guardar}
-        onDescartar={pedirDescartar}
-        compactActions
-      />
-      <div className="hidden lg:block">
-        <MatrizTable roles={roles} modulos={modulos} nivelDe={editor.nivelDe} bloqueoDe={editor.bloqueoDe} onCiclar={editor.ciclar} />
-      </div>
-      <div className="lg:hidden">
-        <ModuloCards
-          roles={roles}
-          modulos={modulos}
-          nivelDe={editor.nivelDe}
-          bloqueoDe={editor.bloqueoDe}
-          onCiclar={editor.ciclar}
-          rolInicial="PROPIETARIA"
-        />
-      </div>
-      {/* Barra de guardado fija en mobile (Stitch) */}
-      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 lg:hidden dark:border-white/10 dark:bg-surface-low/95">
-        <div className="flex gap-2">
-          <Button
-            onClick={pedirDescartar}
-            disabled={editor.objetivos.size === 0 || actualizar.isPending}
-            className="flex-1 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
-          >
-            Descartar
-          </Button>
-          <Button
-            onClick={guardar}
-            disabled={editor.objetivos.size === 0 || actualizar.isPending}
-            className="flex-[2] bg-primary text-white hover:bg-primary-dark"
-          >
-            {actualizar.isPending ? "Guardando..." : `Guardar${editor.objetivos.size > 0 ? ` (${editor.objetivos.size})` : ""}`}
-          </Button>
+      <MatrizToolbar />
+      <div className={cambiosPendientes > 0 ? "pb-24" : ""}>
+        <div className="hidden lg:block">
+          <MatrizTable roles={roles} modulos={modulos} nivelDe={editor.nivelDe} bloqueoDe={editor.bloqueoDe} onCiclar={editor.ciclar} />
+        </div>
+        <div className="lg:hidden">
+          <ModuloCards
+            roles={roles}
+            modulos={modulos}
+            nivelDe={editor.nivelDe}
+            bloqueoDe={editor.bloqueoDe}
+            onCiclar={editor.ciclar}
+            rolInicial="PROPIETARIA"
+          />
         </div>
       </div>
 
-      {confirmaDescarte && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="descartar-titulo"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
-          onClick={() => setConfirmaDescarte(false)}
-        >
-          <div
-            ref={descarteRef}
-            onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-surface-low"
-          >
-            <h2 id="descartar-titulo" className="text-lg font-extrabold text-slate-900 dark:text-white">
-              Descartar cambios
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Tenés {editor.objetivos.size} {editor.objetivos.size === 1 ? "cambio sin guardar" : "cambios sin guardar"}. Esta acción no se puede deshacer.
-            </p>
-            <div className="mt-4 flex gap-2">
-              <Button
-                onClick={() => setConfirmaDescarte(false)}
-                data-autofocus
-                className="flex-1 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
-              >
-                Seguir editando
-              </Button>
-              <Button onClick={descartar} className="flex-1 bg-rose-600 text-white hover:bg-rose-700">
-                Descartar
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* DOCK FLOTANTE DE CAMBIOS PENDIENTES (único punto de confirmación) */}
+      {cambiosPendientes > 0 && (
+        <PendingChangesDock
+          cantidad={cambiosPendientes}
+          guardando={actualizar.isPending}
+          onGuardar={guardar}
+          onDescartar={descartar}
+        />
       )}
     </OwnerLayout>
   );

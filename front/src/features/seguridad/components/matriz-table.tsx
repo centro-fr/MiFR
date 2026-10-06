@@ -39,7 +39,7 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
       <table className="w-full min-w-[720px] border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
-            <th scope="col" className="min-w-[280px] px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <th scope="col" className="min-w-[280px] px-5 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Módulo
             </th>
             {roles.map((rol) => {
@@ -59,7 +59,7 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                     )}
                     {rol.nombre}
                   </span>
-                  <span className="mt-0.5 block text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                  <span className="mt-0.5 block text-xs font-medium text-slate-400 dark:text-slate-500">
                     {bloqueada ? (
                       <span title="Columna bloqueada con acceso total">
                         {ROL_SUBTITULO[rol.codigo]} · No editable

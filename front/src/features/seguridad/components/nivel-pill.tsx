@@ -47,7 +47,7 @@ export function NivelPill({ nivel, bloqueado, corto, onCiclar, etiqueta }: Nivel
         aria-label={`${etiqueta}: ${texto} (bloqueado)`}
         aria-disabled="true"
         className={cn(
-          "inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold opacity-80",
+          "inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-semibold opacity-80",
           clases,
         )}
       >
@@ -65,7 +65,7 @@ export function NivelPill({ nivel, bloqueado, corto, onCiclar, etiqueta }: Nivel
       title={`${etiqueta}: clic para cambiar`}
       aria-label={`${etiqueta}: ${texto}. Activar para cambiar de nivel`}
       className={cn(
-        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors lg:min-h-[32px]",
+        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold transition-colors lg:min-h-[32px]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         clases,
       )}

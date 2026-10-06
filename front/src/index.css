@@ -19,6 +19,17 @@
   /* Compatibilidad con la pantalla Horarios (US-04): usa animate-fadeIn y animate-shake */
   --animate-fadeIn: fade-in 0.3s ease-out both;
   --animate-shake: shake 0.4s ease-in-out;
+  /* Drawer mobile: entrada/salida coreografiadas + stagger de ítems */
+  --animate-drawer-in: drawer-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-drawer-out: drawer-out 0.22s ease-in both;
+  --animate-overlay-out: overlay-out 0.22s ease-in both;
+  --animate-drawer-item: drawer-item 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Transición de página del layout (solo entrada: fade + leve elevación).
+     Fill "backwards" (no "both"): al terminar no queda transform residual,
+     que rompería los position:fixed de modales/docks/toasts del contenido. */
+  --animate-page-enter: page-enter 0.28s ease-out backwards;
+  /* Modal centrado: entrada con leve escala y elevación */
+  --animate-modal-in: modal-in 0.22s ease-out both;
 }
 
 /* Modo oscuro por clase (.dark en <html>), controlado por el store de tema. */
@@ -101,10 +112,85 @@
   }
 }
 
+/* Drawer mobile: el panel entra deslizando desde la izquierda con una
+   leve presencia inicial; al salir retrocede y se disuelve. */
+@keyframes drawer-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0.4;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Ítems del menú: cascada sutil al abrir (el delay lo pone el componente) */
+@keyframes drawer-item {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Entrada de página del layout: fade + leve elevación, solo el contenido */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada de modal centrado: fade + escala sutil + leve elevación */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-enter,
   .animate-overlay-in,
-  .animate-panel-in {
+  .animate-panel-in,
+  .animate-drawer-in,
+  .animate-drawer-out,
+  .animate-overlay-out,
+  .animate-drawer-item,
+  .animate-page-enter,
+  .animate-modal-in {
     animation: none;
   }
 }

@@ -48,7 +48,7 @@ export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar, rolI
       </div>
 
       {rolActivo === "PROPIETARIA" && (
-        <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
           <Lock aria-hidden="true" className="h-3.5 w-3.5" />
           Acceso total · Columna bloqueada, no editable
         </p>
@@ -59,7 +59,7 @@ export function ModuloCards({ roles, modulos, nivelDe, bloqueoDe, onCiclar, rolI
           <li key={modulo} className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold text-slate-900 dark:text-white">{etiquetaModulo(modulo)}</p>
-              <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500 dark:text-slate-400">{descripcionModulo(modulo)}</p>
+              <p className="mt-0.5 line-clamp-2 text-sm leading-snug text-slate-500 dark:text-slate-400">{descripcionModulo(modulo)}</p>
             </div>
             <NivelPill
               corto

@@ -99,7 +99,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full">
         {/* Cabecera de días */}
         <div className="grid grid-cols-[130px_repeat(6,1fr)] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
-          <div className="p-3 text-center border-r border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
+          <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
             Horario
           </div>
           {DIAS_COLUMNAS.map((dia) => (
@@ -107,7 +107,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
               key={dia.id}
               className="p-3 text-center border-r last:border-r-0 border-slate-200 flex items-center justify-center"
             >
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
                 {dia.label}
               </span>
             </div>
@@ -122,7 +122,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
           <p className="text-sm font-bold text-slate-800">
             Cronograma sin franjas horarias
           </p>
-          <p className="text-xs text-slate-500 max-w-sm mt-1 leading-relaxed">
+          <p className="text-sm text-slate-500 max-w-sm mt-1 leading-relaxed">
             No hay clases asignadas actualmente. El rango horario del cronograma se ajustará automáticamente a partir del horario de la primera clase que agregues.
           </p>
         </div>
@@ -136,7 +136,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
         <div className="min-w-[760px]">
           {/* Cabecera de días */}
           <div className="grid grid-cols-[130px_repeat(6,1fr)] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
-        <div className="p-3 text-center border-r border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
+        <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
           Horario
         </div>
         {DIAS_COLUMNAS.map((dia) => (
@@ -144,7 +144,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
             key={dia.id}
             className="p-3 text-center border-r last:border-r-0 border-slate-200 flex items-center justify-center"
           >
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
               {dia.label}
             </span>
           </div>
@@ -152,7 +152,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       </div>
 
       {/* Grilla: horas y columnas de días */}
-      <div className="grid grid-cols-[130px_repeat(6,1fr)] text-xs">
+      <div className="grid grid-cols-[130px_repeat(6,1fr)] text-sm">
         {/* COLUMNA 0: ETIQUETAS DE HORAS */}
         <div
           className="border-r border-slate-200/60 bg-slate-50/70 select-none grid"
@@ -161,7 +161,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
           {franjasHorarias.map((franja) => (
             <div
               key={franja.label}
-              className="h-[104px] p-2 text-center font-bold text-[#181C26] text-xs border-b border-slate-100 flex items-center justify-center"
+              className="h-[104px] p-2 text-center font-bold text-[#181C26] text-sm border-b border-slate-100 flex items-center justify-center"
             >
               {franja.label}
             </div>
@@ -301,8 +301,8 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                         }`}
                       >
                         <ArrowLeftRight className="w-5 h-5 mb-1 animate-bounce" />
-                        <span className="text-[11px] font-black leading-tight">Soltar para intercambiar</span>
-                        <span className="text-[9px] font-semibold text-pink-100">Swap de horarios</span>
+                        <span className="text-xs font-black leading-tight">Soltar para intercambiar</span>
+                        <span className="text-xs font-semibold text-pink-100">Swap de horarios</span>
                       </div>
 
                       {/* Contenido de la tarjeta */}
@@ -312,7 +312,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           <div className="flex items-center justify-between gap-1">
                             <div className="flex items-center gap-1 min-w-0">
                               <span
-                                className="font-black uppercase rounded-md truncate shadow-2xs text-[9.5px] px-1.5 py-0.5 max-w-[90px]"
+                                 className="font-black uppercase rounded-md truncate shadow-2xs text-xs px-1.5 py-0.5 max-w-[110px]"
                                 style={{
                                   backgroundColor: theme.badgeBg,
                                   color: theme.badgeText,
@@ -365,10 +365,10 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           {/* Fila inferior: Nombre de actividad (izq) y Cupos (der) */}
                           <div className="flex items-end justify-between gap-1.5 mt-auto pt-1">
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-slate-900 text-xs leading-tight truncate">
+                              <h4 className="font-black text-slate-900 text-sm leading-tight truncate">
                                 {horarioEnSlot.actividadNombre}
                               </h4>
-                              <p className="font-semibold text-slate-700 truncate text-[10px]">
+                              <p className="font-semibold text-slate-700 truncate text-xs">
                                 {horarioEnSlot.actividadTipo === 'PERSONALIZADA'
                                   ? 'Personalizada 1:1'
                                   : 'Clase Grupal'}
@@ -377,7 +377,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
                             {/* Cupo alineado a la derecha */}
                             <div className="text-right shrink-0 bg-white/80 backdrop-blur-2xs px-2 py-0.5 rounded-lg border border-black/5 shadow-2xs">
-                              <div className="text-[9.5px] font-bold text-slate-700 leading-tight">
+                              <div className="text-xs font-bold text-slate-700 leading-tight">
                                 Cupo: <strong className="text-slate-900">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
                               </div>
                             </div>
@@ -391,7 +391,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             <div className="flex items-center justify-between gap-1 flex-wrap mb-1.5">
                               <div className="flex items-center gap-1 min-w-0">
                                 <span
-                                  className="font-black uppercase rounded-md truncate shadow-2xs text-[10px] px-2 py-0.5 max-w-[110px]"
+                                   className="font-black uppercase rounded-md truncate shadow-2xs text-xs px-2 py-0.5 max-w-[130px]"
                                   style={{
                                     backgroundColor: theme.badgeBg,
                                     color: theme.badgeText,
@@ -409,7 +409,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                                 )}
                               </div>
                               <div className="flex items-center gap-1 pointer-events-auto">
-                                <span className="font-extrabold text-slate-800 tracking-tight text-[11px]">
+                                <span className="font-extrabold text-slate-800 tracking-tight text-xs">
                                   {horarioEnSlot.horaInicio} - {horarioEnSlot.horaFin} hs
                                 </span>
                                 <div className="hidden group-hover:flex items-center gap-0.5 ml-0.5">
@@ -444,7 +444,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             <h4 className="font-black text-slate-900 leading-snug text-sm line-clamp-2">
                               {horarioEnSlot.actividadNombre}
                             </h4>
-                            <p className="font-semibold text-slate-700 truncate text-[11px] mt-0.5">
+                             <p className="font-semibold text-slate-700 truncate text-xs mt-0.5">
                               {horarioEnSlot.actividadTipo === 'PERSONALIZADA'
                                 ? 'Personalizada 1:1'
                                 : 'Clase Grupal'}
@@ -452,7 +452,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           </div>
 
                           {/* Pie de tarjeta multislot */}
-                          <div className="flex items-center border-t border-black/10 mt-auto font-medium pointer-events-none text-[11px] pt-2">
+                           <div className="flex items-center border-t border-black/10 mt-auto font-medium pointer-events-none text-xs pt-2">
                             <span className="text-slate-700">
                               Cupo: <strong className="text-slate-900 font-bold">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
                             </span>

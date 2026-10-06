@@ -54,7 +54,7 @@ export function OwnerDashboardPage() {
               <UserRound className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Tu sesión</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Tu sesión</h2>
               <p className="truncate text-sm text-slate-500 dark:text-slate-400">{user?.email ?? "Sin correo"}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {roles.map((rol) => (
@@ -77,7 +77,7 @@ export function OwnerDashboardPage() {
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Permisos activos</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Permisos activos</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Tenés <strong className="font-bold text-slate-800 dark:text-slate-100">{cantidadPermisos}</strong>{" "}
                 permisos habilitados en tu sesión.
@@ -104,7 +104,7 @@ export function OwnerDashboardPage() {
                   <Icono className="h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block text-sm font-bold text-slate-900 dark:text-white">{titulo}</span>
+                  <span className="block text-base font-bold text-slate-900 dark:text-white">{titulo}</span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">{descripcion}</span>
                 </span>
               </Link>

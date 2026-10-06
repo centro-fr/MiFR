@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { X, AlertCircle } from 'lucide-react';
@@ -119,6 +119,16 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
     }
   };
 
+  // Cerrar con Escape, como el resto de los modales del sistema.
+  useEffect(() => {
+    if (!isOpen) return;
+    function alPresionarTecla(evento: KeyboardEvent) {
+      if (evento.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', alPresionarTecla);
+    return () => document.removeEventListener('keydown', alPresionarTecla);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -127,16 +137,19 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-horario-title"
-        className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+        onClick={(evento) => {
+          if (evento.target === evento.currentTarget) onClose();
+        }}
+        className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
       >
-        <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-3xl w-full max-w-[600px] my-auto shadow-2xl border border-slate-200 overflow-hidden">
           {/* Cabecera del modal */}
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div className="bg-slate-50 border-b border-slate-200 px-6 md:px-8 py-5 md:py-6 flex items-center justify-between gap-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#BC1266] px-2 py-0.5 rounded-md bg-pink-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#BC1266] px-2.5 py-1 rounded-md bg-pink-100">
                 Cronograma
               </span>
-              <h3 id="modal-horario-title" className="text-base font-extrabold text-slate-900 mt-1">
+              <h3 id="modal-horario-title" className="text-xl md:text-2xl font-extrabold text-slate-900 mt-2 tracking-tight">
                 {horarioEnEdicion ? 'Editar Horario Semanal' : 'Asignar Nuevo Horario'}
               </h3>
             </div>
@@ -144,41 +157,42 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Cerrar formulario"
-              className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
+              className="w-11 h-11 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer shrink-0"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Alerta de Conflicto de Superposición / Validación */}
           {errorMessage && (
-            <div className="bg-red-50 border-b border-red-200 p-4 animate-shake">
+            <div className="bg-red-50 border-b border-red-200 px-6 md:px-8 py-5 animate-shake">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-red-800 uppercase">Validación de Horario</h4>
-                  <p className="text-xs text-red-700 mt-0.5">{errorMessage}</p>
+                  <h4 className="text-sm font-black text-red-800 uppercase">Validación de Horario</h4>
+                  <p className="text-sm text-red-700 mt-1 leading-relaxed">{errorMessage}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Formulario */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 md:p-7 space-y-4 md:space-y-5">
             {/* Actividad */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="horario-actividad" className="block text-xs font-bold text-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="horario-actividad" className="block text-sm md:text-base font-bold text-slate-700">
                   Actividad / Disciplina
                 </label>
               </div>
               <select
                 id="horario-actividad"
                 value={actividadId}
+                autoFocus
                 onChange={(e) => setActividadId(e.target.value)}
-                className="w-full text-xs rounded-xl p-2.5 outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
+                className="w-full text-sm md:text-base rounded-xl px-4 py-3 min-h-[48px] outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
                 required
               >
                 {actividades.map((act) => (
@@ -191,8 +205,8 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
 
             {/* Profesora */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="horario-profesora" className="block text-xs font-bold text-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="horario-profesora" className="block text-sm md:text-base font-bold text-slate-700">
                   Profesora responsable
                 </label>
               </div>
@@ -200,7 +214,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 id="horario-profesora"
                 value={profesoraId}
                 onChange={(e) => setProfesoraId(e.target.value)}
-                className="w-full text-xs rounded-xl p-2.5 outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
+                className="w-full text-sm md:text-base rounded-xl px-4 py-3 min-h-[48px] outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
                 required
               >
                 {profesoras.map((prof) => (
@@ -212,16 +226,16 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
             </div>
 
             {/* Día y Cupo */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
               <div>
-                <label htmlFor="horario-dia" className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="horario-dia" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
                   Día
                 </label>
                 <select
                   id="horario-dia"
                   value={diaSemana}
                   onChange={(e) => setDiaSemana(e.target.value as DiaSemana)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-[#E91E82]"
+                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
                   required
                 >
                   {DIAS_SEMANA.map((dia) => (
@@ -232,7 +246,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 </select>
               </div>
               <div>
-                <label htmlFor="horario-cupo" className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="horario-cupo" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
                   Cupo propio <span className="text-slate-400 font-normal">(opcional)</span>
                 </label>
                 <input
@@ -241,17 +255,21 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   min="1"
                   max="32767"
                   value={cupoPropio ?? ''}
-                  onChange={(e) => setCupoPropio(e.target.value ? parseInt(e.target.value, 10) : null)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-[#E91E82]"
+                  // Solo dígitos: ni "-", ni "-0", ni "e" llegan al estado (Zod valida al guardar).
+                  onChange={(e) => {
+                    const digitos = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
+                    setCupoPropio(digitos ? parseInt(digitos, 10) : null);
+                  }}
+                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
                   placeholder={`De la actividad: ${textoCupo(selectedActividad?.cupoMaximo ?? null)}`}
                 />
               </div>
             </div>
 
             {/* Horas Inicio y Fin */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
               <div>
-                <label htmlFor="horario-inicio" className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="horario-inicio" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
                   Hora Inicio <span className="text-slate-400 font-normal">(07:00 a 19:00)</span>
                 </label>
                 <input
@@ -261,12 +279,12 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   max="19:00"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-[#E91E82]"
+                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="horario-fin" className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="horario-fin" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
                   Hora Fin <span className="text-slate-400 font-normal">(máx 20:00)</span>
                 </label>
                 <input
@@ -276,36 +294,36 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   max="20:00"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-[#E91E82]"
+                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
                   required
                 />
               </div>
             </div>
 
             {/* Botones de acción */}
-            <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+            <div className="pt-4 md:pt-5 border-t border-slate-200 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
               {horarioEnEdicion && onDelete ? (
                 <button
                   type="button"
-                  className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                  className="text-sm md:text-base font-bold text-red-600 hover:underline cursor-pointer min-h-[44px] px-2 text-left"
                   onClick={onDelete}
                 >
                   Eliminar horario
                 </button>
               ) : (
-                <div />
+                <div className="hidden sm:block" />
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
                 <button
                   type="button"
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-5 py-3 min-h-[48px] text-sm md:text-base font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                   onClick={onClose}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#E91E82] hover:bg-[#BC1266] text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition cursor-pointer"
+                  className="bg-[#E91E82] hover:bg-[#BC1266] text-white text-sm md:text-base font-bold px-7 py-3 min-h-[48px] rounded-xl shadow-md transition cursor-pointer"
                 >
                   Aceptar
                 </button>
