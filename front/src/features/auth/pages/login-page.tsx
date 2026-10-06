@@ -14,7 +14,7 @@ import type { LegalModalType } from "@/features/auth/schemas/contact";
 import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
-const USE_MOCKS = (import.meta.env.VITE_USE_MOCKS ?? "true") !== "false";
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
 
 function useLoginFlow() {
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null);

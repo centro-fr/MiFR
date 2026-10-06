@@ -158,6 +158,7 @@ Los archivos `.env` están ignorados por Git. Cada paquete versiona un `.env.exa
 | | `NODE_ENV` | Con `production` no se publica Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas |
 | `front/.env` | `VITE_GOOGLE_CLIENT_ID` | Botón de inicio de sesión con Google |
+| | `VITE_USE_MOCKS` | Con `true`, el front usa los mocks de MSW en lugar de la API real. Sin valor, usa la API |
 | | `API_URL` | Adónde reenvía `/api` el servidor de Vite, por defecto `http://localhost:3000` |
 
 ## Documentación

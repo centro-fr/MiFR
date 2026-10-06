@@ -1,10 +1,10 @@
 import axios from "axios";
 import { clearSessionToken, getSessionToken } from "@/features/auth/api/session-token";
 
-const baseURL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
-
+// Ruta relativa: el navegador solo habla con el Servidor Web, que reenvía /api al back
+// (Vite en desarrollo, Netlify en producción). Así no hay CORS ni URL del back en el bundle.
 export const apiClient = axios.create({
-  baseURL,
+  baseURL: "/api/v1",
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
