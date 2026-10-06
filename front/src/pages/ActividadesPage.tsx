@@ -24,6 +24,7 @@ const ITEMS_NAV_ACTIVIDADES = [
   { etiqueta: 'Dashboard', to: '/app/dashboard' },
   { etiqueta: 'Alumnos', to: '/app/alumnos' },
   { etiqueta: 'Actividades y Horarios', to: '/app/actividades' },
+  { etiqueta: 'Horarios', to: '/app/horarios' },
   { etiqueta: 'Planes y Precios', to: '/app/planes' },
   { etiqueta: 'Cobros y Cuotas', to: '/app/pagos' },
   { etiqueta: 'Asistencia', to: '/app/asistencia' },

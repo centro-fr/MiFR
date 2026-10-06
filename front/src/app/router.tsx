@@ -3,6 +3,7 @@ import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-ro
 import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
 import { LoginPage } from "@/features/auth/pages/login-page";
+import { HorariosPage } from "@/features/horarios/pages/HorariosPage";
 import { PermisosPage } from "@/features/seguridad/pages/permisos-page";
 import { EnConstruccionPage } from "@/pages/en-construccion-page";
 import { NotFoundPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
@@ -51,6 +52,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ActividadesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/app/horarios",
+    element: (
+      <ProtectedRoute>
+        <HorariosPage />
       </ProtectedRoute>
     ),
   },
