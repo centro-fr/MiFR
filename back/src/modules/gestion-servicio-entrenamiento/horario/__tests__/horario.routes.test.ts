@@ -131,6 +131,40 @@ describe("rutas de horarios", () => {
     },
   );
 
+  it.each([
+    ["empieza antes de la apertura", { hora_inicio: "06:30", hora_fin: "08:00" }],
+    ["termina después del cierre", { hora_inicio: "19:00", hora_fin: "20:30" }],
+  ])("rechaza un horario que %s", async (_caso, horas) => {
+    const respuesta = await request(app)
+      .post("/api/v1/horarios")
+      .set("Authorization", "Bearer propietaria")
+      .send({ id_actividad: 3, id_profesora: 8, dia_semana: 1, ...horas });
+
+    expect(respuesta.status).toBe(400);
+    expect(logica.crearHorario).not.toHaveBeenCalled();
+  });
+
+  it("acepta un horario que ocupa exactamente de la apertura al cierre", async () => {
+    logica.crearHorario.mockResolvedValue({ id_horario: 9 });
+
+    const respuesta = await request(app)
+      .post("/api/v1/horarios")
+      .set("Authorization", "Bearer propietaria")
+      .send({ id_actividad: 3, id_profesora: 8, dia_semana: 1, hora_inicio: "07:00", hora_fin: "20:00" });
+
+    expect(respuesta.status).toBe(201);
+  });
+
+  it("rechaza un PATCH que deja una hora fuera del horario del centro", async () => {
+    const respuesta = await request(app)
+      .patch("/api/v1/horarios/4")
+      .set("Authorization", "Bearer propietaria")
+      .send({ hora_fin: "21:00" });
+
+    expect(respuesta.status).toBe(400);
+    expect(logica.actualizarHorario).not.toHaveBeenCalled();
+  });
+
   it("actualiza un horario de la propietaria", async () => {
     logica.actualizarHorario.mockResolvedValue({ id_horario: 4 });
 

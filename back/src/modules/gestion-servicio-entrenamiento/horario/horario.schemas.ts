@@ -1,7 +1,17 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 
-const hora = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm");
+// Horario de atención del centro (US-04): ninguna clase empieza antes ni termina después.
+const HORA_APERTURA = "07:00";
+const HORA_CIERRE = "20:00";
+
+// Con formato HH:mm de dos dígitos, comparar los textos equivale a comparar las horas.
+const hora = z
+  .string()
+  .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm")
+  .refine((valor) => valor >= HORA_APERTURA && valor <= HORA_CIERRE, {
+    message: `La hora debe estar entre las ${HORA_APERTURA} y las ${HORA_CIERRE}`,
+  });
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
 
 export const crearHorarioSchema = z
