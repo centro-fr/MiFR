@@ -76,7 +76,8 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
     });
   }
 
-  const nombreUsuario = user ? `${user.nombre} ${user.apellido}`.trim() : "Mariana FR";
+  const nombreUsuario = user ? `${user.nombre} ${user.apellido}`.trim() : "";
+  const iniciales = user ? `${user.nombre.charAt(0)}${user.apellido.charAt(0)}`.toUpperCase() : "";
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-bg-light text-slate-900 lg:flex-row dark:bg-canvas dark:text-slate-100">
@@ -157,7 +158,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
             <div className="mt-auto shrink-0 border-t border-slate-100 bg-white p-4 dark:border-white/10 dark:bg-surface-low">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                  MR
+                  {iniciales}
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{nombreUsuario}</div>
@@ -202,7 +203,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                MR
+                {iniciales}
               </div>
               <div className="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">{nombreUsuario}</div>
             </div>
