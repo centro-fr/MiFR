@@ -33,18 +33,27 @@ cp back/.env.example back/.env       # completar GOOGLE_CLIENT_ID y JWT_SECRET
 cp front/.env.example front/.env     # completar VITE_GOOGLE_CLIENT_ID (o usar el login de desarrollo)
 docker compose up -d db              # PostgreSQL en el puerto 55432
 pnpm --filter back prisma:migrate    # aplica las migraciones
-pnpm --filter back db:seed -- <email-de-google> <nombre> <apellido> <AAAA-MM-DD>
+pnpm --filter back db:seed:demo      # carga roles, permisos y datos de prueba
 ```
 
-El seed carga los roles, los permisos y la primera propietaria. No hay auto-registro: solo puede iniciar sesión quien ya fue dado de alta, así que para entrar con Google el correo tiene que ser una cuenta de Google real.
+`db:seed:demo` es autosuficiente: crea los roles, los permisos y la matriz de accesos si no existen, y después carga profesoras de prueba, actividades y horarios. Solo corre contra una base local (si `DATABASE_URL` apunta a otro host, se niega).
 
-Para cargar datos de prueba (profesoras, actividades, horarios y un usuario con los roles PROPIETARIA y PROFESORA):
+Los usuarios que carga son:
+
+| Email | Roles |
+| :--- | :--- |
+| `lucia.gomez@example.com` | PROFESORA |
+| `carla.ruiz@example.com` | PROFESORA |
+| `marina.sosa@example.com` | PROPIETARIA + PROFESORA |
+
+Para entrar al sistema con un email de Google real en lugar de `marina.sosa@example.com`:
 
 ```bash
-pnpm --filter back db:seed:demo -- [email-del-usuario-multirol]
+pnpm --filter back db:seed:demo -- tu-cuenta@gmail.com
 ```
 
-Sin email, el usuario multirol es `marina.sosa@example.com`. Las profesoras de prueba son `lucia.gomez@example.com` y `carla.ruiz@example.com`. El seed de prueba solo corre contra una base local: si `DATABASE_URL` apunta a otro host, se niega.
+> [!NOTE]
+> `db:seed:demo` es para desarrollo local. Para configurar la propietaria real en producción existe `db:seed`, que pide los datos de la propietaria como argumentos o variables de entorno.
 
 ## Cómo ejecutarlo
 
@@ -148,8 +157,8 @@ MiFR/
 | `pnpm prisma:migrate` | Crea y aplica migraciones en la base local |
 | `pnpm prisma:generate` | Regenera el cliente de Prisma tras tocar el esquema |
 | `pnpm prisma:studio` | Abre Prisma Studio para explorar la base |
-| `pnpm db:seed` | Carga roles, permisos y la primera propietaria |
-| `pnpm db:seed:demo` | Carga datos de prueba en la base local |
+| `pnpm db:seed` | Carga roles, permisos y la primera propietaria (producción) |
+| `pnpm db:seed:demo` | Setup completo de desarrollo: roles, permisos, actividades, profesoras y horarios de prueba |
 | `pnpm token` | Emite un JWT de desarrollo para un usuario |
 
 ### front
