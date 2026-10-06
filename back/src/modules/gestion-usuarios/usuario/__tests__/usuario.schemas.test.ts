@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   actualizarUsuarioSchema,
   asignarRolSchema,
@@ -68,7 +68,7 @@ describe("crearUsuarioSchema", () => {
     ["nombre", "a".repeat(60)],
     ["apellido", "a".repeat(60)],
     ["email", `${"a".repeat(111)}@test.com`],
-    ["telefono", "1".repeat(20)],
+    ["telefono", "+54 9 (351) 123-4567"],
     ["direccion", "a".repeat(120)],
   ])("acepta %s con el largo máximo del DER", (campo, valor) => {
     expect(crearUsuarioSchema.safeParse({ ...minimo, [campo]: valor }).success).toBe(true);
@@ -82,15 +82,52 @@ describe("crearUsuarioSchema", () => {
     expect(crearUsuarioSchema.safeParse({ ...minimo, email: "no-es-email" }).success).toBe(false);
   });
 
-  it.each(["40.123.456", "40123456a", "12345678901", ""])(
-    "rechaza el dni %j (solo dígitos, máximo 10)",
+  it.each(["40.123.456", "40123456a", "12345678901", "", "0", "-0", "00000000", "01234567", "12345"])(
+    "rechaza el dni %j (entre 6 y 10 dígitos, sin ceros adelante)",
     (dni) => {
       expect(crearUsuarioSchema.safeParse({ ...minimo, dni }).success).toBe(false);
     },
   );
 
-  it.each(["1", "40123456", "1234567890"])("acepta el dni %j", (dni) => {
+  it.each(["123456", "40123456", "1234567890"])("acepta el dni %j", (dni) => {
     expect(crearUsuarioSchema.safeParse({ ...minimo, dni }).success).toBe(true);
+  });
+
+  it.each(["-0", "123", "!!!", "<b>Ana</b>", "Ana\u0000", "Ana​", "-Ana", "Ana2"])(
+    "rechaza el nombre %j: solo letras y separadores",
+    (nombre) => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, nombre }).success).toBe(false);
+      expect(crearUsuarioSchema.safeParse({ ...minimo, apellido: nombre }).success).toBe(false);
+    },
+  );
+
+  it.each(["María José", "O'Neill", "D’Angelo", "Pérez-Rua", "Ma. Inés", "Zoë", "Ñuñez"])(
+    "acepta el nombre %j",
+    (nombre) => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, nombre }).success).toBe(true);
+    },
+  );
+
+  it.each(["-0", "0", "abc", "------", "123456", "1234567890123456", "11 1234 56a", "54+1112345678"])(
+    "rechaza el teléfono %j",
+    (telefono) => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, telefono }).success).toBe(false);
+    },
+  );
+
+  it.each(["3511234567", "+54 9 351 123-4567", "(0351) 423-4567", "4234567"])(
+    "acepta el teléfono %j",
+    (telefono) => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, telefono }).success).toBe(true);
+    },
+  );
+
+  it.each(["-0", "123", "   ", "Calle\u0000 1"])("rechaza la dirección %j", (direccion) => {
+    expect(crearUsuarioSchema.safeParse({ ...minimo, direccion }).success).toBe(false);
+  });
+
+  it.each(["google 123", "id/123", "id\u0000"])("rechaza el google_id %j", (google_id) => {
+    expect(crearUsuarioSchema.safeParse({ ...minimo, google_id }).success).toBe(false);
   });
 
   it("rechaza una fecha de nacimiento inválida", () => {
@@ -113,6 +150,45 @@ describe("crearUsuarioSchema", () => {
     const resultado = crearUsuarioSchema.parse({ ...minimo, fecha_nacimiento: "1990-05-10T00:00:00.000Z" });
 
     expect(resultado.fecha_nacimiento).toEqual(new Date("1990-05-10T00:00:00.000Z"));
+  });
+
+  describe("rango de la fecha de nacimiento", () => {
+    // 2026-10-06 a las 22:00 de Argentina, que en UTC ya es el 7.
+    const AHORA = new Date("2026-10-07T01:00:00Z");
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(AHORA);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("acepta el día de hoy en Argentina", () => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "2026-10-06" }).success).toBe(true);
+    });
+
+    it("rechaza el día siguiente aunque en UTC ya sea hoy", () => {
+      const resultado = crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "2026-10-07" });
+
+      expect(resultado.success).toBe(false);
+      expect(resultado.error?.issues[0]?.message).toBe("La fecha de nacimiento no puede ser futura");
+    });
+
+    it.each(["2999-01-01", "2027-01-01T00:00:00Z"])("rechaza la fecha futura %j", (fecha_nacimiento) => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento }).success).toBe(false);
+    });
+
+    it("acepta el 1900-01-01 y rechaza el día anterior", () => {
+      expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "1900-01-01" }).success).toBe(true);
+      expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "1899-12-31" }).success).toBe(false);
+      expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "0001-01-01" }).success).toBe(false);
+    });
+
+    it("actualizarUsuarioSchema aplica el mismo rango", () => {
+      expect(actualizarUsuarioSchema.safeParse({ fecha_nacimiento: "2999-01-01" }).success).toBe(false);
+    });
   });
 });
 
