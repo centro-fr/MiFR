@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import type { Actividad, Profesora, DiaSemana, Horario, HorarioFormData, SaveHorarioOptions } from '../../../types/horarios';
-import { X, AlertCircle, Users } from 'lucide-react';
+import type { Actividad } from '../../../types/actividad';
+import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
+import { X, AlertCircle } from 'lucide-react';
+import { textoCupo } from '../utils/cupo';
 
 interface HorarioModalFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: HorarioFormData, options?: SaveHorarioOptions) => { ok: boolean; error?: string };
-  onValidate?: (data: HorarioFormData, ignoreId?: string) => { ok: boolean; error?: string };
+  onSave: (data: HorarioFormData) => { ok: true } | { ok: false; error: string };
+  onValidate?: (data: HorarioFormData, ignoreId?: string) => { ok: true } | { ok: false; error: string };
   onDelete?: () => void;
   actividades: Actividad[];
   profesoras: Profesora[];
@@ -60,24 +62,11 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
   const [horaFin, setHoraFin] = useState<string>(() =>
     horarioEnEdicion ? horarioEnEdicion.horaFin : horaFinSugerida(horaSugerida ?? '08:00'),
   );
-  const [cupoMaximo, setCupoMaximo] = useState<number | undefined>(
-    horarioEnEdicion?.cupoMaximo ?? actividades[0]?.cupoMaximoBase ?? 20,
-  );
+  // Vacío = el horario usa el cupo de la actividad (cupo_maximo null en el back).
+  const [cupoPropio, setCupoPropio] = useState<number | null>(horarioEnEdicion?.cupoPropio ?? null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleActividadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newActId = e.target.value;
-    setActividadId(newActId);
-    const selected = actividades.find((a) => a.id === newActId);
-    if (selected && selected.cupoMaximoBase) {
-      setCupoMaximo(selected.cupoMaximoBase);
-    }
-  };
-
   const selectedActividad = actividades.find((a) => a.id === actividadId);
-  const inscriptosCount = horarioEnEdicion
-    ? (horarioEnEdicion.inscriptosActuales ?? horarioEnEdicion.inscriptos ?? 0)
-    : 0;
 
   const getFormData = (): HorarioFormData => ({
     actividadId,
@@ -85,13 +74,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
     diaSemana,
     horaInicio,
     horaFin,
-    cupoMaximo: cupoMaximo && cupoMaximo > 0 ? cupoMaximo : selectedActividad?.cupoMaximoBase,
-    id_actividad: actividadId,
-    id_profesora: profesoraId,
-    dia_semana: diaSemana,
-    hora_inicio: horaInicio,
-    hora_fin: horaFin,
-    cupo_maximo: cupoMaximo && cupoMaximo > 0 ? cupoMaximo : selectedActividad?.cupoMaximoBase,
+    cupoPropio,
   });
 
   const validarCamposBasicos = (): boolean => {
@@ -135,12 +118,11 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
     ejecutarGuardado();
   };
 
-  const ejecutarGuardado = (options?: SaveHorarioOptions) => {
-    const formData = getFormData();
-    const result = onSave(formData, options);
+  const ejecutarGuardado = () => {
+    const result = onSave(getFormData());
 
     if (!result.ok) {
-      setErrorMessage(result.error || 'Error al guardar el horario.');
+      setErrorMessage(result.error);
     } else {
       onClose();
     }
@@ -194,43 +176,23 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Aviso unificado de alumnos inscriptos */}
-            {inscriptosCount > 0 && (
-              <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                <Users className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>
-                  Clase con <strong>{inscriptosCount} alumno{inscriptosCount > 1 ? 's' : ''}</strong>: la disciplina y la profesora están protegidas.
-                </span>
-              </div>
-            )}
-
             {/* Actividad */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label htmlFor="horario-actividad" className="block text-xs font-bold text-slate-700">
                   Actividad / Disciplina
                 </label>
-                {inscriptosCount > 0 && (
-                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                    Bloqueado
-                  </span>
-                )}
               </div>
               <select
                 id="horario-actividad"
                 value={actividadId}
-                onChange={handleActividadChange}
-                disabled={inscriptosCount > 0}
-                className={`w-full text-xs rounded-xl p-2.5 outline-none transition ${
-                  inscriptosCount > 0
-                    ? 'bg-slate-100 border border-slate-200 text-slate-500 cursor-not-allowed'
-                    : 'bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]'
-                }`}
+                onChange={(e) => setActividadId(e.target.value)}
+                className="w-full text-xs rounded-xl p-2.5 outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
                 required
               >
                 {actividades.map((act) => (
                   <option key={act.id} value={act.id}>
-                    {act.nombre} ({act.tipo === 'PERSONALIZADA' ? 'Personalizada 1:1' : 'Grupal'} - Cupo máx: {act.cupoMaximoBase || 'Abierto'})
+                    {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Personalizada' : 'Grupal'} - Cupo: {textoCupo(act.cupoMaximo)})
                   </option>
                 ))}
               </select>
@@ -242,22 +204,12 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 <label htmlFor="horario-profesora" className="block text-xs font-bold text-slate-700">
                   Profesora responsable
                 </label>
-                {inscriptosCount > 0 && (
-                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                    Bloqueado
-                  </span>
-                )}
               </div>
               <select
                 id="horario-profesora"
                 value={profesoraId}
                 onChange={(e) => setProfesoraId(e.target.value)}
-                disabled={inscriptosCount > 0}
-                className={`w-full text-xs rounded-xl p-2.5 outline-none transition ${
-                  inscriptosCount > 0
-                    ? 'bg-slate-100 border border-slate-200 text-slate-500 cursor-not-allowed'
-                    : 'bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]'
-                }`}
+                className="w-full text-xs rounded-xl p-2.5 outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
                 required
               >
                 {profesoras.map((prof) => (
@@ -290,17 +242,17 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               </div>
               <div>
                 <label htmlFor="horario-cupo" className="block text-xs font-bold text-slate-700 mb-1">
-                  Cupo Máximo <span className="text-slate-400 font-normal">(Predeterminado)</span>
+                  Cupo propio <span className="text-slate-400 font-normal">(opcional)</span>
                 </label>
                 <input
                   id="horario-cupo"
                   type="number"
                   min="1"
-                  max="100"
-                  value={cupoMaximo || ''}
-                  onChange={(e) => setCupoMaximo(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                  max="32767"
+                  value={cupoPropio ?? ''}
+                  onChange={(e) => setCupoPropio(e.target.value ? parseInt(e.target.value, 10) : null)}
                   className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-[#E91E82]"
-                  placeholder={selectedActividad?.cupoMaximoBase ? `Predeterminado: ${selectedActividad.cupoMaximoBase}` : 'Ej: 20'}
+                  placeholder={`De la actividad: ${textoCupo(selectedActividad?.cupoMaximo ?? null)}`}
                 />
               </div>
             </div>

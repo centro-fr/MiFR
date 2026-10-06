@@ -2,15 +2,13 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-route";
 import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
+import { ActividadesPage } from "@/features/actividades/pages/actividades-page";
 import { LoginPage } from "@/features/auth/pages/login-page";
 import { HorariosPage } from "@/features/horarios/pages/HorariosPage";
 import { PermisosPage } from "@/features/seguridad/pages/permisos-page";
 import { EnConstruccionPage } from "@/pages/en-construccion-page";
 import { NotFoundPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
 import { OwnerDashboardPage } from "@/pages/owner-dashboard-page";
-
-// Importación de tu nueva página de Actividades (US-03)
-import { ActividadesPage } from "@/pages/ActividadesPage"; 
 
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },

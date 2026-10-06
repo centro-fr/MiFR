@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { OwnerLayout } from '@/components/layout/owner-layout';
+import { mensajeDeErrorApi } from '@/api/errores';
 import { useHorarios } from '../hooks/useHorarios';
 import { CronogramaGridDesktop } from '../components/CronogramaGridDesktop';
 import { CronogramaListMobile } from '../components/CronogramaListMobile';
 import { HorarioModalForm } from '../components/HorarioModalForm';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
-import type { DiaSemana, Horario, HorarioFormData, SaveHorarioOptions } from '../../../types/horarios';
-import { Filter, RotateCcw, Plus, CalendarX, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
+import { Filter, RotateCcw, Plus, CalendarX, Check, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 export const HorariosPage: React.FC = () => {
   const {
+    cargando,
+    errorCarga,
+    reintentarCarga,
     horarios,
     totalHorarios,
     actividades,
     profesoras,
-    todasProfesoras,
     filtroActividad,
     setFiltroActividad,
     filtroProfesora,
@@ -24,10 +27,9 @@ export const HorariosPage: React.FC = () => {
     eliminarHorario,
     moverHorario,
     intercambiarHorarios,
-    cambiarColorProfesora,
     validarSuperposicion,
     hayCambiosPendientes,
-    alumnosAfectadosPendientes,
+    guardando,
     guardarCambios,
     cancelarCambios,
   } = useHorarios();
@@ -97,9 +99,9 @@ export const HorariosPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = (data: HorarioFormData, options?: SaveHorarioOptions) => {
+  const handleSave = (data: HorarioFormData) => {
     if (horarioEnEdicion) {
-      const res = editarHorario(horarioEnEdicion.id, data, options);
+      const res = editarHorario(horarioEnEdicion.id, data);
       if (res.ok) {
         showToast('Horario modificado en borrador. Presioná "Guardar cambios" para consolidar.');
       }
@@ -113,27 +115,24 @@ export const HorariosPage: React.FC = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
-    if (horarioAEliminar) {
-      const res = eliminarHorario(horarioAEliminar.id);
-      if (res.alumnosDesvinculados > 0) {
-        showToast(`Horario eliminado definitivamente. ${res.alumnosDesvinculados} alumno(s) quedaron sin clase asignada para reubicar.`);
-      } else {
-        showToast('Horario eliminado definitivamente.');
-      }
-      setHorarioAEliminar(null);
+  const handleConfirmDelete = async () => {
+    if (!horarioAEliminar) return;
+    const res = await eliminarHorario(horarioAEliminar.id);
+    if (res.ok) {
+      showToast(res.advertencia ? `Horario dado de baja. ${res.advertencia}` : 'Horario dado de baja.');
       setIsModalOpen(false);
+    } else {
+      showToast(`⚠️ ${res.error}`);
     }
+    setHorarioAEliminar(null);
   };
 
-  const handleGuardarCambios = () => {
-    const res = guardarCambios();
+  const handleGuardarCambios = async () => {
+    const res = await guardarCambios();
     if (res.ok) {
-      if (res.alumnosDesvinculados > 0) {
-        showToast(`¡Cambios guardados! (${res.count} clases). ${res.alumnosDesvinculados} alumno(s) para reubicar.`);
-      } else {
-        showToast(`¡Cambios guardados con éxito! Cronograma actualizado (${res.count} clases).`);
-      }
+      showToast(`¡Cambios guardados! Se actualizaron ${res.guardados} clases.`);
+    } else {
+      showToast(`⚠️ ${res.error} Los cambios que no se guardaron siguen en el borrador.`);
     }
   };
 
@@ -164,6 +163,34 @@ export const HorariosPage: React.FC = () => {
       showToast(`⚠️ ${res.error}`);
     }
   };
+
+  if (cargando || errorCarga) {
+    return (
+      <OwnerLayout>
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+          {cargando ? (
+            <>
+              <Loader2 aria-hidden="true" className="w-8 h-8 text-[#E91E82] animate-spin" />
+              <p className="text-sm font-semibold text-slate-600">Cargando el cronograma…</p>
+            </>
+          ) : (
+            <>
+              <p role="alert" className="text-sm font-semibold text-slate-700">
+                {mensajeDeErrorApi(errorCarga, 'No se pudo cargar el cronograma.')}
+              </p>
+              <button
+                type="button"
+                onClick={reintentarCarga}
+                className="min-h-[44px] px-5 rounded-xl bg-[#E91E82] hover:bg-[#BC1266] text-white text-sm font-bold cursor-pointer"
+              >
+                Reintentar
+              </button>
+            </>
+          )}
+        </div>
+      </OwnerLayout>
+    );
+  }
 
   return (
     <OwnerLayout>
@@ -202,11 +229,6 @@ export const HorariosPage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs font-bold min-w-0">
               <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
               <span className="truncate">Tenés cambios sin guardar en el borrador</span>
-              {alumnosAfectadosPendientes > 0 && (
-                <span className="hidden sm:inline text-[10px] bg-amber-700/60 px-2 py-0.5 rounded-md font-extrabold">
-                  {alumnosAfectadosPendientes} a reubicar
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -219,7 +241,7 @@ export const HorariosPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={handleGuardarCambios}
+                onClick={() => void handleGuardarCambios()}
                 className="px-3.5 py-1.5 rounded-lg bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-extrabold shadow-xs transition cursor-pointer min-h-[36px] flex items-center gap-1"
               >
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -282,7 +304,7 @@ export const HorariosPage: React.FC = () => {
               <option value="TODAS">Todas las disciplinas ({actividades.length})</option>
               {actividades.map((act) => (
                 <option key={act.id} value={act.id}>
-                  {act.nombre} ({act.tipo === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'})
+                  {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'})
                 </option>
               ))}
             </select>
@@ -330,45 +352,15 @@ export const HorariosPage: React.FC = () => {
           </div>
         </div>
 
-        {/* GUÍA DE COLORES POR PROFESORA (SCROLLABLE EN MÓVIL) */}
-        <div className="px-4 md:px-7 py-2.5 bg-white/80 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 gap-3 overflow-hidden">
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar select-none">
-            <span className="font-bold text-slate-400 uppercase tracking-wider text-[11px] shrink-0">
-              Profesoras:
-            </span>
-            {todasProfesoras
-              .filter((p) => p.activa)
-              .map((prof) => (
-                <label
-                  key={prof.id}
-                  className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 px-2 py-1 rounded-lg transition shrink-0 min-h-[36px]"
-                  title={`Clic para elegir color personalizado para ${prof.nombre}`}
-                >
-                  <span
-                    className="w-4.5 h-4.5 rounded-full border shadow-xs inline-block relative overflow-hidden shrink-0"
-                    style={{
-                      backgroundColor: prof.colorTheme.badgeBg || prof.colorTheme.primary,
-                      borderColor: prof.colorTheme.border,
-                    }}
-                  >
-                    <input
-                      type="color"
-                      value={prof.colorTheme.badgeBg || prof.colorTheme.primary}
-                      onChange={(e) => cambiarColorProfesora(prof.id, e.target.value)}
-                      className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                    />
-                  </span>
-                  <span
-                    className="font-bold text-xs"
-                    style={{ color: prof.colorTheme.primary }}
-                  >
-                    {prof.nombre}
-                  </span>
-                </label>
-              ))}
-          </div>
-          <span className="hidden xl:inline text-slate-400 font-normal text-[11px] shrink-0">
-            🎨 Clic en el color para personalizar su tonalidad
+        {/* REFERENCIA DE COLORES: salen de la modalidad de la actividad */}
+        <div className="px-4 md:px-7 py-2.5 bg-white/80 border-b border-slate-200 flex items-center gap-4 text-xs font-bold text-slate-600">
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="w-3 h-3 rounded-full bg-[#3B82F6]" />
+            Grupal
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="w-3 h-3 rounded-full bg-[#8B5CF6]" />
+            Personalizada
           </span>
         </div>
 
@@ -391,11 +383,6 @@ export const HorariosPage: React.FC = () => {
                   <span className="inline-flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 px-3.5 py-2 rounded-xl shadow-2xs">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                     <span>Cambios sin guardar</span>
-                    {alumnosAfectadosPendientes > 0 && (
-                      <span className="text-[10px] font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">
-                        {alumnosAfectadosPendientes} a reubicar
-                      </span>
-                    )}
                   </span>
                 )}
 
@@ -415,8 +402,8 @@ export const HorariosPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleGuardarCambios}
-                  disabled={!hayCambiosPendientes}
+                  onClick={() => void handleGuardarCambios()}
+                  disabled={!hayCambiosPendientes || guardando}
                   className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-xs min-h-[44px] ${
                     hayCambiosPendientes
                       ? 'text-white bg-emerald-600 hover:bg-emerald-700 hover:shadow-md cursor-pointer active:scale-98'
@@ -527,7 +514,7 @@ export const HorariosPage: React.FC = () => {
         isOpen={Boolean(horarioAEliminar)}
         horario={horarioAEliminar}
         onClose={() => setHorarioAEliminar(null)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => void handleConfirmDelete()}
       />
 
       {/* TOAST DE FEEDBACK */}
