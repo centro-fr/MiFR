@@ -22,11 +22,6 @@ export type AuthErrorCode =
   | "POPUP_BLOQUEADO"
   | "POPUP_CANCELADO";
 
-export interface ApiError {
-  codigo: string;
-  mensaje: string;
-}
-
 export function homePathForRoles(roles: RoleCode[]): string {
   if (roles.includes("PROPIETARIA")) return "/app/dashboard";
   if (roles.includes("PROFESORA")) return "/app/hoy";
