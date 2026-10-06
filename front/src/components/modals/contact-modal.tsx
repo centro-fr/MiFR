@@ -10,7 +10,7 @@ interface ContactModalProps {
 }
 
 const INPUT_CLASSES =
-  "min-h-[44px] w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white focus:border-primary focus:outline-none transition-colors";
+  "min-h-[44px] w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-base text-white transition-colors focus:border-primary";
 
 export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border border-white/15 bg-dark p-6 text-white shadow-2xl sm:p-8"
+        className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/15 bg-dark p-6 text-white shadow-2xl sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -67,7 +67,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <h3 id="contact-title" className="text-lg font-bold tracking-tight text-white">
               Administración MiFR
             </h3>
-            <p className="text-xs font-semibold text-primary">Solicitud de Alta de Socio o Staff</p>
+            <p className="text-sm font-semibold text-primary">Solicitud de Alta de Socio o Staff</p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <h4 className="text-xl font-bold text-white">¡Solicitud Recibida!</h4>
             <p role="status" className="mx-auto max-w-sm text-sm text-slate-300">
               El equipo de administración de MiFR se comunicará a tu correo{" "}
-              <strong className="text-white">{submittedEmail}</strong> en menos de 24 horas para habilitar tu acceso.
+              <strong className="break-all text-white">{submittedEmail}</strong> en menos de 24 horas para habilitar tu acceso.
             </p>
             <div className="pt-4">
               <button
@@ -99,7 +99,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             </p>
             <form onSubmit={handleSubmit(onSubmit)} className="mb-2 space-y-4" noValidate>
               <div>
-                <label htmlFor="contact-nombre" className="mb-1 block text-xs font-semibold text-slate-300">
+                <label htmlFor="contact-nombre" className="mb-1 block text-sm font-semibold text-slate-300">
                   Nombre Completo *
                 </label>
                 <input id="contact-nombre" type="text" placeholder="Ej. Martín Rodríguez" className={INPUT_CLASSES} {...register("nombre")} />
@@ -107,14 +107,14 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="contact-email" className="mb-1 block text-xs font-semibold text-slate-300">
+                  <label htmlFor="contact-email" className="mb-1 block text-sm font-semibold text-slate-300">
                     Email de Google *
                   </label>
                   <input id="contact-email" type="email" placeholder="tu.cuenta@gmail.com" className={INPUT_CLASSES} {...register("email")} />
                   {errors.email && <FieldError message={errors.email.message} />}
                 </div>
                 <div>
-                  <label htmlFor="contact-telefono" className="mb-1 block text-xs font-semibold text-slate-300">
+                  <label htmlFor="contact-telefono" className="mb-1 block text-sm font-semibold text-slate-300">
                     Teléfono / WhatsApp *
                   </label>
                   <input id="contact-telefono" type="tel" placeholder="+54 9 11 ..." className={INPUT_CLASSES} {...register("telefono")} />
@@ -122,10 +122,10 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 </div>
               </div>
               <div>
-                <label htmlFor="contact-tipo" className="mb-1 block text-xs font-semibold text-slate-300">
+                <label htmlFor="contact-tipo" className="mb-1 block text-sm font-semibold text-slate-300">
                   Tipo de Acceso Requerido *
                 </label>
-                <select id="contact-tipo" className="min-h-[44px] w-full rounded-xl border border-white/10 bg-[#1f2430] px-3.5 py-2.5 text-sm text-white focus:border-primary focus:outline-none" {...register("tipoAcceso")}>
+                <select id="contact-tipo" className="min-h-[44px] w-full rounded-xl border border-white/10 bg-[#1f2430] px-3.5 py-2.5 text-base text-white focus:border-primary" {...register("tipoAcceso")}>
                   <option value="socio">Alumno / Socio Nuevo</option>
                   <option value="profesor">Profesor / Entrenador</option>
                   <option value="staff">Personal Administrativo</option>
@@ -149,7 +149,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mt-1 text-xs text-rose-300">
+    <p role="alert" className="mt-1 text-sm text-rose-300">
       {message}
     </p>
   );

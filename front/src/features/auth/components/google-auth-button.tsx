@@ -26,7 +26,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
         role="status"
         aria-live="polite"
         aria-label="Iniciando sesión"
-        className={cn(BASE_CLASSES, "cursor-wait border-slate-200 bg-slate-100 text-slate-600 shadow-sm")}
+        className={cn(BASE_CLASSES, "cursor-wait border-slate-200 bg-slate-100 text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-slate-300")}
       >
         <Spinner />
         <span>Iniciando sesión...</span>
@@ -36,7 +36,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
 
   if (hasError && !isConnectionError) {
     return (
-      <button type="button" onClick={onRetry} className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover")}>
+      <button type="button" onClick={onRetry} className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15")}>
         <RotateCw aria-hidden="true" className="h-4 w-4 text-primary-dark" />
         <span>Volver a intentar</span>
       </button>
@@ -54,6 +54,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
           <GoogleIcon className="h-5 w-5 shrink-0" />
           <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
         </span>
+        <span className="sr-only">Al activar, Google mostrará el selector de cuenta para iniciar sesión</span>
         {overlay}
       </span>
     );
@@ -64,7 +65,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
       <button
         type="button"
         onClick={hasError ? onRetry : onLogin}
-        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30", className)}
+        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15", className)}
       >
         <GoogleIcon className="h-5 w-5 shrink-0" />
         <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>

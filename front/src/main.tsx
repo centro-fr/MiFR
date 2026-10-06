@@ -1,10 +1,23 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { Providers } from './app/providers';
-import './index.css';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import "react-toastify/dist/ReactToastify.css";
+import App from "./App.tsx";
+import { initTema } from "./stores/theme-store.ts";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Providers />
-  </React.StrictMode>
-);
+initTema();
+
+async function enableMocks() {
+  if ((import.meta.env.VITE_USE_MOCKS ?? "true") === "false") return;
+  if (import.meta.env.PROD) return;
+  const { worker } = await import("./mocks/browser.ts");
+  await worker.start({ onUnhandledRequest: "bypass" });
+}
+
+void enableMocks().finally(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+});

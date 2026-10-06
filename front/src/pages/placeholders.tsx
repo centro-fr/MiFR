@@ -22,10 +22,6 @@ function PlaceholderShell({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function OwnerDashboardPage() {
-  return <PlaceholderShell title="Dashboard" body="Redirección de Propietaria verificada. El dashboard completo llega en pantallas posteriores." />;
-}
-
 export function TeacherHomePage() {
   return <PlaceholderShell title="Hoy" body="Redirección de Profesora verificada. Las clases del día llegan en la pantalla #16." />;
 }

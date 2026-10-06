@@ -6,6 +6,13 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MiFR | Centro de Entrenamiento</title>
+  <!-- Aplica el tema guardado antes del primer pintado para que el splash
+       respete el tema claro/oscuro desde el inicio (misma clave que theme-store). -->
+  <script>
+    try {
+      if (localStorage.getItem("mifr:tema") === "oscuro") document.documentElement.classList.add("dark");
+    } catch (e) { /* sin almacenamiento: tema claro por defecto */ }
+  </script>
   <!-- Google Fonts: Plus Jakarta Sans (solo pesos usados) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +20,7 @@
     rel="stylesheet">
 </head>
 
-<body class="min-h-full font-sans antialiased text-[#181C26] bg-[#0f131d]">
+<body class="min-h-full font-sans antialiased text-[#181C26] bg-[#F8FAFC] dark:bg-[#0f131d] dark:text-slate-100">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

@@ -19,15 +19,16 @@ export interface ItemMenu {
 }
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
-  { etiqueta: "Dashboard General", icono: LayoutDashboard, to: "/app/dashboard" },
-  { etiqueta: "Alumnos", icono: Users },
-  { etiqueta: "Actividades y Horarios", icono: CalendarDays },
-  { etiqueta: "Planes y Precios", icono: Tag },
+  { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
+  { etiqueta: "Alumnos", icono: Users, to: "/app/alumnos" },
+  { etiqueta: "Actividades y Horarios", icono: CalendarDays, to: "/app/actividades" },
+  { etiqueta: "Planes y Precios", icono: Tag, to: "/app/planes" },
   // Glosario: nunca "pago" en la UI. Cobro = efectivo de profesora, transferencia = aviso del alumno.
-  { etiqueta: "Transferencias y Cobros", icono: Banknote },
-  { etiqueta: "Asistencia Global", icono: ClipboardCheck },
-  { etiqueta: "Honorarios Docentes", icono: Receipt },
-  { etiqueta: "Notificaciones", icono: Bell },
-  { etiqueta: "Reportes", icono: BarChart3 },
+  // Etiqueta visible alineada con la pantalla Actividades ("Cobros y Cuotas").
+  { etiqueta: "Cobros y Cuotas", icono: Banknote, to: "/app/pagos" },
+  { etiqueta: "Asistencia", icono: ClipboardCheck, to: "/app/asistencia" },
+  { etiqueta: "Honorarios", icono: Receipt, to: "/app/honorarios" },
+  { etiqueta: "Notificaciones", icono: Bell, to: "/app/notificaciones" },
+  { etiqueta: "Reportes", icono: BarChart3, to: "/app/reportes" },
   { etiqueta: "Configuración", icono: Settings, to: "/app/seguridad/permisos" },
 ];

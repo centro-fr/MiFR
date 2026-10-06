@@ -25,17 +25,17 @@ export function RouteErrorBoundary() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-[#F8FAFC] px-6 py-12 text-center text-slate-900">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 shadow-sm">
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-[#F8FAFC] px-6 py-12 text-center text-slate-900 dark:bg-canvas dark:text-slate-100">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 shadow-sm dark:bg-rose-500/15 dark:text-rose-300">
         <AlertCircle className="h-8 w-8" />
       </div>
-      <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">{titulo}</h1>
-      <p className="mt-2 max-w-md text-sm text-slate-500 leading-relaxed">{mensaje}</p>
+      <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">{titulo}</h1>
+      <p className="mt-2 max-w-md text-sm text-slate-500 leading-relaxed dark:text-slate-400">{mensaje}</p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Button
           onClick={() => window.location.reload()}
-          className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/20 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
         >
           <RotateCcw className="h-4 w-4" />
           Reintentar

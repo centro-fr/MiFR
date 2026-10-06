@@ -3,6 +3,7 @@ import {
   cambiosParaNivel,
   derivarNivel,
   motivoBloqueoCelda,
+  NIVEL_COMPLETO,
   nivelesEquivalentes,
   siguienteNivel,
   type NivelAcceso,
@@ -34,6 +35,9 @@ export function useMatrizEditor(matriz: MatrizPermisos | undefined) {
 
   const nivelDe = useCallback(
     (rol: RoleCode, modulo: string): NivelAcceso => {
+      // La propietaria es acceso total fijo: siempre verde, sin importar
+      // objetivos locales ni valores del servidor.
+      if (rol === "PROPIETARIA") return NIVEL_COMPLETO;
       const objetivo = objetivos.get(claveCelda(rol, modulo));
       if (objetivo !== undefined) return objetivo;
       if (!matriz) return 2;

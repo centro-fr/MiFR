@@ -50,7 +50,7 @@ export function AuthFormBlock({
         overlay={overlay}
         className={buttonClassName}
       />
-      <p className={cn("mt-4 text-center text-sm font-medium text-slate-600", hintClassName)}>
+      <p className={cn("mt-4 text-center text-sm font-medium text-slate-600 dark:text-slate-400", hintClassName)}>
         {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
       </p>
       {showRetry && (
@@ -58,7 +58,7 @@ export function AuthFormBlock({
           type="button"
           onClick={onClear}
           className={cn(
-            "mt-3 min-h-[44px] w-full text-center text-sm font-semibold text-slate-600 hover:text-dark",
+            "mt-3 min-h-[44px] w-full text-center text-sm font-semibold text-slate-600 hover:text-dark dark:text-slate-400 dark:hover:text-white",
             actionClassName,
           )}
         >

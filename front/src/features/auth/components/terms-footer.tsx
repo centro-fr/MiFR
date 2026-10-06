@@ -7,8 +7,8 @@ interface TermsFooterProps {
 export function TermsFooter({ onOpenLegal, onContact, variant = "desktop" }: TermsFooterProps) {
   if (variant === "mobile") {
     return (
-      <footer className="border-t border-slate-100 pt-4 text-center">
-        <p className="text-[12px] leading-tight text-slate-500">
+      <footer className="border-t border-slate-100 pt-4 text-center dark:border-white/10">
+        <p className="text-sm leading-relaxed text-slate-500">
           Al ingresar aceptás nuestros{" "}
           <FooterLink label="Términos" onClick={() => onOpenLegal("terms")} /> y{" "}
           <FooterLink label="Política de Privacidad" onClick={() => onOpenLegal("privacy")} />.
@@ -17,7 +17,7 @@ export function TermsFooter({ onOpenLegal, onContact, variant = "desktop" }: Ter
           <button
             type="button"
             onClick={onContact}
-            className="mt-1 min-h-[44px] text-[13px] font-semibold text-primary-dark hover:text-primary"
+            className="mt-1 min-h-[44px] text-sm font-semibold text-primary-dark hover:text-primary"
           >
             Contactar administración
           </button>
@@ -28,12 +28,12 @@ export function TermsFooter({ onOpenLegal, onContact, variant = "desktop" }: Ter
   }
 
   return (
-    <footer className="w-full max-w-[420px] pt-6 text-center text-slate-400">
-      <p className="text-[12px] leading-relaxed">
+    <footer className="w-full max-w-[420px] pt-6 text-center text-slate-500">
+      <p className="text-sm leading-relaxed">
         Al ingresar aceptás nuestros <FooterLink label="Términos" onClick={() => onOpenLegal("terms")} /> y{" "}
         <FooterLink label="Política de Privacidad" onClick={() => onOpenLegal("privacy")} />.
       </p>
-      <p className="mt-1 font-mono text-[11px]">Centro de Entrenamiento FR © 2026 • Todos los derechos reservados</p>
+      <p className="mt-1 text-sm">Centro de Entrenamiento FR © 2026 • Todos los derechos reservados</p>
     </footer>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { ContactModal } from "@/components/modals/contact-modal";
 import { LegalModal } from "@/components/modals/legal-modal";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
@@ -81,7 +81,7 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
       </div>
 
       <div className="hidden h-dvh w-full lg:block">
-        <div className="relative flex h-full w-full bg-white">
+        <div className="relative flex h-full w-full bg-white dark:bg-surface-low">
           <LoginHero />
           <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-1/2 z-10 -translate-x-1/2">
             <div className="h-full w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent" />

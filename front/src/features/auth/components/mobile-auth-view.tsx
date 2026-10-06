@@ -17,9 +17,9 @@ interface MobileAuthViewProps {
 // botón Google 54px, banners ámbar/rosa, sin footers extensos.
 export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear, onContact, onOpenLegal, overlay }: MobileAuthViewProps) {
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-white">
+    <div className="flex min-h-dvh w-full flex-col bg-white dark:bg-surface-low">
       {/* Header mínimo público: solo logo (Stitch) */}
-      <header className="flex items-center border-b border-slate-100 bg-white px-6 py-4">
+      <header className="flex items-center border-b border-slate-100 bg-white px-6 py-4 dark:border-white/10 dark:bg-surface-low">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -27,7 +27,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
           >
             FR
           </span>
-          <span className="text-sm font-extrabold tracking-tight text-dark">MiFR</span>
+          <span className="text-sm font-extrabold tracking-tight text-dark dark:text-white">MiFR</span>
         </div>
       </header>
 
@@ -36,12 +36,12 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
         <div className="flex flex-col items-center text-center">
           <div
             aria-hidden="true"
-            className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-primary-dark text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50"
+            className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-primary-dark text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50 dark:ring-primary/20"
           >
             FR
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-dark">MiFR</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-600">
+          <h1 className="text-2xl font-extrabold tracking-tight text-dark dark:text-white">MiFR</h1>
+          <p className="mt-1 text-sm font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
             Centro de Entrenamiento FR
           </p>
         </div>
@@ -55,21 +55,21 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
             onClear={onClear}
             onContact={onContact}
             overlay={overlay}
-            hintClassName="text-xs"
-            actionClassName="text-xs"
+            hintClassName="text-sm"
+            actionClassName="text-sm"
           />
         </div>
       </div>
 
       {/* Home indicator + legal mínimo (una línea, Stitch: sin footers extensos) */}
-      <div className="flex justify-center bg-white pb-2">
+      <div className="flex justify-center bg-white pb-2 dark:bg-surface-low">
         <div aria-hidden="true" className="h-1 w-32 rounded-full bg-slate-300" />
       </div>
-      <footer className="border-t border-slate-100 px-6 pb-3 pt-2 text-center">
-        <p className="text-xs text-slate-600">
-          <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700">Términos</button>
+      <footer className="border-t border-slate-100 px-6 pb-3 pt-2 text-center dark:border-white/10">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700 dark:hover:text-slate-200">Términos</button>
           {" · "}
-          <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700">Privacidad</button>
+          <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700 dark:hover:text-slate-200">Privacidad</button>
         </p>
       </footer>
     </div>

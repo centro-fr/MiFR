@@ -4,7 +4,9 @@ import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
 import { LoginPage } from "@/features/auth/pages/login-page";
 import { PermisosPage } from "@/features/seguridad/pages/permisos-page";
-import { NotFoundPage, OwnerDashboardPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
+import { EnConstruccionPage } from "@/pages/en-construccion-page";
+import { NotFoundPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
+import { OwnerDashboardPage } from "@/pages/owner-dashboard-page";
 
 // Importación de tu nueva página de Actividades (US-03)
 import { ActividadesPage } from "@/pages/ActividadesPage"; 
@@ -46,10 +48,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/app/actividades",
-    element: 
-        
+    element: (
+      <ProtectedRoute>
         <ActividadesPage />
-    
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/app/seguridad/permisos",
@@ -61,5 +64,24 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+  // Secciones sin funcionalidad real: pantalla genérica "En construcción"
+  // dentro del layout normal (con sidebar). Al implementar cada sección,
+  // reemplazar su ruta por la página real.
+  ...[
+    { path: "/app/alumnos", seccion: "Alumnos" },
+    { path: "/app/planes", seccion: "Planes y Precios" },
+    { path: "/app/pagos", seccion: "Cobros y Cuotas" },
+    { path: "/app/asistencia", seccion: "Asistencia" },
+    { path: "/app/honorarios", seccion: "Honorarios" },
+    { path: "/app/notificaciones", seccion: "Notificaciones" },
+    { path: "/app/reportes", seccion: "Reportes" },
+  ].map(({ path, seccion }) => ({
+    path,
+    element: (
+      <ProtectedRoute>
+        <EnConstruccionPage seccion={seccion} />
+      </ProtectedRoute>
+    ),
+  })),
   { path: "*", element: <NotFoundPage /> },
 ]);

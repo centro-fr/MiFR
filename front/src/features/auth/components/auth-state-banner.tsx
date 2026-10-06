@@ -38,19 +38,19 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
 
   if (code === "POPUP_CANCELADO") {
     return (
-      <div role="alert" aria-live="assertive" className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left shadow-sm">
+      <div role="alert" aria-live="assertive" className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left shadow-sm dark:border-white/15 dark:bg-white/5">
         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-700">
           <Info aria-hidden="true" className="h-3.5 w-3.5" />
         </span>
         <div className="text-sm">
-          <p className="font-bold text-slate-900">Inicio cancelado</p>
-          <p className="mt-0.5 leading-snug text-slate-600">
+          <p className="font-bold text-slate-900 dark:text-white">Inicio cancelado</p>
+          <p className="mt-0.5 leading-snug text-slate-600 dark:text-slate-400">
             Cerraste la ventana de Google antes de terminar. Podés intentarlo de nuevo cuando quieras.
           </p>
           <button
             type="button"
             onClick={onRetry}
-            className={cn("mt-1 min-h-[44px] text-sm font-bold text-slate-900 underline hover:no-underline")}
+            className={cn("mt-1 min-h-[44px] text-sm font-bold text-slate-900 underline hover:no-underline dark:text-white")}
           >
             Reintentar ahora
           </button>

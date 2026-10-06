@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { useDialogA11y } from "@/hooks/use-dialog-a11y";
 import { MatrizTable } from "@/features/seguridad/components/matriz-table";
 import { MatrizSkeleton } from "@/features/seguridad/components/matriz-skeleton";
 import { MatrizToolbar } from "@/features/seguridad/components/matriz-toolbar";
@@ -15,6 +16,8 @@ export function PermisosPage() {
   const actualizar = useActualizarMatriz();
   const editor = useMatrizEditor(matrizQuery.data);
   const [confirmaDescarte, setConfirmaDescarte] = useState(false);
+  const descarteRef = useRef<HTMLDivElement>(null);
+  useDialogA11y({ active: confirmaDescarte, onClose: () => setConfirmaDescarte(false), dialogRef: descarteRef });
 
   const efectiva = matrizQuery.data;
 
@@ -64,8 +67,8 @@ export function PermisosPage() {
           <span aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
             <AlertTriangle className="h-8 w-8" />
           </span>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">No pudimos cargar la matriz</h1>
-          <p className="max-w-[320px] text-sm leading-relaxed text-slate-600">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">No pudimos cargar la matriz</h1>
+          <p className="max-w-[320px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
             {matrizQuery.error === "SIN_PERMISO"
               ? "Tu sesión no tiene permiso para ver esta sección."
               : "Verificá tu conexión e intentá de nuevo."}
@@ -82,8 +85,8 @@ export function PermisosPage() {
     return (
       <OwnerLayout>
         <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Sin permisos cargados</h1>
-          <p className="max-w-[320px] text-sm text-slate-600">Todavía no hay módulos ni permisos para mostrar.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Sin permisos cargados</h1>
+          <p className="max-w-[320px] text-sm text-slate-600 dark:text-slate-400">Todavía no hay módulos ni permisos para mostrar.</p>
         </div>
       </OwnerLayout>
     );
@@ -115,27 +118,50 @@ export function PermisosPage() {
         />
       </div>
       {/* Barra de guardado fija en mobile (Stitch) */}
-      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 lg:hidden">
-        <Button
-          onClick={guardar}
-          disabled={editor.objetivos.size === 0 || actualizar.isPending}
-          className="w-full bg-primary text-white hover:bg-primary-dark"
-        >
-          {actualizar.isPending ? "Guardando..." : `Guardar${editor.objetivos.size > 0 ? ` (${editor.objetivos.size})` : ""}`}
-        </Button>
+      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 lg:hidden dark:border-white/10 dark:bg-surface-low/95">
+        <div className="flex gap-2">
+          <Button
+            onClick={pedirDescartar}
+            disabled={editor.objetivos.size === 0 || actualizar.isPending}
+            className="flex-1 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            Descartar
+          </Button>
+          <Button
+            onClick={guardar}
+            disabled={editor.objetivos.size === 0 || actualizar.isPending}
+            className="flex-[2] bg-primary text-white hover:bg-primary-dark"
+          >
+            {actualizar.isPending ? "Guardando..." : `Guardar${editor.objetivos.size > 0 ? ` (${editor.objetivos.size})` : ""}`}
+          </Button>
+        </div>
       </div>
 
       {confirmaDescarte && (
-        <div role="dialog" aria-modal="true" aria-labelledby="descartar-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 id="descartar-titulo" className="text-lg font-extrabold text-slate-900">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="descartar-titulo"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          onClick={() => setConfirmaDescarte(false)}
+        >
+          <div
+            ref={descarteRef}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-surface-low"
+          >
+            <h2 id="descartar-titulo" className="text-lg font-extrabold text-slate-900 dark:text-white">
               Descartar cambios
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
               Tenés {editor.objetivos.size} {editor.objetivos.size === 1 ? "cambio sin guardar" : "cambios sin guardar"}. Esta acción no se puede deshacer.
             </p>
             <div className="mt-4 flex gap-2">
-              <Button onClick={() => setConfirmaDescarte(false)} className="flex-1 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+              <Button
+                onClick={() => setConfirmaDescarte(false)}
+                data-autofocus
+                className="flex-1 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+              >
                 Seguir editando
               </Button>
               <Button onClick={descartar} className="flex-1 bg-rose-600 text-white hover:bg-rose-700">

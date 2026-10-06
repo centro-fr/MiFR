@@ -39,11 +39,11 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
             <h3 id="legal-title" className="text-lg font-bold tracking-tight text-white">
               {type === "terms" ? "Términos y Condiciones de Uso" : "Política de Privacidad y Datos"}
             </h3>
-            <p className="text-xs text-slate-400">Centro de Entrenamiento MiFR • Athletic Hub</p>
+            <p className="text-sm text-slate-400">Centro de Entrenamiento MiFR • Athletic Hub</p>
           </div>
         </div>
 
-        <div className="space-y-4 overflow-y-auto border-t border-white/10 pr-2 pt-4 text-xs leading-relaxed text-slate-300">
+        <div className="space-y-4 overflow-y-auto border-t border-white/10 pr-2 pt-4 text-sm leading-relaxed text-slate-300">
           {type === "terms" ? (
             <>
               <p>
@@ -80,7 +80,7 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[44px] rounded-full bg-primary px-5 py-2 text-xs font-bold text-white transition-all hover:bg-primary-dark"
+            className="min-h-[44px] rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-all hover:bg-primary-dark"
           >
             Entendido
           </button>

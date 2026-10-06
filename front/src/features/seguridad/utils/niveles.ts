@@ -58,23 +58,20 @@ export function valorCanonico(
 }
 
 /**
- * Motivo de bloqueo de la celda, o null si es editable. Espejo exacto del back:
- * críticos no se quitan a la propietaria y exclusivos apagados no se otorgan
- * a otros roles (la celda entera se bloquea para no generar cambios inválidos).
+ * Motivo de bloqueo de la celda, o null si es editable. Espejo exacto del back,
+ * más la regla de producto: la columna PROPIETARIA es de acceso total fijo y
+ * nunca editable desde la UI (toda la columna bloqueada).
  */
 export function motivoBloqueoCelda(
   matriz: MatrizPermisos,
   rol: RoleCode,
   modulo: string,
 ): string | null {
+  if (rol === "PROPIETARIA") {
+    return "Acceso total: la propietaria conserva todos los permisos y no se puede modificar";
+  }
   const permisos = matriz.modulos.find((m) => m.modulo === modulo)?.permisos ?? [];
   const otorgados = new Set(matriz.matriz[rol]);
-  if (rol === "PROPIETARIA") {
-    if (permisos.some((p) => p.critico)) {
-      return "Permiso crítico: no se puede modificar a la propietaria";
-    }
-    return null;
-  }
   const exclusivoApagado = permisos.some(
     (p) => EXCLUSIVOS_PROPIETARIA.has(p.codigo) && !otorgados.has(p.codigo),
   );

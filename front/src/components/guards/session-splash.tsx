@@ -4,7 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 export function SessionSplash() {
   return (
     <main
-      className="flex h-dvh min-h-screen w-full flex-col items-center justify-center gap-6 bg-white lg:bg-canvas"
+      className="flex h-dvh min-h-screen w-full flex-col items-center justify-center gap-6 bg-bg-light text-slate-900 dark:bg-canvas dark:text-slate-100"
       role="status"
       aria-live="polite"
       aria-label="Cargando sesión"
@@ -22,7 +22,7 @@ export function SessionSplash() {
         </div>
       </div>
       <Spinner className="h-9 w-9 text-primary" strokeWidth={4} />
-      <p className="text-sm font-medium text-slate-500">Cargando sesión…</p>
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Cargando sesión…</p>
     </main>
   );
 }

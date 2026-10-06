@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Lock } from "lucide-react";
 import { NivelPill } from "@/features/seguridad/components/nivel-pill";
 import { descripcionModulo, etiquetaModulo } from "@/features/seguridad/utils/etiquetas";
 import type { NivelAcceso } from "@/features/seguridad/utils/niveles";
@@ -35,26 +35,49 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-surface-low">
       <table className="w-full min-w-[720px] border-collapse text-left">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th scope="col" className="min-w-[280px] px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+          <tr className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
+            <th scope="col" className="min-w-[280px] px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Módulo
             </th>
-            {roles.map((rol) => (
-              <th key={rol.codigo} scope="col" className="border-l border-slate-200/70 px-4 py-3.5 text-center">
-                <span className="block text-sm font-extrabold text-slate-900">{rol.nombre}</span>
-                <span className="mt-0.5 block text-[11px] font-medium text-slate-400">{ROL_SUBTITULO[rol.codigo]}</span>
-              </th>
-            ))}
+            {roles.map((rol) => {
+              const bloqueada = rol.codigo === "PROPIETARIA";
+              return (
+                <th
+                  key={rol.codigo}
+                  scope="col"
+                  className={cn(
+                    "border-l border-slate-200/70 px-4 py-3.5 text-center dark:border-white/10",
+                    bloqueada && "bg-slate-100/70 dark:bg-white/[0.02]",
+                  )}
+                >
+                  <span className="flex items-center justify-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-white">
+                    {bloqueada && (
+                      <Lock aria-hidden="true" className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                    )}
+                    {rol.nombre}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                    {bloqueada ? (
+                      <span title="Columna bloqueada con acceso total">
+                        {ROL_SUBTITULO[rol.codigo]} · No editable
+                      </span>
+                    ) : (
+                      ROL_SUBTITULO[rol.codigo]
+                    )}
+                  </span>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {modulos.map((modulo) => {
             const colapsado = colapsados.has(modulo);
             return (
-              <tr key={modulo} className="border-t border-slate-200 first:border-t-0">
+              <tr key={modulo} className="border-t border-slate-200 first:border-t-0 dark:border-white/10">
                 <td className="px-5 py-2">
                   <button
                     type="button"
@@ -67,15 +90,22 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                       className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", colapsado && "-rotate-90")}
                     />
                     <span>
-                      <span className="block text-sm font-extrabold text-slate-800">{etiquetaModulo(modulo)}</span>
+                      <span className="block text-sm font-extrabold text-slate-800 dark:text-slate-100">{etiquetaModulo(modulo)}</span>
                       {!colapsado && (
-                        <span className="mt-0.5 block text-xs font-normal text-slate-400">{descripcionModulo(modulo)}</span>
+                        <span className="mt-0.5 block text-xs font-normal text-slate-400 dark:text-slate-500">{descripcionModulo(modulo)}</span>
                       )}
                     </span>
                   </button>
                 </td>
                 {roles.map((rol) => (
-                  <td key={rol.codigo} className={cn("border-l border-slate-100 px-3 text-center", colapsado ? "py-1" : "py-3")}>
+                  <td
+                    key={rol.codigo}
+                    className={cn(
+                      "border-l border-slate-100 px-3 text-center dark:border-white/10",
+                      colapsado ? "py-1" : "py-3",
+                      rol.codigo === "PROPIETARIA" && "bg-slate-50/60 dark:bg-white/[0.02]",
+                    )}
+                  >
                     {!colapsado && (
                       <NivelPill
                         nivel={nivelDe(rol.codigo, modulo)}
