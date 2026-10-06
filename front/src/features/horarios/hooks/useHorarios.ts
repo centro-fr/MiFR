@@ -9,10 +9,9 @@ import {
   listarHorarios,
   listarProfesoras,
 } from "@/features/horarios/api/horarios-api";
-import type { GuardarHorarioBody, HorarioApi } from "@/features/horarios/schemas/horario";
+import { horarioFormSchema, type GuardarHorarioBody, type HorarioApi } from "@/features/horarios/schemas/horario";
 import {
   diaDesdeNumero,
-  estaEnRangoPermitido,
   horaDesdeApi,
   intercambiarHorariosEnLista,
   moverHorarioEnLista,
@@ -126,12 +125,8 @@ export const useHorarios = () => {
 
   const validarSuperposicion = useCallback(
     (data: HorarioFormData, ignorarHorarioId?: string): Resultado => {
-      if (data.horaFin <= data.horaInicio) {
-        return { ok: false, error: "La hora de fin debe ser posterior a la hora de inicio." };
-      }
-      if (!estaEnRangoPermitido(data.horaInicio, data.horaFin)) {
-        return { ok: false, error: "Los horarios tienen que estar entre las 07:00 y las 20:00 hs." };
-      }
+      const basicos = horarioFormSchema.safeParse(data);
+      if (!basicos.success) return { ok: false, error: basicos.error.issues[0].message };
       const conflicto = validarSolapamientoProfesoraEnLista(
         horariosEditables,
         data.profesoraId,

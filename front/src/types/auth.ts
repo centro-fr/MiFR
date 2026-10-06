@@ -2,7 +2,7 @@ export type RoleCode = "PROPIETARIA" | "PROFESORA" | "ALUMNO" | "TUTOR";
 
 export interface AuthUser {
   id_usuario: number;
-  email: string;
+  email: string | null;
   nombre: string;
   apellido: string;
   roles: RoleCode[];
@@ -21,11 +21,6 @@ export type AuthErrorCode =
   | "RED_ERROR"
   | "POPUP_BLOQUEADO"
   | "POPUP_CANCELADO";
-
-export interface ApiError {
-  codigo: string;
-  mensaje: string;
-}
 
 export function homePathForRoles(roles: RoleCode[]): string {
   if (roles.includes("PROPIETARIA")) return "/app/dashboard";

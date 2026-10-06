@@ -3,6 +3,7 @@ import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { X, AlertCircle } from 'lucide-react';
 import { textoCupo } from '../utils/cupo';
+import { horarioFormSchema } from '../schemas/horario';
 
 interface HorarioModalFormProps {
   isOpen: boolean;
@@ -78,21 +79,11 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
   });
 
   const validarCamposBasicos = (): boolean => {
-    if (!actividadId || !profesoraId || !diaSemana || !horaInicio || !horaFin) {
-      setErrorMessage('Por favor completa todos los campos requeridos.');
+    const resultado = horarioFormSchema.safeParse(getFormData());
+    if (!resultado.success) {
+      setErrorMessage(resultado.error.issues[0].message);
       return false;
     }
-
-    if (horaInicio < '07:00' || horaFin > '20:00') {
-      setErrorMessage('El centro opera exclusivamente entre las 07:00 y las 20:00 hs.');
-      return false;
-    }
-
-    if (horaFin <= horaInicio) {
-      setErrorMessage('La hora de fin debe ser posterior a la hora de inicio.');
-      return false;
-    }
-
     return true;
   };
 

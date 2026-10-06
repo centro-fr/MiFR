@@ -58,5 +58,3 @@ export function createUsuarioController(gestionUsuarios: ILogicaUsuarios) {
     },
   };
 }
-
-export type UsuarioController = ReturnType<typeof createUsuarioController>;

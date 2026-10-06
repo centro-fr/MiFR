@@ -35,7 +35,3 @@ const DESCRIPCIONES: Record<string, string> = {
 export function descripcionModulo(modulo: string): string {
   return DESCRIPCIONES[modulo] ?? "";
 }
-
-export function etiquetaPermiso(descripcion: string): string {
-  return descripcion.replace(/pagos/i, "transferencias").replace(/Pagos/i, "Transferencias");
-}

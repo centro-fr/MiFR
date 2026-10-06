@@ -96,6 +96,24 @@ describe("crearUsuarioSchema", () => {
   it("rechaza una fecha de nacimiento inválida", () => {
     expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "no-es-fecha" }).success).toBe(false);
   });
+
+  // JSON no tiene fechas: un valor que no es texto no se convierte en 1970-01-01.
+  it.each([null, 0, true, 631152000000])("rechaza la fecha de nacimiento %j porque no es texto", (fecha) => {
+    expect(crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: fecha }).success).toBe(false);
+  });
+
+  it("rechaza una fecha de nacimiento que no existe en el calendario", () => {
+    const resultado = crearUsuarioSchema.safeParse({ ...minimo, fecha_nacimiento: "2026-02-30" });
+
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues[0]?.message).toBe("La fecha no existe");
+  });
+
+  it("acepta la fecha de nacimiento con fecha y hora ISO", () => {
+    const resultado = crearUsuarioSchema.parse({ ...minimo, fecha_nacimiento: "1990-05-10T00:00:00.000Z" });
+
+    expect(resultado.fecha_nacimiento).toEqual(new Date("1990-05-10T00:00:00.000Z"));
+  });
 });
 
 describe("actualizarUsuarioSchema", () => {

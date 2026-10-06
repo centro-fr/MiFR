@@ -7,18 +7,15 @@ import type { AuthResponse, AuthUser, RoleCode } from "@/types/auth";
 // Errores: { error: { code, message } } con códigos USUARIO_NO_REGISTRADO,
 // FORBIDDEN, UNAUTHORIZED, VALIDATION_ERROR.
 
-export const googleCredentialSchema = z.object({
-  id_token: z.string().min(1, "Token de Google requerido"),
-});
-
 export const roleSchema = z.enum(["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"]);
 
 // El usuario de Prisma trae campos extra (google_id, estado, roles anidados...);
 // solo nos interesan identidad + los roles/permisos efectivos de nivel raíz.
+// El email es opcional en el DER (usuarios.email), así que el back puede mandarlo en null.
 const backendUsuarioSchema = z
   .object({
     id_usuario: z.number(),
-    email: z.string().email(),
+    email: z.string().nullable(),
     nombre: z.string(),
     apellido: z.string(),
   })
@@ -30,8 +27,6 @@ const backendSessionSchema = z.object({
   roles: z.array(roleSchema),
   permisos: z.array(z.string()),
 });
-
-export type BackendSession = z.infer<typeof backendSessionSchema>;
 
 export function normalizeSession(data: unknown): AuthResponse {
   const parsed = backendSessionSchema.parse(data);
@@ -45,19 +40,3 @@ export function normalizeSession(data: unknown): AuthResponse {
   };
   return { token: parsed.token ?? "", usuario };
 }
-
-export const authUserSchema = z.object({
-  id_usuario: z.number(),
-  email: z.string().email(),
-  nombre: z.string(),
-  apellido: z.string(),
-  roles: z.array(roleSchema).min(1),
-  permisos: z.array(z.string()),
-});
-
-export const authResponseSchema = z.object({
-  token: z.string().min(1),
-  usuario: authUserSchema,
-});
-
-export type GoogleCredential = z.infer<typeof googleCredentialSchema>;
