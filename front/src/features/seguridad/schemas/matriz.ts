@@ -4,7 +4,7 @@ import { roleSchema } from "@/features/auth/schemas/auth";
 const permisoMatrizSchema = z.object({
   id_permiso: z.number(),
   codigo: z.string().min(1).max(50),
-  descripcion: z.string(),
+  descripcion: z.string().nullable(),
   critico: z.boolean(),
 });
 
