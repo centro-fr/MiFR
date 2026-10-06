@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getMe, postGoogleLogin, postLogout } from "@/features/auth/api/auth-api";
+import { getMe, postGoogleLogin, postLoginDesarrollo, postLogout } from "@/features/auth/api/auth-api";
 import { clearSessionToken } from "@/features/auth/api/session-token";
 import { AuthContext } from "@/features/auth/hooks/auth-context";
 import type { AuthContextValue } from "@/features/auth/hooks/auth-context";
@@ -38,6 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return session.usuario;
   }, []);
 
+  const loginDesarrollo = useCallback(async (email: string) => {
+    const session = await postLoginDesarrollo(email);
+    setUser(session.usuario);
+    return session.usuario;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await postLogout();
@@ -49,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: user !== null, isLoading, login, logout }),
-    [user, isLoading, login, logout],
+    () => ({ user, isAuthenticated: user !== null, isLoading, login, loginDesarrollo, logout }),
+    [user, isLoading, login, loginDesarrollo, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
