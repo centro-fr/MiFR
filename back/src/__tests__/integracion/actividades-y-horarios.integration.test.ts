@@ -4,7 +4,7 @@ import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "..
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
-// Casos PI-04 a PI-06 de docs/testing.md, sobre los mismos datos que carga db:seed:demo:
+// Casos PI-04 a PI-06 del plan de pruebas de integración, sobre los mismos datos que carga db:seed:demo:
 // Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Pilates Reformer.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;

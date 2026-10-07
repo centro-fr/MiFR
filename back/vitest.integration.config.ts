@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 // Tests de integración: la app real (composicion.ts) contra un Postgres real. La base se levanta
-// con `docker compose --profile test up -d db-test`; ver docs/test-integracion.md.
+// con `docker compose --profile test up -d db-test`; ver .claude/skills/tests-integracion.
 export default defineConfig({
   test: {
     environment: "node",
