@@ -13,6 +13,33 @@ Los tests unitarios mockean la persistencia: los de repositorio reciben un `pris
 
 Los tests de integración cubren eso: levantan la app real contra un Postgres real y le pegan por HTTP, igual que el front.
 
+## Qué tipo de integración es
+
+Las pruebas de integración se suelen dividir en tres tipos, según qué partes del sistema se prueban juntas:
+
+| Tipo | Qué verifica | Ejemplo |
+| :--- | :--- | :--- |
+| Integración de componentes (frontend) | Que varios componentes visuales funcionen bien juntos | Al hacer clic en un botón de la lista de productos, el carrito se actualiza |
+| Integración sistema-API (frontend + backend) | Que la interfaz se comunique bien con el servidor | El formulario de registro manda los datos en el formato que espera el backend y maneja bien la respuesta, sea de éxito o de error de validación |
+| Integración de servicios (backend + base de datos / terceros) | Que la lógica del servidor guarde, lea y modifique datos reales en la base, o que se conecte bien con servicios externos | Una pasarela de pagos como Stripe o PayPal |
+
+**Lo que hicimos es integración de servicios, del lado de la base de datos.** Los tests levantan el backend completo, con sus rutas, middlewares, services y repositorios reales, contra un PostgreSQL real. Después verifican dos cosas: que las respuestas HTTP sean las correctas y que los datos queden bien guardados en la base, o que no se guarde nada cuando el pedido se rechaza. Lo concreto:
+
+- **Permisos que salen de la base.** Quién puede hacer qué lo decide la matriz `roles` / `permisos` / `rol_permisos`. Los tests la cargan igual que en producción y comprueban cada rol contra cada listado.
+- **Cambios que se reflejan en la base al instante.** Si la propietaria quita un permiso o un rol, el cambio queda guardado y rige desde el pedido siguiente, aun con el mismo token.
+- **Datos que no deben persistir.** Cuando un pedido se rechaza por falta de permisos, se verifica en la base que no se haya creado nada.
+- **Esquema real.** Las migraciones se aplican igual que en producción, con los `CHECK`, los `UNIQUE` y las claves foráneas.
+- **Carga del catálogo de seguridad.** Volver a correr el seed no pisa los cambios de la propietaria ni duplica filas.
+
+Los tests le pegan a la API por HTTP, igual que lo haría el front, pero **no son de integración sistema-API**: en ese tipo participa la interfaz real, y acá no hay front. Lo que se prueba es el backend con su base.
+
+**El tramo de terceros quedó afuera a propósito.** El único servicio externo que hoy usa el backend es Google, para el inicio de sesión, y en los tests se reemplaza por uno simulado. Probar contra Google de verdad exigiría cuentas y tokens reales, y el resultado dependería de la red y de un servicio que no controlamos. El código que habla con Google (`GoogleAutenticacion`) está aislado detrás de la interfaz `IAutenticacionGoogleAuth` y tiene sus propios tests unitarios. Cuando llegue la pasarela de pagos, conviene seguir el mismo criterio: probarla contra el entorno de pruebas (*sandbox*) del proveedor, en una suite aparte.
+
+**Los otros dos tipos no son de este documento:**
+
+- **Integración de componentes (frontend):** corresponde al equipo de front y se prueba con las herramientas del front.
+- **Integración sistema-API:** sería la prueba de punta a punta con el navegador (Playwright), en pocos flujos críticos como el login o el alta de una profesora. Queda pendiente y hay que coordinarla con el equipo de front. Mientras tanto, el contrato entre las dos partes se cuida desde el backend: la documentación OpenAPI se genera a partir de los mismos esquemas Zod que validan cada pedido, y `src/__tests__/openapi.test.ts` falla si una ruta no está documentada.
+
 ## Cómo se corren
 
 Requisito: Docker Desktop abierto.
