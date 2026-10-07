@@ -13,6 +13,7 @@ pnpm dev              # tsx watch src/index.ts
 pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
 pnpm test             # vitest run
 pnpm test:coverage    # vitest run --coverage (reporte en consola)
+pnpm test:integration # tests contra Postgres real; antes: docker compose --profile test up -d db-test
 pnpm format           # prettier --write .
 pnpm format:check     # prettier --check .
 pnpm prisma:generate  # regenerar el cliente tras tocar el schema
@@ -33,14 +34,15 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 
 ```text
 src/
-  index.ts    composition root: unico lugar donde se hace `new` de clases concretas
+  index.ts    composition root: lee el entorno, crea las piezas de infraestructura y levanta el servidor
+  composicion.ts  construirDependencias(): arma los componentes; lo usan index.ts y los tests de integración
   app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
   modules/<subsistema>/
       interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación)
       <subsistema>.service.ts         (la realiza pasando cada operación a su componente)
   modules/<subsistema>/<componente>/
       interface/       i-*.ts
-      __tests__/       *.test.ts
+      __tests__/       *.test.ts (unitarios)   *.integration.test.ts (contra Postgres)
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
       <x>.openapi.ts                  (documentación Swagger de sus rutas)
@@ -71,7 +73,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 
 1. Todo se escribe en español: identificadores, comentarios, mensajes de error, tests y commits.
 2. El código sigue a los diagramas de `docs/diagrams/`. Para apartarse, primero se actualiza el diagrama.
-3. Solo `index.ts` instancia clases concretas, incluidas las de librerías (`PrismaClient`, `OAuth2Client`, el generador de OpenAPI). Donde hay interfaz, se depende de la interfaz. La única otra excepción es `prisma/seed.ts`, que es un programa aparte con su propio punto de entrada.
+3. Solo el composition root (`index.ts` y `composicion.ts`) instancia clases concretas, incluidas las de librerías (`PrismaClient`, `OAuth2Client`, el generador de OpenAPI). Donde hay interfaz, se depende de la interfaz. Las únicas otras excepciones son los seeds de `prisma/`, que son programas aparte con su propio punto de entrada, y los tests.
 4. El cliente de Prisma lo recibe por constructor solo un repositorio. Un service nunca lo toca.
 5. Nunca se commitea directo sobre `main` ni sobre `dev`.
 6. Los commits no mencionan herramientas de IA: sin coautores, sin enlaces de sesión, sin etiquetas de generación automática.

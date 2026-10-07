@@ -150,7 +150,7 @@ pnpm --filter back db:seed:demo -- tu-cuenta@gmail.com
 | Trabajar en el front sin el back | `VITE_USE_MOCKS=true` en `front/.env`. El login muestra un botón que entra como la propietaria de prueba |
 | Ver los logs de la API en Docker | `docker compose logs -f api` |
 
-Antes de subir cambios: `pnpm --filter back test` y `pnpm --filter back format:check` en el back; `pnpm --filter front lint` y `pnpm --filter front build` en el front.
+Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:integration` (ver [`docs/test-integracion.md`](docs/test-integracion.md)) y `pnpm --filter back format:check` en el back; `pnpm --filter front lint` y `pnpm --filter front build` en el front.
 
 ### Problemas comunes
 
@@ -239,7 +239,8 @@ Desde la raíz, `pnpm dev:back` y `pnpm dev:front` (o `pnpm dev`) levantan cada 
 | :--- | :--- | :--- |
 | back | `dev` | API con recarga automática (tsx) |
 | | `build` / `start` | Compila a `dist/` sin los tests / ejecuta lo compilado |
-| | `test` / `test:coverage` | Tests con Vitest / con cobertura |
+| | `test` / `test:coverage` | Tests unitarios con Vitest / con cobertura |
+| | `test:integration` | Tests de integración contra Postgres (`docker compose --profile test up -d db-test`) |
 | | `format` / `format:check` | Aplica o verifica el formato con Prettier |
 | | `prisma:migrate` | Crea y aplica migraciones en la base local y regenera el cliente |
 | | `prisma:generate` | Regenera el cliente de Prisma |
