@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>10 · Ejemplo completo de una US</title>
+  <link rel="stylesheet" href="../recursos/tema.css">
+  <link rel="stylesheet" href="../recursos/estilos.css">
+  <script src="filminas.js" defer></script>
+  <script src="../recursos/presentacion.js" defer></script>
+</head>
+<body>
+  <main class="diapositiva diapositiva--contenido">
+    <div class="contenido">
+      <p class="subtitulo animable" style="--orden: 0">Bloque 2 · Producto</p>
+      <h2 class="animable" style="--orden: 1">Ejemplo completo de una US</h2>
+      <article class="ficha-us animable" style="--orden: 2">
+        <h3><span>US-18</span> · Cálculo del estado de habilitación</h3>
+        <div class="tabla-contenedor">
+          <table class="tabla tabla--compacta">
+            <thead>
+              <tr><th scope="col">Criterio de aceptación</th><th scope="col">Prueba</th><th scope="col">Resultado esperado</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Plan mensual con días de gracia</td><td>Plan dentro del período de gracia</td><td class="celda-ok">“Por vencer” ✅</td></tr>
+              <tr><td>Clase suelta sin gracia</td><td>Al día siguiente de la clase</td><td class="celda-ok">“Vencida” ✅</td></tr>
+              <tr><td>Cupo en clases personalizadas</td><td>Inscripción sin cupo disponible</td><td class="celda-ok">Bloqueada ✅</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+      <p class="mensaje-clave animable" style="--orden: 3">Las 37 US tienen descripción, criterios de aceptación y <strong>casos de prueba que pasan y que fallan</strong>.</p>
+    </div>
+  </main>
+</body>
+</html>
