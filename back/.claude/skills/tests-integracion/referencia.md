@@ -58,12 +58,12 @@ back/
 
 - **Catálogo de seguridad:** se carga solo en cada `reiniciarBase`.
 - **`crearUsuario`:** usuarios con los roles y el estado que se pidan, con correos `usuarioN@example.com`.
-- **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Pilates Reformer (`PILATES_REF`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Devuelve los ids de profesoras por correo y de actividades por código.
+- **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Devuelve los ids de profesoras por correo y de actividades por código.
 - Los horarios tienen que caer entre las 07:00 y las 20:00 (horario de atención): fuera de esa franja la API responde 400 antes de llegar a la regla que se quiere probar.
 
 ## Archivos y códigos asignados
 
-Los códigos de los tests son del documento de Drive, para poder citarlos. Mantener esta tabla al día al sumar tests.
+Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para poder citarlos. Mantener esta tabla al día al sumar tests.
 
 | Letra | Archivo | Tema | Último código |
 | :--- | :--- | :--- | :--- |
@@ -71,7 +71,7 @@ Los códigos de los tests son del documento de Drive, para poder citarlos. Mante
 | B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-13 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
 
-Último caso del plan: **PI-10** (Sprint 1). El Sprint 2 empieza en PI-11.
+El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 
 ## Problemas comunes
 

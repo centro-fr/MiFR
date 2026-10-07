@@ -1,13 +1,13 @@
 ---
 name: tests-integracion
-description: Escribe los tests de integración (app real contra Postgres) de una funcionalidad nueva o modificada del backend, los corre, comprueba que detectan fallas y deja en el chat el bloque para actualizar el documento "Pruebas de Integración" de Drive (casos PI-xx, tests, trazabilidad y registro de ejecución). Usar cada vez que se agrega o cambia un endpoint, un permiso, una regla de negocio o una US, y al cerrar un sprint.
+description: Escribe los tests de integración (app real contra Postgres) de una funcionalidad nueva o modificada del backend, los corre, comprueba que detectan fallas y completa PRUEBAS-INTEGRACION.md en la raíz del repo (casos PI-xx, tests, trazabilidad, registro de ejecución y defectos). Usar cada vez que se agrega o cambia un endpoint, un permiso, una regla de negocio o una US, y al cerrar un sprint.
 ---
 
 # Tests de integración
 
 Los unitarios prueban cada pieza con mocks. Estos prueban que las piezas funcionen juntas: el backend real (`construirDependencias`), por HTTP, contra un PostgreSQL real. Lo único simulado es Google.
 
-El plan de pruebas (casos PI-xx, trazabilidad con las US, registro de corridas y defectos) **vive en Drive**, en el documento "MiFR – Pruebas de Integración", y no en el repositorio. Esta skill no edita ningún archivo de documentación: al final deja en el chat lo que hay que pegar en ese documento.
+El plan de pruebas (casos PI-xx, trazabilidad con las US, registro de corridas y defectos) vive en [`PRUEBAS-INTEGRACION.md`](../../../../PRUEBAS-INTEGRACION.md), en la raíz del repositorio. Esta skill lo completa en el mismo trabajo que agrega o modifica los tests; el documento de Drive se copia desde ese archivo.
 
 El detalle técnico (decisiones, estructura, protecciones, archivos y códigos asignados) está en [`referencia.md`](referencia.md). Leerlo antes de escribir el primer test de la sesión.
 
@@ -26,7 +26,7 @@ No corresponde para lógica pura de un service o un cálculo: eso va en un unita
 
 ### 1. Definir los casos
 
-1. Preguntar a la persona cuál es el último caso PI del documento de Drive. Si no lo sabe, usar el que figura en `referencia.md` y avisar que hay que confirmarlo.
+1. Tomar el último caso PI de la sección 6.1 de `PRUEBAS-INTEGRACION.md` y numerar desde el siguiente.
 2. Por cada flujo, escribir el caso: US que cubre, precondición, pasos y resultado esperado (códigos HTTP, mensajes y **estado final en la base**). Usar la plantilla del final.
 3. Separar lo que solo pasa en la interfaz (menús, redirecciones, diálogos de Google) en un caso aparte marcado *Manual*. No se prueba desde el backend.
 4. Mostrar los casos y esperar el visto bueno antes de escribir código.
@@ -61,18 +61,20 @@ Si ningún test falla, el test no prueba la regla: corregirlo. Suele pasar cuand
 
 Si se creó un archivo de tests, asignarle la siguiente letra libre y anotarlo. Actualizar el último código de cada archivo y el último caso PI.
 
-### 6. Dejar el bloque para Drive
+### 6. Completar `PRUEBAS-INTEGRACION.md`
 
-Cerrar con un bloque en Markdown, listo para pegar en el documento de Drive, con:
+Editar las tablas existentes del archivo de la raíz (no reescribirlo ni dejar el bloque solo en el chat):
 
-1. **Casos nuevos o modificados**, con la plantilla.
-2. **Tests automatizados**: tabla `Código | Test | Caso`, con los nombres tal como están en el código. Los códigos son la letra del archivo y un número correlativo (A-42, B-14, …).
-3. **Trazabilidad**: qué casos se suman a cada US y su estado de automatización (*Sí*, *Parcial*, *No* o *Manual*).
-4. **Registro de ejecución**: una fila por caso con fecha, resultado y tests que pasan, y una fila de corrida con fecha, sprint, motivo, cantidad de tests, resultado y duración (la que informa Vitest).
-5. **Fallas provocadas**: qué regla se rompió y qué tests fallaron.
-6. **Defectos y puntos a confirmar**, si aparecieron.
+1. **Sección 6**: fila nueva en el resumen (6.1) y detalle del caso con la plantilla (6.2). Si se modificó un caso, actualizarlo en los dos lugares.
+2. **Sección 5, trazabilidad**: sumar los casos a cada US y su estado de automatización (*Sí*, *Parcial*, *No* o *Manual*).
+3. **Sección 4**: documentar las fábricas o datos nuevos.
+4. **Sección 7, tests automatizados**: actualizar el total, la tabla de archivos (cantidad y último código) y la de tests (`Tests | Qué verifican | Caso`). Los códigos son la letra del archivo y un número correlativo (A-42, B-14, …).
+5. **Sección 7.1**: qué regla se rompió y qué tests fallaron.
+6. **Sección 8**: una fila de corrida en 8.1 (fecha, motivo, cantidad de tests, resultado, duración que informa Vitest, observaciones), el resultado de cada caso en 8.2 y los defectos en 8.3 (D-01, D-02…).
+7. **Sección 9**: puntos a confirmar, si aparecieron. Cerrar los que se resolvieron.
+8. **Sección 11**: una fila en el historial (`Versión | Fecha | Observaciones | Encargado`), con la versión siguiente a la última (1.2, 1.3, …) y en Observaciones qué casos y tests se sumaron o cambiaron.
 
-No commitear: resumir lo hecho y dejar que la persona revise.
+Fechas en formato `dd/mm/aaaa`. No commitear: resumir lo hecho y dejar que la persona revise.
 
 ## Plantilla de caso
 

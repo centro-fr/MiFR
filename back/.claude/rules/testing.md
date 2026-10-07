@@ -57,7 +57,7 @@ Al inyectarlos, el cast va contra el tipo real: `repositorio as unknown as Usuar
 
 Corren la app real (`construirDependencias` de `composicion.ts`, el mismo cableado que usa `index.ts`) contra un Postgres real. Lo único simulado es Google.
 
-**Toda funcionalidad nueva o modificada que cruce capas o dependa de la base (endpoint, permiso, regla de negocio, US) viene con sus tests de integración en el mismo trabajo.** El procedimiento está en la skill `tests-integracion`, que además deja el bloque para actualizar el documento "Pruebas de Integración" de Drive: el plan de pruebas no vive en el repositorio. El detalle técnico (decisiones, estructura, datos disponibles y códigos asignados) está en `.claude/skills/tests-integracion/referencia.md`.
+**Toda funcionalidad nueva o modificada que cruce capas o dependa de la base (endpoint, permiso, regla de negocio, US) viene con sus tests de integración en el mismo trabajo.** El procedimiento está en la skill `tests-integracion`, que además completa el plan de pruebas en `PRUEBAS-INTEGRACION.md` (raíz del repo): casos, tests, trazabilidad, corridas y defectos. El detalle técnico (decisiones, estructura, datos disponibles y códigos asignados) está en `.claude/skills/tests-integracion/referencia.md`.
 
 - Archivo con sufijo `.integration.test.ts`. `pnpm test` los excluye; corren con `pnpm test:integration`, que usa `vitest.integration.config.ts`.
 - Los que recorren varios componentes por HTTP van en `src/__tests__/integracion/`. Los de un componente puntual van en el `__tests__/` del componente.

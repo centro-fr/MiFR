@@ -150,7 +150,7 @@ pnpm --filter back db:seed:demo -- tu-cuenta@gmail.com
 | Trabajar en el front sin el back | `VITE_USE_MOCKS=true` en `front/.env`. El login muestra un botón que entra como la propietaria de prueba |
 | Ver los logs de la API en Docker | `docker compose logs -f api` |
 
-Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:integration` (ver la skill [`tests-integracion`](back/.claude/skills/tests-integracion/SKILL.md)) y `pnpm --filter back format:check` en el back; `pnpm --filter front lint` y `pnpm --filter front build` en el front.
+Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:integration` (ver la skill [`tests-integracion`](back/.claude/skills/tests-integracion/SKILL.md) y el plan en [`PRUEBAS-INTEGRACION.md`](PRUEBAS-INTEGRACION.md)) y `pnpm --filter back format:check` en el back; `pnpm --filter front lint` y `pnpm --filter front build` en el front.
 
 ### Problemas comunes
 
