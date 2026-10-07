@@ -109,6 +109,7 @@ describe("rutas de actividades", () => {
   it.each([
     ["un nombre sin letras", { nombre: "-0" }],
     ["un carácter nulo", { nombre: "Cross\u0000fit" }],
+    ["un cupo negativo", { cupo_maximo: -1 }],
     ["un cupo de -0", { cupo_maximo: -0 }],
   ])("responde 400 y no llega al service con %s", async (_caso, cambio) => {
     const respuesta = await request(app)
