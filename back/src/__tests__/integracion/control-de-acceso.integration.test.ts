@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { CodigoRol } from "../../modules/gestion-usuarios/usuario/usuario.types.js";
+import { cargarDatosDemo } from "../../shared/db/datos-demo.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion, SECRETO_JWT_DE_PRUEBA } from "./entorno.js";
 import { crearUsuario, type UsuarioDePrueba } from "./fabricas.js";
@@ -12,6 +13,7 @@ const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;
 
 const ROLES: CodigoRol[] = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
+const ROLES_SIN_ESCRITURA = ["PROFESORA", "ALUMNO", "TUTOR"] as const;
 const ACTIVIDAD_VALIDA = { codigo: "FUNC", nombre: "Funcional", modalidad: "GRUPAL", cupo_maximo: 10 };
 
 interface Sesion {
@@ -56,6 +58,7 @@ describe("autenticación", () => {
 
     expect(respuesta.status).toBe(403);
     expect(respuesta.body.error.code).toBe("USUARIO_NO_REGISTRADO");
+    expect(await prisma.usuarios.count()).toBe(0);
   });
 
   it("el login vincula la cuenta de Google y /auth/me devuelve los permisos de la base", async () => {
@@ -133,20 +136,17 @@ describe("escrituras reservadas a la propietaria", () => {
     expect(await prisma.actividades.count()).toBe(1);
   });
 
-  it.each(["PROFESORA", "ALUMNO", "TUTOR"] as const)(
-    "%s no puede crear actividades y no queda nada guardado",
-    async (rol) => {
-      const { token } = await sesionCon(rol);
+  it.each(ROLES_SIN_ESCRITURA)("%s no puede crear actividades y no queda nada guardado", async (rol) => {
+    const { token } = await sesionCon(rol);
 
-      const respuesta = await request(app)
-        .post("/api/v1/actividades")
-        .set(...autorizacion(token))
-        .send(ACTIVIDAD_VALIDA);
+    const respuesta = await request(app)
+      .post("/api/v1/actividades")
+      .set(...autorizacion(token))
+      .send(ACTIVIDAD_VALIDA);
 
-      expect(respuesta.status).toBe(403);
-      expect(await prisma.actividades.count()).toBe(0);
-    },
-  );
+    expect(respuesta.status).toBe(403);
+    expect(await prisma.actividades.count()).toBe(0);
+  });
 
   it("un usuario con varios roles suma los permisos de todos", async () => {
     const { token } = await sesionCon("PROFESORA", "PROPIETARIA");
@@ -257,4 +257,42 @@ describe("los permisos se releen de la base en cada pedido", () => {
     });
     expect(otorgado).toBe(0);
   });
+});
+
+describe("escrituras sobre actividades y horarios cargados", () => {
+  it.each(ROLES_SIN_ESCRITURA)(
+    "%s no puede modificar ni dar de baja actividades ni asignar horarios, y la base queda igual",
+    async (rol) => {
+      const { idActividad, idProfesora } = await cargarDatosDemo(prisma);
+      const idFuncional = idActividad.get("FUNCIONAL") as number;
+      const horariosAntes = await prisma.horarios.count();
+      const { token } = await sesionCon(rol);
+
+      const modificar = await request(app)
+        .patch(`/api/v1/actividades/${idFuncional}`)
+        .set(...autorizacion(token))
+        .send({ descripcion: "Descripción cambiada" });
+      const darDeBaja = await request(app)
+        .delete(`/api/v1/actividades/${idFuncional}`)
+        .set(...autorizacion(token));
+      const asignarHorario = await request(app)
+        .post("/api/v1/horarios")
+        .set(...autorizacion(token))
+        .send({
+          id_actividad: idFuncional,
+          id_profesora: idProfesora.get("carla.ruiz@example.com"),
+          dia_semana: 6,
+          hora_inicio: "10:00",
+          hora_fin: "11:00",
+        });
+
+      expect([modificar.status, darDeBaja.status, asignarHorario.status]).toEqual([403, 403, 403]);
+      const funcional = await prisma.actividades.findUnique({ where: { id_actividad: idFuncional } });
+      expect(funcional).toMatchObject({
+        descripcion: "Clase grupal de entrenamiento funcional",
+        activo: true,
+      });
+      expect(await prisma.horarios.count()).toBe(horariosAntes);
+    },
+  );
 });
