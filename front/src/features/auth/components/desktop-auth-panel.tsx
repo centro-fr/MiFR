@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { AuthFormBlock } from "@/features/auth/components/auth-form-block";
 import type { AuthErrorCode } from "@/types/auth";
 
@@ -45,9 +46,9 @@ export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onCle
 
         <footer className="mt-3 border-t border-slate-100 pt-2 text-center dark:border-white/10">
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            <button type="button" onClick={() => onOpenLegal("terms")} className="min-h-[44px] font-medium hover:text-slate-700 dark:hover:text-slate-200">Términos</button>
+            <Button type="button" variant="link" onClick={() => onOpenLegal("terms")} className="h-auto min-h-[44px] px-0 font-medium text-inherit underline-offset-2 hover:text-inherit hover:no-underline">Términos</Button>
             {" · "}
-            <button type="button" onClick={() => onOpenLegal("privacy")} className="min-h-[44px] font-medium hover:text-slate-700 dark:hover:text-slate-200">Privacidad</button>
+            <Button type="button" variant="link" onClick={() => onOpenLegal("privacy")} className="h-auto min-h-[44px] px-0 font-medium text-inherit underline-offset-2 hover:text-inherit hover:no-underline">Privacidad</Button>
           </p>
         </footer>
       </div>

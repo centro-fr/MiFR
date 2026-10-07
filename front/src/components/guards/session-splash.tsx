@@ -1,4 +1,4 @@
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2 } from "lucide-react";
 
 // Splash mientras se restaura la sesión (guards). Sin pantalla en blanco.
 export function SessionSplash() {
@@ -21,7 +21,7 @@ export function SessionSplash() {
           FR
         </div>
       </div>
-      <Spinner className="h-9 w-9 text-primary" strokeWidth={4} />
+      <Loader2 aria-hidden="true" className="h-9 w-9 animate-spin text-primary" />
       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Cargando sesión…</p>
     </main>
   );

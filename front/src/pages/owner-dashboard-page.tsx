@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { CalendarDays, Settings, ShieldCheck, UserRound } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import type { RoleCode } from "@/types/auth";
 
@@ -36,7 +38,6 @@ export function OwnerDashboardPage() {
     <OwnerLayout>
       <section aria-labelledby="dashboard-titulo" className="flex w-full flex-col gap-6">
         <header className="flex flex-col gap-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary">MiFR Centro</p>
           <h1 id="dashboard-titulo" className="text-xl font-extrabold text-slate-900 sm:text-2xl dark:text-white">
             Hola, {nombre}
           </h1>
@@ -46,44 +47,49 @@ export function OwnerDashboardPage() {
         </header>
 
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-          <article className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-surface-low">
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-pink-300"
-            >
-              <UserRound className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Tu sesión</h2>
-              <p className="truncate text-sm text-slate-500 dark:text-slate-400">{user?.email ?? "Sin correo"}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {roles.map((rol) => (
-                  <span
-                    key={rol}
-                    className="rounded-full bg-[#FDF2F7] px-2.5 py-1 text-xs font-bold text-primary-dark dark:bg-primary/20 dark:text-pink-300"
-                  >
-                    {ETIQUETAS_ROL[rol]}
-                  </span>
-                ))}
+          <Card className="rounded-2xl border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-surface-low">
+            <CardContent className="flex items-start gap-3 p-4">
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-pink-300"
+              >
+                <UserRound className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Tu sesión</h2>
+                <p className="truncate text-sm text-slate-500 dark:text-slate-400">{user?.email ?? "Sin correo"}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {roles.map((rol) => (
+                    <Badge
+                      key={rol}
+                      variant="outline"
+                      className="rounded-full border-0 bg-[#FDF2F7] px-2.5 py-1 text-xs font-bold text-primary-dark dark:bg-primary/20 dark:text-pink-300"
+                    >
+                      {ETIQUETAS_ROL[rol]}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          </article>
+            </CardContent>
+          </Card>
 
-          <article className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-surface-low">
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-pink-300"
-            >
-              <ShieldCheck className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Permisos activos</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Tenés <strong className="font-bold text-slate-800 dark:text-slate-100">{cantidadPermisos}</strong>{" "}
-                permisos habilitados en tu sesión.
-              </p>
-            </div>
-          </article>
+          <Card className="rounded-2xl border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-surface-low">
+            <CardContent className="flex items-start gap-3 p-4">
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-pink-300"
+              >
+                <ShieldCheck className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Permisos activos</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Tenés <strong className="font-bold text-slate-800 dark:text-slate-100">{cantidadPermisos}</strong>{" "}
+                  permisos habilitados en tu sesión.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex flex-col gap-3">

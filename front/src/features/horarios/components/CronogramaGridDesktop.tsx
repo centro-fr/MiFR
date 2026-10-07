@@ -3,6 +3,9 @@ import type { DiaSemana, Horario } from '../../../types/horarios';
 import { timeToMinutes } from '../utils/cronograma';
 import { textoCupo } from '../utils/cupo';
 import { Plus, Pencil, Trash2, ArrowLeftRight, Move } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 interface CronogramaGridDesktopProps {
   horarios: Horario[];
@@ -96,7 +99,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
   if (totalSlots === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full">
+      <Card className="w-full overflow-hidden rounded-2xl border-slate-200 shadow-xs">
         {/* Cabecera de días */}
         <div className="grid grid-cols-[130px_repeat(6,1fr)] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
           <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
@@ -126,12 +129,12 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
             No hay clases asignadas actualmente. El rango horario del cronograma se ajustará automáticamente a partir del horario de la primera clase que agregues.
           </p>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden w-full">
+      <Card className="w-full overflow-hidden rounded-2xl border-slate-200 shadow-xs">
       <div className="overflow-x-auto">
         <div className="min-w-[760px]">
           {/* Cabecera de días */}
@@ -311,15 +314,16 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           {/* Cabecera compacta 1 hora */}
                           <div className="flex items-center justify-between gap-1">
                             <div className="flex items-center gap-1 min-w-0">
-                              <span
-                                 className="font-black uppercase rounded-md truncate shadow-2xs text-xs px-1.5 py-0.5 max-w-[110px]"
-                                style={{
-                                  backgroundColor: theme.badgeBg,
-                                  color: theme.badgeText,
-                                }}
-                              >
-                                {horarioEnSlot.profesoraNombre}
-                              </span>
+                              <Badge
+                                 variant="outline"
+                                 className="max-w-[110px] truncate rounded-md border-0 px-1.5 py-0.5 text-xs font-black uppercase shadow-2xs"
+                                 style={{
+                                   backgroundColor: theme.badgeBg,
+                                   color: theme.badgeText,
+                                 }}
+                               >
+                                 {horarioEnSlot.profesoraNombre}
+                               </Badge>
                               {!isFilterActive && (
                                 <span
                                   className="text-slate-400 group-hover:text-slate-600 transition"
@@ -334,30 +338,32 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                                 {horarioEnSlot.horaInicio} - {horarioEnSlot.horaFin} hs
                               </span>
                               <div className="hidden group-hover:flex items-center gap-0.5 ml-0.5">
-                                <button
+                                <Button
                                   type="button"
+                                  size="icon"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onEdit(horarioEnSlot);
                                   }}
-                                  className="p-1 rounded bg-white/80 hover:bg-white text-slate-600 hover:text-[#E91E82] shadow-2xs transition cursor-pointer"
+                                  className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-[#E91E82] [&_svg]:size-2.5"
                                   title="Editar horario"
                                   aria-label="Editar horario"
                                 >
                                   <Pencil className="w-2.5 h-2.5 stroke-[2.5]" />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   type="button"
+                                  size="icon"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onDelete(horarioEnSlot);
                                   }}
-                                  className="p-1 rounded bg-white/80 hover:bg-white text-slate-600 hover:text-red-600 shadow-2xs transition cursor-pointer"
+                                  className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-red-600 [&_svg]:size-2.5"
                                   title="Eliminar horario"
                                   aria-label="Eliminar horario"
                                 >
                                   <Trash2 className="w-2.5 h-2.5 stroke-[2.5]" />
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -390,15 +396,16 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             {/* Cabecera de la tarjeta */}
                             <div className="flex items-center justify-between gap-1 flex-wrap mb-1.5">
                               <div className="flex items-center gap-1 min-w-0">
-                                <span
-                                   className="font-black uppercase rounded-md truncate shadow-2xs text-xs px-2 py-0.5 max-w-[130px]"
-                                  style={{
-                                    backgroundColor: theme.badgeBg,
-                                    color: theme.badgeText,
-                                  }}
-                                >
-                                  {horarioEnSlot.profesoraNombre}
-                                </span>
+                                <Badge
+                                    variant="outline"
+                                    className="max-w-[130px] truncate rounded-md border-0 px-2 py-0.5 text-xs font-black uppercase shadow-2xs"
+                                    style={{
+                                      backgroundColor: theme.badgeBg,
+                                      color: theme.badgeText,
+                                    }}
+                                  >
+                                    {horarioEnSlot.profesoraNombre}
+                                  </Badge>
                                 {!isFilterActive && (
                                   <span
                                     className="text-slate-400 group-hover:text-slate-600 transition"
@@ -413,30 +420,32 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                                   {horarioEnSlot.horaInicio} - {horarioEnSlot.horaFin} hs
                                 </span>
                                 <div className="hidden group-hover:flex items-center gap-0.5 ml-0.5">
-                                  <button
+                                  <Button
                                     type="button"
+                                    size="icon"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onEdit(horarioEnSlot);
                                     }}
-                                    className="p-1 rounded bg-white/80 hover:bg-white text-slate-600 hover:text-[#E91E82] shadow-2xs transition cursor-pointer"
+                                    className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-[#E91E82] [&_svg]:size-2.5"
                                     title="Editar horario"
                                     aria-label="Editar horario"
                                   >
                                     <Pencil className="w-2.5 h-2.5 stroke-[2.5]" />
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     type="button"
+                                    size="icon"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onDelete(horarioEnSlot);
                                     }}
-                                    className="p-1 rounded bg-white/80 hover:bg-white text-slate-600 hover:text-red-600 shadow-2xs transition cursor-pointer"
+                                    className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-red-600 [&_svg]:size-2.5"
                                     title="Eliminar horario"
                                     aria-label="Eliminar horario"
                                   >
                                     <Trash2 className="w-2.5 h-2.5 stroke-[2.5]" />
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             </div>
@@ -585,14 +594,17 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                   </div>
 
                   {/* Botón de creación en hover */}
-                  <button
+                  <Button
                     type="button"
-                    className={`w-7 h-7 rounded-full bg-[#E91E82]/15 text-[#E91E82] font-black flex items-center justify-center shadow-xs transition pointer-events-none ${
+                    size="icon"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className={`pointer-events-none h-7 w-7 rounded-full bg-[#E91E82]/15 font-black text-[#E91E82] shadow-xs transition [&_svg]:size-4 ${
                       isOverCell ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
                     }`}
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
-                  </button>
+                  </Button>
                 </div>
               );
             })}
@@ -601,6 +613,6 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };

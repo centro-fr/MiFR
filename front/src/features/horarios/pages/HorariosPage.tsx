@@ -7,6 +7,18 @@ import { CronogramaListMobile } from '../components/CronogramaListMobile';
 import { HorarioModalForm } from '../components/HorarioModalForm';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { PendingChangesDock } from '@/components/ui/pending-changes-dock';
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { Filter, RotateCcw, Plus, CalendarX, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
@@ -50,15 +62,6 @@ export const HorariosPage: React.FC = () => {
   const [horaSugerida, setHoraSugerida] = useState<string>('08:00');
   const [horarioAEliminar, setHorarioAEliminar] = useState<Horario | null>(null);
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-  };
 
   // Saber si hay filtros activos
   const isFilterActive =
@@ -80,7 +83,7 @@ export const HorariosPage: React.FC = () => {
     setFiltroActividad('TODAS');
     setFiltroProfesora('TODAS');
     setFiltroTipo('todas');
-    showToast('Filtros restablecidos');
+    toast.success('Filtros restablecidos');
   };
 
   // Acciones de modal
@@ -105,13 +108,13 @@ export const HorariosPage: React.FC = () => {
     if (horarioEnEdicion) {
       const res = editarHorario(horarioEnEdicion.id, data);
       if (res.ok) {
-        showToast('Horario modificado en borrador. Presioná "Guardar cambios" para consolidar.');
+        toast.success('Horario modificado en borrador. Presioná "Guardar cambios" para consolidar.');
       }
       return res;
     } else {
       const res = crearHorario(data);
       if (res.ok) {
-        showToast('Nuevo horario agregado al borrador. Presioná "Guardar cambios" para consolidar.');
+        toast.success('Nuevo horario agregado al borrador. Presioná "Guardar cambios" para consolidar.');
       }
       return res;
     }
@@ -121,10 +124,10 @@ export const HorariosPage: React.FC = () => {
     if (!horarioAEliminar) return;
     const res = await eliminarHorario(horarioAEliminar.id);
     if (res.ok) {
-      showToast(res.advertencia ? `Horario dado de baja. ${res.advertencia}` : 'Horario dado de baja.');
+      toast.success(res.advertencia ? `Horario dado de baja. ${res.advertencia}` : 'Horario dado de baja.');
       setIsModalOpen(false);
     } else {
-      showToast(`⚠️ ${res.error}`);
+      toast.error(res.error);
     }
     setHorarioAEliminar(null);
   };
@@ -132,15 +135,15 @@ export const HorariosPage: React.FC = () => {
   const handleGuardarCambios = async () => {
     const res = await guardarCambios();
     if (res.ok) {
-      showToast(`¡Cambios guardados! Se actualizaron ${res.guardados} clases.`);
+      toast.success(`¡Cambios guardados! Se actualizaron ${res.guardados} clases.`);
     } else {
-      showToast(`⚠️ ${res.error} Los cambios que no se guardaron siguen en el borrador.`);
+      toast.error(`${res.error} Los cambios que no se guardaron siguen en el borrador.`);
     }
   };
 
   const handleCancelarCambios = () => {
     cancelarCambios();
-    showToast('Cambios descartados: se restauró el cronograma oficial.');
+    toast.success('Cambios descartados: se restauró el cronograma oficial.');
   };
 
   const handleMoveHorario = (
@@ -151,18 +154,18 @@ export const HorariosPage: React.FC = () => {
   ) => {
     const res = moverHorario(horarioId, nuevoDia, nuevaHoraInicio, slotFin);
     if (res.ok) {
-      showToast('Clase reubicada en borrador. Presioná "Guardar cambios" para consolidar.');
+      toast.success('Clase reubicada en borrador. Presioná "Guardar cambios" para consolidar.');
     } else {
-      showToast(`⚠️ ${res.error}`);
+      toast.error(res.error);
     }
   };
 
   const handleSwapHorarios = (idA: string, idB: string) => {
     const res = intercambiarHorarios(idA, idB);
     if (res.ok) {
-      showToast('Clases intercambiadas en borrador. Presioná "Guardar cambios" para consolidar.');
+      toast.success('Clases intercambiadas en borrador. Presioná "Guardar cambios" para consolidar.');
     } else {
-      showToast(`⚠️ ${res.error}`);
+      toast.error(res.error);
     }
   };
 
@@ -180,13 +183,9 @@ export const HorariosPage: React.FC = () => {
               <p role="alert" className="text-sm font-semibold text-slate-700">
                 {mensajeDeErrorApi(errorCarga, 'No se pudo cargar el cronograma.')}
               </p>
-              <button
-                type="button"
-                onClick={reintentarCarga}
-                className="min-h-[44px] px-5 rounded-xl bg-[#E91E82] hover:bg-[#BC1266] text-white text-sm font-bold cursor-pointer"
-              >
+              <Button type="button" onClick={reintentarCarga} className="min-h-[44px] px-5">
                 Reintentar
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -214,9 +213,9 @@ export const HorariosPage: React.FC = () => {
                 <h1 className="text-2xl xl:text-3xl font-black text-[#181C26] tracking-tight">
                   Horarios
                 </h1>
-                <span className="px-3 py-1 rounded-full text-sm font-bold bg-pink-50 text-[#E91E82] border border-pink-100 shadow-2xs">
+                <Badge variant="outline" className="rounded-full border-pink-100 bg-pink-50 px-3 py-1 text-sm font-bold text-[#E91E82] shadow-2xs">
                   {totalHorarios} clases asignadas
-                </span>
+                </Badge>
               </div>
               <p className="text-sm text-slate-500 mt-1 font-medium leading-relaxed">
                 Armá y gestioná el cronograma semanal del salón sin superposiciones.
@@ -229,32 +228,35 @@ export const HorariosPage: React.FC = () => {
         <div className="bg-white border-b border-slate-200 px-4 md:px-7 py-3">
           {/* Fila compacta de móvil */}
           <div className="flex items-center justify-between md:hidden">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-              className="inline-flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition cursor-pointer min-h-[44px]"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-slate-100 px-3.5 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 [&_svg]:size-3.5"
             >
               <Filter className="w-3.5 h-3.5 text-slate-500" />
               <span>Filtros</span>
               {activeFiltersCount > 0 && (
-                <span className="w-5 h-5 rounded-full bg-[#E91E82] text-white flex items-center justify-center text-xs font-extrabold">
+                <Badge variant="outline" className="flex h-5 w-5 items-center justify-center rounded-full border-0 bg-[#E91E82] p-0 text-xs font-extrabold text-white">
                   {activeFiltersCount}
-                </span>
+                </Badge>
               )}
               {isMobileFiltersOpen ? (
                 <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
               ) : (
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               )}
-            </button>
+            </Button>
 
             {isFilterActive && (
-              <button
+              <Button
+                type="button"
+                variant="link"
                 onClick={resetFilters}
-                className="text-sm font-bold text-[#E91E82] hover:underline cursor-pointer"
+                className="h-auto min-h-[44px] px-0 text-sm font-bold text-[#E91E82]"
               >
                 Limpiar filtros
-              </button>
+              </Button>
             )}
           </div>
 
@@ -270,58 +272,72 @@ export const HorariosPage: React.FC = () => {
             </div>
 
             {/* Actividad */}
-            <select
-              value={filtroActividad}
-              onChange={(e) => setFiltroActividad(e.target.value)}
-              className="w-full md:w-auto text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition-colors min-h-[44px]"
-            >
-              <option value="TODAS">Todas las disciplinas ({actividades.length})</option>
-              {actividades.map((act) => (
-                <option key={act.id} value={act.id}>
-                  {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'})
-                </option>
-              ))}
-            </select>
+            <Select value={filtroActividad} onValueChange={setFiltroActividad}>
+              <SelectTrigger
+                aria-label="Filtrar por disciplina"
+                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas las disciplinas ({actividades.length})</SelectItem>
+                {actividades.map((act) => (
+                  <SelectItem key={act.id} value={act.id}>
+                    {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Profesora */}
-            <select
-              value={filtroProfesora}
-              onChange={(e) => setFiltroProfesora(e.target.value)}
-              className="w-full md:w-auto text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition-colors min-h-[44px]"
-            >
-              <option value="TODAS">Todas las profesoras ({profesoras.length})</option>
-              {profesoras.map((prof) => (
-                <option key={prof.id} value={prof.id}>
-                  {prof.nombre} {prof.apellido}
-                </option>
-              ))}
-            </select>
+            <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
+              <SelectTrigger
+                aria-label="Filtrar por profesora"
+                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODAS">Todas las profesoras ({profesoras.length})</SelectItem>
+                {profesoras.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id}>
+                    {prof.nombre} {prof.apellido}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Modalidad */}
-            <select
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full md:w-auto text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition-colors min-h-[44px]"
-            >
-              <option value="todas">Todas las modalidades</option>
-              <option value="grupal">Solo Grupales</option>
-              <option value="personalizada">Solo Personalizadas</option>
-            </select>
+            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+              <SelectTrigger
+                aria-label="Filtrar por modalidad"
+                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las modalidades</SelectItem>
+                <SelectItem value="grupal">Solo Grupales</SelectItem>
+                <SelectItem value="personalizada">Solo Personalizadas</SelectItem>
+              </SelectContent>
+            </Select>
 
             {isFilterActive && (
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={resetFilters}
-                className="hidden md:inline-flex items-center gap-1.5 text-sm font-bold text-[#E91E82] hover:text-[#BC1266] px-3 py-2 rounded-xl hover:bg-pink-50 transition cursor-pointer min-h-[44px]"
+                className="hidden min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-[#E91E82] hover:bg-pink-50 hover:text-[#BC1266] md:inline-flex [&_svg]:size-3.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Limpiar filtros
-              </button>
+              </Button>
             )}
 
             {isFilterActive && (
-              <span className="hidden md:inline-flex text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl ml-auto">
+              <Badge variant="outline" className="ml-auto hidden rounded-xl border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 md:inline-flex">
                 Modo consulta activo
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -343,57 +359,62 @@ export const HorariosPage: React.FC = () => {
           <div className="max-w-[1380px] mx-auto w-full">
             {/* ACCIÓN PRINCIPAL: la confirmación vive en el dock flotante inferior */}
             <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-5">
-              <button
+              <Button
                 type="button"
                 onClick={() => handleOpenCreate('LUNES', '08:00')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#E91E82] to-[#BC1266] hover:from-[#BC1266] hover:to-[#900e4e] shadow-xs hover:shadow-md transition cursor-pointer min-h-[44px]"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#E91E82] to-[#BC1266] px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:from-[#BC1266] hover:to-[#900e4e] hover:shadow-md"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Nuevo Horario</span>
-              </button>
+              </Button>
             </div>
 
             {/* MENSAJE CUANDO EL CRONOGRAMA ESTÁ VACÍO */}
             {totalHorarios === 0 ? (
-              <div className="mb-5 bg-gradient-to-r from-amber-50/90 via-white to-pink-50/70 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
-                    <CalendarX className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-extrabold text-slate-900">
-                        Cronograma vacío
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                        Sin clases activas
-                      </span>
+              <Card className="mb-5 rounded-2xl border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-white to-pink-50/70 p-4 shadow-xs sm:p-5">
+                <CardContent className="flex flex-col items-center justify-between gap-4 p-0 sm:flex-row">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+                      <CalendarX className="w-5 h-5" />
                     </div>
-                    <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-                      Actualmente no hay ninguna clase programada. Asigná la primera clase semanal haciendo clic en <strong>"+ Nueva clase"</strong>.
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-extrabold text-slate-900">
+                          Cronograma vacío
+                        </h3>
+                        <Badge variant="outline" className="rounded-full border-0 bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                          Sin clases activas
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
+                        Actualmente no hay ninguna clase programada. Asigná la primera clase semanal haciendo clic en <strong>"+ Nueva clase"</strong>.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => handleOpenCreate('LUNES', '08:00')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#E91E82] hover:bg-[#BC1266] transition shadow-xs cursor-pointer shrink-0 min-h-[44px]"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                  <span>Asignar primera clase</span>
-                </button>
-              </div>
+                  <Button
+                    type="button"
+                    onClick={() => handleOpenCreate('LUNES', '08:00')}
+                    className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold shadow-xs [&_svg]:size-3.5"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>Asignar primera clase</span>
+                  </Button>
+                </CardContent>
+              </Card>
             ) : isFilterActive && horariosMostrados.length === 0 ? (
-              <div className="mb-5 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm text-slate-600">
-                <p>
+              <Alert className="mb-5 flex items-center justify-between gap-3 rounded-2xl border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <AlertDescription>
                   No se encontraron clases programadas con los filtros seleccionados.
-                </p>
-                <button
+                </AlertDescription>
+                <Button
+                  type="button"
+                  variant="link"
                   onClick={resetFilters}
-                  className="text-sm font-bold text-[#E91E82] hover:underline cursor-pointer"
+                  className="h-auto shrink-0 px-0 text-sm font-bold text-[#E91E82]"
                 >
                   Restablecer filtros
-                </button>
-              </div>
+                </Button>
+              </Alert>
             ) : null}
 
             {/* VISTA DESKTOP (GRILLA SEMANAL CON DRAG & DROP) */}
@@ -464,13 +485,6 @@ export const HorariosPage: React.FC = () => {
         />
       )}
 
-      {/* TOAST DE FEEDBACK (se eleva cuando el dock está visible) */}
-      {toastMessage && (
-        <div className={`fixed right-6 z-50 bg-[#181C26] text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 text-sm font-semibold animate-fadeIn max-w-[90vw] ${hayCambiosPendientes ? 'bottom-24' : 'bottom-6'}`}>
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </OwnerLayout>
   );
 };

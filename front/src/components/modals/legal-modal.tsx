@@ -1,5 +1,12 @@
 import { ShieldCheck, X } from "lucide-react";
-import { useEscapeToClose, type LegalModalType } from "@/features/auth/schemas/contact";
+import type { LegalModalType } from "@/features/auth/schemas/contact";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface LegalModalProps {
   type: LegalModalType;
@@ -7,38 +14,36 @@ interface LegalModalProps {
 }
 
 export function LegalModal({ type, onClose }: LegalModalProps) {
-  useEscapeToClose(onClose, type !== null);
-  if (!type) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="legal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={onClose}
+    <Dialog
+      open={type !== null}
+      onOpenChange={(abierto) => {
+        if (!abierto) onClose();
+      }}
     >
-      <div
-        className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-3xl border border-white/15 bg-dark p-6 text-white shadow-2xl sm:p-8"
-        onClick={(event) => event.stopPropagation()}
+      <DialogContent
+        hideClose
+        className="relative flex max-h-[85vh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-dark p-6 text-white shadow-2xl sm:rounded-3xl sm:p-8"
       >
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
           aria-label="Cerrar modal"
-          className="absolute right-5 top-5 min-h-[44px] min-w-[44px] rounded-xl bg-white/5 p-2 text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+          className="absolute right-5 top-5 min-h-[44px] min-w-[44px] rounded-xl bg-white/5 p-2 text-slate-300 transition-all hover:bg-white/10 hover:text-white [&_svg]:size-5"
         >
           <X aria-hidden="true" className="h-5 w-5" />
-        </button>
+        </Button>
 
         <div className="mb-4 flex items-center gap-3">
           <span className="rounded-xl border border-primary/30 bg-primary/20 p-2.5 text-primary">
             <ShieldCheck aria-hidden="true" className="h-6 w-6" />
           </span>
           <div>
-            <h3 id="legal-title" className="text-lg font-bold tracking-tight text-white">
+            <DialogTitle className="text-lg font-bold tracking-tight text-white">
               {type === "terms" ? "Términos y Condiciones de Uso" : "Política de Privacidad y Datos"}
-            </h3>
+            </DialogTitle>
             <p className="text-sm text-slate-400">Centro de Entrenamiento MiFR • Athletic Hub</p>
           </div>
         </div>
@@ -54,9 +59,11 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
                 <strong>2. Identidad única Google:</strong> la plataforma utiliza exclusivamente Google Identity
                 Services (SSO); no se almacenan contraseñas locales.
               </p>
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
-                Texto legal completo pendiente de definición por la administración del centro.
-              </p>
+              <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3">
+                <AlertDescription className="text-sm text-amber-900">
+                  Texto legal completo pendiente de definición por la administración del centro.
+                </AlertDescription>
+              </Alert>
             </>
           ) : (
             <>
@@ -69,23 +76,25 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
                 <strong>2. Uso de datos:</strong> tus datos no se comparten con terceros ni se utilizan con fines
                 distintos a la gestión del centro.
               </p>
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
-                Texto legal completo pendiente de definición por la administración del centro.
-              </p>
+              <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3">
+                <AlertDescription className="text-sm text-amber-900">
+                  Texto legal completo pendiente de definición por la administración del centro.
+                </AlertDescription>
+              </Alert>
             </>
           )}
         </div>
 
         <div className="flex justify-end border-t border-white/10 pt-5">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             className="min-h-[44px] rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-all hover:bg-primary-dark"
           >
             Entendido
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

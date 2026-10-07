@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -12,14 +11,3 @@ const contactSchema = z.object({
 export type ContactFormData = z.infer<typeof contactSchema>;
 export { contactSchema };
 export type LegalModalType = "terms" | "privacy" | null;
-
-export function useEscapeToClose(onClose: () => void, active: boolean) {
-  useEffect(() => {
-    if (!active) return;
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [active, onClose]);
-}

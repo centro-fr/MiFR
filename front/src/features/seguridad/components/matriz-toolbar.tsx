@@ -1,4 +1,11 @@
 import { LeyendaEstados } from "@/features/seguridad/components/leyenda-estados";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // Encabezado: breadcrumb, título, descripción y leyenda. La confirmación de
 // cambios (guardar/descartar) vive en el dock flotante inferior,
@@ -6,17 +13,19 @@ import { LeyendaEstados } from "@/features/seguridad/components/leyenda-estados"
 export function MatrizToolbar() {
   return (
     <div className="flex flex-col gap-4">
-      <nav aria-label="Ruta">
-        <ol className="flex flex-wrap items-center gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
-          <li>Centro MiFR</li>
-          <li aria-hidden="true">/</li>
-          <li>Configuración</li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="font-bold text-slate-700 dark:text-slate-200">
-            Permisos por Rol
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb aria-label="Ruta">
+        <BreadcrumbList className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          <BreadcrumbItem>Centro MiFR</BreadcrumbItem>
+          <BreadcrumbSeparator>/</BreadcrumbSeparator>
+          <BreadcrumbItem>Configuración</BreadcrumbItem>
+          <BreadcrumbSeparator>/</BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-bold text-slate-700 dark:text-slate-200">
+              Permisos por Rol
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
           Definición de Permisos por Rol

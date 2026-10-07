@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { AuthStateBanner } from "@/features/auth/components/auth-state-banner";
 import { GoogleAuthButton } from "@/features/auth/components/google-auth-button";
 import type { AuthErrorCode } from "@/types/auth";
@@ -54,8 +55,9 @@ export function AuthFormBlock({
         {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
       </p>
       {showRetry && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onClear}
           className={cn(
             "mt-3 min-h-[44px] w-full text-center text-sm font-semibold text-slate-600 hover:text-dark dark:text-slate-400 dark:hover:text-white",
@@ -63,11 +65,12 @@ export function AuthFormBlock({
           )}
         >
           ← Cancelar y volver al inicio
-        </button>
+        </Button>
       )}
       {isAccessDenied && !isLoading && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onContact}
           className={cn(
             "mt-2 min-h-[44px] w-full text-center text-sm font-bold text-primary-dark hover:text-primary",
@@ -75,7 +78,7 @@ export function AuthFormBlock({
           )}
         >
           Contactar administración para solicitar acceso
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { RotateCw } from "lucide-react";
+import { Loader2, RotateCw } from "lucide-react";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { Spinner } from "@/components/ui/spinner";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
 
 interface GoogleAuthButtonProps {
@@ -28,7 +28,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
         aria-label="Iniciando sesión"
         className={cn(BASE_CLASSES, "cursor-wait border-slate-200 bg-slate-100 text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-slate-300")}
       >
-        <Spinner />
+        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
         <span>Iniciando sesión...</span>
       </div>
     );
@@ -36,10 +36,10 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
 
   if (hasError && !isConnectionError) {
     return (
-      <button type="button" onClick={onRetry} className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15")}>
+      <Button type="button" onClick={onRetry} className={cn(BASE_CLASSES, "[&_svg]:size-4 border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15")}>
         <RotateCw aria-hidden="true" className="h-4 w-4 text-primary-dark" />
         <span>Volver a intentar</span>
-      </button>
+      </Button>
     );
   }
 
@@ -49,7 +49,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
       <span className="relative block w-full">
         <span
           aria-hidden="true"
-          className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google", className)}
+          className={cn(buttonVariants({ variant: "outline" }), BASE_CLASSES, "[&_svg]:size-5 border-slate-300 bg-white text-[#1f1f1f] shadow-google", className)}
         >
           <GoogleIcon className="h-5 w-5 shrink-0" />
           <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
@@ -62,14 +62,14 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
 
   return (
     <span className="relative block w-full">
-      <button
+      <Button
         type="button"
         onClick={hasError ? onRetry : onLogin}
-        className={cn(BASE_CLASSES, "border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15", className)}
+        className={cn(BASE_CLASSES, "[&_svg]:size-5 border-slate-300 bg-white text-[#1f1f1f] shadow-google hover:bg-slate-50 hover:shadow-google-hover focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15", className)}
       >
         <GoogleIcon className="h-5 w-5 shrink-0" />
         <span>{hasError ? "Reintentar con Google" : "Iniciar sesión con Google"}</span>
-      </button>
+      </Button>
     </span>
   );
 }

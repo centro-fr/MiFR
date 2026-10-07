@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ContactModal } from "@/components/modals/contact-modal";
 import { LegalModal } from "@/components/modals/legal-modal";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
@@ -159,11 +160,17 @@ export function LoginPage() {
 function LoginSinConfigurar() {
   return (
     <main className="flex h-dvh items-center justify-center bg-canvas px-4">
-      <p role="alert" className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-        Falta configurar el login: definí <code>VITE_GOOGLE_CLIENT_ID</code>, o en desarrollo{" "}
-        <code>VITE_LOGIN_DESARROLLO=true</code> (con <code>LOGIN_DESARROLLO=true</code> en el back) o{" "}
-        <code>VITE_USE_MOCKS=true</code>.
-      </p>
+      <Alert
+        variant="destructive"
+        className="max-w-md rounded-2xl border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 [&>svg]:text-amber-600"
+      >
+        <AlertTitle>Falta configurar el login</AlertTitle>
+        <AlertDescription className="text-sm text-amber-900">
+          Definí <code>VITE_GOOGLE_CLIENT_ID</code>, o en desarrollo{" "}
+          <code>VITE_LOGIN_DESARROLLO=true</code> (con <code>LOGIN_DESARROLLO=true</code> en el back) o{" "}
+          <code>VITE_USE_MOCKS=true</code>.
+        </AlertDescription>
+      </Alert>
     </main>
   );
 }

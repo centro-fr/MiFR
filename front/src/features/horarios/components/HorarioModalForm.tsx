@@ -1,9 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { X, AlertCircle } from 'lucide-react';
 import { textoCupo } from '../utils/cupo';
 import { horarioFormSchema } from '../schemas/horario';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription as AlertDesc, AlertTitle as AlertTitulo } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface HorarioModalFormProps {
   isOpen: boolean;
@@ -32,6 +50,9 @@ function horaFinSugerida(horaInicioSugerida: string): string {
   const nextH = Math.min(h + 1, 20);
   return `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
+
+const CLASES_CAMPO =
+  'w-full min-h-[48px] rounded-xl border-slate-300 bg-slate-50 text-slate-800 focus:ring-[#E91E82]';
 
 export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
   isOpen,
@@ -66,6 +87,9 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
   // Vacío = el horario usa el cupo de la actividad (cupo_maximo null en el back).
   const [cupoPropio, setCupoPropio] = useState<number | null>(horarioEnEdicion?.cupoPropio ?? null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Foco inicial en el primer campo (reemplaza el autoFocus del select nativo).
+  const primerCampoRef = useRef<HTMLButtonElement>(null);
 
   const selectedActividad = actividades.find((a) => a.id === actividadId);
 
@@ -119,219 +143,216 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
     }
   };
 
-  // Cerrar con Escape, como el resto de los modales del sistema.
-  useEffect(() => {
-    if (!isOpen) return;
-    function alPresionarTecla(evento: KeyboardEvent) {
-      if (evento.key === 'Escape') onClose();
-    }
-    document.addEventListener('keydown', alPresionarTecla);
-    return () => document.removeEventListener('keydown', alPresionarTecla);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   return (
-    <>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-horario-title"
-        onClick={(evento) => {
-          if (evento.target === evento.currentTarget) onClose();
+    <Dialog
+      open={isOpen}
+      onOpenChange={(abierto) => {
+        if (!abierto) onClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        onOpenAutoFocus={(evento) => {
+          evento.preventDefault();
+          primerCampoRef.current?.focus();
         }}
-        className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn"
+        className="max-h-[90dvh] w-full max-w-[600px] gap-0 overflow-y-auto rounded-3xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl"
       >
-        <div className="bg-white rounded-3xl w-full max-w-[600px] my-auto shadow-2xl border border-slate-200 overflow-hidden">
-          {/* Cabecera del modal */}
-          <div className="bg-slate-50 border-b border-slate-200 px-6 md:px-8 py-5 md:py-6 flex items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#BC1266] px-2.5 py-1 rounded-md bg-pink-100">
-                Cronograma
-              </span>
-              <h3 id="modal-horario-title" className="text-xl md:text-2xl font-extrabold text-slate-900 mt-2 tracking-tight">
-                {horarioEnEdicion ? 'Editar Horario Semanal' : 'Asignar Nuevo Horario'}
-              </h3>
+        {/* Cabecera del modal */}
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 md:px-8 md:py-6">
+          <div>
+            <Badge variant="outline" className="rounded-md border-0 bg-pink-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[#BC1266]">
+              Cronograma
+            </Badge>
+            <DialogTitle className="mt-2 text-xl font-extrabold tracking-tight text-slate-900 md:text-2xl">
+              {horarioEnEdicion ? 'Editar Horario Semanal' : 'Asignar Nuevo Horario'}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Formulario de horario semanal del cronograma.
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Cerrar formulario"
+            className="h-11 w-11 shrink-0 rounded-full bg-slate-200 font-bold text-slate-600 hover:bg-slate-300 [&_svg]:size-5"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Alerta de Conflicto de Superposición / Validación */}
+        {errorMessage && (
+          <Alert className="flex items-start gap-3 rounded-none border-0 border-b border-red-200 bg-red-50 px-6 py-5 animate-shake md:px-8 [&>svg]:static [&>svg]:h-10 [&>svg]:w-10 [&>svg]:shrink-0 [&>svg]:rounded-xl [&>svg]:bg-red-100 [&>svg]:p-2 [&>svg]:text-red-600 [&>svg~*]:pl-0">
+            <AlertCircle aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <AlertTitulo className="text-sm font-black uppercase text-red-800">
+                Validación de Horario
+              </AlertTitulo>
+              <AlertDesc className="mt-1 text-sm leading-relaxed text-red-700">
+                {errorMessage}
+              </AlertDesc>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar formulario"
-              className="w-11 h-11 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer shrink-0"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          </Alert>
+        )}
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-4 p-5 md:space-y-5 md:p-7">
+          {/* Actividad */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label htmlFor="horario-actividad" className="text-sm font-bold text-slate-700 md:text-base">
+                Actividad / Disciplina
+              </Label>
+            </div>
+            <Select value={actividadId} onValueChange={setActividadId}>
+              <SelectTrigger
+                id="horario-actividad"
+                ref={primerCampoRef}
+                className={CLASES_CAMPO}
+              >
+                <SelectValue placeholder="Seleccionar actividad" />
+              </SelectTrigger>
+              <SelectContent>
+                {actividades.map((act) => (
+                  <SelectItem key={act.id} value={act.id}>
+                    {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Personalizada' : 'Grupal'} - Cupo: {textoCupo(act.cupoMaximo)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Alerta de Conflicto de Superposición / Validación */}
-          {errorMessage && (
-            <div className="bg-red-50 border-b border-red-200 px-6 md:px-8 py-5 animate-shake">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-red-800 uppercase">Validación de Horario</h4>
-                  <p className="text-sm text-red-700 mt-1 leading-relaxed">{errorMessage}</p>
-                </div>
-              </div>
+          {/* Profesora */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label htmlFor="horario-profesora" className="text-sm font-bold text-slate-700 md:text-base">
+                Profesora responsable
+              </Label>
             </div>
-          )}
-
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="p-5 md:p-7 space-y-4 md:space-y-5">
-            {/* Actividad */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="horario-actividad" className="block text-sm md:text-base font-bold text-slate-700">
-                  Actividad / Disciplina
-                </label>
-              </div>
-              <select
-                id="horario-actividad"
-                value={actividadId}
-                autoFocus
-                onChange={(e) => setActividadId(e.target.value)}
-                className="w-full text-sm md:text-base rounded-xl px-4 py-3 min-h-[48px] outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
-                required
-              >
-                {actividades.map((act) => (
-                  <option key={act.id} value={act.id}>
-                    {act.nombre} ({act.modalidad === 'PERSONALIZADA' ? 'Personalizada' : 'Grupal'} - Cupo: {textoCupo(act.cupoMaximo)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Profesora */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="horario-profesora" className="block text-sm md:text-base font-bold text-slate-700">
-                  Profesora responsable
-                </label>
-              </div>
-              <select
-                id="horario-profesora"
-                value={profesoraId}
-                onChange={(e) => setProfesoraId(e.target.value)}
-                className="w-full text-sm md:text-base rounded-xl px-4 py-3 min-h-[48px] outline-none transition bg-slate-50 border border-slate-300 text-slate-800 focus:ring-2 focus:ring-[#E91E82]"
-                required
-              >
+            <Select value={profesoraId} onValueChange={setProfesoraId}>
+              <SelectTrigger id="horario-profesora" className={CLASES_CAMPO}>
+                <SelectValue placeholder="Seleccionar profesora" />
+              </SelectTrigger>
+              <SelectContent>
                 {profesoras.map((prof) => (
-                  <option key={prof.id} value={prof.id}>
+                  <SelectItem key={prof.id} value={prof.id}>
                     {prof.nombre} {prof.apellido}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Día y Cupo */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-              <div>
-                <label htmlFor="horario-dia" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
-                  Día
-                </label>
-                <select
-                  id="horario-dia"
-                  value={diaSemana}
-                  onChange={(e) => setDiaSemana(e.target.value as DiaSemana)}
-                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
-                  required
-                >
+          {/* Día y Cupo */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+            <div>
+              <Label htmlFor="horario-dia" className="mb-2 block text-sm font-bold text-slate-700 md:text-base">
+                Día
+              </Label>
+              <Select value={diaSemana} onValueChange={(valor) => setDiaSemana(valor as DiaSemana)}>
+                <SelectTrigger id="horario-dia" className={CLASES_CAMPO}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {DIAS_SEMANA.map((dia) => (
-                    <option key={dia.id} value={dia.id}>
+                    <SelectItem key={dia.id} value={dia.id}>
                       {dia.label}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="horario-cupo" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
-                  Cupo propio <span className="text-slate-400 font-normal">(opcional)</span>
-                </label>
-                <input
-                  id="horario-cupo"
-                  type="number"
-                  min="1"
-                  max="32767"
-                  value={cupoPropio ?? ''}
-                  // Solo dígitos: ni "-", ni "-0", ni "e" llegan al estado (Zod valida al guardar).
-                  onChange={(e) => {
-                    const digitos = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
-                    setCupoPropio(digitos ? parseInt(digitos, 10) : null);
-                  }}
-                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
-                  placeholder={`De la actividad: ${textoCupo(selectedActividad?.cupoMaximo ?? null)}`}
-                />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
+            <div>
+              <Label htmlFor="horario-cupo" className="mb-2 block text-sm font-bold text-slate-700 md:text-base">
+                Cupo propio <span className="font-normal text-slate-400">(opcional)</span>
+              </Label>
+              <Input
+                id="horario-cupo"
+                type="number"
+                min="1"
+                max="32767"
+                value={cupoPropio ?? ''}
+                // Solo dígitos: ni "-", ni "-0", ni "e" llegan al estado (Zod valida al guardar).
+                onChange={(e) => {
+                  const digitos = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
+                  setCupoPropio(digitos ? parseInt(digitos, 10) : null);
+                }}
+                className={CLASES_CAMPO}
+                placeholder={`De la actividad: ${textoCupo(selectedActividad?.cupoMaximo ?? null)}`}
+              />
+            </div>
+          </div>
 
-            {/* Horas Inicio y Fin */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-              <div>
-                <label htmlFor="horario-inicio" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
-                  Hora Inicio <span className="text-slate-400 font-normal">(07:00 a 19:00)</span>
-                </label>
-                <input
-                  id="horario-inicio"
-                  type="time"
-                  min="07:00"
-                  max="19:00"
-                  value={horaInicio}
-                  onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="horario-fin" className="block text-sm md:text-base font-bold text-slate-700 mb-2">
-                  Hora Fin <span className="text-slate-400 font-normal">(máx 20:00)</span>
-                </label>
-                <input
-                  id="horario-fin"
-                  type="time"
-                  min="08:00"
-                  max="20:00"
-                  value={horaFin}
-                  onChange={(e) => setHoraFin(e.target.value)}
-                  className="w-full text-sm md:text-base bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 min-h-[48px] outline-none focus:ring-2 focus:ring-[#E91E82]"
-                  required
-                />
-              </div>
+          {/* Horas Inicio y Fin */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+            <div>
+              <Label htmlFor="horario-inicio" className="mb-2 block text-sm font-bold text-slate-700 md:text-base">
+                Hora Inicio <span className="font-normal text-slate-400">(07:00 a 19:00)</span>
+              </Label>
+              <Input
+                id="horario-inicio"
+                type="time"
+                min="07:00"
+                max="19:00"
+                value={horaInicio}
+                onChange={(e) => setHoraInicio(e.target.value)}
+                className={CLASES_CAMPO}
+                required
+              />
             </div>
+            <div>
+              <Label htmlFor="horario-fin" className="mb-2 block text-sm font-bold text-slate-700 md:text-base">
+                Hora Fin <span className="font-normal text-slate-400">(máx 20:00)</span>
+              </Label>
+              <Input
+                id="horario-fin"
+                type="time"
+                min="08:00"
+                max="20:00"
+                value={horaFin}
+                onChange={(e) => setHoraFin(e.target.value)}
+                className={CLASES_CAMPO}
+                required
+              />
+            </div>
+          </div>
 
-            {/* Botones de acción */}
-            <div className="pt-4 md:pt-5 border-t border-slate-200 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-              {horarioEnEdicion && onDelete ? (
-                <button
-                  type="button"
-                  className="text-sm md:text-base font-bold text-red-600 hover:underline cursor-pointer min-h-[44px] px-2 text-left"
-                  onClick={onDelete}
-                >
-                  Eliminar horario
-                </button>
-              ) : (
-                <div className="hidden sm:block" />
-              )}
-              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
-                <button
-                  type="button"
-                  className="px-5 py-3 min-h-[48px] text-sm md:text-base font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-                  onClick={onClose}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#E91E82] hover:bg-[#BC1266] text-white text-sm md:text-base font-bold px-7 py-3 min-h-[48px] rounded-xl shadow-md transition cursor-pointer"
-                >
-                  Aceptar
-                </button>
-              </div>
+          {/* Botones de acción */}
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between md:pt-5">
+            {horarioEnEdicion && onDelete ? (
+              <Button
+                type="button"
+                variant="link"
+                className="min-h-[44px] justify-start px-2 text-left text-sm font-bold text-red-600 hover:text-red-700 hover:no-underline md:text-base"
+                onClick={onDelete}
+              >
+                Eliminar horario
+              </Button>
+            ) : (
+              <div className="hidden sm:block" />
+            )}
+            <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-[48px] px-5 text-sm font-bold text-slate-600 hover:bg-slate-100 md:text-base"
+                onClick={onClose}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="min-h-[48px] bg-[#E91E82] px-7 text-sm font-bold text-white shadow-md hover:bg-[#BC1266] md:text-base"
+              >
+                Aceptar
+              </Button>
             </div>
-          </form>
-        </div>
-      </div>
-    </>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
-};
+}

@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "@/components/ui/sonner";
 import { router } from "@/app/router";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/hooks/auth-provider";
-import { useThemeStore } from "@/stores/theme-store";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,17 +13,14 @@ const queryClient = new QueryClient({
 });
 
 export function Providers() {
-  const tema = useThemeStore((estado) => estado.tema);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RouterProvider router={router} />
-        <ToastContainer
-          position="top-right"
-          theme={tema === "oscuro" ? "dark" : "light"}
-          closeButton
-          autoClose={4000}
-        />
+        {/* Sin DOM: solo contexto de Radix para los tooltips (sidebar colapsado). */}
+        <TooltipProvider delayDuration={300}>
+          <RouterProvider router={router} />
+        </TooltipProvider>
+        <Toaster position="top-right" duration={4000} />
       </AuthProvider>
     </QueryClientProvider>
   );

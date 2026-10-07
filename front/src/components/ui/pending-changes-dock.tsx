@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 
 interface PendingChangesDockProps {
   cantidad: number;
@@ -50,33 +52,35 @@ export function PendingChangesDock({ cantidad, guardando, onGuardar, onDescartar
         </p>
 
         <div className="flex items-center gap-1 shrink-0">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={handleDescartar}
             disabled={guardando}
             aria-live="polite"
-            className={`px-3 min-h-[44px] rounded-xl text-sm font-bold transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={cn(
+              "h-auto min-h-[44px] rounded-xl px-3 text-sm font-bold disabled:cursor-not-allowed",
               confirmandoDescarte
-                ? "text-red-300 hover:text-red-200 hover:bg-white/10"
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-            }`}
+                ? "text-red-300 hover:bg-white/10 hover:text-red-200"
+                : "text-slate-300 hover:bg-white/10 hover:text-white",
+            )}
           >
             {confirmandoDescarte ? "¿Descartar?" : "Descartar"}
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={onGuardar}
             disabled={guardando}
-            className="inline-flex items-center gap-1.5 px-4 min-h-[44px] rounded-xl text-sm font-bold text-white bg-[#E91E82] hover:bg-[#BC1266] transition cursor-pointer disabled:cursor-wait disabled:opacity-80"
+            className="inline-flex h-auto min-h-[44px] items-center gap-1.5 rounded-xl bg-[#E91E82] px-4 text-sm font-bold text-white transition hover:bg-[#BC1266] disabled:cursor-wait [&_svg]:size-3.5"
           >
             {guardando ? (
-              <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Check aria-hidden="true" className="w-3.5 h-3.5 stroke-[3]" />
+              <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-[3]" />
             )}
             <span>{guardando ? "Guardando…" : "Guardar cambios"}</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>

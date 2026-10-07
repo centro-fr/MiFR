@@ -3,6 +3,16 @@ import { ChevronDown, Lock } from "lucide-react";
 import { NivelPill } from "@/features/seguridad/components/nivel-pill";
 import { descripcionModulo, etiquetaModulo } from "@/features/seguridad/utils/etiquetas";
 import type { NivelAcceso } from "@/features/seguridad/utils/niveles";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/utils/cn";
 import type { RoleCode } from "@/types/auth";
 
@@ -35,17 +45,17 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-surface-low">
-      <table className="w-full min-w-[720px] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
-            <th scope="col" className="min-w-[280px] px-5 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+    <Card className="overflow-x-auto rounded-2xl border-slate-200 bg-white dark:border-white/10 dark:bg-surface-low">
+      <Table className="w-full min-w-[720px] text-left">
+        <TableHeader>
+          <TableRow className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
+            <TableHead scope="col" className="min-w-[280px] px-5 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Módulo
-            </th>
+            </TableHead>
             {roles.map((rol) => {
               const bloqueada = rol.codigo === "PROPIETARIA";
               return (
-                <th
+                <TableHead
                   key={rol.codigo}
                   scope="col"
                   className={cn(
@@ -68,22 +78,23 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                       ROL_SUBTITULO[rol.codigo]
                     )}
                   </span>
-                </th>
+                </TableHead>
               );
             })}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {modulos.map((modulo) => {
             const colapsado = colapsados.has(modulo);
             return (
-              <tr key={modulo} className="border-t border-slate-200 first:border-t-0 dark:border-white/10">
-                <td className="px-5 py-2">
-                  <button
+              <TableRow key={modulo} className="border-t border-slate-200 first:border-t-0 dark:border-white/10">
+                <TableCell className="px-5 py-2">
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => alternarModulo(modulo)}
                     aria-expanded={!colapsado}
-                    className="flex min-h-[44px] w-full items-center gap-2 text-left"
+                    className="flex h-auto min-h-[44px] w-full items-center justify-start gap-2 rounded-lg px-0 text-left hover:bg-transparent"
                   >
                     <ChevronDown
                       aria-hidden="true"
@@ -95,10 +106,10 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                         <span className="mt-0.5 block text-xs font-normal text-slate-400 dark:text-slate-500">{descripcionModulo(modulo)}</span>
                       )}
                     </span>
-                  </button>
-                </td>
+                  </Button>
+                </TableCell>
                 {roles.map((rol) => (
-                  <td
+                  <TableCell
                     key={rol.codigo}
                     className={cn(
                       "border-l border-slate-100 px-3 text-center dark:border-white/10",
@@ -114,13 +125,13 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                         onCiclar={() => onCiclar(rol.codigo, modulo)}
                       />
                     )}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </Card>
   );
 }

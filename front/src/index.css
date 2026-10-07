@@ -1,13 +1,68 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/* Modo oscuro por clase (.dark en <html>), controlado por el store de tema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Variables shadcn/ui (tema claro) mapeadas al brand MiFR ─────────────
+   Los componentes shadcn (dialog, sheet, table, badge…) consumen estos
+   tokens vía bg-background / text-foreground / bg-primary / border-border.
+   Brand obligatorio: #E91E82 · #BC1266 · #181C26 (AGENTS.md §6). */
+:root {
+  --background: #f8fafc;
+  --foreground: #181c26;
+  --card: #ffffff;
+  --card-foreground: #181c26;
+  --popover: #ffffff;
+  --popover-foreground: #181c26;
+  --primary: #e91e82;
+  --primary-dark: #bc1266;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #181c26;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #181c26;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #e91e82;
+}
+
+.dark {
+  --background: #0f131d;
+  --foreground: #dfe2f0;
+  --card: #171b25;
+  --card-foreground: #dfe2f0;
+  --popover: #171b25;
+  --popover-foreground: #dfe2f0;
+  --primary: #e91e82;
+  --primary-foreground: #ffffff;
+  --secondary: #262a34;
+  --secondary-foreground: #dfe2f0;
+  --muted: #262a34;
+  --muted-foreground: #94a3b8;
+  --accent: #262a34;
+  --accent-foreground: #dfe2f0;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #e91e82;
+}
+
+/* Tokens estáticos del tema (no dependen de la clase .dark). */
 @theme {
-  --color-primary: #e91e82;
-  --color-primary-dark: #bc1266;
   --color-dark: #181c26;
   --color-canvas: #0f131d;
   --color-surface-low: #171b25;
   --color-surface-high: #262a34;
   --color-bg-light: #f8fafc;
+  /* Menú lateral: rosa profundo (vino). Blanco sobre este fondo da 12.2:1
+     y pink-200 8.8:1; se usa igual en tema claro y oscuro. */
+  --color-sidebar: #651538;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
   --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -35,8 +90,31 @@
   --animate-modal-in: modal-in 0.22s ease-out both;
 }
 
-/* Modo oscuro por clase (.dark en <html>), controlado por el store de tema. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Tokens shadcn: `inline` para que las utilidades (bg-background,
+   text-foreground…) referencien la var y reaccionen a .dark sin
+   regenerar el CSS. primary-dark es constante en ambos temas. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
 
 @keyframes pulse-glow {
   0%,
@@ -198,27 +276,26 @@
   }
 }
 
+/* shadcn: el borde por defecto (`border` sin color) usa el token del tema
+   en vez de currentColor, y el body nace con los tokens background/foreground
+   (las vars se resuelven por cascada desde .dark en <html>). */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
 html {
   font-family: var(--font-sans);
   height: 100%;
-  background-color: var(--color-bg-light);
-}
-
-html.dark {
-  background-color: var(--color-canvas);
-}
-
-body {
-  margin: 0;
-  min-height: 100%;
-  background-color: var(--color-bg-light);
-  color: #181c26;
-  -webkit-font-smoothing: antialiased;
-}
-
-html.dark body {
-  background-color: var(--color-canvas);
-  color: #dfe2f0;
+  background-color: var(--color-background);
 }
 
 #root {
