@@ -50,7 +50,7 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
     request: {
       body: cuerpoJson(
         crearProfesoraSchema.openapi("CrearProfesora", {
-          example: { id_usuario: 2, especialidad: "Pilates" },
+          example: { id_usuario: 2, especialidad: "Posing" },
         }),
       ),
     },

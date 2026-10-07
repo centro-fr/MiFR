@@ -5,7 +5,7 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
 // Casos PI-04 a PI-06 del plan de pruebas de integración, sobre los mismos datos que carga db:seed:demo:
-// Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Pilates Reformer.
+// Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Entrenamiento Personalizado.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;
 
@@ -44,19 +44,19 @@ afterAll(() => entorno.cerrar());
 describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
   it("una actividad personalizada sin cupo se rechaza y no se guarda", async () => {
     const respuesta = await comoMarina("post", "/actividades").send({
-      codigo: "PILATES_MAT",
-      nombre: "Pilates Mat",
+      codigo: "POSING",
+      nombre: "Posing",
       modalidad: "PERSONALIZADA",
     });
 
     expect(respuesta.status).toBe(400);
-    expect(await prisma.actividades.count({ where: { codigo: "PILATES_MAT" } })).toBe(0);
+    expect(await prisma.actividades.count({ where: { codigo: "POSING" } })).toBe(0);
   });
 
   it("un horario sin cupo propio toma el cupo de su actividad", async () => {
     const actividad = await comoMarina("post", "/actividades").send({
-      codigo: "PILATES_MAT",
-      nombre: "Pilates Mat",
+      codigo: "POSING",
+      nombre: "Posing",
       modalidad: "PERSONALIZADA",
       cupo_maximo: 3,
     });
@@ -68,20 +68,23 @@ describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
       hora_inicio: "09:00",
       hora_fin: "10:00",
     });
-    const pilatesReformer = await comoMarina("get", `/horarios?id_actividad=${idActividad("PILATES_REF")}`);
+    const entrenamientoPersonalizado = await comoMarina(
+      "get",
+      `/horarios?id_actividad=${idActividad("ENTRENAMIENTO_PERS")}`,
+    );
 
     expect(actividad.status).toBe(201);
     expect(horario.status).toBe(201);
     expect(horario.body.cupo_maximo_efectivo).toBe(3);
-    expect(pilatesReformer.body).toHaveLength(2);
-    expect(pilatesReformer.body.map((h: { cupo_maximo_efectivo: number }) => h.cupo_maximo_efectivo)).toEqual(
-      [4, 4],
-    );
+    expect(entrenamientoPersonalizado.body).toHaveLength(2);
+    expect(
+      entrenamientoPersonalizado.body.map((h: { cupo_maximo_efectivo: number }) => h.cupo_maximo_efectivo),
+    ).toEqual([4, 4]);
   });
 
   it("el cupo propio de un horario manda sobre el de su actividad", async () => {
     const conCupoPropio = await crearHorario({
-      id_actividad: idActividad("PILATES_REF"),
+      id_actividad: idActividad("ENTRENAMIENTO_PERS"),
       id_profesora: idProfesora(CARLA),
       dia_semana: LUNES,
       hora_inicio: "11:00",
@@ -133,7 +136,7 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
   it("no se le puede asignar a una profesora un horario que se superpone con otro suyo", async () => {
     const respuesta = await esperarRechazoSinCambios(
       crearHorario({
-        id_actividad: idActividad("PILATES_REF"),
+        id_actividad: idActividad("ENTRENAMIENTO_PERS"),
         id_profesora: idProfesora(LUCIA),
         dia_semana: LUNES,
         hora_inicio: "18:30",
@@ -189,7 +192,7 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
 
     const respuesta = await esperarRechazoSinCambios(
       crearHorario({
-        id_actividad: idActividad("PILATES_REF"),
+        id_actividad: idActividad("ENTRENAMIENTO_PERS"),
         id_profesora: idProfesora(CARLA),
         dia_semana: VIERNES,
         hora_inicio: "09:00",
@@ -232,18 +235,18 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
 
   it("una actividad sin horarios se da de baja", async () => {
     const actividad = await comoMarina("post", "/actividades").send({
-      codigo: "YOGA",
-      nombre: "Yoga",
+      codigo: "RETO_3M",
+      nombre: "Reto 3M",
       modalidad: "GRUPAL",
     });
 
     const respuesta = await comoMarina("delete", `/actividades/${actividad.body.id_actividad}`);
 
     expect(respuesta.status).toBe(200);
-    const yoga = await prisma.actividades.findUnique({
+    const reto3m = await prisma.actividades.findUnique({
       where: { id_actividad: actividad.body.id_actividad },
     });
-    expect(yoga?.activo).toBe(false);
+    expect(reto3m?.activo).toBe(false);
   });
 
   it("una actividad no puede pasar a personalizada sin cupo", async () => {

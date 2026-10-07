@@ -46,7 +46,7 @@ function usuariosDemo(emailMultirol: string): UsuarioDemo[] {
       nombre: "Carla",
       apellido: "Ruiz",
       roles: ["PROFESORA"],
-      especialidad: "Pilates",
+      especialidad: "Entrenamiento personalizado",
     },
     {
       email: emailMultirol,
@@ -67,9 +67,9 @@ export const ACTIVIDADES_DEMO: ActividadDemo[] = [
     cupo_maximo: null,
   },
   {
-    codigo: "PILATES_REF",
-    nombre: "Pilates Reformer",
-    descripcion: "Clase personalizada en máquina reformer",
+    codigo: "ENTRENAMIENTO_PERS",
+    nombre: "Entrenamiento Personalizado",
+    descripcion: "Preparación física general con rutina individual",
     modalidad: "PERSONALIZADA",
     cupo_maximo: 4,
   },
@@ -94,7 +94,7 @@ function horariosDemo(emailMultirol: string): HorarioDemo[] {
       cupo_maximo: null,
     },
     {
-      codigoActividad: "PILATES_REF",
+      codigoActividad: "ENTRENAMIENTO_PERS",
       emailProfesora: "carla.ruiz@example.com",
       dia_semana: 2,
       hora_inicio: "09:00",
@@ -102,7 +102,7 @@ function horariosDemo(emailMultirol: string): HorarioDemo[] {
       cupo_maximo: null,
     },
     {
-      codigoActividad: "PILATES_REF",
+      codigoActividad: "ENTRENAMIENTO_PERS",
       emailProfesora: "carla.ruiz@example.com",
       dia_semana: 4,
       hora_inicio: "09:00",
