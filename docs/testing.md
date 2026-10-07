@@ -46,7 +46,7 @@ Cada sprint dura dos semanas. Las fechas de los Sprints 2 a 5 son estimadas a pa
 
 | Sprint | Nombre | Fechas | US | Estado de las pruebas |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | Autenticación, Accesos y Configuración Base | 22/09/2026 – 06/10/2026 | US-01 a US-04 | En ejecución: 6 de 9 casos automatizados, total o parcialmente |
+| 1 | Autenticación, Accesos y Configuración Base | 22/09/2026 – 06/10/2026 | US-01 a US-04 | En ejecución: 9 casos automatizados y aprobados; PI-10 (interfaz) pendiente de verificación manual |
 | 2 | Gestión Comercial y Ciclo de Vida del Alumno | 07/10/2026 – 20/10/2026 (estimadas) | US-05 a US-12 | Sin casos definidos |
 | 3 | Núcleo Transaccional y Operación Diaria | 21/10/2026 – 03/11/2026 (estimadas) | US-15 a US-18, US-20, US-21 | Sin casos definidos |
 | 4 | Control Administrativo, Finanzas y Retención | 04/11/2026 – 17/11/2026 (estimadas) | US-13, US-19, US-22 a US-26 | Sin casos definidos |
@@ -108,10 +108,10 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 
 | US | Historia | Sprint | Casos | Automatización |
 | :--- | :--- | :---: | :--- | :--- |
-| US-01 | Inicio de sesión con Google Auth | 1 | PI-01, PI-02, PI-03, PI-07, PI-08 | Parcial |
-| US-02 | Definición de permisos por rol | 1 | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09 | Parcial |
-| US-03 | Alta y administración de actividades y cupos | 1 | PI-03, PI-04, PI-06 | Parcial |
-| US-04 | Asignación de profesoras y horarios a actividades | 1 | PI-03, PI-04, PI-05, PI-06 | Parcial |
+| US-01 | Inicio de sesión con Google Auth | 1 | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10 | Sí, salvo PI-10 (Manual) |
+| US-02 | Definición de permisos por rol | 1 | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09, PI-10 | Sí, salvo PI-10 (Manual) |
+| US-03 | Alta y administración de actividades y cupos | 1 | PI-03, PI-04, PI-06 | Sí |
+| US-04 | Asignación de profesoras y horarios a actividades | 1 | PI-03, PI-04, PI-05, PI-06 | Sí |
 | US-05 | Pre-inscripción de alumno nuevo | 2 | | |
 | US-06 | Asociación de tutor a alumno menor de edad | 2 | | |
 | US-07 | Alta definitiva al confirmarse el primer pago | 2 | | |
@@ -169,23 +169,26 @@ Sesión de Google → roles en base de datos → middleware de permisos → endp
 
 | Caso | Flujo | US-01 | US-02 | US-03 | US-04 | Automatizado |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| PI-01 | Login con roles múltiples y permisos por rol | X | X | | | Parcial |
-| PI-02 | Accesos rechazados | X | X | | | Parcial |
-| PI-03 | Permisos sobre actividades y horarios | X | X | X | X | Parcial |
-| PI-04 | Actividad personalizada → horario con cupo heredado | | | X | X | No |
-| PI-05 | Validaciones al asignar profesora y horario | | X | | X | No |
-| PI-06 | Modificación y baja de actividades con horarios | | | X | X | No |
+| PI-01 | Login con roles múltiples y permisos por rol | X | X | | | Sí |
+| PI-02 | Accesos rechazados | X | X | | | Sí |
+| PI-03 | Permisos sobre actividades y horarios | X | X | X | X | Sí |
+| PI-04 | Actividad personalizada → horario con cupo heredado | | | X | X | Sí |
+| PI-05 | Validaciones al asignar profesora y horario | | X | | X | Sí |
+| PI-06 | Modificación y baja de actividades con horarios | | | X | X | Sí |
 | PI-07 | Acceso a los datos propios | X | X | | | Sí |
 | PI-08 | Los cambios de permisos rigen desde el pedido siguiente | X | X | | | Sí |
 | PI-09 | Carga del catálogo de seguridad | | X | | | Sí |
+| PI-10 | Sesión en la interfaz: menú por rol, login cancelado y redirección | X | X | | | Manual |
 
 PI-07, PI-08 y PI-09 no estaban en la primera versión del plan. Se sumaron al automatizar, porque cubren riesgos de control de acceso que los tests unitarios no pueden ver: con mocks, los permisos nunca salen de la base.
 
+PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador (el menú, el login de Google cancelado y la redirección al login). Se separaron para que cada caso de backend quede completo y lo que depende de la interfaz quede identificado: se verifica a mano hasta que existan las pruebas de punta a punta con el navegador.
+
 #### Datos de prueba del sprint
 
-Los casos ya automatizados (PI-01 a PI-03 y PI-07 a PI-09) usan los datos comunes de la sección 4, más una actividad "Funcional" (código `FUNC`, grupal, cupo 10) para los casos de alta.
+PI-01 a PI-03 y PI-07 a PI-09 usan los datos comunes de la sección 4, más una actividad "Funcional" (código `FUNC`, grupal, cupo 10) para los casos de alta.
 
-PI-04 a PI-06 usan los datos que ya están cargados en el seed de desarrollo (`back/prisma/seed-demo.ts`, que se corre con `pnpm --filter back db:seed:demo`). Así, el mismo escenario se puede recorrer a mano en Swagger o en el front y verificar en los tests automatizados. Para automatizarlos, la carga de esos datos se extraerá a una función reutilizable, como se hizo con el catálogo de seguridad, y cada test la correrá sobre la base de prueba. Los correos son ficticios.
+PI-03 (paso 4) y PI-04 a PI-06 usan los datos del seed de desarrollo. La carga está en `back/src/shared/db/datos-demo.ts` (`cargarDatosDemo`) y la usan los dos: `pnpm --filter back db:seed:demo` la corre sobre la base local, y los tests la corren sobre la base de prueba antes de cada caso. Así, el mismo escenario se puede recorrer a mano en Swagger o en el front y verificar en los tests automatizados. Los correos son ficticios.
 
 Usuarios (los tres tienen además su registro de profesora):
 
@@ -214,6 +217,8 @@ Horarios:
 | Jueves | 09:00 – 10:00 | Carla Ruiz | Pilates Reformer | Sin cupo propio (toma 4 de la actividad) |
 | Viernes | 19:00 – 20:00 | Marina Sosa | Funcional Grupal | 12, propio del horario (CA-07) |
 
+Los horarios nuevos tienen que caer dentro del horario de atención del centro, de 07:00 a 20:00 (US-04): fuera de esa franja la API responde 400 antes de llegar a las reglas de cada caso.
+
 #### PI-01 — Login con roles múltiples y permisos por rol
 
 **US:** US-01, US-02 · **Precondición:** catálogo de seguridad cargado.
@@ -224,7 +229,7 @@ Horarios:
 
 **Resultado esperado:** el login vincula la cuenta de Google con el usuario. El perfil trae sus roles y los permisos que salen de la matriz de la base (el Alumno ve actividades y horarios, pero no usuarios). El usuario con dos roles suma los permisos de ambos. La base no guarda ninguna contraseña: el esquema no tiene columna para eso.
 
-**Automatizado:** Parcial. Pasos 1 a 3 (tests A-04 y A-31). El menú lo arma el front a partir de los permisos que devuelve `/auth/me`, así que su verificación es Manual y queda para las pruebas de punta a punta.
+**Automatizado:** Sí (tests A-04 y A-31). El menú que arma el front con esos permisos está en PI-10.
 
 #### PI-02 — Accesos rechazados
 
@@ -236,22 +241,22 @@ Horarios:
 4. Se llama con el token de un usuario que después fue borrado.
 5. Se llama con el token de un usuario que después fue dado de baja.
 
-**Resultado esperado:** el correo no registrado recibe 403 con el código `USUARIO_NO_REGISTRADO` y no se abre ninguna sesión. Las llamadas sin sesión o con un token ajeno responden 401. El usuario borrado recibe 401 y el dado de baja 403, aunque su token no haya vencido.
+**Resultado esperado:** el correo no registrado recibe 403 con el código `USUARIO_NO_REGISTRADO`, no se abre ninguna sesión y no se crea ninguna persona en la base. Las llamadas sin sesión o con un token ajeno responden 401. El usuario borrado recibe 401 y el dado de baja 403, aunque su token no haya vencido.
 
-**Automatizado:** Parcial. Pasos 1 a 5 (tests A-01, A-02, A-03, A-05 y A-06). Falta verificar en la base que el intento del paso 1 no crea ninguna persona. El login de Google cancelado y la redirección al login ocurren en la interfaz (Manual).
+**Automatizado:** Sí (tests A-01, A-02, A-03, A-05 y A-06). El login de Google cancelado y la redirección al login están en PI-10.
 
 #### PI-03 — Permisos sobre actividades y horarios
 
-**US:** US-01, US-02, US-03, US-04 · **Precondición:** catálogo de seguridad cargado.
+**US:** US-01, US-02, US-03, US-04 · **Precondición:** catálogo de seguridad cargado; para el paso 4, también el seed de desarrollo.
 
 1. Una profesora, un alumno y un tutor intentan crear una actividad.
 2. La propietaria crea la misma actividad.
 3. Cada rol consulta los listados de usuarios, matriz de permisos, actividades, horarios y profesoras.
-4. Una profesora intenta modificar y dar de baja una actividad, y asignar un horario a otra profesora.
+4. Una profesora, un alumno y un tutor intentan modificar y dar de baja Funcional Grupal, y asignarle a Carla un horario.
 
-**Resultado esperado:** las escrituras de profesora, alumno y tutor responden 403 y la base queda sin cambios. La de la propietaria responde 201 y queda persistida. Actividades, horarios y profesoras responden 200 para todos los roles. Usuarios y matriz de permisos responden 200 solo para la propietaria y 403 para el resto.
+**Resultado esperado:** las escrituras de profesora, alumno y tutor responden 403 y la base queda sin cambios: ninguna actividad creada, la descripción de Funcional Grupal intacta, la actividad sigue activa y no aparece ningún horario nuevo. La de la propietaria responde 201 y queda persistida. Actividades, horarios y profesoras responden 200 para todos los roles. Usuarios y matriz de permisos responden 200 solo para la propietaria y 403 para el resto.
 
-**Automatizado:** Parcial. Pasos 1 a 3 (tests A-07 a A-30). Falta el paso 4.
+**Automatizado:** Sí (tests A-07 a A-30 y A-39 a A-41).
 
 #### PI-04 — Actividad personalizada → horario con cupo heredado
 
@@ -260,12 +265,14 @@ Horarios:
 1. Marina intenta crear la actividad "Pilates Mat" (código `PILATES_MAT`), personalizada y sin cupo.
 2. La crea con cupo 3.
 3. Le asigna a Carla el horario de Pilates Mat del lunes de 09:00 a 10:00, sin cupo propio.
-4. Se consultan los horarios.
-5. Marina crea "Funcional Sábado", grupal y sin cupo, y se la asigna a Lucía el sábado de 10:00 a 11:00.
+4. Se consultan los horarios de Pilates Reformer.
+5. Le asigna a Carla un horario de Pilates Reformer el lunes de 11:00 a 12:00, con cupo propio 2.
+6. Se consultan los horarios de Marina.
+7. Marina crea "Funcional Sábado", grupal y sin cupo, y se la asigna a Lucía el sábado de 10:00 a 11:00.
 
-**Resultado esperado:** el paso 1 falla con 400 por cupo obligatorio. En el paso 4, el horario nuevo de Carla informa cupo efectivo 3 y los de Pilates Reformer de martes y jueves informan 4: si el horario no tiene cupo propio, toma el de la actividad. El de Funcional Grupal del viernes de Marina informa 12, porque su cupo propio manda sobre el de la actividad. La actividad grupal del paso 5 se crea y se asigna sin cupo.
+**Resultado esperado:** el paso 1 falla con 400 por cupo obligatorio y la actividad no se guarda. El horario del paso 3 informa cupo efectivo 3, y los de Pilates Reformer de martes y jueves informan 4: si el horario no tiene cupo propio, toma el de la actividad. El horario del paso 5 informa 2 y el de Funcional Grupal del viernes de Marina informa 12, porque el cupo propio del horario manda sobre el de la actividad. La actividad grupal del paso 7 se crea y se asigna sin cupo.
 
-**Automatizado:** No.
+**Automatizado:** Sí (tests B-01 a B-04).
 
 #### PI-05 — Validaciones al asignar profesora y horario
 
@@ -273,13 +280,13 @@ Horarios:
 
 1. Marina intenta asignarle a Lucía Pilates Reformer el lunes de 18:30 a 19:30.
 2. Marina se asigna a sí misma Funcional Grupal el lunes de 18:00 a 19:00.
-3. Marina intenta asignarse una clase el viernes de 19:30 a 20:30.
+3. Marina intenta asignarse Funcional Grupal el viernes de 18:30 a 19:30.
 4. Marina intenta crear un horario que termina antes de empezar (de 10:00 a 09:00).
 5. Marina le quita a Carla el rol Profesora e intenta asignarle Pilates Reformer el viernes de 09:00 a 10:00.
 
-**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. El paso 5 se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Ninguno de los rechazos deja un horario guardado.
+**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. En el paso 5 el rol se quita (200) y la asignación se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Ninguno de los rechazos deja un horario guardado.
 
-**Automatizado:** No.
+**Automatizado:** Sí (tests B-05 a B-09).
 
 #### PI-06 — Modificación y baja de actividades con horarios
 
@@ -290,9 +297,9 @@ Horarios:
 3. Marina crea una actividad nueva, sin horarios, y la da de baja.
 4. Marina intenta cambiar Funcional Grupal de grupal a personalizada sin indicar cupo.
 
-**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene horarios activos: hay que darlos de baja antes que la actividad") y la actividad sigue activa. El paso 3 se acepta. El paso 4 se rechaza con 400 por cupo obligatorio.
+**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene horarios activos: hay que darlos de baja antes que la actividad") y la actividad sigue activa. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal.
 
-**Automatizado:** No.
+**Automatizado:** Sí (tests B-10 a B-13).
 
 #### PI-07 — Acceso a los datos propios
 
@@ -331,11 +338,24 @@ Horarios:
 
 **Automatizado:** Sí (tests C-01 a C-03).
 
+#### PI-10 — Sesión en la interfaz: menú por rol, login cancelado y redirección
+
+**US:** US-01, US-02 · **Precondición:** front y back levantados con el seed de desarrollo. Los correos del seed no son cuentas reales de Google: para entrar como Marina con Google se carga el seed con un correo propio (`pnpm --filter back db:seed:demo -- <correo>`), y para los pasos 1, 2 y 4 alcanza con el login de desarrollo (`LOGIN_DESARROLLO=true`).
+
+1. Marina inicia sesión y se mira el menú.
+2. Lucía inicia sesión y se mira el menú.
+3. Se inicia el login con Google y se cierra la ventana de Google antes de elegir la cuenta.
+4. Sin sesión, se entra directo a una pantalla interna (por ejemplo, la de actividades).
+
+**Resultado esperado:** el menú de Marina combina las funciones de propietaria y de profesora. El de Lucía muestra solo funciones de profesora: ve sus propios honorarios, pero no la administración de usuarios, la matriz de permisos ni los datos financieros del centro. El login cancelado no deja ninguna sesión abierta. La pantalla interna redirige al login.
+
+**Automatizado:** Manual. Depende del navegador y de la cuenta de Google: se automatiza con las pruebas de punta a punta, coordinadas con el equipo de front.
+
 #### Tests automatizados del sprint
 
-41 tests en dos archivos.
+57 tests en tres archivos.
 
-##### Archivo A: `back/src/__tests__/integracion/control-de-acceso.integration.test.ts` (38 tests)
+##### Archivo A: `back/src/__tests__/integracion/control-de-acceso.integration.test.ts` (41 tests)
 
 Autenticación:
 
@@ -343,7 +363,7 @@ Autenticación:
 | :--- | :--- | :--- |
 | A-01 | rechaza con 401 un pedido sin token | PI-02 |
 | A-02 | rechaza con 401 un token firmado con otro secreto | PI-02 |
-| A-03 | no deja iniciar sesión a quien no fue dado de alta | PI-02 |
+| A-03 | no deja iniciar sesión a quien no fue dado de alta (y verifica que no se cree ninguna persona) | PI-02 |
 | A-04 | el login vincula la cuenta de Google y /auth/me devuelve los permisos de la base | PI-01 |
 | A-05 | rechaza con 401 el token de un usuario que ya no existe | PI-02 |
 | A-06 | rechaza con 403 a un usuario dado de baja aunque su token siga vigente | PI-02 |
@@ -385,6 +405,34 @@ Los permisos se releen de la base en cada pedido:
 | A-37 | un rol quitado deja de valer con el mismo token | PI-08 |
 | A-38 | la matriz no deja otorgar a otro rol un permiso exclusivo de la propietaria | PI-08 |
 
+Escrituras sobre actividades y horarios cargados (con los datos del seed de desarrollo):
+
+| Código | Test | Caso |
+| :--- | :--- | :--- |
+| A-39 | PROFESORA no puede modificar ni dar de baja actividades ni asignar horarios, y la base queda igual | PI-03 |
+| A-40 | ALUMNO no puede modificar ni dar de baja actividades ni asignar horarios, y la base queda igual | PI-03 |
+| A-41 | TUTOR no puede modificar ni dar de baja actividades ni asignar horarios, y la base queda igual | PI-03 |
+
+##### Archivo B: `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts` (13 tests)
+
+Todos corren con los datos del seed de desarrollo y la sesión de Marina.
+
+| Código | Test | Caso |
+| :--- | :--- | :--- |
+| B-01 | una actividad personalizada sin cupo se rechaza y no se guarda | PI-04 |
+| B-02 | un horario sin cupo propio toma el cupo de su actividad | PI-04 |
+| B-03 | el cupo propio de un horario manda sobre el de su actividad | PI-04 |
+| B-04 | una actividad grupal sin cupo se crea y se asigna sin cupo | PI-04 |
+| B-05 | no se le puede asignar a una profesora un horario que se superpone con otro suyo | PI-05 |
+| B-06 | dos profesoras distintas pueden dictar a la misma hora | PI-05 |
+| B-07 | la propietaria tampoco puede superponer dos horarios propios | PI-05 |
+| B-08 | un horario que termina antes de empezar se rechaza | PI-05 |
+| B-09 | no se le puede asignar un horario a quien ya no tiene el rol profesora | PI-05 |
+| B-10 | la descripción nueva de una actividad se ve en todos sus horarios | PI-06 |
+| B-11 | no se puede dar de baja una actividad con horarios activos | PI-06 |
+| B-12 | una actividad sin horarios se da de baja | PI-06 |
+| B-13 | una actividad no puede pasar a personalizada sin cupo | PI-06 |
+
 ##### Archivo C: `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` (3 tests)
 
 | Código | Test | Caso |
@@ -395,7 +443,15 @@ Los permisos se releen de la base en cada pedido:
 
 ##### Cómo se comprobó que las pruebas detectan fallas
 
-Se rompió a propósito el middleware `requierePermiso` para que dejara pasar cualquier pedido: fallaron 8 tests (A-08 a A-10, A-33 a A-37). Los demás siguieron en verde porque esas rutas tienen una segunda barrera, `requiereRol("PROPIETARIA")`. Después se restauró el middleware.
+Para cada regla importante se rompió a propósito el código que la implementa, se verificó que algún test fallara y después se restauró el código:
+
+| Regla rota | Tests que fallaron |
+| :--- | :--- |
+| `requierePermiso` deja pasar cualquier pedido | 8 tests: A-08 a A-10, A-33 a A-37. Los demás siguieron en verde porque esas rutas tienen una segunda barrera, `requiereRol("PROPIETARIA")` |
+| El cupo de la actividad pasa a mandar sobre el cupo propio del horario | B-03 |
+| Se deja de verificar si la actividad tiene horarios activos antes de darla de baja | B-11 |
+
+La primera versión de B-03 no detectaba la segunda falla: ninguno de los datos tenía a la vez cupo en la actividad y cupo propio en el horario. Se corrigió sumando un horario con cupo propio sobre una actividad que también tiene cupo.
 
 También se apuntó la suite a la base de desarrollo (`mifr`): se negó a correr, sin tocar ningún dato.
 
@@ -403,20 +459,20 @@ También se apuntó la suite a la base de desarrollo (`mifr`): se negó a correr
 
 | Caso | Fecha de ejecución | Ejecutó | Resultado | Resultado obtenido / observaciones |
 | :--- | :--- | :--- | :--- | :--- |
-| PI-01 | 07/10/2026 | Francisco Andrade | Aprobado (parcial) | A-04 y A-31 pasan. Falta el menú, que se verifica con el navegador |
-| PI-02 | 07/10/2026 | Francisco Andrade | Aprobado (parcial) | A-01, A-02, A-03, A-05 y A-06 pasan. Falta verificar que no se cree ninguna persona y el login cancelado |
-| PI-03 | 07/10/2026 | Francisco Andrade | Aprobado (parcial) | A-07 a A-30 pasan. Falta el paso 4 (modificar, dar de baja, asignar horario) |
-| PI-04 | | | Pendiente | Sin automatizar |
-| PI-05 | | | Pendiente | Sin automatizar |
-| PI-06 | | | Pendiente | Sin automatizar |
+| PI-01 | 07/10/2026 | Francisco Andrade | Aprobado | A-04 y A-31 pasan |
+| PI-02 | 07/10/2026 | Francisco Andrade | Aprobado | A-01, A-02, A-03, A-05 y A-06 pasan |
+| PI-03 | 07/10/2026 | Francisco Andrade | Aprobado | A-07 a A-30 y A-39 a A-41 pasan |
+| PI-04 | 07/10/2026 | Francisco Andrade | Aprobado | B-01 a B-04 pasan |
+| PI-05 | 07/10/2026 | Francisco Andrade | Aprobado | B-05 a B-09 pasan |
+| PI-06 | 07/10/2026 | Francisco Andrade | Aprobado | B-10 a B-13 pasan |
 | PI-07 | 07/10/2026 | Francisco Andrade | Aprobado | A-32 a A-34 pasan |
 | PI-08 | 07/10/2026 | Francisco Andrade | Aprobado | A-35 a A-38 pasan |
 | PI-09 | 07/10/2026 | Francisco Andrade | Aprobado | C-01 a C-03 pasan |
+| PI-10 | | | Pendiente | Verificación manual en el navegador |
 
 #### Pendientes del sprint
 
-- Automatizar PI-04, PI-05 y PI-06, cargando en la base de prueba los datos del seed de desarrollo.
-- Completar PI-02 (que el login rechazado no cree ninguna persona) y PI-03 (paso 4).
+- Verificar a mano PI-10 y registrar el resultado.
 
 ### 6.2 Sprint 2 — Gestión Comercial y Ciclo de Vida del Alumno
 
@@ -444,11 +500,11 @@ Borrador, a refinar en el Sprint Planning:
 - Tutor y alumno menor: el tutor ve lo del menor y nada más.
 - Alta definitiva atada al primer pago, que llega en el Sprint 3: hasta entonces la inscripción queda como preinscripta.
 - Baja lógica del alumno y su efecto en la baja de horarios y actividades (punto pendiente del Sprint 1, ver sección 8).
-- Regresión: los casos PI-01 a PI-09.
+- Regresión: los casos PI-01 a PI-10.
 
 #### Casos del sprint
 
-Sin definir. Se numeran desde PI-10.
+Sin definir. Se numeran desde PI-11.
 
 #### Datos de prueba del sprint
 
@@ -602,6 +658,7 @@ Cada corrida ejecuta todos los tests de integración, así que también es la re
 | Fecha | Sprint | Motivo | Tests | Resultado | Duración | Observaciones |
 | :--- | :---: | :--- | :--- | :--- | :--- | :--- |
 | 07/10/2026 | 1 | Primera corrida | 41 | 41 aprobados | 4,4 s | En la misma corrida pasaron los 669 tests unitarios |
+| 07/10/2026 | 1 | Casos PI-03 (paso 4) a PI-06 automatizados | 57 | 57 aprobados | 7,0 s | Se comprobó con fallas provocadas que los tests nuevos detectan errores en el cupo efectivo y en la baja de actividades |
 
 ### Defectos detectados
 
@@ -659,3 +716,4 @@ Plantilla de caso:
 | 1.0 | 07/10/2026 | Francisco Andrade | Plan de pruebas de integración del Sprint 1: casos PI-01 a PI-06 |
 | 1.1 | 07/10/2026 | Francisco Andrade | Estrategia ajustada a lo implementado (Vitest, base `db-test`, migraciones con `migrate deploy`). Casos PI-07 a PI-09. Listado de tests automatizados y primera corrida registrada |
 | 1.2 | 07/10/2026 | Francisco Andrade | Estructura por sprint: secciones de los Sprints 2 a 5 con su alcance y puntos de integración, matriz de trazabilidad por US, registro de corridas y guía para sumar un sprint. PI-04 a PI-06 pasan a usar los datos cargados en el seed de desarrollo |
+| 1.3 | 07/10/2026 | Francisco Andrade | PI-03 a PI-06 automatizados con los datos del seed de desarrollo (archivo B y tests A-39 a A-41). PI-02 verifica que no se cree ninguna persona. Los pasos de interfaz de PI-01 y PI-02 pasan a PI-10 (Manual). PI-05 ajustado al horario de atención del centro |

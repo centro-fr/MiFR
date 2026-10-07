@@ -102,6 +102,8 @@ Así, lo que se prueba es exactamente el grafo de objetos de producción. La reg
 
 `seed.ts` y `seed-demo.ts` tenían cada uno su copia de la carga de roles, permisos y matriz inicial. Esa lógica pasó a `src/shared/db/catalogo-seguridad.ts` (`cargarCatalogoSeguridad`), y la usan los dos seeds y los tests. La base de prueba arranca con la misma seguridad que la publicada, y no hay una tercera copia que se desincronice.
 
+Lo mismo con los datos de prueba de desarrollo (Marina, Lucía y Carla, Funcional Grupal, Pilates Reformer y sus horarios): están en `src/shared/db/datos-demo.ts` (`cargarDatosDemo`), los carga `seed-demo.ts` en la base local y los tests de actividades y horarios en la base de prueba. El escenario que se recorre a mano en Swagger o en el front es el mismo que verifican los tests.
+
 ### Protecciones
 
 - **Solo bases `_test`.** Los tests vacían todas las tablas. Si la URL apunta por error a la base de desarrollo o a la publicada, la suite falla antes de tocar nada.
@@ -119,6 +121,7 @@ back/
   src/
     composicion.ts                  construirDependencias(): el cableado compartido
     shared/db/catalogo-seguridad.ts cargarCatalogoSeguridad(): roles, permisos y matriz inicial
+    shared/db/datos-demo.ts         cargarDatosDemo(): profesoras, actividades y horarios de desarrollo
     shared/db/__tests__/
       catalogo-seguridad.integration.test.ts
     __tests__/integracion/
@@ -127,6 +130,7 @@ back/
       entorno.ts                    app real + Google simulado + iniciarSesion(email)
       fabricas.ts                   crearUsuario(prisma, { roles, estado })
       control-de-acceso.integration.test.ts
+      actividades-y-horarios.integration.test.ts
 ```
 
 Convención: los tests que recorren varios componentes por HTTP van en `src/__tests__/integracion/`. Los de un componente puntual (por ejemplo, un repositorio contra la base) van en el `__tests__/` del componente. En los dos casos el archivo termina en `.integration.test.ts`.
@@ -139,11 +143,21 @@ Es lo que más duele si falla (OWASP A01, *Broken Access Control*), y era lo que
 
 | Grupo | Qué verifica |
 | :--- | :--- |
-| Autenticación | Sin token: 401. Token firmado con otro secreto: 401. Login de alguien no dado de alta: 403 `USUARIO_NO_REGISTRADO`. El login vincula el `google_id` y `/auth/me` devuelve los permisos de la base. Usuario borrado: 401. Usuario dado de baja con token vigente: 403 |
+| Autenticación | Sin token: 401. Token firmado con otro secreto: 401. Login de alguien no dado de alta: 403 `USUARIO_NO_REGISTRADO`, sin crear ninguna persona. El login vincula el `google_id` y `/auth/me` devuelve los permisos de la base. Usuario borrado: 401. Usuario dado de baja con token vigente: 403 |
 | Lecturas según la matriz inicial | Para cada rol (PROPIETARIA, PROFESORA, ALUMNO, TUTOR) y cada listado (`/usuarios`, `/seguridad/matriz`, `/actividades`, `/horarios`, `/profesoras`), el código esperado: 200 o 403 |
-| Escrituras de la propietaria | La propietaria crea una actividad (201). Los demás roles reciben 403 **y no queda nada guardado**. Un usuario con varios roles suma los permisos de todos |
+| Escrituras de la propietaria | La propietaria crea una actividad (201). Los demás roles reciben 403 al crear, modificar o dar de baja actividades y al asignar horarios, **y la base queda igual**. Un usuario con varios roles suma los permisos de todos |
 | Datos propios | Un alumno ve sus datos pero no los de otro. Tampoco puede cambiar su propio estado |
 | Permisos releídos en cada pedido | Los roles del JWT no cuentan: un token con `roles: ["PROPIETARIA"]` de un alumno recibe 403. Un permiso quitado en la matriz o un rol quitado dejan de valer **con el mismo token**. La matriz no deja otorgar a otro rol un permiso exclusivo de la propietaria, y no lo persiste |
+
+### Actividades y horarios (`actividades-y-horarios.integration.test.ts`)
+
+Con los datos de desarrollo y la sesión de Marina:
+
+| Grupo | Qué verifica |
+| :--- | :--- |
+| Cupo | Una actividad personalizada sin cupo se rechaza (400) y no se guarda. Un horario sin cupo propio toma el de su actividad; si tiene cupo propio, manda el del horario. Una actividad grupal puede no tener cupo |
+| Asignación de horarios | Una profesora no puede tener dos horarios superpuestos el mismo día (409), pero dos profesoras distintas sí pueden dictar a la misma hora. Un horario que termina antes de empezar da 400. A quien se le quitó el rol de profesora no se le pueden asignar horarios (404). Ningún rechazo deja un horario guardado |
+| Modificación y baja | La descripción nueva de una actividad se ve en todos sus horarios. Una actividad con horarios activos no se puede dar de baja (409) y sigue activa; una sin horarios sí. Una actividad no puede pasar a personalizada sin cupo (400) |
 
 ### Catálogo de seguridad (`catalogo-seguridad.integration.test.ts`)
 
@@ -151,7 +165,13 @@ Volver a correr el seed no pisa lo que la propietaria cambió en la matriz, repo
 
 ### Cómo se comprobó que los tests detectan fallas
 
-Se rompió a propósito `requierePermiso` para que dejara pasar todo: fallaron 8 tests. Los que siguieron en verde son los de rutas que además exigen `requiereRol("PROPIETARIA")`, que es la segunda barrera que tienen. También se apuntó la suite a la base de desarrollo (`mifr`), y se negó a correr.
+Para cada regla importante se rompió a propósito el código que la implementa y se verificó que algún test fallara:
+
+- `requierePermiso` dejando pasar todo: fallaron 8 tests. Los que siguieron en verde son los de rutas que además exigen `requiereRol("PROPIETARIA")`, que es la segunda barrera que tienen.
+- El cupo de la actividad mandando sobre el cupo propio del horario: falló el test del cupo propio. La primera versión de ese test no lo detectaba, porque ningún dato tenía cupo en los dos lados; se corrigió.
+- La baja de una actividad sin verificar sus horarios activos: falló el test de la baja bloqueada.
+
+También se apuntó la suite a la base de desarrollo (`mifr`), y se negó a correr.
 
 ## Cómo escribir uno nuevo
 
@@ -199,6 +219,6 @@ Pautas:
 ## Próximos pasos
 
 1. **Repositorios contra la base:** `CHECK` de horarios y actividades, `UNIQUE` (email, dni, código) que terminan en 409 y no en 500, y rollback de los `$transaction` de usuario, rol y horario.
-2. **Flujos de negocio:** dar de alta a una profesora, asignarle un horario de una actividad y verificar que lo que devuelve el GET coincida con lo guardado. Bajas bloqueadas por horarios asociados.
+2. **Flujos de negocio:** dar de alta a una profesora por la API y asignarle horarios (hoy las profesoras salen de los datos de desarrollo), y dar de baja horarios. Los casos de cada sprint están en [`testing.md`](testing.md).
 3. **Mapeo de errores:** 400 (Zod), 404 y 409, y nunca 500 ante una entrada inválida.
 4. **CI:** un workflow de GitHub Actions con `services: postgres:16` que corra `test`, `test:integration` y `build` en cada PR a `dev`.
