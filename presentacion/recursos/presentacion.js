@@ -1,7 +1,7 @@
 // Controla una filmina: crea los controles, mide el tiempo y navega a la siguiente.
 // Requiere que filminas.js se haya cargado antes (define window.FILMINAS).
 (function iniciarFilmina() {
-  const RUTA_INDICE = '../index.html';
+  const RUTA_INDICE = 'index.html'; // índice de la presentación, en la misma carpeta
   const CLAVE_PAUSA = 'presentacion:pausada';
   const ICONOS = {
     anterior: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -94,6 +94,14 @@
     controles.anuncio.textContent = pausada ? 'Presentación en pausa' : 'Presentación reanudada';
   }
 
+  // Cada filmina dura lo que le asigna el guion; sin dato, rige el valor global del tema.
+  function aplicarDuracionPropia() {
+    const { segundos } = filminas[indiceActual];
+    if (Number.isFinite(segundos) && segundos > 0) {
+      controles.progreso.style.setProperty('--tiempo-por-filmina', `${segundos}s`);
+    }
+  }
+
   // El tiempo lo mide la propia animación de la barra (dura --tiempo-por-filmina):
   // así la barra y el avance nunca se desincronizan, y pausar es solo pausar la animación.
   function iniciarTemporizador() {
@@ -170,6 +178,7 @@
   document.addEventListener('keydown', manejarTeclado);
   window.addEventListener('pageshow', restaurarDesdeCache);
 
+  aplicarDuracionPropia();
   aplicarPausa();
   iniciarTemporizador();
 })();
