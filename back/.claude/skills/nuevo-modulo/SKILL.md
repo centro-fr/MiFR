@@ -47,4 +47,4 @@ Después, el cableado:
 
 ## Al terminar
 
-Correr `pnpm test` y `pnpm build`. Después, resumir qué se creó y qué decisiones quedaron pendientes de confirmar, sin commitear.
+Correr la skill `tests-integracion` para el módulo nuevo: sus endpoints, permisos y reglas que dependen de la base. Después correr `pnpm test`, `pnpm test:integration` y `pnpm build`, y resumir qué se creó y qué decisiones quedaron pendientes de confirmar, sin commitear.

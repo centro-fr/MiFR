@@ -55,13 +55,15 @@ Al inyectarlos, el cast va contra el tipo real: `repositorio as unknown as Usuar
 
 ## Tests de integración
 
-Corren la app real (`construirDependencias` de `composicion.ts`, el mismo cableado que usa `index.ts`) contra un Postgres real. Lo único simulado es Google. El detalle (cómo se levanta la base, qué se prueba y por qué) está en `docs/test-integracion.md` de la raíz.
+Corren la app real (`construirDependencias` de `composicion.ts`, el mismo cableado que usa `index.ts`) contra un Postgres real. Lo único simulado es Google.
+
+**Toda funcionalidad nueva o modificada que cruce capas o dependa de la base (endpoint, permiso, regla de negocio, US) viene con sus tests de integración en el mismo trabajo.** El procedimiento está en la skill `tests-integracion`, que además deja el bloque para actualizar el documento "Pruebas de Integración" de Drive: el plan de pruebas no vive en el repositorio. El detalle técnico (decisiones, estructura, datos disponibles y códigos asignados) está en `.claude/skills/tests-integracion/referencia.md`.
 
 - Archivo con sufijo `.integration.test.ts`. `pnpm test` los excluye; corren con `pnpm test:integration`, que usa `vitest.integration.config.ts`.
 - Los que recorren varios componentes por HTTP van en `src/__tests__/integracion/`. Los de un componente puntual van en el `__tests__/` del componente.
 - Base: `docker compose --profile test up -d db-test` (puerto 55433, en memoria). Las migraciones se aplican solas al arrancar la suite.
 - Cada test empieza con `reiniciarBase(prisma)`: vacía las tablas y vuelve a cargar roles, permisos y la matriz inicial.
-- El escenario se arma con las fábricas de `src/__tests__/integracion/fabricas.ts`; la sesión se abre con `entorno.iniciarSesion(email)`, que pasa por el login real.
+- El escenario se arma con las fábricas de `src/__tests__/integracion/fabricas.ts` o con `cargarDatosDemo` (los datos de `db:seed:demo`); la sesión se abre con `entorno.iniciarSesion(email)`, que pasa por el login real.
 - Solo corren contra una base cuyo nombre termine en `_test`: si no, fallan antes de tocar nada.
 - Van pocos y apuntados: lo que un mock no puede mostrar (permisos que salen de la base, restricciones de Postgres, transacciones, cableado). No repetir lo que ya cubre un unitario.
 

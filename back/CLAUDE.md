@@ -80,7 +80,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
-10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test.
+10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test. Lo que cruza capas o depende de la base viene además con sus tests de integración (skill `tests-integracion`).
 
 ## Reglas detalladas
 
@@ -99,6 +99,6 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 
 ## Skills
 
-En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `validar-arquitectura` y `revisar-antes-de-integrar`.
+En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura` y `revisar-antes-de-integrar`.
 
 > Claude Code busca las skills y la configuración en la carpeta donde se abre la sesión. Para que estas aparezcan hay que abrir la sesión parada en `back/`. Si se abre en la raíz del repositorio, el `CLAUDE.md` igual se carga, pero las skills no.
