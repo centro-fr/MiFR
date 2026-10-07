@@ -13,13 +13,13 @@ describe("crearProfesoraSchema", () => {
     });
   });
 
-  it.each(["-0", "123", "Pilates\u0000", "a".repeat(81)])("rechaza la especialidad %j", (especialidad) => {
+  it.each(["-0", "123", "Posing\u0000", "a".repeat(81)])("rechaza la especialidad %j", (especialidad) => {
     expect(crearProfesoraSchema.safeParse({ id_usuario: 1, especialidad }).success).toBe(false);
   });
 
   it("acepta una especialidad con letras", () => {
-    expect(crearProfesoraSchema.parse({ id_usuario: 1, especialidad: " Pilates " }).especialidad).toBe(
-      "Pilates",
+    expect(crearProfesoraSchema.parse({ id_usuario: 1, especialidad: " Posing " }).especialidad).toBe(
+      "Posing",
     );
   });
 });

@@ -5,7 +5,7 @@ describe("textoSchema", () => {
   const schema = textoSchema(10);
 
   it("recorta los espacios de los extremos", () => {
-    expect(schema.parse("  Pilates ")).toBe("Pilates");
+    expect(schema.parse("  Posing ")).toBe("Posing");
   });
 
   it.each(["", "   ", "-0", "0", "123", "!!!", "---"])("rechaza %j porque no tiene letras", (valor) => {
@@ -25,7 +25,7 @@ describe("textoSchema", () => {
     expect(schema.safeParse("a".repeat(10)).success).toBe(true);
   });
 
-  it.each(["Funcional 2", "Zumba®", "Yoga & Pilates", "Ñandú"])("acepta %j", (valor) => {
+  it.each(["Funcional 2", "Reto 3M®", "Funcional & HIIT", "Ñandú"])("acepta %j", (valor) => {
     expect(textoSchema(60).safeParse(valor).success).toBe(true);
   });
 
@@ -45,7 +45,7 @@ describe("textoOpcionalSchema", () => {
   });
 
   it("aplica las reglas de textoSchema a un texto con contenido", () => {
-    expect(schema.parse(" Pilates ")).toBe("Pilates");
+    expect(schema.parse(" Posing ")).toBe("Posing");
     expect(schema.safeParse("-0").success).toBe(false);
     expect(schema.safeParse("a\u0000").success).toBe(false);
   });

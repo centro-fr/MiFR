@@ -28,10 +28,10 @@ describe("ProfesorRepository", () => {
   });
 
   it("crear da de alta el perfil con los datos recibidos y la fecha de hoy en Argentina", async () => {
-    await repositorio.crear({ id_usuario: 5, especialidad: "Pilates" });
+    await repositorio.crear({ id_usuario: 5, especialidad: "Posing" });
 
     expect(prisma.profesoras.create).toHaveBeenCalledWith({
-      data: { id_usuario: 5, especialidad: "Pilates", fecha_alta: HOY_EN_ARGENTINA },
+      data: { id_usuario: 5, especialidad: "Posing", fecha_alta: HOY_EN_ARGENTINA },
       include: CON_NOMBRE,
     });
   });

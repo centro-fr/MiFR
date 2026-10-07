@@ -7,8 +7,8 @@ import { GestionServicioEntrenamientoService } from "../gestion-servicio-entrena
 
 const actividadDadaDeBaja: Actividad = {
   id_actividad: 1,
-  codigo: "CROSSFIT",
-  nombre: "Crossfit",
+  codigo: "HIIT",
+  nombre: "HIIT",
   descripcion: null,
   modalidad: "GRUPAL",
   cupo_maximo: 20,

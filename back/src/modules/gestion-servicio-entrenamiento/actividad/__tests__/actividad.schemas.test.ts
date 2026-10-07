@@ -10,7 +10,9 @@ const minimo = { codigo: "FUNCIONAL", nombre: "Funcional Grupal", modalidad: "GR
 
 describe("crearActividadSchema", () => {
   it("normaliza el código a mayúsculas", () => {
-    expect(crearActividadSchema.parse({ ...minimo, codigo: " pilates_ref " }).codigo).toBe("PILATES_REF");
+    expect(crearActividadSchema.parse({ ...minimo, codigo: " entrenamiento_pers " }).codigo).toBe(
+      "ENTRENAMIENTO_PERS",
+    );
   });
 
   it.each(["-0", "0", "123", "A B", "ÑANDU", "<SCRIPT>", "A\u0000", "", "A".repeat(21)])(
@@ -20,11 +22,11 @@ describe("crearActividadSchema", () => {
     },
   );
 
-  it.each(["PILATES_REF", "YOGA-2", "A".repeat(20)])("acepta el código %j", (codigo) => {
+  it.each(["ENTRENAMIENTO_PERS", "HIIT-2", "A".repeat(20)])("acepta el código %j", (codigo) => {
     expect(crearActividadSchema.safeParse({ ...minimo, codigo }).success).toBe(true);
   });
 
-  it.each(["-0", "123", "!!!", "", "   ", "Yoga\u0000", "a".repeat(61)])("rechaza el nombre %j", (nombre) => {
+  it.each(["-0", "123", "!!!", "", "   ", "GAP\u0000", "a".repeat(61)])("rechaza el nombre %j", (nombre) => {
     expect(crearActividadSchema.safeParse({ ...minimo, nombre }).success).toBe(false);
   });
 
@@ -73,7 +75,7 @@ describe("actualizarActividadSchema", () => {
   });
 
   it("descarta el código: no se puede cambiar", () => {
-    expect(actualizarActividadSchema.parse({ nombre: "Yoga", codigo: "OTRO" })).toEqual({ nombre: "Yoga" });
+    expect(actualizarActividadSchema.parse({ nombre: "GAP", codigo: "OTRO" })).toEqual({ nombre: "GAP" });
   });
 });
 

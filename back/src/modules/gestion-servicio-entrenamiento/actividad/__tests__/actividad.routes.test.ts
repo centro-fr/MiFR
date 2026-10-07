@@ -11,8 +11,8 @@ import type { Actividad } from "../actividad.types.js";
 
 const actividad: Actividad = {
   id_actividad: 1,
-  codigo: "CROSSFIT",
-  nombre: "Crossfit",
+  codigo: "HIIT",
+  nombre: "HIIT",
   descripcion: null,
   modalidad: "GRUPAL",
   cupo_maximo: 20,
@@ -75,12 +75,12 @@ describe("rutas de actividades", () => {
     const respuesta = await request(app)
       .post("/api/v1/actividades")
       .set("Authorization", "Bearer propietaria")
-      .send({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL" });
+      .send({ codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL" });
 
     expect(respuesta.status).toBe(201);
     expect(logica.crearActividad).toHaveBeenCalledWith({
-      codigo: "CROSSFIT",
-      nombre: "Crossfit",
+      codigo: "HIIT",
+      nombre: "HIIT",
       modalidad: "GRUPAL",
     });
   });
@@ -89,7 +89,7 @@ describe("rutas de actividades", () => {
     const respuesta = await request(app)
       .post("/api/v1/actividades")
       .set("Authorization", "Bearer profesora")
-      .send({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL" });
+      .send({ codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL" });
 
     expect(respuesta.status).toBe(403);
     expect(logica.crearActividad).not.toHaveBeenCalled();
@@ -99,7 +99,7 @@ describe("rutas de actividades", () => {
     const respuesta = await request(app)
       .post("/api/v1/actividades")
       .set("Authorization", "Bearer propietaria")
-      .send({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL", cupo_maximo: 32768 });
+      .send({ codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL", cupo_maximo: 32768 });
 
     expect(respuesta.status).toBe(400);
     expect(logica.crearActividad).not.toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe("rutas de actividades", () => {
     const respuesta = await request(app)
       .post("/api/v1/actividades")
       .set("Authorization", "Bearer propietaria")
-      .send({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL", ...cambio });
+      .send({ codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL", ...cambio });
 
     expect(respuesta.status).toBe(400);
     expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
@@ -123,15 +123,15 @@ describe("rutas de actividades", () => {
   });
 
   it("actualiza una actividad", async () => {
-    logica.actualizarActividad.mockResolvedValue({ ...actividad, nombre: "Crossfit avanzado" });
+    logica.actualizarActividad.mockResolvedValue({ ...actividad, nombre: "HIIT avanzado" });
 
     const respuesta = await request(app)
       .patch("/api/v1/actividades/1")
       .set("Authorization", "Bearer propietaria")
-      .send({ nombre: "Crossfit avanzado" });
+      .send({ nombre: "HIIT avanzado" });
 
     expect(respuesta.status).toBe(200);
-    expect(logica.actualizarActividad).toHaveBeenCalledWith(1, { nombre: "Crossfit avanzado" });
+    expect(logica.actualizarActividad).toHaveBeenCalledWith(1, { nombre: "HIIT avanzado" });
   });
 
   it("permite quitar el cupo al pasar a GRUPAL", async () => {

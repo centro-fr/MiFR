@@ -19,7 +19,8 @@
     "prisma:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed-demo.ts",
-    "token": "tsx prisma/generar-token.ts"
+    "token": "tsx prisma/generar-token.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts"
   },
   "keywords": [],
   "author": "",

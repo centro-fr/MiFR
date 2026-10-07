@@ -26,8 +26,8 @@ describe("HorarioService", () => {
 
   const actividad = {
     id_actividad: 1,
-    codigo: "CROSSFIT",
-    nombre: "Crossfit",
+    codigo: "HIIT",
+    nombre: "HIIT",
     descripcion: null,
     modalidad: "GRUPAL" as const,
     cupo_maximo: 20,
