@@ -40,7 +40,6 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   },
   { etiqueta: "Planes y Precios", icono: Tag, to: "/app/planes" },
   // Glosario: nunca "pago" en la UI. Cobro = efectivo de profesora, transferencia = aviso del alumno.
-  // Etiqueta visible alineada con la pantalla Actividades ("Cobros y Cuotas").
   { etiqueta: "Cobros y Cuotas", icono: Banknote, to: "/app/pagos" },
   { etiqueta: "Asistencia", icono: ClipboardCheck, to: "/app/asistencia" },
   { etiqueta: "Honorarios", icono: Receipt, to: "/app/honorarios" },

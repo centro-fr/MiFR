@@ -28,6 +28,9 @@
      Fill "backwards" (no "both"): al terminar no queda transform residual,
      que rompería los position:fixed de modales/docks/toasts del contenido. */
   --animate-page-enter: page-enter 0.28s ease-out backwards;
+  /* Nav del sidebar desktop: fade-in al expandir (el fade-out lo maneja el
+     layout con transition-opacity + desmontaje diferido). */
+  --animate-nav-in: fade-in 0.18s ease-out both;
   /* Modal centrado: entrada con leve escala y elevación */
   --animate-modal-in: modal-in 0.22s ease-out both;
 }

@@ -44,6 +44,11 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
   });
   // `saliendo` mantiene el drawer montado durante la animación de salida.
   const [saliendo, setSaliendo] = useState(false);
+  // Nav del medio en desktop: al colapsar hace fade-out (150ms) y recién ahí
+  // se desmonta (display:none real: sin saltos, fuera del tab). Al expandir
+  // monta directo con fade-in. Nace oculto si la preferencia guardada es colapsado.
+  const [navOculto, setNavOculto] = useState<boolean>(colapsado);
+  const temporizadorNav = useRef<number | null>(null);
   const location = useLocation();
   // Submenú "Actividades y Horarios" como estado derivado (sin efectos):
   // nace abierto y se reabre solo en rutas hijas; el toggle manual solo vale
@@ -81,30 +86,37 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
     void logout();
   }, [logout]);
 
+  // Único punto que cambia el colapsado (botón + Ctrl/Cmd+B): acá se
+  // orquesta también el fade del nav, sin efectos (el lint del repo no
+  // permite set-state-in-effect). Expandir monta al instante; colapsar
+  // espera 180ms (fade-out de 150ms) antes de desmontar.
   const alternarColapsado = useCallback(() => {
-    setColapsado((anterior) => {
-      const siguiente = !anterior;
-      try {
-        localStorage.setItem(CLAVE_SIDEBAR_COLAPSADO, siguiente ? "1" : "0");
-      } catch {
-        // Almacenamiento no disponible (modo privado, cookies bloqueadas):
-        // la preferencia solo vive en esta sesión.
-      }
-      return siguiente;
-    });
-  }, []);
-
-  // En modo colapsado el grupo muestra solo su ícono: al pulsarlo se expande
-  // el sidebar y se abre el submenú para elegir pantalla.
-  const expandirYSublAbrir = useCallback(() => {
-    setColapsado(false);
+    const siguiente = !colapsado;
+    setColapsado(siguiente);
     try {
-      localStorage.setItem(CLAVE_SIDEBAR_COLAPSADO, "0");
+      localStorage.setItem(CLAVE_SIDEBAR_COLAPSADO, siguiente ? "1" : "0");
     } catch {
-      // Sin almacenamiento la preferencia solo vive en esta sesión.
+      // Almacenamiento no disponible (modo privado, cookies bloqueadas):
+      // la preferencia solo vive en esta sesión.
     }
-    setSubForzado({ ruta: location.pathname, abierto: true });
-  }, [location.pathname]);
+    if (temporizadorNav.current !== null) {
+      window.clearTimeout(temporizadorNav.current);
+      temporizadorNav.current = null;
+    }
+    if (siguiente) {
+      temporizadorNav.current = window.setTimeout(() => setNavOculto(true), 180);
+    } else {
+      setNavOculto(false);
+    }
+  }, [colapsado]);
+
+  // Limpieza del temporizador si el layout se desmonta a mitad del fade.
+  useEffect(
+    () => () => {
+      if (temporizadorNav.current !== null) window.clearTimeout(temporizadorNav.current);
+    },
+    [],
+  );
 
   // Atajo Ctrl/Cmd + B para alternar el sidebar. Se ignora al escribir en campos.
   useEffect(() => {
@@ -208,40 +220,25 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
     return () => observador.disconnect();
   }, [actualizarIndicador]);
 
-  // Nav con íconos (los define owner-navigation).
-  // - Expandido/mobile: filas completas; los grupos muestran un submenú
-  //   desplegable animado con sus pantallas.
-  // - Colapsado (solo desktop): solo íconos con tooltip nativo; cada link
-  //   lleva aria-label y el grupo expande el sidebar al pulsarlo.
-  // - En mobile los ítems entran en cascada sutil al abrir el drawer.
-  function renderNavItems(onItemClick?: () => void, isMobile = false, soloIconos = false) {
+  // Nav con íconos (los define owner-navigation): filas completas con texto.
+  // En desktop colapsado el nav directamente no se monta (ver navOculto):
+  // no hay íconos del medio, solo el botón de deslizar + los 3 de abajo.
+  // En mobile los ítems entran en cascada sutil al abrir el drawer.
+  function renderNavItems(onItemClick?: () => void, isMobile = false) {
     return navItems.map(({ etiqueta, icono: Icono, to, esActivo, hijos }, indice) => {
       // Ítem simple (hoja): igual que antes, con clave única por ruta.
       if (!hijos) {
         const clases = cn(
-          "flex items-center rounded-lg transition-colors duration-200",
-          isMobile ? "px-3 py-3" : soloIconos ? "justify-center px-0 py-2.5" : "gap-2.5 px-3 py-2",
+          "flex items-center gap-2.5 rounded-lg px-3 transition-colors duration-200",
+          isMobile ? "py-3" : "py-2",
           esActivo
             ? "bg-[#FDF2F7] font-bold text-[#E91E82] dark:bg-primary/20 dark:text-pink-300"
             : "hover:bg-slate-100 dark:hover:bg-white/10",
-          !soloIconos && esActivo && "justify-between",
+          esActivo && "justify-between",
           isMobile && !saliendo && "animate-drawer-item",
         );
         const estiloEntrada =
           isMobile && !saliendo ? { animationDelay: `${Math.min(indice, 10) * 22}ms` } : undefined;
-        const contenido = soloIconos ? (
-          <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
-        ) : (
-          <>
-            <span className="flex min-w-0 items-center gap-2.5">
-              <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
-              <span className="truncate">{etiqueta}</span>
-            </span>
-            {esActivo && isMobile && (
-              <span aria-hidden="true" className="w-1.5 h-3.5 shrink-0 rounded-full bg-[#E91E82]" />
-            )}
-          </>
-        );
 
         return to ? (
           <Link
@@ -250,51 +247,37 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
             onClick={onItemClick}
             ref={!isMobile ? registrarItem(to ?? etiqueta) : undefined}
             aria-current={esActivo ? "page" : undefined}
-            aria-label={soloIconos ? etiqueta : undefined}
-            title={soloIconos ? etiqueta : undefined}
             className={clases}
             style={estiloEntrada}
           >
-            {contenido}
+            <span className="flex min-w-0 items-center gap-2.5">
+              <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
+              <span className="truncate">{etiqueta}</span>
+            </span>
+            {esActivo && isMobile && (
+              <span aria-hidden="true" className="w-1.5 h-3.5 shrink-0 rounded-full bg-[#E91E82]" />
+            )}
           </Link>
         ) : (
           <span
             key={etiqueta}
             ref={!isMobile ? registrarItem(to ?? etiqueta) : undefined}
-            title={soloIconos ? etiqueta : "Próximamente"}
-            aria-label={soloIconos ? etiqueta : undefined}
+            title="Próximamente"
             className={cn(clases, "cursor-default")}
             style={estiloEntrada}
           >
-            {contenido}
+            <span className="flex min-w-0 items-center gap-2.5">
+              <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
+              <span className="truncate">{etiqueta}</span>
+            </span>
           </span>
         );
       }
 
       // Grupo desplegable ("Actividades y Horarios").
-      if (soloIconos) {
-        return (
-          <button
-            key={etiqueta}
-            type="button"
-            onClick={expandirYSublAbrir}
-            title={etiqueta}
-            aria-label={`${etiqueta}: expandir menú para ver sus pantallas`}
-            className={cn(
-              "flex cursor-pointer items-center justify-center rounded-lg px-0 py-2.5 transition-colors duration-200",
-              esActivo
-                ? "bg-[#FDF2F7] font-bold text-[#E91E82] dark:bg-primary/20 dark:text-pink-300"
-                : "hover:bg-slate-100 dark:hover:bg-white/10",
-            )}
-          >
-            <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
-          </button>
-        );
-      }
-
       const clasesGrupo = cn(
         "flex w-full cursor-pointer items-center rounded-lg transition-colors duration-200",
-        isMobile ? "px-3 py-3" : "gap-2.5 px-3 py-2",
+        isMobile ? "px-3 py-3" : "gap-2 px-3 py-2",
         esActivo
           ? "bg-[#FDF2F7] font-bold text-[#E91E82] dark:bg-primary/20 dark:text-pink-300"
           : "hover:bg-slate-100 dark:hover:bg-white/10",
@@ -316,12 +299,12 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
           >
             <span className="flex min-w-0 flex-1 items-center gap-2.5">
               <Icono aria-hidden="true" className="h-5 w-5 shrink-0" />
-              <span className="truncate">{etiqueta}</span>
+              <span className="truncate tracking-tight">{etiqueta}</span>
             </span>
             <ChevronDown
               aria-hidden="true"
               className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
+                "h-3.5 w-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
                 subActividadesAbierto && "rotate-180",
               )}
             />
@@ -473,12 +456,14 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
         </div>
       )}
 
-      {/* ================= SIDEBAR DESKTOP (colapsable, solo íconos) ================= */}
+      {/* ================= SIDEBAR DESKTOP (colapsable) ================= */}
+      {/* Colapsado: solo botón de deslizar + avatar/tema/salir. El nav del
+          medio se oculta (fade + desmontaje). Expandido: nav completo. */}
       <aside
         id="sidebar-desktop"
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white transition-[width,padding] duration-250 ease-in-out motion-reduce:transition-none lg:flex dark:border-white/10 dark:bg-surface-low",
-          colapsado ? "w-[76px] px-3 py-4" : "w-60 p-4",
+          colapsado ? "w-[76px] px-3 py-4" : "w-70 p-4",
         )}
       >
         <div className="flex min-h-0 flex-1 flex-col">
@@ -506,26 +491,34 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
             )}
           </div>
 
-          {/* En colapsado el nav sigue visible: renderNavItems muestra solo
-              íconos (con tooltip + aria-label). Sin `invisible`: antes ocultaba
-              también los íconos y el sidebar quedaba vacío. */}
-          <nav
-            ref={navRef}
-            aria-label="Administración"
-            className="relative mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-1 text-sm font-semibold text-slate-600 dark:text-slate-300"
-          >
-            {!colapsado && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute right-3 top-0 w-1.5 rounded-full bg-[#E91E82] transition-[transform,height,opacity] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none",
-                  indicador.visible ? "opacity-100" : "opacity-0",
-                )}
-                style={{ transform: `translateY(${indicador.y}px)`, height: indicador.h }}
-              />
-            )}
-            {renderNavItems(undefined, false, colapsado)}
-          </nav>
+          {/* Colapsado: el nav no se monta (display:none real). Durante el
+              fade-out de 180ms sigue montado pero invisible e inerte: fuera
+              del tab y de lectores, sin saltos de layout. Al expandir monta
+              con fade-in. Solo quedan el botón de deslizar + los 3 de abajo. */}
+          {!navOculto && (
+            <nav
+              ref={navRef}
+              aria-label="Administración"
+              inert={colapsado}
+              aria-hidden={colapsado}
+              className={cn(
+                "relative mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden pr-1 text-sm font-semibold text-slate-600 transition-opacity duration-150 ease-in-out motion-reduce:transition-none dark:text-slate-300",
+                colapsado ? "opacity-0" : "animate-nav-in",
+              )}
+            >
+              {!colapsado && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "pointer-events-none absolute right-3 top-0 w-1.5 rounded-full bg-[#E91E82] transition-[transform,height,opacity] duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none",
+                    indicador.visible ? "opacity-100" : "opacity-0",
+                  )}
+                  style={{ transform: `translateY(${indicador.y}px)`, height: indicador.h }}
+                />
+              )}
+              {renderNavItems(undefined, false)}
+            </nav>
+          )}
         </div>
 
         {colapsado ? (
