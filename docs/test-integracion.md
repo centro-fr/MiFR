@@ -1,6 +1,6 @@
 # Tests de integración del backend
 
-Este documento explica cómo están armados los tests de integración de `back/`, cómo se corren, qué cubren y por qué se eligió cada pieza.
+Este documento explica cómo están armados los tests de integración de `back/`, cómo se corren, qué cubren y por qué se eligió cada pieza. El plan de pruebas (casos PI-xx, trazabilidad con las US y registro de ejecución) está en [`testing.md`](testing.md).
 
 ## Para qué están
 
