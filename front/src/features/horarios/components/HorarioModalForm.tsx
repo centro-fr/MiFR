@@ -156,7 +156,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
           evento.preventDefault();
           primerCampoRef.current?.focus();
         }}
-        className="max-h-[90dvh] w-full max-w-[600px] gap-0 overflow-y-auto rounded-3xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl"
+        className="max-h-[90dvh] w-full max-w-[600px] gap-0 overflow-y-auto [&>*]:min-w-0 rounded-3xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl"
       >
         {/* Cabecera del modal */}
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 md:px-8 md:py-6">

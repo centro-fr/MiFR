@@ -418,7 +418,7 @@ export const HorariosPage: React.FC = () => {
             ) : null}
 
             {/* VISTA DESKTOP (GRILLA SEMANAL CON DRAG & DROP) */}
-            <div className="hidden md:block">
+            <div className="hidden xl:block">
               <CronogramaGridDesktop
                 horarios={horariosMostrados}
                 todosLosHorarios={horarios}
@@ -432,7 +432,7 @@ export const HorariosPage: React.FC = () => {
             </div>
 
             {/* VISTA MOBILE (LISTA TOUCH DIARIA, SIN ARRASTRE) */}
-            <div className="block md:hidden bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="block xl:hidden bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <CronogramaListMobile
                 horarios={horariosMostrados}
                 onEdit={handleEdit}

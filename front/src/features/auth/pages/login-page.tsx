@@ -70,7 +70,7 @@ type Flow = ReturnType<typeof useLoginFlow>;
 
 function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => void; overlay?: ReactNode }) {
   return (
-    <main className="h-dvh w-full overflow-x-clip bg-canvas">
+    <main className="min-h-dvh w-full overflow-x-clip bg-canvas">
       <div className="lg:hidden">
         <MobileAuthView
           errorCode={flow.errorCode}

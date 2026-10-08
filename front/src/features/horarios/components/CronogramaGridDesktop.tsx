@@ -101,7 +101,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
     return (
       <Card className="w-full overflow-hidden rounded-2xl border-slate-200 shadow-xs">
         {/* Cabecera de días */}
-        <div className="grid grid-cols-[130px_repeat(6,1fr)] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
+        <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
           <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
             Horario
           </div>
@@ -138,7 +138,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       <div className="overflow-x-auto">
         <div className="min-w-[760px]">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-[130px_repeat(6,1fr)] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
+          <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
         <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
           Horario
         </div>
@@ -155,7 +155,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       </div>
 
       {/* Grilla: horas y columnas de días */}
-      <div className="grid grid-cols-[130px_repeat(6,1fr)] text-sm">
+      <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] text-sm">
         {/* COLUMNA 0: ETIQUETAS DE HORAS */}
         <div
           className="border-r border-slate-200/60 bg-slate-50/70 select-none grid"
