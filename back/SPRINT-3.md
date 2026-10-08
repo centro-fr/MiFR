@@ -70,7 +70,7 @@ Cómo trabajar en paralelo sin bloquearse:
 4. **Francisco** genera la migración de `cuotas` y `pagos` recién cuando la de inscripciones está en `dev`.
 5. **Migraciones:** antes de generar una, traer `dev` a la rama propia. Si dos se generan en paralelo, la segunda en integrarse se vuelve a generar sobre la primera.
 6. Cada uno suma sus datos al escenario de demostración (`src/shared/db/datos-demo.ts`, que usan el seed y los tests) y sus casos a `PRUEBAS-INTEGRACION.md`. El front lo hace otro equipo y trabaja con Swagger y el seed, así que cada ruta nueva se documenta en su `<x>.openapi.ts`.
-7. Las **diferencias a decidir** (final del archivo) se cierran entre los tres antes de escribir las migraciones.
+7. Las **diferencias** con las specs y el SDD ya están decididas (final del archivo).
 
 ---
 
@@ -103,7 +103,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 - [ ] Modelo `parametros_sistema` en Prisma + migración (`ck_parametros_sistema_tipo_dato`).
 - [ ] Componente `gestion-servicio-entrenamiento/parametros-sistema/` con `IInfoParametros` (leer un valor ya convertido a su tipo). Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
 - [ ] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
-- [ ] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad). Propuesta:
+- [ ] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
   - [ ] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`).
   - [ ] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
   - [ ] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
@@ -118,6 +118,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendiente (US-15)
 
+- [ ] Agregar al `.puml` y a EA que `Cuota` requiere `IInfoPlanes` y que `GestionPersonas` requiere `IInfoCuotas` (regla dura 2).
 - [ ] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`.
 - [ ] Subsistema nuevo `gestion-cuotas-y-pagos/` con `ILogicaCuotasPagos`, su fachada y los componentes `cuota/` (`IInfoCuotas`) y `pago/` (`IInfoPagos`). Montar las rutas en `app.ts` y armarlo en `composicion.ts`.
 - [ ] `POST /api/v1/pagos/efectivo`: genera la cuota del período y el pago `CONFIRMADO` en una transacción. `rendido = false` y `id_profesora_cobra` si cobró una profesora (la rendición es US-19, Sprint 4).
@@ -174,6 +175,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendiente (US-20)
 
+- [ ] Agregar al `.puml` y a EA que `GestionInscripcionesYClases` requiere `IInfoCuotas` (regla dura 2).
 - [ ] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
 - [ ] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
 - [ ] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
@@ -197,7 +199,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 - [ ] `CierreAsistencia`: los inscriptos sin marcar quedan `asistio = false` con `id_usuario_registra = NULL` (lo registró el cierre). No toca a los ya marcados.
 - [ ] Cierre automático de las clases que terminaron (más `MINUTOS_CIERRE_ASISTENCIA`) y siguen abiertas (ver decisiones).
 - [ ] **Reglas**:
-  - [ ] Si no se tomó asistencia en la clase, el cierre automático no genera ausentes (evita falsos positivos).
+  - [ ] El cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano: si no se tomó asistencia, no inventa faltas. El cierre con el botón siempre los genera (ver decisiones).
   - [ ] Los dados de baja no generan inasistencias.
   - [ ] Cerrar dos veces no duplica nada.
 - [ ] Tests del service y de integración (5 inscriptos, 3 presentes, cierre → 2 ausentes).
@@ -209,18 +211,18 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ---
 
-## Diferencias a decidir antes de seguir
+## Diferencias con las specs y el SDD
 
-**Responsables:** los tres. Las tildadas ya están decididas; en el resto va la propuesta, que se confirma o se cambia antes de escribir las migraciones.
+**Responsables:** los tres. Todas quedaron decididas.
 
 - [x] **Comprobante de transferencia.** El SDD propone subir el comprobante (`multer`, archivos en S3). La US-16 dice que no se adjunta y el DER no tiene dónde guardarlo. **Decidido: manda el DER y la spec.** Sin archivos: menos superficie de ataque y sin almacenamiento que mantener.
-- [ ] **Comprobante del cobro (US-15).** La spec pide imprimirlo o descargarlo en PDF. **Propuesta:** el back devuelve los datos (`GET /pagos/:id/comprobante`; el número es el `id_pago`) y el front lo arma para imprimir o guardar como PDF. Evita sumar una librería de PDF al back.
+- [x] **Comprobante del cobro (US-15).** La spec pide imprimirlo o descargarlo en PDF. **Decidido:** el back devuelve los datos (`GET /pagos/:id/comprobante`; el número es el `id_pago`) y el front lo arma para imprimir o guardar como PDF. Evita sumar una librería de PDF al back.
 - [x] **Cuándo se genera la cuota.** `pagos.id_cuota` es obligatorio, así que la cuota existe antes que el pago. **Decidido:** la cuota del período se genera al registrar el pago, en la misma transacción, con el monto del precio vigente ese día. La cuota cubre desde el pago hasta el vencimiento que calcula `ICalculoVencimiento`. Lo que se pierde: no hay deuda acumulada por períodos no pagados (quien vuelve después de meses paga desde ese día). La alternativa es generar las cuotas por adelantado con un proceso programado.
 - [x] **Días de gracia.** La US-18 los describe "antes del vencimiento" y el SDD "después" (`EN_GRACIA`). **Decidido:** después del vencimiento, como el SDD y como funciona una cuota vencida con tolerancia. El estado en la gracia se llama `POR_VENCER`, como en la spec y en el badge amarillo de US-10.
-- [ ] **Vencidos en la clase.** La US-18 lo deja configurable. **Propuesta:** parámetro `VENCIDOS_PUEDEN_ASISTIR`, por defecto `true` (aparecen con advertencia, como pide US-20).
-- [ ] **Instancias de clase.** El SDD propone un generador. **Propuesta:** se crean al pedir las clases del día, sin proceso programado; el único `(id_horario, fecha_clase)` del DER hace que pedirlas dos veces no las duplique.
+- [x] **Vencidos en la clase.** La US-18 lo deja configurable. **Decidido:** parámetro `VENCIDOS_PUEDEN_ASISTIR`, por defecto `true` (aparecen con advertencia, como pide US-20).
+- [x] **Instancias de clase.** El SDD propone un generador. **Decidido:** se crean al pedir las clases del día, sin proceso programado; el único `(id_horario, fecha_clase)` del DER hace que pedirlas dos veces no las duplique.
 - [x] **Cierre automático (US-21).** Hace falta algo que corra al terminar cada clase. En Render el servidor se duerme sin tráfico, así que un `cron` dentro del proceso no es confiable. **Decidido:** las clases vencidas se cierran al leerlas (clases del día, historial, informes) y además con un intervalo dentro del proceso mientras está despierto. Si hace falta exactitud, se suma un Cron Job de Render que llame a un endpoint interno.
-- [ ] **"Se abrió la ventana" (US-21).** No hay columna para eso. **Propuesta:** una clase con al menos una asistencia marcada a mano tuvo la ventana abierta; sin ninguna, el cierre automático no genera ausentes.
-- [ ] **Alta definitiva desde el cobro.** `ILogica*` es solo para la presentación. **Propuesta:** `IInfoInscripciones.activar(idInscripcion)`, como `IInfoAlumnos.activar`, idempotente.
-- [ ] **Diagrama.** Agregar a la vista arquitectónica que `Cuota` requiere `IInfoPlanes`, y que `GestionInscripcionesYClases` y `GestionPersonas` requieren `IInfoCuotas`. Actualizar el `.puml` y EA antes de implementarlo (regla dura 2).
-- [ ] **Permisos nuevos.** `PAGOS_REGISTRAR` (propietaria y profesora) y `PARAMETROS_EDITAR` (exclusivo de la propietaria). En una base ya cargada, la propietaria se los otorga a la profesora desde la matriz.
+- [x] **"Se abrió la ventana" (US-21).** No hay columna para eso. **Decidido:** el cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano; sin ninguna, se entiende que no se tomó asistencia y no inventa faltas. El cierre con el botón de la profesora siempre genera los ausentes, aunque no haya marcado a nadie (por ejemplo, porque no vino ningún alumno).
+- [x] **Alta definitiva desde el cobro.** `ILogica*` es solo para la presentación. **Decidido:** `IInfoInscripciones.activar(idInscripcion)`, como `IInfoAlumnos.activar`, idempotente.
+- [x] **Diagrama.** Agregar a la vista arquitectónica que `Cuota` requiere `IInfoPlanes`, y que `GestionInscripcionesYClases` y `GestionPersonas` requieren `IInfoCuotas`. **Decidido:** cada responsable las agrega al `.puml` y a EA en el primer commit de su parte, antes de codificarla (regla dura 2): Francisco las de `Cuota` y `GestionPersonas`, Nicolas la de `GestionInscripcionesYClases`.
+- [x] **Permisos nuevos.** **Decidido:** `PAGOS_REGISTRAR` (propietaria y profesora; lo agrega Francisco) y `PARAMETROS_EDITAR` (exclusivo de la propietaria: la matriz no deja otorgárselo a otro rol; lo agrega Rosario). En una base ya cargada, la propietaria se los otorga a la profesora desde la matriz.
