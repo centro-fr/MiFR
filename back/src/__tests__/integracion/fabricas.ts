@@ -78,3 +78,54 @@ export async function crearPlan(
 
   return { id_plan: plan.id_plan, id_plan_precio: plan.precios[0].id_plan_precio };
 }
+
+export interface AlumnoDePrueba {
+  id_alumno: number;
+  id_usuario: number;
+}
+
+interface OpcionesAlumno {
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
+  email?: string | null;
+  fecha_nacimiento?: Date;
+  estado?: "ACTIVO" | "INACTIVO" | "BAJA";
+  id_usuario_responsable?: number;
+}
+
+// Alumno con su usuario, como lo deja el alta por la API (pre-inscripto: INACTIVO y sin roles).
+// Los casos de inscripciones lo usan para tener a quién inscribir.
+export async function crearAlumno(
+  prisma: PrismaClient,
+  {
+    nombre = "Alumno",
+    apellido,
+    dni,
+    email,
+    fecha_nacimiento = new Date("1995-04-20T00:00:00Z"),
+    estado = "INACTIVO",
+    id_usuario_responsable,
+  }: OpcionesAlumno = {},
+): Promise<AlumnoDePrueba> {
+  const numero = siguienteNumero++;
+  const alumno = await prisma.alumnos.create({
+    data: {
+      estado,
+      fecha_baja: estado === "BAJA" ? new Date() : null,
+      responsable: id_usuario_responsable ? { connect: { id_usuario: id_usuario_responsable } } : undefined,
+      usuario: {
+        create: {
+          nombre,
+          apellido: apellido ?? `De Prueba ${numero}`,
+          dni,
+          email: email === undefined ? `alumno${numero}@example.com` : email,
+          fecha_nacimiento,
+          estado: estado === "ACTIVO" ? "ACTIVO" : "INACTIVO",
+        },
+      },
+    },
+  });
+
+  return { id_alumno: alumno.id_alumno, id_usuario: alumno.id_usuario };
+}

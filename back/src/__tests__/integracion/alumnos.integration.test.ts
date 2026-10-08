@@ -1,0 +1,266 @@
+import request from "supertest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo.js";
+import { reiniciarBase } from "./base-de-prueba.js";
+import { crearEntornoDeIntegracion } from "./entorno.js";
+import { crearAlumno, crearUsuario } from "./fabricas.js";
+
+// Casos PI-15 a PI-18 del plan de pruebas de integración: alta de alumnos mayores y menores con su
+// tutor (US-05, US-06), modificación (US-09) y búsqueda (US-10), sobre los datos de db:seed:demo.
+const entorno = crearEntornoDeIntegracion();
+const { app, prisma } = entorno;
+
+const LUCIA = "lucia.gomez@example.com";
+const MAYOR = "1995-04-20";
+const MENOR = "2016-05-10";
+
+const ANA = {
+  nombre: "Ana",
+  apellido: "López",
+  dni: "40111222",
+  email: "ana@example.com",
+  fecha_nacimiento: MAYOR,
+};
+const TUTORA = {
+  nombre: "Laura",
+  apellido: "Pérez",
+  dni: "30111222",
+  telefono: "3794 112233",
+  email: "laura.perez@example.com",
+  fecha_nacimiento: "1985-03-02",
+};
+const TOMAS = { nombre: "Tomás", apellido: "Pérez", dni: "50111222", fecha_nacimiento: MENOR, tutor: TUTORA };
+
+let tokenMarina: string;
+
+function como(token: string, metodo: "get" | "post" | "patch", ruta: string) {
+  return request(app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
+}
+
+function comoMarina(metodo: "get" | "post" | "patch", ruta: string) {
+  return como(tokenMarina, metodo, ruta);
+}
+
+async function contarFilas() {
+  return { usuarios: await prisma.usuarios.count(), alumnos: await prisma.alumnos.count() };
+}
+
+beforeEach(async () => {
+  await reiniciarBase(prisma);
+  await cargarDatosDemo(prisma);
+  tokenMarina = await entorno.iniciarSesion(EMAIL_MULTIROL_DEMO);
+});
+afterAll(() => entorno.cerrar());
+
+describe("PI-15: pre-inscripción de un alumno mayor", () => {
+  it("queda inactivo, sin roles y sin poder entrar hasta el primer pago", async () => {
+    const respuesta = await comoMarina("post", "/alumnos").send(ANA);
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body).toMatchObject({
+      estado: "INACTIVO",
+      responsable: null,
+      usuario: { email: "ana@example.com" },
+    });
+    const alumno = await prisma.alumnos.findUnique({
+      where: { id_alumno: respuesta.body.id_alumno },
+      include: { usuario: { include: { roles: true } } },
+    });
+    expect(alumno?.estado).toBe("INACTIVO");
+    expect(alumno?.usuario.estado).toBe("INACTIVO");
+    expect(alumno?.usuario.roles).toEqual([]);
+    const login = await request(app).post("/api/v1/auth/google").send({ id_token: "ana@example.com" });
+    expect(login.status).toBe(403);
+  });
+
+  it("una profesora también da de alta alumnos", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+
+    const respuesta = await como(tokenLucia, "post", "/alumnos").send(ANA);
+
+    expect(respuesta.status).toBe(201);
+    expect(await prisma.alumnos.count()).toBe(1);
+  });
+
+  it("avisa con ALUMNO_EXISTENTE si el DNI ya es de un alumno, sin duplicarlo", async () => {
+    const existente = await crearAlumno(prisma, { dni: "40111222" });
+    const antes = await contarFilas();
+
+    const respuesta = await comoMarina("post", "/alumnos").send(ANA);
+
+    expect(respuesta.status).toBe(409);
+    expect(JSON.stringify(respuesta.body)).toContain("ALUMNO_EXISTENTE");
+    expect(JSON.stringify(respuesta.body)).toContain(`alumno ${existente.id_alumno}`);
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  it("rechaza un email de otro usuario y un mayor sin email, sin guardar nada", async () => {
+    const otro = await crearUsuario(prisma, { roles: [] });
+    const antes = await contarFilas();
+
+    const emailTomado = await comoMarina("post", "/alumnos").send({ ...ANA, email: otro.email });
+    const sinEmail = await comoMarina("post", "/alumnos").send({ ...ANA, email: undefined });
+
+    expect(emailTomado.status).toBe(409);
+    expect(sinEmail.status).toBe(400);
+    expect(await contarFilas()).toEqual(antes);
+  });
+});
+
+describe("PI-16: alumno menor con tutor", () => {
+  it("un menor sin tutor se rechaza y no se guarda nadie", async () => {
+    const antes = await contarFilas();
+
+    const respuesta = await comoMarina("post", "/alumnos").send({ ...TOMAS, tutor: undefined });
+
+    expect(respuesta.status).toBe(400);
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  it("un menor con tutor nuevo queda vinculado a un tutor inactivo hasta el primer pago", async () => {
+    const respuesta = await comoMarina("post", "/alumnos").send(TOMAS);
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.usuario.email).toBeNull();
+    const tutora = await prisma.usuarios.findUnique({ where: { dni: "30111222" } });
+    expect(tutora).toMatchObject({ email: "laura.perez@example.com", estado: "INACTIVO" });
+    const alumno = await prisma.alumnos.findUnique({ where: { id_alumno: respuesta.body.id_alumno } });
+    expect(alumno?.id_usuario_responsable).toBe(tutora?.id_usuario);
+  });
+
+  it("dos hermanos comparten el mismo tutor sin duplicarlo", async () => {
+    await comoMarina("post", "/alumnos").send(TOMAS);
+
+    const hermana = await comoMarina("post", "/alumnos").send({ ...TOMAS, nombre: "Sofía", dni: "50333444" });
+
+    expect(hermana.status).toBe(201);
+    expect(await prisma.usuarios.count({ where: { dni: "30111222" } })).toBe(1);
+    const tutora = await prisma.usuarios.findUnique({ where: { dni: "30111222" } });
+    expect(await prisma.alumnos.count({ where: { id_usuario_responsable: tutora?.id_usuario } })).toBe(2);
+  });
+
+  it("rechaza un menor con email y un tutor menor de edad, sin guardar nada", async () => {
+    const antes = await contarFilas();
+
+    const conEmail = await comoMarina("post", "/alumnos").send({ ...TOMAS, email: "tomas@example.com" });
+    const tutorMenor = await comoMarina("post", "/alumnos").send({
+      ...TOMAS,
+      tutor: { ...TUTORA, fecha_nacimiento: "2010-01-01" },
+    });
+
+    expect(conEmail.status).toBe(400);
+    expect(tutorMenor.status).toBe(400);
+    expect(await contarFilas()).toEqual(antes);
+  });
+});
+
+describe("PI-17: modificación de datos del alumno", () => {
+  it("guarda el teléfono nuevo", async () => {
+    const { body } = await comoMarina("post", "/alumnos").send(ANA);
+
+    const respuesta = await comoMarina("patch", `/alumnos/${body.id_alumno}`).send({
+      telefono: "3794 445566",
+    });
+
+    expect(respuesta.status).toBe(200);
+    const usuario = await prisma.usuarios.findUnique({ where: { id_usuario: body.id_usuario } });
+    expect(usuario?.telefono).toBe("3794 445566");
+  });
+
+  it("un menor que pasa a mayor necesita email, y con email se le quita el tutor", async () => {
+    const { body } = await comoMarina("post", "/alumnos").send(TOMAS);
+
+    const sinEmail = await comoMarina("patch", `/alumnos/${body.id_alumno}`).send({
+      fecha_nacimiento: MAYOR,
+    });
+    const sigueConTutor = await prisma.alumnos.findUnique({ where: { id_alumno: body.id_alumno } });
+    const conEmail = await comoMarina("patch", `/alumnos/${body.id_alumno}`).send({
+      fecha_nacimiento: MAYOR,
+      email: "tomas@example.com",
+    });
+
+    expect(sinEmail.status).toBe(400);
+    expect(sigueConTutor?.id_usuario_responsable).not.toBeNull();
+    expect(conEmail.status).toBe(200);
+    const alumno = await prisma.alumnos.findUnique({ where: { id_alumno: body.id_alumno } });
+    expect(alumno?.id_usuario_responsable).toBeNull();
+  });
+
+  it("rechaza un DNI que ya es de otro usuario y deja los datos como estaban", async () => {
+    const { body } = await comoMarina("post", "/alumnos").send(ANA);
+    await crearAlumno(prisma, { dni: "40999888" });
+
+    const respuesta = await comoMarina("patch", `/alumnos/${body.id_alumno}`).send({ dni: "40999888" });
+
+    expect(respuesta.status).toBe(409);
+    const usuario = await prisma.usuarios.findUnique({ where: { id_usuario: body.id_usuario } });
+    expect(usuario?.dni).toBe("40111222");
+  });
+});
+
+describe("PI-18: búsqueda y consulta de alumnos", () => {
+  async function buscar(query: string) {
+    const respuesta = await comoMarina("get", `/alumnos?${query}`);
+    expect(respuesta.status).toBe(200);
+    return respuesta.body as { datos: { id_alumno: number }[]; total: number };
+  }
+
+  it("encuentra sin acentos ni mayúsculas, por el tutor y por DNI exacto", async () => {
+    const perez = await crearAlumno(prisma, { nombre: "Juan", apellido: "Pérez", dni: "40222333" });
+    const tutora = await crearUsuario(prisma, { roles: [] });
+    await prisma.usuarios.update({ where: { id_usuario: tutora.id_usuario }, data: { apellido: "Giménez" } });
+    const menor = await crearAlumno(prisma, {
+      apellido: "Rossi",
+      email: null,
+      fecha_nacimiento: new Date(`${MENOR}T00:00:00Z`),
+      id_usuario_responsable: tutora.id_usuario,
+    });
+    await crearAlumno(prisma, { apellido: "Gómez", dni: "40222334" });
+
+    expect((await buscar("busqueda=PEREZ")).datos.map((a) => a.id_alumno)).toEqual([perez.id_alumno]);
+    expect((await buscar("busqueda=gimenez")).datos.map((a) => a.id_alumno)).toEqual([menor.id_alumno]);
+    expect((await buscar("dni=40222333")).datos.map((a) => a.id_alumno)).toEqual([perez.id_alumno]);
+    expect(await buscar("dni=4022233")).toMatchObject({ datos: [], total: 0 });
+    expect(await buscar("busqueda=zzz")).toMatchObject({ datos: [], total: 0 });
+  });
+
+  it("los dados de baja no aparecen salvo que se los pida", async () => {
+    const activo = await crearAlumno(prisma, { apellido: "Activo", estado: "ACTIVO" });
+    const baja = await crearAlumno(prisma, { apellido: "Baja", estado: "BAJA" });
+
+    expect((await buscar("")).datos.map((a) => a.id_alumno)).toEqual([activo.id_alumno]);
+    expect((await buscar("incluirBajas=true")).datos.map((a) => a.id_alumno)).toEqual([
+      activo.id_alumno,
+      baja.id_alumno,
+    ]);
+  });
+
+  it("pagina ordenando por apellido e informa el total", async () => {
+    for (const apellido of ["Acosta", "Benítez", "Castro", "Díaz", "Escobar"]) {
+      await crearAlumno(prisma, { apellido });
+    }
+
+    const segunda = await comoMarina("get", "/alumnos?limit=2&offset=2");
+
+    expect(segunda.body).toMatchObject({ total: 5, limit: 2, offset: 2 });
+    expect(segunda.body.datos.map((a: { usuario: { apellido: string } }) => a.usuario.apellido)).toEqual([
+      "Castro",
+      "Díaz",
+    ]);
+  });
+
+  it("la profesora todavía no consulta ni edita alumnos", async () => {
+    const alumno = await crearAlumno(prisma, { apellido: "Pérez" });
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+
+    const listado = await como(tokenLucia, "get", "/alumnos");
+    const ficha = await como(tokenLucia, "get", `/alumnos/${alumno.id_alumno}`);
+    const edicion = await como(tokenLucia, "patch", `/alumnos/${alumno.id_alumno}`).send({
+      telefono: "3794 445566",
+    });
+
+    expect([listado.status, ficha.status, edicion.status]).toEqual([403, 403, 403]);
+    const usuario = await prisma.usuarios.findUnique({ where: { id_usuario: alumno.id_usuario } });
+    expect(usuario?.telefono).toBeNull();
+  });
+});
