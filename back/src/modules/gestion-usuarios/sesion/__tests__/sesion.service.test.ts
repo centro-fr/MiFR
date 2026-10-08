@@ -45,6 +45,7 @@ function crearUsuariosMock() {
     obtenerPorId: vi.fn(),
     buscarPorId: vi.fn(),
     identificarPorGoogle: vi.fn(),
+    buscarPorEmail: vi.fn(),
   };
 }
 
@@ -86,6 +87,39 @@ describe("SesionService", () => {
     usuarios.identificarPorGoogle.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
 
     await expect(sesion.iniciarSesion("id-token-valido")).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("iniciarSesionDesarrollo busca al usuario por email sin pasar por Google y devuelve un JWT propio", async () => {
+    usuarios.buscarPorEmail.mockResolvedValue(usuarioExistente);
+
+    const { token, permisos } = await sesion.iniciarSesionDesarrollo("test@example.com");
+
+    expect(googleAuth.verificarToken).not.toHaveBeenCalled();
+    expect(usuarios.buscarPorEmail).toHaveBeenCalledWith("test@example.com");
+    expect(new JwtService("test-secret").verificar(token)).toEqual({ usuarioId: 1, roles: ["ALUMNO"] });
+    expect(permisos).toEqual(["RUTINAS_VER"]);
+  });
+
+  it("iniciarSesionDesarrollo audita cada ingreso", async () => {
+    usuarios.buscarPorEmail.mockResolvedValue(usuarioExistente);
+
+    await sesion.iniciarSesionDesarrollo("test@example.com");
+
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"auditoria":"LOGIN_DESARROLLO"'));
+  });
+
+  it("iniciarSesionDesarrollo lanza UsuarioNoRegistradoError si el email no está dado de alta", async () => {
+    usuarios.buscarPorEmail.mockResolvedValue(null);
+
+    await expect(sesion.iniciarSesionDesarrollo("nadie@example.com")).rejects.toBeInstanceOf(
+      UsuarioNoRegistradoError,
+    );
+  });
+
+  it("iniciarSesionDesarrollo lanza ForbiddenError si el usuario está inactivo", async () => {
+    usuarios.buscarPorEmail.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
+
+    await expect(sesion.iniciarSesionDesarrollo("test@example.com")).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it("iniciarSesion devuelve un JWT propio con el id_usuario y los códigos de rol", async () => {

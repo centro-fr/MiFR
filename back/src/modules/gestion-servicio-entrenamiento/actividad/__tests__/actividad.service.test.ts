@@ -26,8 +26,8 @@ describe("ActividadService", () => {
 
   const actividadBase: Actividad = {
     id_actividad: 1,
-    codigo: "CROSSFIT",
-    nombre: "Crossfit",
+    codigo: "HIIT",
+    nombre: "HIIT",
     descripcion: null,
     modalidad: "GRUPAL",
     cupo_maximo: 20,
@@ -35,7 +35,7 @@ describe("ActividadService", () => {
   };
 
   it("crear crea una actividad", async () => {
-    const input = { codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL" as const };
+    const input = { codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL" as const };
     repositorio.buscarPorCodigo.mockResolvedValue(null);
     repositorio.crear.mockResolvedValue(actividadBase);
 
@@ -46,9 +46,9 @@ describe("ActividadService", () => {
   it("crear lanza ConflictError si el código ya existe", async () => {
     repositorio.buscarPorCodigo.mockResolvedValue(actividadBase);
 
-    await expect(
-      servicio.crear({ codigo: "CROSSFIT", nombre: "Crossfit", modalidad: "GRUPAL" }),
-    ).rejects.toThrow(ConflictError);
+    await expect(servicio.crear({ codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL" })).rejects.toThrow(
+      ConflictError,
+    );
   });
 
   it("listar delega el filtro al repositorio", async () => {

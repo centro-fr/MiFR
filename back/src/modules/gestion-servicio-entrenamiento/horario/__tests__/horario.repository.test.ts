@@ -19,7 +19,10 @@ const prisma = {
   horarios: { findMany: vi.fn(), findUnique: vi.fn(), count: vi.fn(), update: vi.fn() },
 };
 
-const CON_DATOS = { actividad: true, profesora: true };
+const CON_DATOS = {
+  actividad: true,
+  profesora: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+};
 const nuevo = { id_actividad: 1, id_profesora: 3, dia_semana: 2, hora_inicio: "18:00", hora_fin: "19:00" };
 
 describe("HorarioRepository", () => {

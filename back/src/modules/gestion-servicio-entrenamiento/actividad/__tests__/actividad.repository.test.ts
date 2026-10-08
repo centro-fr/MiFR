@@ -15,7 +15,7 @@ describe("ActividadRepository", () => {
   });
 
   it("crear da de alta la actividad como activa", async () => {
-    const input = { codigo: "YOGA", nombre: "Yoga", modalidad: "GRUPAL" as const };
+    const input = { codigo: "GAP", nombre: "GAP", modalidad: "GRUPAL" as const };
 
     await repositorio.crear(input);
 
@@ -57,18 +57,18 @@ describe("ActividadRepository", () => {
 
   it("buscarPorId y buscarPorCodigo buscan por sus claves únicas", async () => {
     await repositorio.buscarPorId(3);
-    await repositorio.buscarPorCodigo("YOGA");
+    await repositorio.buscarPorCodigo("GAP");
 
     expect(prisma.actividades.findUnique).toHaveBeenNthCalledWith(1, { where: { id_actividad: 3 } });
-    expect(prisma.actividades.findUnique).toHaveBeenNthCalledWith(2, { where: { codigo: "YOGA" } });
+    expect(prisma.actividades.findUnique).toHaveBeenNthCalledWith(2, { where: { codigo: "GAP" } });
   });
 
   it("actualizar guarda solo los campos recibidos", async () => {
-    await repositorio.actualizar(3, { nombre: "Yoga suave", cupo_maximo: null });
+    await repositorio.actualizar(3, { nombre: "GAP avanzado", cupo_maximo: null });
 
     expect(prisma.actividades.update).toHaveBeenCalledWith({
       where: { id_actividad: 3 },
-      data: { nombre: "Yoga suave", cupo_maximo: null },
+      data: { nombre: "GAP avanzado", cupo_maximo: null },
     });
   });
 });

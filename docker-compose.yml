@@ -17,6 +17,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # Base de los tests de integración (pnpm --filter back test:integration). Es descartable: vive
+  # en memoria y solo se levanta con el perfil, así un `docker compose up` normal no la arranca.
+  #   docker compose --profile test up -d db-test
+  db-test:
+    image: postgres:16-alpine
+    container_name: mifr-db-test
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mifr_test
+    ports:
+      - "55433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mifr_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   api:
     build:
       context: .

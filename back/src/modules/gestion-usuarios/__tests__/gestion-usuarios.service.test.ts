@@ -17,6 +17,7 @@ function crearComponentesMock() {
     },
     sesion: {
       iniciarSesion: vi.fn().mockResolvedValue("sesion.iniciarSesion"),
+      iniciarSesionDesarrollo: vi.fn().mockResolvedValue("sesion.iniciarSesionDesarrollo"),
       obtenerPerfil: vi.fn().mockResolvedValue("sesion.obtenerPerfil"),
       validarSesion: vi.fn(),
     },
@@ -42,6 +43,7 @@ describe("GestionUsuariosService", () => {
 
   it.each([
     ["iniciarSesion", ["id-token"], "sesion"],
+    ["iniciarSesionDesarrollo", ["ana@example.com"], "sesion"],
     ["obtenerPerfil", [1], "sesion"],
     ["crear", [{ nombre: "Ana" }], "usuarios"],
     ["listar", [], "usuarios"],

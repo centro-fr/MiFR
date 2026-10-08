@@ -21,6 +21,9 @@ export interface SesionIniciada extends PerfilSesion {
 // (cada uno la requiere para validar sesión/permisos de sus propias rutas).
 export interface IAutenticacion {
   iniciarSesion(idToken: string): Promise<SesionIniciada>;
+  // Solo desarrollo: entra con el email, sin Google. La ruta que lo usa existe únicamente
+  // con LOGIN_DESARROLLO=true y fuera de producción (index.ts).
+  iniciarSesionDesarrollo(email: string): Promise<SesionIniciada>;
   obtenerPerfil(idUsuario: number): Promise<PerfilSesion>;
   validarSesion(token: string): Promise<SesionPayload>;
 }

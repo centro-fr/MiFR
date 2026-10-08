@@ -26,8 +26,8 @@ describe("HorarioService", () => {
 
   const actividad = {
     id_actividad: 1,
-    codigo: "CROSSFIT",
-    nombre: "Crossfit",
+    codigo: "HIIT",
+    nombre: "HIIT",
     descripcion: null,
     modalidad: "GRUPAL" as const,
     cupo_maximo: 20,
@@ -39,6 +39,7 @@ describe("HorarioService", () => {
     especialidad: null,
     fecha_alta: new Date("2026-09-30T00:00:00.000Z"),
     fecha_baja: null,
+    usuario: { nombre: "Lucía", apellido: "Gómez" },
   };
   const horarioBase: HorarioConDatos = {
     id_horario: 1,

@@ -30,6 +30,8 @@ export interface AppOpciones {
   documentacionApi?: DocumentoOpenApi;
   // Sin lista se acepta cualquier origen, que solo sirve en desarrollo.
   origenesPermitidos?: string[];
+  // Habilita POST /auth/desarrollo (login sin Google). index.ts lo impide en producción.
+  loginDesarrollo?: boolean;
 }
 
 export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
@@ -48,7 +50,12 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
-  api.use("/auth", createSesionRoutes(deps.gestionUsuarios, deps.autenticacion));
+  api.use(
+    "/auth",
+    createSesionRoutes(deps.gestionUsuarios, deps.autenticacion, {
+      loginDesarrollo: opciones.loginDesarrollo,
+    }),
+  );
   api.use("/usuarios", createUsuarioRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
   api.use(

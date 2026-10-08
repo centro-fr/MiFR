@@ -36,7 +36,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 - Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
 - Envolver los handlers asincrónicos con `asyncHandler` para que los rechazos lleguen al manejador de errores.
 - Proteger las rutas con `requiereSesion(autenticacion)` y `requierePermiso(autorizacion, "CODIGO")` en la definición de la ruta, no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `requiereRol` queda para lo que la spec ata a un rol y no a un permiso.
-- Instanciar solo en `index.ts`, también las clases de librerías: quien las usa las recibe por constructor.
+- Instanciar solo en el composition root (`index.ts` y `composicion.ts`), también las clases de librerías: quien las usa las recibe por constructor.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
 - Para el "hoy" de una columna `DATE` (altas, bajas, vencimientos) usar `fechaActualArgentina()` de `shared/utils/fecha-argentina.ts`, nunca `new Date()`: el servidor y la base corren en UTC, y Prisma guarda el día UTC, que desde las 21:00 de Argentina ya es el siguiente. Los `TIMESTAMP` siguen en UTC.
@@ -46,7 +46,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 
 - `any`. Si el tipo no se sabe, `unknown` y estrechar.
 - Usar el cliente de Prisma fuera de un repositorio.
-- Hacer `new` de una clase concreta fuera de `index.ts`.
+- Hacer `new` de una clase concreta fuera del composition root (`index.ts` y `composicion.ts`).
 - Poner lógica de negocio en un controller, en una ruta o en un middleware.
 - Devolver la entidad cruda cuando tiene campos que el cliente no debería ver.
 - `console.log` de depuración. Para trazas hay `shared/middlewares/logger.ts`.
@@ -76,5 +76,6 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `PORT` | Puerto de la API, por defecto `3000` |
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
+| `LOGIN_DESARROLLO` | Con `true` habilita `POST /auth/desarrollo` (login por email, sin Google). Prohibida con `NODE_ENV=production`: la API no arranca |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.

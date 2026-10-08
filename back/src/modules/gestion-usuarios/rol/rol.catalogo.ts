@@ -1,5 +1,21 @@
 import type { CodigoRol } from "../usuario/usuario.types.js";
 
+// Catálogo de roles del DER (roles.codigo): lo cargan los seeds en la tabla `roles`.
+export const CATALOGO_ROLES: readonly { codigo: CodigoRol; nombre: string; descripcion: string }[] = [
+  {
+    codigo: "PROPIETARIA",
+    nombre: "Propietaria",
+    descripcion: "Administradora y dueña del centro de entrenamiento",
+  },
+  {
+    codigo: "PROFESORA",
+    nombre: "Profesora",
+    descripcion: "Instructora que dicta clases y gestiona asistencias y rutinas",
+  },
+  { codigo: "ALUMNO", nombre: "Alumno", descripcion: "Persona que asiste al centro" },
+  { codigo: "TUTOR", nombre: "Tutor", descripcion: "Responsable de un alumno menor de edad" },
+];
+
 // Catálogo de permisos del sistema: lo carga el seed en la tabla `permisos` y lo usan
 // las rutas en requierePermiso. El módulo es la columna permisos.modulo (el DER no
 // tiene tabla de módulos). Largos: codigo VARCHAR(50), modulo VARCHAR(30).

@@ -138,6 +138,16 @@ describe("UsuarioService", () => {
     });
   });
 
+  describe("buscarPorEmail", () => {
+    it("buscarPorEmail devuelve el usuario del repositorio, o null sin lanzar", async () => {
+      repositorio.buscarPorEmail.mockResolvedValueOnce(crearUsuario()).mockResolvedValueOnce(null);
+
+      await expect(service.buscarPorEmail("ana@example.com")).resolves.toMatchObject({ id_usuario: 1 });
+      await expect(service.buscarPorEmail("nadie@example.com")).resolves.toBeNull();
+      expect(repositorio.buscarPorEmail).toHaveBeenCalledWith("ana@example.com");
+    });
+  });
+
   describe("identificarPorGoogle", () => {
     it("identificarPorGoogle devuelve el usuario con ese google_id sin buscar por email", async () => {
       repositorio.buscarPorGoogleId.mockResolvedValue(crearUsuario());

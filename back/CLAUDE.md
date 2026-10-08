@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** solo está implementado el subsistema `gestion-usuarios` (usuario, sesión, rol). Los otros ocho subsistemas del diagrama de arquitectura todavía no tienen carpeta.
+**Estado actual:** están implementados tres de los nueve subsistemas del diagrama de arquitectura, con lo que pide el sprint 1: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor) y `gestion-servicio-entrenamiento` (actividad, horario). Los otros seis todavía no tienen carpeta.
 
 ## Comandos
 
@@ -13,6 +13,7 @@ pnpm dev              # tsx watch src/index.ts
 pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
 pnpm test             # vitest run
 pnpm test:coverage    # vitest run --coverage (reporte en consola)
+pnpm test:integration # tests contra Postgres real; antes: docker compose --profile test up -d db-test
 pnpm format           # prettier --write .
 pnpm format:check     # prettier --check .
 pnpm prisma:generate  # regenerar el cliente tras tocar el schema
@@ -20,7 +21,10 @@ pnpm prisma:migrate   # crear y aplicar migracion
 pnpm prisma:studio    # explorar la base
 pnpm db:seed          # roles, permisos y la primera propietaria (también en producción)
 pnpm db:seed:demo     # datos de prueba, solo contra una base local
+pnpm token            # JWT de desarrollo para un usuario, para probar en Swagger
 ```
+
+Para entrar al front sin Google en desarrollo está `LOGIN_DESARROLLO=true`, que habilita `POST /auth/desarrollo` (ver el README de la raíz). Con `NODE_ENV=production` la API no arranca si está activa.
 
 La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.
 
@@ -30,14 +34,15 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 
 ```text
 src/
-  index.ts    composition root: unico lugar donde se hace `new` de clases concretas
+  index.ts    composition root: lee el entorno, crea las piezas de infraestructura y levanta el servidor
+  composicion.ts  construirDependencias(): arma los componentes; lo usan index.ts y los tests de integración
   app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
   modules/<subsistema>/
       interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación)
       <subsistema>.service.ts         (la realiza pasando cada operación a su componente)
   modules/<subsistema>/<componente>/
       interface/       i-*.ts
-      __tests__/       *.test.ts
+      __tests__/       *.test.ts (unitarios)   *.integration.test.ts (contra Postgres)
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
       <x>.openapi.ts                  (documentación Swagger de sus rutas)
@@ -68,14 +73,14 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 
 1. Todo se escribe en español: identificadores, comentarios, mensajes de error, tests y commits.
 2. El código sigue a los diagramas de `docs/diagrams/`. Para apartarse, primero se actualiza el diagrama.
-3. Solo `index.ts` instancia clases concretas, incluidas las de librerías (`PrismaClient`, `OAuth2Client`, el generador de OpenAPI). Donde hay interfaz, se depende de la interfaz. La única otra excepción es `prisma/seed.ts`, que es un programa aparte con su propio punto de entrada.
+3. Solo el composition root (`index.ts` y `composicion.ts`) instancia clases concretas, incluidas las de librerías (`PrismaClient`, `OAuth2Client`, el generador de OpenAPI). Donde hay interfaz, se depende de la interfaz. Las únicas otras excepciones son los seeds de `prisma/`, que son programas aparte con su propio punto de entrada, y los tests.
 4. El cliente de Prisma lo recibe por constructor solo un repositorio. Un service nunca lo toca.
 5. Nunca se commitea directo sobre `main` ni sobre `dev`.
 6. Los commits no mencionan herramientas de IA: sin coautores, sin enlaces de sesión, sin etiquetas de generación automática.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
-10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test.
+10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test. Lo que cruza capas o depende de la base viene además con sus tests de integración (skill `tests-integracion`).
 
 ## Reglas detalladas
 
@@ -94,6 +99,6 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 
 ## Skills
 
-En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `validar-arquitectura` y `revisar-antes-de-integrar`.
+En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura` y `revisar-antes-de-integrar`.
 
 > Claude Code busca las skills y la configuración en la carpeta donde se abre la sesión. Para que estas aparezcan hay que abrir la sesión parada en `back/`. Si se abre en la raíz del repositorio, el `CLAUDE.md` igual se carga, pero las skills no.

@@ -1,3 +1,5 @@
+import path from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
 
@@ -20,8 +22,16 @@ export default defineConfig(({ mode }) => {
   const headers = { 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' }
 
   return {
-    plugins: [react()],
-    server: { port: 3001, proxy, headers },
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(import.meta.dirname, './src'),
+      },
+    },
+    // Mitiga barrel imports (lucide-react): pre-bundling + chunk manual.
+    optimizeDeps: { include: ["lucide-react", "@tanstack/react-query"] },
+    build: { chunkSizeWarningLimit: 600 },
+    server: { proxy, headers },
     preview: { proxy, headers },
   }
 })

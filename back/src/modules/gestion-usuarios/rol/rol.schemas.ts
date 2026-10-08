@@ -18,4 +18,3 @@ export const actualizarMatrizSchema = z.object({
 });
 
 export type CambioPermiso = z.infer<typeof cambioPermisoSchema>;
-export type ActualizarMatrizInput = z.infer<typeof actualizarMatrizSchema>;

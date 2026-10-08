@@ -57,9 +57,9 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
       body: cuerpoJson(
         crearActividadSchema.openapi("CrearActividad", {
           example: {
-            codigo: "YOGA",
-            nombre: "Yoga",
-            descripcion: "Clase grupal de yoga",
+            codigo: "GAP",
+            nombre: "GAP",
+            descripcion: "Trabajo de glúteos, abdominales y piernas",
             modalidad: "GRUPAL",
           },
         }),

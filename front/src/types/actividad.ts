@@ -1,26 +1,13 @@
+// Actividad como la usa la interfaz. Sale de ActividadApi (features/actividades/schemas).
+
 export type ModalidadActividad = "GRUPAL" | "PERSONALIZADA";
 
 export interface Actividad {
-  id_actividad: number;
+  id: string;
   codigo: string;
   nombre: string;
-  descripcion: string | null;
+  descripcion: string;
   modalidad: ModalidadActividad;
-  cupo_maximo: number | null;
-  activo: boolean;
-}
-
-export interface CrearActividadInput {
-  codigo: string;
-  nombre: string;
-  descripcion?: string;
-  modalidad: ModalidadActividad;
-  cupo_maximo?: number | null;
-}
-
-export interface ActualizarActividadInput {
-  nombre?: string;
-  descripcion?: string;
-  modalidad?: ModalidadActividad;
-  cupo_maximo?: number | null;
+  /** null = sin límite de cupo (solo en GRUPAL). */
+  cupoMaximo: number | null;
 }

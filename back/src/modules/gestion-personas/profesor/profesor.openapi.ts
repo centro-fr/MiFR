@@ -16,6 +16,7 @@ export const profesoraSchema = z
     especialidad: z.string().nullable(),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
+    usuario: z.object({ nombre: z.string(), apellido: z.string() }),
   })
   .openapi("Profesora");
 
@@ -49,7 +50,7 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
     request: {
       body: cuerpoJson(
         crearProfesoraSchema.openapi("CrearProfesora", {
-          example: { id_usuario: 2, especialidad: "Pilates" },
+          example: { id_usuario: 2, especialidad: "Posing" },
         }),
       ),
     },

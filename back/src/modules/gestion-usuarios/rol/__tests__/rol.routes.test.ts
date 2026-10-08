@@ -26,6 +26,7 @@ const jwtService = new JwtService(JWT_SECRET, "1h");
 const autenticacion: IAutenticacion = {
   validarSesion: async (token: string) => jwtService.verificar(token),
   iniciarSesion: vi.fn(),
+  iniciarSesionDesarrollo: vi.fn(),
   obtenerPerfil: vi.fn(),
 };
 
