@@ -1,4 +1,5 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+import { registrarDocumentacionAlumnos } from "./modules/gestion-personas/alumno/alumno.openapi.js";
 import { registrarDocumentacionProfesoras } from "./modules/gestion-personas/profesor/profesor.openapi.js";
 import { registrarDocumentacionActividades } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.openapi.js";
 import { registrarDocumentacionHorarios } from "./modules/gestion-servicio-entrenamiento/horario/horario.openapi.js";
@@ -29,6 +30,7 @@ export function registrarDocumentacionApi(
   registrarDocumentacionUsuarios(registro);
   registrarDocumentacionSeguridad(registro);
   registrarDocumentacionProfesoras(registro);
+  registrarDocumentacionAlumnos(registro);
   registrarDocumentacionActividades(registro);
   registrarDocumentacionHorarios(registro);
   registrarDocumentacionPlanes(registro);

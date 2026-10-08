@@ -69,3 +69,10 @@ export class ValidationError extends AppError {
     super(400, message, "VALIDATION_ERROR");
   }
 }
+
+// US-05: el front muestra la advertencia y ofrece abrir la ficha del alumno que ya existe.
+export class AlumnoExistenteError extends AppError {
+  constructor(idAlumno: number) {
+    super(409, `Ya hay un alumno registrado con ese DNI (alumno ${idAlumno})`, "ALUMNO_EXISTENTE");
+  }
+}

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError } from "../../../shared/errors/app-error.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
+import type { AlumnoService } from "../alumno/alumno.service.js";
 import type { ProfesorService } from "../profesor/profesor.service.js";
 import { GestionPersonasService } from "../gestion-personas.service.js";
 
@@ -15,7 +16,7 @@ describe("GestionPersonasService", () => {
       tieneActivosDeActividad: vi.fn(),
       tieneActivosDeProfesora: vi.fn().mockResolvedValue(false),
     };
-    servicio = new GestionPersonasService(profesoras as ProfesorService, horarios);
+    servicio = new GestionPersonasService(profesoras as ProfesorService, horarios, {} as AlumnoService);
   });
 
   it("darDeBajaProfesora permite la baja si no tiene horarios activos", async () => {
@@ -40,10 +41,42 @@ describe("GestionPersonasService delega en Profesor", () => {
       listar: vi.fn().mockResolvedValue([]),
     };
     const horarios = { tieneActivosDeActividad: vi.fn(), tieneActivosDeProfesora: vi.fn() };
-    const servicio = new GestionPersonasService(profesoras as unknown as ProfesorService, horarios);
+    const servicio = new GestionPersonasService(
+      profesoras as unknown as ProfesorService,
+      horarios,
+      {} as AlumnoService,
+    );
 
     await expect(servicio.crearProfesora({ id_usuario: 5 })).resolves.toEqual({ id_profesora: 1 });
     await expect(servicio.listarProfesoras()).resolves.toEqual([]);
     expect(profesoras.crear).toHaveBeenCalledWith({ id_usuario: 5 });
+  });
+});
+
+describe("GestionPersonasService delega en Alumno", () => {
+  const alumnos = {
+    crear: vi.fn().mockResolvedValue("resultado"),
+    listar: vi.fn().mockResolvedValue("resultado"),
+    obtenerPorId: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+  };
+  const horarios = { tieneActivosDeActividad: vi.fn(), tieneActivosDeProfesora: vi.fn() };
+  const servicio = new GestionPersonasService(
+    {} as ProfesorService,
+    horarios,
+    alumnos as unknown as AlumnoService,
+  );
+  const cuerpo = { nombre: "Ana" };
+
+  it.each([
+    ["crearAlumno", [cuerpo], alumnos.crear],
+    ["listarAlumnos", [{ limit: 20, offset: 0 }], alumnos.listar],
+    ["obtenerAlumnoPorId", [3], alumnos.obtenerPorId],
+    ["actualizarAlumno", [3, cuerpo], alumnos.actualizar],
+  ] as const)("%s", async (operacion, argumentos, destino) => {
+    const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
+
+    await expect(metodo.apply(servicio, [...argumentos])).resolves.toBe("resultado");
+    expect(destino).toHaveBeenCalledWith(...argumentos);
   });
 });
