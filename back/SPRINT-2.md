@@ -7,11 +7,11 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 | US-11 | Alta y edición de planes vigentes | Completa | Francisco |
 | US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro, Sprint 3) | Francisco |
 | US-05 | Pre-inscripción de alumno nuevo | En curso | Francisco (alumno) + Nicolas (inscripción) |
-| US-06 | Asociación de tutor a alumno menor | Pendiente | Francisco |
+| US-06 | Asociación de tutor a alumno menor | Completa | Francisco |
 | US-07 | Alta definitiva al confirmarse el primer pago | Pendiente | Nicolas |
 | US-08 | Baja lógica de alumno | Pendiente | Nicolas |
-| US-09 | Modificación de datos de alumno | Pendiente | Francisco (datos y tutor) + Nicolas (plan y horarios) |
-| US-10 | Consulta y búsqueda de alumnos | Pendiente | Francisco |
+| US-09 | Modificación de datos de alumno | En curso (datos y tutor completos) | Francisco (datos y tutor) + Nicolas (plan y horarios) |
+| US-10 | Consulta y búsqueda de alumnos | En curso (faltan los filtros que salen de las inscripciones) | Francisco |
 
 Fuentes: `docs/specs/03-*` y `docs/specs/04-*`, `docs/sdd/03-*/tasks.md` y `docs/sdd/04-*/tasks.md`, y el DER (`docs/diagrams/enterprise_architect/DER - Centro de Entrenamiento FR.sql`). Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
 
@@ -48,7 +48,7 @@ GestionServicioEntrenamientoService (fachada) ──> IInfoInscripciones  (aviso
 
 Cómo trabajar en paralelo sin bloquearse:
 
-1. **Día 1, los dos juntos:** acordar y commitear las interfaces `IInfoPlanes`, `IInfoAlumnos` e `IInfoInscripciones` (solo los tipos, sin implementación). Cada uno programa contra la interfaz del otro y la reemplaza por un fake en los tests unitarios.
+1. [x] `IInfoPlanes` e `IInfoAlumnos` publicadas; `IInfoInscripciones` la define Nicolas con lo que pide US-10 (abajo). **Día 1, los dos juntos:** acordar y commitear las interfaces `IInfoPlanes`, `IInfoAlumnos` e `IInfoInscripciones` (solo los tipos, sin implementación). Cada uno programa contra la interfaz del otro y la reemplaza por un fake en los tests unitarios.
 2. [x] **Francisco** hace primero la migración de `planes`, `plan_precios` y `alumnos`, y la integra a `dev` cuanto antes: las FK de `inscripciones` apuntan a esas tablas.
 3. **Nicolas** trae esa migración a su rama y recién ahí genera la de `inscripciones` e `inscripcion_horarios`. Dos migraciones generadas en paralelo sobre el mismo `schema.prisma` chocan en el orden.
 4. Cada uno suma sus datos a `prisma/seed-demo` y sus casos a `PRUEBAS-INTEGRACION.md`. El front lo hace otro equipo y trabaja con el contrato de Swagger y el seed-demo, así que cada ruta nueva se documenta en su `<x>.openapi.ts`.
@@ -99,21 +99,22 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Francisco
 
-### Pendiente (US-05 y US-06, alumno)
+### Hecho (US-05 y US-06, alumno)
 
 - [x] Modelo `alumnos` en Prisma + migración (`ck_alumnos_estado`, UK `id_usuario`, FK al tutor `FK_alumnos_usuario_responsable`).
-- [ ] Componente `gestion-personas/alumno/` con `IInfoAlumnos`; las operaciones para la API se suman a `ILogicaPersonas`.
-- [ ] `POST /api/v1/alumnos`: crea el `usuario` del alumno en estado `INACTIVO` y sin roles (no puede entrar todavía) y la fila de `alumnos` en estado `INACTIVO`.
-- [ ] `Usuario`: operación para crear un usuario sin acceso y búsqueda por DNI, expuestas en `IInfoUsuarios`.
-- [ ] **Reglas**:
-  - [ ] Menor de 18 años → el tutor es obligatorio (400 si falta). Mayor → no se acepta tutor.
-  - [ ] El tutor es un `usuario`: si ya existe (por DNI o email) se reutiliza, si no se crea. Un tutor puede tener varios alumnos.
-  - [ ] Un menor no lleva `email` ni `google_id` (comentario del DER); el acceso al sistema es del tutor.
-  - [ ] DNI ya registrado → 409 con el id del alumno existente, para que el front muestre la advertencia.
-- [ ] `IInfoAlumnos.activar(id)`: pasa alumno y usuario a `ACTIVO` y asigna el rol `ALUMNO`, o `TUTOR` al responsable si es menor. Tiene que ser idempotente: la va a llamar `Inscripcion` y un pago confirmado dos veces no puede duplicar nada.
-- [ ] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id)` para US-08.
-- [ ] Catálogo: la profesora pre-inscribe (US-05) y edita contacto (US-09), pero hoy no tiene `ALUMNOS_EDITAR` en `MATRIZ_INICIAL`. Agregárselo.
-- [ ] Tests del service (menor sin tutor, reutilización del tutor, activación idempotente) y de integración.
+- [x] Componente `gestion-personas/alumno/` con `IInfoAlumnos`; las operaciones para la API se suman a `ILogicaPersonas`.
+- [x] `POST /api/v1/alumnos`: crea el `usuario` del alumno en estado `INACTIVO` y sin roles (no puede entrar todavía) y la fila de `alumnos` en estado `INACTIVO`.
+- [x] `Usuario`: búsqueda por DNI expuesta en `IInfoUsuarios`. El usuario del alumno y el del tutor nuevo se crean en la misma transacción que el alumno (repositorio de `Alumno`): separados, un fallo dejaba un usuario huérfano con el email o el DNI tomados.
+- [x] **Reglas**:
+  - [x] Menor de 18 años → el tutor es obligatorio (400 si falta). Mayor → no se acepta tutor.
+  - [x] El tutor es un `usuario`: si ya existe (por DNI o email) se reutiliza, si no se crea. Un tutor puede tener varios alumnos.
+  - [x] Un menor no lleva `email` ni `google_id` (comentario del DER); el acceso al sistema es del tutor.
+  - [x] DNI ya registrado → 409 `ALUMNO_EXISTENTE` con el id del alumno existente, para que el front muestre la advertencia.
+  - [x] Mayor de edad → email obligatorio (decidido); el tutor también lo lleva, porque es quien entra.
+- [x] `IInfoAlumnos.activar(id)`: pasa alumno y usuario a `ACTIVO` y asigna el rol `ALUMNO`, o `TUTOR` al responsable si es menor. Tiene que ser idempotente: la va a llamar `Inscripcion` y un pago confirmado dos veces no puede duplicar nada.
+- [x] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id)` para US-08 (la baja deja al usuario `INACTIVO`; el tutor no se toca porque puede tener otros alumnos).
+- [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada (producción) la carga del catálogo no los agrega: la propietaria se los otorga desde la matriz.
+- [x] Tests del service (menor sin tutor, reutilización del tutor, activación idempotente) y de integración: PI-15, PI-16 y PI-19 (tests E-01 a E-08 y F-01 a F-03).
 
 ## US-05, US-07 y US-08 – Inscripción, alta definitiva y baja
 
@@ -155,10 +156,10 @@ Cómo trabajar en paralelo sin bloquearse:
 
 ### Francisco: datos personales y tutor
 
-- [ ] `PATCH /api/v1/alumnos/:id`: datos personales, contacto de emergencia, observaciones, apto médico y tutor.
-- [ ] La profesora solo edita contacto y observaciones; el resto pide rol `PROPIETARIA`.
-- [ ] Si un cambio de fecha de nacimiento lo vuelve menor, exige tutor; si lo vuelve mayor, se quita el tutor.
-- [ ] Auditoría del cambio (usuario y fecha).
+- [x] `PATCH /api/v1/alumnos/:id`: datos personales, contacto de emergencia, observaciones, apto médico y tutor.
+- [ ] La profesora solo edita contacto y observaciones de sus alumnos; el resto pide rol `PROPIETARIA`. **Por ahora la edición es solo de la propietaria**: qué alumnos tiene a cargo una profesora sale de las inscripciones. Se habilita junto con el filtro de US-10.
+- [x] Si un cambio de fecha de nacimiento lo vuelve menor, exige tutor; si lo vuelve mayor, se quita el tutor (y pasa a necesitar email).
+- [x] Auditoría del cambio (usuario y fecha): evento `ALUMNO_MODIFICADO` con los campos tocados. Tests de integración PI-17 (E-09 a E-11).
 
 ### Nicolas: plan y horarios
 
@@ -170,15 +171,17 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Francisco
 
-### Pendiente (US-10)
+### US-10 (lo que falta usa `IInfoInscripciones`, de Nicolas)
 
-- [ ] `GET /api/v1/alumnos`: búsqueda parcial por nombre y apellido sin distinguir acentos ni mayúsculas, DNI exacto, filtro por estado, paginación (`limit`, `offset`). Los dados de baja no salen salvo con `incluirBajas=true`.
+- [x] `GET /api/v1/alumnos`: búsqueda parcial por nombre y apellido sin distinguir acentos ni mayúsculas, DNI exacto, filtro por estado, paginación (`limit`, `offset`). Los dados de baja no salen salvo con `incluirBajas=true`.
 - [ ] Filtros por plan, profesora y actividad: la fachada `GestionPersonasService` le pide a `IInfoInscripciones` los ids y después lista los alumnos con esos ids.
 - [ ] Cada fila trae su plan y profesora vigentes, pedidos a `IInfoInscripciones` para toda la página de una vez.
-- [ ] `GET /api/v1/alumnos/:id`: ficha con datos, tutor e inscripción vigente con sus horarios.
+- [x] `GET /api/v1/alumnos/:id`: ficha con datos y tutor.
+- [ ] Sumar a la ficha la inscripción vigente con sus horarios, desde `IInfoInscripciones`.
 - [ ] Una profesora solo ve los alumnos de los que está a cargo (`inscripciones.id_profesora`); la propietaria ve todos.
-- [ ] Índice para la búsqueda por nombre (decidir `unaccent` + trigram o columna normalizada al escribir la migración).
-- [ ] Tests del service y de integración de la búsqueda con acentos y del filtro por profesora.
+- [x] Búsqueda sin acentos con la extensión `unaccent` (migración `habilitar_unaccent`); incluye el nombre del tutor. **Decidido: sin índice por ahora.** Un centro tiene cientos de alumnos y el recorrido completo es instantáneo; `unaccent` no es `IMMUTABLE` y un índice pide una función envoltorio. Se revisa si el volumen crece.
+- [x] Tests del service y de integración de la búsqueda con acentos, las bajas y la paginación: PI-18 (E-12 a E-15).
+- [ ] Test de integración del filtro por profesora, cuando exista.
 
 Fuera de este sprint: estado de cuota, historial de pagos e historial de asistencia de la ficha. Dependen de `cuotas`, `pagos` y `asistencias` (Sprint 3); hasta entonces la ficha no los devuelve.
 
@@ -195,4 +198,4 @@ Fuera de este sprint: estado de cuota, historial de pagos e historial de asisten
 - [x] **Parentesco del tutor.** US-06 lo pide y el DER no lo tiene. **Decidido:** no se guarda (si hace falta, va en `observaciones`).
 - [x] **Email del alumno mayor.** US-05 lo da como opcional, pero sin email no puede entrar con Google. **Decidido:** obligatorio para mayores, para que al activarse pueda iniciar sesión.
 - [x] **Edad de corte configurable.** **Decidido:** constante de 18 años por ahora (YAGNI); pasa a `parametros_sistema` cuando exista ese componente.
-- [ ] **Diagrama.** La vista arquitectónica no muestra que `Inscripcion` requiera `IInfoPlanes`, ni que `GestionPersonas` y `GestionServicioEntrenamiento` requieran `IInfoInscripciones`. Actualizar `docs/diagrams/` antes de implementarlo (regla dura 2).
+- [x] **Diagrama.** Actualizado en `vista_arquitectonica.puml`; falta pasarlo al `.eap` de Enterprise Architect y regenerar el `.jpg` y el `.pdf`. La vista arquitectónica no muestra que `Inscripcion` requiera `IInfoPlanes`, ni que `GestionPersonas` y `GestionServicioEntrenamiento` requieran `IInfoInscripciones`. Actualizar `docs/diagrams/` antes de implementarlo (regla dura 2).
