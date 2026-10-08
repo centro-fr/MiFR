@@ -93,10 +93,14 @@ export const PERMISOS_CRITICOS: readonly CodigoPermiso[] = [
 // Alumno y tutor no necesitan permisos para ver lo suyo: eso se resuelve por pertenencia.
 export const MATRIZ_INICIAL: Record<CodigoRol, readonly CodigoPermiso[]> = {
   PROPIETARIA: CATALOGO_PERMISOS.map((permiso) => permiso.codigo),
+  // La profesora pre-inscribe alumnos (US-05): para eso necesita ver los planes y dar de alta al
+  // alumno. Cambiar el plan o dar de baja sigue siendo de la propietaria, que lo exige por rol.
   PROFESORA: [
     "ACTIVIDADES_VER",
     "HORARIOS_VER",
+    "PLANES_VER",
     "ALUMNOS_VER",
+    "ALUMNOS_EDITAR",
     "ASISTENCIAS_MARCAR",
     "RUTINAS_VER",
     "RUTINAS_EDITAR",

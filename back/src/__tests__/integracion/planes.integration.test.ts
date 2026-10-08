@@ -249,13 +249,16 @@ describe("PI-13: actualización de precio con fecha de vigencia", () => {
 });
 
 describe("PI-14: permisos sobre planes", () => {
-  it("una profesora sin PLANES_VER no puede ver los planes", async () => {
-    await crearBasico();
+  it("una profesora ve los planes, que necesita para pre-inscribir alumnos", async () => {
+    const idPlan = await crearBasico();
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
 
-    const respuesta = await como(tokenLucia, "get", "/planes");
+    const listado = await como(tokenLucia, "get", "/planes");
+    const precios = await como(tokenLucia, "get", `/planes/${idPlan}/precios`);
 
-    expect(respuesta.status).toBe(403);
+    expect(listado.status).toBe(200);
+    expect(listado.body.map((p: { id_plan: number }) => p.id_plan)).toEqual([idPlan]);
+    expect(precios.status).toBe(200);
   });
 
   it("una profesora no puede crear planes ni cargar precios", async () => {
