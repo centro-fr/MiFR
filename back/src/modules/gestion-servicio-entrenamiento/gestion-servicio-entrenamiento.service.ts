@@ -6,12 +6,16 @@ import type { Actividad, FiltroActividad } from "./actividad/actividad.types.js"
 import type { HorarioService } from "./horario/horario.service.js";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario/horario.schemas.js";
 import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "./horario/horario.types.js";
+import type { PlanService } from "./plan/plan.service.js";
+import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan/plan.schemas.js";
+import type { FiltroPlan, Plan, PrecioPlan } from "./plan/plan.types.js";
 
 // Realiza ILogicaServicioEntrenamiento
 export class GestionServicioEntrenamientoService implements ILogicaServicioEntrenamiento {
   constructor(
     private readonly actividades: ActividadService,
     private readonly horarios: HorarioService,
+    private readonly planes: PlanService,
   ) {}
 
   crearActividad(input: CrearActividadInput): Promise<Actividad> {
@@ -59,5 +63,33 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
 
   darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
     return this.horarios.darDeBaja(id);
+  }
+
+  crearPlan(input: CrearPlanInput): Promise<Plan> {
+    return this.planes.crear(input);
+  }
+
+  listarPlanes(filtro: FiltroPlan): Promise<Plan[]> {
+    return this.planes.listar(filtro);
+  }
+
+  obtenerPlanPorId(id: number): Promise<Plan> {
+    return this.planes.obtenerPorId(id);
+  }
+
+  actualizarPlan(id: number, input: ActualizarPlanInput): Promise<Plan> {
+    return this.planes.actualizar(id, input);
+  }
+
+  darDeBajaPlan(id: number): Promise<Plan> {
+    return this.planes.darDeBaja(id);
+  }
+
+  listarPreciosPlan(id: number): Promise<PrecioPlan[]> {
+    return this.planes.listarPrecios(id);
+  }
+
+  registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan> {
+    return this.planes.registrarPrecio(id, input);
   }
 }

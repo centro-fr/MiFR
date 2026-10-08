@@ -3,6 +3,7 @@ import { ConflictError } from "../../../shared/errors/app-error.js";
 import type { ActividadService } from "../actividad/actividad.service.js";
 import type { Actividad } from "../actividad/actividad.types.js";
 import type { HorarioService } from "../horario/horario.service.js";
+import type { PlanService } from "../plan/plan.service.js";
 import { GestionServicioEntrenamientoService } from "../gestion-servicio-entrenamiento.service.js";
 
 const actividadDadaDeBaja: Actividad = {
@@ -26,6 +27,7 @@ describe("GestionServicioEntrenamientoService", () => {
     servicio = new GestionServicioEntrenamientoService(
       actividades as ActividadService,
       horarios as HorarioService,
+      {} as PlanService,
     );
   });
 
@@ -59,9 +61,19 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     actualizar: vi.fn().mockResolvedValue("resultado"),
     darDeBaja: vi.fn().mockResolvedValue("resultado"),
   };
+  const planes = {
+    crear: vi.fn().mockResolvedValue("resultado"),
+    listar: vi.fn().mockResolvedValue("resultado"),
+    obtenerPorId: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+    darDeBaja: vi.fn().mockResolvedValue("resultado"),
+    listarPrecios: vi.fn().mockResolvedValue("resultado"),
+    registrarPrecio: vi.fn().mockResolvedValue("resultado"),
+  };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
     horarios as unknown as HorarioService,
+    planes as unknown as PlanService,
   );
   const cuerpo = { nombre: "X" };
 
@@ -75,6 +87,13 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["obtenerHorarioPorId", [3], horarios.obtenerPorId],
     ["actualizarHorario", [3, cuerpo], horarios.actualizar],
     ["darDeBajaHorario", [3], horarios.darDeBaja],
+    ["crearPlan", [cuerpo], planes.crear],
+    ["listarPlanes", [{ tipo: "MENSUAL" }], planes.listar],
+    ["obtenerPlanPorId", [3], planes.obtenerPorId],
+    ["actualizarPlan", [3, cuerpo], planes.actualizar],
+    ["darDeBajaPlan", [3], planes.darDeBaja],
+    ["listarPreciosPlan", [3], planes.listarPrecios],
+    ["registrarPrecioPlan", [3, cuerpo], planes.registrarPrecio],
   ] as const)("%s", async (operacion, argumentos, destino) => {
     const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
 

@@ -37,6 +37,13 @@ const OPERACIONES_ESPERADAS = [
   "get /horarios/{id}",
   "patch /horarios/{id}",
   "delete /horarios/{id}",
+  "get /planes",
+  "post /planes",
+  "get /planes/{id}",
+  "patch /planes/{id}",
+  "delete /planes/{id}",
+  "get /planes/{id}/precios",
+  "post /planes/{id}/precios",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {
