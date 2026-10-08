@@ -16,6 +16,8 @@ import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.se
 import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
 import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
+import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
+import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -39,9 +41,11 @@ export function construirDependencias({
   const actividadService = new ActividadService(new ActividadRepository(prisma));
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
+  const planService = new PlanService(new PlanRepository(prisma), actividadService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
     actividadService,
     horarioService,
+    planService,
   );
   const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
 

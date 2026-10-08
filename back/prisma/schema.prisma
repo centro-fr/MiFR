@@ -43,6 +43,8 @@ model usuarios {
 
   roles     usuario_roles[]
   profesora profesoras?
+  alumno    alumnos?        @relation("alumno_usuario")
+  tutelados alumnos[]       @relation("alumno_responsable")
 }
 
 model roles {
@@ -108,7 +110,8 @@ model actividades {
   cupo_maximo  Int?                @db.SmallInt
   activo       Boolean
 
-  horarios horarios[]
+  horarios          horarios[]
+  planes_exclusivos planes[]
 }
 
 model profesoras {
@@ -118,7 +121,7 @@ model profesoras {
   fecha_alta   DateTime  @default(now()) @db.Date
   fecha_baja   DateTime? @db.Date
 
-  usuario  usuarios  @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  usuario  usuarios   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
   horarios horarios[]
 }
 
@@ -138,4 +141,69 @@ model horarios {
 
   @@index([id_actividad], map: "IXFK_horarios_actividades")
   @@index([id_profesora], map: "IXFK_horarios_profesoras")
+}
+
+enum tipo_plan {
+  MENSUAL
+  CLASE_SUELTA
+}
+
+model planes {
+  id_plan                Int       @id(map: "PK_planes") @default(autoincrement())
+  tipo                   tipo_plan
+  nombre                 String    @db.VarChar(40)
+  descripcion            String?   @db.VarChar(255)
+  // 1..7; NULL si CLASE_SUELTA
+  clases_por_semana      Int?      @db.SmallInt
+  // >= 0; 0 si CLASE_SUELTA
+  dias_gracia            Int       @db.SmallInt
+  // ej. Plan Kids
+  id_actividad_exclusiva Int?
+  profesora_unica        Boolean
+  fecha_alta             DateTime  @default(now()) @db.Date
+  fecha_baja             DateTime? @db.Date
+
+  actividad_exclusiva actividades?   @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  precios             plan_precios[]
+}
+
+model plan_precios {
+  id_plan_precio       Int       @id(map: "PK_plan_precios") @default(autoincrement())
+  id_plan              Int
+  precio               Decimal   @db.Decimal(10, 2)
+  fecha_vigencia_desde DateTime  @db.Date
+  // NULL = vigente
+  fecha_vigencia_hasta DateTime? @db.Date
+
+  plan planes @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_plan_precios_planes")
+
+  @@index([id_plan], map: "IXFK_plan_precios_planes")
+}
+
+// ============================================================
+// PERSONAS DEL NEGOCIO
+// ============================================================
+
+enum estado_alumno {
+  ACTIVO
+  INACTIVO
+  BAJA
+}
+
+model alumnos {
+  id_alumno              Int           @id(map: "PK_alumnos") @default(autoincrement())
+  id_usuario             Int           @unique(map: "UK_alumnos_id_usuario")
+  // tutor; obligatorio si es menor
+  id_usuario_responsable Int?
+  cont_emerg_nombre      String?       @db.VarChar(80)
+  cont_emerg_telefono    String?       @db.VarChar(20)
+  apto_medico            Boolean       @default(false)
+  fecha_apto_medico      DateTime?     @db.Date
+  observaciones          String?       @db.VarChar(500)
+  estado                 estado_alumno
+  fecha_alta             DateTime      @default(now()) @db.Timestamp(6)
+  fecha_baja             DateTime?     @db.Timestamp(6)
+
+  usuario     usuarios  @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
+  responsable usuarios? @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
 }

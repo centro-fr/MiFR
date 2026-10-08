@@ -35,3 +35,46 @@ export async function crearUsuario(
 
   return { id_usuario: usuario.id_usuario, email: usuario.email as string };
 }
+
+export interface PlanDePrueba {
+  id_plan: number;
+  id_plan_precio: number;
+}
+
+interface OpcionesPlan {
+  nombre?: string;
+  tipo?: "MENSUAL" | "CLASE_SUELTA";
+  clases_por_semana?: number | null;
+  precio?: number;
+  vigenteDesde?: Date;
+  id_actividad_exclusiva?: number;
+}
+
+// Plan con un único precio abierto, como lo deja el alta por la API. Las inscripciones lo
+// necesitan para guardar el plan y el precio con el que se inscribió el alumno.
+export async function crearPlan(
+  prisma: PrismaClient,
+  {
+    nombre = `Plan ${siguienteNumero++}`,
+    tipo = "MENSUAL",
+    clases_por_semana = tipo === "MENSUAL" ? 2 : null,
+    precio = 25000,
+    vigenteDesde = new Date("2026-01-01T00:00:00Z"),
+    id_actividad_exclusiva,
+  }: OpcionesPlan = {},
+): Promise<PlanDePrueba> {
+  const plan = await prisma.planes.create({
+    data: {
+      nombre,
+      tipo,
+      clases_por_semana,
+      dias_gracia: tipo === "MENSUAL" ? 5 : 0,
+      profesora_unica: false,
+      id_actividad_exclusiva,
+      precios: { create: { precio, fecha_vigencia_desde: vigenteDesde } },
+    },
+    include: { precios: true },
+  });
+
+  return { id_plan: plan.id_plan, id_plan_precio: plan.precios[0].id_plan_precio };
+}

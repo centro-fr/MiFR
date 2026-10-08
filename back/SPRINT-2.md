@@ -186,13 +186,13 @@ Fuera de este sprint: estado de cuota, historial de pagos e historial de asisten
 
 ## Diferencias a decidir antes de seguir
 
-**Responsables:** los dos. Para cada una va la propuesta; se confirma o se cambia antes de escribir las migraciones.
+**Responsables:** los dos. Todas se decidieron como estaba propuesto.
 
-- [ ] **Plan ↔ actividad y profesora.** US-11 pide que el plan tenga actividad y profesora obligatorias. En el DER `planes` solo tiene `id_actividad_exclusiva` (opcional) y `profesora_unica`; la profesora a cargo está en `inscripciones.id_profesora`. **Propuesta: manda el DER.** La profesora se elige al inscribir y `profesora_unica` obliga a que todos los horarios sean de ella. Avisar al equipo del front.
-- [ ] **Estado del alumno pre-inscripto.** US-05 habla de alumno "pendiente", pero `alumnos.estado` solo admite `ACTIVO`, `INACTIVO` y `BAJA`. **Propuesta:** alumno `INACTIVO` + inscripción `PREINSCRIPTA`. Lo "pendiente" se lee de la inscripción.
-- [ ] **Pre-inscripción en uno o dos pasos.** El alumno es de `GestionPersonas` y la inscripción de `GestionInscripcionesYClases`. **Propuesta:** dos llamadas (`POST /alumnos` y después `POST /inscripciones`). Respeta los subsistemas y no hace falta una transacción entre los dos. Lo que se pierde: si falla la segunda queda un alumno `INACTIVO` sin inscripción, que es inofensivo y se reutiliza al reintentar.
-- [ ] **Peso y talla.** US-05 los pide "si la actividad lo requiere", pero `actividades` no tiene ese dato y las medidas viven en `registros_progreso` / `medidas_corporales` (Sprint 5). **Propuesta:** fuera del Sprint 2; el criterio "clase que requiere peso/talla sin cargarlos → falla" no se puede cumplir sin cambiar el DER.
-- [ ] **Parentesco del tutor.** US-06 lo pide y el DER no lo tiene. **Propuesta:** no se guarda (o va en `observaciones`).
-- [ ] **Email del alumno mayor.** US-05 lo da como opcional, pero sin email no puede entrar con Google. **Propuesta:** obligatorio para mayores, para que al activarse pueda iniciar sesión.
-- [ ] **Edad de corte configurable.** **Propuesta:** constante de 18 años por ahora (YAGNI); pasa a `parametros_sistema` cuando exista ese componente.
+- [x] **Plan ↔ actividad y profesora.** US-11 pide que el plan tenga actividad y profesora obligatorias. En el DER `planes` solo tiene `id_actividad_exclusiva` (opcional) y `profesora_unica`; la profesora a cargo está en `inscripciones.id_profesora`. **Decidido: manda el DER.** La profesora se elige al inscribir y `profesora_unica` obliga a que todos los horarios sean de ella. Avisar al equipo del front.
+- [x] **Estado del alumno pre-inscripto.** US-05 habla de alumno "pendiente", pero `alumnos.estado` solo admite `ACTIVO`, `INACTIVO` y `BAJA`. **Decidido:** alumno `INACTIVO` + inscripción `PREINSCRIPTA`. Lo "pendiente" se lee de la inscripción.
+- [x] **Pre-inscripción en uno o dos pasos.** El alumno es de `GestionPersonas` y la inscripción de `GestionInscripcionesYClases`. **Decidido:** dos llamadas (`POST /alumnos` y después `POST /inscripciones`). Respeta los subsistemas y no hace falta una transacción entre los dos. Lo que se pierde: si falla la segunda queda un alumno `INACTIVO` sin inscripción, que es inofensivo y se reutiliza al reintentar.
+- [x] **Peso y talla.** US-05 los pide "si la actividad lo requiere", pero `actividades` no tiene ese dato y las medidas viven en `registros_progreso` / `medidas_corporales` (Sprint 5). **Decidido:** fuera del Sprint 2; el criterio "clase que requiere peso/talla sin cargarlos → falla" no se puede cumplir sin cambiar el DER.
+- [x] **Parentesco del tutor.** US-06 lo pide y el DER no lo tiene. **Decidido:** no se guarda (si hace falta, va en `observaciones`).
+- [x] **Email del alumno mayor.** US-05 lo da como opcional, pero sin email no puede entrar con Google. **Decidido:** obligatorio para mayores, para que al activarse pueda iniciar sesión.
+- [x] **Edad de corte configurable.** **Decidido:** constante de 18 años por ahora (YAGNI); pasa a `parametros_sistema` cuando exista ese componente.
 - [ ] **Diagrama.** La vista arquitectónica no muestra que `Inscripcion` requiera `IInfoPlanes`, ni que `GestionPersonas` y `GestionServicioEntrenamiento` requieran `IInfoInscripciones`. Actualizar `docs/diagrams/` antes de implementarlo (regla dura 2).
