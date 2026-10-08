@@ -93,10 +93,13 @@ describe("POST /api/v1/auth/desarrollo", () => {
     expect(gestionUsuarios.iniciarSesionDesarrollo).toHaveBeenCalledWith("test@example.com");
   });
 
-  it("responde 400 si el email no es válido", async () => {
+  it.each([
+    ["no es válido", "no-es-un-email"],
+    ["supera los 120 caracteres del DER", `${"a".repeat(109)}@example.com`],
+  ])("responde 400 si el email %s", async (_caso, email) => {
     const response = await request(createApp(deps, { loginDesarrollo: true }))
       .post("/api/v1/auth/desarrollo")
-      .send({ email: "no-es-un-email" });
+      .send({ email });
 
     expect(response.status).toBe(400);
     expect(gestionUsuarios.iniciarSesionDesarrollo).not.toHaveBeenCalled();
@@ -216,6 +219,7 @@ describe("POST /api/v1/auth/google", () => {
     ["vacío", { id_token: "" }],
     ["solo espacios", { id_token: "   " }],
     ["que no es texto", { id_token: 123 }],
+    ["de más de 4096 caracteres", { id_token: "a".repeat(4097) }],
   ])("responde 400 con un id_token %s", async (_caso, body) => {
     const app = createApp({
       gestionUsuarios: gestionUsuariosStub,
