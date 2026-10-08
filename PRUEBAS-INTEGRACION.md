@@ -99,7 +99,7 @@ Cuando las pruebas nuevas necesiten otro tipo de dato (por ejemplo inscripciones
 
 ### 4.1 Escenario de demostración
 
-No incluye alumnos, tutores ni planes; los casos que los necesitan los crean con `crearUsuario`, `crearPlan` y `crearAlumno`, o por la API.
+Incluye planes y dos alumnos pre-inscriptos. Los casos que necesitan otros los crean con `crearUsuario`, `crearPlan` y `crearAlumno`, o por la API, y cuentan contra lo que ya había para no depender del escenario.
 
 **Usuarios** (los tres tienen registro de profesora):
 
@@ -125,6 +125,22 @@ No incluye alumnos, tutores ni planes; los casos que los necesitan los crean con
 | Miércoles | 18:00 – 19:00 | Lucía Gómez | Funcional Grupal            | Sin cupo propio          |
 | Jueves    | 09:00 – 10:00 | Carla Ruiz  | Entrenamiento Personalizado | Sin cupo propio (toma 4) |
 | Viernes   | 19:00 – 20:00 | Marina Sosa | Funcional Grupal            | 12, propio (CA-07)       |
+
+**Planes** (precios vigentes desde el 01/01/2026):
+
+| Plan                 | Tipo         | Clases por semana | Exclusivo de                | Profesora única |  Precio |
+| :------------------- | :----------- | :---------------: | :-------------------------- | :-------------: | ------: |
+| Básico               | Mensual      |         2         | —                           |       No        | $25.000 |
+| Intermedio           | Mensual      |         3         | —                           |       No        | $30.000 |
+| Personalizado 2 días | Mensual      |         2         | Entrenamiento Personalizado |       Sí        | $45.000 |
+| Clase suelta         | Clase suelta |         —         | —                           |       No        |  $6.000 |
+
+**Alumnos** (pre-inscriptos: alumno y usuario `INACTIVO`, sin inscripción todavía):
+
+| Alumno       | DNI      | Edad  | Email                      | Tutor                                                               |
+| :----------- | :------- | :---- | :------------------------- | :------------------------------------------------------------------ |
+| Sofía Medina | 38111222 | Mayor | `sofia.medina@example.com` | —                                                                   |
+| Mateo Romero | 52111222 | Menor | —                          | Paula Romero (DNI 31222333, `paula.romero@example.com`, `INACTIVO`) |
 
 Los horarios nuevos deben caer dentro del horario de atención, de lunes a sábado de 07:00 a 20:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas. El centro no abre los domingos: la base admite el día 7 (el DER no se cambia), pero la API lo rechaza.
 
@@ -539,14 +555,15 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 
 ### 8.1 Ejecuciones completas
 
-| Fecha      | Motivo                                                                | Tests | Resultado    | Duración | Observaciones                                                                       |
-| :--------- | :-------------------------------------------------------------------- | :---: | :----------- | :------: | :---------------------------------------------------------------------------------- |
-| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                                             |
-| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades                 |
-| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                                             |
-| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada                  |
-| 08/10/2026 | Planes y precios con vigencia (PI-11 a PI-14)                         |  73   | 73 aprobados |  27,0 s  | Pasaron también los 763 tests unitarios; las 12 fallas provocadas fueron detectadas |
-| 08/10/2026 | Alumnos y tutores (PI-15 a PI-19); la profesora ve los planes (PI-14) |  91   | 91 aprobados |  28,3 s  | Pasaron también los 854 tests unitarios; las 19 fallas provocadas fueron detectadas |
+| Fecha      | Motivo                                                                | Tests | Resultado    | Duración | Observaciones                                                                                                 |
+| :--------- | :-------------------------------------------------------------------- | :---: | :----------- | :------: | :------------------------------------------------------------------------------------------------------------ |
+| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                                                                       |
+| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades                                           |
+| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                                                                       |
+| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada                                            |
+| 08/10/2026 | Planes y precios con vigencia (PI-11 a PI-14)                         |  73   | 73 aprobados |  27,0 s  | Pasaron también los 763 tests unitarios; las 12 fallas provocadas fueron detectadas                           |
+| 08/10/2026 | Alumnos y tutores (PI-15 a PI-19); la profesora ve los planes (PI-14) |  91   | 91 aprobados |  28,3 s  | Pasaron también los 854 tests unitarios; las 19 fallas provocadas fueron detectadas                           |
+| 08/10/2026 | Planes y alumnos en el escenario de demostración                      |  91   | 91 aprobados |  33,3 s  | Los tests de planes y alumnos pasan a contar contra lo que había; las fallas provocadas se vuelven a detectar |
 
 ### 8.2 Resultado por caso
 
@@ -600,9 +617,10 @@ Los defectos se numeran D-01, D-02…
 
 ## 11. Historial de cambios
 
-| Versión | Fecha      | Observaciones                                                                                                                                    | Encargado         |
-| :-----: | :--------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :---------------- |
-|   1.1   | 07/10/2026 | Casos PI-01 a PI-10 del Sprint 1 y tests A-01 a A-41, B-01 a B-13 y C-01 a C-03                                                                  | Francisco Andrade |
-|   1.2   | 07/10/2026 | PI-05: pasos 6 y 7 (el centro no abre los domingos) y tests B-14 y B-15                                                                          | Francisco Andrade |
-|   1.3   | 08/10/2026 | Casos PI-11 a PI-14 (planes y precios, Sprint 2), fábrica `crearPlan` y tests D-01 a D-14                                                        | Francisco Andrade |
-|   1.4   | 08/10/2026 | Casos PI-15 a PI-19 (alumnos y tutores), PI-14 actualizado (la profesora ve los planes), fábrica `crearAlumno` y tests E-01 a E-15 y F-01 a F-03 | Francisco Andrade |
+| Versión | Fecha      | Observaciones                                                                                                                                                | Encargado         |
+| :-----: | :--------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------- |
+|   1.1   | 07/10/2026 | Casos PI-01 a PI-10 del Sprint 1 y tests A-01 a A-41, B-01 a B-13 y C-01 a C-03                                                                              | Francisco Andrade |
+|   1.2   | 07/10/2026 | PI-05: pasos 6 y 7 (el centro no abre los domingos) y tests B-14 y B-15                                                                                      | Francisco Andrade |
+|   1.3   | 08/10/2026 | Casos PI-11 a PI-14 (planes y precios, Sprint 2), fábrica `crearPlan` y tests D-01 a D-14                                                                    | Francisco Andrade |
+|   1.4   | 08/10/2026 | Casos PI-15 a PI-19 (alumnos y tutores), PI-14 actualizado (la profesora ve los planes), fábrica `crearAlumno` y tests E-01 a E-15 y F-01 a F-03             | Francisco Andrade |
+|   1.5   | 08/10/2026 | Planes y alumnos en el escenario de demostración (sección 4.1); D-02, D-03, D-06, D-13, D-14, E-02, E-13 y E-14 cuentan o filtran sin depender del escenario | Francisco Andrade |
