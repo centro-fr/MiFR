@@ -59,7 +59,7 @@ back/
 - **Catálogo de seguridad:** se carga solo en cada `reiniciarBase`.
 - **`crearUsuario`:** usuarios con los roles y el estado que se pidan, con correos `usuarioN@example.com`.
 - **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Devuelve los ids de profesoras por correo y de actividades por código.
-- Los horarios tienen que caer entre las 07:00 y las 20:00 (horario de atención): fuera de esa franja la API responde 400 antes de llegar a la regla que se quiere probar.
+- Los horarios tienen que caer de lunes a sábado, entre las 07:00 y las 20:00 (horario de atención): un domingo o una hora fuera de esa franja hacen que la API responda 400 antes de llegar a la regla que se quiere probar.
 
 ## Archivos y códigos asignados
 
@@ -68,7 +68,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | Letra | Archivo | Tema | Último código |
 | :--- | :--- | :--- | :--- |
 | A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos | A-41 |
-| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-13 |
+| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-15 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
