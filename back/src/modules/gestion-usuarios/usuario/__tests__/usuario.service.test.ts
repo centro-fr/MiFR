@@ -148,6 +148,16 @@ describe("UsuarioService", () => {
     });
   });
 
+  describe("buscarPorDni", () => {
+    it("buscarPorDni devuelve el usuario del repositorio, o null sin lanzar", async () => {
+      repositorio.buscarPorDni.mockResolvedValueOnce(crearUsuario()).mockResolvedValueOnce(null);
+
+      await expect(service.buscarPorDni("30111222")).resolves.toMatchObject({ id_usuario: 1 });
+      await expect(service.buscarPorDni("40111222")).resolves.toBeNull();
+      expect(repositorio.buscarPorDni).toHaveBeenCalledWith("30111222");
+    });
+  });
+
   describe("identificarPorGoogle", () => {
     it("identificarPorGoogle devuelve el usuario con ese google_id sin buscar por email", async () => {
       repositorio.buscarPorGoogleId.mockResolvedValue(crearUsuario());
