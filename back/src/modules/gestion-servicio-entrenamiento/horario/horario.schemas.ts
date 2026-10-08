@@ -13,12 +13,15 @@ const hora = z
     message: `La hora debe estar entre las ${HORA_APERTURA} y las ${HORA_CIERRE}`,
   });
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
+// 1 = lunes … 6 = sábado. El DER admite el domingo (7), pero el centro no abre ese día: la regla
+// vive acá y no en el CHECK de la base, para que abrir los domingos no requiera una migración.
+const dia_semana = z.number().int().min(1).max(6, "El centro no abre los domingos");
 
 export const crearHorarioSchema = z
   .object({
     id_actividad: idSchema,
     id_profesora: idSchema,
-    dia_semana: z.number().int().min(1).max(7),
+    dia_semana,
     hora_inicio: hora,
     hora_fin: hora,
     cupo_maximo,
@@ -32,7 +35,7 @@ export const actualizarHorarioSchema = z
   .object({
     id_actividad: idSchema.optional(),
     id_profesora: idSchema.optional(),
-    dia_semana: z.number().int().min(1).max(7).optional(),
+    dia_semana: dia_semana.optional(),
     hora_inicio: hora.optional(),
     hora_fin: hora.optional(),
     cupo_maximo,
