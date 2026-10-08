@@ -43,6 +43,14 @@ describe("horarioFormSchema", () => {
       }
     });
 
+    it("rechaza una hora de inicio posterior a las 19:00", () => {
+      const resultado = horarioFormSchema.safeParse({ ...datosValidos, horaInicio: "19:01" });
+      expect(resultado.success).toBe(false);
+      if (!resultado.success) {
+        expect(resultado.error.issues[0].message).toMatch(/Los horarios tienen que estar entre las 07:00 y las 19:00 hs/);
+      }
+    });
+
     it("rechaza una hora posterior al cierre (20:00)", () => {
       const resultado = horarioFormSchema.safeParse({ ...datosValidos, horaFin: "20:01" });
       expect(resultado.success).toBe(false);

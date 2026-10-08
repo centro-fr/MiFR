@@ -114,13 +114,6 @@ export function ActividadesPage() {
   return (
     <OwnerLayout>
       <div className="px-4 py-5 md:p-8 max-w-[1180px] mx-auto w-full">
-        <div className="flex items-center gap-2 text-sm font-medium mb-2 select-none">
-          <span className="text-slate-400">MiFR Centro</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-600 font-semibold dark:text-slate-300">Actividades y Horarios</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-[#E91E82] font-semibold">Actividades</span>
-        </div>
         <div className="flex items-start justify-between gap-3 mb-5 md:mb-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

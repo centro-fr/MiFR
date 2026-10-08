@@ -197,16 +197,8 @@ export const HorariosPage: React.FC = () => {
     <OwnerLayout>
       {/* CONTENIDO PRINCIPAL */}
       <div className="flex flex-col bg-slate-50/50 min-w-0">
-        {/* HEADER CON BREADCRUMB */}
+        {/* ENCABEZADO */}
         <header className="bg-white border-b border-slate-200 px-4 py-4 md:px-7 md:py-5">
-          <div className="flex items-center gap-2 text-sm font-medium mb-1.5 select-none">
-            <span className="text-slate-400">MiFR Centro</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-slate-600 font-semibold">Actividades y Horarios</span>
-            <span className="text-slate-300">/</span>
-            <span className="text-[#E91E82] font-semibold">Horarios</span>
-          </div>
-
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-3.5 flex-wrap">
@@ -218,7 +210,7 @@ export const HorariosPage: React.FC = () => {
                 </Badge>
               </div>
               <p className="text-sm text-slate-500 mt-1 font-medium leading-relaxed">
-                Armá y gestioná el cronograma semanal del salón sin superposiciones.
+                Armá y gestioná el cronograma semanal del salón.
               </p>
             </div>
           </div>
@@ -262,9 +254,8 @@ export const HorariosPage: React.FC = () => {
 
           {/* Menú de filtros (siempre visible en desktop, colapsable en móvil) */}
           <div
-            className={`${
-              isMobileFiltersOpen ? 'flex' : 'hidden md:flex'
-            } flex-col md:flex-row flex-wrap items-stretch md:items-center justify-start gap-2.5 md:gap-3.5 mt-3 md:mt-0`}
+            className={`${isMobileFiltersOpen ? 'flex' : 'hidden md:flex'
+              } flex-col md:flex-row flex-wrap items-stretch md:items-center justify-start gap-2.5 md:gap-3.5 mt-3 md:mt-0`}
           >
             <div className="hidden md:flex items-center gap-2 text-sm font-bold text-slate-700 mr-1">
               <Filter className="w-4 h-4 text-slate-400" />

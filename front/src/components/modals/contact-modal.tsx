@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -42,7 +43,8 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
 
   const form = useForm<ContactFormData>({ resolver: zodResolver(contactSchema), mode: "onBlur" });
 
-  function onSubmit(data: ContactFormData) {
+  async function onSubmit(data: ContactFormData) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setSubmittedEmail(data.email);
   }
 
@@ -176,6 +178,27 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                           <SelectItem value="staff">Personal Administrativo</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage role="alert" className="text-sm text-rose-300" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mensaje"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="contact-mensaje" className={LABEL_CLASSES}>
+                        Mensaje o Consulta <span className="font-normal text-slate-400">(opcional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          id="contact-mensaje"
+                          placeholder="Contanos tu consulta o disponibilidad horaria..."
+                          className="min-h-[80px] w-full resize-none rounded-xl border-white/10 bg-white/5 px-3.5 py-2.5 text-base text-white transition-colors placeholder:text-slate-500 focus:border-primary focus-visible:ring-primary/40"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
                       <FormMessage role="alert" className="text-sm text-rose-300" />
                     </FormItem>
                   )}
