@@ -12,7 +12,14 @@ describe("crearHorarioSchema", () => {
     expect(crearHorarioSchema.safeParse({ ...minimo, dia_semana }).success).toBe(false);
   });
 
-  it.each([1, 7])("acepta el día de la semana %j", (dia_semana) => {
+  it("rechaza el domingo porque el centro no abre ese día", () => {
+    const resultado = crearHorarioSchema.safeParse({ ...minimo, dia_semana: 7 });
+
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.flatten().fieldErrors.dia_semana).toEqual(["El centro no abre los domingos"]);
+  });
+
+  it.each([1, 6])("acepta el día de la semana %j", (dia_semana) => {
     expect(crearHorarioSchema.safeParse({ ...minimo, dia_semana }).success).toBe(true);
   });
 
@@ -41,6 +48,7 @@ describe("crearHorarioSchema", () => {
 describe("actualizarHorarioSchema", () => {
   it("aplica las mismas reglas numéricas que al crear", () => {
     expect(actualizarHorarioSchema.safeParse({ dia_semana: -0 }).success).toBe(false);
+    expect(actualizarHorarioSchema.safeParse({ dia_semana: 7 }).success).toBe(false);
     expect(actualizarHorarioSchema.safeParse({ cupo_maximo: 0 }).success).toBe(false);
   });
 
