@@ -26,7 +26,7 @@ const horarioSchema = z
     id_horario: z.number().int(),
     id_actividad: z.number().int(),
     id_profesora: z.number().int(),
-    dia_semana: z.number().int().min(1).max(7).openapi({ description: "1 = lunes, 7 = domingo" }),
+    dia_semana: z.number().int().min(1).max(6).openapi({ description: "1 = lunes … 6 = sábado" }),
     hora_inicio: horaSchema,
     hora_fin: horaSchema,
     cupo_maximo: z.number().int().nullable(),
@@ -53,7 +53,8 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
   const reglas =
     "La actividad y la profesora tienen que estar activas, y la profesora no puede tener otro " +
     "horario superpuesto ese día (409). `cupo_maximo` es obligatorio si la actividad es PERSONALIZADA " +
-    "y no tiene cupo propio. Las horas tienen que estar entre las 07:00 y las 20:00, el horario del centro (400).";
+    "y no tiene cupo propio. El día va de lunes a sábado y las horas entre las 07:00 y las 20:00, el " +
+    "horario del centro (400).";
 
   registro.registerPath({
     method: "get",
