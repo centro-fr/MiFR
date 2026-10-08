@@ -12,6 +12,7 @@ import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-en
 import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profesor.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
+import { createPlanRoutes } from "./modules/gestion-servicio-entrenamiento/plan/plan.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
@@ -66,6 +67,10 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   api.use(
     "/horarios",
     createHorarioRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
+  );
+  api.use(
+    "/planes",
+    createPlanRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
   );
   app.use("/api/v1", api);
 

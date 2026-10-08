@@ -86,18 +86,19 @@ Su estrategia y ambiente se definen cuando se implementen. Mientras tanto, lo qu
 
 Antes de cada test la base de prueba se vacía y el test carga solo los datos que necesita. Así ningún test depende de lo que dejó otro, y el resultado es siempre el mismo sin importar el orden en que se ejecuten. Estos son los datos que se usan:
 
-| Dato                             | Cómo se carga                                                                                                                                                                                                                                       |
-| :------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Roles, permisos y matriz inicial | Los mismos del seed de producción (`cargarCatalogoSeguridad`), antes de cada test                                                                                                                                                                   |
-| Usuarios                         | Fábrica `crearUsuario` (`back/src/__tests__/integracion/fabricas.ts`) con los roles y el estado que necesite cada test. Correos ficticios: `usuario1@example.com`…                                                                                  |
-| Sesión                           | `entorno.iniciarSesion(correo)`, que pasa por el login real con Google simulado                                                                                                                                                                     |
-| Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests |
+| Dato                             | Cómo se carga                                                                                                                                                                                                                                                                                                |
+| :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Roles, permisos y matriz inicial | Los mismos del seed de producción (`cargarCatalogoSeguridad`), antes de cada test                                                                                                                                                                                                                            |
+| Usuarios                         | Fábrica `crearUsuario` (`back/src/__tests__/integracion/fabricas.ts`) con los roles y el estado que necesite cada test. Correos ficticios: `usuario1@example.com`…                                                                                                                                           |
+| Sesión                           | `entorno.iniciarSesion(correo)`, que pasa por el login real con Google simulado                                                                                                                                                                                                                              |
+| Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones |
+| Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                          |
 
-Cuando las pruebas nuevas necesiten otro tipo de dato (por ejemplo alumnos, planes o pagos), se agrega en `fabricas.ts` una función que lo cree, igual que `crearUsuario`. Así cualquier test puede reutilizarla.
+Cuando las pruebas nuevas necesiten otro tipo de dato (por ejemplo alumnos o pagos), se agrega en `fabricas.ts` una función que lo cree, igual que `crearUsuario`. Así cualquier test puede reutilizarla.
 
 ### 4.1 Escenario de demostración
 
-No incluye alumnos ni tutores; los casos que los necesitan los crean con `crearUsuario`.
+No incluye alumnos, tutores ni planes; los casos que los necesitan los crean con `crearUsuario` y `crearPlan`, o por la API.
 
 **Usuarios** (los tres tienen registro de profesora):
 
@@ -130,45 +131,45 @@ Los horarios nuevos deben caer dentro del horario de atención, de lunes a sába
 
 Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de integración. Las US de sprints futuros figuran para que la matriz se complete a medida que avanza el proyecto.
 
-| US    | Historia                                                  | Sprint | Casos                                                  | Automatización           |
-| :---- | :-------------------------------------------------------- | :----: | :----------------------------------------------------- | :----------------------- |
-| US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10               | Sí, salvo PI-10 (Manual) |
-| US-02 | Definición de permisos por rol                            |   1    | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09, PI-10 | Sí, salvo PI-10 (Manual) |
-| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                    | Sí                       |
-| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06                             | Sí                       |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    |                                                        |                          |
-| US-06 | Asociación de tutor a alumno menor de edad                |   2    |                                                        |                          |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    |                                                        |                          |
-| US-08 | Baja lógica de alumno                                     |   2    |                                                        |                          |
-| US-09 | Modificación de datos de alumno                           |   2    |                                                        |                          |
-| US-10 | Consulta y búsqueda de alumnos                            |   2    |                                                        |                          |
-| US-11 | Alta y edición de planes vigentes                         |   2    |                                                        |                          |
-| US-12 | Actualización de precios con fecha de vigencia            |   2    |                                                        |                          |
-| US-13 | Alta de descuentos y promociones temporales               |   4    |                                                        |                          |
-| US-14 | Renovación o cambio de plan                               |   5    |                                                        |                          |
-| US-15 | Registro de cobro en efectivo                             |   3    |                                                        |                          |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    |                                                        |                          |
-| US-17 | Aprobación o rechazo de transferencias                    |   3    |                                                        |                          |
-| US-18 | Cálculo del estado de habilitación del alumno             |   3    |                                                        |                          |
-| US-19 | Control de efectivo pendiente de rendición                |   4    |                                                        |                          |
-| US-20 | Registro de asistencia por clase                          |   3    |                                                        |                          |
-| US-21 | Registro automático de inasistencias                      |   3    |                                                        |                          |
-| US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                        |                          |
-| US-23 | Informe mensual automático de honorarios                  |   4    |                                                        |                          |
-| US-24 | Registro de suplencias entre profesoras                   |   4    |                                                        |                          |
-| US-25 | Aviso automático de vencimiento de cuota                  |   4    |                                                        |                          |
-| US-26 | Resumen diario para la propietaria                        |   4    |                                                        |                          |
-| US-27 | Carga de rutina y evolución física                        |   5    |                                                        |                          |
-| US-28 | Consulta de rutina y progreso físico                      |   5    |                                                        |                          |
-| US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                        |                          |
-| US-30 | Ranking de asistencia entre alumnos                       |   5    |                                                        |                          |
-| US-31 | Insignias y racha de asistencia                           |   5    |                                                        |                          |
-| US-32 | Panel público de disponibilidad                           |   5    |                                                        |                          |
-| US-33 | Informe de asistencia                                     |   5    |                                                        |                          |
-| US-34 | Informe de cuotas vencidas                                |   5    |                                                        |                          |
-| US-35 | Reportes de inscriptos por mes                            |   5    |                                                        |                          |
-| US-36 | Reportes de planes más elegidos                           |   5    |                                                        |                          |
-| US-37 | Mapa de calor de ocupación de horarios                    |   5    |                                                        |                          |
+| US    | Historia                                                  | Sprint | Casos                                                         | Automatización                                                          |
+| :---- | :-------------------------------------------------------- | :----: | :------------------------------------------------------------ | :---------------------------------------------------------------------- |
+| US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10                      | Sí, salvo PI-10 (Manual)                                                |
+| US-02 | Definición de permisos por rol                            |   1    | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09, PI-10, PI-14 | Sí, salvo PI-10 (Manual)                                                |
+| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                           | Sí                                                                      |
+| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06                                    | Sí                                                                      |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    |                                                               |                                                                         |
+| US-06 | Asociación de tutor a alumno menor de edad                |   2    |                                                               |                                                                         |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    |                                                               |                                                                         |
+| US-08 | Baja lógica de alumno                                     |   2    |                                                               |                                                                         |
+| US-09 | Modificación de datos de alumno                           |   2    |                                                               |                                                                         |
+| US-10 | Consulta y búsqueda de alumnos                            |   2    |                                                               |                                                                         |
+| US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                      |
+| US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3) |
+| US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                         |
+| US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                         |
+| US-15 | Registro de cobro en efectivo                             |   3    |                                                               |                                                                         |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    |                                                               |                                                                         |
+| US-17 | Aprobación o rechazo de transferencias                    |   3    |                                                               |                                                                         |
+| US-18 | Cálculo del estado de habilitación del alumno             |   3    |                                                               |                                                                         |
+| US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                         |
+| US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                         |
+| US-21 | Registro automático de inasistencias                      |   3    |                                                               |                                                                         |
+| US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                               |                                                                         |
+| US-23 | Informe mensual automático de honorarios                  |   4    |                                                               |                                                                         |
+| US-24 | Registro de suplencias entre profesoras                   |   4    |                                                               |                                                                         |
+| US-25 | Aviso automático de vencimiento de cuota                  |   4    |                                                               |                                                                         |
+| US-26 | Resumen diario para la propietaria                        |   4    |                                                               |                                                                         |
+| US-27 | Carga de rutina y evolución física                        |   5    |                                                               |                                                                         |
+| US-28 | Consulta de rutina y progreso físico                      |   5    |                                                               |                                                                         |
+| US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                               |                                                                         |
+| US-30 | Ranking de asistencia entre alumnos                       |   5    |                                                               |                                                                         |
+| US-31 | Insignias y racha de asistencia                           |   5    |                                                               |                                                                         |
+| US-32 | Panel público de disponibilidad                           |   5    |                                                               |                                                                         |
+| US-33 | Informe de asistencia                                     |   5    |                                                               |                                                                         |
+| US-34 | Informe de cuotas vencidas                                |   5    |                                                               |                                                                         |
+| US-35 | Reportes de inscriptos por mes                            |   5    |                                                               |                                                                         |
+| US-36 | Reportes de planes más elegidos                           |   5    |                                                               |                                                                         |
+| US-37 | Mapa de calor de ocupación de horarios                    |   5    |                                                               |                                                                         |
 
 ## 6. Casos de prueba
 
@@ -188,8 +189,12 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-08 | Los cambios de permisos rigen desde el pedido siguiente            | US-01, US-02  | Servicios   | Comunes                         | Sí           |
 | PI-09 | Carga del catálogo de seguridad                                    | US-02         | Servicios   | Comunes                         | Sí           |
 | PI-10 | Sesión en la interfaz: menú por rol, login cancelado y redirección | US-01, US-02  | Sistema–API | Demostración                    | Manual       |
+| PI-11 | Alta de plan con su precio inicial                                 | US-11, US-12  | Servicios   | Demostración                    | Sí           |
+| PI-12 | Modificación y baja de planes                                      | US-11         | Servicios   | Demostración                    | Sí           |
+| PI-13 | Actualización de precio con fecha de vigencia                      | US-12         | Servicios   | Demostración                    | Parcial      |
+| PI-14 | Permisos sobre planes                                              | US-02, US-11  | Servicios   | Demostración                    | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador.
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-14 son los primeros del Sprint 2.
 
 ### 6.2 Detalle
 
@@ -327,44 +332,110 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Manual. Depende del navegador y de la cuenta de Google; se automatiza con las pruebas de punta a punta, coordinadas con el equipo de front.
 
+#### PI-11 — Alta de plan con su precio inicial
+
+**US:** US-11, US-12 · **Precondición:** escenario de demostración cargado; sesión de Marina.
+
+1. Marina crea el plan mensual "Básico 2 días" (2 clases por semana, 5 días de gracia) a $25.000.
+2. Marina intenta crear un plan exclusivo de Funcional Grupal después de que esa actividad quedó dada de baja.
+3. Marina intenta crear otro plan llamado "BÁSICO 2 DÍAS".
+4. Se intenta guardar, directo en la base, una clase suelta con clases por semana y un precio de $0.
+
+**Resultado esperado:** el paso 1 responde 201 y en la base quedan el plan y un único precio de $25.000, vigente desde hoy y sin fecha de cierre; la respuesta lo informa como precio vigente y sin precio programado. El paso 2 responde 400 y no queda ningún plan ni precio. El paso 3 responde 409 ("Ya existe un plan vigente con ese nombre"): el nombre se compara sin distinguir mayúsculas, y sigue habiendo un solo plan. En el paso 4 la base rechaza los dos registros por las restricciones del DER (`ck_planes_x3` y `ck_plan_precios_x1`), aunque no pasen por la API.
+
+**Automatizado:** Sí (D-01 a D-04).
+
+#### PI-12 — Modificación y baja de planes
+
+**US:** US-11 · **Precondición:** escenario de demostración cargado; sesión de Marina; plan "Básico 2 días" creado.
+
+1. Marina cambia la frecuencia del plan a 3 clases por semana.
+2. Marina da de baja el plan y consulta el listado, primero sin filtros y después con `incluirBajas=true`.
+3. Marina intenta darlo de baja otra vez y cambiarle la frecuencia.
+
+**Resultado esperado:** el paso 1 responde 200 y la base guarda la nueva frecuencia. En el paso 2 la baja es lógica: el plan queda con `fecha_baja` de hoy y conserva su precio; no aparece en el listado por defecto y sí con `incluirBajas=true`. En el paso 3 la segunda baja responde 409 y la edición 404, y la frecuencia guardada no cambia.
+
+**Automatizado:** Sí (D-05 a D-07).
+
+#### PI-13 — Actualización de precio con fecha de vigencia
+
+**US:** US-12 · **Precondición:** escenario de demostración cargado; sesión de Marina; plan "Básico 2 días" a $25.000 desde hoy.
+
+1. Marina carga un aumento a $28.000 que rige dentro de 30 días, y consulta el plan y su historial de precios.
+2. Marina carga otro aumento, a $27.000, que rige dentro de 10 días.
+3. Marina intenta cargar un precio con fecha de ayer.
+4. Marina intenta cargar un precio que rige desde hoy, el mismo día en que empezó el actual.
+5. Marina da de baja el plan e intenta cargarle un precio.
+
+**Resultado esperado:** el paso 1 responde 201; en la base el precio de $25.000 queda cerrado el día anterior al aumento y el de $28.000 queda abierto. El plan informa $25.000 como precio vigente y $28.000 como programado, y el historial devuelve los dos, del más nuevo al más viejo. En el paso 2 el aumento de $28.000, que nunca rigió, se reemplaza: quedan el de $25.000, cerrado el día anterior al nuevo, y el de $27.000 abierto. El paso 3 responde 400, el paso 4 responde 409 ("El plan ya tiene un precio que empezó a regir hoy") y el paso 5 responde 409; en los tres la base no cambia.
+
+**Automatizado:** Parcial (D-08 a D-12). El criterio de aceptación "un cobro anterior a la fecha de vigencia aplica el precio anterior y uno posterior aplica el nuevo" depende del cobro de cuotas (US-15 a US-17, Sprint 3). La consulta del precio que rige a una fecha (`IInfoPlanes.precioVigente`) ya está y tiene tests unitarios; el test de integración se suma con el cobro.
+
+#### PI-14 — Permisos sobre planes
+
+**US:** US-02, US-11 · **Precondición:** escenario de demostración cargado; plan "Básico 2 días" creado; sesión de Lucía (profesora).
+
+1. Lucía consulta el listado de planes.
+2. Lucía intenta crear un plan y cargarle un precio al existente.
+
+**Resultado esperado:** el paso 1 responde 403, porque la matriz inicial no le da a la profesora el permiso `PLANES_VER`. Los dos intentos del paso 2 responden 403 y la base sigue con un plan y un precio.
+
+**Automatizado:** Sí (D-13, D-14).
+
 ## 7. Tests automatizados
 
-59 tests en tres archivos:
+73 tests en cuatro archivos:
 
 | Archivo | Ubicación                                                                   | Tests            | Casos                             |
 | :-----: | :-------------------------------------------------------------------------- | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`      | 41 (A-01 a A-41) | PI-01, PI-02, PI-03, PI-07, PI-08 |
 |    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | 15 (B-01 a B-15) | PI-04, PI-05, PI-06               |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`       | 3 (C-01 a C-03)  | PI-09                             |
+|    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                 | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 
-| Tests       | Qué verifican                                                                                                                                                           | Caso  |
-| :---------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---- |
-| A-01, A-02  | 401 sin token o con un token firmado con otro secreto                                                                                                                   | PI-02 |
-| A-03        | Un correo no dado de alta no inicia sesión ni crea ninguna persona                                                                                                      | PI-02 |
-| A-04        | El login vincula la cuenta de Google y `/auth/me` devuelve los permisos de la base                                                                                      | PI-01 |
-| A-05, A-06  | 401 si el usuario ya no existe; 403 si está dado de baja, aunque el token siga vigente                                                                                  | PI-02 |
-| A-07 a A-26 | GET de usuarios, matriz, actividades, horarios y profesoras con cada rol (un test por ruta y rol): usuarios y matriz 200 solo para Propietaria; el resto 200 para todos | PI-03 |
-| A-27 a A-30 | Solo la propietaria crea actividades; con los otros roles no queda nada guardado                                                                                        | PI-03 |
-| A-31        | Un usuario con varios roles suma los permisos de todos                                                                                                                  | PI-01 |
-| A-32 a A-34 | Un alumno ve sus datos, no los de otro, y no puede cambiar su propio estado                                                                                             | PI-07 |
-| A-35 a A-38 | Los roles del token no cuentan; un permiso o rol quitado deja de valer con el mismo token; no se otorgan permisos exclusivos de la propietaria                          | PI-08 |
-| A-39 a A-41 | Profesora, Alumno y Tutor no modifican ni dan de baja actividades ni asignan horarios, y la base queda igual                                                            | PI-03 |
-| B-01 a B-04 | Cupo obligatorio en personalizadas; el horario sin cupo propio toma el de la actividad; el cupo propio manda; grupal sin cupo                                           | PI-04 |
-| B-05 a B-09 | Superposición de horarios de una misma profesora (también la propietaria); dos profesoras a la misma hora; horario invertido; profesora sin el rol                      | PI-05 |
-| B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con horarios activos; baja sin horarios; no pasar a personalizada sin cupo                                    | PI-06 |
-| B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                             | PI-05 |
-| C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                             | PI-09 |
+| Tests       | Qué verifican                                                                                                                                                                   | Caso  |
+| :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
+| A-01, A-02  | 401 sin token o con un token firmado con otro secreto                                                                                                                           | PI-02 |
+| A-03        | Un correo no dado de alta no inicia sesión ni crea ninguna persona                                                                                                              | PI-02 |
+| A-04        | El login vincula la cuenta de Google y `/auth/me` devuelve los permisos de la base                                                                                              | PI-01 |
+| A-05, A-06  | 401 si el usuario ya no existe; 403 si está dado de baja, aunque el token siga vigente                                                                                          | PI-02 |
+| A-07 a A-26 | GET de usuarios, matriz, actividades, horarios y profesoras con cada rol (un test por ruta y rol): usuarios y matriz 200 solo para Propietaria; el resto 200 para todos         | PI-03 |
+| A-27 a A-30 | Solo la propietaria crea actividades; con los otros roles no queda nada guardado                                                                                                | PI-03 |
+| A-31        | Un usuario con varios roles suma los permisos de todos                                                                                                                          | PI-01 |
+| A-32 a A-34 | Un alumno ve sus datos, no los de otro, y no puede cambiar su propio estado                                                                                                     | PI-07 |
+| A-35 a A-38 | Los roles del token no cuentan; un permiso o rol quitado deja de valer con el mismo token; no se otorgan permisos exclusivos de la propietaria                                  | PI-08 |
+| A-39 a A-41 | Profesora, Alumno y Tutor no modifican ni dan de baja actividades ni asignan horarios, y la base queda igual                                                                    | PI-03 |
+| B-01 a B-04 | Cupo obligatorio en personalizadas; el horario sin cupo propio toma el de la actividad; el cupo propio manda; grupal sin cupo                                                   | PI-04 |
+| B-05 a B-09 | Superposición de horarios de una misma profesora (también la propietaria); dos profesoras a la misma hora; horario invertido; profesora sin el rol                              | PI-05 |
+| B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con horarios activos; baja sin horarios; no pasar a personalizada sin cupo                                            | PI-06 |
+| B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                                     | PI-05 |
+| C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
+| D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
+| D-05 a D-07 | Cambio de frecuencia; baja lógica que saca el plan del listado; no hay segunda baja ni edición de un plan dado de baja                                                          | PI-12 |
+| D-08 a D-12 | Aumento futuro que cierra el precio actual el día anterior; reemplazo de un aumento programado; fecha pasada; precio que empieza el mismo día que el vigente; plan dado de baja | PI-13 |
+| D-13, D-14  | La profesora no ve los planes, no los crea y no carga precios; la base queda igual                                                                                              | PI-14 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
 
-| Regla rota                                                              | Tests que fallaron                                                                                         |
-| :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
-| `requierePermiso` deja pasar cualquier pedido                           | A-08 a A-10, A-33 a A-37. El resto siguió en verde por la segunda barrera `requiereRol("PROPIETARIA")`     |
-| El cupo de la actividad manda sobre el cupo propio del horario          | B-03 (la primera versión no lo detectaba; se sumó un horario con cupo propio sobre una actividad con cupo) |
-| No se verifica que la actividad tenga horarios activos antes de la baja | B-11                                                                                                       |
-| El día de la semana vuelve a aceptar el domingo (`max(7)`)              | B-14, B-15                                                                                                 |
+| Regla rota                                                                            | Tests que fallaron                                                                                         |
+| :------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------- |
+| `requierePermiso` deja pasar cualquier pedido                                         | A-08 a A-10, A-33 a A-37. El resto siguió en verde por la segunda barrera `requiereRol("PROPIETARIA")`     |
+| El cupo de la actividad manda sobre el cupo propio del horario                        | B-03 (la primera versión no lo detectaba; se sumó un horario con cupo propio sobre una actividad con cupo) |
+| No se verifica que la actividad tenga horarios activos antes de la baja               | B-11                                                                                                       |
+| El día de la semana vuelve a aceptar el domingo (`max(7)`)                            | B-14, B-15                                                                                                 |
+| El precio anterior se cierra el mismo día que empieza el nuevo, en vez del día previo | D-08, D-09                                                                                                 |
+| El aumento programado no se borra al cargar uno con fecha anterior                    | D-09                                                                                                       |
+| No se detecta un precio que empezó el mismo día que el nuevo                          | D-11                                                                                                       |
+| Se acepta una fecha de vigencia pasada                                                | D-10                                                                                                       |
+| Se acepta un precio para un plan dado de baja                                         | D-12                                                                                                       |
+| No se valida el nombre repetido                                                       | D-03                                                                                                       |
+| Se acepta como exclusiva una actividad dada de baja                                   | D-02                                                                                                       |
+| El listado incluye los planes dados de baja                                           | D-06                                                                                                       |
+| Se permite dar de baja dos veces o editar un plan dado de baja (una regla por vez)    | D-07                                                                                                       |
+| El listado de planes pide `ACTIVIDADES_VER` en lugar de `PLANES_VER`                  | D-13                                                                                                       |
+| Crear planes y cargar precios ya no exige rol Propietaria ni `PLANES_EDITAR`          | D-14                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -372,25 +443,28 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 
 ### 8.1 Ejecuciones completas
 
-| Fecha      | Motivo                                                                | Tests | Resultado    | Duración | Observaciones                                                       |
-| :--------- | :-------------------------------------------------------------------- | :---: | :----------- | :------: | :------------------------------------------------------------------ |
-| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                             |
-| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades |
-| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                             |
-| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada  |
+| Fecha      | Motivo                                                                | Tests | Resultado    | Duración | Observaciones                                                                       |
+| :--------- | :-------------------------------------------------------------------- | :---: | :----------- | :------: | :---------------------------------------------------------------------------------- |
+| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                                             |
+| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades                 |
+| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                                             |
+| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada                  |
+| 08/10/2026 | Planes y precios con vigencia (PI-11 a PI-14)                         |  73   | 73 aprobados |  27,0 s  | Pasaron también los 763 tests unitarios; las 12 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
-| Caso          | Fecha      | Ejecutó           | Resultado | Observaciones                         |
-| :------------ | :--------- | :---------------- | :-------- | :------------------------------------ |
-| PI-01 a PI-09 | 07/10/2026 | Francisco Andrade | Aprobado  | Todos sus tests pasan (ver sección 7) |
-| PI-10         | —          | —                 | Pendiente | Verificación manual en el navegador   |
+| Caso                | Fecha      | Ejecutó           | Resultado          | Observaciones                                                    |
+| :------------------ | :--------- | :---------------- | :----------------- | :--------------------------------------------------------------- |
+| PI-01 a PI-09       | 07/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                            |
+| PI-10               | —          | —                 | Pendiente          | Verificación manual en el navegador                              |
+| PI-11, PI-12, PI-14 | 08/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                            |
+| PI-13               | 08/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan D-08 a D-12; falta el precio aplicado al cobrar (Sprint 3) |
 
 ### 8.3 Defectos
 
-| ID  | Caso | Descripción                               | Severidad | Responsable | Corregido en |
-| :-- | :--- | :---------------------------------------- | :-------- | :---------- | :----------- |
-| —   | —    | Sin defectos en la corrida del 07/10/2026 | —         | —           | —            |
+| ID  | Caso | Descripción                                                 | Severidad | Responsable | Corregido en |
+| :-- | :--- | :---------------------------------------------------------- | :-------- | :---------- | :----------- |
+| —   | —    | Sin defectos en las corridas del 07/10/2026 y el 08/10/2026 | —         | —           | —            |
 
 Los defectos se numeran D-01, D-02…
 
@@ -399,6 +473,7 @@ Los defectos se numeran D-01, D-02…
 | Caso  | Punto                                                                                                                                                                                                                                                                                                                                                 | Estado  |
 | :---- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
 | PI-06 | Baja de una actividad con horarios activos: el backend la rechaza con 409 y pide dar de baja los horarios primero (US-03 / CA-03). Falta confirmarlo con la propietaria; si prefiere darla de baja y desasignar los horarios, es un cambio de regla. Cuando existan inscripciones se revisa si el bloqueo se limita a horarios con alumnos inscriptos | Abierto |
+| PI-14 | La profesora carga pre-inscripciones (US-05) y para eso necesita ver los planes, pero la matriz inicial no le da `PLANES_VER`. Se le agrega junto con la parte de alumnos del Sprint 2; cuando cambie, PI-14 pasa a verificar que la profesora ve los planes pero no los edita                                                                        | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -426,7 +501,8 @@ Los defectos se numeran D-01, D-02…
 
 ## 11. Historial de cambios
 
-| Versión | Fecha      | Observaciones                                                                   | Encargado         |
-| :-----: | :--------- | :------------------------------------------------------------------------------ | :---------------- |
-|   1.1   | 07/10/2026 | Casos PI-01 a PI-10 del Sprint 1 y tests A-01 a A-41, B-01 a B-13 y C-01 a C-03 | Francisco Andrade |
-|   1.2   | 07/10/2026 | PI-05: pasos 6 y 7 (el centro no abre los domingos) y tests B-14 y B-15         | Francisco Andrade |
+| Versión | Fecha      | Observaciones                                                                             | Encargado         |
+| :-----: | :--------- | :---------------------------------------------------------------------------------------- | :---------------- |
+|   1.1   | 07/10/2026 | Casos PI-01 a PI-10 del Sprint 1 y tests A-01 a A-41, B-01 a B-13 y C-01 a C-03           | Francisco Andrade |
+|   1.2   | 07/10/2026 | PI-05: pasos 6 y 7 (el centro no abre los domingos) y tests B-14 y B-15                   | Francisco Andrade |
+|   1.3   | 08/10/2026 | Casos PI-11 a PI-14 (planes y precios, Sprint 2), fábrica `crearPlan` y tests D-01 a D-14 | Francisco Andrade |
