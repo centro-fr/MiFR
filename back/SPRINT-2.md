@@ -4,9 +4,9 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-11 | Alta y edición de planes vigentes | Pendiente | Francisco |
-| US-12 | Actualización de precios con fecha de vigencia | Pendiente | Francisco |
-| US-05 | Pre-inscripción de alumno nuevo | Pendiente | Francisco (alumno) + Nicolas (inscripción) |
+| US-11 | Alta y edición de planes vigentes | Completa | Francisco |
+| US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro, Sprint 3) | Francisco |
+| US-05 | Pre-inscripción de alumno nuevo | En curso | Francisco (alumno) + Nicolas (inscripción) |
 | US-06 | Asociación de tutor a alumno menor | Pendiente | Francisco |
 | US-07 | Alta definitiva al confirmarse el primer pago | Pendiente | Nicolas |
 | US-08 | Baja lógica de alumno | Pendiente | Nicolas |
@@ -49,7 +49,7 @@ GestionServicioEntrenamientoService (fachada) ──> IInfoInscripciones  (aviso
 Cómo trabajar en paralelo sin bloquearse:
 
 1. **Día 1, los dos juntos:** acordar y commitear las interfaces `IInfoPlanes`, `IInfoAlumnos` e `IInfoInscripciones` (solo los tipos, sin implementación). Cada uno programa contra la interfaz del otro y la reemplaza por un fake en los tests unitarios.
-2. **Francisco** hace primero la migración de `planes`, `plan_precios` y `alumnos`, y la integra a `dev` cuanto antes: las FK de `inscripciones` apuntan a esas tablas.
+2. [x] **Francisco** hace primero la migración de `planes`, `plan_precios` y `alumnos`, y la integra a `dev` cuanto antes: las FK de `inscripciones` apuntan a esas tablas.
 3. **Nicolas** trae esa migración a su rama y recién ahí genera la de `inscripciones` e `inscripcion_horarios`. Dos migraciones generadas en paralelo sobre el mismo `schema.prisma` chocan en el orden.
 4. Cada uno suma sus datos a `prisma/seed-demo` y sus casos a `PRUEBAS-INTEGRACION.md`. El front lo hace otro equipo y trabaja con el contrato de Swagger y el seed-demo, así que cada ruta nueva se documenta en su `<x>.openapi.ts`.
 5. Las **diferencias a decidir** (final del archivo) se cierran entre los dos antes de escribir las migraciones.
@@ -60,38 +60,38 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Francisco
 
-### Pendiente (US-11)
+### Hecho (US-11)
 
-- [ ] Modelos `planes` y `plan_precios` en Prisma + migración, con los CHECK del SQL de EA (`ck_planes_tipo`, `ck_planes_x1`, `ck_planes_x2`, `ck_planes_x3`, `ck_plan_precios_x1`, `ck_plan_precios_x2`) y la FK `FK_planes_actividad_exclusiva`.
-- [ ] Componente `gestion-servicio-entrenamiento/plan/` (repository, service, controller, routes, schemas, openapi) e interfaz `IInfoPlanes` (buscar por id, precio vigente a una fecha). Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
-- [ ] Endpoints: listar (filtros por tipo, actividad exclusiva y vigencia), obtener, crear (con su precio inicial en la misma transacción), editar, baja lógica (`fecha_baja`).
-- [ ] **Reglas**:
-  - [ ] `tipo` `MENSUAL` o `CLASE_SUELTA`; en `CLASE_SUELTA` van `clases_por_semana = NULL` y `dias_gracia = 0`.
-  - [ ] `clases_por_semana` entre 1 y 7 en los mensuales.
-  - [ ] Precio inicial mayor a 0.
-  - [ ] Si tiene actividad exclusiva, la actividad tiene que existir y estar activa.
-  - [ ] Un plan nunca se borra: se le pone `fecha_baja`. Un plan dado de baja no admite inscripciones nuevas; las que ya tiene siguen.
-  - [ ] Nombre de plan duplicado entre los vigentes → 409.
-- [ ] Protegido con `PLANES_VER` / `PLANES_EDITAR`.
-- [ ] Tests del service y de las rutas; de integración para la creación con precio inicial.
+- [x] Modelos `planes` y `plan_precios` en Prisma + migración, con los CHECK del SQL de EA (`ck_planes_tipo`, `ck_planes_x1`, `ck_planes_x2`, `ck_planes_x3`, `ck_plan_precios_x1`, `ck_plan_precios_x2`) y la FK `FK_planes_actividad_exclusiva`.
+- [x] Componente `gestion-servicio-entrenamiento/plan/` (repository, service, controller, routes, schemas, openapi) e interfaz `IInfoPlanes` (buscar por id, precio vigente a una fecha). Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
+- [x] Endpoints: listar (filtros por tipo, actividad exclusiva y vigencia), obtener, crear (con su precio inicial en la misma transacción), editar, baja lógica (`fecha_baja`).
+- [x] **Reglas**:
+  - [x] `tipo` `MENSUAL` o `CLASE_SUELTA`; en `CLASE_SUELTA` van `clases_por_semana = NULL` y `dias_gracia = 0`.
+  - [x] `clases_por_semana` entre 1 y 7 en los mensuales.
+  - [x] Precio inicial mayor a 0.
+  - [x] Si tiene actividad exclusiva, la actividad tiene que existir y estar activa.
+  - [x] Un plan nunca se borra: se le pone `fecha_baja`. Un plan dado de baja no admite inscripciones nuevas (lo controla `Inscripcion` con `IInfoPlanes`); las que ya tiene siguen.
+  - [x] Nombre de plan duplicado entre los vigentes → 409.
+- [x] Protegido con `PLANES_VER` / `PLANES_EDITAR`.
+- [x] Tests del service y de las rutas; de integración PI-11, PI-12 y PI-14 (tests D-01 a D-07, D-13 y D-14).
 
 ## US-12 – Actualización de precios con fecha de vigencia
 
 **Responsable:** Francisco
 
-### Pendiente (US-12)
+### Hecho (US-12)
 
-- [ ] `POST /api/v1/planes/:id/precios`: cierra el precio vigente (`fecha_vigencia_hasta = fecha_nueva - 1 día`) e inserta el nuevo, en una transacción.
-- [ ] `GET /api/v1/planes/:id/precios`: historial del plan.
-- [ ] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usa `Inscripcion` para guardar `id_plan_precio` y lo va a usar el cobro del Sprint 3.
-- [ ] **Reglas**:
-  - [ ] Precio mayor a 0.
-  - [ ] Fecha de vigencia hoy o futura; en el pasado → 400.
-  - [ ] Si ya hay un precio programado a futuro, el nuevo lo reemplaza (se resuelve por el más reciente) en lugar de dejar dos vigencias superpuestas.
-  - [ ] Plan dado de baja → 409.
-  - [ ] Las inscripciones guardan `id_plan_precio`, así que un cambio de precio nunca altera lo ya cobrado.
-- [ ] Auditoría del cambio (valor anterior, nuevo y usuario) con `shared/utils/auditoria.ts`: el DER no tiene columna para el usuario que lo hizo.
-- [ ] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia.
+- [x] `POST /api/v1/planes/:id/precios`: cierra el precio vigente (`fecha_vigencia_hasta = fecha_nueva - 1 día`) e inserta el nuevo, en una transacción.
+- [x] `GET /api/v1/planes/:id/precios`: historial del plan.
+- [x] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usa `Inscripcion` para guardar `id_plan_precio` y lo va a usar el cobro del Sprint 3.
+- [x] **Reglas**:
+  - [x] Precio mayor a 0.
+  - [x] Fecha de vigencia hoy o futura; en el pasado → 400.
+  - [x] Si ya hay un precio programado a futuro, el nuevo lo reemplaza (se resuelve por el más reciente) en lugar de dejar dos vigencias superpuestas.
+  - [x] Plan dado de baja → 409.
+  - [x] Las inscripciones guardan `id_plan_precio`, así que un cambio de precio nunca altera lo ya cobrado.
+- [x] Auditoría del cambio (evento `PRECIO_PLAN_REGISTRADO` con el precio nuevo, su fecha y el usuario) con `shared/utils/auditoria.ts`: el DER no tiene columna para el usuario que lo hizo. El valor anterior queda en el historial de `plan_precios`.
+- [x] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia: PI-13 (tests D-08 a D-12).
 
 ---
 
@@ -101,7 +101,7 @@ Cómo trabajar en paralelo sin bloquearse:
 
 ### Pendiente (US-05 y US-06, alumno)
 
-- [ ] Modelo `alumnos` en Prisma + migración (`ck_alumnos_estado`, UK `id_usuario`, FK al tutor `FK_alumnos_usuario_responsable`).
+- [x] Modelo `alumnos` en Prisma + migración (`ck_alumnos_estado`, UK `id_usuario`, FK al tutor `FK_alumnos_usuario_responsable`).
 - [ ] Componente `gestion-personas/alumno/` con `IInfoAlumnos`; las operaciones para la API se suman a `ILogicaPersonas`.
 - [ ] `POST /api/v1/alumnos`: crea el `usuario` del alumno en estado `INACTIVO` y sin roles (no puede entrar todavía) y la fila de `alumnos` en estado `INACTIVO`.
 - [ ] `Usuario`: operación para crear un usuario sin acceso y búsqueda por DNI, expuestas en `IInfoUsuarios`.
