@@ -134,17 +134,15 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoActividades" as I_InfoActividades
     interface "IInfoHorarios"   as I_InfoHorarios
     interface "IInfoProfesores" as R_GSE_InfoProfesores
-    interface "IInfoActividades" as R_GSE_InfoActividades
 
     ParametrosSistema -down- I_InfoParametros
     Plan    -right- I_InfoPlanes
-    Actividad -down- I_InfoActividades
+    Actividad -up- I_InfoActividades
     Horario -left- I_InfoHorarios
     Horario -right-( R_GSE_InfoProfesores
-    Horario -down-( R_GSE_InfoActividades
     Plan    ..> Promocion
     Plan    ..> Actividad
-    Horario ..> I_InfoActividades
+    Horario ..> Actividad
   }
   interface "ILogicaServicioEntrenamiento" as I_LogicaServicioEntrenamiento
   interface "IAutenticacion" as R_GSE_Aut
