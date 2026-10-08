@@ -67,19 +67,6 @@ export function AuthFormBlock({
           ← Cancelar y volver al inicio
         </Button>
       )}
-      {isAccessDenied && !isLoading && (
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onContact}
-          className={cn(
-            "mt-2 min-h-[44px] w-full text-center text-sm font-bold text-primary-dark hover:text-primary",
-            actionClassName,
-          )}
-        >
-          Contactar administración para solicitar acceso
-        </Button>
-      )}
     </div>
   );
 }

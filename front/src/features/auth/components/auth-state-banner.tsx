@@ -30,6 +30,14 @@ function BotonBanner({ children, onClick, className }: { children: string; onCli
   );
 }
 
+// Texto del cartel rojo según el error. Si no hay uno propio, se usa el genérico.
+const MENSAJES_ERROR: Partial<Record<AuthErrorCode, string>> = {
+  POPUP_BLOQUEADO: "Tu navegador bloqueó la ventana de Google. Habilitá los popups para este sitio e intentá nuevamente.",
+  INVALID_GOOGLE_TOKEN: "No pudimos validar tu cuenta de Google. Volvé a intentarlo y, si el problema sigue, contactá a la administración.",
+  ERROR_SERVIDOR: "El servidor tuvo un problema. Intentá de nuevo en unos minutos.",
+};
+const MENSAJE_GENERICO = "Verificá tu conexión o el bloqueo de ventanas emergentes.";
+
 export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerProps) {
   const isAccessDenied = code === "ACCESO_NO_HABILITADO" || code === "USUARIO_INACTIVO";
 
@@ -75,9 +83,7 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
       <div className="min-w-0 flex-1 space-y-0.5">
         <AlertTitle className="text-sm font-bold leading-snug text-rose-900">No pudimos iniciar sesión</AlertTitle>
         <AlertDescription className="text-sm text-rose-800">
-          {code === "POPUP_BLOQUEADO"
-            ? "Tu navegador bloqueó la ventana de Google. Habilitá los popups para este sitio e intentá nuevamente."
-            : "Verificá tu conexión o el bloqueo de ventanas emergentes."}
+          {MENSAJES_ERROR[code] ?? MENSAJE_GENERICO}
           <br />
           <BotonBanner onClick={onRetry} className="text-rose-900">
             Reintentar ahora
