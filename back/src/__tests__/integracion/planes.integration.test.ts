@@ -46,6 +46,15 @@ async function crearBasico(): Promise<number> {
   return respuesta.body.id_plan as number;
 }
 
+// El escenario de demostración ya trae planes: los tests comparan contra lo que había antes.
+async function contarPlanesYPrecios() {
+  return { planes: await prisma.planes.count(), precios: await prisma.plan_precios.count() };
+}
+
+function idsDe(planes: { id_plan: number }[]): number[] {
+  return planes.map((plan) => plan.id_plan);
+}
+
 function preciosEnLaBase(idPlan: number) {
   return prisma.plan_precios.findMany({
     where: { id_plan: idPlan },
@@ -82,6 +91,7 @@ describe("PI-11: alta de plan con su precio inicial", () => {
   it("rechaza un plan exclusivo de una actividad dada de baja y no guarda nada", async () => {
     const idActividad = datos.idActividad.get("FUNCIONAL") as number;
     await prisma.actividades.update({ where: { id_actividad: idActividad }, data: { activo: false } });
+    const antes = await contarPlanesYPrecios();
 
     const respuesta = await comoMarina("post", "/planes").send({
       ...BASICO,
@@ -89,8 +99,7 @@ describe("PI-11: alta de plan con su precio inicial", () => {
     });
 
     expect(respuesta.status).toBe(400);
-    expect(await prisma.planes.count()).toBe(0);
-    expect(await prisma.plan_precios.count()).toBe(0);
+    expect(await contarPlanesYPrecios()).toEqual(antes);
   });
 
   it("rechaza un nombre que ya usa otro plan vigente, sin distinguir mayúsculas", async () => {
@@ -99,7 +108,9 @@ describe("PI-11: alta de plan con su precio inicial", () => {
     const respuesta = await comoMarina("post", "/planes").send({ ...BASICO, nombre: "BÁSICO 2 DÍAS" });
 
     expect(respuesta.status).toBe(409);
-    expect(await prisma.planes.count()).toBe(1);
+    expect(
+      await prisma.planes.count({ where: { nombre: { equals: "básico 2 días", mode: "insensitive" } } }),
+    ).toBe(1);
   });
 
   it("la base aplica las restricciones del DER aunque se saltee la API", async () => {
@@ -143,8 +154,8 @@ describe("PI-12: modificación y baja de planes", () => {
     const plan = await prisma.planes.findUnique({ where: { id_plan: idPlan } });
     expect(plan?.fecha_baja).toEqual(hoy);
     expect(await prisma.plan_precios.count({ where: { id_plan: idPlan } })).toBe(1);
-    expect(vigentes.body).toEqual([]);
-    expect(todos.body.map((p: { id_plan: number }) => p.id_plan)).toEqual([idPlan]);
+    expect(idsDe(vigentes.body)).not.toContain(idPlan);
+    expect(idsDe(todos.body)).toContain(idPlan);
   });
 
   it("no se da de baja dos veces ni se edita un plan dado de baja", async () => {
@@ -257,13 +268,14 @@ describe("PI-14: permisos sobre planes", () => {
     const precios = await como(tokenLucia, "get", `/planes/${idPlan}/precios`);
 
     expect(listado.status).toBe(200);
-    expect(listado.body.map((p: { id_plan: number }) => p.id_plan)).toEqual([idPlan]);
+    expect(idsDe(listado.body)).toContain(idPlan);
     expect(precios.status).toBe(200);
   });
 
   it("una profesora no puede crear planes ni cargar precios", async () => {
     const idPlan = await crearBasico();
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const antes = await contarPlanesYPrecios();
 
     const alta = await como(tokenLucia, "post", "/planes").send({ ...BASICO, nombre: "Premium" });
     const precio = await como(tokenLucia, "post", `/planes/${idPlan}/precios`).send({
@@ -273,7 +285,6 @@ describe("PI-14: permisos sobre planes", () => {
 
     expect(alta.status).toBe(403);
     expect(precio.status).toBe(403);
-    expect(await prisma.planes.count()).toBe(1);
-    expect(await prisma.plan_precios.count()).toBe(1);
+    expect(await contarPlanesYPrecios()).toEqual(antes);
   });
 });

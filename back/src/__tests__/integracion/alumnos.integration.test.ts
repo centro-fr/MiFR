@@ -45,6 +45,8 @@ async function contarFilas() {
   return { usuarios: await prisma.usuarios.count(), alumnos: await prisma.alumnos.count() };
 }
 
+// El escenario de demostración ya trae alumnos (Sofía Medina y Mateo Romero): los tests cuentan
+// contra lo que había antes o filtran por sus propios nombres.
 beforeEach(async () => {
   await reiniciarBase(prisma);
   await cargarDatosDemo(prisma);
@@ -79,7 +81,7 @@ describe("PI-15: pre-inscripción de un alumno mayor", () => {
     const respuesta = await como(tokenLucia, "post", "/alumnos").send(ANA);
 
     expect(respuesta.status).toBe(201);
-    expect(await prisma.alumnos.count()).toBe(1);
+    expect(await prisma.alumnos.count({ where: { usuario: { email: "ana@example.com" } } })).toBe(1);
   });
 
   it("avisa con ALUMNO_EXISTENTE si el DNI ya es de un alumno, sin duplicarlo", async () => {
@@ -225,11 +227,11 @@ describe("PI-18: búsqueda y consulta de alumnos", () => {
   });
 
   it("los dados de baja no aparecen salvo que se los pida", async () => {
-    const activo = await crearAlumno(prisma, { apellido: "Activo", estado: "ACTIVO" });
-    const baja = await crearAlumno(prisma, { apellido: "Baja", estado: "BAJA" });
+    const activo = await crearAlumno(prisma, { nombre: "Filtro", apellido: "Activo", estado: "ACTIVO" });
+    const baja = await crearAlumno(prisma, { nombre: "Filtro", apellido: "Baja", estado: "BAJA" });
 
-    expect((await buscar("")).datos.map((a) => a.id_alumno)).toEqual([activo.id_alumno]);
-    expect((await buscar("incluirBajas=true")).datos.map((a) => a.id_alumno)).toEqual([
+    expect((await buscar("busqueda=filtro")).datos.map((a) => a.id_alumno)).toEqual([activo.id_alumno]);
+    expect((await buscar("busqueda=filtro&incluirBajas=true")).datos.map((a) => a.id_alumno)).toEqual([
       activo.id_alumno,
       baja.id_alumno,
     ]);
@@ -237,10 +239,10 @@ describe("PI-18: búsqueda y consulta de alumnos", () => {
 
   it("pagina ordenando por apellido e informa el total", async () => {
     for (const apellido of ["Acosta", "Benítez", "Castro", "Díaz", "Escobar"]) {
-      await crearAlumno(prisma, { apellido });
+      await crearAlumno(prisma, { nombre: "Paginado", apellido });
     }
 
-    const segunda = await comoMarina("get", "/alumnos?limit=2&offset=2");
+    const segunda = await comoMarina("get", "/alumnos?busqueda=paginado&limit=2&offset=2");
 
     expect(segunda.body).toMatchObject({ total: 5, limit: 2, offset: 2 });
     expect(segunda.body.datos.map((a: { usuario: { apellido: string } }) => a.usuario.apellido)).toEqual([
