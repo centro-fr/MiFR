@@ -124,7 +124,7 @@ No incluye alumnos ni tutores; los casos que los necesitan los crean con `crearU
 | Jueves    | 09:00 – 10:00 | Carla Ruiz  | Entrenamiento Personalizado | Sin cupo propio (toma 4) |
 | Viernes   | 19:00 – 20:00 | Marina Sosa | Funcional Grupal            | 12, propio (CA-07)       |
 
-Los horarios nuevos deben caer dentro del horario de atención, de 07:00 a 20:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas.
+Los horarios nuevos deben caer dentro del horario de atención, de lunes a sábado de 07:00 a 20:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas. El centro no abre los domingos: la base admite el día 7 (el DER no se cambia), pero la API lo rechaza.
 
 ## 5. Matriz de trazabilidad
 
@@ -257,10 +257,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 3. Marina intenta asignarse Funcional Grupal el viernes de 18:30 a 19:30.
 4. Marina intenta crear un horario que termina antes de empezar (de 10:00 a 09:00).
 5. Marina le quita a Carla el rol Profesora e intenta asignarle Entrenamiento Personalizado el viernes de 09:00 a 10:00.
+6. Marina intenta asignarle a Lucía Funcional Grupal el domingo de 10:00 a 11:00.
+7. Marina intenta pasar al domingo el horario del lunes de Lucía.
 
-**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. En el paso 5 el rol se quita (200) y la asignación se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Ninguno de los rechazos deja un horario guardado.
+**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. En el paso 5 el rol se quita (200) y la asignación se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Los pasos 6 y 7 se rechazan con 400 `VALIDATION_ERROR` ("El centro no abre los domingos"): no queda ningún horario en domingo y el de Lucía sigue el lunes. Ninguno de los rechazos deja un horario guardado.
 
-**Automatizado:** Sí (B-05 a B-09).
+**Automatizado:** Sí (B-05 a B-09, B-14, B-15).
 
 #### PI-06 — Modificación y baja de actividades con horarios
 
@@ -327,12 +329,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-57 tests en tres archivos:
+59 tests en tres archivos:
 
 | Archivo | Ubicación                                                                   | Tests            | Casos                             |
 | :-----: | :-------------------------------------------------------------------------- | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`      | 41 (A-01 a A-41) | PI-01, PI-02, PI-03, PI-07, PI-08 |
-|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | 13 (B-01 a B-13) | PI-04, PI-05, PI-06               |
+|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | 15 (B-01 a B-15) | PI-04, PI-05, PI-06               |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`       | 3 (C-01 a C-03)  | PI-09                             |
 
 | Tests       | Qué verifican                                                                                                                                                           | Caso  |
@@ -350,6 +352,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | B-01 a B-04 | Cupo obligatorio en personalizadas; el horario sin cupo propio toma el de la actividad; el cupo propio manda; grupal sin cupo                                           | PI-04 |
 | B-05 a B-09 | Superposición de horarios de una misma profesora (también la propietaria); dos profesoras a la misma hora; horario invertido; profesora sin el rol                      | PI-05 |
 | B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con horarios activos; baja sin horarios; no pasar a personalizada sin cupo                                    | PI-06 |
+| B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                             | PI-05 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                             | PI-09 |
 
 ### 7.1 Verificación de que los tests detectan fallas
@@ -361,6 +364,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | `requierePermiso` deja pasar cualquier pedido                           | A-08 a A-10, A-33 a A-37. El resto siguió en verde por la segunda barrera `requiereRol("PROPIETARIA")`     |
 | El cupo de la actividad manda sobre el cupo propio del horario          | B-03 (la primera versión no lo detectaba; se sumó un horario con cupo propio sobre una actividad con cupo) |
 | No se verifica que la actividad tenga horarios activos antes de la baja | B-11                                                                                                       |
+| El día de la semana vuelve a aceptar el domingo (`max(7)`)              | B-14, B-15                                                                                                 |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -373,6 +377,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                             |
 | 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades |
 | 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                             |
+| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada  |
 
 ### 8.2 Resultado por caso
 
@@ -424,3 +429,4 @@ Los defectos se numeran D-01, D-02…
 | Versión | Fecha      | Observaciones                                                                   | Encargado         |
 | :-----: | :--------- | :------------------------------------------------------------------------------ | :---------------- |
 |   1.1   | 07/10/2026 | Casos PI-01 a PI-10 del Sprint 1 y tests A-01 a A-41, B-01 a B-13 y C-01 a C-03 | Francisco Andrade |
+|   1.2   | 07/10/2026 | PI-05: pasos 6 y 7 (el centro no abre los domingos) y tests B-14 y B-15         | Francisco Andrade |
