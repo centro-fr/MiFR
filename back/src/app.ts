@@ -10,6 +10,7 @@ import { createUsuarioRoutes } from "./modules/gestion-usuarios/usuario/usuario.
 import { createActividadRoutes } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profesor.routes.js";
+import { createAlumnoRoutes } from "./modules/gestion-personas/alumno/alumno.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
 import { createPlanRoutes } from "./modules/gestion-servicio-entrenamiento/plan/plan.routes.js";
@@ -64,6 +65,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
     createActividadRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
   );
   api.use("/profesoras", createProfesorRoutes(deps.gestionPersonas, deps.autenticacion, deps.autorizacion));
+  api.use("/alumnos", createAlumnoRoutes(deps.gestionPersonas, deps.autenticacion, deps.autorizacion));
   api.use(
     "/horarios",
     createHorarioRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
