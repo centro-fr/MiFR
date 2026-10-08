@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { cargarCatalogoSeguridad } from "../src/shared/db/catalogo-seguridad.js";
-import { ACTIVIDADES_DEMO, cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../src/shared/db/datos-demo.js";
+import {
+  ACTIVIDADES_DEMO,
+  ALUMNOS_DEMO,
+  cargarDatosDemo,
+  EMAIL_MULTIROL_DEMO,
+  PLANES_DEMO,
+} from "../src/shared/db/datos-demo.js";
 
 // Carga en la base local los datos de prueba de src/shared/db/datos-demo.ts. Son para desarrollo:
 // el seed principal (seed.ts) es el único que se corre contra la base publicada.
@@ -31,6 +37,8 @@ async function main(prisma: PrismaClient): Promise<void> {
   );
   console.log(`Actividades de prueba: ${ACTIVIDADES_DEMO.map((a) => a.nombre).join(", ")}`);
   console.log(`Horarios nuevos: ${horariosCreados}`);
+  console.log(`Planes de prueba: ${PLANES_DEMO.map((p) => p.nombre).join(", ")}`);
+  console.log(`Alumnos pre-inscriptos: ${ALUMNOS_DEMO.map((a) => `${a.nombre} ${a.apellido}`).join(", ")}`);
 }
 
 const prisma = new PrismaClient();

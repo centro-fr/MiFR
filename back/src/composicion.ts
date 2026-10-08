@@ -14,6 +14,8 @@ import { GestionServicioEntrenamientoService } from "./modules/gestion-servicio-
 import { ProfesorRepository } from "./modules/gestion-personas/profesor/profesor.repository.js";
 import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.service.js";
 import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
+import { AlumnoRepository } from "./modules/gestion-personas/alumno/alumno.repository.js";
+import { AlumnoService } from "./modules/gestion-personas/alumno/alumno.service.js";
 import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
 import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
@@ -47,7 +49,8 @@ export function construirDependencias({
     horarioService,
     planService,
   );
-  const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
+  const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
+  const gestionPersonas = new GestionPersonasService(profesorService, horarioService, alumnoService);
 
   return {
     gestionUsuarios,

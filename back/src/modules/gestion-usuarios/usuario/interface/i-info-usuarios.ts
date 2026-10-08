@@ -7,4 +7,5 @@ export interface IInfoUsuarios {
   buscarPorId(id: number): Promise<UsuarioConRoles | null>;
   identificarPorGoogle(googleId: string, email: string): Promise<UsuarioConRoles | null>;
   buscarPorEmail(email: string): Promise<UsuarioConRoles | null>;
+  buscarPorDni(dni: string): Promise<UsuarioConRoles | null>;
 }

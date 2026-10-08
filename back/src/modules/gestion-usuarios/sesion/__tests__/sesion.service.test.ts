@@ -46,6 +46,7 @@ function crearUsuariosMock() {
     buscarPorId: vi.fn(),
     identificarPorGoogle: vi.fn(),
     buscarPorEmail: vi.fn(),
+    buscarPorDni: vi.fn(),
   };
 }
 

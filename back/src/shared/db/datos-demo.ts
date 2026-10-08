@@ -1,7 +1,7 @@
-import type { PrismaClient, codigo_rol, modalidad_actividad } from "@prisma/client";
+import type { PrismaClient, codigo_rol, modalidad_actividad, tipo_plan } from "@prisma/client";
 
-// Datos de prueba de las tareas 1.2 del SDD de autenticación (usuario multi-rol) y de
-// configuración base (actividades, profesoras y horarios). Los cargan seed-demo.ts en la base
+// Datos de prueba de las tareas 1.2 del SDD de autenticación (usuario multi-rol), de
+// configuración base (actividades, profesoras y horarios), de planes y de alumnos. Los cargan seed-demo.ts en la base
 // local y los tests de integración en la base de prueba, así el escenario que se recorre a mano
 // es el mismo que verifican los tests.
 
@@ -121,6 +121,96 @@ function horariosDemo(emailMultirol: string): HorarioDemo[] {
   ];
 }
 
+interface PlanDemo {
+  nombre: string;
+  tipo: tipo_plan;
+  clases_por_semana: number | null;
+  dias_gracia: number;
+  profesora_unica: boolean;
+  codigoActividadExclusiva: string | null;
+  precio: number;
+}
+
+// Los precios rigen desde el 01/01/2026, así hoy siempre tienen un precio vigente.
+const VIGENCIA_PRECIOS_DEMO = new Date("2026-01-01T00:00:00Z");
+
+export const PLANES_DEMO: PlanDemo[] = [
+  {
+    nombre: "Básico",
+    tipo: "MENSUAL",
+    clases_por_semana: 2,
+    dias_gracia: 5,
+    profesora_unica: false,
+    codigoActividadExclusiva: null,
+    precio: 25000,
+  },
+  {
+    nombre: "Intermedio",
+    tipo: "MENSUAL",
+    clases_por_semana: 3,
+    dias_gracia: 5,
+    profesora_unica: false,
+    codigoActividadExclusiva: null,
+    precio: 30000,
+  },
+  {
+    nombre: "Personalizado 2 días",
+    tipo: "MENSUAL",
+    clases_por_semana: 2,
+    dias_gracia: 5,
+    profesora_unica: true,
+    codigoActividadExclusiva: "ENTRENAMIENTO_PERS",
+    precio: 45000,
+  },
+  {
+    nombre: "Clase suelta",
+    tipo: "CLASE_SUELTA",
+    clases_por_semana: null,
+    dias_gracia: 0,
+    profesora_unica: false,
+    codigoActividadExclusiva: null,
+    precio: 6000,
+  },
+];
+
+interface PersonaDemo {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  email: string | null;
+  fecha_nacimiento: Date;
+}
+
+interface AlumnoDemo extends PersonaDemo {
+  tutor: PersonaDemo | null;
+}
+
+// Pre-inscriptos (INACTIVO): se activan cuando se confirma su primer pago.
+export const ALUMNOS_DEMO: AlumnoDemo[] = [
+  {
+    nombre: "Sofía",
+    apellido: "Medina",
+    dni: "38111222",
+    email: "sofia.medina@example.com",
+    fecha_nacimiento: new Date("1996-08-14T00:00:00Z"),
+    tutor: null,
+  },
+  {
+    nombre: "Mateo",
+    apellido: "Romero",
+    dni: "52111222",
+    email: null,
+    fecha_nacimiento: new Date("2015-11-03T00:00:00Z"),
+    tutor: {
+      nombre: "Paula",
+      apellido: "Romero",
+      dni: "31222333",
+      email: "paula.romero@example.com",
+      fecha_nacimiento: new Date("1984-06-21T00:00:00Z"),
+    },
+  },
+];
+
 function convertirHora(hora: string): Date {
   const [horas, minutos] = hora.split(":").map(Number);
   return new Date(Date.UTC(1970, 0, 1, horas, minutos));
@@ -132,6 +222,10 @@ export interface DatosDemoCargados {
   // id_actividad por código de la actividad
   idActividad: Map<string, number>;
   horariosCreados: number;
+  // id_plan por nombre del plan
+  idPlan: Map<string, number>;
+  // id_alumno por DNI del alumno
+  idAlumno: Map<string, number>;
 }
 
 // Espera el catálogo de seguridad ya cargado: las profesoras reciben sus roles de la tabla roles.
@@ -142,7 +236,9 @@ export async function cargarDatosDemo(
   const idProfesora = await cargarUsuarios(prisma, usuariosDemo(emailMultirol));
   const idActividad = await cargarActividades(prisma);
   const horariosCreados = await cargarHorarios(prisma, horariosDemo(emailMultirol), idActividad, idProfesora);
-  return { idProfesora, idActividad, horariosCreados };
+  const idPlan = await cargarPlanes(prisma, idActividad);
+  const idAlumno = await cargarAlumnos(prisma);
+  return { idProfesora, idActividad, horariosCreados, idPlan, idAlumno };
 }
 
 async function cargarUsuarios(prisma: PrismaClient, usuarios: UsuarioDemo[]): Promise<Map<string, number>> {
@@ -214,4 +310,50 @@ async function cargarHorarios(
     creados++;
   }
   return creados;
+}
+
+// Los planes no tienen una clave única en el DER: se busca uno vigente con el mismo nombre.
+async function cargarPlanes(
+  prisma: PrismaClient,
+  idActividad: Map<string, number>,
+): Promise<Map<string, number>> {
+  const idPlanPorNombre = new Map<string, number>();
+  for (const { codigoActividadExclusiva, precio, ...plan } of PLANES_DEMO) {
+    const existente = await prisma.planes.findFirst({ where: { nombre: plan.nombre, fecha_baja: null } });
+    const creado =
+      existente ??
+      (await prisma.planes.create({
+        data: {
+          ...plan,
+          id_actividad_exclusiva: codigoActividadExclusiva ? idActividad.get(codigoActividadExclusiva) : null,
+          precios: { create: { precio, fecha_vigencia_desde: VIGENCIA_PRECIOS_DEMO } },
+        },
+      }));
+    idPlanPorNombre.set(plan.nombre, creado.id_plan);
+  }
+  return idPlanPorNombre;
+}
+
+async function cargarPersona(prisma: PrismaClient, persona: PersonaDemo): Promise<number> {
+  const usuario = await prisma.usuarios.upsert({
+    where: { dni: persona.dni },
+    update: {},
+    create: { ...persona, estado: "INACTIVO" },
+  });
+  return usuario.id_usuario;
+}
+
+async function cargarAlumnos(prisma: PrismaClient): Promise<Map<string, number>> {
+  const idAlumnoPorDni = new Map<string, number>();
+  for (const { tutor, ...persona } of ALUMNOS_DEMO) {
+    const idResponsable = tutor ? await cargarPersona(prisma, tutor) : null;
+    const idUsuario = await cargarPersona(prisma, persona);
+    const alumno = await prisma.alumnos.upsert({
+      where: { id_usuario: idUsuario },
+      update: {},
+      create: { id_usuario: idUsuario, id_usuario_responsable: idResponsable, estado: "INACTIVO" },
+    });
+    idAlumnoPorDni.set(persona.dni, alumno.id_alumno);
+  }
+  return idAlumnoPorDni;
 }
