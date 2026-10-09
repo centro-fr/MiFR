@@ -73,9 +73,9 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-15 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
 | D | `src/__tests__/integracion/planes.integration.test.ts` | Planes, baja lógica y precios con fecha de vigencia | D-14 |
-| E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda y lo que ve la profesora | E-19 |
+| E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda y lo que ve la profesora | E-20 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
-| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción, alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos | G-12 |
+| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción, alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación de horarios | G-13 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

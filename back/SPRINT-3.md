@@ -58,7 +58,7 @@ GestionPersonas (fachada)             ──> IInfoCuotas   estado de cuota en e
 
 | Integrante | Asignado | Carga |
 | --- | --- | --- |
-| **Francisco** | Subsistema nuevo `gestion-cuotas-y-pagos`: `Cuota` y `Pago` (US-15, US-16, US-17) + lo que falta de US-10 | El más pesado: un subsistema, dos tablas, el ciclo del pago y el alta definitiva. Ya conoce `IInfoPlanes` e `IInfoAlumnos`, que son las piezas que usa |
+| **Francisco** | Subsistema nuevo `gestion-cuotas-y-pagos`: `Cuota` y `Pago` (US-15, US-16, US-17) + lo que falta de US-10 + lo que necesita el front para el Sprint 2 | El más pesado: un subsistema, dos tablas, el ciclo del pago y el alta definitiva. Ya conoce `IInfoPlanes` e `IInfoAlumnos`, que son las piezas que usa |
 | **Nicolas** | Lo que queda del Sprint 2 (inscripciones) + `Clase`, `Asistencia` y `CierreAsistencia` (US-20, US-21) | Termina su subsistema: las clases y la asistencia viven en `gestion-inscripciones-y-clases`, junto a `Inscripcion` |
 | **Rosario** | Capa no persistente `calculos-del-negocio` (US-18) + componente `ParametrosSistema` | Cálculos puros, sin base y sin mocks de persistencia: se testean con fechas. No depende de nadie para arrancar, y los otros dos la consumen |
 
@@ -164,6 +164,20 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 - [x] Ficha con la inscripción vigente y sus horarios.
 - [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota.
 - [ ] Historial de pagos en la ficha, visible solo para la propietaria.
+
+## Lo que necesita el front para el Sprint 2
+
+**Responsable:** Francisco
+
+El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes de que arranque:
+
+- [x] `GET /horarios` y `GET /horarios/:id` informan `inscriptos` y `cupo_disponible`, para elegir el horario al pre-inscribir (US-04, US-05). Los cuenta la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones.contarInscriptosVigentes`, en una consulta. Test PI-27.
+- [x] Un alumno activo en el escenario de demostración (Valentina Herrera, plan Intermedio con Carla), para maquetar el estado activo y probar la sesión de un alumno mientras no exista el cobro. Test E-20.
+- [x] Validaciones: `-0` en enteros no negativos (`enteroNoNegativoSchema`), teléfonos con guion adelante y tope de 7 horarios por inscripción.
+- [x] Revisión de inscripciones: activación fuera de la API (va por `IInfoInscripciones.activar`), baja de horario bloqueada con inscriptos, fechas DATE con el día de Argentina, pase libre sin tope de horarios y tests al 100 %.
+- [x] Vista arquitectónica sin `CalculadorCupo` ni `ICalculoCupo`: el cupo lo resuelven `IInfoHorarios` e `IInfoInscripciones`.
+- [ ] Reflejar en el `.eap` de Enterprise Architect la quita de `ICalculoCupo` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [ ] Integrar a `dev` (solo `back/`).
 
 ---
 
