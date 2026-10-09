@@ -64,7 +64,13 @@ GestionPersonas (fachada)             ──> IInfoCuotas   estado de cuota en e
 
 Cómo trabajar en paralelo sin bloquearse:
 
-1. **Día 1, los tres juntos:** commitear los tipos de `ICalculoVencimiento`, `ICalculoHabilitacion`, `IInfoParametros`, `IInfoCuotas`, `IInfoInscripciones` (con `activar`) e `IInfoClases`. Cada uno programa contra la interfaz de los otros y la reemplaza por un fake en los tests unitarios.
+1. [x] **Día 1:** los contratos están en `dev`, solo los tipos, para que cada uno programe contra la interfaz de los otros y la reemplace por un fake en los tests unitarios:
+   - `calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.ts` (Rosario implementa, usa Francisco).
+   - `calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.ts` (Rosario implementa, usa Francisco). Suma el estado `PENDIENTE_DE_PAGO` para quien no pagó ninguna cuota, que US-18 no contemplaba.
+   - `gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.ts` (Rosario implementa, usa Nicolas).
+   - `gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.ts` (Francisco implementa, usan Nicolas y Francisco).
+   - `IInfoInscripciones.activar` ya existía. `IInfoClases` la define Nicolas con su componente: hoy nadie de afuera la usa.
+   Si al implementar hace falta cambiar un contrato, se acuerda entre quien lo provee y quien lo usa, y se sube a `dev` antes que el resto.
 2. **Rosario** arranca ya: los calculadores no tocan la base. `ParametrosSistema` tiene su propia tabla, sin FK a nadie.
 3. **Nicolas** sube primero la migración de inscripciones; después la de `clases` y `asistencias`.
 4. **Francisco** genera la migración de `cuotas` y `pagos` recién cuando la de inscripciones está en `dev`.
