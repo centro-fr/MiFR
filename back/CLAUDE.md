@@ -83,7 +83,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
-10. Toda ruta valida su entrada con Zod. Todo lo que se agrega o se cambia en el back viene con sus tests en el mismo trabajo: unitarios de cada pieza (service, repositorio, schemas, rutas, fachada y utilidades de `shared/`) y, si cruza capas o depende de la base, de integración (skill `tests-integracion`). La cobertura de los unitarios se mantiene en 100 %. El detalle está en `.claude/rules/testing.md`.
+10. Toda ruta valida su entrada con Zod, con los esquemas compartidos de `shared/utils/` (ver `.claude/rules/validaciones.md`). Todo lo que se agrega o se cambia en el back viene con sus tests en el mismo trabajo: unitarios de cada pieza (service, repositorio, schemas, rutas, fachada y utilidades de `shared/`) y, si cruza capas o depende de la base, de integración (skill `tests-integracion`). La cobertura de los unitarios se mantiene en 100 %. El detalle está en `.claude/rules/testing.md`.
 
 ## Reglas detalladas
 
@@ -98,6 +98,7 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 | `persistencia.md` | Al tocar Prisma, el esquema o un repositorio |
 | `testing.md` | Al escribir tests |
 | `documentacion.md` | Al comentar código o dudar de una buena práctica |
+| `validaciones.md` | Al escribir o cambiar un schema de Zod |
 | `mcp.md` | Al explorar el código con herramientas |
 
 ## Skills
