@@ -98,54 +98,55 @@ Acceso a opciones secundarias (esquina superior derecha):
 
 ## 👑 Propietaria / Dueño
 
-### Desktop (sidebar, 10 ítems)
+### Desktop (sidebar, 11 ítems)
 
 | # | Ítem | Ícono | Pantalla que abre |
 | --- | ------ | ------- | ------------------- |
 | 1 | **Dashboard** | home | Resumen general (KPIs, alertas) |
 | 2 | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
-| 3 | **Actividades y Horarios** (grupo desplegable) | calendario | Submenú: Actividades (US-03) + Horarios (US-04) |
-| 4 | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
-| 5 | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
-| 6 | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
-| 7 | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
-| 8 | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
-| 9 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
-| 10 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
+| 3 | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
+| 4 | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
+| 5 | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
+| 6 | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
+| 7 | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
+| 8 | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
+| 9 | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
+| 10 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
+| 11 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
 
-### Submenú "Actividades y Horarios"
+### Actividades y Horarios (ítems independientes)
 
-El ítem 3 es un **grupo desplegable** (no navega por sí mismo):
+"Actividades" y "Horarios" se presentan como dos accesos directos independientes en el menú (no forman un grupo desplegable):
 
-| Sub-ítem | Pantalla que abre |
-| ---------- | ------------------- |
-| **Actividades** | Disciplinas y cupos (US-03) → `/app/actividades` |
-| **Horarios** | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
+| Ítem | Ícono | Pantalla que abre |
+| ------ | ------- | ------------------- |
+| **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
+| **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
 
 Reglas:
 
-- El grupo **nace abierto** si la ruta actual es una de sus hijas, y se **reabre solo** al navegar a ellas.
-- El toggle manual (chevron) persiste mientras no se cambie de sección.
-- La hija activa se resalta igual que cualquier otro ítem; el grupo toma el color activo.
-- En sidebar colapsado (desktop) el grupo muestra solo su ícono: al pulsarlo se **expande el sidebar y se abre el submenú**.
-- En mobile el grupo funciona igual dentro del drawer.
+- Cada ítem navega de forma directa a su pantalla correspondiente.
+- El ítem activo se resalta según la ruta actual (`/app/actividades` o `/app/horarios`).
+- En sidebar colapsado (desktop), cada ítem muestra su propio ícono individual con tooltip.
+- En mobile (drawer), ambos figuran como ítems independientes de primer nivel.
 
 ### Mobile (drawer lateral desde la izquierda)
 
-Mismos 10 ítems que desktop (incluido el grupo desplegable "Actividades y Horarios"), pero en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
+Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos directos independientes), en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
 
 ### Orden de prioridad visual (más usados arriba)
 
 1. Dashboard
 2. Alumnos
 3. Cobros y Cuotas
-4. Actividades y Horarios
-5. Planes y Precios
-6. Asistencia
-7. Reportes
-8. Honorarios
-9. Notificaciones
-10. Configuración
+4. Actividades
+5. Horarios
+6. Planes y Precios
+7. Asistencia
+8. Reportes
+9. Honorarios
+10. Notificaciones
+11. Configuración
 
 ---
 
@@ -180,7 +181,7 @@ Mismos 10 ítems que desktop (incluido el grupo desplegable "Actividades y Horar
 | ----- | -------- | --------- | ------------------- |
 | **Alumno** | Bottom nav (5) + hamburguesa | Sidebar (5 + secundarios) | Inicio, Mi plan, Progreso, Comunidad, Perfil |
 | **Profesora** | Bottom nav (5) + hamburguesa | Sidebar (5 + secundarios) | Hoy, Mis clases, Alumnos, Cobros, Perfil |
-| **Propietaria** | Drawer lateral (10) | Sidebar (10) | Dashboard, Alumnos, Actividades y Horarios, Planes, Cobros, Asistencia, Honorarios, Notificaciones, Reportes, Configuración |
+| **Propietaria** | Drawer lateral (11) | Sidebar (11) | Dashboard, Alumnos, Actividades, Horarios, Planes, Cobros, Asistencia, Honorarios, Notificaciones, Reportes, Configuración |
 | **Público** | Header + hamburguesa | Header | Inicio, Disponibilidad, Precios, Contacto, Iniciar sesión |
 
 ---
@@ -244,4 +245,4 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 
 ---
 
-Última actualización: 6/10/2026
+Última actualización: 9/10/2026
