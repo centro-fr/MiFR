@@ -3,7 +3,7 @@ import type { IAutorizacion } from "../../modules/gestion-usuarios/rol/interface
 import type { CodigoPermiso } from "../../modules/gestion-usuarios/rol/rol.catalogo.js";
 import type { IAutenticacion } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { ForbiddenError, UnauthorizedError } from "../errors/app-error.js";
-import type { Solicitante } from "../utils/solicitante.js";
+import type { Solicitante } from "../utils/solicitante.types.js";
 
 export interface UsuarioAutenticado {
   id_usuario: number;

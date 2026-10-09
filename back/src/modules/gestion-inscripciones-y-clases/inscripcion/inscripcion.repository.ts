@@ -452,17 +452,6 @@ export class InscripcionRepository {
     });
   }
 
-  async tieneInscriptosVigentesDeActividad(idActividad: number): Promise<boolean> {
-    const cantidad = await this.prisma.inscripcion_horarios.count({
-      where: {
-        fecha_hasta: null,
-        horario: { id_actividad: idActividad },
-        inscripcion: { estado: { in: [...ESTADOS_VIGENTES] }, alumno: { estado: { not: "BAJA" } } },
-      },
-    });
-    return cantidad > 0;
-  }
-
   private async agregarHorarios(
     transaccion: Transaccion,
     idInscripcion: number,

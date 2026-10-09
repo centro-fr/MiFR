@@ -5,7 +5,7 @@ import {
   ValidationError,
 } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
-import type { Solicitante } from "../../../shared/utils/solicitante.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
@@ -184,10 +184,6 @@ export class InscripcionService implements IInfoInscripciones {
 
   contarInscriptosVigentesEnHorario(idHorario: number): Promise<number> {
     return this.repositorio.contarInscriptosVigentesEnHorario(idHorario);
-  }
-
-  tieneInscriptosVigentesDeActividad(idActividad: number): Promise<boolean> {
-    return this.repositorio.tieneInscriptosVigentesDeActividad(idActividad);
   }
 
   private async obtenerInscripcionVigente(id: number): Promise<InscripcionConDatos> {

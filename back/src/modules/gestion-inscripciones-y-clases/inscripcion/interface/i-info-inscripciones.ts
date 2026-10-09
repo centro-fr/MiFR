@@ -15,5 +15,4 @@ export interface IInfoInscripciones {
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]>;
   resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]>;
   contarInscriptosVigentesEnHorario(idHorario: number): Promise<number>;
-  tieneInscriptosVigentesDeActividad(idActividad: number): Promise<boolean>;
 }

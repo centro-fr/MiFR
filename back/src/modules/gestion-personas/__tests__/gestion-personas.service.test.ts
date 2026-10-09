@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ForbiddenError } from "../../../shared/errors/app-error.js";
-import type { Solicitante } from "../../../shared/utils/solicitante.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "../alumno/alumno.service.js";

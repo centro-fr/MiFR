@@ -5,7 +5,7 @@ import type {
   DarDeBajaAlumnoInput,
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
-import type { Solicitante } from "../../shared/utils/solicitante.js";
+import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 import type { InscripcionService } from "./inscripcion/inscripcion.service.js";
 import type { ILogicaInscripcionesYClases } from "./interface/i-logica-inscripciones-y-clases.js";
 import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";

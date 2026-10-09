@@ -1,4 +1,4 @@
-import type { Solicitante } from "../../../shared/utils/solicitante.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type {
   InscripcionConDatos,
   ResumenInscripcionAlumno,
