@@ -1,14 +1,13 @@
 import { Router } from "express";
-import { requiereSesion } from "../../../shared/middlewares/auth.js";
+import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createSesionController } from "./sesion.controller.js";
 import { googleLoginSchema, loginDesarrolloSchema } from "./sesion.schemas.js";
 import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
-import type { IAutenticacion } from "./interface/i-autenticacion.js";
 
 export function createSesionRoutes(
   gestionUsuarios: ILogicaUsuarios,
-  autenticacion: IAutenticacion,
+  acceso: ControlDeAcceso,
   { loginDesarrollo = false }: { loginDesarrollo?: boolean } = {},
 ): Router {
   const router = Router();
@@ -19,8 +18,8 @@ export function createSesionRoutes(
   if (loginDesarrollo) {
     router.post("/desarrollo", validate({ body: loginDesarrolloSchema }), controller.loginDesarrollo);
   }
-  router.get("/me", requiereSesion(autenticacion), controller.me);
-  router.post("/logout", requiereSesion(autenticacion), controller.logout);
+  router.get("/me", acceso.sesion, controller.me);
+  router.post("/logout", acceso.sesion, controller.logout);
 
   return router;
 }

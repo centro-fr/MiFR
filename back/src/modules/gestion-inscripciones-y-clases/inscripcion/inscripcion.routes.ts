@@ -1,8 +1,6 @@
 import { Router } from "express";
-import { requierePermiso, requiereRol, requiereSesion } from "../../../shared/middlewares/auth.js";
+import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
-import type { IAutenticacion } from "../../gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { createInscripcionController } from "./inscripcion.controller.js";
 import {
   actualizarHorariosSchema,
@@ -18,29 +16,28 @@ import type { ILogicaInscripcionesYClases } from "../interface/i-logica-inscripc
 
 export function createInscripcionRoutes(
   logica: ILogicaInscripcionesYClases,
-  autenticacion: IAutenticacion,
-  autorizacion: IAutorizacion,
+  acceso: ControlDeAcceso,
 ): Router {
   const router = Router();
   const controller = createInscripcionController(logica);
-  const soloPropietaria = [requiereRol("PROPIETARIA"), requierePermiso(autorizacion, "ALUMNOS_EDITAR")];
+  const soloPropietaria = [acceso.rol("PROPIETARIA"), acceso.permiso("ALUMNOS_EDITAR")];
 
-  router.use(requiereSesion(autenticacion));
+  router.use(acceso.sesion);
   router.get(
     "/",
-    requierePermiso(autorizacion, "ALUMNOS_VER"),
+    acceso.permiso("ALUMNOS_VER"),
     validate({ query: listarInscripcionesQuerySchema }),
     controller.listar,
   );
   router.post(
     "/",
-    requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
+    acceso.permiso("ALUMNOS_EDITAR"),
     validate({ body: crearInscripcionSchema }),
     controller.crear,
   );
   router.get(
     "/:id",
-    requierePermiso(autorizacion, "ALUMNOS_VER"),
+    acceso.permiso("ALUMNOS_VER"),
     validate({ params: inscripcionIdParamSchema }),
     controller.obtener,
   );
@@ -68,22 +65,21 @@ export function createInscripcionRoutes(
 
 export function createInscripcionAlumnoRoutes(
   logica: ILogicaInscripcionesYClases,
-  autenticacion: IAutenticacion,
-  autorizacion: IAutorizacion,
+  acceso: ControlDeAcceso,
 ): Router {
   const router = Router();
   const controller = createInscripcionController(logica);
 
-  router.use(requiereSesion(autenticacion), requiereRol("PROPIETARIA"));
+  router.use(acceso.sesion, acceso.rol("PROPIETARIA"));
   router.post(
     "/:id/baja",
-    requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
+    acceso.permiso("ALUMNOS_EDITAR"),
     validate({ params: alumnoIdParamSchema, body: darDeBajaAlumnoSchema }),
     controller.darDeBajaAlumno,
   );
   router.post(
     "/:id/reactivar",
-    requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
+    acceso.permiso("ALUMNOS_EDITAR"),
     validate({ params: alumnoIdParamSchema, body: reactivarAlumnoSchema }),
     controller.reactivarAlumno,
   );

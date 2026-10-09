@@ -65,3 +65,27 @@ export function requierePropioOPermiso(autorizacion: IAutorizacion, codigoPermis
     await verificarPermiso(req, res, next);
   };
 }
+
+// Un guardia async devuelve la promesa para que quien lo envuelva pueda esperarlo.
+export type Guardia = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
+
+export interface ControlDeAcceso {
+  sesion: Guardia;
+  rol(...rolesPermitidos: string[]): Guardia;
+  permiso(codigoPermiso: CodigoPermiso): Guardia;
+  propioOPermiso(codigoPermiso: CodigoPermiso): Guardia;
+}
+
+// Junta los guardias con autenticación y autorización ya resueltas, para que las rutas digan
+// qué exigen (acceso.permiso("PLANES_VER")) sin recibir ni pasar esas dos dependencias.
+export function crearControlDeAcceso(
+  autenticacion: IAutenticacion,
+  autorizacion: IAutorizacion,
+): ControlDeAcceso {
+  return {
+    sesion: requiereSesion(autenticacion),
+    rol: requiereRol,
+    permiso: (codigoPermiso) => requierePermiso(autorizacion, codigoPermiso),
+    propioOPermiso: (codigoPermiso) => requierePropioOPermiso(autorizacion, codigoPermiso),
+  };
+}

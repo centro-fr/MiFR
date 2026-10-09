@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextFunction, Request, Response } from "express";
 import { ForbiddenError, UnauthorizedError } from "../../errors/app-error.js";
-import { requierePermiso, requierePropioOPermiso, requiereRol, requiereSesion } from "../auth.js";
+import {
+  crearControlDeAcceso,
+  requierePermiso,
+  requierePropioOPermiso,
+  requiereRol,
+  requiereSesion,
+} from "../auth.js";
 import type { IAutorizacion } from "../../../modules/gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../../modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 
@@ -200,5 +206,53 @@ describe("requierePropioOPermiso", () => {
       ForbiddenError,
     );
     expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe("crearControlDeAcceso", () => {
+  let autenticacion: IAutenticacion;
+  let autorizacion: IAutorizacion;
+  let next: NextFunction;
+
+  beforeEach(() => {
+    autenticacion = {
+      validarSesion: vi.fn().mockResolvedValue({ usuarioId: 3, roles: ["PROFESORA"] }),
+    } as unknown as IAutenticacion;
+    autorizacion = { tienePermiso: vi.fn().mockResolvedValue(true) } as unknown as IAutorizacion;
+    next = vi.fn();
+  });
+
+  it("sesion valida el token con la autenticación recibida", async () => {
+    const req = crearRequest({ headers: { authorization: "Bearer token" } });
+
+    await crearControlDeAcceso(autenticacion, autorizacion).sesion(req, res, next);
+
+    expect(autenticacion.validarSesion).toHaveBeenCalledWith("token");
+    expect(req.usuario).toEqual({ id_usuario: 3, roles: ["PROFESORA"] });
+  });
+
+  it("permiso consulta el código pedido con la autorización recibida", async () => {
+    const req = crearRequest({ usuario: { id_usuario: 3, roles: ["PROFESORA"] } });
+
+    await crearControlDeAcceso(autenticacion, autorizacion).permiso("PLANES_VER")(req, res, next);
+
+    expect(autorizacion.tienePermiso).toHaveBeenCalledWith(3, "PLANES_VER");
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it("propioOPermiso consulta el permiso para los datos de otro usuario", async () => {
+    const req = crearRequest({ params: { id: "9" }, usuario: { id_usuario: 3, roles: ["PROFESORA"] } });
+
+    await crearControlDeAcceso(autenticacion, autorizacion).propioOPermiso("USUARIOS_VER")(req, res, next);
+
+    expect(autorizacion.tienePermiso).toHaveBeenCalledWith(3, "USUARIOS_VER");
+  });
+
+  it("rol exige alguno de los roles indicados", () => {
+    const req = crearRequest({ usuario: { id_usuario: 3, roles: ["PROFESORA"] } });
+
+    expect(() =>
+      crearControlDeAcceso(autenticacion, autorizacion).rol("PROPIETARIA")(req, res, next),
+    ).toThrow(ForbiddenError);
   });
 });
