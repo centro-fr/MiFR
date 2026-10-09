@@ -6,19 +6,32 @@
 - El archivo se llama `i-nombre-en-kebab.ts`; el tipo exportado es `IPascalCase`.
 - Lleva arriba un comentario corto que la vincula al componente del diagrama de arquitectura y aclara qué queda afuera.
 
+## Las `ILogica*` se dividen por componente
+
+La `ILogica*` del subsistema es la unión de una parte por componente, todas en el mismo archivo:
+
 ```ts
-// Interfaz del subsistema GestionUsuarios en la vista arquitectónica: es lo único que ve la
-// capa de presentación (UsuarioPresWeb). Reúne lo que ofrecen sus componentes Sesion,
-// Usuario y Rol; IAutenticacion e IAutorizacion quedan para los otros subsistemas.
-export interface ILogicaUsuarios {
+export interface ILogicaSesion {
   iniciarSesion(idToken: string): Promise<SesionIniciada>;
-  crear(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
-  obtenerMatriz(): Promise<MatrizPermisos>;
   // ...
 }
+
+export interface ILogicaCuentasDeUsuario {
+  crearUsuario(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
+  // ...
+}
+
+// Interfaz del subsistema GestionUsuarios en la vista arquitectónica: es lo único que ve la
+// capa de presentación (UsuarioPresWeb). IAutenticacion e IAutorizacion quedan para los otros
+// subsistemas.
+export interface ILogicaUsuarios extends ILogicaSesion, ILogicaCuentasDeUsuario, ILogicaMatrizPermisos {}
 ```
 
-Las que existen hoy: `ILogicaUsuarios`, `ILogicaPersonas`, `ILogicaServicioEntrenamiento`, `IAutenticacion`, `IAutenticacionGoogleAuth`, `IAutorizacion`, `IInfoUsuarios`, `IInfoProfesores`, `IInfoActividades` e `IInfoHorarios`.
+- El controller y el router de cada componente dependen de su parte (`createPlanController(logica: ILogicaPlanes)`), no de la `ILogica*` entera: así declaran solo lo que usan.
+- Las partes no son interfaces nuevas del diagrama, que nombra una sola por subsistema. Por eso viven en el archivo de la `ILogica*` y no en `interface/` del componente.
+- Los métodos llevan el nombre del recurso (`crearUsuario`, `listarPlanes`), porque la fachada reúne varios componentes y `crear` a secas no dice sobre qué opera. El service del componente sí usa `crear`, `listar`: adentro no hay ambigüedad.
+
+Las que existen hoy: `ILogicaUsuarios`, `ILogicaPersonas`, `ILogicaServicioEntrenamiento`, `ILogicaInscripcionesYClases`, `IAutenticacion`, `IAutenticacionGoogleAuth`, `IAutorizacion`, `IInfoUsuarios`, `IInfoProfesores`, `IInfoAlumnos`, `IInfoActividades`, `IInfoHorarios`, `IInfoPlanes` e `IInfoInscripciones`.
 
 ## Cómo se usan
 
@@ -56,5 +69,6 @@ Hoy no todo se tipa contra interfaz, y está bien:
 
 - Los repositorios se tipan concretos (`private readonly repositorio: UsuarioRepository`). El diagrama no los modela como interfaz y los tests los mockean con un cast. Si un repositorio llega a necesitar dos implementaciones, ahí se le crea la interfaz.
 - `JwtService` también se inyecta concreto en `SesionService`.
+- La fachada del subsistema recibe concretos los services de sus propios componentes (`GestionServicioEntrenamientoService` recibe `PlanService`), porque solo delega en ellos. Lo que llega de otro subsistema, en cambio, viene por interfaz (`GestionPersonasService` recibe `IInfoHorarios`).
 
 Lo que no tiene excepción es la dirección de la dependencia: un componente nunca importa la clase concreta de **otro** componente para llamarle lógica de negocio. Para eso está la interfaz.

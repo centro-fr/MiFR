@@ -2,9 +2,9 @@
 
 API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usuarios y roles, alumnos, planes, inscripciones, clases, cuotas, pagos, honorarios, rutinas y notificaciones.
 
-**Stack:** Node + TypeScript (ESM), Express, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
+**Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados tres de los nueve subsistemas del diagrama de arquitectura, con lo que pide el sprint 1: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor) y `gestion-servicio-entrenamiento` (actividad, horario). Los otros seis todavía no tienen carpeta.
+**Estado actual:** están implementados cuatro de los nueve subsistemas del diagrama de arquitectura: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). Los otros cinco todavía no tienen carpeta.
 
 ## Comandos
 
@@ -36,17 +36,20 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 src/
   index.ts    composition root: lee el entorno, crea las piezas de infraestructura y levanta el servidor
   composicion.ts  construirDependencias(): arma los componentes; lo usan index.ts y los tests de integración
-  app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
+  app.ts      createApp(deps): arma Express, crea el ControlDeAcceso y monta un router por subsistema
   modules/<subsistema>/
-      interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación)
+      interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación,
+                                       dividida en una parte por componente)
       <subsistema>.service.ts         (la realiza pasando cada operación a su componente)
+      <subsistema>.routes.ts          (monta los routers de sus componentes)
+      <subsistema>.openapi.ts         (registra la documentación de sus componentes)
   modules/<subsistema>/<componente>/
       interface/       i-*.ts
       __tests__/       *.test.ts (unitarios)   *.integration.test.ts (contra Postgres)
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
       <x>.openapi.ts                  (documentación Swagger de sus rutas)
-  openapi.ts  registra en un OpenAPIRegistry los <x>.openapi.ts de cada componente
+  openapi.ts  registra en un OpenAPIRegistry los <subsistema>.openapi.ts
   shared/     transversal: db/  errors/  middlewares/  openapi/  utils/
 prisma/       schema.prisma, migrations/, seed.ts
 ```
@@ -56,14 +59,14 @@ prisma/       schema.prisma, migrations/, seed.ts
 Recorrido de una petición:
 
 ```text
-routes → validate(schemas) → controller → service (implementa I*) → repository → prisma
+routes (guardias de acceso) → validate(schemas) → controller → fachada ILogica* → service → repository → prisma
 ```
 
 ## Documentación de la API (Swagger)
 
 Fuera de producción, la API publica Swagger UI en `/api/v1/docs` y el documento en `/api/v1/docs/openapi.json`. Con `NODE_ENV=production` no se publica.
 
-El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; `src/openapi.ts` los junta e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
+El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; el `<subsistema>.openapi.ts` junta los de sus componentes, `src/openapi.ts` los de cada subsistema, e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
 
 Los errores se lanzan como subclases de `AppError` y los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
 

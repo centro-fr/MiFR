@@ -16,7 +16,7 @@ Es el modelo a seguir para cualquier integración externa futura (pasarela de pa
 
 `gestion-usuarios/gestion-usuarios.service.ts`. En `vista_arquitectonica.puml` la interfaz `ILogicaUsuarios` la provee el subsistema `GestionUsuarios`, no uno de sus componentes, y es lo único que usa la capa de presentación. `GestionUsuariosService` la implementa pasando cada operación al componente dueño (`Sesion`, `Usuario` o `Rol`), sin reglas propias.
 
-Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y los controllers dependen de esa interfaz.
+Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y cada controller depende de la parte de esa interfaz que le toca a su componente (ver `interfaces.md`).
 
 **Única excepción a "sin reglas propias":** una regla que cruza dos componentes que el diagrama no conecta entre sí. Va en la fachada, porque el subsistema es el único que ve a los dos, y nunca en uno de los componentes, porque eso agregaría una dependencia que el diagrama no tiene. Los dos casos actuales:
 
@@ -90,6 +90,6 @@ Conviene nombrarlas bien, sobre todo al documentar o defender el trabajo:
 
 - **Repository** (`usuario.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
 - **La inyección de dependencias por constructor** es la aplicación del principio de inversión de dependencias, no un patrón de diseño.
-- **`createApp`, `createUsuarioRoutes`, `createUsuarioController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
+- **`createApp`, `createGestionUsuariosRoutes`, `createUsuarioRoutes`, `createUsuarioController`, `crearControlDeAcceso`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
 - **`AppError` y sus subclases** son herencia simple para tipar errores HTTP.
 - **La instancia única de `PrismaClient`** no es el patrón Singleton: nada impide crear otra. Es una sola porque la crea una sola vez el composition root (`index.ts`) y la reparte por constructor.

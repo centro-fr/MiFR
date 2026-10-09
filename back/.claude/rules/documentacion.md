@@ -34,8 +34,9 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 
 - Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega.
 - Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
-- Envolver los handlers asincrónicos con `asyncHandler` para que los rechazos lleguen al manejador de errores.
-- Proteger las rutas con `requiereSesion(autenticacion)` y `requierePermiso(autorizacion, "CODIGO")` en la definición de la ruta, no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `requiereRol` queda para lo que la spec ata a un rol y no a un permiso.
+- Pasar los handlers asincrónicos directo a la ruta: Express 5 manda sus rechazos al manejador de errores, así que no hace falta envolverlos.
+- Proteger las rutas con los guardias del `ControlDeAcceso` que recibe el router (`acceso.sesion`, `acceso.permiso("CODIGO")`, `acceso.propioOPermiso("CODIGO")`), en la definición de la ruta y no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `acceso.rol(...)` queda para lo que la spec ata a un rol y no a un permiso.
+- Si un middleware propio envuelve un guardia, lo espera (`await guardia(req, res, next)`). Los guardias son async: sin el `await` el rechazo se pierde y el pedido queda colgado.
 - Instanciar solo en el composition root (`index.ts` y `composicion.ts`), también las clases de librerías: quien las usa las recibe por constructor.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
