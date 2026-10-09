@@ -162,6 +162,15 @@ describe("HorarioRepository", () => {
     });
   });
 
+  it("buscarPorIds trae los horarios pedidos, aunque estén dados de baja", async () => {
+    await repositorio.buscarPorIds([7, 8]);
+
+    expect(prisma.horarios.findMany).toHaveBeenCalledWith({
+      where: { id_horario: { in: [7, 8] } },
+      include: CON_DATOS,
+    });
+  });
+
   it("buscarPorId trae el horario con su actividad y su profesora, aunque esté dado de baja", async () => {
     await repositorio.buscarPorId(7);
 

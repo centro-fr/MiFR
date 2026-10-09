@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import { ForbiddenError, UnauthorizedError } from "../../errors/app-error.js";
 import {
   crearControlDeAcceso,
+  solicitanteDe,
   requierePermiso,
   requierePropioOPermiso,
   requiereRol,
@@ -254,5 +255,24 @@ describe("crearControlDeAcceso", () => {
     expect(() =>
       crearControlDeAcceso(autenticacion, autorizacion).rol("PROPIETARIA")(req, res, next),
     ).toThrow(ForbiddenError);
+  });
+});
+
+describe("solicitanteDe", () => {
+  it("dice quién pide y si es la propietaria", () => {
+    expect(
+      solicitanteDe(crearRequest({ usuario: { id_usuario: 3, roles: ["PROFESORA", "PROPIETARIA"] } })),
+    ).toEqual({
+      idUsuario: 3,
+      esPropietaria: true,
+    });
+    expect(solicitanteDe(crearRequest({ usuario: { id_usuario: 4, roles: ["PROFESORA"] } }))).toEqual({
+      idUsuario: 4,
+      esPropietaria: false,
+    });
+  });
+
+  it("lanza UnauthorizedError si la ruta no pasó por la sesión", () => {
+    expect(() => solicitanteDe(crearRequest())).toThrow(UnauthorizedError);
   });
 });
