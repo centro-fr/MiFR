@@ -44,7 +44,7 @@ const ETIQUETAS_ROL: Record<RoleCode, string> = {
 
 /** Ítem activo en rosa de marca; el resto de estados (hover, foco) los resuelve el Sidebar. */
 const CLASES_ITEM =
-  "h-11 md:h-9 [&>svg]:size-5 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground";
+  "h-11 pointer-fine:h-9 [&>svg]:size-5 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground";
 
 function leerSidebarAbierto(): boolean {
   try {
@@ -165,7 +165,7 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
               <SidebarMenuSubButton
                 asChild
                 isActive={hijo.esActivo}
-                className="h-11 md:h-8 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground"
+                className="h-11 pointer-fine:h-8 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground"
               >
                 <Link to={hijo.to} onClick={alNavegar} aria-current={hijo.esActivo ? "page" : undefined}>
                   <span>{hijo.etiqueta}</span>
@@ -302,7 +302,7 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
-      <SidebarTrigger className="-ml-2 h-11 w-11 shrink-0 text-slate-500 md:h-9 md:w-9 dark:text-slate-300" />
+      <SidebarTrigger className="-ml-2 h-11 w-11 shrink-0 text-slate-500 pointer-fine:h-9 pointer-fine:w-9 dark:text-slate-300" />
       <div className="flex items-center gap-2.5 md:hidden">
         <LogoMarca />
         <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>

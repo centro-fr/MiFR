@@ -163,7 +163,7 @@ export function ActividadesPage() {
           <EmptyActividades onNuevo={abrirNueva} />
         ) : (
           <>
-            <div className="md:hidden space-y-3 pb-8">
+            <div className="grid grid-cols-1 gap-3 pb-8 md:grid-cols-2 xl:hidden">
               {SECCIONES.map((seccion) =>
                 actividades
                   .filter((actividad) => actividad.modalidad === seccion.modalidad)
@@ -237,7 +237,7 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
         type="button"
         variant="outline"
         onClick={() => onEditar(actividad)}
-        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary md:min-h-0 md:px-2.5 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
+        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary pointer-fine:min-h-0 md:px-2.5 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
       >
         Editar
       </Button>
@@ -245,7 +245,7 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
         type="button"
         variant="outline"
         onClick={() => onBaja(actividad)}
-        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-3 py-1.5 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white md:min-h-0 md:px-2.5 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
+        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-3 py-1.5 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white pointer-fine:min-h-0 md:px-2.5 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
       >
         Dar de baja
       </Button>
@@ -279,7 +279,7 @@ function ActividadCard({ actividad, badge, ...acciones }: { actividad: Actividad
 
 function TablaActividades({ actividades, acciones }: { actividades: Actividad[]; acciones: AccionesActividad }) {
   return (
-    <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm md:block dark:bg-surface-low">
+    <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm xl:block dark:bg-surface-low">
       <div className="overflow-x-auto">
         <Table className="w-full min-w-[760px] text-left text-sm">
           <TableHeader>

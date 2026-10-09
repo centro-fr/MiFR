@@ -299,18 +299,13 @@
   }
 }
 
-/* Cambio de tema claro/oscuro: el store pone `cambiando-tema` en <html> unos
-   instantes para que los colores se fundan en vez de saltar. Sin `!important`:
-   la especificidad ya le gana a las utilidades, y respeta reduced-motion. */
-@media (prefers-reduced-motion: no-preference) {
-  html.cambiando-tema,
-  html.cambiando-tema *,
-  html.cambiando-tema *::before,
-  html.cambiando-tema *::after {
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
-  }
+/* Cambio de tema claro/oscuro: theme-store revela la captura nueva con un círculo
+   (clip-path) sobre la vieja. Se anula el fundido por defecto del navegador para que
+   nunca se mezclen las dos capturas. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 html {
