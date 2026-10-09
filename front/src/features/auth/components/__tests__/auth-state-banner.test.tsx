@@ -4,7 +4,7 @@ import { AuthStateBanner } from "@/features/auth/components/auth-state-banner";
 import type { AuthErrorCode } from "@/types/auth";
 
 function renderBanner(code: AuthErrorCode) {
-  render(<AuthStateBanner code={code} onContact={vi.fn()} onRetry={vi.fn()} />);
+  render(<AuthStateBanner code={code} onRetry={vi.fn()} />);
   return screen.getByRole("alert");
 }
 

@@ -4,15 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ContactModal } from "@/components/modals/contact-modal";
-import { LegalModal } from "@/components/modals/legal-modal";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
 import { GisOfficialOverlay } from "@/features/auth/components/gis-official-overlay";
 import { LoginHero } from "@/features/auth/components/login-hero";
 import { MobileAuthView } from "@/features/auth/components/mobile-auth-view";
 import { LoginDesarrolloPanel } from "@/features/auth/components/login-desarrollo-panel";
 import { mapLoginError, useLogin, type LoginVariables } from "@/features/auth/hooks/use-login";
-import type { LegalModalType } from "@/features/auth/schemas/contact";
 import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
@@ -22,8 +19,6 @@ const LOGIN_DESARROLLO = import.meta.env.VITE_LOGIN_DESARROLLO === "true";
 
 function useLoginFlow() {
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null);
-  const [isContactOpen, setIsContactOpen] = useState(false);
-  const [legalType, setLegalType] = useState<LegalModalType>(null);
   const loginMutation = useLogin();
   const navigate = useNavigate();
 
@@ -56,10 +51,6 @@ function useLoginFlow() {
   return {
     errorCode,
     isLoading: loginMutation.isPending,
-    isContactOpen,
-    setIsContactOpen,
-    legalType,
-    setLegalType,
     startLogin,
     cancelLogin,
     clearError,
@@ -78,8 +69,6 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
           onLogin={onLogin}
           onRetry={onLogin}
           onClear={flow.clearError}
-          onContact={() => flow.setIsContactOpen(true)}
-          onOpenLegal={(type) => flow.setLegalType(type)}
           overlay={overlay}
         />
       </div>
@@ -97,15 +86,10 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
             onLogin={onLogin}
             onRetry={onLogin}
             onClear={flow.clearError}
-            onContact={() => flow.setIsContactOpen(true)}
-            onOpenLegal={(type) => flow.setLegalType(type)}
             overlay={overlay}
           />
         </div>
       </div>
-
-      <ContactModal isOpen={flow.isContactOpen} onClose={() => flow.setIsContactOpen(false)} />
-      <LegalModal type={flow.legalType} onClose={() => flow.setLegalType(null)} />
     </main>
   );
 }

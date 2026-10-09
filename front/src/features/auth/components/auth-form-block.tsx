@@ -11,7 +11,6 @@ interface AuthFormBlockProps {
   onLogin: () => void;
   onRetry: () => void;
   onClear: () => void;
-  onContact: () => void;
   overlay?: ReactNode;
   buttonClassName?: string;
   hintClassName?: string;
@@ -26,7 +25,6 @@ export function AuthFormBlock({
   onLogin,
   onRetry,
   onClear,
-  onContact,
   overlay,
   buttonClassName,
   hintClassName,
@@ -39,7 +37,7 @@ export function AuthFormBlock({
     <div className="w-full">
       {errorCode && !isLoading && (
         <div className="mb-4">
-          <AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} />
+          <AuthStateBanner code={errorCode} onRetry={onRetry} />
         </div>
       )}
       <GoogleAuthButton

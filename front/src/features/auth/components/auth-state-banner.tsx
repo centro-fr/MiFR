@@ -6,7 +6,6 @@ import { cn } from "@/utils/cn";
 
 interface AuthStateBannerProps {
   code: AuthErrorCode;
-  onContact: () => void;
   onRetry: () => void;
 }
 
@@ -33,12 +32,12 @@ function BotonBanner({ children, onClick, className }: { children: string; onCli
 // Texto del cartel rojo según el error. Si no hay uno propio, se usa el genérico.
 const MENSAJES_ERROR: Partial<Record<AuthErrorCode, string>> = {
   POPUP_BLOQUEADO: "Tu navegador bloqueó la ventana de Google. Habilitá los popups para este sitio e intentá nuevamente.",
-  INVALID_GOOGLE_TOKEN: "No pudimos validar tu cuenta de Google. Volvé a intentarlo y, si el problema sigue, contactá a la administración.",
+  INVALID_GOOGLE_TOKEN: "No pudimos validar tu cuenta de Google. Volvé a intentarlo.",
   ERROR_SERVIDOR: "El servidor tuvo un problema. Intentá de nuevo en unos minutos.",
 };
 const MENSAJE_GENERICO = "Verificá tu conexión o el bloqueo de ventanas emergentes.";
 
-export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerProps) {
+export function AuthStateBanner({ code, onRetry }: AuthStateBannerProps) {
   const isAccessDenied = code === "ACCESO_NO_HABILITADO" || code === "USUARIO_INACTIVO";
 
   if (isAccessDenied) {
@@ -48,11 +47,7 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
         <div className="min-w-0 flex-1 space-y-0.5">
           <AlertTitle className="text-sm font-bold leading-snug text-amber-900 dark:text-amber-200">Acceso no habilitado</AlertTitle>
           <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
-            Tu cuenta no está habilitada. Contactá al centro para solicitar acceso.
-            <br />
-            <BotonBanner onClick={onContact} className="text-amber-900 dark:text-amber-200">
-              Contactar administración MiFR
-            </BotonBanner>
+            Tu cuenta no tiene acceso a MiFR.
           </AlertDescription>
         </div>
       </Alert>

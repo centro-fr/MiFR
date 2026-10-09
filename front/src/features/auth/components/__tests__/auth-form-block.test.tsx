@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AuthFormBlock } from "@/features/auth/components/auth-form-block";
 
-// US-01: con una cuenta no habilitada tiene que haber UN solo camino para contactar a la administración.
+// US-01: el sistema no gestiona solicitudes de acceso, así que una cuenta no habilitada solo ve el aviso.
 describe("AuthFormBlock", () => {
-  it("acceso no habilitado: hay un solo botón para contactar a la administración", () => {
+  it("acceso no habilitado: avisa sin ofrecer contactar a la administración", () => {
     render(
       <AuthFormBlock
         errorCode="ACCESO_NO_HABILITADO"
@@ -12,10 +12,10 @@ describe("AuthFormBlock", () => {
         onLogin={vi.fn()}
         onRetry={vi.fn()}
         onClear={vi.fn()}
-        onContact={vi.fn()}
       />,
     );
-    expect(screen.getAllByRole("button", { name: /contactar administración/i })).toHaveLength(1);
+    expect(screen.getByRole("alert")).toHaveTextContent("Tu cuenta no tiene acceso a MiFR");
+    expect(screen.queryByRole("button", { name: /contactar/i })).not.toBeInTheDocument();
   });
 
   // US-01, estado "Loading": mientras autentica no se muestra el error anterior.
@@ -27,7 +27,6 @@ describe("AuthFormBlock", () => {
         onLogin={vi.fn()}
         onRetry={vi.fn()}
         onClear={vi.fn()}
-        onContact={vi.fn()}
       />,
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
