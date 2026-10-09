@@ -1,7 +1,8 @@
 import type { PrismaClient, codigo_rol, modalidad_actividad, tipo_plan } from "@prisma/client";
+import { fechaActualArgentina } from "../utils/fecha-argentina.js";
 
 // Datos de prueba de las tareas 1.2 del SDD de autenticación (usuario multi-rol), de
-// configuración base (actividades, profesoras y horarios), de planes y de alumnos. Los cargan seed-demo.ts en la base
+// configuración base (actividades, profesoras y horarios), de planes, de alumnos y de sus inscripciones. Los cargan seed-demo.ts en la base
 // local y los tests de integración en la base de prueba, así el escenario que se recorre a mano
 // es el mismo que verifican los tests.
 
@@ -211,6 +212,33 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
   },
 ];
 
+interface InscripcionDemo {
+  dniAlumno: string;
+  nombrePlan: string;
+  emailProfesora: string;
+  // Los horarios de la profesora en esos días, de la actividad indicada.
+  codigoActividad: string;
+  dias: number[];
+}
+
+// Pre-inscripciones: reservan cupo y el alumno sigue INACTIVO hasta el primer pago (US-05, US-07).
+export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
+  {
+    dniAlumno: "38111222",
+    nombrePlan: "Básico",
+    emailProfesora: "lucia.gomez@example.com",
+    codigoActividad: "FUNCIONAL",
+    dias: [1, 3],
+  },
+  {
+    dniAlumno: "52111222",
+    nombrePlan: "Personalizado 2 días",
+    emailProfesora: "carla.ruiz@example.com",
+    codigoActividad: "ENTRENAMIENTO_PERS",
+    dias: [2, 4],
+  },
+];
+
 function convertirHora(hora: string): Date {
   const [horas, minutos] = hora.split(":").map(Number);
   return new Date(Date.UTC(1970, 0, 1, horas, minutos));
@@ -226,6 +254,8 @@ export interface DatosDemoCargados {
   idPlan: Map<string, number>;
   // id_alumno por DNI del alumno
   idAlumno: Map<string, number>;
+  // id_inscripcion por DNI del alumno
+  idInscripcion: Map<string, number>;
 }
 
 // Espera el catálogo de seguridad ya cargado: las profesoras reciben sus roles de la tabla roles.
@@ -238,7 +268,8 @@ export async function cargarDatosDemo(
   const horariosCreados = await cargarHorarios(prisma, horariosDemo(emailMultirol), idActividad, idProfesora);
   const idPlan = await cargarPlanes(prisma, idActividad);
   const idAlumno = await cargarAlumnos(prisma);
-  return { idProfesora, idActividad, horariosCreados, idPlan, idAlumno };
+  const idInscripcion = await cargarInscripciones(prisma, { idProfesora, idActividad, idPlan, idAlumno });
+  return { idProfesora, idActividad, horariosCreados, idPlan, idAlumno, idInscripcion };
 }
 
 async function cargarUsuarios(prisma: PrismaClient, usuarios: UsuarioDemo[]): Promise<Map<string, number>> {
@@ -356,4 +387,52 @@ async function cargarAlumnos(prisma: PrismaClient): Promise<Map<string, number>>
     idAlumnoPorDni.set(persona.dni, alumno.id_alumno);
   }
   return idAlumnoPorDni;
+}
+
+// Si el alumno ya tiene una inscripción vigente se deja como está, para que volver a correr el
+// script no la duplique.
+async function cargarInscripciones(
+  prisma: PrismaClient,
+  ids: Omit<DatosDemoCargados, "horariosCreados" | "idInscripcion">,
+): Promise<Map<string, number>> {
+  const idInscripcionPorDni = new Map<string, number>();
+  const hoy = fechaActualArgentina();
+  for (const inscripcion of INSCRIPCIONES_DEMO) {
+    const id_alumno = ids.idAlumno.get(inscripcion.dniAlumno) as number;
+    const id_plan = ids.idPlan.get(inscripcion.nombrePlan) as number;
+    const id_profesora = ids.idProfesora.get(inscripcion.emailProfesora) as number;
+    const existente = await prisma.inscripciones.findFirst({
+      where: { id_alumno, estado: { in: ["PREINSCRIPTA", "ACTIVA"] } },
+    });
+    if (existente) {
+      idInscripcionPorDni.set(inscripcion.dniAlumno, existente.id_inscripcion);
+      continue;
+    }
+
+    const [precio, horarios] = await Promise.all([
+      prisma.plan_precios.findFirstOrThrow({ where: { id_plan }, orderBy: { fecha_vigencia_desde: "desc" } }),
+      prisma.horarios.findMany({
+        where: {
+          id_profesora,
+          id_actividad: ids.idActividad.get(inscripcion.codigoActividad),
+          dia_semana: { in: inscripcion.dias },
+          fecha_baja: null,
+        },
+      }),
+    ]);
+    const creada = await prisma.inscripciones.create({
+      data: {
+        id_alumno,
+        id_plan,
+        id_plan_precio: precio.id_plan_precio,
+        id_profesora,
+        sin_cargo: false,
+        fecha_inicio: hoy,
+        estado: "PREINSCRIPTA",
+        horarios: { create: horarios.map(({ id_horario }) => ({ id_horario, fecha_desde: hoy })) },
+      },
+    });
+    idInscripcionPorDni.set(inscripcion.dniAlumno, creada.id_inscripcion);
+  }
+  return idInscripcionPorDni;
 }

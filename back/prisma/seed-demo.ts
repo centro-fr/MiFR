@@ -5,6 +5,7 @@ import {
   ALUMNOS_DEMO,
   cargarDatosDemo,
   EMAIL_MULTIROL_DEMO,
+  INSCRIPCIONES_DEMO,
   PLANES_DEMO,
 } from "../src/shared/db/datos-demo.js";
 
@@ -39,6 +40,9 @@ async function main(prisma: PrismaClient): Promise<void> {
   console.log(`Horarios nuevos: ${horariosCreados}`);
   console.log(`Planes de prueba: ${PLANES_DEMO.map((p) => p.nombre).join(", ")}`);
   console.log(`Alumnos pre-inscriptos: ${ALUMNOS_DEMO.map((a) => `${a.nombre} ${a.apellido}`).join(", ")}`);
+  console.log(
+    `Inscripciones: ${INSCRIPCIONES_DEMO.map((i) => `${i.dniAlumno} en ${i.nombrePlan}`).join(", ")}`,
+  );
 }
 
 const prisma = new PrismaClient();
