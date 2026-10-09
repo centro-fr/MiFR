@@ -184,8 +184,7 @@ interface PersonaDemo {
 
 interface AlumnoDemo extends PersonaDemo {
   tutor: PersonaDemo | null;
-  // Activo: como si ya hubiera pagado. Hasta que exista el cobro (Sprint 3) es la única forma de
-  // tener en el escenario un alumno que pueda entrar al sistema.
+  // Activo: ya pagó su primera cuota en efectivo, que el escenario carga junto con su inscripción.
   activo: boolean;
 }
 
@@ -469,7 +468,59 @@ async function cargarInscripciones(
         horarios: { create: horarios.map(({ id_horario }) => ({ id_horario, fecha_desde: hoy })) },
       },
     });
+    if (inscripcion.estado === "ACTIVA") {
+      await cargarPrimerPagoEnEfectivo(
+        prisma,
+        creada.id_inscripcion,
+        id_profesora,
+        precio.precio.toNumber(),
+        hoy,
+      );
+    }
     idInscripcionPorDni.set(inscripcion.dniAlumno, creada.id_inscripcion);
   }
   return idInscripcionPorDni;
+}
+
+// Un alumno activo ya pagó su primera cuota (US-07): se la cobró en efectivo su profesora y todavía
+// no la rindió (US-19).
+async function cargarPrimerPagoEnEfectivo(
+  prisma: PrismaClient,
+  idInscripcion: number,
+  idProfesora: number,
+  monto: number,
+  hoy: Date,
+): Promise<void> {
+  const profesora = await prisma.profesoras.findUniqueOrThrow({ where: { id_profesora: idProfesora } });
+  const ahora = new Date();
+  await prisma.cuotas.create({
+    data: {
+      id_inscripcion: idInscripcion,
+      numero_cuota: 1,
+      fecha_vencimiento: unMesDespues(hoy),
+      monto,
+      pagos: {
+        create: {
+          forma_pago: "EFECTIVO",
+          estado: "CONFIRMADO",
+          monto,
+          fecha_pago: ahora,
+          id_usuario_registra: profesora.id_usuario,
+          id_profesora_cobra: idProfesora,
+          rendido: false,
+          id_usuario_confirma: profesora.id_usuario,
+          fecha_confirmacion: ahora,
+        },
+      },
+    },
+  });
+}
+
+// La regla de un plan mensual (de fecha a fecha, 31/01 → 28 o 29/02). En la aplicación la resuelve
+// ICalculoVencimiento; el escenario no depende de él para poder cargarse solo.
+function unMesDespues(dia: Date): Date {
+  const anio = dia.getUTCFullYear();
+  const mes = dia.getUTCMonth() + 1;
+  const ultimoDiaDelMes = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(anio, mes, Math.min(dia.getUTCDate(), ultimoDiaDelMes)));
 }
