@@ -92,6 +92,10 @@ export class InscripcionService implements IInfoInscripciones {
     return inscripcion;
   }
 
+  buscarPorId(id: number): Promise<InscripcionConDatos | null> {
+    return this.repositorio.buscarPorId(id);
+  }
+
   listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
     return this.repositorio.listarVigentesPorAlumno(idAlumno);
   }

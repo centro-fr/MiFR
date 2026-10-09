@@ -9,6 +9,9 @@ export const INCLUIR_DATOS_INSCRIPCION = {
     select: {
       id_alumno: true,
       estado: true,
+      // Quién es el alumno y quién su tutor: los únicos que pueden informar sus pagos (US-16).
+      id_usuario: true,
+      id_usuario_responsable: true,
       usuario: { select: { nombre: true, apellido: true } },
     },
   },

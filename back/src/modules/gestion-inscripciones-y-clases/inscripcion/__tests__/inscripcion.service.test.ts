@@ -274,6 +274,12 @@ describe("InscripcionService", () => {
       await expect(servicio.obtenerPara(12, PROFESORA)).rejects.toThrow(ForbiddenError);
     });
 
+    it("buscarPorId devuelve null si no existe, sin lanzar", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(null);
+
+      await expect(servicio.buscarPorId(99)).resolves.toBeNull();
+    });
+
     it("obtenerPorId lanza NotFoundError si no existe", async () => {
       mocks.repositorio.buscarPorId.mockResolvedValue(null);
 

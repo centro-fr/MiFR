@@ -62,6 +62,8 @@ export const inscripcionSchema = z
     alumno: z.object({
       id_alumno: z.number().int(),
       estado: z.enum(["ACTIVO", "INACTIVO", "BAJA"]),
+      id_usuario: z.number().int(),
+      id_usuario_responsable: z.number().int().nullable(),
       usuario: z.object({ nombre: z.string(), apellido: z.string() }),
     }),
     plan: z.object({
