@@ -52,6 +52,7 @@ function condicionesDelListado(filtro: FiltroAlumno): Prisma.Sql {
     condiciones.push(Prisma.sql`a.estado <> 'BAJA'`);
   }
   if (filtro.dni) condiciones.push(Prisma.sql`u.dni = ${filtro.dni}`);
+  if (filtro.ids) condiciones.push(Prisma.sql`a.id_alumno = ANY(${filtro.ids})`);
   if (filtro.busqueda) {
     // Se busca también por el nombre del tutor: es quien suele consultar por un menor.
     condiciones.push(

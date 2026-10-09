@@ -31,6 +31,15 @@ describe("validate", () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
+  it("validate reemplaza la query aunque sea un getter de solo lectura, como en Express 5", () => {
+    const prototipo = Object.defineProperty({}, "query", { get: () => ({ pagina: "2" }) });
+    const req = Object.create(prototipo) as Request;
+
+    validate({ query: z.object({ pagina: z.coerce.number() }) })(req, res, next);
+
+    expect(req.query).toEqual({ pagina: 2 });
+  });
+
   it("validate descarta los campos que no están en el schema", () => {
     const req = { body: { nombre: "Ana", admin: true } } as unknown as Request;
 

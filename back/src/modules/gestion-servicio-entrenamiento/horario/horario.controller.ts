@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaHorarios } from "../interface/i-logica-servicio-entrenamiento.js";
 import type { ActualizarHorarioInput, CrearHorarioInput, ListarHorarioQuery } from "./horario.schemas.js";
 
-export function createHorarioController(logica: ILogicaServicioEntrenamiento) {
+export function createHorarioController(logica: ILogicaHorarios) {
   return {
     async listar(req: Request, res: Response) {
       res.json(await logica.listarHorarios(req.query as ListarHorarioQuery));

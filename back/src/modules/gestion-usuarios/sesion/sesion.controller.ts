@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
+import type { ILogicaSesion } from "../interface/i-logica-usuarios.js";
 import type { PerfilSesion } from "./interface/i-autenticacion.js";
 import type { UsuarioRol } from "../usuario/usuario.types.js";
 
@@ -7,7 +7,7 @@ function respuestaPerfil({ usuario, permisos }: PerfilSesion) {
   return { usuario, roles: usuario.roles.map((r: UsuarioRol) => r.rol.codigo), permisos };
 }
 
-export function createSesionController(gestionUsuarios: ILogicaUsuarios) {
+export function createSesionController(gestionUsuarios: ILogicaSesion) {
   return {
     async googleLogin(req: Request, res: Response): Promise<void> {
       const { token, ...perfil } = await gestionUsuarios.iniciarSesion(req.body.id_token);

@@ -3,6 +3,7 @@ import type { IAutorizacion } from "../../modules/gestion-usuarios/rol/interface
 import type { CodigoPermiso } from "../../modules/gestion-usuarios/rol/rol.catalogo.js";
 import type { IAutenticacion } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { ForbiddenError, UnauthorizedError } from "../errors/app-error.js";
+import type { Solicitante } from "../utils/solicitante.types.js";
 
 export interface UsuarioAutenticado {
   id_usuario: number;
@@ -18,19 +19,23 @@ declare global {
   }
 }
 
+// Para el controller de una ruta que ya pasó por acceso.sesion.
+export function solicitanteDe(req: Request): Solicitante {
+  if (!req.usuario) throw new UnauthorizedError();
+  return { idUsuario: req.usuario.id_usuario, esPropietaria: req.usuario.roles.includes("PROPIETARIA") };
+}
+
+// Express 5 pasa al errorHandler tanto lo que se lanza como el rechazo de un middleware async,
+// así que los guardias lanzan el AppError directamente.
+
 export function requiereSesion(autenticacion: IAutenticacion) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const header = req.headers.authorization;
     if (!header?.startsWith("Bearer ")) throw new UnauthorizedError("Token no provisto");
 
-    const token = header.slice("Bearer ".length);
-    autenticacion
-      .validarSesion(token)
-      .then(({ usuarioId, roles }) => {
-        req.usuario = { id_usuario: usuarioId, roles };
-        next();
-      })
-      .catch(next);
+    const { usuarioId, roles } = await autenticacion.validarSesion(header.slice("Bearer ".length));
+    req.usuario = { id_usuario: usuarioId, roles };
+    next();
   };
 }
 
@@ -47,13 +52,12 @@ export function requiereRol(...rolesPermitidos: string[]) {
 // Decide con los roles actuales de la base, no con los del JWT: así un cambio en la
 // matriz o en los roles del usuario rige desde la próxima petición.
 export function requierePermiso(autorizacion: IAutorizacion, codigoPermiso: CodigoPermiso) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     if (!req.usuario) throw new UnauthorizedError();
-
-    autorizacion
-      .tienePermiso(req.usuario.id_usuario, codigoPermiso)
-      .then((permitido) => next(permitido ? undefined : new ForbiddenError()))
-      .catch(next);
+    if (!(await autorizacion.tienePermiso(req.usuario.id_usuario, codigoPermiso))) {
+      throw new ForbiddenError();
+    }
+    next();
   };
 }
 
@@ -62,9 +66,33 @@ export function requierePermiso(autorizacion: IAutorizacion, codigoPermiso: Codi
 export function requierePropioOPermiso(autorizacion: IAutorizacion, codigoPermiso: CodigoPermiso) {
   const verificarPermiso = requierePermiso(autorizacion, codigoPermiso);
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.usuario) throw new UnauthorizedError();
     if (Number(req.params.id) === req.usuario.id_usuario) return next();
-    verificarPermiso(req, res, next);
+    await verificarPermiso(req, res, next);
+  };
+}
+
+// Un guardia async devuelve la promesa para que quien lo envuelva pueda esperarlo.
+export type Guardia = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
+
+export interface ControlDeAcceso {
+  sesion: Guardia;
+  rol(...rolesPermitidos: string[]): Guardia;
+  permiso(codigoPermiso: CodigoPermiso): Guardia;
+  propioOPermiso(codigoPermiso: CodigoPermiso): Guardia;
+}
+
+// Junta los guardias con autenticación y autorización ya resueltas, para que las rutas digan
+// qué exigen (acceso.permiso("PLANES_VER")) sin recibir ni pasar esas dos dependencias.
+export function crearControlDeAcceso(
+  autenticacion: IAutenticacion,
+  autorizacion: IAutorizacion,
+): ControlDeAcceso {
+  return {
+    sesion: requiereSesion(autenticacion),
+    rol: requiereRol,
+    permiso: (codigoPermiso) => requierePermiso(autorizacion, codigoPermiso),
+    propioOPermiso: (codigoPermiso) => requierePropioOPermiso(autorizacion, codigoPermiso),
   };
 }

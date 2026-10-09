@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import type { ILogicaPersonas } from "../interface/i-logica-personas.js";
+import type { ILogicaProfesoras } from "../interface/i-logica-personas.js";
 import type { CrearProfesoraInput } from "./profesor.schemas.js";
 
-export function createProfesorController(logica: ILogicaPersonas) {
+export function createProfesorController(logica: ILogicaProfesoras) {
   return {
     async listar(_req: Request, res: Response) {
       res.json(await logica.listarProfesoras());

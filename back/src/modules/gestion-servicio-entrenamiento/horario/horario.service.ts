@@ -79,8 +79,8 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(await this.repositorio.darDeBaja(id));
   }
 
-  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return this.repositorio.tieneActivosDeActividad(idActividad);
+  darDeBajaDeActividad(idActividad: number): Promise<number> {
+    return this.repositorio.darDeBajaDeActividad(idActividad);
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {

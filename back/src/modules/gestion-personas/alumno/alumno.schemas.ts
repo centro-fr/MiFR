@@ -93,6 +93,9 @@ export const listarAlumnoQuerySchema = z.object({
   busqueda: textoBusquedaSchema(60).optional(),
   dni: dniSchema.optional(),
   estado: z.enum(["ACTIVO", "INACTIVO", "BAJA"]).optional(),
+  id_plan: idDesdeTextoSchema.optional(),
+  id_profesora: idDesdeTextoSchema.optional(),
+  id_actividad: idDesdeTextoSchema.optional(),
   incluirBajas: z
     .enum(["true", "false"])
     .transform((valor) => valor === "true")

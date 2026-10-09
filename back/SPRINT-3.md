@@ -58,7 +58,7 @@ GestionPersonas (fachada)             ──> IInfoCuotas   estado de cuota en e
 
 | Integrante | Asignado | Carga |
 | --- | --- | --- |
-| **Francisco** | Subsistema nuevo `gestion-cuotas-y-pagos`: `Cuota` y `Pago` (US-15, US-16, US-17) + lo que falta de US-10 | El más pesado: un subsistema, dos tablas, el ciclo del pago y el alta definitiva. Ya conoce `IInfoPlanes` e `IInfoAlumnos`, que son las piezas que usa |
+| **Francisco** | Subsistema nuevo `gestion-cuotas-y-pagos`: `Cuota` y `Pago` (US-15, US-16, US-17) + lo que falta de US-10 + lo que necesita el front para el Sprint 2 | El más pesado: un subsistema, dos tablas, el ciclo del pago y el alta definitiva. Ya conoce `IInfoPlanes` e `IInfoAlumnos`, que son las piezas que usa |
 | **Nicolas** | Lo que queda del Sprint 2 (inscripciones) + `Clase`, `Asistencia` y `CierreAsistencia` (US-20, US-21) | Termina su subsistema: las clases y la asistencia viven en `gestion-inscripciones-y-clases`, junto a `Inscripcion` |
 | **Rosario** | Capa no persistente `calculos-del-negocio` (US-18) + componente `ParametrosSistema` | Cálculos puros, sin base y sin mocks de persistencia: se testean con fechas. No depende de nadie para arrancar, y los otros dos la consumen |
 
@@ -118,7 +118,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendiente (US-15)
 
-- [ ] Agregar al `.puml` y a EA que `Cuota` requiere `IInfoPlanes` y que `GestionPersonas` requiere `IInfoCuotas` (regla dura 2).
+- [x] Agregar al `.puml` y a EA que `Cuota` requiere `IInfoPlanes` y que `GestionPersonas` requiere `IInfoCuotas` (regla dura 2).
 - [ ] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`.
 - [ ] Subsistema nuevo `gestion-cuotas-y-pagos/` con `ILogicaCuotasPagos`, su fachada y los componentes `cuota/` (`IInfoCuotas`) y `pago/` (`IInfoPagos`). Montar las rutas en `app.ts` y armarlo en `composicion.ts`.
 - [ ] `POST /api/v1/pagos/efectivo`: genera la cuota del período y el pago `CONFIRMADO` en una transacción. `rendido = false` y `id_profesora_cobra` si cobró una profesora (la rendición es US-19, Sprint 4).
@@ -159,11 +159,25 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 **Responsable:** Francisco
 
-- [ ] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
-- [ ] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
-- [ ] Ficha con la inscripción vigente y sus horarios.
+- [x] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
+- [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
+- [x] Ficha con la inscripción vigente y sus horarios.
 - [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota.
 - [ ] Historial de pagos en la ficha, visible solo para la propietaria.
+
+## Lo que necesita el front para el Sprint 2
+
+**Responsable:** Francisco
+
+El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes de que arranque:
+
+- [x] `GET /horarios` y `GET /horarios/:id` informan `inscriptos` y `cupo_disponible`, para elegir el horario al pre-inscribir (US-04, US-05). Los cuenta la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones.contarInscriptosVigentes`, en una consulta. Test PI-27.
+- [x] Un alumno activo en el escenario de demostración (Valentina Herrera, plan Intermedio con Carla), para maquetar el estado activo y probar la sesión de un alumno mientras no exista el cobro. Test E-20.
+- [x] Validaciones: `-0` en enteros no negativos (`enteroNoNegativoSchema`), teléfonos con guion adelante y tope de 7 horarios por inscripción.
+- [x] Revisión de inscripciones: activación fuera de la API (va por `IInfoInscripciones.activar`), baja de horario bloqueada con inscriptos, fechas DATE con el día de Argentina, pase libre sin tope de horarios y tests al 100 %.
+- [x] Vista arquitectónica sin `CalculadorCupo` ni `ICalculoCupo`: el cupo lo resuelven `IInfoHorarios` e `IInfoInscripciones`.
+- [x] Reflejar en el `.eap` de Enterprise Architect la quita de `ICalculoCupo` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [ ] Integrar a `dev` (solo `back/`).
 
 ---
 
@@ -175,7 +189,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendiente (US-20)
 
-- [ ] Agregar al `.puml` y a EA que `GestionInscripcionesYClases` requiere `IInfoCuotas` (regla dura 2).
+- [x] Agregar al `.puml` y a EA que `GestionInscripcionesYClases` requiere `IInfoCuotas` (regla dura 2).
 - [ ] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
 - [ ] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
 - [ ] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
@@ -206,7 +220,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendientes del Sprint 1 que siguen esperando
 
-- [ ] Al dar de baja un horario, avisar si tiene alumnos inscriptos (fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
+- [x] Un horario con alumnos inscriptos no se da de baja (409; fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
 - [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
 
 ---

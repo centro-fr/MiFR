@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import type { ILogicaInscripcionesYClases } from "../interface/i-logica-inscripciones-y-clases.js";
+import { solicitanteDe } from "../../../shared/middlewares/auth.js";
+import type { ILogicaInscripciones } from "../interface/i-logica-inscripciones-y-clases.js";
 import type {
   ActualizarHorariosInput,
   CambiarPlanInput,
@@ -9,10 +10,10 @@ import type {
   ReactivarAlumnoInput,
 } from "./inscripcion.schemas.js";
 
-export function createInscripcionController(logica: ILogicaInscripcionesYClases) {
+export function createInscripcionController(logica: ILogicaInscripciones) {
   return {
     async listar(req: Request, res: Response) {
-      res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery));
+      res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery, solicitanteDe(req)));
     },
 
     async crear(req: Request, res: Response) {
@@ -20,11 +21,7 @@ export function createInscripcionController(logica: ILogicaInscripcionesYClases)
     },
 
     async obtener(req: Request, res: Response) {
-      res.json(await logica.obtenerInscripcion(Number(req.params.id)));
-    },
-
-    async activar(req: Request, res: Response) {
-      res.json(await logica.activarInscripcion(Number(req.params.id)));
+      res.json(await logica.obtenerInscripcion(Number(req.params.id), solicitanteDe(req)));
     },
 
     async darDeBajaAlumno(req: Request, res: Response) {

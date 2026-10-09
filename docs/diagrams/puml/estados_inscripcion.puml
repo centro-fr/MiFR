@@ -2,9 +2,11 @@
 title Ciclo de vida de una inscripción
 
 [*] --> PREINSCRIPTA : pre-inscribir
-PREINSCRIPTA --> ACTIVA : confirmar primer pago / activar
-PREINSCRIPTA --> BAJA : dar de baja
-ACTIVA --> BAJA : dar de baja
+[*] --> ACTIVA : reactivar alumno dado de baja
+PREINSCRIPTA --> ACTIVA : primer pago confirmado (lo dispara el cobro)
+PREINSCRIPTA --> BAJA : dar de baja al alumno
+ACTIVA --> BAJA : dar de baja al alumno
+PREINSCRIPTA --> BAJA : cambiar de plan / CAMBIO_PLAN
 ACTIVA --> BAJA : cambiar de plan / CAMBIO_PLAN
 
 note right of PREINSCRIPTA

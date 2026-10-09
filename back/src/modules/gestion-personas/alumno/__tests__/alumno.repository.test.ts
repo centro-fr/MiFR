@@ -163,6 +163,16 @@ describe("AlumnoRepository", () => {
       expect(total.values).toEqual(["BAJA", "40111222", "%100\\%\\_pe%"]);
     });
 
+    it("restringe a los ids que salen de los filtros por inscripción", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0n }]);
+
+      await repositorio.listar({ ids: [4, 9], limit: 20, offset: 0 });
+
+      const total = sqlDeLaLlamada(1);
+      expect(total.text).toContain("a.id_alumno = ANY($1)");
+      expect(total.values).toEqual([[4, 9]]);
+    });
+
     it("con incluirBajas no filtra por estado", async () => {
       prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0n }]);
 

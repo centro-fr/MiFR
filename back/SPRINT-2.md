@@ -10,8 +10,8 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 | US-06 | Asociación de tutor a alumno menor | Completa | Francisco |
 | US-07 | Alta definitiva al confirmarse el primer pago | Completa | Nicolas |
 | US-08 | Baja lógica de alumno | Completa | Nicolas |
-| US-09 | Modificación de datos de alumno | En curso (datos, tutor, plan y horarios completos; queda habilitar edición de profesora) | Francisco (datos y tutor) + Nicolas (plan y horarios) |
-| US-10 | Consulta y búsqueda de alumnos | En curso (faltan los filtros que salen de las inscripciones) | Francisco |
+| US-09 | Modificación de datos de alumno | Completa | Francisco (datos y tutor) + Nicolas (plan y horarios) |
+| US-10 | Consulta y búsqueda de alumnos | Completa (estado de cuota e historiales de pagos y asistencia: Sprint 3) | Francisco |
 
 Fuentes: `docs/specs/03-*` y `docs/specs/04-*`, `docs/sdd/03-*/tasks.md` y `docs/sdd/04-*/tasks.md`, y el DER (`docs/diagrams/enterprise_architect/DER - Centro de Entrenamiento FR.sql`). Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
 
@@ -133,17 +133,17 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] En planes mensuales, la cantidad de horarios no supera `clases_por_semana`.
   - [x] El cupo efectivo del horario (propio o heredado de la actividad) cuenta inscripciones `PREINSCRIPTA` o `ACTIVA` con horario vigente (`fecha_hasta` nula). Sin cupo → 409; las operaciones que compiten por el cupo se serializan en transacción.
   - [x] Un alumno no puede tener dos inscripciones activas o pre-inscriptas al mismo plan.
-- [x] `POST /api/v1/inscripciones/:id/activar` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. Queda disponible en `ILogicaInscripcionesYClases` para el cobro del Sprint 3.
+- [x] `IInfoInscripciones.activar(id)` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. No está en la API: US-07 dice que el alta definitiva la dispara el pago confirmado, así que la va a llamar el cobro del Sprint 3.
 - [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409.
 - [x] `POST /api/v1/alumnos/:id/reactivar` crea una inscripción nueva, conserva la anterior como historial, valida cupos y reactiva al alumno. Sin cupo responde 409 sin cambiar su estado.
-- [x] Activación, baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`.
+- [x] Baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`. Una profesora solo ve las inscripciones que tiene a cargo.
 - [x] `IInfoInscripciones` expone ids de alumnos por plan/profesora/actividad y el resumen vigente por lote (sin N+1), además del conteo de cupo para horarios.
 - [x] Tests unitarios del ciclo de vida y de integración PI-20 a PI-23.
 
 ### Pendientes del Sprint 1 que se destraban
 
-- [x] Al dar de baja un horario, avisar si tiene alumnos inscriptos. Lo resuelve la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones`; `Horario` no la conoce.
-- [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
+- [x] Un horario con alumnos inscriptos no se da de baja (409): primero hay que reubicarlos (US-04). Lo resuelve la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones`; `Horario` no la conoce.
+- [x] La baja de una actividad se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, da de baja también sus horarios en el mismo paso. Decidido con Francisco: antes había que dar de baja cada horario a mano.
 
 ---
 
@@ -152,7 +152,7 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Francisco: datos personales y tutor
 
 - [x] `PATCH /api/v1/alumnos/:id`: datos personales, contacto de emergencia, observaciones, apto médico y tutor.
-- [ ] La profesora solo edita contacto y observaciones de sus alumnos; el resto pide rol `PROPIETARIA`. **Por ahora la edición es solo de la propietaria**: qué alumnos tiene a cargo una profesora sale de las inscripciones. Se habilita junto con el filtro de US-10.
+- [x] La profesora solo edita contacto (`telefono`, `direccion`, `cont_emerg_nombre`, `cont_emerg_telefono`) y observaciones de los alumnos a su cargo; otro campo o un alumno ajeno responde 403. Tests de integración PI-25.
 - [x] Si un cambio de fecha de nacimiento lo vuelve menor, exige tutor; si lo vuelve mayor, se quita el tutor (y pasa a necesitar email).
 - [x] Auditoría del cambio (usuario y fecha): evento `ALUMNO_MODIFICADO` con los campos tocados. Tests de integración PI-17 (E-09 a E-11).
 
@@ -169,14 +169,14 @@ Cómo trabajar en paralelo sin bloquearse:
 ### US-10 (lo que falta usa `IInfoInscripciones`, de Nicolas)
 
 - [x] `GET /api/v1/alumnos`: búsqueda parcial por nombre y apellido sin distinguir acentos ni mayúsculas, DNI exacto, filtro por estado, paginación (`limit`, `offset`). Los dados de baja no salen salvo con `incluirBajas=true`.
-- [ ] Filtros por plan, profesora y actividad: la fachada `GestionPersonasService` le pide a `IInfoInscripciones` los ids y después lista los alumnos con esos ids.
-- [ ] Cada fila trae su plan y profesora vigentes, pedidos a `IInfoInscripciones` para toda la página de una vez.
+- [x] Filtros por plan, profesora y actividad: la fachada `GestionPersonasService` le pide a `IInfoInscripciones` los ids y después lista los alumnos con esos ids.
+- [x] Cada fila trae su plan y profesora vigentes (`inscripcion`), pedidos a `IInfoInscripciones` para toda la página de una vez.
 - [x] `GET /api/v1/alumnos/:id`: ficha con datos y tutor.
-- [ ] Sumar a la ficha la inscripción vigente con sus horarios, desde `IInfoInscripciones`.
-- [ ] Una profesora solo ve los alumnos de los que está a cargo (`inscripciones.id_profesora`); la propietaria ve todos.
+- [x] La ficha trae las inscripciones vigentes con plan, precio, profesora y horarios (`inscripciones`), desde `IInfoInscripciones`.
+- [x] Una profesora solo ve los alumnos de los que está a cargo (`inscripciones.id_profesora`), y con los demás recibe 403; la propietaria ve todos.
 - [x] Búsqueda sin acentos con la extensión `unaccent` (migración `habilitar_unaccent`); incluye el nombre del tutor. **Decidido: sin índice por ahora.** Un centro tiene cientos de alumnos y el recorrido completo es instantáneo; `unaccent` no es `IMMUTABLE` y un índice pide una función envoltorio. Se revisa si el volumen crece.
 - [x] Tests del service y de integración de la búsqueda con acentos, las bajas y la paginación: PI-18 (E-12 a E-15).
-- [ ] Test de integración del filtro por profesora, cuando exista.
+- [x] Tests de integración de los filtros y de lo que ve la profesora: PI-25 y PI-26 (E-15 a E-19).
 
 Fuera de este sprint: estado de cuota, historial de pagos e historial de asistencia de la ficha. Dependen de `cuotas`, `pagos` y `asistencias` (Sprint 3); hasta entonces la ficha no los devuelve.
 

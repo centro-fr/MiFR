@@ -100,7 +100,7 @@ Cuando las pruebas necesiten otro tipo de dato, se agrega una fábrica reutiliza
 
 ### 4.1 Escenario de demostración
 
-Incluye planes y dos alumnos pre-inscriptos. Los casos que necesitan otros los crean con `crearUsuario`, `crearPlan` y `crearAlumno`, o por la API, y cuentan contra lo que ya había para no depender del escenario.
+Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscripción. Los casos que necesitan otros los crean con `crearUsuario`, `crearPlan` y `crearAlumno`, o por la API, y cuentan contra lo que ya había para no depender del escenario.
 
 **Usuarios** (los tres tienen registro de profesora):
 
@@ -136,12 +136,21 @@ Incluye planes y dos alumnos pre-inscriptos. Los casos que necesitan otros los c
 | Personalizado 2 días | Mensual      |         2         | Entrenamiento Personalizado |       Sí        | $45.000 |
 | Clase suelta         | Clase suelta |         —         | —                           |       No        |  $6.000 |
 
-**Alumnos** (pre-inscriptos: alumno y usuario `INACTIVO`, sin inscripción todavía):
+**Alumnos** (los pre-inscriptos quedan `INACTIVO` hasta el primer pago; Valentina está activa como si ya hubiera pagado, con el rol `ALUMNO`):
 
 | Alumno       | DNI      | Edad  | Email                      | Tutor                                                               |
 | :----------- | :------- | :---- | :------------------------- | :------------------------------------------------------------------ |
 | Sofía Medina | 38111222 | Mayor | `sofia.medina@example.com` | —                                                                   |
 | Mateo Romero | 52111222 | Menor | —                          | Paula Romero (DNI 31222333, `paula.romero@example.com`, `INACTIVO`) |
+| Valentina Herrera | 39222333 | Mayor | `valentina.herrera@example.com` | — (activa) |
+
+**Inscripciones** (con el precio vigente del plan y desde el día en que se carga el escenario):
+
+| Alumno            | Plan                 | Profesora a cargo | Estado         | Horarios                                           |
+| :---------------- | :------------------- | :---------------- | :------------- | :------------------------------------------------- |
+| Sofía Medina      | Básico               | Lucía Gómez       | `PREINSCRIPTA` | Funcional, lunes y miércoles 18:00                 |
+| Mateo Romero      | Personalizado 2 días | Carla Ruiz        | `PREINSCRIPTA` | Entrenamiento personalizado, martes y jueves 09:00 |
+| Valentina Herrera | Intermedio           | Carla Ruiz        | `ACTIVA`       | Entrenamiento personalizado, martes y jueves 09:00 |
 
 Los horarios nuevos deben caer dentro del horario de atención, de lunes a sábado de 07:00 a 20:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas. El centro no abre los domingos: la base admite el día 7 (el DER no se cambia), pero la API lo rechaza.
 
@@ -154,13 +163,13 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10                      | Sí, salvo PI-10 (Manual)                                                               |
 | US-02 | Definición de permisos por rol                            |   1    | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09, PI-10, PI-14 | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                           | Sí                                                                                     |
-| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06                                    | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20                                           | Sí, alumno, inscripción, horarios y cupos                                               |
+| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27                      | Sí                                                                                     |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27                                    | Sí, alumno, inscripción, horarios y cupos                                               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19                                           | Sí                                                                                     |
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21                                                  | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
-| US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23                                                  | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
-| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18                                                         | Parcial: faltan los filtros por plan y profesora, y que la profesora vea a sus alumnos |
+| US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
+| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26                                    | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3)                |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
@@ -217,11 +226,15 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-18         | Búsqueda y consulta de alumnos                                     | US-08, US-10        | Servicios          | Demostración                                               | Sí           |
 | PI-19         | Cambios de estado del alumno contra la base                        | US-06, US-07, US-08 | Servicios          | Comunes                                                    | Parcial      |
 | PI-20         | Preinscripción, reglas de plan y cupo                              | US-05               | Servicios          | Demostración                                               | Sí           |
-| PI-21         | Activación idempotente y revalidación de cupo                       | US-07               | Servicios          | Demostración                                               | Sí           |
+| PI-21         | Alta definitiva idempotente y revalidación de cupo                  | US-07               | Servicios          | Demostración                                               | Sí           |
 | PI-22         | Baja del alumno y reactivación con historial                        | US-08               | Servicios          | Demostración                                               | Sí           |
 | PI-23         | Cambio de plan y horarios                                           | US-09               | Servicios          | Demostración                                               | Sí           |
+| PI-24         | Baja de un horario con alumnos inscriptos                           | US-04, US-08        | Servicios          | Demostración                                               | Sí           |
+| PI-25         | La profesora ve y edita solo a los alumnos a su cargo               | US-09, US-10        | Servicios          | Demostración                                               | Sí           |
+| PI-26         | Filtros por inscripción y ficha completa                            | US-10               | Servicios          | Demostración                                               | Sí           |
+| PI-27         | Ocupación de los horarios                                           | US-04, US-05        | Servicios          | Demostración                                               | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-23 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19) e inscripciones (PI-20 a PI-23).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27).
 
 ### 6.2 Detalle
 
@@ -298,16 +311,17 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-06 — Modificación y baja de actividades con horarios
 
-**US:** US-03, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes).
+**US:** US-03, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
 
 1. Marina cambia la descripción de Funcional Grupal.
 2. Marina intenta dar de baja Funcional Grupal.
 3. Marina crea una actividad nueva, sin horarios, y la da de baja.
 4. Marina intenta cambiar Funcional Grupal de grupal a personalizada sin indicar cupo.
+5. Marina crea la actividad Yoga con dos horarios sin alumnos y la da de baja.
 
-**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene horarios activos: hay que darlos de baja antes que la actividad") y la actividad sigue activa. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal.
+**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran).
 
-**Automatizado:** Sí (B-10 a B-13).
+**Automatizado:** Sí (B-10 a B-13 y B-16).
 
 #### PI-07 — Acceso a los datos propios
 
@@ -449,16 +463,15 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-18 — Búsqueda y consulta de alumnos
 
-**US:** US-08, US-10 · **Precondición:** escenario de demostración cargado; sesiones de Marina y de Lucía.
+**US:** US-08, US-10 · **Precondición:** escenario de demostración cargado; sesión de Marina.
 
 1. Con Juan Pérez, un menor a cargo de una tutora de apellido Giménez y otro alumno de apellido Gómez, Marina busca "PEREZ", "gimenez", el DNI exacto de Juan, un DNI incompleto y un texto sin coincidencias.
 2. Con un alumno activo y uno dado de baja, Marina lista sin filtros y con `incluirBajas=true`.
 3. Con cinco alumnos, Marina pide la segunda página de a dos.
-4. Lucía intenta listar, abrir la ficha y modificar a un alumno.
 
-**Resultado esperado:** en el paso 1 "PEREZ" encuentra a Pérez y "gimenez" al menor de Giménez: la búsqueda no distingue acentos ni mayúsculas e incluye el nombre del tutor. El DNI exacto encuentra a Juan; el incompleto y el texto sin coincidencias devuelven una página vacía con `total: 0`. En el paso 2 el dado de baja no aparece por defecto y sí al pedirlo. En el paso 3 la página trae Castro y Díaz (orden por apellido) con `total: 5`. En el paso 4 los tres pedidos responden 403 y el alumno no cambia: hasta que existan las inscripciones, que dicen qué alumnos tiene a cargo cada profesora, la consulta y la edición son solo de la propietaria.
+**Resultado esperado:** en el paso 1 "PEREZ" encuentra a Pérez y "gimenez" al menor de Giménez: la búsqueda no distingue acentos ni mayúsculas e incluye el nombre del tutor. El DNI exacto encuentra a Juan; el incompleto y el texto sin coincidencias devuelven una página vacía con `total: 0`. En el paso 2 el dado de baja no aparece por defecto y sí al pedirlo. En el paso 3 la página trae Castro y Díaz (orden por apellido) con `total: 5`. Lo que ve y edita una profesora se prueba en PI-25.
 
-**Automatizado:** Sí (E-12 a E-15).
+**Automatizado:** Sí (E-12 a E-14).
 
 #### PI-19 — Cambios de estado del alumno contra la base
 
@@ -485,15 +498,15 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (G-01 a G-03).
 
-#### PI-21 — Activación idempotente y revalidación de cupo
+#### PI-21 — Alta definitiva idempotente y revalidación de cupo
 
-**US:** US-07 · **Precondición:** escenario de demostración cargado; sesión de Marina; inscripción `PREINSCRIPTA`.
+**US:** US-07 · **Precondición:** escenario de demostración cargado; inscripción `PREINSCRIPTA`. El alta definitiva la va a disparar el cobro (Sprint 3) por `IInfoInscripciones.activar`; hasta entonces el test la llama por esa interfaz, armada con el mismo composition root.
 
-1. Marina activa la inscripción y repite la misma operación.
+1. Se activa la inscripción dos veces seguidas, como un pago confirmado dos veces.
 2. El alumno inicia sesión con su correo.
-3. Se preinscriben dos alumnos en el último cupo; luego se reduce el cupo y se intenta activar desde una profesora y desde Marina.
+3. Se preinscriben dos alumnos en el último cupo, se reduce el cupo y se intenta activar la segunda, primero por HTTP y después por la interfaz.
 
-**Resultado esperado:** las dos activaciones del paso 1 responden 200, el alumno y su usuario quedan `ACTIVO`, con un solo rol `ALUMNO`, y el login responde 200. En el paso 3 la profesora recibe 403; Marina recibe 409 cuando ya no hay cupo, y la inscripción sigue `PREINSCRIPTA`.
+**Resultado esperado:** el alumno y su usuario quedan `ACTIVO`, con un solo rol `ALUMNO`, y el login responde 200. En el paso 3 `POST /inscripciones/:id/activar` responde 404 (US-07: sin pago no hay alta), la activación por la interfaz falla por falta de cupo y la inscripción sigue `PREINSCRIPTA`.
 
 **Automatizado:** Sí (G-04 y G-05).
 
@@ -522,19 +535,66 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (G-09 a G-11).
 
+#### PI-24 — Baja de un horario con alumnos inscriptos
+
+**US:** US-04, US-08 · **Precondición:** escenario de demostración cargado; sesión de Marina; horario con cupo 3.
+
+1. Se inscribe un alumno en el horario y Marina intenta darlo de baja.
+2. Marina da de baja al alumno y vuelve a intentar la baja del horario.
+
+**Resultado esperado:** el paso 1 responde 409 y el horario sigue sin `fecha_baja`: primero hay que reubicar a los inscriptos (US-04). En el paso 2 la baja responde 200 y el horario queda con su fecha de baja.
+
+**Automatizado:** Sí (G-12).
+
+#### PI-25 — La profesora ve y edita solo a los alumnos a su cargo
+
+**US:** US-09, US-10 · **Precondición:** escenario de demostración cargado (Sofía a cargo de Lucía, Mateo a cargo de Carla); sesión de Lucía.
+
+1. Lucía lista los alumnos, abre la ficha de Sofía y la de Mateo, y filtra por Carla.
+2. Lucía modifica el teléfono y las observaciones de Sofía; después intenta cambiarle el nombre y modificar el teléfono de Mateo.
+3. Lucía lista las inscripciones y abre la de Mateo.
+
+**Resultado esperado:** en el paso 1 el listado trae solo a Sofía, con su plan (Básico) y su profesora; la ficha de Sofía trae su inscripción con dos horarios; la de Mateo responde 403, y el filtro por Carla devuelve una página vacía. En el paso 2 el contacto se guarda (200), el nombre y el alumno ajeno responden 403, y en la base Sofía conserva su nombre y Mateo no cambia. En el paso 3 solo aparece la inscripción de Sofía y la de Mateo responde 403.
+
+**Automatizado:** Sí (E-15 a E-17).
+
+#### PI-26 — Filtros por inscripción y ficha completa
+
+**US:** US-10 · **Precondición:** escenario de demostración cargado; sesión de Marina; un alumno pre-inscripto sin inscripción.
+
+1. Marina filtra el listado por el plan Básico, por Carla y por la actividad Entrenamiento Personalizado, y lista sin filtros.
+2. Marina abre la ficha de Mateo.
+
+3. Marina abre la ficha de Valentina, que inicia sesión con su correo.
+
+**Resultado esperado:** cada filtro trae a los alumnos que corresponden, ordenados por apellido: Sofía por el plan Básico, y Valentina y Mateo por Carla y por entrenamiento personalizado. En el listado completo el alumno sin inscripción aparece con `inscripcion: null`. La ficha de Mateo trae una inscripción `PREINSCRIPTA` con el plan Personalizado 2 días, Carla como profesora y dos horarios. Valentina está `ACTIVO`, con su inscripción `ACTIVA`, y su login responde 200 con el rol `ALUMNO`.
+
+**Automatizado:** Sí (E-18 a E-20).
+
+#### PI-27 — Ocupación de los horarios
+
+**US:** US-04, US-05 · **Precondición:** escenario de demostración cargado; sesiones de Marina y de Lucía; horario con cupo 3.
+
+1. Se inscriben dos alumnos en el horario y se da de baja a uno.
+2. Marina abre el horario y Lucía lista los horarios.
+
+**Resultado esperado:** el horario informa `inscriptos: 1` y `cupo_disponible: 2` en el detalle y en el listado (el dado de baja no cuenta). Un horario sin cupo informa `cupo_disponible: null`.
+
+**Automatizado:** Sí (G-13).
+
 ## 7. Tests automatizados
 
-102 tests en siete archivos:
+110 tests en siete archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 41 (A-01 a A-41) | PI-01, PI-02, PI-03, PI-07, PI-08 |
-|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 15 (B-01 a B-15) | PI-04, PI-05, PI-06               |
+|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 16 (B-01 a B-16) | PI-04, PI-05, PI-06               |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
-|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 15 (E-01 a E-15) | PI-15, PI-16, PI-17, PI-18        |
+|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 20 (E-01 a E-20) | PI-15 a PI-18, PI-25, PI-26       |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 11 (G-01 a G-11) | PI-20, PI-21, PI-22, PI-23        |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 13 (G-01 a G-13) | PI-20 a PI-24, PI-27              |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -550,8 +610,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | A-39 a A-41 | Profesora, Alumno y Tutor no modifican ni dan de baja actividades ni asignan horarios, y la base queda igual                                                                    | PI-03 |
 | B-01 a B-04 | Cupo obligatorio en personalizadas; el horario sin cupo propio toma el de la actividad; el cupo propio manda; grupal sin cupo                                                   | PI-04 |
 | B-05 a B-09 | Superposición de horarios de una misma profesora (también la propietaria); dos profesoras a la misma hora; horario invertido; profesora sin el rol                              | PI-05 |
-| B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con horarios activos; baja sin horarios; no pasar a personalizada sin cupo                                            | PI-06 |
+| B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con alumnos inscriptos; baja sin horarios; no pasar a personalizada sin cupo                                          | PI-06 |
 | B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                                     | PI-05 |
+| B-16        | La baja de una actividad sin alumnos da de baja también sus horarios, que no se borran                                                                                        | PI-06 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
 | D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
 | D-05 a D-07 | Cambio de frecuencia; baja lógica que saca el plan del listado; no hay segunda baja ni edición de un plan dado de baja                                                          | PI-12 |
@@ -560,12 +621,16 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-01 a E-04 | Alta de un mayor inactivo, sin roles ni acceso; alta por la profesora; DNI de otro alumno (`ALUMNO_EXISTENTE`); email repetido y mayor sin email                                | PI-15 |
 | E-05 a E-08 | Menor sin tutor; menor con tutora nueva inactiva; hermanos con la misma tutora; menor con email y tutor menor de edad                                                           | PI-16 |
 | E-09 a E-11 | Cambio de teléfono; menor que pasa a mayor (sin email se rechaza, con email pierde el tutor); DNI de otro usuario                                                               | PI-17 |
-| E-12 a E-15 | Búsqueda sin acentos, por tutor y por DNI exacto; dados de baja fuera del listado; paginación por apellido con total; la profesora todavía no consulta ni edita                 | PI-18 |
+| E-12 a E-14 | Búsqueda sin acentos, por tutor y por DNI exacto; dados de baja fuera del listado; paginación por apellido con total                                                           | PI-18 |
+| E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; la base no cambia con los rechazos                          | PI-25 |
+| E-18 a E-20 | Filtros por plan, profesora y actividad; alumno sin inscripción con `inscripcion: null`; ficha con la inscripción vigente, su plan, profesora y horarios; el alumno activo de la demostración inicia sesión | PI-26 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
 | G-01 a G-03 | Inscripción preinscripta, precio vigente, filtros, validación de reglas, duplicados y cupo                                                                                   | PI-20 |
-| G-04, G-05  | Activación idempotente, rol `ALUMNO`, login, autorización de propietaria y revalidación de cupo                                                                               | PI-21 |
+| G-04, G-05  | Alta definitiva idempotente, rol `ALUMNO`, login, revalidación de cupo y activación ausente de la API (404)                                                                   | PI-21 |
 | G-06 a G-08 | Baja que libera cupo; reactivación con nuevo historial y rechazo cuando no hay cupo                                                                                          | PI-22 |
 | G-09 a G-11 | Cambio transaccional de plan, cambio de horarios, rechazos por cupo y control de acceso                                                                                      | PI-23 |
+| G-12        | No se da de baja un horario con inscriptos (409, la base no cambia); sí cuando el alumno se fue                                                                               | PI-24 |
+| G-13        | Inscriptos y lugares que quedan en el detalle y el listado de horarios; los dados de baja no cuentan; sin cupo, `cupo_disponible: null`                                     | PI-27 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -575,7 +640,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | :------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------- |
 | `requierePermiso` deja pasar cualquier pedido                                         | A-08 a A-10, A-33 a A-37. El resto siguió en verde por la segunda barrera `requiereRol("PROPIETARIA")`     |
 | El cupo de la actividad manda sobre el cupo propio del horario                        | B-03 (la primera versión no lo detectaba; se sumó un horario con cupo propio sobre una actividad con cupo) |
-| No se verifica que la actividad tenga horarios activos antes de la baja               | B-11                                                                                                       |
+| No se verifica que los horarios de la actividad tengan alumnos antes de la baja       | B-11                                                                                                       |
 | El día de la semana vuelve a aceptar el domingo (`max(7)`)                            | B-14, B-15                                                                                                 |
 | El precio anterior se cierra el mismo día que empieza el nuevo, en vez del día previo | D-08, D-09                                                                                                 |
 | El aumento programado no se borra al cargar uno con fecha anterior                    | D-09                                                                                                       |
@@ -599,7 +664,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La búsqueda distingue acentos, o no incluye el nombre del tutor                       | E-12 (una vez por cada regla)                                                                              |
 | El listado incluye a los dados de baja                                                | E-13                                                                                                       |
 | El listado deja de ordenar por apellido                                               | E-13, E-14                                                                                                 |
-| La profesora puede consultar y editar alumnos                                         | E-15                                                                                                       |
+| La profesora ve y edita a todos los alumnos, no solo a los que tiene a cargo           | E-15 a E-17                                                                                                |
+| La baja de horario no cuenta los inscriptos antes de dar de baja                      | G-12                                                                                                       |
+| La ocupación de un horario no suma sus inscriptos                                     | G-13                                                                                                       |
 | El alta deja al usuario del alumno `ACTIVO`                                           | E-01                                                                                                       |
 | La profesora pierde `ALUMNOS_EDITAR` en la matriz inicial                             | E-02                                                                                                       |
 | La activación vuelve a asignar un rol que ya tiene                                    | F-01                                                                                                       |
@@ -622,6 +689,10 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 08/10/2026 | Alumnos y tutores (PI-15 a PI-19); la profesora ve los planes (PI-14) |  91   | 91 aprobados  |  28,3 s  | Pasaron también los 854 tests unitarios; las 19 fallas provocadas fueron detectadas                                |
 | 08/10/2026 | Planes y alumnos en el escenario de demostración                      |  91   | 91 aprobados  |  33,3 s  | Los tests de planes y alumnos pasan a contar contra lo que había; las fallas provocadas se vuelven a detectar      |
 | 09/10/2026 | Inscripciones y ciclo de vida (PI-20 a PI-23)                         | 102   | 102 aprobados | 21,9 s   | Pasaron también los 859 tests unitarios; build correcto. Se corrigió y volvió a probar la reactivación de alumnos |
+| 08/10/2026 | Migración a Express 5 y rutas agrupadas por subsistema                | 102   | 102 aprobados | 44,4 s   | Sin cambios en los tests de integración: confirman que el contrato HTTP y los permisos no cambiaron. Pasaron también los 862 tests unitarios; build correcto |
+| 09/10/2026 | Revisión de inscripciones; US-10 y US-09 de la profesora (PI-21, PI-24 a PI-26) | 107 | 107 aprobados | 53,2 s | Pasaron también los 973 tests unitarios, con cobertura del 100 %; build correcto. Las fallas provocadas fueron detectadas |
+| 09/10/2026 | Ocupación de horarios (PI-27), alumno activo en la demostración y validaciones | 109 | 109 aprobados | 61,2 s | Pasaron también los 990 tests unitarios; falla provocada detectada |
+| 09/10/2026 | La baja de actividad arrastra sus horarios sin alumnos (PI-06)        | 110 | 110 aprobados | 60,0 s | Pasaron también los 991 tests unitarios; falla provocada detectada (B-11) |
 
 ### 8.2 Resultado por caso
 
@@ -633,12 +704,18 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-13         | 08/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan D-08 a D-12; falta el precio aplicado al cobrar (Sprint 3)                 |
 | PI-14 a PI-19 | 08/10/2026 | Francisco Andrade | Aprobado           | PI-19 se complementa con las operaciones HTTP cubiertas en PI-21 y PI-22         |
 | PI-20 a PI-23 | 09/10/2026 | Nicolas           | Aprobado           | Pasan G-01 a G-11; la reactivación crea una nueva inscripción y valida el cupo   |
+| PI-21, PI-24 a PI-27 | 09/10/2026 | Francisco Andrade | Aprobado     | PI-21 pasa a activar por `IInfoInscripciones` (D-02); pasan G-12, G-13 y E-15 a E-20 |
 
 ### 8.3 Defectos
 
 | ID   | Caso  | Descripción                                                                                                                    | Severidad | Responsable | Corregido en        |
 | :--- | :---- | :----------------------------------------------------------------------------------------------------------------------------- | :-------- | :---------- | :------------------ |
 | D-01 | PI-22 | La preparación compartida de inscripción rechazaba alumnos en `BAJA`, impidiendo completar la reactivación por HTTP. Corregido: solo la reactivación puede preparar para un alumno dado de baja. | Media     | Nicolas     | `InscripcionService` |
+| D-02 | PI-21 | `POST /inscripciones/:id/activar` permitía el alta definitiva sin pago, contra US-07. Corregido: la activación sale de la API y queda en `IInfoInscripciones.activar` para el cobro | Alta | Francisco Andrade | `inscripcion.routes.ts`, `IInfoInscripciones` |
+| D-03 | PI-24 | La baja de un horario se hacía aunque tuviera inscriptos y después avisaba que había que reubicarlos. Corregido: responde 409 antes de darlo de baja | Alta | Francisco Andrade | `GestionServicioEntrenamientoService` |
+| D-04 | PI-22 | La baja del alumno guardaba `inscripcion_horarios.fecha_hasta` (DATE) con `new Date()`: desde las 21:00 de Argentina quedaba el día siguiente. Corregido con `fechaActualArgentina()` | Media | Francisco Andrade | `InscripcionService` |
+| D-05 | PI-22 | La baja de un alumno aceptaba `CAMBIO_PLAN` como motivo. Corregido: responde 400 | Baja | Francisco Andrade | `inscripcion.schemas.ts` |
+| D-06 | PI-20 | A un plan mensual sin `clases_por_semana` (pase libre) no se le podía asignar ningún horario. Corregido; lo detectó un unitario | Media | Francisco Andrade | `InscripcionService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -646,9 +723,9 @@ Los defectos se numeran D-01, D-02…
 
 | Caso  | Punto                                                                                                                                                                                                                                                                                                                                                 | Estado  |
 | :---- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
-| PI-06 | Baja de una actividad con horarios activos: el backend la rechaza con 409 y pide dar de baja los horarios primero (US-03 / CA-03). Falta confirmarlo con la propietaria; si prefiere darla de baja y desasignar los horarios, es un cambio de regla. Cuando existan inscripciones se revisa si el bloqueo se limita a horarios con alumnos inscriptos | Abierto |
+| PI-06 | Baja de una actividad con horarios activos. Resuelto: se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, la baja de la actividad da de baja también sus horarios en el mismo paso | Cerrado |
 | PI-14 | La profesora carga pre-inscripciones (US-05) y necesita ver los planes. Resuelto: la matriz inicial le da `PLANES_VER` y `ALUMNOS_EDITAR`. En una base ya cargada (producción) la carga del catálogo no agrega permisos a permisos que ya existían: la propietaria se los otorga desde la matriz                                                      | Cerrado |
-| PI-18 | La profesora todavía no consulta ni edita alumnos: US-10 le permite ver solo a los que tiene a cargo, y eso sale de las inscripciones. Cuando existan, PI-18 pasa a verificar que ve a sus alumnos y no a los demás                                                                                                                                   | Abierto |
+| PI-18 | La profesora todavía no consulta ni edita alumnos: US-10 le permite ver solo a los que tiene a cargo, y eso sale de las inscripciones. Resuelto en PI-25: ve y edita solo a los alumnos con una inscripción vigente a su cargo                                                                                                                         | Cerrado |
 | PI-19 | La activación, la baja y la reactivación se probaron sobre el componente; PI-21 y PI-22 ahora las cubren también por HTTP                                                                                                                                                                                                                           | Cerrado |
 
 ## 10. Cómo sumar casos
@@ -685,3 +762,4 @@ Los defectos se numeran D-01, D-02…
 |   1.4   | 08/10/2026 | Casos PI-15 a PI-19 (alumnos y tutores), PI-14 actualizado (la profesora ve los planes), fábrica `crearAlumno` y tests E-01 a E-15 y F-01 a F-03             | Francisco Andrade |
 |   1.5   | 08/10/2026 | Planes y alumnos en el escenario de demostración (sección 4.1); D-02, D-03, D-06, D-13, D-14, E-02, E-13 y E-14 cuentan o filtran sin depender del escenario | Francisco Andrade |
 |   1.6   | 09/10/2026 | Casos PI-20 a PI-23, fábrica de horarios y tests G-01 a G-11; activación, baja, reactivación y cambios de inscripción                          | Nicolas           |
+|   1.7   | 09/10/2026 | PI-21 activa por `IInfoInscripciones` (la ruta HTTP ya no existe); casos PI-24 a PI-27, PI-06 actualizado (la baja de actividad arrastra sus horarios sin alumnos) y tests B-16, G-12, G-13 y E-15 a E-20 (E-15 deja de ser "la profesora no consulta"); inscripciones y un alumno activo en el escenario de demostración; defectos D-02 a D-06 | Francisco Andrade |

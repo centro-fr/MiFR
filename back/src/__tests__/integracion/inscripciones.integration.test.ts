@@ -7,18 +7,18 @@ import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
 // Casos PI-20 a PI-27: preinscripción, activación, baja/reactivación y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
-const { app, prisma } = entorno;
+const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
 const CARLA = "carla.ruiz@example.com";
 
 let tokenMarina: string;
 let datosDemo: Awaited<ReturnType<typeof cargarDatosDemo>>;
 
-function como(token: string, metodo: "get" | "post" | "patch", ruta: string) {
+function como(token: string, metodo: "get" | "post" | "patch" | "delete", ruta: string) {
   return request(app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
 }
 
-function comoMarina(metodo: "get" | "post" | "patch", ruta: string) {
+function comoMarina(metodo: "get" | "post" | "patch" | "delete", ruta: string) {
   return como(tokenMarina, metodo, ruta);
 }
 
@@ -131,6 +131,7 @@ describe("PI-20: preinscripción y cupos", () => {
   });
 
   it("valida exclusividad de actividad, profesora única y máximo semanal", async () => {
+    const inscripcionesDeDemo = await prisma.inscripciones.count();
     const alumno = await crearAlumno(prisma);
     const funcionales = await horariosFuncionales();
     const planExclusivo = datosDemo.idPlan.get("Personalizado 2 días")!;
@@ -167,7 +168,7 @@ describe("PI-20: preinscripción y cupos", () => {
     expect(profesoraInconsistente.status).toBe(400);
     expect(excedeClasesSemanales.status).toBe(400);
     expect(horarioCarla.id_horario).not.toBe(funcionales[0].id_horario);
-    expect(await prisma.inscripciones.count()).toBe(0);
+    expect(await prisma.inscripciones.count()).toBe(inscripcionesDeDemo);
   });
 });
 
@@ -177,17 +178,9 @@ describe("PI-21: activación", () => {
     const horarios = await horariosFuncionales();
     const creada = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
 
-    const primeraActivacion = await comoMarina(
-      "post",
-      `/inscripciones/${creada.body.id_inscripcion}/activar`,
-    );
-    const segundaActivacion = await comoMarina(
-      "post",
-      `/inscripciones/${creada.body.id_inscripcion}/activar`,
-    );
+    await infoInscripciones.activar(creada.body.id_inscripcion);
+    await infoInscripciones.activar(creada.body.id_inscripcion);
 
-    expect(primeraActivacion.status).toBe(200);
-    expect(segundaActivacion.status).toBe(200);
     expect((await obtenerInscripcion(creada.body.id_inscripcion))?.estado).toBe("ACTIVA");
     expect(await prisma.alumnos.findUnique({ where: { id_alumno: alumno.id_alumno } })).toMatchObject({
       estado: "ACTIVO",
@@ -198,27 +191,23 @@ describe("PI-21: activación", () => {
     expect(login.status).toBe(200);
   });
 
-  it("revalida el cupo al activar y restringe la operación a la propietaria", async () => {
+  it("revalida el cupo al activar y no expone la activación en la API", async () => {
     const idHorario = await crearHorarioConCupo(2);
     const primero = await crearAlumno(prisma);
     const segundo = await crearAlumno(prisma);
-    const inscripcionPrimero = await inscribir(primero.id_alumno, [idHorario]);
+    await inscribir(primero.id_alumno, [idHorario]);
     const inscripcionSegundo = await inscribir(segundo.id_alumno, [idHorario]);
-    const tokenLucia = await entorno.iniciarSesion(LUCIA);
     await prisma.horarios.update({ where: { id_horario: idHorario }, data: { cupo_maximo: 1 } });
 
-    const prohibida = await como(
-      tokenLucia,
-      "post",
-      `/inscripciones/${inscripcionPrimero.body.id_inscripcion}/activar`,
-    );
-    const sinCupo = await comoMarina(
+    const porHttp = await comoMarina(
       "post",
       `/inscripciones/${inscripcionSegundo.body.id_inscripcion}/activar`,
     );
 
-    expect(prohibida.status).toBe(403);
-    expect(sinCupo.status).toBe(409);
+    expect(porHttp.status).toBe(404);
+    await expect(infoInscripciones.activar(inscripcionSegundo.body.id_inscripcion)).rejects.toThrow(
+      "No hay cupo disponible",
+    );
     expect((await obtenerInscripcion(inscripcionSegundo.body.id_inscripcion))?.estado).toBe("PREINSCRIPTA");
   });
 });
@@ -290,7 +279,7 @@ describe("PI-23: cambios de plan y horarios", () => {
     const alumno = await crearAlumno(prisma);
     const horarios = await horariosFuncionales();
     const anterior = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
-    await comoMarina("post", `/inscripciones/${anterior.body.id_inscripcion}/activar`);
+    await infoInscripciones.activar(anterior.body.id_inscripcion);
     const nuevoPlan = await crearPlan(prisma, { nombre: "Plan renovado", precio: 32000 });
 
     const cambio = await comoMarina(
@@ -382,5 +371,47 @@ describe("PI-23: cambios de plan y horarios", () => {
         ({ id_horario, fecha_hasta }) => id_horario === horarios[0].id_horario && fecha_hasta,
       ),
     ).toBe(true);
+  });
+});
+
+describe("PI-24: baja de un horario con alumnos inscriptos", () => {
+  it("no da de baja un horario con inscriptos vigentes y sí cuando el alumno se fue", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    const alumno = await crearAlumno(prisma);
+    await inscribir(alumno.id_alumno, [idHorario]);
+
+    const conInscriptos = await comoMarina("delete", `/horarios/${idHorario}`);
+    expect(conInscriptos.status).toBe(409);
+    expect(await prisma.horarios.findUnique({ where: { id_horario: idHorario } })).toMatchObject({
+      fecha_baja: null,
+    });
+
+    await darDeBaja(alumno.id_alumno);
+    const sinInscriptos = await comoMarina("delete", `/horarios/${idHorario}`);
+    expect(sinInscriptos.status).toBe(200);
+    expect(sinInscriptos.body.horario.fecha_baja).not.toBeNull();
+  });
+});
+
+describe("PI-27: ocupación de los horarios", () => {
+  it("cada horario informa sus inscriptos vigentes y los lugares que le quedan", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    const primero = await crearAlumno(prisma);
+    const segundo = await crearAlumno(prisma);
+    await inscribir(primero.id_alumno, [idHorario]);
+    await inscribir(segundo.id_alumno, [idHorario]);
+    await darDeBaja(segundo.id_alumno);
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+
+    const detalle = await comoMarina("get", `/horarios/${idHorario}`);
+    const listado = await como(tokenLucia, "get", "/horarios");
+
+    expect(detalle.body).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
+    const enListado = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorario);
+    expect(enListado).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
+    const funcionalSinCupo = listado.body.find(
+      (h: { cupo_maximo_efectivo: number | null }) => h.cupo_maximo_efectivo === null,
+    );
+    expect(funcionalSinCupo.cupo_disponible).toBeNull();
   });
 });

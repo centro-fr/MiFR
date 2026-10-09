@@ -169,12 +169,14 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "IInfoUsuarios"   as R_GP_InfoUsuarios
   interface "IInfoHorarios"   as R_GP_InfoHorarios
   interface "IInfoInscripciones" as R_GP_InfoInscripciones
+  interface "IInfoCuotas"     as R_GP_InfoCuotas
   interface "IAutenticacion"  as R_GP_Aut
   GestionPersonas       -down- I_LogicaPersonas
   GestionPersonas         -down-( R_GP_Autz
   GestionPersonas -down-( R_GP_InfoUsuarios
   GestionPersonas -down-( R_GP_InfoHorarios
   GestionPersonas -down-( R_GP_InfoInscripciones
+  GestionPersonas -down-( R_GP_InfoCuotas
   GestionPersonas          -down-( R_GP_Aut
 
   ' ---------------- GestionRutinasYProgreso ----------------
@@ -204,9 +206,11 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoCuotas"          as I_InfoCuotas
     interface "IInfoPagos"           as I_InfoPagos
     interface "IInfoProfesores"      as R_GCP_InfoProfesores
+    interface "IInfoPlanes"          as R_GCP_InfoPlanes
 
     Cuota -right-( R_GCP_CalculoVencimiento
     Cuota -right-( R_GCP_InfoInscripciones
+    Cuota -right-( R_GCP_InfoPlanes
     Cuota -down-( R_GCP_CalculoHabilitacion
     Cuota -down- I_InfoCuotas
     Pago  -up- I_InfoPagos
@@ -231,7 +235,6 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoHorarios"      as R_GIC_InfoHorarios
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresInsc
     interface "IInfoAlumnos"       as R_GIC_InfoAlumnos
-    interface "ICalculoCupo"       as R_GIC_CalculoCupo
     interface "IInfoPlanes"        as R_GIC_InfoPlanes
     interface "IInfoInscripciones" as I_InfoInscripciones
     interface "IInfoClases"        as I_InfoClases
@@ -242,7 +245,6 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Inscripcion -left-( R_GIC_InfoHorarios
     Inscripcion -left-( R_GIC_InfoProfesoresInsc
     Inscripcion -left-( R_GIC_InfoAlumnos
-    Inscripcion -left-( R_GIC_CalculoCupo
     Inscripcion -left-( R_GIC_InfoPlanes
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
@@ -262,9 +264,11 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "ILogicaInscripcionesYClases" as I_LogicaInscripcionesYClases
   interface "IAutorizacion"  as R_GIC_Autz
   interface "IAutenticacion" as R_GIC_Aut
+  interface "IInfoCuotas"    as R_GIC_InfoCuotas
   GestionInscripcionesYClases -down- I_LogicaInscripcionesYClases
   GestionInscripcionesYClases   -down-( R_GIC_Autz
   GestionInscripcionesYClases    -down-( R_GIC_Aut
+  GestionInscripcionesYClases -down-( R_GIC_InfoCuotas
 
   ' ---------------- GestionNotificaciones ----------------
   package "GestionNotificaciones" as GestionNotificaciones <<subsystem>> {
@@ -367,12 +371,10 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     interface "IInfoHorarios"      as R_DP_InfoHorarios
     interface "IInfoInscripciones" as R_DP_InfoInscripciones
     interface "IInfoPlanes"        as R_DP_InfoPlanes
-    interface "ICalculoCupo"       as R_DP_CalculoCupo
 
     PanelDisponibilidad -right-( R_DP_InfoHorarios
     PanelDisponibilidad -right-( R_DP_InfoInscripciones
     PanelDisponibilidad -right-( R_DP_InfoPlanes
-    PanelDisponibilidad -right-( R_DP_CalculoCupo
   }
   interface "ILogicaDifusionPublica" as I_LogicaDifusionPublica
   DifusionPublica -down- I_LogicaDifusionPublica
@@ -382,23 +384,19 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     component "CalculadorRachaRanking"     as CalcRacha #EEFBF4
     component "CalculadorVencimientoCuota" as CalcVenc #EEFBF4
     component "CalculadorHabilitacion"     as CalcHab #EEFBF4
-    component "CalculadorCupo"             as CalcCupo #EEFBF4
     component "CalculadorHonorarios"       as CalcHon #EEFBF4
     interface "ICalculoRachaRanking" as I_CalculoRachaRanking
     interface "ICalculoVencimiento"  as I_CalculoVencimiento
     interface "ICalculoHabilitacion" as I_CalculoHabilitacion
-    interface "ICalculoCupo"         as I_CalculoCupo
     interface "ICalculoHonorarios"   as I_CalculoHonorarios
 
     CalcRacha -right- I_CalculoRachaRanking
     CalcVenc  -right- I_CalculoVencimiento
     CalcHab   -right- I_CalculoHabilitacion
-    CalcCupo  -right- I_CalculoCupo
     CalcHon   -right- I_CalculoHonorarios
     CalcRacha -[hidden]down-> CalcVenc
     CalcVenc  -[hidden]down-> CalcHab
-    CalcHab   -[hidden]down-> CalcCupo
-    CalcCupo  -[hidden]down-> CalcHon
+    CalcHab   -[hidden]down-> CalcHon
   }
 
   ' ---------------- Reportes ----------------

@@ -1,11 +1,8 @@
 import { Router } from "express";
-import { asyncHandler } from "../../../shared/utils/async-handler.js";
-import { requierePermiso, requiereRol, requiereSesion } from "../../../shared/middlewares/auth.js";
+import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import type { IAutenticacion } from "../../gestion-usuarios/sesion/interface/i-autenticacion.js";
-import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import { createActividadController } from "./actividad.controller.js";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaActividades } from "../interface/i-logica-servicio-entrenamiento.js";
 import {
   actividadIdParamSchema,
   actualizarActividadSchema,
@@ -13,52 +10,48 @@ import {
   listarActividadQuerySchema,
 } from "./actividad.schemas.js";
 
-export function createActividadRoutes(
-  logica: ILogicaServicioEntrenamiento,
-  autenticacion: IAutenticacion,
-  autorizacion: IAutorizacion,
-): Router {
+export function createActividadRoutes(logica: ILogicaActividades, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createActividadController(logica);
 
-  router.use(requiereSesion(autenticacion));
+  router.use(acceso.sesion);
 
   router.get(
     "/",
-    requierePermiso(autorizacion, "ACTIVIDADES_VER"),
+    acceso.permiso("ACTIVIDADES_VER"),
     validate({ query: listarActividadQuerySchema }),
-    asyncHandler(controller.listar),
+    controller.listar,
   );
 
   router.post(
     "/",
-    requiereRol("PROPIETARIA"),
-    requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
+    acceso.rol("PROPIETARIA"),
+    acceso.permiso("ACTIVIDADES_EDITAR"),
     validate({ body: crearActividadSchema }),
-    asyncHandler(controller.crear),
+    controller.crear,
   );
 
   router.get(
     "/:id",
-    requierePermiso(autorizacion, "ACTIVIDADES_VER"),
+    acceso.permiso("ACTIVIDADES_VER"),
     validate({ params: actividadIdParamSchema }),
-    asyncHandler(controller.obtener),
+    controller.obtener,
   );
 
   router.patch(
     "/:id",
-    requiereRol("PROPIETARIA"),
-    requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
+    acceso.rol("PROPIETARIA"),
+    acceso.permiso("ACTIVIDADES_EDITAR"),
     validate({ params: actividadIdParamSchema, body: actualizarActividadSchema }),
-    asyncHandler(controller.actualizar),
+    controller.actualizar,
   );
 
   router.delete(
     "/:id",
-    requiereRol("PROPIETARIA"),
-    requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
+    acceso.rol("PROPIETARIA"),
+    acceso.permiso("ACTIVIDADES_EDITAR"),
     validate({ params: actividadIdParamSchema }),
-    asyncHandler(controller.baja),
+    controller.baja,
   );
 
   return router;

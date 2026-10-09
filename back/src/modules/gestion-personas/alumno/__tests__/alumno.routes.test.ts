@@ -2,7 +2,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
-import { AlumnoExistenteError } from "../../../../shared/errors/app-error.js";
+import { AlumnoExistenteError, ForbiddenError } from "../../../../shared/errors/app-error.js";
 import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import type { ILogicaUsuarios } from "../../../gestion-usuarios/interface/i-logica-usuarios.js";
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
@@ -83,7 +83,10 @@ describe("rutas de alumnos", () => {
       .set("Authorization", "Bearer propietaria");
 
     expect(respuesta.status).toBe(200);
-    expect(logica.listarAlumnos).toHaveBeenCalledWith({ busqueda: "lopez", limit: 20, offset: 0 });
+    expect(logica.listarAlumnos).toHaveBeenCalledWith(
+      { busqueda: "lopez", limit: 20, offset: 0 },
+      { idUsuario: 1, esPropietaria: true },
+    );
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(1, "ALUMNOS_VER");
   });
 
@@ -93,7 +96,7 @@ describe("rutas de alumnos", () => {
     const respuesta = await request(app).get("/api/v1/alumnos/1").set("Authorization", "Bearer propietaria");
 
     expect(respuesta.status).toBe(200);
-    expect(logica.obtenerAlumnoPorId).toHaveBeenCalledWith(1);
+    expect(logica.obtenerAlumnoPorId).toHaveBeenCalledWith(1, { idUsuario: 1, esPropietaria: true });
   });
 
   it("modifica un alumno y deja registrado quién lo hizo y qué campos cambió", async () => {
@@ -105,7 +108,11 @@ describe("rutas de alumnos", () => {
       .send({ telefono: "3794 445566" });
 
     expect(respuesta.status).toBe(200);
-    expect(logica.actualizarAlumno).toHaveBeenCalledWith(1, { telefono: "3794 445566" });
+    expect(logica.actualizarAlumno).toHaveBeenCalledWith(
+      1,
+      { telefono: "3794 445566" },
+      { idUsuario: 1, esPropietaria: true },
+    );
     const auditoria = JSON.parse(warn.mock.calls.at(-1)?.[0] as string);
     expect(auditoria).toMatchObject({
       auditoria: "ALUMNO_MODIFICADO",
@@ -115,15 +122,26 @@ describe("rutas de alumnos", () => {
     });
   });
 
-  it.each([
-    ["get", "/api/v1/alumnos"],
-    ["get", "/api/v1/alumnos/1"],
-    ["patch", "/api/v1/alumnos/1"],
-  ] as const)("por ahora rechaza %s %s a la profesora", async (metodo, ruta) => {
+  it("le pasa a la lógica que pide una profesora, que decide qué alumnos tiene a cargo", async () => {
+    logica.listarAlumnos.mockResolvedValue({ datos: [], total: 0, limit: 20, offset: 0 });
+
     const respuesta = await request(app)
-      [metodo](ruta)
-      .set("Authorization", "Bearer profesora")
-      .send({ telefono: "1" });
+      .get("/api/v1/alumnos?id_plan=3&id_actividad=4")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.listarAlumnos).toHaveBeenCalledWith(
+      { id_plan: 3, id_actividad: 4, limit: 20, offset: 0 },
+      { idUsuario: 2, esPropietaria: false },
+    );
+  });
+
+  it("responde 403 si la profesora pide un alumno que no tiene a cargo", async () => {
+    logica.obtenerAlumnoPorId.mockRejectedValue(
+      new ForbiddenError("Solo puede ver y editar a los alumnos que tiene a cargo"),
+    );
+
+    const respuesta = await request(app).get("/api/v1/alumnos/1").set("Authorization", "Bearer profesora");
 
     expect(respuesta.status).toBe(403);
   });

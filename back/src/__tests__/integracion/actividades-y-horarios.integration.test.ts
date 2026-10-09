@@ -252,17 +252,49 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     }
   });
 
-  it("no se puede dar de baja una actividad con horarios activos", async () => {
+  it("no se puede dar de baja una actividad con alumnos inscriptos en sus horarios", async () => {
+    // En el escenario, Sofía está inscripta en Funcional los lunes y los miércoles.
     const respuesta = await comoMarina("delete", `/actividades/${idActividad("FUNCIONAL")}`);
 
     expect(respuesta.status).toBe(409);
     expect(respuesta.body.error.message).toBe(
-      "La actividad tiene horarios activos: hay que darlos de baja antes que la actividad",
+      "La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja",
     );
     const funcional = await prisma.actividades.findUnique({
       where: { id_actividad: idActividad("FUNCIONAL") },
     });
     expect(funcional?.activo).toBe(true);
+    expect(
+      await prisma.horarios.count({ where: { id_actividad: idActividad("FUNCIONAL"), fecha_baja: null } }),
+    ).toBe(3);
+  });
+
+  it("la baja de una actividad sin alumnos da de baja también sus horarios", async () => {
+    const actividad = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+    const idYoga = actividad.body.id_actividad;
+    for (const email of [LUCIA, CARLA]) {
+      const creado = await crearHorario({
+        id_actividad: idYoga,
+        id_profesora: idProfesora(email),
+        dia_semana: SABADO,
+        hora_inicio: "10:00",
+        hora_fin: "11:00",
+      });
+      expect(creado.status).toBe(201);
+    }
+
+    const respuesta = await comoMarina("delete", `/actividades/${idYoga}`);
+
+    expect(respuesta.status).toBe(200);
+    expect(await prisma.actividades.findUnique({ where: { id_actividad: idYoga } })).toMatchObject({
+      activo: false,
+    });
+    expect(await prisma.horarios.count({ where: { id_actividad: idYoga } })).toBe(2);
+    expect(await prisma.horarios.count({ where: { id_actividad: idYoga, fecha_baja: null } })).toBe(0);
   });
 
   it("una actividad sin horarios se da de baja", async () => {
