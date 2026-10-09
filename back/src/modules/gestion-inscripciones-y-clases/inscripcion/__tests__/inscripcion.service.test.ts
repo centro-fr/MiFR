@@ -1,41 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, ForbiddenError } from "../../../../shared/errors/app-error.js";
-import type { Solicitante } from "../../../../shared/utils/solicitante.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "../../../../shared/errors/app-error.js";
+import type { Solicitante } from "../../../../shared/utils/solicitante.types.js";
 import type { IInfoAlumnos } from "../../../gestion-personas/alumno/interface/i-info-alumnos.js";
-import type { Alumno } from "../../../gestion-personas/alumno/alumno.types.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
-import type { HorarioConDatos } from "../../../gestion-servicio-entrenamiento/horario/horario.types.js";
 import type { IInfoPlanes } from "../../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
-import type { Plan } from "../../../gestion-servicio-entrenamiento/plan/plan.types.js";
 import type { InscripcionRepository } from "../inscripcion.repository.js";
-import type { ReactivarAlumnoInput } from "../inscripcion.schemas.js";
+import type { CrearInscripcionInput, ReactivarAlumnoInput } from "../inscripcion.schemas.js";
 import { InscripcionService } from "../inscripcion.service.js";
 import type { InscripcionConDatos } from "../inscripcion.types.js";
 
-function crearMocks() {
-  return {
-    repositorio: {
-      listar: vi.fn().mockResolvedValue([]),
-      listarVigentesPorAlumno: vi.fn(),
-      buscarPorId: vi.fn(),
-      buscarVigentePorAlumno: vi.fn(),
-      activar: vi.fn(),
-      reactivar: vi.fn(),
-    },
-    alumnos: {
-      buscarPorId: vi.fn(),
-      activar: vi.fn(),
-      reactivar: vi.fn(),
-    },
-    planes: {
-      buscarPorId: vi.fn(),
-      precioVigente: vi.fn(),
-    },
-    horarios: { buscarPorIds: vi.fn() },
-    profesores: { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }) },
-  };
-}
+const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
+const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
+
+// 15:00 UTC del 9 de octubre: en Argentina también es el 9.
+const AHORA = new Date("2026-10-09T15:00:00Z");
+const HOY = new Date("2026-10-09T00:00:00Z");
 
 const plan = {
   id_plan: 1,
@@ -44,24 +29,72 @@ const plan = {
   profesora_unica: false,
   id_actividad_exclusiva: null,
   fecha_baja: null,
-} as Plan;
-
-const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
-const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
-
-const alumnoDadoDeBaja = { id_alumno: 5, estado: "BAJA" } as Alumno;
+};
 const horario = {
   id_horario: 8,
   id_profesora: 3,
   id_actividad: 4,
   fecha_baja: null,
   actividad: { activo: true },
-} as HorarioConDatos;
-const inscripcionActiva = {
+};
+const inscripcion = {
   id_inscripcion: 12,
   id_alumno: 5,
+  id_plan: 1,
+  id_profesora: 3,
   estado: "ACTIVA",
-} as InscripcionConDatos;
+  plan,
+} as unknown as InscripcionConDatos;
+const preinscripta = { ...inscripcion, estado: "PREINSCRIPTA" } as InscripcionConDatos;
+const ok = { resultado: "ok", inscripcion };
+const alta: CrearInscripcionInput = {
+  id_alumno: 5,
+  id_plan: 1,
+  id_profesora: 3,
+  ids_horarios: [8],
+  sin_cargo: false,
+};
+const reactivacion: ReactivarAlumnoInput = {
+  id_plan: 1,
+  id_profesora: 3,
+  ids_horarios: [8],
+  sin_cargo: false,
+};
+
+function crearMocks() {
+  return {
+    repositorio: {
+      crear: vi.fn().mockResolvedValue(ok),
+      listar: vi.fn().mockResolvedValue([]),
+      listarVigentesPorAlumno: vi.fn(),
+      buscarPorId: vi.fn().mockResolvedValue(inscripcion),
+      buscarVigentePorAlumno: vi.fn().mockResolvedValue(null),
+      activar: vi.fn().mockResolvedValue(ok),
+      darDeBajaAlumno: vi.fn(),
+      reactivar: vi.fn().mockResolvedValue(ok),
+      cambiarPlan: vi.fn().mockResolvedValue(ok),
+      actualizarHorarios: vi.fn().mockResolvedValue(ok),
+      obtenerIdsDeAlumnos: vi.fn().mockResolvedValue([5]),
+      resumirInscripcionesVigentes: vi.fn().mockResolvedValue([]),
+      contarInscriptosVigentesEnHorario: vi.fn().mockResolvedValue(2),
+    },
+    alumnos: {
+      buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO" }),
+      activar: vi.fn(),
+      darDeBaja: vi.fn(),
+      reactivar: vi.fn(),
+    },
+    planes: {
+      buscarPorId: vi.fn().mockResolvedValue(plan),
+      precioVigente: vi.fn().mockResolvedValue({ id_plan_precio: 15 }),
+    },
+    horarios: { buscarPorIds: vi.fn().mockResolvedValue([horario]) },
+    profesores: {
+      buscarPorId: vi.fn().mockResolvedValue({ id_profesora: 3 }),
+      buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }),
+    },
+  };
+}
 
 describe("InscripcionService", () => {
   let mocks: ReturnType<typeof crearMocks>;
@@ -69,7 +102,7 @@ describe("InscripcionService", () => {
 
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-09T15:00:00Z"));
+    vi.setSystemTime(AHORA);
     mocks = crearMocks();
     servicio = new InscripcionService(
       mocks.repositorio as unknown as InscripcionRepository,
@@ -82,72 +115,130 @@ describe("InscripcionService", () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it("activar activa la inscripción y el alumno", async () => {
-    mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcionActiva, estado: "PREINSCRIPTA" });
-    mocks.repositorio.activar.mockResolvedValue({ resultado: "ok", inscripcion: inscripcionActiva });
-    mocks.alumnos.activar.mockResolvedValue({} as Alumno);
+  describe("crear", () => {
+    it("pre-inscribe con el precio vigente hoy y los horarios elegidos", async () => {
+      await expect(servicio.crear(alta)).resolves.toBe(inscripcion);
 
-    await servicio.activar(12);
+      expect(mocks.planes.precioVigente).toHaveBeenCalledWith(1, HOY);
+      expect(mocks.repositorio.crear).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id_alumno: 5,
+          estado: "PREINSCRIPTA",
+          id_plan_precio: 15,
+          fecha_inicio: HOY,
+        }),
+        [8],
+        HOY,
+      );
+    });
 
-    expect(mocks.repositorio.activar).toHaveBeenCalledWith(12);
-    expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
+    it.each([
+      ["el alumno no existe", () => mocks.alumnos.buscarPorId.mockResolvedValue(null), NotFoundError],
+      [
+        "el alumno está dado de baja",
+        () => mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA" }),
+        NotFoundError,
+      ],
+      ["el plan no existe", () => mocks.planes.buscarPorId.mockResolvedValue(null), ConflictError],
+      [
+        "el plan está dado de baja",
+        () => mocks.planes.buscarPorId.mockResolvedValue({ ...plan, fecha_baja: HOY }),
+        ConflictError,
+      ],
+      [
+        "el plan no tiene precio vigente",
+        () => mocks.planes.precioVigente.mockResolvedValue(null),
+        ConflictError,
+      ],
+    ] as const)("rechaza si %s", async (_caso, preparar, error) => {
+      preparar();
+
+      await expect(servicio.crear(alta)).rejects.toThrow(error);
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("rechaza un inicio anterior a hoy y un fin estimado que no es posterior al inicio", async () => {
+      await expect(
+        servicio.crear({ ...alta, fecha_inicio: new Date("2026-10-08T00:00:00Z") }),
+      ).rejects.toThrow(ValidationError);
+      await expect(servicio.crear({ ...alta, fecha_fin_estimado: HOY })).rejects.toThrow(ValidationError);
+    });
+
+    it.each([
+      ["sin cupo", { resultado: "sin-cupo" }, "No hay cupo disponible"],
+      ["con el plan duplicado", { resultado: "plan-duplicado" }, "ya tiene una inscripción vigente"],
+      ["si dejó de estar vigente", { resultado: "no-vigente" }, "dejó de estar vigente"],
+    ])("traduce el resultado del repositorio %s a ConflictError", async (_caso, resultado, mensaje) => {
+      mocks.repositorio.crear.mockResolvedValue(resultado);
+
+      await expect(servicio.crear(alta)).rejects.toThrow(mensaje);
+    });
   });
 
-  it("activar reintenta el paso del alumno si la inscripción ya estaba activa", async () => {
-    mocks.repositorio.buscarPorId.mockResolvedValue(inscripcionActiva);
-    mocks.alumnos.activar.mockResolvedValue({} as Alumno);
+  describe("reglas de los horarios", () => {
+    it.each([
+      [
+        "la profesora no existe o está inactiva",
+        () => mocks.profesores.buscarPorId.mockResolvedValue(null),
+        NotFoundError,
+      ],
+      ["falta un horario", () => mocks.horarios.buscarPorIds.mockResolvedValue([]), ConflictError],
+      [
+        "un horario está dado de baja",
+        () => mocks.horarios.buscarPorIds.mockResolvedValue([{ ...horario, fecha_baja: HOY }]),
+        ConflictError,
+      ],
+      [
+        "la actividad del horario está dada de baja",
+        () => mocks.horarios.buscarPorIds.mockResolvedValue([{ ...horario, actividad: { activo: false } }]),
+        ConflictError,
+      ],
+    ] as const)("rechaza si %s", async (_caso, preparar, error) => {
+      preparar();
 
-    await servicio.activar(12);
+      await expect(servicio.crear(alta)).rejects.toThrow(error);
+    });
 
-    expect(mocks.repositorio.activar).not.toHaveBeenCalled();
-    expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
-  });
+    it("rechaza horarios de dos profesoras distintas", async () => {
+      mocks.horarios.buscarPorIds.mockResolvedValue([
+        horario,
+        { ...horario, id_horario: 9, id_profesora: 4 },
+      ]);
 
-  it("reactivar permite preparar una inscripción nueva para un alumno dado de baja", async () => {
-    mocks.alumnos.buscarPorId.mockResolvedValue(alumnoDadoDeBaja);
-    mocks.planes.buscarPorId.mockResolvedValue(plan);
-    mocks.planes.precioVigente.mockResolvedValue({ id_plan_precio: 15 });
-    mocks.profesores.buscarPorId.mockResolvedValue({ id_profesora: 3 });
-    mocks.horarios.buscarPorIds.mockResolvedValue([horario]);
-    mocks.repositorio.buscarVigentePorAlumno.mockResolvedValue(null);
-    mocks.repositorio.reactivar.mockResolvedValue({ resultado: "ok", inscripcion: inscripcionActiva });
-    mocks.alumnos.reactivar.mockResolvedValue({} as Alumno);
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).rejects.toThrow("misma profesora");
+    });
 
-    const input: ReactivarAlumnoInput = {
-      id_plan: 1,
-      id_profesora: 3,
-      ids_horarios: [8],
-      sin_cargo: false,
-    };
+    it("con profesora única exige que los horarios sean de la profesora a cargo", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, profesora_unica: true });
 
-    await servicio.reactivarAlumno(5, input);
+      await expect(servicio.crear({ ...alta, id_profesora: 7 })).rejects.toThrow(ValidationError);
+    });
 
-    expect(mocks.repositorio.reactivar).toHaveBeenCalledWith(
-      expect.objectContaining({ id_alumno: 5, id_plan_precio: 15, estado: "ACTIVA" }),
-      [8],
-      expect.any(Date),
-    );
-    expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
-  });
+    it("con actividad exclusiva exige horarios de esa actividad", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, id_actividad_exclusiva: 99 });
 
-  it("reactivar no cambia al alumno si falla la validación de cupo", async () => {
-    mocks.alumnos.buscarPorId.mockResolvedValue(alumnoDadoDeBaja);
-    mocks.planes.buscarPorId.mockResolvedValue(plan);
-    mocks.planes.precioVigente.mockResolvedValue({ id_plan_precio: 15 });
-    mocks.profesores.buscarPorId.mockResolvedValue({ id_profesora: 3 });
-    mocks.horarios.buscarPorIds.mockResolvedValue([horario]);
-    mocks.repositorio.buscarVigentePorAlumno.mockResolvedValue(null);
-    mocks.repositorio.reactivar.mockResolvedValue({ resultado: "sin-cupo" });
+      await expect(servicio.crear(alta)).rejects.toThrow("actividad exclusiva");
+    });
 
-    const input: ReactivarAlumnoInput = {
-      id_plan: 1,
-      id_profesora: 3,
-      ids_horarios: [8],
-      sin_cargo: false,
-    };
+    it("en un plan mensual no acepta más horarios que clases por semana", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: 1 });
+      mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
 
-    await expect(servicio.reactivarAlumno(5, input)).rejects.toThrow(ConflictError);
-    expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).rejects.toThrow("clases por semana");
+    });
+
+    it("un mensual sin clases por semana es un pase libre y acepta varios horarios", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: null });
+      mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
+
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).resolves.toBe(inscripcion);
+    });
+
+    it("una clase suelta no tiene tope de horarios", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, tipo: "CLASE_SUELTA", clases_por_semana: null });
+
+      await expect(servicio.crear(alta)).resolves.toBe(inscripcion);
+    });
   });
 
   describe("lo que ve cada uno (US-10)", () => {
@@ -173,23 +264,175 @@ describe("InscripcionService", () => {
     });
 
     it("obtenerPara devuelve la inscripción a la propietaria y a la profesora a cargo", async () => {
-      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcionActiva, id_profesora: 3 });
-
-      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({ id_inscripcion: 12 });
-      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toMatchObject({ id_inscripcion: 12 });
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toBe(inscripcion);
+      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toBe(inscripcion);
     });
 
     it("obtenerPara lanza ForbiddenError si la profesora no está a cargo", async () => {
-      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcionActiva, id_profesora: 9 });
+      mocks.profesores.buscarPorUsuario.mockResolvedValue({ id_profesora: 9 });
 
       await expect(servicio.obtenerPara(12, PROFESORA)).rejects.toThrow(ForbiddenError);
     });
 
-    it("listarVigentesDeAlumno pide al repositorio las vigentes del alumno", async () => {
-      mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcionActiva]);
+    it("obtenerPorId lanza NotFoundError si no existe", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(null);
 
-      await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([inscripcionActiva]);
-      expect(mocks.repositorio.listarVigentesPorAlumno).toHaveBeenCalledWith(5);
+      await expect(servicio.obtenerPorId(99)).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe("activar (US-07)", () => {
+    it("activa la pre-inscripción y el alumno", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(preinscripta);
+
+      await servicio.activar(12);
+
+      expect(mocks.repositorio.activar).toHaveBeenCalledWith(12);
+      expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
+    });
+
+    it("si ya estaba activa solo reintenta el paso del alumno", async () => {
+      await servicio.activar(12);
+
+      expect(mocks.repositorio.activar).not.toHaveBeenCalled();
+      expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
+    });
+
+    it("rechaza una inscripción dada de baja y no activa sin cupo", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValueOnce({ ...inscripcion, estado: "BAJA" });
+      await expect(servicio.activar(12)).rejects.toThrow(ConflictError);
+
+      mocks.repositorio.buscarPorId.mockResolvedValueOnce(preinscripta);
+      mocks.repositorio.activar.mockResolvedValue({ resultado: "sin-cupo" });
+      await expect(servicio.activar(12)).rejects.toThrow(ConflictError);
+      expect(mocks.alumnos.activar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("darDeBajaAlumno (US-08)", () => {
+    it("cierra las inscripciones con el instante y el día de Argentina, y da de baja al alumno", async () => {
+      await servicio.darDeBajaAlumno(5, { motivo_baja: "ABANDONO" });
+
+      expect(mocks.repositorio.darDeBajaAlumno).toHaveBeenCalledWith(
+        5,
+        { motivo_baja: "ABANDONO" },
+        { instante: AHORA, dia: HOY },
+      );
+      expect(mocks.alumnos.darDeBaja).toHaveBeenCalledWith(5);
+    });
+
+    it("rechaza un alumno inexistente o ya dado de baja", async () => {
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce(null);
+      await expect(servicio.darDeBajaAlumno(5, { motivo_baja: "OTRO" })).rejects.toThrow(NotFoundError);
+
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" });
+      await expect(servicio.darDeBajaAlumno(5, { motivo_baja: "OTRO" })).rejects.toThrow(ConflictError);
+      expect(mocks.repositorio.darDeBajaAlumno).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("reactivarAlumno (US-08)", () => {
+    beforeEach(() => {
+      mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA" });
+    });
+
+    it("crea una inscripción nueva activa y reactiva al alumno", async () => {
+      await servicio.reactivarAlumno(5, reactivacion);
+
+      expect(mocks.repositorio.reactivar).toHaveBeenCalledWith(
+        expect.objectContaining({ id_alumno: 5, id_plan_precio: 15, estado: "ACTIVA" }),
+        [8],
+        HOY,
+      );
+      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
+    });
+
+    it("no cambia al alumno si no hay cupo", async () => {
+      mocks.repositorio.reactivar.mockResolvedValue({ resultado: "sin-cupo" });
+
+      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+      expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
+    });
+
+    it("no vuelve a reactivar si otra operación ya lo hizo", async () => {
+      mocks.alumnos.buscarPorId
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" })
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" })
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
+
+      await servicio.reactivarAlumno(5, reactivacion);
+
+      expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
+    });
+
+    it("con una inscripción activa que quedó abierta solo reactiva al alumno", async () => {
+      mocks.repositorio.buscarVigentePorAlumno.mockResolvedValue(inscripcion);
+
+      await expect(servicio.reactivarAlumno(5, reactivacion)).resolves.toBe(inscripcion);
+      expect(mocks.repositorio.reactivar).not.toHaveBeenCalled();
+      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
+    });
+
+    it("rechaza si quedó una pre-inscripción vigente, si no existe o si no está de baja", async () => {
+      mocks.repositorio.buscarVigentePorAlumno.mockResolvedValueOnce(preinscripta);
+      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce(null);
+      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(NotFoundError);
+
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
+      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+    });
+  });
+
+  describe("cambiarPlan y actualizarHorarios (US-09)", () => {
+    it("cambiarPlan conserva el estado y usa el precio vigente del plan nuevo", async () => {
+      await servicio.cambiarPlan(12, { ...reactivacion, id_plan: 2 });
+
+      expect(mocks.planes.buscarPorId).toHaveBeenCalledWith(2);
+      expect(mocks.repositorio.cambiarPlan).toHaveBeenCalledWith(
+        inscripcion,
+        expect.objectContaining({ id_plan: 2 }),
+        15,
+        { instante: AHORA, dia: HOY },
+      );
+    });
+
+    it("cambiarPlan de una pre-inscripción la deja pre-inscripta", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(preinscripta);
+
+      await servicio.cambiarPlan(12, { ...reactivacion, id_plan: 2 });
+
+      expect(mocks.repositorio.cambiarPlan).toHaveBeenCalled();
+    });
+
+    it("cambiarPlan rechaza el mismo plan y una inscripción dada de baja", async () => {
+      await expect(servicio.cambiarPlan(12, reactivacion)).rejects.toThrow("ya tiene el plan");
+
+      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcion, estado: "BAJA" });
+      await expect(servicio.cambiarPlan(12, { ...reactivacion, id_plan: 2 })).rejects.toThrow("dada de baja");
+      expect(mocks.repositorio.cambiarPlan).not.toHaveBeenCalled();
+    });
+
+    it("actualizarHorarios valida con las reglas del plan de la inscripción", async () => {
+      await servicio.actualizarHorarios(12, { ids_horarios: [8] });
+
+      expect(mocks.planes.buscarPorId).not.toHaveBeenCalled();
+      expect(mocks.repositorio.actualizarHorarios).toHaveBeenCalledWith(
+        inscripcion,
+        { ids_horarios: [8] },
+        HOY,
+      );
+    });
+  });
+
+  describe("IInfoInscripciones", () => {
+    it("pasa las consultas al repositorio", async () => {
+      await expect(servicio.obtenerIdsDeAlumnos({ id_plan: 1 })).resolves.toEqual([5]);
+      await expect(servicio.resumirInscripcionesVigentes([5])).resolves.toEqual([]);
+      await expect(servicio.contarInscriptosVigentesEnHorario(8)).resolves.toBe(2);
+      mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcion]);
+      await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([inscripcion]);
     });
   });
 });

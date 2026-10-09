@@ -252,7 +252,8 @@ export class InscripcionService implements IInfoInscripciones {
     ) {
       throw new ValidationError("Los horarios deben corresponder a la actividad exclusiva del plan");
     }
-    if (plan.tipo === "MENSUAL" && idsHorarios.length > (plan.clases_por_semana ?? 0)) {
+    // Un mensual sin clases_por_semana es un pase libre: no tiene tope de horarios.
+    if (plan.clases_por_semana !== null && idsHorarios.length > plan.clases_por_semana) {
       throw new ValidationError("La cantidad de horarios supera las clases por semana del plan");
     }
   }
