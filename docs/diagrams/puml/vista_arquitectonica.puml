@@ -207,10 +207,12 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoPagos"           as I_InfoPagos
     interface "IInfoProfesores"      as R_GCP_InfoProfesores
     interface "IInfoPlanes"          as R_GCP_InfoPlanes
+    interface "IInfoParametros"      as R_GCP_InfoParametros
 
     Cuota -right-( R_GCP_CalculoVencimiento
     Cuota -right-( R_GCP_InfoInscripciones
     Cuota -right-( R_GCP_InfoPlanes
+    Cuota -down-( R_GCP_InfoParametros
     Cuota -down-( R_GCP_CalculoHabilitacion
     Cuota -down- I_InfoCuotas
     Pago  -up- I_InfoPagos
