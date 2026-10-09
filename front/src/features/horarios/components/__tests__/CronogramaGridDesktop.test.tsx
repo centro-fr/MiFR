@@ -59,4 +59,17 @@ describe("CronogramaGridDesktop", () => {
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
     expect(mockOnDelete).toHaveBeenCalledWith(horario);
   });
+
+  it("deja editar y eliminar al alcance del teclado, con el contexto de la clase en el nombre accesible", () => {
+    const horario = crearHorarioFrontend({ diaSemana: "MIERCOLES", horaInicio: "15:00", horaFin: "16:00" });
+    render(<CronogramaGridDesktop {...defaultProps} horarios={[horario]} todosLosHorarios={[horario]} />);
+
+    const botonEditar = screen.getByRole("button", { name: "Editar horario de Funcional Grupal, MIERCOLES 15:00" });
+    const botonEliminar = screen.getByRole("button", { name: "Eliminar horario de Funcional Grupal, MIERCOLES 15:00" });
+
+    // Si estuvieran ocultos con display:none no entrarían en el orden de tab.
+    expect(botonEditar.tabIndex).toBeGreaterThanOrEqual(0);
+    expect(botonEliminar.tabIndex).toBeGreaterThanOrEqual(0);
+    expect(botonEditar.parentElement).toHaveClass("sr-only", "group-focus-within:not-sr-only");
+  });
 });

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 const ESTADOS = [
   { icono: Check, texto: "Puede ver y modificar", clases: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300" },
   { icono: Eye, texto: "Solo puede ver", clases: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300" },
-  { icono: X, texto: "Sin acceso", clases: "border-slate-200 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/10 dark:text-slate-300" },
+  { icono: X, texto: "Sin acceso", clases: "border-border bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300" },
 ] as const;
 
 export function LeyendaEstados() {

@@ -63,6 +63,13 @@
   /* Menú lateral: rosa profundo (vino). Blanco sobre este fondo da 12.2:1
      y pink-200 8.8:1; se usa igual en tema claro y oscuro. */
   --color-sidebar: #651538;
+  --color-sidebar-foreground: #ffffff;
+  --color-sidebar-primary: #e91e82;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: rgba(255, 255, 255, 0.1);
+  --color-sidebar-accent-foreground: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.1);
+  --color-sidebar-ring: #e91e82;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
   --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -289,6 +296,20 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Cambio de tema claro/oscuro: el store pone `cambiando-tema` en <html> unos
+   instantes para que los colores se fundan en vez de saltar. Sin `!important`:
+   la especificidad ya le gana a las utilidades, y respeta reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html.cambiando-tema,
+  html.cambiando-tema *,
+  html.cambiando-tema *::before,
+  html.cambiando-tema *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
   }
 }
 

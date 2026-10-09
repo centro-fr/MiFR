@@ -126,7 +126,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                     <FormItem>
                       <FormLabel htmlFor="contact-nombre" className={LABEL_CLASSES}>Nombre Completo *</FormLabel>
                       <FormControl>
-                        <Input id="contact-nombre" placeholder="Ej. Martín Rodríguez" className={INPUT_CLASSES} {...field} />
+                        <Input id="contact-nombre" autoComplete="name" placeholder="Ej. Martín Rodríguez" className={INPUT_CLASSES} {...field} />
                       </FormControl>
                       <FormMessage role="alert" className="text-sm text-rose-300" />
                     </FormItem>
@@ -140,7 +140,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                       <FormItem>
                         <FormLabel htmlFor="contact-email" className={LABEL_CLASSES}>Email de Google *</FormLabel>
                         <FormControl>
-                          <Input id="contact-email" type="email" placeholder="tu.cuenta@gmail.com" className={INPUT_CLASSES} {...field} />
+                          <Input id="contact-email" type="email" autoComplete="email" spellCheck={false} placeholder="tu.cuenta@gmail.com" className={INPUT_CLASSES} {...field} />
                         </FormControl>
                         <FormMessage role="alert" className="text-sm text-rose-300" />
                       </FormItem>
@@ -153,7 +153,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                       <FormItem>
                         <FormLabel htmlFor="contact-telefono" className={LABEL_CLASSES}>Teléfono / WhatsApp *</FormLabel>
                         <FormControl>
-                          <Input id="contact-telefono" type="tel" placeholder="+54 9 11 ..." className={INPUT_CLASSES} {...field} />
+                          <Input id="contact-telefono" type="tel" autoComplete="tel" placeholder="+54 9 11 1234-5678" className={INPUT_CLASSES} {...field} />
                         </FormControl>
                         <FormMessage role="alert" className="text-sm text-rose-300" />
                       </FormItem>
@@ -193,7 +193,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                       <FormControl>
                         <Textarea
                           id="contact-mensaje"
-                          placeholder="Contanos tu consulta o disponibilidad horaria..."
+                          placeholder="Contanos tu consulta o disponibilidad horaria…"
                           className="min-h-[80px] w-full resize-none rounded-xl border-white/10 bg-white/5 px-3.5 py-2.5 text-base text-white transition-colors placeholder:text-slate-500 focus:border-primary focus-visible:ring-primary/40"
                           {...field}
                           value={field.value ?? ""}
@@ -208,7 +208,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                   disabled={form.formState.isSubmitting}
                   className="min-h-[44px] w-full rounded-full bg-primary py-3 text-sm font-bold text-white shadow-brand-glow transition-all hover:bg-primary-dark disabled:opacity-70"
                 >
-                  {form.formState.isSubmitting ? "Enviando..." : "Enviar Solicitud de Habilitación"}
+                  {form.formState.isSubmitting ? "Enviando…" : "Enviar Solicitud de Habilitación"}
                 </Button>
               </form>
             </Form>

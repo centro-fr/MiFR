@@ -45,11 +45,11 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
   }
 
   return (
-    <Card className="overflow-x-auto rounded-2xl border-slate-200 bg-white dark:border-white/10 dark:bg-surface-low">
+    <Card className="overflow-x-auto rounded-2xl border-border bg-white dark:bg-surface-low">
       <Table className="w-full min-w-[720px] text-left">
         <TableHeader>
-          <TableRow className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
-            <TableHead scope="col" className="min-w-[280px] px-5 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <TableRow className="border-b border-border bg-slate-50 dark:bg-white/5">
+            <TableHead scope="col" className="min-w-[280px] px-5 py-3.5 text-sm font-bold uppercase tracking-wider text-muted-foreground">
               Módulo
             </TableHead>
             {roles.map((rol) => {
@@ -69,7 +69,7 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                     )}
                     {rol.nombre}
                   </span>
-                  <span className="mt-0.5 block text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <span className="mt-0.5 block text-sm font-medium text-slate-400 dark:text-slate-500">
                     {bloqueada ? (
                       <span title="Columna bloqueada con acceso total">
                         {ROL_SUBTITULO[rol.codigo]} · No editable
@@ -87,7 +87,7 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
           {modulos.map((modulo) => {
             const colapsado = colapsados.has(modulo);
             return (
-              <TableRow key={modulo} className="border-t border-slate-200 first:border-t-0 dark:border-white/10">
+              <TableRow key={modulo} className="border-t border-border first:border-t-0">
                 <TableCell className="px-5 py-2">
                   <Button
                     type="button"
@@ -101,9 +101,9 @@ export function MatrizTable({ roles, modulos, nivelDe, bloqueoDe, onCiclar }: Ma
                       className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", colapsado && "-rotate-90")}
                     />
                     <span>
-                      <span className="block text-sm font-extrabold text-slate-800 dark:text-slate-100">{etiquetaModulo(modulo)}</span>
+                      <span className="block text-sm font-extrabold text-foreground">{etiquetaModulo(modulo)}</span>
                       {!colapsado && (
-                        <span className="mt-0.5 block text-xs font-normal text-slate-400 dark:text-slate-500">{descripcionModulo(modulo)}</span>
+                        <span className="mt-0.5 block text-sm font-normal text-slate-400 dark:text-slate-500">{descripcionModulo(modulo)}</span>
                       )}
                     </span>
                   </Button>

@@ -59,8 +59,8 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
                 <strong>2. Identidad única Google:</strong> la plataforma utiliza exclusivamente Google Identity
                 Services (SSO); no se almacenan contraseñas locales.
               </p>
-              <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3">
-                <AlertDescription className="text-sm text-amber-900">
+              <Alert className="rounded-xl border-amber-500/30 bg-amber-500/10 p-3">
+                <AlertDescription className="text-sm text-amber-200">
                   Texto legal completo pendiente de definición por la administración del centro.
                 </AlertDescription>
               </Alert>
@@ -76,8 +76,8 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
                 <strong>2. Uso de datos:</strong> tus datos no se comparten con terceros ni se utilizan con fines
                 distintos a la gestión del centro.
               </p>
-              <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3">
-                <AlertDescription className="text-sm text-amber-900">
+              <Alert className="rounded-xl border-amber-500/30 bg-amber-500/10 p-3">
+                <AlertDescription className="text-sm text-amber-200">
                   Texto legal completo pendiente de definición por la administración del centro.
                 </AlertDescription>
               </Alert>

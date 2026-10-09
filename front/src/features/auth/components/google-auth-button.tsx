@@ -29,7 +29,7 @@ export function GoogleAuthButton({ isLoading, onLogin, onRetry, hasError, isConn
         className={cn(BASE_CLASSES, "cursor-wait border-slate-200 bg-slate-100 text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-slate-300")}
       >
         <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
-        <span>Iniciando sesión...</span>
+        <span>Iniciando sesión…</span>
       </div>
     );
   }

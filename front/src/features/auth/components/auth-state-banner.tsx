@@ -43,14 +43,14 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
 
   if (isAccessDenied) {
     return (
-      <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-amber-200 bg-amber-50 [&>svg]:bg-amber-100 [&>svg]:text-amber-800")}>
+      <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 [&>svg]:bg-amber-100 [&>svg]:text-amber-800 dark:[&>svg]:bg-amber-500/20 dark:[&>svg]:text-amber-300")}>
         <XCircle aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-0.5">
-          <AlertTitle className="text-sm font-bold leading-snug text-amber-900">Acceso no habilitado</AlertTitle>
-          <AlertDescription className="text-sm text-amber-800">
+          <AlertTitle className="text-sm font-bold leading-snug text-amber-900 dark:text-amber-200">Acceso no habilitado</AlertTitle>
+          <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
             Tu cuenta no está habilitada. Contactá al centro para solicitar acceso.
             <br />
-            <BotonBanner onClick={onContact} className="text-amber-900">
+            <BotonBanner onClick={onContact} className="text-amber-900 dark:text-amber-200">
               Contactar administración MiFR
             </BotonBanner>
           </AlertDescription>
@@ -78,14 +78,14 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
   }
 
   return (
-    <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-rose-200 bg-rose-50 [&>svg]:bg-rose-100 [&>svg]:text-rose-700")}>
+    <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 [&>svg]:bg-rose-100 [&>svg]:text-rose-700 dark:[&>svg]:bg-rose-500/20 dark:[&>svg]:text-rose-300")}>
       <AlertTriangle aria-hidden="true" />
       <div className="min-w-0 flex-1 space-y-0.5">
-        <AlertTitle className="text-sm font-bold leading-snug text-rose-900">No pudimos iniciar sesión</AlertTitle>
-        <AlertDescription className="text-sm text-rose-800">
+        <AlertTitle className="text-sm font-bold leading-snug text-rose-900 dark:text-rose-200">No pudimos iniciar sesión</AlertTitle>
+        <AlertDescription className="text-sm text-rose-800 dark:text-rose-300">
           {MENSAJES_ERROR[code] ?? MENSAJE_GENERICO}
           <br />
-          <BotonBanner onClick={onRetry} className="text-rose-900">
+          <BotonBanner onClick={onRetry} className="text-rose-900 dark:text-rose-200">
             Reintentar ahora
           </BotonBanner>
         </AlertDescription>

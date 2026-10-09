@@ -52,7 +52,7 @@ export function AuthFormBlock({
         className={buttonClassName}
       />
       <p className={cn("mt-4 text-center text-sm font-medium text-slate-600 dark:text-slate-400", hintClassName)}>
-        {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
+        {isLoading ? "Conectando con Google Identity Services…" : "Usá tu cuenta de Google"}
       </p>
       {showRetry && (
         <Button

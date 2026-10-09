@@ -9,7 +9,7 @@ export function MatrizSkeleton() {
       <MatrizToolbar />
       <div className="flex flex-col gap-3" aria-hidden="true">
         {[0, 1, 2].map((modulo) => (
-          <Card key={modulo} className="overflow-hidden rounded-2xl border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-surface-low">
+          <Card key={modulo} className="overflow-hidden rounded-2xl border-border bg-white p-4 dark:bg-surface-low">
             <CardContent className="p-0">
               <Skeleton className="h-5 w-40 rounded bg-slate-200 dark:bg-white/10" />
               <div className="mt-3 flex flex-col gap-2.5">

@@ -32,7 +32,7 @@ const MODALIDADES: { valor: ModalidadActividad; titulo: string; detalle: string;
 ];
 
 const CLASE_INPUT =
-  "rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 font-semibold text-slate-800 focus:border-[#E91E82] focus:ring-2 focus:ring-pink-100 focus:bg-white dark:border-white/15 dark:bg-white/5 dark:text-slate-100 dark:focus:bg-white/10";
+  "rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 font-semibold text-foreground focus:border-primary focus:ring-2 focus:ring-pink-100 focus:bg-white dark:border-white/15 dark:bg-white/5 dark:focus:bg-white/10";
 
 function Campo({ id, etiqueta, error, children }: { id: string; etiqueta: ReactNode; error?: string; children: ReactNode }) {
   return (
@@ -94,14 +94,14 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
           evento.preventDefault();
           (actividad === null ? codigoRef : nombreRef).current?.focus();
         }}
-        className="my-auto flex max-h-[90dvh] w-full max-w-[640px] flex-col gap-0 overflow-hidden rounded-3xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl dark:border-white/10 dark:bg-surface-low"
+        className="my-auto flex max-h-[90dvh] w-full max-w-[640px] flex-col gap-0 overflow-hidden rounded-3xl border-border bg-white p-0 shadow-2xl sm:rounded-3xl dark:bg-surface-low"
       >
         <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-6 dark:border-white/10 dark:from-white/5 dark:to-surface-low">
           <div>
             <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-white">
               {actividad ? "Editar actividad" : "Nueva actividad"}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+            <DialogDescription className="text-sm text-muted-foreground">
               Datos, modalidad y cupo de la disciplina.
             </DialogDescription>
           </div>
@@ -130,11 +130,11 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <Campo
                 id="actividad-codigo"
-                etiqueta={<>Código <span className="text-[#E91E82]">*</span></>}
+                etiqueta={<>Código <span className="text-primary">*</span></>}
                 error={errores.codigo}
               >
                 <Input
-                  id="actividad-codigo"
+                  id="actividad-codigo" autoComplete="off"
                   ref={codigoRef}
                   type="text"
                   value={codigo}
@@ -150,11 +150,11 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
 
               <Campo
                 id="actividad-nombre"
-                etiqueta={<>Nombre <span className="text-[#E91E82]">*</span></>}
+                etiqueta={<>Nombre <span className="text-primary">*</span></>}
                 error={errores.nombre}
               >
                 <Input
-                  id="actividad-nombre"
+                  id="actividad-nombre" autoComplete="off"
                   ref={nombreRef}
                   type="text"
                   value={nombre}
@@ -174,7 +174,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               error={errores.descripcion}
             >
               <Textarea
-                id="actividad-descripcion"
+                id="actividad-descripcion" autoComplete="off"
                 rows={3}
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -185,7 +185,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
 
             <fieldset className="space-y-2">
               <legend className="block text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Modalidad <span className="text-[#E91E82]">*</span>
+                Modalidad <span className="text-primary">*</span>
               </legend>
               <RadioGroup
                 value={modalidad}
@@ -199,7 +199,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
                     className={cn(
                       "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border-2 p-3.5 transition-all",
                       modalidad === valor
-                        ? "border-[#E91E82] bg-pink-50/60 shadow-sm dark:bg-pink-500/10"
+                        ? "border-primary bg-pink-50/60 shadow-sm dark:bg-pink-500/10"
                         : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/15 dark:bg-transparent",
                     )}
                   >
@@ -219,7 +219,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               id="actividad-cupo"
               etiqueta={
                 modalidad === "PERSONALIZADA" ? (
-                  <>Cupo máximo <span className="text-[#E91E82]">*</span></>
+                  <>Cupo máximo <span className="text-primary">*</span></>
                 ) : (
                   <>Cupo máximo <span className="font-normal lowercase text-slate-400">(vacío = sin límite)</span></>
                 )
@@ -227,7 +227,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               error={errores.cupoMaximo}
             >
               <Input
-                id="actividad-cupo"
+                id="actividad-cupo" autoComplete="off"
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -254,9 +254,9 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             <Button
               type="submit"
               disabled={guardando}
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#E91E82] px-6 text-sm font-extrabold text-white shadow-md shadow-[#E91E82]/30 transition-all hover:bg-[#BC1266] sm:w-auto"
+              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary px-6 text-sm font-extrabold text-white shadow-md shadow-primary/30 transition-all hover:bg-primary-dark sm:w-auto"
             >
-              {guardando ? "Guardando..." : "Guardar actividad"}
+              {guardando ? "Guardando…" : "Guardar actividad"}
             </Button>
           </div>
         </form>

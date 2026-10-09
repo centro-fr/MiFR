@@ -5,6 +5,7 @@ export type DiaSemana = "LUNES" | "MARTES" | "MIERCOLES" | "JUEVES" | "VIERNES" 
 export interface TemaHorario {
   primary: string; // Color principal (texto / bordes)
   bg: string; // Fondo claro y suave de la tarjeta
+  bgOscuro: string; // Fondo de la tarjeta en tema oscuro
   border: string; // Borde de la tarjeta
   badgeBg: string; // Fondo del badge de profesora
   badgeText: string; // Texto del badge de profesora

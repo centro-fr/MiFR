@@ -24,7 +24,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-dark to-primary text-xs font-extrabold tracking-wider text-white shadow-sm"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-dark to-primary text-sm font-extrabold tracking-wider text-white shadow-sm"
           >
             FR
           </span>

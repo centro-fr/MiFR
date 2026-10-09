@@ -175,12 +175,12 @@ export const HorariosPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
           {cargando ? (
             <>
-              <Loader2 aria-hidden="true" className="w-8 h-8 text-[#E91E82] animate-spin" />
-              <p className="text-sm font-semibold text-slate-600">Cargando el cronograma…</p>
+              <Loader2 aria-hidden="true" className="w-8 h-8 text-primary animate-spin" />
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Cargando el cronograma…</p>
             </>
           ) : (
             <>
-              <p role="alert" className="text-sm font-semibold text-slate-700">
+              <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {mensajeDeErrorApi(errorCarga, 'No se pudo cargar el cronograma.')}
               </p>
               <Button type="button" onClick={reintentarCarga} className="min-h-[44px] px-5">
@@ -196,20 +196,20 @@ export const HorariosPage: React.FC = () => {
   return (
     <OwnerLayout>
       {/* CONTENIDO PRINCIPAL */}
-      <div className="flex flex-col bg-slate-50/50 min-w-0">
+      <div className="flex flex-col bg-slate-50/50 dark:bg-white/5 min-w-0">
         {/* ENCABEZADO */}
-        <header className="bg-white border-b border-slate-200 px-4 py-4 md:px-7 md:py-5">
+        <header className="bg-card border-b border-border px-4 py-4 md:px-7 md:py-5">
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-3.5 flex-wrap">
-                <h1 className="text-2xl xl:text-3xl font-black text-[#181C26] tracking-tight">
+                <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
                   Horarios
                 </h1>
-                <Badge variant="outline" className="rounded-full border-pink-100 bg-pink-50 px-3 py-1 text-sm font-bold text-[#E91E82] shadow-2xs">
+                <Badge variant="outline" className="rounded-full border-pink-100 dark:border-primary/30 bg-pink-50 dark:bg-primary/15 px-3 py-1 text-sm font-bold text-primary shadow-2xs">
                   {totalHorarios} clases asignadas
                 </Badge>
               </div>
-              <p className="text-sm text-slate-500 mt-1 font-medium leading-relaxed">
+              <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
                 Armá y gestioná el cronograma semanal del salón.
               </p>
             </div>
@@ -217,19 +217,19 @@ export const HorariosPage: React.FC = () => {
         </header>
 
         {/* BARRA DE FILTROS RESPONSIVE */}
-        <div className="bg-white border-b border-slate-200 px-4 md:px-7 py-3">
+        <div className="bg-card border-b border-border px-4 md:px-7 py-3">
           {/* Fila compacta de móvil */}
           <div className="flex items-center justify-between md:hidden">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-slate-100 px-3.5 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 [&_svg]:size-3.5"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-slate-100 dark:bg-white/10 px-3.5 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 [&_svg]:size-3.5"
             >
-              <Filter className="w-3.5 h-3.5 text-slate-500" />
+              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Filtros</span>
               {activeFiltersCount > 0 && (
-                <Badge variant="outline" className="flex h-5 w-5 items-center justify-center rounded-full border-0 bg-[#E91E82] p-0 text-xs font-extrabold text-white">
+                <Badge variant="outline" className="flex h-5 w-5 items-center justify-center rounded-full border-0 bg-primary p-0 text-sm font-extrabold text-white">
                   {activeFiltersCount}
                 </Badge>
               )}
@@ -245,7 +245,7 @@ export const HorariosPage: React.FC = () => {
                 type="button"
                 variant="link"
                 onClick={resetFilters}
-                className="h-auto min-h-[44px] px-0 text-sm font-bold text-[#E91E82]"
+                className="h-auto min-h-[44px] px-0 text-sm font-bold text-primary"
               >
                 Limpiar filtros
               </Button>
@@ -257,7 +257,7 @@ export const HorariosPage: React.FC = () => {
             className={`${isMobileFiltersOpen ? 'flex' : 'hidden md:flex'
               } flex-col md:flex-row flex-wrap items-stretch md:items-center justify-start gap-2.5 md:gap-3.5 mt-3 md:mt-0`}
           >
-            <div className="hidden md:flex items-center gap-2 text-sm font-bold text-slate-700 mr-1">
+            <div className="hidden md:flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200 mr-1">
               <Filter className="w-4 h-4 text-slate-400" />
               <span>Filtros:</span>
             </div>
@@ -266,7 +266,7 @@ export const HorariosPage: React.FC = () => {
             <Select value={filtroActividad} onValueChange={setFiltroActividad}>
               <SelectTrigger
                 aria-label="Filtrar por disciplina"
-                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+                className="w-full min-h-[44px] rounded-xl border-border bg-slate-50 dark:bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 md:w-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -284,7 +284,7 @@ export const HorariosPage: React.FC = () => {
             <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
               <SelectTrigger
                 aria-label="Filtrar por profesora"
-                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+                className="w-full min-h-[44px] rounded-xl border-border bg-slate-50 dark:bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 md:w-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -302,7 +302,7 @@ export const HorariosPage: React.FC = () => {
             <Select value={filtroTipo} onValueChange={setFiltroTipo}>
               <SelectTrigger
                 aria-label="Filtrar por modalidad"
-                className="w-full min-h-[44px] rounded-xl border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 md:w-auto"
+                className="w-full min-h-[44px] rounded-xl border-border bg-slate-50 dark:bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 md:w-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -318,7 +318,7 @@ export const HorariosPage: React.FC = () => {
                 type="button"
                 variant="ghost"
                 onClick={resetFilters}
-                className="hidden min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-[#E91E82] hover:bg-pink-50 hover:text-[#BC1266] md:inline-flex [&_svg]:size-3.5"
+                className="hidden min-h-[44px] items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-primary hover:bg-pink-50 dark:hover:bg-primary/20 hover:text-primary-dark dark:hover:text-pink-300 md:inline-flex [&_svg]:size-3.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Limpiar filtros
@@ -326,7 +326,7 @@ export const HorariosPage: React.FC = () => {
             )}
 
             {isFilterActive && (
-              <Badge variant="outline" className="ml-auto hidden rounded-xl border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 md:inline-flex">
+              <Badge variant="outline" className="ml-auto hidden rounded-xl border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-sm font-bold text-amber-700 dark:text-amber-300 md:inline-flex">
                 Modo consulta activo
               </Badge>
             )}
@@ -334,7 +334,7 @@ export const HorariosPage: React.FC = () => {
         </div>
 
         {/* REFERENCIA DE COLORES: salen de la modalidad de la actividad */}
-        <div className="px-4 md:px-7 py-2.5 bg-white/80 border-b border-slate-200 flex items-center gap-4 text-sm font-bold text-slate-600">
+        <div className="px-4 md:px-7 py-2.5 bg-white/80 dark:bg-black/30 border-b border-border flex items-center gap-4 text-sm font-bold text-slate-600 dark:text-slate-300">
           <span className="flex items-center gap-1.5">
             <span aria-hidden="true" className="w-3 h-3 rounded-full bg-[#3B82F6]" />
             Grupal
@@ -353,7 +353,7 @@ export const HorariosPage: React.FC = () => {
               <Button
                 type="button"
                 onClick={() => handleOpenCreate('LUNES', '08:00')}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#E91E82] to-[#BC1266] px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:from-[#BC1266] hover:to-[#900e4e] hover:shadow-md"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:from-primary-dark hover:to-[#900e4e] hover:shadow-md"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Nuevo Horario</span>
@@ -362,22 +362,22 @@ export const HorariosPage: React.FC = () => {
 
             {/* MENSAJE CUANDO EL CRONOGRAMA ESTÁ VACÍO */}
             {totalHorarios === 0 ? (
-              <Card className="mb-5 rounded-2xl border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-white to-pink-50/70 p-4 shadow-xs sm:p-5">
+              <Card className="mb-5 rounded-2xl border-amber-200/90 dark:border-amber-500/30 bg-gradient-to-r from-amber-50/90 dark:from-amber-500/10 via-white dark:via-card to-pink-50/70 dark:to-primary/10 p-4 shadow-xs sm:p-5">
                 <CardContent className="flex flex-col items-center justify-between gap-4 p-0 sm:flex-row">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
                       <CalendarX className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-extrabold text-slate-900">
+                        <h3 className="text-sm font-extrabold text-foreground">
                           Cronograma vacío
                         </h3>
-                        <Badge variant="outline" className="rounded-full border-0 bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                        <Badge variant="outline" className="rounded-full border-0 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 text-sm font-bold text-amber-800 dark:text-amber-200">
                           Sin clases activas
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                         Actualmente no hay ninguna clase programada. Asigná la primera clase semanal haciendo clic en <strong>"+ Nueva clase"</strong>.
                       </p>
                     </div>
@@ -393,7 +393,7 @@ export const HorariosPage: React.FC = () => {
                 </CardContent>
               </Card>
             ) : isFilterActive && horariosMostrados.length === 0 ? (
-              <Alert className="mb-5 flex items-center justify-between gap-3 rounded-2xl border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <Alert className="mb-5 flex items-center justify-between gap-3 rounded-2xl border-border bg-slate-50 dark:bg-white/5 p-4 text-sm text-slate-600 dark:text-slate-300">
                 <AlertDescription>
                   No se encontraron clases programadas con los filtros seleccionados.
                 </AlertDescription>
@@ -401,7 +401,7 @@ export const HorariosPage: React.FC = () => {
                   type="button"
                   variant="link"
                   onClick={resetFilters}
-                  className="h-auto shrink-0 px-0 text-sm font-bold text-[#E91E82]"
+                  className="h-auto shrink-0 px-0 text-sm font-bold text-primary"
                 >
                   Restablecer filtros
                 </Button>
@@ -423,7 +423,7 @@ export const HorariosPage: React.FC = () => {
             </div>
 
             {/* VISTA MOBILE (LISTA TOUCH DIARIA, SIN ARRASTRE) */}
-            <div className="block xl:hidden bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="block xl:hidden bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
               <CronogramaListMobile
                 horarios={horariosMostrados}
                 onEdit={handleEdit}

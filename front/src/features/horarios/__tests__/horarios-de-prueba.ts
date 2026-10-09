@@ -63,6 +63,7 @@ export function crearHorarioFrontend(overrides?: Partial<Horario>): Horario {
     tema: {
       primary: "text-blue-500",
       bg: "bg-blue-50",
+      bgOscuro: "bg-blue-950",
       border: "border-blue-200",
       badgeBg: "bg-blue-100",
       badgeText: "text-blue-800",

@@ -3,6 +3,10 @@ import { create } from "zustand";
 export type Tema = "claro" | "oscuro";
 
 const CLAVE_TEMA = "mifr:tema";
+/** Clase temporal en <html> que activa la transición de colores (ver index.css). */
+const CLASE_TRANSICION = "cambiando-tema";
+const DURACION_TRANSICION_MS = 350;
+let temporizadorTransicion: number | undefined;
 
 function temaInicial(): Tema {
   try {
@@ -14,7 +18,16 @@ function temaInicial(): Tema {
   return "claro";
 }
 
-function aplicarTema(tema: Tema): void {
+/** Solo durante el cambio: así la carga inicial no anima y las transiciones propias de cada componente no se pisan el resto del tiempo. */
+function habilitarTransicionTemporal(): void {
+  const raiz = document.documentElement;
+  raiz.classList.add(CLASE_TRANSICION);
+  window.clearTimeout(temporizadorTransicion);
+  temporizadorTransicion = window.setTimeout(() => raiz.classList.remove(CLASE_TRANSICION), DURACION_TRANSICION_MS);
+}
+
+function aplicarTema(tema: Tema, animar = false): void {
+  if (animar) habilitarTransicionTemporal();
   document.documentElement.classList.toggle("dark", tema === "oscuro");
   document.documentElement.style.colorScheme = tema === "oscuro" ? "dark" : "light";
   try {
@@ -34,7 +47,7 @@ export const useThemeStore = create<ThemeStore>()((set) => ({
   alternarTema: () =>
     set((estado) => {
       const siguiente: Tema = estado.tema === "oscuro" ? "claro" : "oscuro";
-      aplicarTema(siguiente);
+      aplicarTema(siguiente, true);
       return { tema: siguiente };
     }),
 }));

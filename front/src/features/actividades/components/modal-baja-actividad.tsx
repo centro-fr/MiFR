@@ -30,13 +30,13 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="max-w-md space-y-4 rounded-2xl border-slate-200 p-6 shadow-2xl sm:rounded-2xl dark:border-white/10 dark:bg-surface-low">
+      <AlertDialogContent className="max-w-md space-y-4 rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
         <AlertDialogHeader className="space-y-4">
           <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 font-black text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
             <TriangleAlert className="h-5 w-5" />
           </div>
           <div>
-            <AlertDialogTitle className="text-base font-extrabold text-[#181C26] dark:text-white">
+            <AlertDialogTitle className="text-base font-extrabold text-dark dark:text-white">
               ¿Dar de baja esta actividad?
             </AlertDialogTitle>
             <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">

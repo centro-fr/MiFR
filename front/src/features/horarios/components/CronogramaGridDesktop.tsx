@@ -1,11 +1,10 @@
 import React, { useMemo, useState, useRef } from 'react';
 import type { DiaSemana, Horario } from '../../../types/horarios';
 import { timeToMinutes } from '../utils/cronograma';
-import { textoCupo } from '../utils/cupo';
-import { Plus, Pencil, Trash2, ArrowLeftRight, Move } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Plus, ArrowLeftRight, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { TarjetaHorario } from './TarjetaHorario';
 
 interface CronogramaGridDesktopProps {
   horarios: Horario[];
@@ -99,18 +98,18 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
   if (totalSlots === 0) {
     return (
-      <Card className="w-full overflow-hidden rounded-2xl border-slate-200 shadow-xs">
+      <Card className="w-full overflow-hidden rounded-2xl border-border shadow-xs">
         {/* Cabecera de días */}
-        <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
-          <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
+        <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-border bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
+          <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
             Horario
           </div>
           {DIAS_COLUMNAS.map((dia) => (
             <div
               key={dia.id}
-              className="p-3 text-center border-r last:border-r-0 border-slate-200 flex items-center justify-center"
+              className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
             >
-              <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
+              <span className="text-sm font-bold uppercase tracking-wider text-foreground">
                 {dia.label}
               </span>
             </div>
@@ -118,14 +117,14 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
         </div>
 
         {/* Estado vacío sin franjas */}
-        <div className="py-16 px-6 text-center bg-slate-50/30 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3 shadow-2xs">
+        <div className="py-16 px-6 text-center bg-slate-50/30 dark:bg-white/[0.03] flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-400 mb-3 shadow-2xs">
             <Plus className="w-6 h-6" />
           </div>
-          <p className="text-sm font-bold text-slate-800">
+          <p className="text-sm font-bold text-foreground">
             Cronograma sin franjas horarias
           </p>
-          <p className="text-sm text-slate-500 max-w-sm mt-1 leading-relaxed">
+          <p className="text-sm text-muted-foreground max-w-sm mt-1 leading-relaxed">
             No hay clases asignadas actualmente. El rango horario del cronograma se ajustará automáticamente a partir del horario de la primera clase que agregues.
           </p>
         </div>
@@ -134,20 +133,20 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
   }
 
   return (
-      <Card className="w-full overflow-hidden rounded-2xl border-slate-200 shadow-xs">
+      <Card className="w-full overflow-hidden rounded-2xl border-border shadow-xs">
       <div className="overflow-x-auto">
         <div className="min-w-[760px]">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-slate-200 bg-slate-50/95 sticky top-0 z-20">
-        <div className="p-3 text-center border-r border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center justify-center">
+          <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-border bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
+        <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
           Horario
         </div>
         {DIAS_COLUMNAS.map((dia) => (
           <div
             key={dia.id}
-            className="p-3 text-center border-r last:border-r-0 border-slate-200 flex items-center justify-center"
+            className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
           >
-            <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
+            <span className="text-sm font-bold uppercase tracking-wider text-foreground">
               {dia.label}
             </span>
           </div>
@@ -158,13 +157,13 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] text-sm">
         {/* COLUMNA 0: ETIQUETAS DE HORAS */}
         <div
-          className="border-r border-slate-200/60 bg-slate-50/70 select-none grid"
+          className="border-r border-slate-200/60 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 select-none grid"
           style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
         >
           {franjasHorarias.map((franja) => (
             <div
               key={franja.label}
-              className="h-[104px] p-2 text-center font-bold text-[#181C26] text-sm border-b border-slate-100 flex items-center justify-center"
+              className="h-[104px] p-2 text-center font-bold text-dark dark:text-white text-sm border-b border-slate-100 dark:border-white/10 flex items-center justify-center"
             >
               {franja.label}
             </div>
@@ -175,7 +174,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
         {DIAS_COLUMNAS.map((dia) => (
           <div
             key={dia.id}
-            className="border-r last:border-r-0 border-slate-200/60 grid relative"
+            className="border-r last:border-r-0 border-slate-200/60 dark:border-white/10 grid relative"
             style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
           >
             {franjasHorarias.map((franja, slotIndex) => {
@@ -282,192 +281,40 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                         setDraggedHorarioId(null);
                       }}
                       onClick={() => onEdit(horarioEnSlot)}
-                      className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border-0 shadow-xs group relative overflow-hidden select-none ${
+                      className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border-0 bg-(--tema-bg) dark:bg-(--tema-bg-oscuro) shadow-xs group relative overflow-hidden select-none ${
                         isSingleSlot ? 'p-2.5' : 'p-3.5'
                       } ${
                         draggedHorarioId === horarioEnSlot.id
-                          ? 'opacity-30 scale-95 border-2 border-dashed border-[#E91E82]'
+                          ? 'opacity-30 scale-95 border-2 border-dashed border-primary'
                           : ''
                       } ${
                         dragOverCardId === horarioEnSlot.id
-                          ? 'ring-4 ring-[#E91E82] scale-[1.02] shadow-xl'
+                          ? 'ring-4 ring-primary scale-[1.02] shadow-xl'
                           : 'hover:-translate-y-0.5'
                       }`}
                       style={{
-                        backgroundColor: theme.bg,
-                      }}
+                        '--tema-bg': theme.bg,
+                        '--tema-bg-oscuro': theme.bgOscuro,
+                      } as React.CSSProperties}
                     >
                       {/* Overlay al arrastrar sobre esta tarjeta para Swap (con pointer-events-none para no romper drag) */}
                       <div
-                        className={`absolute inset-0 bg-[#E91E82]/95 backdrop-blur-xs z-30 flex flex-col items-center justify-center text-white p-2 text-center pointer-events-none transition-opacity duration-150 ${
+                        className={`absolute inset-0 bg-primary/95 backdrop-blur-xs z-30 flex flex-col items-center justify-center text-white p-2 text-center pointer-events-none transition-opacity duration-150 ${
                           dragOverCardId === horarioEnSlot.id ? 'opacity-100' : 'opacity-0'
                         }`}
                       >
                         <ArrowLeftRight className="w-5 h-5 mb-1 animate-bounce" />
-                        <span className="text-xs font-black leading-tight">Soltar para intercambiar</span>
-                        <span className="text-xs font-semibold text-pink-100">Swap de horarios</span>
+                        <span className="text-sm font-black leading-tight">Soltar para intercambiar</span>
+                        <span className="text-sm font-semibold text-pink-100">Swap de horarios</span>
                       </div>
 
-                      {/* Contenido de la tarjeta */}
-                      {isSingleSlot ? (
-                        <div className="flex-1 flex flex-col justify-between pointer-events-none min-h-0">
-                          {/* Cabecera compacta 1 hora */}
-                          <div className="flex items-center justify-between gap-1">
-                            <div className="flex items-center gap-1 min-w-0">
-                              <Badge
-                                 variant="outline"
-                                 className="max-w-[110px] truncate rounded-md border-0 px-1.5 py-0.5 text-xs font-black uppercase shadow-2xs"
-                                 style={{
-                                   backgroundColor: theme.badgeBg,
-                                   color: theme.badgeText,
-                                 }}
-                               >
-                                 {horarioEnSlot.profesoraNombre}
-                               </Badge>
-                              {!isFilterActive && (
-                                <span
-                                  className="text-slate-400 group-hover:text-slate-600 transition"
-                                  title="Arrastrá para mover a otra celda o sobre otra clase para intercambiar"
-                                >
-                                  <Move className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 pointer-events-auto">
-                              <span className="font-extrabold text-slate-800 tracking-tight text-[10.5px]">
-                                {horarioEnSlot.horaInicio} - {horarioEnSlot.horaFin} hs
-                              </span>
-                              <div className="hidden group-hover:flex items-center gap-0.5 ml-0.5">
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit(horarioEnSlot);
-                                  }}
-                                  className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-[#E91E82] [&_svg]:size-2.5"
-                                  title="Editar horario"
-                                  aria-label="Editar horario"
-                                >
-                                  <Pencil className="w-2.5 h-2.5 stroke-[2.5]" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(horarioEnSlot);
-                                  }}
-                                  className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-red-600 [&_svg]:size-2.5"
-                                  title="Eliminar horario"
-                                  aria-label="Eliminar horario"
-                                >
-                                  <Trash2 className="w-2.5 h-2.5 stroke-[2.5]" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Fila inferior: Nombre de actividad (izq) y Cupos (der) */}
-                          <div className="flex items-end justify-between gap-1.5 mt-auto pt-1">
-                            <div className="min-w-0 flex-1">
-                              <h4 className="font-black text-slate-900 text-sm leading-tight truncate">
-                                {horarioEnSlot.actividadNombre}
-                              </h4>
-                              <p className="font-semibold text-slate-700 truncate text-xs">
-                                {horarioEnSlot.actividadTipo === 'PERSONALIZADA'
-                                  ? 'Personalizada 1:1'
-                                  : 'Clase Grupal'}
-                              </p>
-                            </div>
-
-                            {/* Cupo alineado a la derecha */}
-                            <div className="text-right shrink-0 bg-white/80 backdrop-blur-2xs px-2 py-0.5 rounded-lg border border-black/5 shadow-2xs">
-                              <div className="text-xs font-bold text-slate-700 leading-tight">
-                                Cupo: <strong className="text-slate-900">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Multislot (>= 2 horas): diseño espacioso vertical */
-                        <>
-                          <div className="pointer-events-none">
-                            {/* Cabecera de la tarjeta */}
-                            <div className="flex items-center justify-between gap-1 flex-wrap mb-1.5">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <Badge
-                                    variant="outline"
-                                    className="max-w-[130px] truncate rounded-md border-0 px-2 py-0.5 text-xs font-black uppercase shadow-2xs"
-                                    style={{
-                                      backgroundColor: theme.badgeBg,
-                                      color: theme.badgeText,
-                                    }}
-                                  >
-                                    {horarioEnSlot.profesoraNombre}
-                                  </Badge>
-                                {!isFilterActive && (
-                                  <span
-                                    className="text-slate-400 group-hover:text-slate-600 transition"
-                                    title="Arrastrá para mover a otra celda o sobre otra clase para intercambiar"
-                                  >
-                                    <Move className="w-2.5 h-2.5" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 pointer-events-auto">
-                                <span className="font-extrabold text-slate-800 tracking-tight text-xs">
-                                  {horarioEnSlot.horaInicio} - {horarioEnSlot.horaFin} hs
-                                </span>
-                                <div className="hidden group-hover:flex items-center gap-0.5 ml-0.5">
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEdit(horarioEnSlot);
-                                    }}
-                                    className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-[#E91E82] [&_svg]:size-2.5"
-                                    title="Editar horario"
-                                    aria-label="Editar horario"
-                                  >
-                                    <Pencil className="w-2.5 h-2.5 stroke-[2.5]" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDelete(horarioEnSlot);
-                                    }}
-                                    className="h-5 w-5 rounded bg-white/80 p-1 text-slate-600 shadow-2xs transition hover:bg-white hover:text-red-600 [&_svg]:size-2.5"
-                                    title="Eliminar horario"
-                                    aria-label="Eliminar horario"
-                                  >
-                                    <Trash2 className="w-2.5 h-2.5 stroke-[2.5]" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-
-                            <h4 className="font-black text-slate-900 leading-snug text-sm line-clamp-2">
-                              {horarioEnSlot.actividadNombre}
-                            </h4>
-                             <p className="font-semibold text-slate-700 truncate text-xs mt-0.5">
-                              {horarioEnSlot.actividadTipo === 'PERSONALIZADA'
-                                ? 'Personalizada 1:1'
-                                : 'Clase Grupal'}
-                            </p>
-                          </div>
-
-                          {/* Pie de tarjeta multislot */}
-                           <div className="flex items-center border-t border-black/10 mt-auto font-medium pointer-events-none text-xs pt-2">
-                            <span className="text-slate-700">
-                              Cupo: <strong className="text-slate-900 font-bold">{textoCupo(horarioEnSlot.cupoMaximo)}</strong>
-                            </span>
-                          </div>
-                        </>
-                      )}
+                      <TarjetaHorario
+                        horario={horarioEnSlot}
+                        esCompacta={isSingleSlot}
+                        isFilterActive={isFilterActive}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                      />
                     </div>
                   </div>
                 );
@@ -479,7 +326,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                   <div
                     key={`free-${dia.id}-${franja.inicio}`}
                     style={{ gridRow: 'span 1' }}
-                    className="h-[104px] p-1.5 border-b border-slate-100 bg-slate-50/20 select-none"
+                    className="h-[104px] p-1.5 border-b border-slate-100 dark:border-white/10 bg-slate-50/20 dark:bg-white/[0.02] select-none"
                   />
                 );
               }
@@ -572,10 +419,10 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                     setDraggedHorarioId(null);
                   }}
                   onClick={() => onAddForCell(dia.id, franja.inicio, franja.fin)}
-                  className={`h-[104px] p-1.5 border-b border-slate-100 group transition relative flex items-center justify-center cursor-pointer select-none ${
+                  className={`h-[104px] p-1.5 border-b border-slate-100 dark:border-white/10 group transition relative flex items-center justify-center cursor-pointer select-none ${
                     isOverCell
-                      ? 'bg-pink-100/90 border-2 border-dashed border-[#E91E82]'
-                      : 'hover:bg-slate-100/60'
+                      ? 'bg-pink-100/90 dark:bg-[#3b1230] border-2 border-dashed border-primary'
+                      : 'hover:bg-slate-100/60 dark:hover:bg-white/10'
                   }`}
                   title={
                     isOverCell
@@ -585,7 +432,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                 >
                   {/* Indicador visual de soltar */}
                   <div
-                    className={`absolute inset-1 rounded-xl bg-pink-100/95 border-2 border-dashed border-[#E91E82] flex flex-col items-center justify-center text-[#E91E82] font-black text-xs gap-1 pointer-events-none transition-all duration-150 z-10 ${
+                    className={`absolute inset-1 rounded-xl bg-pink-100/95 dark:bg-[#3b1230] border-2 border-dashed border-primary flex flex-col items-center justify-center text-primary font-black text-sm gap-1 pointer-events-none transition-all duration-150 z-10 ${
                       isOverCell ? 'opacity-100 scale-100 shadow-inner' : 'opacity-0 scale-95'
                     }`}
                   >
@@ -599,7 +446,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                     size="icon"
                     tabIndex={-1}
                     aria-hidden="true"
-                    className={`pointer-events-none h-7 w-7 rounded-full bg-[#E91E82]/15 font-black text-[#E91E82] shadow-xs transition [&_svg]:size-4 ${
+                    className={`pointer-events-none h-7 w-7 rounded-full bg-primary/15 font-black text-primary shadow-xs transition [&_svg]:size-4 ${
                       isOverCell ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
                     }`}
                   >

@@ -162,10 +162,10 @@ function LoginSinConfigurar() {
     <main className="flex h-dvh items-center justify-center bg-canvas px-4">
       <Alert
         variant="destructive"
-        className="max-w-md rounded-2xl border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 [&>svg]:text-amber-600"
+        className="max-w-md rounded-2xl border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 [&>svg]:text-amber-600"
       >
         <AlertTitle>Falta configurar el login</AlertTitle>
-        <AlertDescription className="text-sm text-amber-900">
+        <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
           Definí <code>VITE_GOOGLE_CLIENT_ID</code>, o en desarrollo{" "}
           <code>VITE_LOGIN_DESARROLLO=true</code> (con <code>LOGIN_DESARROLLO=true</code> en el back) o{" "}
           <code>VITE_USE_MOCKS=true</code>.
