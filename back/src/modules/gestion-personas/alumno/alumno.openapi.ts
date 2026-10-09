@@ -13,6 +13,10 @@ import {
   crearAlumnoSchema,
   listarAlumnoQuerySchema,
 } from "./alumno.schemas.js";
+import {
+  inscripcionSchema,
+  resumenInscripcionSchema,
+} from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.openapi.js";
 
 const datosPersonalesSchema = z
   .object({
@@ -48,9 +52,25 @@ export const alumnoSchema = z
   })
   .openapi("Alumno");
 
+const alumnoEnListadoSchema = alumnoSchema
+  .extend({
+    inscripcion: resumenInscripcionSchema.nullable().openapi({
+      description: "Plan y profesora de la inscripción vigente más reciente; null si no tiene",
+    }),
+  })
+  .openapi("AlumnoEnListado");
+
+const fichaAlumnoSchema = alumnoSchema
+  .extend({
+    inscripciones: z.array(inscripcionSchema).openapi({
+      description: "Inscripciones vigentes (pre-inscriptas o activas) con plan, precio y horarios",
+    }),
+  })
+  .openapi("FichaAlumno");
+
 const paginaAlumnosSchema = z
   .object({
-    datos: z.array(alumnoSchema),
+    datos: z.array(alumnoEnListadoSchema),
     total: z.number().int(),
     limit: z.number().int(),
     offset: z.number().int(),
@@ -66,9 +86,8 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
   const tags = ["Alumnos"];
   const security = SEGURIDAD_BEARER;
   const alumno = respuestaJson("Alumno", alumnoSchema);
-  const temporalmentePropietaria =
-    "Por ahora solo la propietaria: la profesora va a ver a los alumnos a su cargo cuando existan las " +
-    "inscripciones.";
+  const aCargo =
+    "La propietaria ve a todos; una profesora, solo a los alumnos con una inscripción vigente a su cargo.";
 
   registro.registerPath({
     method: "get",
@@ -77,10 +96,11 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     security,
     summary: "Buscar alumnos",
     description:
-      `Requiere el permiso \`ALUMNOS_VER\`. ${temporalmentePropietaria} \`busqueda\` encuentra coincidencias ` +
+      `Requiere el permiso \`ALUMNOS_VER\`. ${aCargo} \`busqueda\` encuentra coincidencias ` +
       "parciales en el nombre y el apellido del alumno o de su tutor, sin distinguir acentos ni mayúsculas. " +
       "`dni` busca el DNI exacto. Los dados de baja no salen salvo con `incluirBajas=true` o `estado=BAJA`. " +
-      "Paginado con `limit` (por defecto 20, máximo 100) y `offset`.",
+      "`id_plan`, `id_profesora` e `id_actividad` filtran por la inscripción vigente. Cada fila trae su plan y " +
+      "profesora. Paginado con `limit` (por defecto 20, máximo 100) y `offset`.",
     request: { query: listarAlumnoQuerySchema },
     responses: {
       200: respuestaJson("Página de alumnos", paginaAlumnosSchema),
@@ -130,9 +150,14 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     tags,
     security,
     summary: "Ficha de un alumno",
-    description: `Requiere el permiso \`ALUMNOS_VER\`. ${temporalmentePropietaria}`,
+    description:
+      `Requiere el permiso \`ALUMNOS_VER\`. ${aCargo} Con un alumno que no tiene a cargo, la profesora ` +
+      "recibe 403. La ficha trae las inscripciones vigentes con su plan, precio, profesora y horarios.",
     request: { params: alumnoIdParamSchema },
-    responses: { 200: alumno, ...respuestasDeError(400, 401, 403, 404) },
+    responses: {
+      200: respuestaJson("Ficha del alumno", fichaAlumnoSchema),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
   });
 
   registro.registerPath({
@@ -142,7 +167,9 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     security,
     summary: "Modificar los datos de un alumno",
     description:
-      `Requiere el permiso \`ALUMNOS_EDITAR\`. ${temporalmentePropietaria} ${reglasDeEdad} Las reglas se ` +
+      `Requiere el permiso \`ALUMNOS_EDITAR\`. ${aCargo} La profesora solo modifica contacto (\`telefono\`, ` +
+      "`direccion`, `cont_emerg_nombre`, `cont_emerg_telefono`) y `observaciones`; otro campo responde 403. " +
+      `${reglasDeEdad} Las reglas se ` +
       "revisan con los datos que resultan del cambio: si el alumno ya es mayor, el tutor se quita. El plan y " +
       "los horarios se cambian desde la inscripción. Queda registrado quién hizo el cambio.",
     request: {

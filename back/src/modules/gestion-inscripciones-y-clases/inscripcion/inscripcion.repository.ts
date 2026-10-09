@@ -174,6 +174,14 @@ export class InscripcionRepository {
     });
   }
 
+  listarVigentesPorAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.prisma.inscripciones.findMany({
+      where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
+      include: INCLUIR_DATOS_INSCRIPCION,
+      orderBy: [{ fecha_inicio: "desc" }, { id_inscripcion: "desc" }],
+    });
+  }
+
   async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionConDatos | null> {
     return this.prisma.inscripciones.findFirst({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },

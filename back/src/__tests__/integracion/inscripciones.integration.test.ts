@@ -131,6 +131,7 @@ describe("PI-20: preinscripción y cupos", () => {
   });
 
   it("valida exclusividad de actividad, profesora única y máximo semanal", async () => {
+    const inscripcionesDeDemo = await prisma.inscripciones.count();
     const alumno = await crearAlumno(prisma);
     const funcionales = await horariosFuncionales();
     const planExclusivo = datosDemo.idPlan.get("Personalizado 2 días")!;
@@ -167,7 +168,7 @@ describe("PI-20: preinscripción y cupos", () => {
     expect(profesoraInconsistente.status).toBe(400);
     expect(excedeClasesSemanales.status).toBe(400);
     expect(horarioCarla.id_horario).not.toBe(funcionales[0].id_horario);
-    expect(await prisma.inscripciones.count()).toBe(0);
+    expect(await prisma.inscripciones.count()).toBe(inscripcionesDeDemo);
   });
 });
 

@@ -70,7 +70,12 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     planService,
     inscripcionService,
   );
-  const gestionPersonas = new GestionPersonasService(profesorService, horarioService, alumnoService);
+  const gestionPersonas = new GestionPersonasService(
+    profesorService,
+    horarioService,
+    alumnoService,
+    inscripcionService,
+  );
 
   return {
     dependencias: {

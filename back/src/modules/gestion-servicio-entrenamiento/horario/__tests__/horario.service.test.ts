@@ -59,7 +59,11 @@ describe("HorarioService", () => {
   beforeEach(() => {
     repositorio = crearRepositorioMock();
     actividades = { buscarPorId: vi.fn().mockResolvedValue(actividad) };
-    profesoras = { buscarPorId: vi.fn().mockResolvedValue(profesora), listar: vi.fn() };
+    profesoras = {
+      buscarPorId: vi.fn().mockResolvedValue(profesora),
+      buscarPorUsuario: vi.fn(),
+      listar: vi.fn(),
+    };
     servicio = new HorarioService(repositorio as unknown as HorarioRepository, actividades, profesoras);
   });
 

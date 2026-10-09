@@ -3,6 +3,7 @@ import type { IAutorizacion } from "../../modules/gestion-usuarios/rol/interface
 import type { CodigoPermiso } from "../../modules/gestion-usuarios/rol/rol.catalogo.js";
 import type { IAutenticacion } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { ForbiddenError, UnauthorizedError } from "../errors/app-error.js";
+import type { Solicitante } from "../utils/solicitante.js";
 
 export interface UsuarioAutenticado {
   id_usuario: number;
@@ -16,6 +17,12 @@ declare global {
       usuario?: UsuarioAutenticado;
     }
   }
+}
+
+// Para el controller de una ruta que ya pasó por acceso.sesion.
+export function solicitanteDe(req: Request): Solicitante {
+  if (!req.usuario) throw new UnauthorizedError();
+  return { idUsuario: req.usuario.id_usuario, esPropietaria: req.usuario.roles.includes("PROPIETARIA") };
 }
 
 // Express 5 pasa al errorHandler tanto lo que se lanza como el rechazo de un middleware async,

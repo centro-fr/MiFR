@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, ForbiddenError } from "../../../../shared/errors/app-error.js";
+import type { Solicitante } from "../../../../shared/utils/solicitante.js";
 import type { IInfoAlumnos } from "../../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { Alumno } from "../../../gestion-personas/alumno/alumno.types.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
@@ -15,6 +16,8 @@ import type { InscripcionConDatos } from "../inscripcion.types.js";
 function crearMocks() {
   return {
     repositorio: {
+      listar: vi.fn().mockResolvedValue([]),
+      listarVigentesPorAlumno: vi.fn(),
       buscarPorId: vi.fn(),
       buscarVigentePorAlumno: vi.fn(),
       activar: vi.fn(),
@@ -30,7 +33,7 @@ function crearMocks() {
       precioVigente: vi.fn(),
     },
     horarios: { buscarPorIds: vi.fn() },
-    profesores: { buscarPorId: vi.fn() },
+    profesores: { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }) },
   };
 }
 
@@ -42,6 +45,9 @@ const plan = {
   id_actividad_exclusiva: null,
   fecha_baja: null,
 } as Plan;
+
+const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
+const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
 
 const alumnoDadoDeBaja = { id_alumno: 5, estado: "BAJA" } as Alumno;
 const horario = {
@@ -142,5 +148,48 @@ describe("InscripcionService", () => {
 
     await expect(servicio.reactivarAlumno(5, input)).rejects.toThrow(ConflictError);
     expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
+  });
+
+  describe("lo que ve cada uno (US-10)", () => {
+    it("listar no restringe a la propietaria", async () => {
+      await servicio.listar({ id_plan: 1 }, PROPIETARIA);
+
+      expect(mocks.repositorio.listar).toHaveBeenCalledWith({ id_plan: 1 });
+      expect(mocks.profesores.buscarPorUsuario).not.toHaveBeenCalled();
+    });
+
+    it("listar le deja a la profesora solo las inscripciones a su cargo", async () => {
+      await servicio.listar({ id_plan: 1 }, PROFESORA);
+
+      expect(mocks.profesores.buscarPorUsuario).toHaveBeenCalledWith(2);
+      expect(mocks.repositorio.listar).toHaveBeenCalledWith({ id_plan: 1, id_profesora: 3 });
+    });
+
+    it("listar no devuelve nada si la profesora filtra por otra o si no tiene perfil activo", async () => {
+      await expect(servicio.listar({ id_profesora: 9 }, PROFESORA)).resolves.toEqual([]);
+      mocks.profesores.buscarPorUsuario.mockResolvedValue(null);
+      await expect(servicio.listar({}, PROFESORA)).resolves.toEqual([]);
+      expect(mocks.repositorio.listar).not.toHaveBeenCalled();
+    });
+
+    it("obtenerPara devuelve la inscripción a la propietaria y a la profesora a cargo", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcionActiva, id_profesora: 3 });
+
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({ id_inscripcion: 12 });
+      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toMatchObject({ id_inscripcion: 12 });
+    });
+
+    it("obtenerPara lanza ForbiddenError si la profesora no está a cargo", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcionActiva, id_profesora: 9 });
+
+      await expect(servicio.obtenerPara(12, PROFESORA)).rejects.toThrow(ForbiddenError);
+    });
+
+    it("listarVigentesDeAlumno pide al repositorio las vigentes del alumno", async () => {
+      mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcionActiva]);
+
+      await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([inscripcionActiva]);
+      expect(mocks.repositorio.listarVigentesPorAlumno).toHaveBeenCalledWith(5);
+    });
   });
 });

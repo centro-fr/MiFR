@@ -1,5 +1,11 @@
-import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
@@ -59,14 +65,35 @@ export class InscripcionService implements IInfoInscripciones {
     return this.resolverResultado(resultado);
   }
 
-  listar(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
-    return this.repositorio.listar(filtro);
+  // US-10: la profesora solo ve las inscripciones que tiene a cargo; la propietaria, todas.
+  async listar(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {
+    if (solicitante.esPropietaria) return this.repositorio.listar(filtro);
+
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (!profesora) return [];
+    if (filtro.id_profesora !== undefined && filtro.id_profesora !== profesora.id_profesora) return [];
+    return this.repositorio.listar({ ...filtro, id_profesora: profesora.id_profesora });
+  }
+
+  async obtenerPara(id: number, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    const inscripcion = await this.obtenerPorId(id);
+    if (solicitante.esPropietaria) return inscripcion;
+
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (profesora?.id_profesora !== inscripcion.id_profesora) {
+      throw new ForbiddenError("Solo puede ver las inscripciones que tiene a cargo");
+    }
+    return inscripcion;
   }
 
   async obtenerPorId(id: number): Promise<InscripcionConDatos> {
     const inscripcion = await this.repositorio.buscarPorId(id);
     if (!inscripcion) throw new NotFoundError("Inscripción no encontrada");
     return inscripcion;
+  }
+
+  listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.repositorio.listarVigentesPorAlumno(idAlumno);
   }
 
   async activar(id: number): Promise<InscripcionConDatos> {

@@ -43,7 +43,7 @@ const horarioSchema = z.object({
   }),
 });
 
-const inscripcionSchema = z
+export const inscripcionSchema = z
   .object({
     id_inscripcion: z.number().int(),
     id_alumno: z.number().int(),
@@ -99,6 +99,19 @@ const inscripcionSchema = z
   })
   .openapi("Inscripcion");
 
+export const resumenInscripcionSchema = z
+  .object({
+    id_alumno: z.number().int(),
+    id_inscripcion: z.number().int(),
+    estado: estadoInscripcionSchema,
+    id_plan: z.number().int(),
+    nombre_plan: z.string(),
+    id_profesora: z.number().int(),
+    nombre_profesora: z.string(),
+    ids_horarios: z.array(z.number().int()),
+  })
+  .openapi("ResumenInscripcion");
+
 const respuestas = respuestaJson("Inscripcion", inscripcionSchema);
 const propietariaEditar = "Requiere sesión, rol PROPIETARIA y permiso `ALUMNOS_EDITAR`.";
 const reglasDeAlta =
@@ -116,7 +129,8 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     security,
     summary: "Listar inscripciones",
     description:
-      "Requiere el permiso `ALUMNOS_VER`. Admite filtros por alumno, plan, profesora, actividad y estado.",
+      "Requiere el permiso `ALUMNOS_VER`. Admite filtros por alumno, plan, profesora, actividad y estado. " +
+      "Una profesora solo recibe las inscripciones que tiene a cargo; la propietaria, todas.",
     request: { query: listarInscripcionesQuerySchema },
     responses: {
       200: respuestaJson("Inscripciones", z.array(inscripcionSchema)),
@@ -152,7 +166,8 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Obtener una inscripción",
-    description: "Requiere el permiso `ALUMNOS_VER`.",
+    description:
+      "Requiere el permiso `ALUMNOS_VER`. Una profesora solo ve las inscripciones que tiene a cargo (si no, 403).",
     request: { params: inscripcionIdParamSchema },
     responses: { 200: respuestas, ...respuestasDeError(400, 401, 403, 404) },
   });

@@ -29,7 +29,14 @@ export class ProfesorService implements IInfoProfesores {
   }
 
   async buscarPorId(id: number): Promise<Profesora | null> {
-    const profesora = await this.repositorio.buscarPorId(id);
+    return this.siEstaActiva(await this.repositorio.buscarPorId(id));
+  }
+
+  async buscarPorUsuario(idUsuario: number): Promise<Profesora | null> {
+    return this.siEstaActiva(await this.repositorio.buscarPorUsuarioId(idUsuario));
+  }
+
+  private async siEstaActiva(profesora: Profesora | null): Promise<Profesora | null> {
     if (!profesora || profesora.fecha_baja !== null) return null;
 
     const usuario = await this.usuarios.obtenerPorId(profesora.id_usuario);

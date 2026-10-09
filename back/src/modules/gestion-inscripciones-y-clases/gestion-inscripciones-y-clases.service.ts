@@ -5,6 +5,7 @@ import type {
   DarDeBajaAlumnoInput,
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
+import type { Solicitante } from "../../shared/utils/solicitante.js";
 import type { InscripcionService } from "./inscripcion/inscripcion.service.js";
 import type { ILogicaInscripcionesYClases } from "./interface/i-logica-inscripciones-y-clases.js";
 import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";
@@ -16,12 +17,12 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     return this.inscripciones.crear(input);
   }
 
-  listarInscripciones(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
-    return this.inscripciones.listar(filtro);
+  listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {
+    return this.inscripciones.listar(filtro, solicitante);
   }
 
-  obtenerInscripcion(id: number): Promise<InscripcionConDatos> {
-    return this.inscripciones.obtenerPorId(id);
+  obtenerInscripcion(id: number, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    return this.inscripciones.obtenerPara(id, solicitante);
   }
 
   darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput): Promise<void> {

@@ -5,8 +5,9 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno, crearUsuario } from "./fabricas.js";
 
-// Casos PI-15 a PI-18 del plan de pruebas de integración: alta de alumnos mayores y menores con su
-// tutor (US-05, US-06), modificación (US-09) y búsqueda (US-10), sobre los datos de db:seed:demo.
+// Casos PI-15 a PI-18, PI-25 y PI-26 del plan de pruebas de integración: alta de alumnos mayores y
+// menores con su tutor (US-05, US-06), modificación (US-09) y búsqueda (US-10), sobre los datos de
+// db:seed:demo. En ese escenario Sofía Medina está a cargo de Lucía y Mateo Romero, de Carla.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;
 
@@ -31,7 +32,12 @@ const TUTORA = {
 };
 const TOMAS = { nombre: "Tomás", apellido: "Pérez", dni: "50111222", fecha_nacimiento: MENOR, tutor: TUTORA };
 
+const CARLA = "carla.ruiz@example.com";
+const DNI_SOFIA = "38111222";
+const DNI_MATEO = "52111222";
+
 let tokenMarina: string;
+let datosDemo: Awaited<ReturnType<typeof cargarDatosDemo>>;
 
 function como(token: string, metodo: "get" | "post" | "patch", ruta: string) {
   return request(app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
@@ -49,7 +55,7 @@ async function contarFilas() {
 // contra lo que había antes o filtran por sus propios nombres.
 beforeEach(async () => {
   await reiniciarBase(prisma);
-  await cargarDatosDemo(prisma);
+  datosDemo = await cargarDatosDemo(prisma);
   tokenMarina = await entorno.iniciarSesion(EMAIL_MULTIROL_DEMO);
 });
 afterAll(() => entorno.cerrar());
@@ -250,19 +256,103 @@ describe("PI-18: búsqueda y consulta de alumnos", () => {
       "Díaz",
     ]);
   });
+});
 
-  it("la profesora todavía no consulta ni edita alumnos", async () => {
-    const alumno = await crearAlumno(prisma, { apellido: "Pérez" });
-    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+function idsDe(respuesta: { body: { datos: { id_alumno: number }[] } }): number[] {
+  return respuesta.body.datos.map(({ id_alumno }) => id_alumno);
+}
 
+describe("PI-25: la profesora ve y edita solo a los alumnos a su cargo", () => {
+  let tokenLucia: string;
+  let sofia: number;
+  let mateo: number;
+
+  beforeEach(async () => {
+    tokenLucia = await entorno.iniciarSesion(LUCIA);
+    sofia = datosDemo.idAlumno.get(DNI_SOFIA)!;
+    mateo = datosDemo.idAlumno.get(DNI_MATEO)!;
+  });
+
+  it("lista y abre la ficha solo de sus alumnos, con su plan y horarios", async () => {
     const listado = await como(tokenLucia, "get", "/alumnos");
-    const ficha = await como(tokenLucia, "get", `/alumnos/${alumno.id_alumno}`);
-    const edicion = await como(tokenLucia, "patch", `/alumnos/${alumno.id_alumno}`).send({
+    const fichaPropia = await como(tokenLucia, "get", `/alumnos/${sofia}`);
+    const fichaAjena = await como(tokenLucia, "get", `/alumnos/${mateo}`);
+    const filtroPorOtra = await como(
+      tokenLucia,
+      "get",
+      `/alumnos?id_profesora=${datosDemo.idProfesora.get(CARLA)}`,
+    );
+
+    expect(idsDe(listado)).toEqual([sofia]);
+    expect(listado.body.datos[0].inscripcion).toMatchObject({
+      nombre_plan: "Básico",
+      nombre_profesora: "Lucía Gómez",
+    });
+    expect(fichaPropia.status).toBe(200);
+    expect(fichaPropia.body.inscripciones[0].horarios).toHaveLength(2);
+    expect(fichaAjena.status).toBe(403);
+    expect(filtroPorOtra.body).toMatchObject({ datos: [], total: 0 });
+  });
+
+  it("modifica contacto y observaciones de sus alumnos, y nada más", async () => {
+    const contacto = await como(tokenLucia, "patch", `/alumnos/${sofia}`).send({
       telefono: "3794 445566",
+      observaciones: "Lesión de rodilla",
+    });
+    const datoPersonal = await como(tokenLucia, "patch", `/alumnos/${sofia}`).send({ nombre: "Otra" });
+    const alumnoAjeno = await como(tokenLucia, "patch", `/alumnos/${mateo}`).send({
+      telefono: "3794 000000",
     });
 
-    expect([listado.status, ficha.status, edicion.status]).toEqual([403, 403, 403]);
-    const usuario = await prisma.usuarios.findUnique({ where: { id_usuario: alumno.id_usuario } });
-    expect(usuario?.telefono).toBeNull();
+    expect([contacto.status, datoPersonal.status, alumnoAjeno.status]).toEqual([200, 403, 403]);
+    const usuarioSofia = await prisma.usuarios.findFirstOrThrow({ where: { dni: DNI_SOFIA } });
+    expect(usuarioSofia).toMatchObject({ nombre: "Sofía", telefono: "3794 445566" });
+    const usuarioMateo = await prisma.usuarios.findFirstOrThrow({ where: { dni: DNI_MATEO } });
+    expect(usuarioMateo.telefono).toBeNull();
+  });
+
+  it("ve solo las inscripciones que tiene a cargo", async () => {
+    const listado = await como(tokenLucia, "get", "/inscripciones");
+    const ajena = await como(tokenLucia, "get", `/inscripciones/${datosDemo.idInscripcion.get(DNI_MATEO)}`);
+
+    expect(listado.body.map((i: { id_alumno: number }) => i.id_alumno)).toEqual([sofia]);
+    expect(ajena.status).toBe(403);
+  });
+});
+
+describe("PI-26: filtros por inscripción y ficha completa para la propietaria", () => {
+  it("filtra por plan, profesora y actividad, y un pre-inscripto sin inscripción sale sin plan", async () => {
+    const sofia = datosDemo.idAlumno.get(DNI_SOFIA)!;
+    const mateo = datosDemo.idAlumno.get(DNI_MATEO)!;
+    const sinInscripcion = await crearAlumno(prisma, { nombre: "Sin", apellido: "Inscripción" });
+
+    const porPlan = await comoMarina("get", `/alumnos?id_plan=${datosDemo.idPlan.get("Básico")}`);
+    const porProfesora = await comoMarina("get", `/alumnos?id_profesora=${datosDemo.idProfesora.get(CARLA)}`);
+    const porActividad = await comoMarina(
+      "get",
+      `/alumnos?id_actividad=${datosDemo.idActividad.get("ENTRENAMIENTO_PERS")}`,
+    );
+    const todos = await comoMarina("get", "/alumnos");
+
+    expect(idsDe(porPlan)).toEqual([sofia]);
+    expect(idsDe(porProfesora)).toEqual([mateo]);
+    expect(idsDe(porActividad)).toEqual([mateo]);
+    const fila = todos.body.datos.find(
+      (a: { id_alumno: number }) => a.id_alumno === sinInscripcion.id_alumno,
+    );
+    expect(fila.inscripcion).toBeNull();
+  });
+
+  it("la ficha trae la inscripción vigente con plan, precio y horarios", async () => {
+    const ficha = await comoMarina("get", `/alumnos/${datosDemo.idAlumno.get(DNI_MATEO)}`);
+
+    expect(ficha.status).toBe(200);
+    expect(ficha.body.inscripciones).toHaveLength(1);
+    expect(ficha.body.inscripciones[0]).toMatchObject({
+      estado: "PREINSCRIPTA",
+      plan: { nombre: "Personalizado 2 días" },
+      profesora: { usuario: { nombre: "Carla" } },
+    });
+    expect(ficha.body.inscripciones[0].horarios).toHaveLength(2);
   });
 });

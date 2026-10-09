@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { solicitanteDe } from "../../../shared/middlewares/auth.js";
 import type { ILogicaInscripciones } from "../interface/i-logica-inscripciones-y-clases.js";
 import type {
   ActualizarHorariosInput,
@@ -12,7 +13,7 @@ import type {
 export function createInscripcionController(logica: ILogicaInscripciones) {
   return {
     async listar(req: Request, res: Response) {
-      res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery));
+      res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery, solicitanteDe(req)));
     },
 
     async crear(req: Request, res: Response) {
@@ -20,7 +21,7 @@ export function createInscripcionController(logica: ILogicaInscripciones) {
     },
 
     async obtener(req: Request, res: Response) {
-      res.json(await logica.obtenerInscripcion(Number(req.params.id)));
+      res.json(await logica.obtenerInscripcion(Number(req.params.id), solicitanteDe(req)));
     },
 
     async darDeBajaAlumno(req: Request, res: Response) {
