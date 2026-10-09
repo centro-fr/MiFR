@@ -53,7 +53,7 @@ Todo tiene que pasar, incluidos los tests de los sprints anteriores (es la regre
 
 ### 4. Comprobar que los tests detectan fallas
 
-Por cada regla nueva, romper a propósito el código que la implementa (invertir una condición, saltear una validación), correr la suite y verificar que falla al menos un test. Restaurar con `git checkout -- <archivo>` y confirmar con `git status` que no quedó nada roto.
+Por cada regla nueva, romper a propósito el código que la implementa (invertir una condición, saltear una validación), correr la suite y verificar que falla al menos un test. Antes de romperlo, copiar el archivo y restaurarlo desde esa copia: `git checkout -- <archivo>` también borra los cambios que todavía no se commitearon. Confirmar con `git diff` que el archivo quedó como estaba.
 
 Si ningún test falla, el test no prueba la regla: corregirlo. Suele pasar cuando los datos no ejercitan el caso (por ejemplo, un cupo que nunca está en los dos lados).
 
