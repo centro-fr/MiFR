@@ -106,6 +106,9 @@ export function ActividadesPage() {
         toast.info(`Actividad "${actividadBaja.nombre}" dada de baja`);
         setActividadBaja(null);
       },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo dar de baja la actividad."));
+      },
     });
   };
 
@@ -190,7 +193,10 @@ export function ActividadesPage() {
           actividad={actividadBaja}
           dandoDeBaja={darDeBaja.isPending}
           errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja la actividad.") : null}
-          onClose={() => setActividadBaja(null)}
+          onClose={() => {
+            darDeBaja.reset();
+            setActividadBaja(null);
+          }}
           onConfirm={confirmarBaja}
         />
       )}

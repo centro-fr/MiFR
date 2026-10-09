@@ -1,7 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -63,17 +62,15 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
               Cancelar
             </Button>
           </AlertDialogCancel>
-          <AlertDialogAction asChild>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onConfirm}
-              disabled={dandoDeBaja}
-              className="min-h-[44px] rounded-xl bg-rose-600 px-4 text-sm font-bold text-white shadow-md hover:bg-rose-700"
-            >
-              {dandoDeBaja ? "Dando de baja..." : "Confirmar baja"}
-            </Button>
-          </AlertDialogAction>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={dandoDeBaja}
+            className="min-h-[44px] rounded-xl bg-rose-600 px-4 text-sm font-bold text-white shadow-md hover:bg-rose-700"
+          >
+            {dandoDeBaja ? "Dando de baja..." : "Confirmar baja"}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
