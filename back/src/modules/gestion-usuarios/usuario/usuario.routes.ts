@@ -2,7 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createUsuarioController } from "./usuario.controller.js";
-import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
+import type { ILogicaCuentasDeUsuario } from "../interface/i-logica-usuarios.js";
 import {
   actualizarUsuarioSchema,
   asignarRolSchema,
@@ -21,7 +21,10 @@ function requierePermisoParaCambiarEstado(acceso: ControlDeAcceso) {
   };
 }
 
-export function createUsuarioRoutes(gestionUsuarios: ILogicaUsuarios, acceso: ControlDeAcceso): Router {
+export function createUsuarioRoutes(
+  gestionUsuarios: ILogicaCuentasDeUsuario,
+  acceso: ControlDeAcceso,
+): Router {
   const router = Router();
   const controller = createUsuarioController(gestionUsuarios);
 

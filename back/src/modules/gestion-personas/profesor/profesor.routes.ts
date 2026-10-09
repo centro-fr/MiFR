@@ -1,11 +1,11 @@
 import { Router } from "express";
-import type { ILogicaPersonas } from "../interface/i-logica-personas.js";
+import type { ILogicaProfesoras } from "../interface/i-logica-personas.js";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createProfesorController } from "./profesor.controller.js";
 import { crearProfesoraSchema, profesoraIdParamSchema } from "./profesor.schemas.js";
 
-export function createProfesorRoutes(logica: ILogicaPersonas, acceso: ControlDeAcceso): Router {
+export function createProfesorRoutes(logica: ILogicaProfesoras, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createProfesorController(logica);
 

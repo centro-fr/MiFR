@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import type { ILogicaPersonas } from "../interface/i-logica-personas.js";
+import type { ILogicaAlumnos } from "../interface/i-logica-personas.js";
 import { createAlumnoController } from "./alumno.controller.js";
 import {
   actualizarAlumnoSchema,
@@ -10,7 +10,7 @@ import {
   listarAlumnoQuerySchema,
 } from "./alumno.schemas.js";
 
-export function createAlumnoRoutes(logica: ILogicaPersonas, acceso: ControlDeAcceso): Router {
+export function createAlumnoRoutes(logica: ILogicaAlumnos, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createAlumnoController(logica);
   // La profesora solo puede ver y editar a los alumnos a su cargo (US-10), que salen de las

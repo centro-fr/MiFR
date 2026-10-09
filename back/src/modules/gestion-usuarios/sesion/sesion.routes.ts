@@ -3,10 +3,10 @@ import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createSesionController } from "./sesion.controller.js";
 import { googleLoginSchema, loginDesarrolloSchema } from "./sesion.schemas.js";
-import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
+import type { ILogicaSesion } from "../interface/i-logica-usuarios.js";
 
 export function createSesionRoutes(
-  gestionUsuarios: ILogicaUsuarios,
+  gestionUsuarios: ILogicaSesion,
   acceso: ControlDeAcceso,
   { loginDesarrollo = false }: { loginDesarrollo?: boolean } = {},
 ): Router {

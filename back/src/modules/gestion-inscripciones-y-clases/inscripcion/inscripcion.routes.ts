@@ -12,12 +12,9 @@ import {
   listarInscripcionesQuerySchema,
   reactivarAlumnoSchema,
 } from "./inscripcion.schemas.js";
-import type { ILogicaInscripcionesYClases } from "../interface/i-logica-inscripciones-y-clases.js";
+import type { ILogicaInscripciones } from "../interface/i-logica-inscripciones-y-clases.js";
 
-export function createInscripcionRoutes(
-  logica: ILogicaInscripcionesYClases,
-  acceso: ControlDeAcceso,
-): Router {
+export function createInscripcionRoutes(logica: ILogicaInscripciones, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createInscripcionController(logica);
   const soloPropietaria = [acceso.rol("PROPIETARIA"), acceso.permiso("ALUMNOS_EDITAR")];
@@ -63,10 +60,7 @@ export function createInscripcionRoutes(
   return router;
 }
 
-export function createInscripcionAlumnoRoutes(
-  logica: ILogicaInscripcionesYClases,
-  acceso: ControlDeAcceso,
-): Router {
+export function createInscripcionAlumnoRoutes(logica: ILogicaInscripciones, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createInscripcionController(logica);
 

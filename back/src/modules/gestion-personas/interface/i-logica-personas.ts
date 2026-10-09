@@ -3,13 +3,21 @@ import type { Alumno, FiltroAlumno, PaginaAlumnos } from "../alumno/alumno.types
 import type { CrearProfesoraInput } from "../profesor/profesor.schemas.js";
 import type { Profesora } from "../profesor/profesor.types.js";
 
-// Interfaz del subsistema GestionPersonas para las operaciones expuestas a la API.
-export interface ILogicaPersonas {
+// Las partes de ILogicaPersonas, una por componente: cada controller depende solo de la suya.
+// No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
+
+export interface ILogicaProfesoras {
   crearProfesora(input: CrearProfesoraInput): Promise<Profesora>;
   listarProfesoras(): Promise<Profesora[]>;
   darDeBajaProfesora(id: number): Promise<Profesora>;
+}
+
+export interface ILogicaAlumnos {
   crearAlumno(input: CrearAlumnoInput): Promise<Alumno>;
   listarAlumnos(filtro: FiltroAlumno): Promise<PaginaAlumnos>;
   obtenerAlumnoPorId(id: number): Promise<Alumno>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput): Promise<Alumno>;
 }
+
+// Interfaz del subsistema GestionPersonas para las operaciones expuestas a la API.
+export interface ILogicaPersonas extends ILogicaProfesoras, ILogicaAlumnos {}

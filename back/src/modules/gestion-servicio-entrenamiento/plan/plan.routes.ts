@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaPlanes } from "../interface/i-logica-servicio-entrenamiento.js";
 import { createPlanController } from "./plan.controller.js";
 import {
   actualizarPlanSchema,
@@ -11,7 +11,7 @@ import {
   registrarPrecioSchema,
 } from "./plan.schemas.js";
 
-export function createPlanRoutes(logica: ILogicaServicioEntrenamiento, acceso: ControlDeAcceso): Router {
+export function createPlanRoutes(logica: ILogicaPlanes, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createPlanController(logica);
   const puedeVer = acceso.permiso("PLANES_VER");

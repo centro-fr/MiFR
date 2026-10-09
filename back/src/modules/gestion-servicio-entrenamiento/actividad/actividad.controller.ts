@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaActividades } from "../interface/i-logica-servicio-entrenamiento.js";
 import type {
   ActualizarActividadInput,
   CrearActividadInput,
   ListarActividadQuery,
 } from "./actividad.schemas.js";
 
-export function createActividadController(logica: ILogicaServicioEntrenamiento) {
+export function createActividadController(logica: ILogicaActividades) {
   return {
     async listar(req: Request<{}, {}, {}, ListarActividadQuery>, res: Response) {
       const actividades = await logica.listarActividades(req.query);

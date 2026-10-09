@@ -5,17 +5,26 @@ import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "../
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "../plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "../plan/plan.types.js";
 
-export interface ILogicaServicioEntrenamiento {
+// Las partes de ILogicaServicioEntrenamiento, una por componente: cada controller depende solo
+// de la suya. No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
+
+export interface ILogicaActividades {
   crearActividad(input: CrearActividadInput): Promise<Actividad>;
   listarActividades(filtro: FiltroActividad): Promise<Actividad[]>;
   obtenerActividadPorId(id: number): Promise<Actividad>;
   actualizarActividad(id: number, input: ActualizarActividadInput): Promise<Actividad>;
   darDeBajaActividad(id: number): Promise<Actividad>;
+}
+
+export interface ILogicaHorarios {
   crearHorario(input: CrearHorarioInput): Promise<HorarioRespuesta>;
   listarHorarios(filtro: FiltroHorario): Promise<HorarioRespuesta[]>;
   obtenerHorarioPorId(id: number): Promise<HorarioRespuesta>;
   actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta>;
   darDeBajaHorario(id: number): Promise<HorarioConAdvertencia>;
+}
+
+export interface ILogicaPlanes {
   crearPlan(input: CrearPlanInput): Promise<Plan>;
   listarPlanes(filtro: FiltroPlan): Promise<Plan[]>;
   obtenerPlanPorId(id: number): Promise<Plan>;
@@ -24,3 +33,6 @@ export interface ILogicaServicioEntrenamiento {
   listarPreciosPlan(id: number): Promise<PrecioPlan[]>;
   registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan>;
 }
+
+// Interfaz del subsistema GestionServicioEntrenamiento en la vista arquitectónica.
+export interface ILogicaServicioEntrenamiento extends ILogicaActividades, ILogicaHorarios, ILogicaPlanes {}

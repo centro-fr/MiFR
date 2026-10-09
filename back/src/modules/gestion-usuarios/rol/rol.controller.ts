@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { auditar } from "../../../shared/utils/auditoria.js";
-import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
+import type { ILogicaMatrizPermisos } from "../interface/i-logica-usuarios.js";
 
-export function createRolController(gestionUsuarios: ILogicaUsuarios) {
+export function createRolController(gestionUsuarios: ILogicaMatrizPermisos) {
   return {
     async obtenerMatriz(_req: Request, res: Response): Promise<void> {
       res.status(200).json(await gestionUsuarios.obtenerMatriz());

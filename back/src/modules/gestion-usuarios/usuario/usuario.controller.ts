@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import { auditar } from "../../../shared/utils/auditoria.js";
-import type { ILogicaUsuarios } from "../interface/i-logica-usuarios.js";
+import type { ILogicaCuentasDeUsuario } from "../interface/i-logica-usuarios.js";
 import type { CodigoRol } from "./usuario.types.js";
 
-export function createUsuarioController(gestionUsuarios: ILogicaUsuarios) {
+export function createUsuarioController(gestionUsuarios: ILogicaCuentasDeUsuario) {
   return {
     async crear(req: Request, res: Response): Promise<void> {
       const usuario = await gestionUsuarios.crear(req.body);

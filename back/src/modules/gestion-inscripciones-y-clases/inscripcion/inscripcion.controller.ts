@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { ILogicaInscripcionesYClases } from "../interface/i-logica-inscripciones-y-clases.js";
+import type { ILogicaInscripciones } from "../interface/i-logica-inscripciones-y-clases.js";
 import type {
   ActualizarHorariosInput,
   CambiarPlanInput,
@@ -9,7 +9,7 @@ import type {
   ReactivarAlumnoInput,
 } from "./inscripcion.schemas.js";
 
-export function createInscripcionController(logica: ILogicaInscripcionesYClases) {
+export function createInscripcionController(logica: ILogicaInscripciones) {
   return {
     async listar(req: Request, res: Response) {
       res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery));

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaHorarios } from "../interface/i-logica-servicio-entrenamiento.js";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createHorarioController } from "./horario.controller.js";
@@ -10,7 +10,7 @@ import {
   listarHorarioQuerySchema,
 } from "./horario.schemas.js";
 
-export function createHorarioRoutes(logica: ILogicaServicioEntrenamiento, acceso: ControlDeAcceso): Router {
+export function createHorarioRoutes(logica: ILogicaHorarios, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createHorarioController(logica);
 

@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import { auditar } from "../../../shared/utils/auditoria.js";
-import type { ILogicaPersonas } from "../interface/i-logica-personas.js";
+import type { ILogicaAlumnos } from "../interface/i-logica-personas.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno.schemas.js";
 
-export function createAlumnoController(logica: ILogicaPersonas) {
+export function createAlumnoController(logica: ILogicaAlumnos) {
   return {
     async listar(req: Request, res: Response) {
       const pagina = await logica.listarAlumnos(req.query as unknown as ListarAlumnoQuery);

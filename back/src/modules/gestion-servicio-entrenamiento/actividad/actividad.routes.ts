@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createActividadController } from "./actividad.controller.js";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaActividades } from "../interface/i-logica-servicio-entrenamiento.js";
 import {
   actividadIdParamSchema,
   actualizarActividadSchema,
@@ -10,7 +10,7 @@ import {
   listarActividadQuerySchema,
 } from "./actividad.schemas.js";
 
-export function createActividadRoutes(logica: ILogicaServicioEntrenamiento, acceso: ControlDeAcceso): Router {
+export function createActividadRoutes(logica: ILogicaActividades, acceso: ControlDeAcceso): Router {
   const router = Router();
   const controller = createActividadController(logica);
 
