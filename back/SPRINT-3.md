@@ -159,9 +159,9 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 **Responsable:** Francisco
 
-- [ ] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
-- [ ] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
-- [ ] Ficha con la inscripción vigente y sus horarios.
+- [x] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
+- [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
+- [x] Ficha con la inscripción vigente y sus horarios.
 - [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota.
 - [ ] Historial de pagos en la ficha, visible solo para la propietaria.
 
@@ -206,7 +206,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 ### Pendientes del Sprint 1 que siguen esperando
 
-- [ ] Al dar de baja un horario, avisar si tiene alumnos inscriptos (fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
+- [x] Un horario con alumnos inscriptos no se da de baja (409; fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
 - [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
 
 ---
