@@ -16,11 +16,14 @@ export const actividadApiSchema = z.object({
 
 export type ActividadApi = z.infer<typeof actividadApiSchema>;
 
+export const CUPO_MAXIMO_PERSONALIZADA = 40;
+export const CUPO_MAXIMO_GRUPAL = 60;
+
 const cupoMaximoSchema = z
   .number({ invalid_type_error: "El cupo tiene que ser un número" })
   .int("El cupo tiene que ser un número entero")
   .positive("El cupo tiene que ser mayor a cero")
-  .max(32767, "El cupo es demasiado grande")
+  .max(CUPO_MAXIMO_GRUPAL, `El cupo máximo no puede superar los ${CUPO_MAXIMO_GRUPAL} alumnos`)
   .nullable();
 
 const CARACTER_NO_PERMITIDO = /[\p{Cc}\p{Cf}]/u;
@@ -59,7 +62,27 @@ export const actividadFormSchema = z
   .refine((datos) => datos.modalidad !== "PERSONALIZADA" || datos.cupoMaximo !== null, {
     message: "El cupo máximo es obligatorio para la modalidad personalizada",
     path: ["cupoMaximo"],
-  });
+  })
+  .refine(
+    (datos) =>
+      datos.modalidad !== "PERSONALIZADA" ||
+      datos.cupoMaximo === null ||
+      datos.cupoMaximo <= CUPO_MAXIMO_PERSONALIZADA,
+    {
+      message: `El cupo máximo no puede superar los ${CUPO_MAXIMO_PERSONALIZADA} alumnos para clases personalizadas`,
+      path: ["cupoMaximo"],
+    },
+  )
+  .refine(
+    (datos) =>
+      datos.modalidad !== "GRUPAL" ||
+      datos.cupoMaximo === null ||
+      datos.cupoMaximo <= CUPO_MAXIMO_GRUPAL,
+    {
+      message: `El cupo máximo no puede superar los ${CUPO_MAXIMO_GRUPAL} alumnos para clases grupales`,
+      path: ["cupoMaximo"],
+    },
+  );
 
 export type ActividadFormData = z.infer<typeof actividadFormSchema>;
 

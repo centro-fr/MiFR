@@ -84,4 +84,134 @@ describe('US-03: ModalFormActividad', () => {
     });
   });
 
+  test('Personalizada con cupo mayor a 40 → rechaza y no llama a onSave', async () => {
+    const mockOnSave = vi.fn();
+
+    render(
+      <ModalFormActividad
+        actividad={null}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/Código/i), { target: { value: 'PERSO' } });
+    fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Personalizado' } });
+    fireEvent.click(screen.getByLabelText(/Personalizada/i));
+
+    // Si intenta ingresar 45 (o más de 40)
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '45' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).not.toHaveBeenCalled();
+      expect(screen.getByText(/El cupo máximo no puede superar los 40 alumnos/i)).toBeInTheDocument();
+    });
+  });
+
+  test('Grupal con cupo mayor a 60 → rechaza y no llama a onSave', async () => {
+    const mockOnSave = vi.fn();
+
+    render(
+      <ModalFormActividad
+        actividad={null}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/Código/i), { target: { value: 'CROSS' } });
+    fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Crossfit Grupal' } });
+    fireEvent.click(screen.getByLabelText(/Grupal/i));
+
+    // Si intenta ingresar 65 (o más de 60)
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '65' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).not.toHaveBeenCalled();
+      expect(screen.getByText(/El cupo máximo no puede superar los 60 alumnos/i)).toBeInTheDocument();
+    });
+  });
+
+  test('Input de cupo recorta entradas a máximo 2 dígitos evitando 99999', () => {
+    render(
+      <ModalFormActividad
+        actividad={null}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+
+    const inputCupo = screen.getByRole('spinbutton', { name: /Cupo máximo/i }) as HTMLInputElement;
+
+    // Intentamos escribir 99999
+    fireEvent.change(inputCupo, { target: { value: '99999' } });
+    expect(inputCupo.value).toBe('99');
+  });
+
+  test('Acepta cupos en los límites máximos permitidos (40 personalizada, 60 grupal)', async () => {
+    const mockOnSave = vi.fn();
+
+    const { rerender } = render(
+      <ModalFormActividad
+        key="perso"
+        actividad={null}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    // Personalizada con 40
+    fireEvent.change(screen.getByLabelText(/Código/i), { target: { value: 'PERSO40' } });
+    fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Personal 40' } });
+    fireEvent.click(screen.getByLabelText(/Personalizada/i));
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
+        codigo: 'PERSO40',
+        modalidad: 'PERSONALIZADA',
+        cupoMaximo: 40,
+      }));
+    });
+
+    mockOnSave.mockClear();
+
+    // Grupal con 60
+    rerender(
+      <ModalFormActividad
+        key="grup"
+        actividad={null}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/Código/i), { target: { value: 'GRUP60' } });
+    fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Grupal 60' } });
+    fireEvent.click(screen.getByLabelText(/Grupal/i));
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '60' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
+        codigo: 'GRUP60',
+        modalidad: 'GRUPAL',
+        cupoMaximo: 60,
+      }));
+    });
+  });
+
 });
