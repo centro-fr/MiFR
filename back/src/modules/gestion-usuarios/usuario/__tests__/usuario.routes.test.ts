@@ -56,11 +56,11 @@ function crearAutorizacionMock() {
 
 function crearServiceMock() {
   return {
-    crear: vi.fn(),
-    listar: vi.fn(),
-    obtenerPorId: vi.fn(),
-    actualizar: vi.fn(),
-    eliminar: vi.fn(),
+    crearUsuario: vi.fn(),
+    listarUsuarios: vi.fn(),
+    obtenerUsuarioPorId: vi.fn(),
+    actualizarUsuario: vi.fn(),
+    eliminarUsuario: vi.fn(),
     asignarRol: vi.fn(),
     quitarRol: vi.fn(),
   };
@@ -135,7 +135,7 @@ describe("rutas de usuarios", () => {
       const response = await request(app).get("/api/v1/usuarios").set("Authorization", `Bearer ${ajeno}`);
 
       expect(response.status).toBe(401);
-      expect(service.listar).not.toHaveBeenCalled();
+      expect(service.listarUsuarios).not.toHaveBeenCalled();
     });
 
     it("responde 401 con un JWT vencido", async () => {
@@ -159,7 +159,7 @@ describe("rutas de usuarios", () => {
     });
 
     it("un usuario multi-rol pasa si alguno de sus roles otorga el permiso", async () => {
-      service.listar.mockResolvedValue([]);
+      service.listarUsuarios.mockResolvedValue([]);
 
       const response = await request(app)
         .get("/api/v1/usuarios")
@@ -171,7 +171,7 @@ describe("rutas de usuarios", () => {
 
   describe("POST /api/v1/usuarios", () => {
     it("exige el permiso USUARIOS_EDITAR", async () => {
-      service.crear.mockResolvedValue(usuario);
+      service.crearUsuario.mockResolvedValue(usuario);
 
       await request(app).post("/api/v1/usuarios").set("Authorization", PROPIETARIA).send(nuevoUsuario);
 
@@ -179,7 +179,7 @@ describe("rutas de usuarios", () => {
     });
 
     it("crea un usuario y responde 201", async () => {
-      service.crear.mockResolvedValue(usuario);
+      service.crearUsuario.mockResolvedValue(usuario);
 
       const response = await request(app)
         .post("/api/v1/usuarios")
@@ -188,14 +188,14 @@ describe("rutas de usuarios", () => {
 
       expect(response.status).toBe(201);
       expect(response.body.email).toBe("test@example.com");
-      expect(service.crear).toHaveBeenCalledWith({
+      expect(service.crearUsuario).toHaveBeenCalledWith({
         ...nuevoUsuario,
         fecha_nacimiento: new Date("1990-01-01"),
       });
     });
 
     it("permite crear un menor sin email", async () => {
-      service.crear.mockResolvedValue({ ...usuario, email: null });
+      service.crearUsuario.mockResolvedValue({ ...usuario, email: null });
       const { email: _email, google_id: _googleId, ...menor } = nuevoUsuario;
 
       const response = await request(app)
@@ -214,7 +214,7 @@ describe("rutas de usuarios", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe("VALIDATION_ERROR");
-      expect(service.crear).not.toHaveBeenCalled();
+      expect(service.crearUsuario).not.toHaveBeenCalled();
     });
 
     it("responde 400 si falta fecha_nacimiento (obligatoria en el DER)", async () => {
@@ -230,7 +230,9 @@ describe("rutas de usuarios", () => {
     });
 
     it("responde 409 si el email o google_id ya existen", async () => {
-      service.crear.mockRejectedValue(new ConflictError("Ya existe un usuario con ese email o google_id"));
+      service.crearUsuario.mockRejectedValue(
+        new ConflictError("Ya existe un usuario con ese email o google_id"),
+      );
 
       const response = await request(app)
         .post("/api/v1/usuarios")
@@ -248,13 +250,13 @@ describe("rutas de usuarios", () => {
         .send(nuevoUsuario);
 
       expect(response.status).toBe(403);
-      expect(service.crear).not.toHaveBeenCalled();
+      expect(service.crearUsuario).not.toHaveBeenCalled();
     });
   });
 
   describe("GET /api/v1/usuarios", () => {
     it("lista los usuarios con el permiso USUARIOS_VER", async () => {
-      service.listar.mockResolvedValue([usuario]);
+      service.listarUsuarios.mockResolvedValue([usuario]);
 
       const response = await request(app).get("/api/v1/usuarios").set("Authorization", PROPIETARIA);
 
@@ -277,13 +279,13 @@ describe("rutas de usuarios", () => {
 
   describe("GET /api/v1/usuarios/:id", () => {
     it("devuelve los datos propios sin pedir permiso y pasa el id como número", async () => {
-      service.obtenerPorId.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO });
+      service.obtenerUsuarioPorId.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO });
 
       const response = await request(app).get(`/api/v1/usuarios/${ID_ALUMNO}`).set("Authorization", ALUMNO);
 
       expect(response.status).toBe(200);
       expect(response.body.id_usuario).toBe(ID_ALUMNO);
-      expect(service.obtenerPorId).toHaveBeenCalledWith(ID_ALUMNO);
+      expect(service.obtenerUsuarioPorId).toHaveBeenCalledWith(ID_ALUMNO);
       expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
     });
 
@@ -292,11 +294,11 @@ describe("rutas de usuarios", () => {
 
       expect(response.status).toBe(403);
       expect(autorizacion.tienePermiso).toHaveBeenCalledWith(ID_ALUMNO, "USUARIOS_VER");
-      expect(service.obtenerPorId).not.toHaveBeenCalled();
+      expect(service.obtenerUsuarioPorId).not.toHaveBeenCalled();
     });
 
     it("devuelve otro usuario con el permiso USUARIOS_VER", async () => {
-      service.obtenerPorId.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO });
+      service.obtenerUsuarioPorId.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO });
 
       const response = await request(app)
         .get(`/api/v1/usuarios/${ID_ALUMNO}`)
@@ -306,7 +308,7 @@ describe("rutas de usuarios", () => {
     });
 
     it("responde 404 si no existe", async () => {
-      service.obtenerPorId.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
+      service.obtenerUsuarioPorId.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
 
       const response = await request(app).get("/api/v1/usuarios/99").set("Authorization", PROPIETARIA);
 
@@ -318,13 +320,17 @@ describe("rutas de usuarios", () => {
       const response = await request(app).get(`/api/v1/usuarios/${id}`).set("Authorization", ALUMNO);
 
       expect(response.status).toBe(400);
-      expect(service.obtenerPorId).not.toHaveBeenCalled();
+      expect(service.obtenerUsuarioPorId).not.toHaveBeenCalled();
     });
   });
 
   describe("PATCH /api/v1/usuarios/:id", () => {
     it("actualiza los datos propios sin pedir permiso y responde 200", async () => {
-      service.actualizar.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO, telefono: "3511234567" });
+      service.actualizarUsuario.mockResolvedValue({
+        ...usuario,
+        id_usuario: ID_ALUMNO,
+        telefono: "3511234567",
+      });
 
       const response = await request(app)
         .patch(`/api/v1/usuarios/${ID_ALUMNO}`)
@@ -332,7 +338,7 @@ describe("rutas de usuarios", () => {
         .send({ telefono: "3511234567" });
 
       expect(response.status).toBe(200);
-      expect(service.actualizar).toHaveBeenCalledWith(ID_ALUMNO, { telefono: "3511234567" });
+      expect(service.actualizarUsuario).toHaveBeenCalledWith(ID_ALUMNO, { telefono: "3511234567" });
       expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
     });
 
@@ -344,7 +350,7 @@ describe("rutas de usuarios", () => {
 
       expect(response.status).toBe(403);
       expect(autorizacion.tienePermiso).toHaveBeenCalledWith(ID_ALUMNO, "USUARIOS_EDITAR");
-      expect(service.actualizar).not.toHaveBeenCalled();
+      expect(service.actualizarUsuario).not.toHaveBeenCalled();
     });
 
     it("responde 403 si alguien sin permiso intenta cambiar su propio estado", async () => {
@@ -354,11 +360,11 @@ describe("rutas de usuarios", () => {
         .send({ estado: "ACTIVO" });
 
       expect(response.status).toBe(403);
-      expect(service.actualizar).not.toHaveBeenCalled();
+      expect(service.actualizarUsuario).not.toHaveBeenCalled();
     });
 
     it("cambia el estado de otro usuario con el permiso USUARIOS_EDITAR y lo audita", async () => {
-      service.actualizar.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO, estado: "INACTIVO" });
+      service.actualizarUsuario.mockResolvedValue({ ...usuario, id_usuario: ID_ALUMNO, estado: "INACTIVO" });
 
       const response = await request(app)
         .patch(`/api/v1/usuarios/${ID_ALUMNO}`)
@@ -390,7 +396,7 @@ describe("rutas de usuarios", () => {
     });
 
     it("responde 409 si el dni pertenece a otro usuario", async () => {
-      service.actualizar.mockRejectedValue(new ConflictError("Ya existe un usuario con ese dni"));
+      service.actualizarUsuario.mockRejectedValue(new ConflictError("Ya existe un usuario con ese dni"));
 
       const response = await request(app)
         .patch("/api/v1/usuarios/1")
@@ -401,7 +407,7 @@ describe("rutas de usuarios", () => {
     });
 
     it("responde 404 si el usuario no existe", async () => {
-      service.actualizar.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
+      service.actualizarUsuario.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
 
       const response = await request(app)
         .patch("/api/v1/usuarios/99")
@@ -414,17 +420,17 @@ describe("rutas de usuarios", () => {
 
   describe("DELETE /api/v1/usuarios/:id", () => {
     it("elimina y responde 204 sin body", async () => {
-      service.eliminar.mockResolvedValue(undefined);
+      service.eliminarUsuario.mockResolvedValue(undefined);
 
       const response = await request(app).delete("/api/v1/usuarios/1").set("Authorization", PROPIETARIA);
 
       expect(response.status).toBe(204);
       expect(response.body).toEqual({});
-      expect(service.eliminar).toHaveBeenCalledWith(1);
+      expect(service.eliminarUsuario).toHaveBeenCalledWith(1);
     });
 
     it("responde 404 si el usuario no existe", async () => {
-      service.eliminar.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
+      service.eliminarUsuario.mockRejectedValue(new NotFoundError("Usuario no encontrado"));
 
       const response = await request(app).delete("/api/v1/usuarios/99").set("Authorization", PROPIETARIA);
 
@@ -435,7 +441,7 @@ describe("rutas de usuarios", () => {
       const response = await request(app).delete("/api/v1/usuarios/1").set("Authorization", ALUMNO);
 
       expect(response.status).toBe(403);
-      expect(service.eliminar).not.toHaveBeenCalled();
+      expect(service.eliminarUsuario).not.toHaveBeenCalled();
     });
   });
 

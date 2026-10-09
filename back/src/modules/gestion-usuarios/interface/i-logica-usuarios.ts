@@ -15,11 +15,11 @@ export interface ILogicaSesion {
 }
 
 export interface ILogicaCuentasDeUsuario {
-  crear(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
-  listar(): Promise<UsuarioConRoles[]>;
-  obtenerPorId(id: number): Promise<UsuarioConRoles>;
-  actualizar(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles>;
-  eliminar(id: number): Promise<void>;
+  crearUsuario(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
+  listarUsuarios(): Promise<UsuarioConRoles[]>;
+  obtenerUsuarioPorId(id: number): Promise<UsuarioConRoles>;
+  actualizarUsuario(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles>;
+  eliminarUsuario(id: number): Promise<void>;
   asignarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles>;
   quitarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles>;
 }
