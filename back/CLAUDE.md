@@ -83,7 +83,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
-10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test. Lo que cruza capas o depende de la base viene además con sus tests de integración (skill `tests-integracion`).
+10. Toda ruta valida su entrada con Zod. Todo lo que se agrega o se cambia en el back viene con sus tests en el mismo trabajo: unitarios de cada pieza (service, repositorio, schemas, rutas, fachada y utilidades de `shared/`) y, si cruza capas o depende de la base, de integración (skill `tests-integracion`). La cobertura de los unitarios se mantiene en 100 %. El detalle está en `.claude/rules/testing.md`.
 
 ## Reglas detalladas
 

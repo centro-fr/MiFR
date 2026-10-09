@@ -29,7 +29,10 @@ En `src/modules/<subsistema>/<componente>/`:
 | `<x>.controller.ts` | `create<X>Controller(logica: ILogica<X>)` que devuelve el objeto de handlers; recibe solo la parte de la `ILogica*` de su componente |
 | `<x>.routes.ts` | `create<X>Routes(logica: ILogica<X>, acceso: ControlDeAcceso)` que devuelve el `Router` |
 | `<x>.openapi.ts` | `registrarDocumentacion<X>(registro)`, con las rutas, los permisos que exigen y los errores que devuelven |
-| `__tests__/<x>.service.test.ts` | Tests del service con el repositorio mockeado |
+| `__tests__/<x>.service.test.ts` | Tests del service con el repositorio mockeado: camino feliz y cada error |
+| `__tests__/<x>.repository.test.ts` | Tests del repositorio con el cliente de Prisma mockeado |
+| `__tests__/<x>.schemas.test.ts` | Lo que acepta y lo que rechaza cada schema (`-0`, negativos, textos sin letras, emails y fechas inválidos) |
+| `__tests__/<x>.routes.test.ts` | Contrato HTTP, códigos y permisos con `supertest` sobre `createApp` |
 
 En la raíz del subsistema, `src/modules/<subsistema>/`:
 
@@ -37,6 +40,8 @@ En la raíz del subsistema, `src/modules/<subsistema>/`:
 - `<subsistema>.service.ts`: implementar los métodos nuevos delegando en el service del componente.
 - `<subsistema>.routes.ts`: montar el router con `router.use("/<recurso>", create<X>Routes(logica, acceso))`.
 - `<subsistema>.openapi.ts`: llamar a `registrarDocumentacion<X>(registro)`.
+- `__tests__/<subsistema>.service.test.ts`: los métodos nuevos de la fachada.
+- `src/__tests__/openapi.test.ts`: sumar las operaciones nuevas a la lista.
 
 Después, el cableado:
 
@@ -56,4 +61,4 @@ Después, el cableado:
 
 ## Al terminar
 
-Correr la skill `tests-integracion` para el módulo nuevo: sus endpoints, permisos y reglas que dependen de la base. Después correr `pnpm test`, `pnpm test:integration` y `pnpm build`, y resumir qué se creó y qué decisiones quedaron pendientes de confirmar, sin commitear.
+Correr la skill `tests-integracion` para el módulo nuevo: sus endpoints, permisos y reglas que dependen de la base. Después correr `pnpm test:coverage` (tiene que seguir en 100 %), `pnpm test:integration` y `pnpm build`, y resumir qué se creó y qué decisiones quedaron pendientes de confirmar, sin commitear.
