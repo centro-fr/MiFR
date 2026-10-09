@@ -184,9 +184,12 @@ interface PersonaDemo {
 
 interface AlumnoDemo extends PersonaDemo {
   tutor: PersonaDemo | null;
+  // Activo: como si ya hubiera pagado. Hasta que exista el cobro (Sprint 3) es la única forma de
+  // tener en el escenario un alumno que pueda entrar al sistema.
+  activo: boolean;
 }
 
-// Pre-inscriptos (INACTIVO): se activan cuando se confirma su primer pago.
+// Los pre-inscriptos quedan INACTIVO hasta que se confirma su primer pago.
 export const ALUMNOS_DEMO: AlumnoDemo[] = [
   {
     nombre: "Sofía",
@@ -195,6 +198,7 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
     email: "sofia.medina@example.com",
     fecha_nacimiento: new Date("1996-08-14T00:00:00Z"),
     tutor: null,
+    activo: false,
   },
   {
     nombre: "Mateo",
@@ -209,6 +213,16 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
       email: "paula.romero@example.com",
       fecha_nacimiento: new Date("1984-06-21T00:00:00Z"),
     },
+    activo: false,
+  },
+  {
+    nombre: "Valentina",
+    apellido: "Herrera",
+    dni: "39222333",
+    email: "valentina.herrera@example.com",
+    fecha_nacimiento: new Date("1994-02-11T00:00:00Z"),
+    tutor: null,
+    activo: true,
   },
 ];
 
@@ -219,9 +233,10 @@ interface InscripcionDemo {
   // Los horarios de la profesora en esos días, de la actividad indicada.
   codigoActividad: string;
   dias: number[];
+  estado: "PREINSCRIPTA" | "ACTIVA";
 }
 
-// Pre-inscripciones: reservan cupo y el alumno sigue INACTIVO hasta el primer pago (US-05, US-07).
+// Las PREINSCRIPTA reservan cupo y el alumno sigue INACTIVO hasta el primer pago (US-05, US-07).
 export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
   {
     dniAlumno: "38111222",
@@ -229,6 +244,7 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     emailProfesora: "lucia.gomez@example.com",
     codigoActividad: "FUNCIONAL",
     dias: [1, 3],
+    estado: "PREINSCRIPTA",
   },
   {
     dniAlumno: "52111222",
@@ -236,6 +252,15 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     emailProfesora: "carla.ruiz@example.com",
     codigoActividad: "ENTRENAMIENTO_PERS",
     dias: [2, 4],
+    estado: "PREINSCRIPTA",
+  },
+  {
+    dniAlumno: "39222333",
+    nombrePlan: "Intermedio",
+    emailProfesora: "carla.ruiz@example.com",
+    codigoActividad: "ENTRENAMIENTO_PERS",
+    dias: [2, 4],
+    estado: "ACTIVA",
   },
 ];
 
@@ -365,25 +390,37 @@ async function cargarPlanes(
   return idPlanPorNombre;
 }
 
-async function cargarPersona(prisma: PrismaClient, persona: PersonaDemo): Promise<number> {
+async function cargarPersona(
+  prisma: PrismaClient,
+  persona: PersonaDemo,
+  estado: "ACTIVO" | "INACTIVO" = "INACTIVO",
+): Promise<number> {
   const usuario = await prisma.usuarios.upsert({
     where: { dni: persona.dni },
     update: {},
-    create: { ...persona, estado: "INACTIVO" },
+    create: { ...persona, estado },
   });
   return usuario.id_usuario;
 }
 
 async function cargarAlumnos(prisma: PrismaClient): Promise<Map<string, number>> {
   const idAlumnoPorDni = new Map<string, number>();
-  for (const { tutor, ...persona } of ALUMNOS_DEMO) {
+  const rolAlumno = await prisma.roles.findUniqueOrThrow({ where: { codigo: "ALUMNO" } });
+  for (const { tutor, activo, ...persona } of ALUMNOS_DEMO) {
+    const estado = activo ? "ACTIVO" : "INACTIVO";
     const idResponsable = tutor ? await cargarPersona(prisma, tutor) : null;
-    const idUsuario = await cargarPersona(prisma, persona);
+    const idUsuario = await cargarPersona(prisma, persona, estado);
     const alumno = await prisma.alumnos.upsert({
       where: { id_usuario: idUsuario },
       update: {},
-      create: { id_usuario: idUsuario, id_usuario_responsable: idResponsable, estado: "INACTIVO" },
+      create: { id_usuario: idUsuario, id_usuario_responsable: idResponsable, estado },
     });
+    if (activo) {
+      await prisma.usuario_roles.createMany({
+        data: [{ id_usuario: idUsuario, id_rol: rolAlumno.id_rol }],
+        skipDuplicates: true,
+      });
+    }
     idAlumnoPorDni.set(persona.dni, alumno.id_alumno);
   }
   return idAlumnoPorDni;
@@ -428,7 +465,7 @@ async function cargarInscripciones(
         id_profesora,
         sin_cargo: false,
         fecha_inicio: hoy,
-        estado: "PREINSCRIPTA",
+        estado: inscripcion.estado,
         horarios: { create: horarios.map(({ id_horario }) => ({ id_horario, fecha_desde: hoy })) },
       },
     });

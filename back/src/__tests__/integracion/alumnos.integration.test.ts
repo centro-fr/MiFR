@@ -35,6 +35,7 @@ const TOMAS = { nombre: "Tomás", apellido: "Pérez", dni: "50111222", fecha_nac
 const CARLA = "carla.ruiz@example.com";
 const DNI_SOFIA = "38111222";
 const DNI_MATEO = "52111222";
+const DNI_VALENTINA = "39222333";
 
 let tokenMarina: string;
 let datosDemo: Awaited<ReturnType<typeof cargarDatosDemo>>;
@@ -324,6 +325,7 @@ describe("PI-26: filtros por inscripción y ficha completa para la propietaria",
   it("filtra por plan, profesora y actividad, y un pre-inscripto sin inscripción sale sin plan", async () => {
     const sofia = datosDemo.idAlumno.get(DNI_SOFIA)!;
     const mateo = datosDemo.idAlumno.get(DNI_MATEO)!;
+    const valentina = datosDemo.idAlumno.get(DNI_VALENTINA)!;
     const sinInscripcion = await crearAlumno(prisma, { nombre: "Sin", apellido: "Inscripción" });
 
     const porPlan = await comoMarina("get", `/alumnos?id_plan=${datosDemo.idPlan.get("Básico")}`);
@@ -335,8 +337,8 @@ describe("PI-26: filtros por inscripción y ficha completa para la propietaria",
     const todos = await comoMarina("get", "/alumnos");
 
     expect(idsDe(porPlan)).toEqual([sofia]);
-    expect(idsDe(porProfesora)).toEqual([mateo]);
-    expect(idsDe(porActividad)).toEqual([mateo]);
+    expect(idsDe(porProfesora)).toEqual([valentina, mateo]);
+    expect(idsDe(porActividad)).toEqual([valentina, mateo]);
     const fila = todos.body.datos.find(
       (a: { id_alumno: number }) => a.id_alumno === sinInscripcion.id_alumno,
     );
@@ -354,5 +356,20 @@ describe("PI-26: filtros por inscripción y ficha completa para la propietaria",
       profesora: { usuario: { nombre: "Carla" } },
     });
     expect(ficha.body.inscripciones[0].horarios).toHaveLength(2);
+  });
+});
+
+describe("PI-26 (escenario): el alumno activo de la demostración", () => {
+  it("Valentina está activa, con su inscripción ACTIVA, y puede iniciar sesión", async () => {
+    const ficha = await comoMarina("get", `/alumnos/${datosDemo.idAlumno.get(DNI_VALENTINA)}`);
+    const login = await request(app)
+      .post("/api/v1/auth/google")
+      .send({ id_token: "valentina.herrera@example.com" });
+
+    expect(ficha.body).toMatchObject({ estado: "ACTIVO", inscripciones: [{ estado: "ACTIVA" }] });
+    expect(login.status).toBe(200);
+    expect(login.body.usuario.roles.map((r: { rol: { codigo: string } }) => r.rol.codigo)).toEqual([
+      "ALUMNO",
+    ]);
   });
 });
