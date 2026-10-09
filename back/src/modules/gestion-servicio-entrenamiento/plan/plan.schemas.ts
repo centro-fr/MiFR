@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
+import { enteroNoNegativoSchema } from "../../../shared/utils/esquemas-numero.js";
 import {
   textoBusquedaSchema,
   textoOpcionalSchema,
@@ -12,7 +13,7 @@ const tipo = z.enum(["MENSUAL", "CLASE_SUELTA"]);
 const nombre = textoSchema(40);
 const descripcion = textoOpcionalSchema(255, { multilinea: true }).optional();
 const clases_por_semana = z.number().int().min(1).max(7).nullable().optional();
-const dias_gracia = z.number().int().min(0).max(365);
+const dias_gracia = enteroNoNegativoSchema(365);
 const id_actividad_exclusiva = idSchema.nullable().optional();
 const profesora_unica = z.boolean();
 

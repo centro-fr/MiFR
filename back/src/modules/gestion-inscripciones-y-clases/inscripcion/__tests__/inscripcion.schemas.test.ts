@@ -19,6 +19,9 @@ describe("crearInscripcionSchema", () => {
   it.each([
     ["sin horarios", { ids_horarios: [] }],
     ["con un horario repetido", { ids_horarios: [8, 8] }],
+    ["con más de siete horarios", { ids_horarios: [1, 2, 3, 4, 5, 6, 7, 8] }],
+    ["con un id -0", { id_alumno: -0 }],
+    ["con un id en texto", { id_plan: "1" }],
     ["con una fecha mal formada", { fecha_inicio: "02/11/2026" }],
     ["sin plan", { id_plan: undefined }],
   ])("rechaza una inscripción %s", (_caso, cambio) => {

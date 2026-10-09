@@ -22,13 +22,14 @@ export const dniSchema = z
   .regex(/^[1-9]\d{5,9}$/, "El dni debe tener entre 6 y 10 dígitos, sin puntos ni ceros adelante");
 
 // Se guarda como lo escribe la persona, pero con un número de dígitos plausible: E.164 admite
-// hasta 15 y ningún teléfono real tiene menos de 7.
+// hasta 15 y ningún teléfono real tiene menos de 7. Empieza con +, dígito o paréntesis: un guion
+// adelante ("-1234567") lo haría parecer un número negativo.
 export const telefonoSchema = z
   .string()
   .trim()
   .max(20)
   .regex(
-    /^\+?[\d ()-]+$/,
+    /^\+?[\d(][\d ()-]*$/,
     "El teléfono solo puede tener dígitos, espacios, guiones, paréntesis y un + inicial",
   )
   .refine((valor) => {
