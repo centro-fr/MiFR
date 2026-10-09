@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { requierePermiso, requiereRol, requiereSesion } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import { asyncHandler } from "../../../shared/utils/async-handler.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { createInscripcionController } from "./inscripcion.controller.js";
@@ -31,37 +30,37 @@ export function createInscripcionRoutes(
     "/",
     requierePermiso(autorizacion, "ALUMNOS_VER"),
     validate({ query: listarInscripcionesQuerySchema }),
-    asyncHandler(controller.listar),
+    controller.listar,
   );
   router.post(
     "/",
     requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
     validate({ body: crearInscripcionSchema }),
-    asyncHandler(controller.crear),
+    controller.crear,
   );
   router.get(
     "/:id",
     requierePermiso(autorizacion, "ALUMNOS_VER"),
     validate({ params: inscripcionIdParamSchema }),
-    asyncHandler(controller.obtener),
+    controller.obtener,
   );
   router.post(
     "/:id/activar",
     ...soloPropietaria,
     validate({ params: inscripcionIdParamSchema }),
-    asyncHandler(controller.activar),
+    controller.activar,
   );
   router.post(
     "/:id/cambio-plan",
     ...soloPropietaria,
     validate({ params: inscripcionIdParamSchema, body: cambiarPlanSchema }),
-    asyncHandler(controller.cambiarPlan),
+    controller.cambiarPlan,
   );
   router.patch(
     "/:id/horarios",
     ...soloPropietaria,
     validate({ params: inscripcionIdParamSchema, body: actualizarHorariosSchema }),
-    asyncHandler(controller.actualizarHorarios),
+    controller.actualizarHorarios,
   );
 
   return router;
@@ -80,13 +79,13 @@ export function createInscripcionAlumnoRoutes(
     "/:id/baja",
     requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
     validate({ params: alumnoIdParamSchema, body: darDeBajaAlumnoSchema }),
-    asyncHandler(controller.darDeBajaAlumno),
+    controller.darDeBajaAlumno,
   );
   router.post(
     "/:id/reactivar",
     requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
     validate({ params: alumnoIdParamSchema, body: reactivarAlumnoSchema }),
-    asyncHandler(controller.reactivarAlumno),
+    controller.reactivarAlumno,
   );
 
   return router;

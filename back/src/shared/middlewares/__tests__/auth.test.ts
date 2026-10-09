@@ -28,25 +28,24 @@ describe("requiereSesion", () => {
   it("requiereSesion carga req.usuario con el id y los roles vigentes y sigue", async () => {
     const req = crearRequest({ headers: { authorization: "Bearer token-valido" } });
 
-    requiereSesion(autenticacion)(req, res, next);
+    await requiereSesion(autenticacion)(req, res, next);
 
-    await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
     expect(autenticacion.validarSesion).toHaveBeenCalledWith("token-valido");
     expect(req.usuario).toEqual({ id_usuario: 1, roles: ["PROPIETARIA"] });
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("requiereSesion lanza UnauthorizedError sin header Authorization", () => {
-    expect(() => requiereSesion(autenticacion)(crearRequest(), res, next)).toThrow(UnauthorizedError);
+  it("requiereSesion lanza UnauthorizedError sin header Authorization", async () => {
+    await expect(requiereSesion(autenticacion)(crearRequest(), res, next)).rejects.toThrow(UnauthorizedError);
     expect(next).not.toHaveBeenCalled();
   });
 
   it.each(["Basic abc", "bearer token", "Token abc", "Bearer"])(
     "requiereSesion lanza UnauthorizedError con el header %j",
-    (authorization) => {
+    async (authorization) => {
       const req = crearRequest({ headers: { authorization } });
 
-      expect(() => requiereSesion(autenticacion)(req, res, next)).toThrow(UnauthorizedError);
+      await expect(requiereSesion(autenticacion)(req, res, next)).rejects.toThrow(UnauthorizedError);
       expect(autenticacion.validarSesion).not.toHaveBeenCalled();
     },
   );
@@ -54,14 +53,13 @@ describe("requiereSesion", () => {
   it.each([
     ["el token es inválido", new UnauthorizedError("Token inválido o expirado")],
     ["el usuario fue dado de baja", new ForbiddenError("Usuario inactivo")],
-  ])("requiereSesion pasa el error a next si %s", async (_caso, error) => {
+  ])("requiereSesion propaga el error si %s", async (_caso, error) => {
     vi.mocked(autenticacion.validarSesion).mockRejectedValue(error);
     const req = crearRequest({ headers: { authorization: "Bearer token" } });
 
-    requiereSesion(autenticacion)(req, res, next);
-
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(error));
+    await expect(requiereSesion(autenticacion)(req, res, next)).rejects.toBe(error);
     expect(req.usuario).toBeUndefined();
+    expect(next).not.toHaveBeenCalled();
   });
 });
 
@@ -131,33 +129,30 @@ describe("requierePermiso", () => {
     autorizacion.tienePermiso.mockResolvedValue(true);
     const req = crearRequest({ usuario: { id_usuario: 7, roles: ["PROFESORA"] } });
 
-    middleware()(req, res, next);
+    await middleware()(req, res, next);
 
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(undefined));
+    expect(next).toHaveBeenCalledWith();
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(7, "ACTIVIDADES_EDITAR");
   });
 
-  it("requierePermiso pasa un ForbiddenError si ninguno de sus roles otorga el permiso", async () => {
+  it("requierePermiso lanza ForbiddenError si ninguno de sus roles otorga el permiso", async () => {
     autorizacion.tienePermiso.mockResolvedValue(false);
     const req = crearRequest({ usuario: { id_usuario: 7, roles: ["ALUMNO"] } });
 
-    middleware()(req, res, next);
-
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError)));
+    await expect(middleware()(req, res, next)).rejects.toThrow(ForbiddenError);
+    expect(next).not.toHaveBeenCalled();
   });
 
-  it("requierePermiso pasa el error al manejador si falla la consulta", async () => {
+  it("requierePermiso propaga el error si falla la consulta", async () => {
     const falla = new Error("connect ECONNREFUSED");
     autorizacion.tienePermiso.mockRejectedValue(falla);
     const req = crearRequest({ usuario: { id_usuario: 7, roles: ["PROPIETARIA"] } });
 
-    middleware()(req, res, next);
-
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(falla));
+    await expect(middleware()(req, res, next)).rejects.toBe(falla);
   });
 
-  it("requierePermiso lanza UnauthorizedError si no pasó antes por requiereSesion", () => {
-    expect(() => middleware()(crearRequest(), res, next)).toThrow(UnauthorizedError);
+  it("requierePermiso lanza UnauthorizedError si no pasó antes por requiereSesion", async () => {
+    await expect(middleware()(crearRequest(), res, next)).rejects.toThrow(UnauthorizedError);
     expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
   });
 });
@@ -171,18 +166,18 @@ describe("requierePropioOPermiso", () => {
     next = vi.fn();
   });
 
-  it("requierePropioOPermiso lanza UnauthorizedError si no pasó por requiereSesion", () => {
+  it("requierePropioOPermiso lanza UnauthorizedError si no pasó por requiereSesion", async () => {
     const req = crearRequest({ params: { id: "1" } });
 
-    expect(() => requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next)).toThrow(
+    await expect(requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next)).rejects.toThrow(
       UnauthorizedError,
     );
   });
 
-  it("requierePropioOPermiso deja pasar los datos propios sin consultar permisos", () => {
+  it("requierePropioOPermiso deja pasar los datos propios sin consultar permisos", async () => {
     const req = crearRequest({ params: { id: "7" }, usuario: { id_usuario: 7, roles: ["ALUMNO"] } });
 
-    requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next);
+    await requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next);
 
     expect(next).toHaveBeenCalledWith();
     expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
@@ -192,17 +187,18 @@ describe("requierePropioOPermiso", () => {
     vi.mocked(autorizacion.tienePermiso).mockResolvedValue(true);
     const req = crearRequest({ params: { id: "8" }, usuario: { id_usuario: 7, roles: ["PROPIETARIA"] } });
 
-    requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next);
+    await requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next);
 
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(undefined));
+    expect(next).toHaveBeenCalledWith();
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(7, "USUARIOS_VER");
   });
 
-  it("requierePropioOPermiso responde ForbiddenError si falta el permiso para otro usuario", async () => {
+  it("requierePropioOPermiso lanza ForbiddenError si falta el permiso para otro usuario", async () => {
     const req = crearRequest({ params: { id: "8" }, usuario: { id_usuario: 7, roles: ["ALUMNO"] } });
 
-    requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next);
-
-    await vi.waitFor(() => expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError)));
+    await expect(requierePropioOPermiso(autorizacion, "USUARIOS_VER")(req, res, next)).rejects.toThrow(
+      ForbiddenError,
+    );
+    expect(next).not.toHaveBeenCalled();
   });
 });

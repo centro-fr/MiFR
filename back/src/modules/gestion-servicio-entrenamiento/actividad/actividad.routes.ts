@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { asyncHandler } from "../../../shared/utils/async-handler.js";
 import { requierePermiso, requiereRol, requiereSesion } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import type { IAutenticacion } from "../../gestion-usuarios/sesion/interface/i-autenticacion.js";
@@ -27,7 +26,7 @@ export function createActividadRoutes(
     "/",
     requierePermiso(autorizacion, "ACTIVIDADES_VER"),
     validate({ query: listarActividadQuerySchema }),
-    asyncHandler(controller.listar),
+    controller.listar,
   );
 
   router.post(
@@ -35,14 +34,14 @@ export function createActividadRoutes(
     requiereRol("PROPIETARIA"),
     requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
     validate({ body: crearActividadSchema }),
-    asyncHandler(controller.crear),
+    controller.crear,
   );
 
   router.get(
     "/:id",
     requierePermiso(autorizacion, "ACTIVIDADES_VER"),
     validate({ params: actividadIdParamSchema }),
-    asyncHandler(controller.obtener),
+    controller.obtener,
   );
 
   router.patch(
@@ -50,7 +49,7 @@ export function createActividadRoutes(
     requiereRol("PROPIETARIA"),
     requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
     validate({ params: actividadIdParamSchema, body: actualizarActividadSchema }),
-    asyncHandler(controller.actualizar),
+    controller.actualizar,
   );
 
   router.delete(
@@ -58,7 +57,7 @@ export function createActividadRoutes(
     requiereRol("PROPIETARIA"),
     requierePermiso(autorizacion, "ACTIVIDADES_EDITAR"),
     validate({ params: actividadIdParamSchema }),
-    asyncHandler(controller.baja),
+    controller.baja,
   );
 
   return router;

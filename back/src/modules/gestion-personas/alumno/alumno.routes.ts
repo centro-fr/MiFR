@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { requierePermiso, requiereRol, requiereSesion } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
-import { asyncHandler } from "../../../shared/utils/async-handler.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../gestion-usuarios/sesion/interface/i-autenticacion.js";
 import type { ILogicaPersonas } from "../interface/i-logica-personas.js";
@@ -31,27 +30,27 @@ export function createAlumnoRoutes(
     soloPropietaria,
     requierePermiso(autorizacion, "ALUMNOS_VER"),
     validate({ query: listarAlumnoQuerySchema }),
-    asyncHandler(controller.listar),
+    controller.listar,
   );
   router.post(
     "/",
     requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
     validate({ body: crearAlumnoSchema }),
-    asyncHandler(controller.crear),
+    controller.crear,
   );
   router.get(
     "/:id",
     soloPropietaria,
     requierePermiso(autorizacion, "ALUMNOS_VER"),
     validate({ params: alumnoIdParamSchema }),
-    asyncHandler(controller.obtener),
+    controller.obtener,
   );
   router.patch(
     "/:id",
     soloPropietaria,
     requierePermiso(autorizacion, "ALUMNOS_EDITAR"),
     validate({ params: alumnoIdParamSchema, body: actualizarAlumnoSchema }),
-    asyncHandler(controller.actualizar),
+    controller.actualizar,
   );
 
   return router;

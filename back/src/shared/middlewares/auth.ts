@@ -18,19 +18,17 @@ declare global {
   }
 }
 
+// Express 5 pasa al errorHandler tanto lo que se lanza como el rechazo de un middleware async,
+// así que los guardias lanzan el AppError directamente.
+
 export function requiereSesion(autenticacion: IAutenticacion) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const header = req.headers.authorization;
     if (!header?.startsWith("Bearer ")) throw new UnauthorizedError("Token no provisto");
 
-    const token = header.slice("Bearer ".length);
-    autenticacion
-      .validarSesion(token)
-      .then(({ usuarioId, roles }) => {
-        req.usuario = { id_usuario: usuarioId, roles };
-        next();
-      })
-      .catch(next);
+    const { usuarioId, roles } = await autenticacion.validarSesion(header.slice("Bearer ".length));
+    req.usuario = { id_usuario: usuarioId, roles };
+    next();
   };
 }
 
@@ -47,13 +45,12 @@ export function requiereRol(...rolesPermitidos: string[]) {
 // Decide con los roles actuales de la base, no con los del JWT: así un cambio en la
 // matriz o en los roles del usuario rige desde la próxima petición.
 export function requierePermiso(autorizacion: IAutorizacion, codigoPermiso: CodigoPermiso) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     if (!req.usuario) throw new UnauthorizedError();
-
-    autorizacion
-      .tienePermiso(req.usuario.id_usuario, codigoPermiso)
-      .then((permitido) => next(permitido ? undefined : new ForbiddenError()))
-      .catch(next);
+    if (!(await autorizacion.tienePermiso(req.usuario.id_usuario, codigoPermiso))) {
+      throw new ForbiddenError();
+    }
+    next();
   };
 }
 
@@ -62,9 +59,9 @@ export function requierePermiso(autorizacion: IAutorizacion, codigoPermiso: Codi
 export function requierePropioOPermiso(autorizacion: IAutorizacion, codigoPermiso: CodigoPermiso) {
   const verificarPermiso = requierePermiso(autorizacion, codigoPermiso);
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.usuario) throw new UnauthorizedError();
     if (Number(req.params.id) === req.usuario.id_usuario) return next();
-    verificarPermiso(req, res, next);
+    await verificarPermiso(req, res, next);
   };
 }
