@@ -182,8 +182,8 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.resumirInscripcionesVigentes(idsAlumnos);
   }
 
-  contarInscriptosVigentesEnHorario(idHorario: number): Promise<number> {
-    return this.repositorio.contarInscriptosVigentesEnHorario(idHorario);
+  contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
+    return this.repositorio.contarInscriptosVigentes(idsHorarios);
   }
 
   private async obtenerInscripcionVigente(id: number): Promise<InscripcionConDatos> {

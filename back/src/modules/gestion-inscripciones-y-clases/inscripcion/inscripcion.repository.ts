@@ -442,14 +442,18 @@ export class InscripcionRepository {
     return [...resumenPorAlumno.values()];
   }
 
-  contarInscriptosVigentesEnHorario(idHorario: number): Promise<number> {
-    return this.prisma.inscripcion_horarios.count({
+  async contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
+    if (idsHorarios.length === 0) return new Map();
+    const filas = await this.prisma.inscripcion_horarios.groupBy({
+      by: ["id_horario"],
       where: {
-        id_horario: idHorario,
+        id_horario: { in: idsHorarios },
         fecha_hasta: null,
         inscripcion: { estado: { in: [...ESTADOS_VIGENTES] }, alumno: { estado: { not: "BAJA" } } },
       },
+      _count: { id_horario: true },
     });
+    return new Map(filas.map(({ id_horario, _count }) => [id_horario, _count.id_horario]));
   }
 
   private async agregarHorarios(

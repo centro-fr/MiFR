@@ -19,8 +19,8 @@ const actividadDadaDeBaja: Actividad = {
 
 describe("GestionServicioEntrenamientoService", () => {
   let actividades: Pick<ActividadService, "darDeBaja">;
-  let horarios: Pick<HorarioService, "tieneActivosDeActividad" | "darDeBaja">;
-  let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentesEnHorario">;
+  let horarios: Pick<HorarioService, "tieneActivosDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
+  let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes">;
   let servicio: GestionServicioEntrenamientoService;
 
   beforeEach(() => {
@@ -28,13 +28,19 @@ describe("GestionServicioEntrenamientoService", () => {
     horarios = {
       tieneActivosDeActividad: vi.fn().mockResolvedValue(false),
       darDeBaja: vi.fn().mockResolvedValue({ id_horario: 3 }),
+      listar: vi.fn().mockResolvedValue([
+        { id_horario: 3, cupo_maximo_efectivo: 4 },
+        { id_horario: 4, cupo_maximo_efectivo: 1 },
+        { id_horario: 5, cupo_maximo_efectivo: null },
+      ]),
+      obtenerPorId: vi.fn().mockResolvedValue({ id_horario: 3, cupo_maximo_efectivo: 4 }),
     };
-    inscripciones = { contarInscriptosVigentesEnHorario: vi.fn().mockResolvedValue(0) };
+    inscripciones = { contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()) };
     servicio = new GestionServicioEntrenamientoService(
       actividades as ActividadService,
       horarios as HorarioService,
       {} as PlanService,
-      inscripciones as IInfoInscripciones,
+      inscripciones as unknown as IInfoInscripciones,
     );
   });
 
@@ -54,10 +60,39 @@ describe("GestionServicioEntrenamientoService", () => {
   });
 
   it("darDeBajaHorario lanza ConflictError si el horario tiene alumnos inscriptos", async () => {
-    vi.mocked(inscripciones.contarInscriptosVigentesEnHorario).mockResolvedValue(2);
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[3, 2]]));
 
     await expect(servicio.darDeBajaHorario(3)).rejects.toThrow(ConflictError);
     expect(horarios.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("listarHorarios suma a cada horario sus inscriptos y los lugares que le quedan, en una consulta", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(
+      new Map([
+        [3, 1],
+        [4, 3],
+        [5, 7],
+      ]),
+    );
+
+    const horariosConOcupacion = await servicio.listarHorarios({});
+
+    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledOnce();
+    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledWith([3, 4, 5]);
+    expect(
+      horariosConOcupacion.map(({ inscriptos, cupo_disponible }) => [inscriptos, cupo_disponible]),
+    ).toEqual([
+      [1, 3],
+      [3, 0],
+      [7, null],
+    ]);
+  });
+
+  it("obtenerHorarioPorId informa 0 inscriptos si no tiene ninguno", async () => {
+    await expect(servicio.obtenerHorarioPorId(3)).resolves.toMatchObject({
+      inscriptos: 0,
+      cupo_disponible: 4,
+    });
   });
 
   it("darDeBajaHorario da de baja el horario sin alumnos inscriptos", async () => {
@@ -69,7 +104,7 @@ describe("GestionServicioEntrenamientoService", () => {
       horario: { id_horario: 3 },
       advertencia: "El horario no tenía alumnos inscriptos.",
     });
-    expect(inscripciones.contarInscriptosVigentesEnHorario).toHaveBeenCalledWith(3);
+    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledWith([3]);
   });
 });
 
@@ -97,7 +132,7 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     registrarPrecio: vi.fn().mockResolvedValue("resultado"),
   };
   const inscripciones = {
-    contarInscriptosVigentesEnHorario: vi.fn().mockResolvedValue(0),
+    contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
   };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
@@ -113,8 +148,6 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["obtenerActividadPorId", [3], actividades.obtenerPorId],
     ["actualizarActividad", [3, cuerpo], actividades.actualizar],
     ["crearHorario", [cuerpo], horarios.crear],
-    ["listarHorarios", [{ id_actividad: 3 }], horarios.listar],
-    ["obtenerHorarioPorId", [3], horarios.obtenerPorId],
     ["actualizarHorario", [3, cuerpo], horarios.actualizar],
     ["crearPlan", [cuerpo], planes.crear],
     ["listarPlanes", [{ tipo: "MENSUAL" }], planes.listar],

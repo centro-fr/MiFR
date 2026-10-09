@@ -42,6 +42,20 @@ const horarioSchema = z
   })
   .openapi("Horario");
 
+const horarioConOcupacionSchema = horarioSchema
+  .extend({
+    inscriptos: z
+      .number()
+      .int()
+      .openapi({ description: "Alumnos con una inscripción vigente en el horario" }),
+    cupo_disponible: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: "Lugares que quedan; null si el horario no tiene cupo" }),
+  })
+  .openapi("HorarioConOcupacion");
+
 const horarioConAdvertenciaSchema = z
   .object({ horario: horarioSchema, advertencia: z.string() })
   .openapi("HorarioConAdvertencia");
@@ -62,10 +76,12 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Listar horarios activos",
-    description: "Requiere el permiso `HORARIOS_VER`.",
+    description:
+      "Requiere el permiso `HORARIOS_VER`. Cada horario trae cuántos alumnos tiene inscriptos y cuántos " +
+      "lugares le quedan, para elegirlo al pre-inscribir.",
     request: { query: listarHorarioQuerySchema },
     responses: {
-      200: respuestaJson("Horarios", z.array(horarioSchema)),
+      200: respuestaJson("Horarios", z.array(horarioConOcupacionSchema)),
       ...respuestasDeError(400, 401, 403),
     },
   });
@@ -99,9 +115,12 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Obtener un horario",
-    description: "Requiere el permiso `HORARIOS_VER`.",
+    description: "Requiere el permiso `HORARIOS_VER`. Trae los inscriptos y los lugares que quedan.",
     request: { params: horarioIdParamSchema },
-    responses: { 200: horario, ...respuestasDeError(400, 401, 403, 404) },
+    responses: {
+      200: respuestaJson("Horario", horarioConOcupacionSchema),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
   });
 
   registro.registerPath({

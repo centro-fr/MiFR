@@ -14,5 +14,6 @@ export interface IInfoInscripciones {
   listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]>;
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]>;
   resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]>;
-  contarInscriptosVigentesEnHorario(idHorario: number): Promise<number>;
+  // Inscriptos vigentes por horario, de una sola consulta; un horario sin inscriptos no figura.
+  contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>>;
 }

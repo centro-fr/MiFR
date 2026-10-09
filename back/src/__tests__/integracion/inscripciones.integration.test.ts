@@ -392,3 +392,26 @@ describe("PI-24: baja de un horario con alumnos inscriptos", () => {
     expect(sinInscriptos.body.horario.fecha_baja).not.toBeNull();
   });
 });
+
+describe("PI-27: ocupación de los horarios", () => {
+  it("cada horario informa sus inscriptos vigentes y los lugares que le quedan", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    const primero = await crearAlumno(prisma);
+    const segundo = await crearAlumno(prisma);
+    await inscribir(primero.id_alumno, [idHorario]);
+    await inscribir(segundo.id_alumno, [idHorario]);
+    await darDeBaja(segundo.id_alumno);
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+
+    const detalle = await comoMarina("get", `/horarios/${idHorario}`);
+    const listado = await como(tokenLucia, "get", "/horarios");
+
+    expect(detalle.body).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
+    const enListado = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorario);
+    expect(enListado).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
+    const funcionalSinCupo = listado.body.find(
+      (h: { cupo_maximo_efectivo: number | null }) => h.cupo_maximo_efectivo === null,
+    );
+    expect(funcionalSinCupo.cupo_disponible).toBeNull();
+  });
+});

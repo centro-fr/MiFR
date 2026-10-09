@@ -1,5 +1,8 @@
 import { ConflictError } from "../../shared/errors/app-error.js";
-import type { ILogicaServicioEntrenamiento } from "./interface/i-logica-servicio-entrenamiento.js";
+import type {
+  HorarioConOcupacion,
+  ILogicaServicioEntrenamiento,
+} from "./interface/i-logica-servicio-entrenamiento.js";
 import type { ActividadService } from "./actividad/actividad.service.js";
 import type { ActualizarActividadInput, CrearActividadInput } from "./actividad/actividad.schemas.js";
 import type { Actividad, FiltroActividad } from "./actividad/actividad.types.js";
@@ -51,12 +54,13 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.horarios.crear(input);
   }
 
-  listarHorarios(filtro: FiltroHorario): Promise<HorarioRespuesta[]> {
-    return this.horarios.listar(filtro);
+  async listarHorarios(filtro: FiltroHorario): Promise<HorarioConOcupacion[]> {
+    return this.conOcupacion(await this.horarios.listar(filtro));
   }
 
-  obtenerHorarioPorId(id: number): Promise<HorarioRespuesta> {
-    return this.horarios.obtenerPorId(id);
+  async obtenerHorarioPorId(id: number): Promise<HorarioConOcupacion> {
+    const [horario] = await this.conOcupacion([await this.horarios.obtenerPorId(id)]);
+    return horario;
   }
 
   actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
@@ -67,7 +71,7 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
   // Horario no conoce a Inscripcion, así que el cruce lo hace el subsistema. La advertencia queda
   // en la respuesta porque el front ya la muestra.
   async darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
-    const inscriptos = await this.inscripciones.contarInscriptosVigentesEnHorario(id);
+    const inscriptos = (await this.inscripciones.contarInscriptosVigentes([id])).get(id) ?? 0;
     if (inscriptos > 0) {
       throw new ConflictError(
         `El horario tiene ${inscriptos} alumno(s) inscripto(s): hay que reubicarlos antes de darlo de baja`,
@@ -77,6 +81,22 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
       horario: await this.horarios.darDeBaja(id),
       advertencia: "El horario no tenía alumnos inscriptos.",
     };
+  }
+
+  // Horario no conoce a Inscripcion: los inscriptos los cuenta el subsistema, en una consulta.
+  private async conOcupacion(horarios: HorarioRespuesta[]): Promise<HorarioConOcupacion[]> {
+    const inscriptosPorHorario = await this.inscripciones.contarInscriptosVigentes(
+      horarios.map(({ id_horario }) => id_horario),
+    );
+    return horarios.map((horario) => {
+      const inscriptos = inscriptosPorHorario.get(horario.id_horario) ?? 0;
+      const cupo = horario.cupo_maximo_efectivo;
+      return {
+        ...horario,
+        inscriptos,
+        cupo_disponible: cupo === null ? null : Math.max(cupo - inscriptos, 0),
+      };
+    });
   }
 
   crearPlan(input: CrearPlanInput): Promise<Plan> {

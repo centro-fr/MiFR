@@ -16,10 +16,14 @@ export interface ILogicaActividades {
   darDeBajaActividad(id: number): Promise<Actividad>;
 }
 
+// US-04 y US-05: el listado y el detalle de un horario dicen cuántos alumnos tiene y cuántos
+// lugares le quedan (null si no tiene cupo), para elegirlo al pre-inscribir. Sale de Inscripcion.
+export type HorarioConOcupacion = HorarioRespuesta & { inscriptos: number; cupo_disponible: number | null };
+
 export interface ILogicaHorarios {
   crearHorario(input: CrearHorarioInput): Promise<HorarioRespuesta>;
-  listarHorarios(filtro: FiltroHorario): Promise<HorarioRespuesta[]>;
-  obtenerHorarioPorId(id: number): Promise<HorarioRespuesta>;
+  listarHorarios(filtro: FiltroHorario): Promise<HorarioConOcupacion[]>;
+  obtenerHorarioPorId(id: number): Promise<HorarioConOcupacion>;
   actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta>;
   darDeBajaHorario(id: number): Promise<HorarioConAdvertencia>;
 }

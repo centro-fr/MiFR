@@ -26,7 +26,7 @@ const transaccion = {
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
   inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
-  inscripcion_horarios: { count: vi.fn() },
+  inscripcion_horarios: { groupBy: vi.fn() },
 };
 
 const DIA = new Date("2026-10-09T00:00:00Z");
@@ -176,12 +176,15 @@ describe("InscripcionRepository", () => {
       ]);
     });
 
-    it("contarInscriptosVigentesEnHorario cuenta los horarios abiertos de inscripciones vigentes", async () => {
-      prisma.inscripcion_horarios.count.mockResolvedValue(3);
+    it("contarInscriptosVigentes cuenta por horario los abiertos de inscripciones vigentes", async () => {
+      await expect(repositorio.contarInscriptosVigentes([])).resolves.toEqual(new Map());
+      expect(prisma.inscripcion_horarios.groupBy).not.toHaveBeenCalled();
 
-      await expect(repositorio.contarInscriptosVigentesEnHorario(8)).resolves.toBe(3);
-      expect(prisma.inscripcion_horarios.count.mock.calls[0][0].where).toMatchObject({
-        id_horario: 8,
+      prisma.inscripcion_horarios.groupBy.mockResolvedValue([{ id_horario: 8, _count: { id_horario: 3 } }]);
+
+      await expect(repositorio.contarInscriptosVigentes([8, 9])).resolves.toEqual(new Map([[8, 3]]));
+      expect(prisma.inscripcion_horarios.groupBy.mock.calls[0][0].where).toMatchObject({
+        id_horario: { in: [8, 9] },
         fecha_hasta: null,
       });
     });
