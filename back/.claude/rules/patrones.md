@@ -20,7 +20,7 @@ Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un servi
 
 **Única excepción a "sin reglas propias":** una regla que cruza dos componentes que el diagrama no conecta entre sí. Va en la fachada, porque el subsistema es el único que ve a los dos, y nunca en uno de los componentes, porque eso agregaría una dependencia que el diagrama no tiene. Los casos actuales:
 
-- `GestionServicioEntrenamientoService.darDeBajaActividad` consulta `IInfoHorarios` antes de dar de baja la actividad (CA-03). `Actividad` no depende de `Horario`, y además `Horario` ya depende de `IInfoActividades`, así que la dependencia inversa armaría un ciclo.
+- `GestionServicioEntrenamientoService.darDeBajaActividad` cuenta con `IInfoInscripciones` los alumnos de los horarios de la actividad: si alguno tiene inscriptos responde 409; si no, da de baja los horarios y después la actividad (US-03). `Actividad` no depende de `Horario`, y además `Horario` ya depende de `IInfoActividades`, así que la dependencia inversa armaría un ciclo.
 - `GestionPersonasService.darDeBajaProfesora` consulta `IInfoHorarios`, que en el diagrama requiere el subsistema `GestionPersonas` y no el componente `Profesor`.
 - `GestionServicioEntrenamientoService.darDeBajaHorario` consulta `IInfoInscripciones` y no da de baja un horario con alumnos inscriptos (US-04). `Horario` no conoce a `Inscripcion`, que además depende de `IInfoHorarios`.
 - `GestionPersonasService` resuelve con `IInfoInscripciones` los filtros por plan, profesora y actividad, el plan de cada fila y qué alumnos tiene a cargo una profesora (US-09, US-10). `Alumno` no conoce a `Inscripcion`, que depende de `IInfoAlumnos`. La fachada recibe quién hace el pedido (`Solicitante`) desde el controller.

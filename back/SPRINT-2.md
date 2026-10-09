@@ -143,7 +143,7 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Pendientes del Sprint 1 que se destraban
 
 - [x] Un horario con alumnos inscriptos no se da de baja (409): primero hay que reubicarlos (US-04). Lo resuelve la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones`; `Horario` no la conoce.
-- [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
+- [x] La baja de una actividad se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, da de baja también sus horarios en el mismo paso. Decidido con Francisco: antes había que dar de baja cada horario a mano.
 
 ---
 

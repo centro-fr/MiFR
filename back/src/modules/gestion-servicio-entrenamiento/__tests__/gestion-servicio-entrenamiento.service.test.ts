@@ -18,15 +18,15 @@ const actividadDadaDeBaja: Actividad = {
 };
 
 describe("GestionServicioEntrenamientoService", () => {
-  let actividades: Pick<ActividadService, "darDeBaja">;
-  let horarios: Pick<HorarioService, "tieneActivosDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
+  let actividades: Pick<ActividadService, "darDeBaja" | "obtenerPorId">;
+  let horarios: Pick<HorarioService, "darDeBajaDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
   let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes">;
   let servicio: GestionServicioEntrenamientoService;
 
   beforeEach(() => {
-    actividades = { darDeBaja: vi.fn() };
+    actividades = { darDeBaja: vi.fn(), obtenerPorId: vi.fn().mockResolvedValue({ id_actividad: 1 }) };
     horarios = {
-      tieneActivosDeActividad: vi.fn().mockResolvedValue(false),
+      darDeBajaDeActividad: vi.fn().mockResolvedValue(3),
       darDeBaja: vi.fn().mockResolvedValue({ id_horario: 3 }),
       listar: vi.fn().mockResolvedValue([
         { id_horario: 3, cupo_maximo_efectivo: 4 },
@@ -37,26 +37,36 @@ describe("GestionServicioEntrenamientoService", () => {
     };
     inscripciones = { contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()) };
     servicio = new GestionServicioEntrenamientoService(
-      actividades as ActividadService,
-      horarios as HorarioService,
+      actividades as unknown as ActividadService,
+      horarios as unknown as HorarioService,
       {} as PlanService,
       inscripciones as unknown as IInfoInscripciones,
     );
   });
 
-  it("darDeBajaActividad permite la baja si la actividad no tiene horarios activos", async () => {
+  it("darDeBajaActividad da de baja la actividad junto con sus horarios sin alumnos", async () => {
     vi.mocked(actividades.darDeBaja).mockResolvedValue(actividadDadaDeBaja);
 
     await expect(servicio.darDeBajaActividad(1)).resolves.toEqual(actividadDadaDeBaja);
-    expect(horarios.tieneActivosDeActividad).toHaveBeenCalledWith(1);
+    expect(horarios.listar).toHaveBeenCalledWith({ id_actividad: 1 });
+    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledWith([3, 4, 5]);
+    expect(horarios.darDeBajaDeActividad).toHaveBeenCalledWith(1);
     expect(actividades.darDeBaja).toHaveBeenCalledWith(1);
   });
 
-  it("darDeBajaActividad bloquea la baja si la actividad tiene horarios activos", async () => {
-    vi.mocked(horarios.tieneActivosDeActividad).mockResolvedValue(true);
+  it("darDeBajaActividad bloquea la baja si algún horario tiene alumnos inscriptos", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[4, 1]]));
 
-    await expect(servicio.darDeBajaActividad(1)).rejects.toThrow(ConflictError);
+    await expect(servicio.darDeBajaActividad(1)).rejects.toThrow("1 horario(s) con alumnos inscriptos");
+    expect(horarios.darDeBajaDeActividad).not.toHaveBeenCalled();
     expect(actividades.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("darDeBajaActividad no toca los horarios si la actividad no existe", async () => {
+    vi.mocked(actividades.obtenerPorId).mockRejectedValue(new Error("no existe"));
+
+    await expect(servicio.darDeBajaActividad(99)).rejects.toThrow("no existe");
+    expect(horarios.darDeBajaDeActividad).not.toHaveBeenCalled();
   });
 
   it("darDeBajaHorario lanza ConflictError si el horario tiene alumnos inscriptos", async () => {

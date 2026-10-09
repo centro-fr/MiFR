@@ -39,14 +39,22 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.actividades.actualizar(id, input);
   }
 
-  // US-03 / CA-03: la baja solo procede sin horarios activos. Actividad no conoce a Horario en
-  // la vista arquitectónica, así que el subsistema es quien cruza los dos componentes.
+  // US-03: la baja de la actividad da de baja también sus horarios, salvo que alguno tenga alumnos
+  // inscriptos: a esos hay que reubicarlos antes (US-04). Actividad no conoce a Horario ni a
+  // Inscripcion en la vista arquitectónica, así que el subsistema es quien los cruza.
   async darDeBajaActividad(id: number): Promise<Actividad> {
-    if (await this.horarios.tieneActivosDeActividad(id)) {
+    await this.actividades.obtenerPorId(id);
+    const horarios = await this.horarios.listar({ id_actividad: id });
+    const inscriptos = await this.inscripciones.contarInscriptosVigentes(
+      horarios.map(({ id_horario }) => id_horario),
+    );
+    const conAlumnos = horarios.filter(({ id_horario }) => (inscriptos.get(id_horario) ?? 0) > 0);
+    if (conAlumnos.length > 0) {
       throw new ConflictError(
-        "La actividad tiene horarios activos: hay que darlos de baja antes que la actividad",
+        `La actividad tiene ${conAlumnos.length} horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja`,
       );
     }
+    await this.horarios.darDeBajaDeActividad(id);
     return this.actividades.darDeBaja(id);
   }
 

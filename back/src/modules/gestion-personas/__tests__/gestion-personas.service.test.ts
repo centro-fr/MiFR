@@ -23,7 +23,6 @@ function crearMocks() {
     },
     horarios: {
       buscarPorIds: vi.fn(),
-      tieneActivosDeActividad: vi.fn(),
       tieneActivosDeProfesora: vi.fn().mockResolvedValue(false),
     },
     alumnos: {

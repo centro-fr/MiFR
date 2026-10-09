@@ -70,7 +70,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | Letra | Archivo | Tema | Último código |
 | :--- | :--- | :--- | :--- |
 | A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos | A-41 |
-| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-15 |
+| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-16 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
 | D | `src/__tests__/integracion/planes.integration.test.ts` | Planes, baja lógica y precios con fecha de vigencia | D-14 |
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda y lo que ve la profesora | E-20 |

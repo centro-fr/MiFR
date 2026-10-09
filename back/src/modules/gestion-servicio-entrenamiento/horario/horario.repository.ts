@@ -99,12 +99,6 @@ export class HorarioRepository {
     });
   }
 
-  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return this.prisma.horarios
-      .count({ where: { id_actividad: idActividad, fecha_baja: null } })
-      .then((cantidad) => cantidad > 0);
-  }
-
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
     return this.prisma.horarios
       .count({ where: { id_profesora: idProfesora, fecha_baja: null } })
@@ -125,6 +119,27 @@ export class HorarioRepository {
         data: mapearHoras(input),
         include: CON_DATOS,
       });
+    });
+  }
+
+  // US-03: la baja de la actividad arrastra sus horarios activos. Toma el mismo bloqueo por horario
+  // que la inscripción (en el mismo orden, para no trabarse con ella), así ninguna entra en un
+  // horario que se está cerrando.
+  darDeBajaDeActividad(idActividad: number): Promise<number> {
+    return this.prisma.$transaction(async (transaccion) => {
+      const activos = await transaccion.horarios.findMany({
+        where: { id_actividad: idActividad, fecha_baja: null },
+        select: { id_horario: true },
+      });
+      const claves = activos.map(({ id_horario }) => `inscripcion-horario:${id_horario}`).sort();
+      for (const clave of claves) {
+        await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
+      }
+      const { count } = await transaccion.horarios.updateMany({
+        where: { id_actividad: idActividad, fecha_baja: null },
+        data: { fecha_baja: fechaActualArgentina() },
+      });
+      return count;
     });
   }
 

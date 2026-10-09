@@ -12,7 +12,7 @@ const HOY_EN_ARGENTINA = new Date("2026-10-04T00:00:00Z");
 
 const transaccion = {
   $executeRaw: vi.fn(),
-  horarios: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
+  horarios: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
 };
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
@@ -140,15 +140,28 @@ describe("HorarioRepository", () => {
     });
   });
 
-  it.each([
-    ["tieneActivosDeActividad", { id_actividad: 1, fecha_baja: null }],
-    ["tieneActivosDeProfesora", { id_profesora: 1, fecha_baja: null }],
-  ] as const)("%s cuenta solo los horarios sin fecha de baja", async (metodo, where) => {
+  it("tieneActivosDeProfesora cuenta solo los horarios sin fecha de baja", async () => {
     prisma.horarios.count.mockResolvedValueOnce(0).mockResolvedValueOnce(2);
 
-    await expect(repositorio[metodo](1)).resolves.toBe(false);
-    await expect(repositorio[metodo](1)).resolves.toBe(true);
-    expect(prisma.horarios.count).toHaveBeenCalledWith({ where });
+    await expect(repositorio.tieneActivosDeProfesora(1)).resolves.toBe(false);
+    await expect(repositorio.tieneActivosDeProfesora(1)).resolves.toBe(true);
+    expect(prisma.horarios.count).toHaveBeenCalledWith({ where: { id_profesora: 1, fecha_baja: null } });
+  });
+
+  it("darDeBajaDeActividad bloquea cada horario activo en el orden de la inscripción y los da de baja", async () => {
+    transaccion.horarios.findMany.mockResolvedValue([{ id_horario: 9 }, { id_horario: 10 }]);
+    transaccion.horarios.updateMany.mockResolvedValue({ count: 2 });
+
+    await expect(repositorio.darDeBajaDeActividad(1)).resolves.toBe(2);
+
+    expect(transaccion.$executeRaw.mock.calls.map(([, clave]) => clave)).toEqual([
+      "inscripcion-horario:10",
+      "inscripcion-horario:9",
+    ]);
+    expect(transaccion.horarios.updateMany).toHaveBeenCalledWith({
+      where: { id_actividad: 1, fecha_baja: null },
+      data: { fecha_baja: HOY_EN_ARGENTINA },
+    });
   });
 
   it("darDeBaja registra la fecha de hoy en Argentina sin borrar el horario", async () => {
