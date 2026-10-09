@@ -4,6 +4,7 @@ import {
   AppError,
   ConflictError,
   ForbiddenError,
+  MontoDistintoError,
   NotFoundError,
   UnauthorizedError,
   UsuarioNoRegistradoError,
@@ -34,6 +35,13 @@ describe("errores de la aplicación", () => {
 
     expect(error).toMatchObject({ statusCode: 409, code: "ALUMNO_EXISTENTE" });
     expect(error.message).toContain("alumno 7");
+  });
+
+  it("MontoDistintoError responde 409 con un código propio y el monto esperado", () => {
+    const error = new MontoDistintoError(28000);
+
+    expect(error).toMatchObject({ statusCode: 409, code: "MONTO_DISTINTO" });
+    expect(error.message).toContain("28000");
   });
 
   it("acepta un mensaje personalizado", () => {

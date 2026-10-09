@@ -9,6 +9,7 @@ Cada `<x>.schemas.ts` arma sus campos con los esquemas compartidos de `src/share
 | `idSchema` | `esquemas-id.ts` | Entero positivo hasta el máximo de `INTEGER` (2.147.483.647). Rechaza `0`, `-0`, negativos y decimales |
 | `idDesdeTextoSchema` | `esquemas-id.ts` | Para params y query: solo dígitos decimales sin ceros adelante (`"1"` sí; `"01"`, `"-0"`, `"1e1"`, `"0x10"`, `" 7 "` no) |
 | `enteroNoNegativoSchema(max)` | `esquemas-numero.ts` | Entero entre 0 y `max`. Rechaza `-0`, que en JSON es un número válido y `min(0)` deja pasar |
+| `montoSchema(nombre)` | `esquemas-numero.ts` | Monto de dinero de una columna `NUMERIC(10,2)`: mayor a 0, hasta 99.999.999,99 y con dos decimales como máximo. Precios, cuotas y pagos |
 | `textoSchema(max)` | `esquemas-texto.ts` | Recorta espacios, exige al menos una letra (`"-0"`, `"123"` o `"!!!"` no son un nombre) y rechaza caracteres de control e invisibles |
 | `textoOpcionalSchema(max)` | `esquemas-texto.ts` | Igual, para columnas que admiten NULL: `""` se guarda como NULL. Con `{ multilinea: true }` acepta saltos de línea (textarea) |
 | `textoBusquedaSchema(max)` | `esquemas-texto.ts` | Para filtros: puede venir vacío y no exige letras, pero tiene largo máximo y no admite caracteres de control |
