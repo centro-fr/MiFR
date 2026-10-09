@@ -33,8 +33,9 @@ export const cambiarPlanSchema = z.object(datosDePlanYHorarios);
 
 export const actualizarHorariosSchema = z.object({ ids_horarios });
 
+// CAMBIO_PLAN no se acepta: lo pone el cambio de plan, y un alumno que se va no cambia de plan.
 export const darDeBajaAlumnoSchema = z.object({
-  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]),
+  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
 });
 
 export const listarInscripcionesQuerySchema = z.object({

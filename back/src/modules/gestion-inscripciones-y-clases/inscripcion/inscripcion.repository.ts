@@ -1,5 +1,4 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type {
   ActualizarHorariosInput,
   CambiarPlanInput,
@@ -8,6 +7,7 @@ import type {
 } from "./inscripcion.schemas.js";
 import {
   INCLUIR_DATOS_INSCRIPCION,
+  type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
   type InscripcionConDatos,
@@ -207,7 +207,11 @@ export class InscripcionRepository {
     });
   }
 
-  async darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput, fecha: Date): Promise<number[]> {
+  async darDeBajaAlumno(
+    idAlumno: number,
+    input: DarDeBajaAlumnoInput,
+    fechas: FechasDeBaja,
+  ): Promise<number[]> {
     return this.prisma.$transaction(async (transaccion) => {
       const vigentes = await transaccion.inscripciones.findMany({
         where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
@@ -228,11 +232,11 @@ export class InscripcionRepository {
 
       await transaccion.inscripciones.updateMany({
         where: { id_inscripcion: { in: idsInscripciones } },
-        data: { estado: "BAJA", motivo_baja: input.motivo_baja, fecha_baja: fecha },
+        data: { estado: "BAJA", motivo_baja: input.motivo_baja, fecha_baja: fechas.instante },
       });
       await transaccion.inscripcion_horarios.updateMany({
         where: { id_inscripcion: { in: idsInscripciones }, fecha_hasta: null },
-        data: { fecha_hasta: fecha },
+        data: { fecha_hasta: fechas.dia },
       });
       return idsInscripciones;
     });
@@ -273,8 +277,9 @@ export class InscripcionRepository {
     actual: InscripcionConDatos,
     nuevoPlan: Omit<CambiarPlanInput, "fecha_inicio">,
     idPlanPrecio: number,
-    fecha: Date,
+    fechas: FechasDeBaja,
   ): Promise<ResultadoOperacion> {
+    const { dia } = fechas;
     const idsHorarios = nuevoPlan.ids_horarios;
     const horariosAnteriores = actual.horarios
       .filter(({ fecha_hasta }) => fecha_hasta === null)
@@ -307,11 +312,11 @@ export class InscripcionRepository {
 
       await transaccion.inscripciones.update({
         where: { id_inscripcion: actual.id_inscripcion },
-        data: { estado: "BAJA", motivo_baja: "CAMBIO_PLAN", fecha_baja: fecha },
+        data: { estado: "BAJA", motivo_baja: "CAMBIO_PLAN", fecha_baja: fechas.instante },
       });
       await transaccion.inscripcion_horarios.updateMany({
         where: { id_inscripcion: actual.id_inscripcion, fecha_hasta: null },
-        data: { fecha_hasta: fecha },
+        data: { fecha_hasta: dia },
       });
       const nueva = await transaccion.inscripciones.create({
         data: {
@@ -320,11 +325,11 @@ export class InscripcionRepository {
           id_plan_precio: idPlanPrecio,
           id_profesora: nuevoPlan.id_profesora,
           sin_cargo: nuevoPlan.sin_cargo,
-          fecha_inicio: fecha,
+          fecha_inicio: dia,
           fecha_fin_estimado: nuevoPlan.fecha_fin_estimado,
           observaciones: nuevoPlan.observaciones,
           estado: vigente.estado,
-          horarios: { create: idsHorarios.map((id_horario) => ({ id_horario, fecha_desde: fecha })) },
+          horarios: { create: idsHorarios.map((id_horario) => ({ id_horario, fecha_desde: dia })) },
         },
         include: INCLUIR_DATOS_INSCRIPCION,
       });
@@ -370,26 +375,25 @@ export class InscripcionRepository {
     });
   }
 
-  obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]> {
-    return this.prisma.inscripciones
-      .findMany({
-        where: {
-          estado: { in: [...ESTADOS_VIGENTES] },
-          alumno: { estado: { not: "BAJA" } },
-          ...(filtro.id_plan === undefined ? {} : { id_plan: filtro.id_plan }),
-          ...(filtro.id_profesora === undefined ? {} : { id_profesora: filtro.id_profesora }),
-          ...(filtro.id_actividad === undefined
-            ? {}
-            : {
-                horarios: {
-                  some: { fecha_hasta: null, horario: { id_actividad: filtro.id_actividad } },
-                },
-              }),
-        },
-        select: { id_alumno: true },
-        distinct: ["id_alumno"],
-      })
-      .then((filas) => filas.map(({ id_alumno }) => id_alumno));
+  async obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]> {
+    const filas = await this.prisma.inscripciones.findMany({
+      where: {
+        estado: { in: [...ESTADOS_VIGENTES] },
+        alumno: { estado: { not: "BAJA" } },
+        ...(filtro.id_plan === undefined ? {} : { id_plan: filtro.id_plan }),
+        ...(filtro.id_profesora === undefined ? {} : { id_profesora: filtro.id_profesora }),
+        ...(filtro.id_actividad === undefined
+          ? {}
+          : {
+              horarios: {
+                some: { fecha_hasta: null, horario: { id_actividad: filtro.id_actividad } },
+              },
+            }),
+      },
+      select: { id_alumno: true },
+      distinct: ["id_alumno"],
+    });
+    return filas.map(({ id_alumno }) => id_alumno);
   }
 
   async resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]> {

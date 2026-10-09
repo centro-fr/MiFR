@@ -32,6 +32,13 @@ export type InscripcionConDatos = Prisma.inscripcionesGetPayload<{
   include: typeof INCLUIR_DATOS_INSCRIPCION;
 }>;
 
+// fecha_baja de la inscripción es TIMESTAMP (el instante, en UTC) y las vigencias de
+// inscripcion_horarios son DATE (el día de Argentina, ver fecha-argentina.ts).
+export interface FechasDeBaja {
+  instante: Date;
+  dia: Date;
+}
+
 export interface FiltroInscripciones {
   id_alumno?: number;
   id_plan?: number;
