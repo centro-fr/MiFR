@@ -1,6 +1,6 @@
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
@@ -201,6 +201,31 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
   );
 }
 
+/** Contraer/expandir el menú en desktop. En mobile no aplica: ahí el menú es un drawer. */
+function BotonColapsarMenu() {
+  const { state, isMobile, toggleSidebar } = useSidebar();
+  if (isMobile) return null;
+
+  const contraido = state === "collapsed";
+  const Icono = contraido ? PanelLeftOpen : PanelLeftClose;
+  const etiqueta = contraido ? "Expandir menú" : "Contraer menú";
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          onClick={toggleSidebar}
+          aria-expanded={!contraido}
+          tooltip={`${etiqueta} (Ctrl+B)`}
+          aria-label={etiqueta}
+          className={cn(CLASES_ITEM, "w-fit text-sidebar-foreground/70 hover:text-sidebar-foreground")}
+        >
+          <Icono aria-hidden="true" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
 function BloqueUsuario() {
   const { user, logout } = useAuth();
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -256,6 +281,9 @@ function MenuLateral({ items }: { items: ItemConEstado[] }) {
       <SidebarContent>
         <NavegacionPrincipal items={items} />
       </SidebarContent>
+      <SidebarGroup className="py-0">
+        <BotonColapsarMenu />
+      </SidebarGroup>
       <BloqueUsuario />
       <SidebarRail />
     </Sidebar>
@@ -298,11 +326,11 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
   );
 }
 
-/** Barra superior: botón del menú (drawer en mobile, contraer en desktop), migas y tema. */
+/** Barra superior: botón del drawer (solo mobile; en desktop se contrae desde el propio menú), migas y tema. */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
-      <SidebarTrigger className="-ml-2 h-11 w-11 shrink-0 text-slate-500 pointer-fine:h-9 pointer-fine:w-9 dark:text-slate-300" />
+      <SidebarTrigger className="-ml-2 h-11 w-11 shrink-0 text-slate-500 md:hidden dark:text-slate-300" />
       <div className="flex items-center gap-2.5 md:hidden">
         <LogoMarca />
         <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>

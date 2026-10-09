@@ -114,10 +114,10 @@ Acceso a opciones secundarias (esquina superior derecha):
 | 10 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
 | 11 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
 
+<<<<<<< Updated upstream
 ### Actividades y Horarios (ítems independientes)
 
 "Actividades" y "Horarios" se presentan como dos accesos directos independientes en el menú (no forman un grupo desplegable):
-
 | Ítem | Ícono | Pantalla que abre |
 | ------ | ------- | ------------------- |
 | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
@@ -133,10 +133,10 @@ Reglas:
 ### Mobile (drawer lateral desde la izquierda)
 
 Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos directos independientes), en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
+=======
+> Antes "Actividades" y "Horarios" eran sub-ítems de un grupo desplegable "Actividades y Horarios".
+> Se separaron en dos ítems de primer nivel para llegar a cada pantalla con un solo toque.
 
-### Orden de prioridad visual (más usados arriba)
-
-1. Dashboard
 2. Alumnos
 3. Cobros y Cuotas
 4. Actividades

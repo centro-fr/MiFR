@@ -23,7 +23,7 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
     >
       <DialogContent
         hideClose
-        className="relative flex max-h-[85vh] w-full max-w-lg flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-dark p-6 text-white shadow-2xl sm:rounded-3xl sm:p-8"
+        className="flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-dark p-6 text-white shadow-2xl sm:rounded-3xl sm:p-8"
       >
         <Button
           type="button"
@@ -36,7 +36,7 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
           <X aria-hidden="true" className="h-5 w-5" />
         </Button>
 
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-4 flex items-center gap-3 pr-12">
           <span className="rounded-xl border border-primary/30 bg-primary/20 p-2.5 text-primary">
             <ShieldCheck aria-hidden="true" className="h-6 w-6" />
           </span>
@@ -48,7 +48,7 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
           </div>
         </div>
 
-        <div className="space-y-4 overflow-y-auto border-t border-white/10 pr-2 pt-4 text-sm leading-relaxed text-slate-300">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain border-t border-white/10 pb-5 pr-2 pt-4 text-sm leading-relaxed text-slate-300">
           {type === "terms" ? (
             <>
               <p>
