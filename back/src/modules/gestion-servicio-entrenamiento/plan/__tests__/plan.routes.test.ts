@@ -1,6 +1,7 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
+import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import { ConflictError } from "../../../../shared/errors/app-error.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
 import type { ILogicaUsuarios } from "../../../gestion-usuarios/interface/i-logica-usuarios.js";
@@ -49,6 +50,7 @@ describe("rutas de planes", () => {
       gestionUsuarios: {} as unknown as ILogicaUsuarios,
       gestionPersonas: {} as unknown as ILogicaPersonas,
       gestionServicioEntrenamiento: logica as unknown as ILogicaServicioEntrenamiento,
+      gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       autenticacion,
       autorizacion,
     });

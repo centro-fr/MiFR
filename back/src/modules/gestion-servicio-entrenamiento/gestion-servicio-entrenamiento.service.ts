@@ -9,6 +9,7 @@ import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "./h
 import type { PlanService } from "./plan/plan.service.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "./plan/plan.types.js";
+import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 // Realiza ILogicaServicioEntrenamiento
 export class GestionServicioEntrenamientoService implements ILogicaServicioEntrenamiento {
@@ -16,6 +17,7 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     private readonly actividades: ActividadService,
     private readonly horarios: HorarioService,
     private readonly planes: PlanService,
+    private readonly inscripciones: IInfoInscripciones,
   ) {}
 
   crearActividad(input: CrearActividadInput): Promise<Actividad> {
@@ -62,7 +64,14 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
   }
 
   darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
-    return this.horarios.darDeBaja(id);
+    return this.horarios.darDeBaja(id).then(async (horario) => {
+      const cantidad = await this.inscripciones.contarInscriptosVigentesEnHorario(id);
+      const advertencia =
+        cantidad > 0
+          ? `El horario tiene ${cantidad} inscripción(es) vigente(s); reubicarlas antes de continuar.`
+          : "El horario no tiene alumnos inscriptos.";
+      return { horario, advertencia };
+    });
   }
 
   crearPlan(input: CrearPlanInput): Promise<Plan> {

@@ -129,3 +129,32 @@ export async function crearAlumno(
 
   return { id_alumno: alumno.id_alumno, id_usuario: alumno.id_usuario };
 }
+
+interface OpcionesHorario {
+  id_actividad: number;
+  id_profesora: number;
+  dia_semana: number;
+  hora_inicio: string;
+  hora_fin: string;
+  cupo_maximo?: number | null;
+}
+
+function convertirHora(hora: string): Date {
+  const [horas, minutos] = hora.split(":").map(Number);
+  return new Date(Date.UTC(1970, 0, 1, horas, minutos));
+}
+
+export async function crearHorarioDePrueba(
+  prisma: PrismaClient,
+  input: OpcionesHorario,
+): Promise<{ id_horario: number }> {
+  const horario = await prisma.horarios.create({
+    data: {
+      ...input,
+      hora_inicio: convertirHora(input.hora_inicio),
+      hora_fin: convertirHora(input.hora_fin),
+    },
+    select: { id_horario: true },
+  });
+  return horario;
+}

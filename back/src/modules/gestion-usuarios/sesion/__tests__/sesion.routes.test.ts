@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp as crearAppBase } from "../../../../app.js";
+import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import {
   ForbiddenError,
   UnauthorizedError,
@@ -14,7 +15,10 @@ import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-ent
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
 
 function createApp(
-  dependencias: Omit<Parameters<typeof crearAppBase>[0], "gestionServicioEntrenamiento" | "gestionPersonas">,
+  dependencias: Omit<
+    Parameters<typeof crearAppBase>[0],
+    "gestionServicioEntrenamiento" | "gestionPersonas" | "gestionInscripcionesYClases"
+  >,
   opciones?: Parameters<typeof crearAppBase>[1],
 ) {
   return crearAppBase(
@@ -22,6 +26,7 @@ function createApp(
       ...dependencias,
       gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
       gestionPersonas: {} as unknown as ILogicaPersonas,
+      gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
     },
     opciones,
   );

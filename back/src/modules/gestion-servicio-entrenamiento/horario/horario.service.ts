@@ -41,6 +41,12 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(await this.obtenerHorario(id));
   }
 
+  async buscarPorIds(ids: number[]): Promise<HorarioRespuesta[]> {
+    if (ids.length === 0) return [];
+    const horarios = await this.repositorio.buscarPorIds(ids);
+    return horarios.map((horario) => this.conCupoEfectivo(horario));
+  }
+
   async actualizar(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
     const actual = await this.obtenerHorarioActivo(id);
     const idActividad = input.id_actividad ?? actual.id_actividad;
@@ -68,13 +74,9 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(horario);
   }
 
-  async darDeBaja(id: number): Promise<HorarioConAdvertencia> {
+  async darDeBaja(id: number): Promise<HorarioRespuesta> {
     await this.obtenerHorarioActivo(id);
-    return {
-      horario: this.conCupoEfectivo(await this.repositorio.darDeBaja(id)),
-      advertencia:
-        "No se verificaron inscripciones futuras; el módulo de inscripciones aún no está disponible.",
-    };
+    return this.conCupoEfectivo(await this.repositorio.darDeBaja(id));
   }
 
   tieneActivosDeActividad(idActividad: number): Promise<boolean> {

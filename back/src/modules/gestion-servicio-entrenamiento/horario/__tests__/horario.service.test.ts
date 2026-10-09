@@ -11,6 +11,7 @@ function crearRepositorioMock() {
     crear: vi.fn(),
     listar: vi.fn(),
     buscarPorId: vi.fn(),
+    buscarPorIds: vi.fn(),
     actualizar: vi.fn(),
     darDeBaja: vi.fn(),
     tieneActivosDeActividad: vi.fn(),
@@ -173,14 +174,19 @@ describe("HorarioService", () => {
     expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
-  it("darDeBaja conserva el registro y advierte sobre inscripciones pendientes de módulo", async () => {
+  it("darDeBaja conserva el registro para que la fachada consulte las inscripciones", async () => {
     repositorio.buscarPorId.mockResolvedValue(horarioBase);
     repositorio.darDeBaja.mockResolvedValue({ ...horarioBase, fecha_baja: new Date() });
 
-    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({
-      horario: { fecha_baja: expect.any(Date) },
-      advertencia: expect.stringContaining("inscripciones futuras"),
-    });
+    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({ fecha_baja: expect.any(Date) });
+  });
+
+  it("buscarPorIds devuelve horarios con el cupo efectivo", async () => {
+    repositorio.buscarPorIds.mockResolvedValue([horarioBase]);
+
+    await expect(servicio.buscarPorIds([1])).resolves.toMatchObject([
+      { id_horario: 1, cupo_maximo_efectivo: 20 },
+    ]);
   });
 
   it("listar devuelve los horarios con su cupo efectivo", async () => {

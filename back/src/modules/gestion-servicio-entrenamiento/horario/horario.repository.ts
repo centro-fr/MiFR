@@ -92,6 +92,13 @@ export class HorarioRepository {
     return this.prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }
 
+  buscarPorIds(ids: number[]): Promise<HorarioConDatos[]> {
+    return this.prisma.horarios.findMany({
+      where: { id_horario: { in: ids } },
+      include: CON_DATOS,
+    });
+  }
+
   tieneActivosDeActividad(idActividad: number): Promise<boolean> {
     return this.prisma.horarios
       .count({ where: { id_actividad: idActividad, fecha_baja: null } })
@@ -122,10 +129,14 @@ export class HorarioRepository {
   }
 
   darDeBaja(id: number): Promise<HorarioConDatos> {
-    return this.prisma.horarios.update({
-      where: { id_horario: id },
-      data: { fecha_baja: fechaActualArgentina() },
-      include: CON_DATOS,
+    return this.prisma.$transaction(async (transaccion) => {
+      const clave = `inscripcion-horario:${id}`;
+      await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
+      return transaccion.horarios.update({
+        where: { id_horario: id },
+        data: { fecha_baja: fechaActualArgentina() },
+        include: CON_DATOS,
+      });
     });
   }
 }

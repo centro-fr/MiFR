@@ -6,11 +6,11 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 | --- | --- | --- | --- |
 | US-11 | Alta y edición de planes vigentes | Completa | Francisco |
 | US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro, Sprint 3) | Francisco |
-| US-05 | Pre-inscripción de alumno nuevo | En curso | Francisco (alumno) + Nicolas (inscripción) |
+| US-05 | Pre-inscripción de alumno nuevo | Completa | Francisco (alumno) + Nicolas (inscripción) |
 | US-06 | Asociación de tutor a alumno menor | Completa | Francisco |
-| US-07 | Alta definitiva al confirmarse el primer pago | Pendiente | Nicolas |
-| US-08 | Baja lógica de alumno | Pendiente | Nicolas |
-| US-09 | Modificación de datos de alumno | En curso (datos y tutor completos) | Francisco (datos y tutor) + Nicolas (plan y horarios) |
+| US-07 | Alta definitiva al confirmarse el primer pago | Completa | Nicolas |
+| US-08 | Baja lógica de alumno | Completa | Nicolas |
+| US-09 | Modificación de datos de alumno | En curso (datos, tutor, plan y horarios completos; queda habilitar edición de profesora) | Francisco (datos y tutor) + Nicolas (plan y horarios) |
 | US-10 | Consulta y búsqueda de alumnos | En curso (faltan los filtros que salen de las inscripciones) | Francisco |
 
 Fuentes: `docs/specs/03-*` y `docs/specs/04-*`, `docs/sdd/03-*/tasks.md` y `docs/sdd/04-*/tasks.md`, y el DER (`docs/diagrams/enterprise_architect/DER - Centro de Entrenamiento FR.sql`). Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
@@ -120,34 +120,29 @@ Cómo trabajar en paralelo sin bloquearse:
 
 **Responsable:** Nicolas
 
-### Pendiente (inscripción)
+### Hecho (inscripción)
 
-- [ ] Diagramar la máquina de estados `PREINSCRIPTA → ACTIVA → BAJA` en `docs/diagrams/` antes de codificarla (`arquitectura.md`). Es el caso de State que anticipa `patrones.md`; si el comportamiento por estado termina siendo poco, alcanza con un `switch` en el service.
-- [ ] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migración (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, PK compuesta de `inscripcion_horarios`).
-- [ ] Subsistema nuevo `gestion-inscripciones-y-clases/` con `ILogicaInscripcionesYClases`, su fachada y el componente `inscripcion/` con `IInfoInscripciones`. Montar sus rutas en el router `api` de `app.ts` y armarlo en `composicion.ts`.
-- [ ] `POST /api/v1/inscripciones` (US-05): crea la inscripción en `PREINSCRIPTA` con sus horarios, la profesora a cargo y el `id_plan_precio` vigente hoy.
-- [ ] `GET /api/v1/inscripciones` (filtros por alumno, plan, profesora, actividad y estado) y `GET /api/v1/inscripciones/:id`.
-- [ ] **Reglas de US-05**:
-  - [ ] Plan obligatorio, vigente; si es de actividad exclusiva, los horarios son de esa actividad.
-  - [ ] Si `planes.profesora_unica`, todos los horarios son de la profesora a cargo.
-  - [ ] En planes mensuales, la cantidad de horarios no supera `clases_por_semana`.
-  - [ ] Cupo: cupo efectivo del horario (propio o heredado de la actividad) contra las inscripciones `PREINSCRIPTA` o `ACTIVA` con ese horario vigente (`fecha_hasta` nula). Sin cupo → 409.
-  - [ ] Un alumno no puede tener dos inscripciones activas o pre-inscriptas al mismo plan.
-- [ ] `POST /api/v1/inscripciones/:id/activar` (US-07, alta manual de la propietaria). La misma operación queda en `ILogicaInscripcionesYClases` para que la llame el cobro del Sprint 3:
-  - [ ] Solo desde `PREINSCRIPTA`; si ya está `ACTIVA` devuelve la inscripción sin hacer nada (doble confirmación). Desde `BAJA` → 409.
-  - [ ] Vuelve a verificar el cupo antes de activar.
-  - [ ] Pasa a `ACTIVA` y llama a `IInfoAlumnos.activar`. Son dos componentes sin transacción compartida, así que los dos pasos tienen que poder reintentarse.
-- [ ] `POST /api/v1/alumnos/:id/baja` y `POST /api/v1/alumnos/:id/reactivar` (US-08). Van en esta parte porque `motivo_baja` está en `inscripciones` según el DER:
-  - [ ] Baja: las inscripciones vigentes del alumno pasan a `BAJA` con `motivo_baja` obligatorio y `fecha_baja`; se cierran sus `inscripcion_horarios` (`fecha_hasta`) para liberar el cupo; después `IInfoAlumnos.darDeBaja`.
-  - [ ] Alumno ya dado de baja → 409.
-  - [ ] Reactivar crea una inscripción nueva (la vieja queda como historial) con validación de cupo; sin cupo → 409.
-  - [ ] Solo la propietaria (rol `PROPIETARIA` + `ALUMNOS_EDITAR`).
-- [ ] `IInfoInscripciones` para US-10: ids de alumnos por filtro (plan, profesora, actividad) y resumen de inscripción vigente por lista de alumnos, en una sola consulta (sin N+1).
-- [ ] Tests del service (cupo, `profesora_unica`, `clases_por_semana`, activación idempotente, baja que libera cupo) y de integración.
+- [x] Diagramar la máquina de estados `PREINSCRIPTA → ACTIVA → BAJA` en [estados_inscripcion.puml](../docs/diagrams/puml/estados_inscripcion.puml) antes de implementarla. El flujo no requiere una jerarquía State: las transiciones y sus reglas quedan en el service.
+- [x] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migraciones y restricciones (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, PK compuesta de `inscripcion_horarios`).
+- [x] Subsistema `gestion-inscripciones-y-clases/` con `ILogicaInscripcionesYClases`, su fachada y `IInfoInscripciones`; rutas montadas en `app.ts` y composición en `composicion.ts`.
+- [x] `POST /api/v1/inscripciones` crea una inscripción `PREINSCRIPTA` con horarios, profesora a cargo y el `id_plan_precio` vigente hoy.
+- [x] `GET /api/v1/inscripciones` (filtros por alumno, plan, profesora, actividad y estado) y `GET /api/v1/inscripciones/:id`.
+- [x] **Reglas de US-05**:
+  - [x] Plan obligatorio y vigente; los planes con actividad exclusiva solo aceptan horarios de esa actividad.
+  - [x] Si `planes.profesora_unica`, todos los horarios deben pertenecer a la profesora a cargo.
+  - [x] En planes mensuales, la cantidad de horarios no supera `clases_por_semana`.
+  - [x] El cupo efectivo del horario (propio o heredado de la actividad) cuenta inscripciones `PREINSCRIPTA` o `ACTIVA` con horario vigente (`fecha_hasta` nula). Sin cupo → 409; las operaciones que compiten por el cupo se serializan en transacción.
+  - [x] Un alumno no puede tener dos inscripciones activas o pre-inscriptas al mismo plan.
+- [x] `POST /api/v1/inscripciones/:id/activar` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. Queda disponible en `ILogicaInscripcionesYClases` para el cobro del Sprint 3.
+- [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409.
+- [x] `POST /api/v1/alumnos/:id/reactivar` crea una inscripción nueva, conserva la anterior como historial, valida cupos y reactiva al alumno. Sin cupo responde 409 sin cambiar su estado.
+- [x] Activación, baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`.
+- [x] `IInfoInscripciones` expone ids de alumnos por plan/profesora/actividad y el resumen vigente por lote (sin N+1), además del conteo de cupo para horarios.
+- [x] Tests unitarios del ciclo de vida y de integración PI-20 a PI-23.
 
 ### Pendientes del Sprint 1 que se destraban
 
-- [ ] Al dar de baja un horario, avisar si tiene alumnos inscriptos (hoy devuelve un texto fijo en `horario.service.ts`). Lo resuelve la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones`; `Horario` no la conoce, porque `Inscripcion` ya depende de `IInfoHorarios`.
+- [x] Al dar de baja un horario, avisar si tiene alumnos inscriptos. Lo resuelve la fachada `GestionServicioEntrenamientoService` con `IInfoInscripciones`; `Horario` no la conoce.
 - [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
 
 ---
@@ -163,9 +158,9 @@ Cómo trabajar en paralelo sin bloquearse:
 
 ### Nicolas: plan y horarios
 
-- [ ] `POST /api/v1/inscripciones/:id/cambio-plan`: da de baja la inscripción actual con `motivo_baja = CAMBIO_PLAN` y crea la nueva con el precio vigente, en una transacción. Las cuotas anteriores siguen apuntando a la inscripción vieja, así que no se tocan.
-- [ ] `PATCH /api/v1/inscripciones/:id/horarios`: cierra los horarios que salen (`fecha_hasta`) y agrega los nuevos con validación de cupo.
-- [ ] Plan no vigente o sin cupo → 409. Solo la propietaria.
+- [x] `POST /api/v1/inscripciones/:id/cambio-plan`: da de baja la inscripción actual con `motivo_baja = CAMBIO_PLAN` y crea la nueva con el precio vigente, en una transacción. Las cuotas aún no existen en el modelo; cuando se incorporen, deben seguir ligadas a la inscripción anterior.
+- [x] `PATCH /api/v1/inscripciones/:id/horarios`: cierra los horarios que salen (`fecha_hasta`) y agrega los nuevos con validación transaccional de cupo.
+- [x] Plan no vigente o sin cupo → 409. Solo la propietaria.
 
 ## US-10 – Consulta y búsqueda de alumnos
 

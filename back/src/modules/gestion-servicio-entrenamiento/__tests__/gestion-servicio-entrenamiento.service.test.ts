@@ -4,6 +4,7 @@ import type { ActividadService } from "../actividad/actividad.service.js";
 import type { Actividad } from "../actividad/actividad.types.js";
 import type { HorarioService } from "../horario/horario.service.js";
 import type { PlanService } from "../plan/plan.service.js";
+import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import { GestionServicioEntrenamientoService } from "../gestion-servicio-entrenamiento.service.js";
 
 const actividadDadaDeBaja: Actividad = {
@@ -18,16 +19,22 @@ const actividadDadaDeBaja: Actividad = {
 
 describe("GestionServicioEntrenamientoService", () => {
   let actividades: Pick<ActividadService, "darDeBaja">;
-  let horarios: Pick<HorarioService, "tieneActivosDeActividad">;
+  let horarios: Pick<HorarioService, "tieneActivosDeActividad" | "darDeBaja">;
+  let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentesEnHorario">;
   let servicio: GestionServicioEntrenamientoService;
 
   beforeEach(() => {
     actividades = { darDeBaja: vi.fn() };
-    horarios = { tieneActivosDeActividad: vi.fn().mockResolvedValue(false) };
+    horarios = {
+      tieneActivosDeActividad: vi.fn().mockResolvedValue(false),
+      darDeBaja: vi.fn().mockResolvedValue({ id_horario: 3 }),
+    };
+    inscripciones = { contarInscriptosVigentesEnHorario: vi.fn().mockResolvedValue(0) };
     servicio = new GestionServicioEntrenamientoService(
       actividades as ActividadService,
       horarios as HorarioService,
       {} as PlanService,
+      inscripciones as IInfoInscripciones,
     );
   });
 
@@ -44,6 +51,18 @@ describe("GestionServicioEntrenamientoService", () => {
 
     await expect(servicio.darDeBajaActividad(1)).rejects.toThrow(ConflictError);
     expect(actividades.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("darDeBajaHorario informa las inscripciones vigentes", async () => {
+    vi.mocked(horarios.darDeBaja).mockResolvedValue({ id_horario: 3 } as unknown as Awaited<
+      ReturnType<HorarioService["darDeBaja"]>
+    >);
+    vi.mocked(inscripciones.contarInscriptosVigentesEnHorario).mockResolvedValue(2);
+
+    await expect(servicio.darDeBajaHorario(3)).resolves.toEqual({
+      horario: { id_horario: 3 },
+      advertencia: "El horario tiene 2 inscripción(es) vigente(s); reubicarlas antes de continuar.",
+    });
   });
 });
 
@@ -70,10 +89,14 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     listarPrecios: vi.fn().mockResolvedValue("resultado"),
     registrarPrecio: vi.fn().mockResolvedValue("resultado"),
   };
+  const inscripciones = {
+    contarInscriptosVigentesEnHorario: vi.fn().mockResolvedValue(0),
+  };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
     horarios as unknown as HorarioService,
     planes as unknown as PlanService,
+    inscripciones as unknown as IInfoInscripciones,
   );
   const cuerpo = { nombre: "X" };
 
@@ -86,7 +109,6 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["listarHorarios", [{ id_actividad: 3 }], horarios.listar],
     ["obtenerHorarioPorId", [3], horarios.obtenerPorId],
     ["actualizarHorario", [3, cuerpo], horarios.actualizar],
-    ["darDeBajaHorario", [3], horarios.darDeBaja],
     ["crearPlan", [cuerpo], planes.crear],
     ["listarPlanes", [{ tipo: "MENSUAL" }], planes.listar],
     ["obtenerPlanPorId", [3], planes.obtenerPorId],

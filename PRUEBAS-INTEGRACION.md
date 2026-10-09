@@ -64,7 +64,7 @@ Se aplica a los tres tipos de integración.
 
 ### 3.2 Integración de servicios (en implementación)
 
-Estas pruebas ejecutan el backend completo sobre una base de datos PostgreSQL real. En cada caso se verifica qué responde la API y qué queda guardado en la base. Corresponden a los casos PI-01 a PI-09.
+Estas pruebas ejecutan el backend completo sobre una base de datos PostgreSQL real. En cada caso se verifica qué responde la API y qué queda guardado en la base. Corresponden a los casos PI-01 a PI-23.
 
 | Elemento             | Definición                                                                                                                                                                                                                                                              |
 | :------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -93,9 +93,10 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Sesión                           | `entorno.iniciarSesion(correo)`, que pasa por el login real con Google simulado                                                                                                                                                                                                                                        |
 | Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones           |
 | Alumnos                          | Fábrica `crearAlumno` (`back/src/__tests__/integracion/fabricas.ts`): alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles) y mayor de edad por defecto; se le puede pasar nombre, apellido, DNI, email (o `null` para un menor), fecha de nacimiento, estado y tutor. La van a usar los casos de inscripciones |
+| Horarios                         | Fábrica `crearHorarioDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): horario directo para el test con actividad, profesora, día, horas y cupo propios configurables                                                                                                                                       |
 | Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                                    |
 
-Cuando las pruebas nuevas necesiten otro tipo de dato (por ejemplo inscripciones o pagos), se agrega en `fabricas.ts` una función que lo cree, igual que `crearUsuario`. Así cualquier test puede reutilizarla.
+Cuando las pruebas necesiten otro tipo de dato, se agrega una fábrica reutilizable en `fabricas.ts`, igual que `crearUsuario`.
 
 ### 4.1 Escenario de demostración
 
@@ -154,11 +155,11 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-02 | Definición de permisos por rol                            |   1    | PI-01, PI-02, PI-03, PI-05, PI-07, PI-08, PI-09, PI-10, PI-14 | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                           | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06                                    | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16                                                  | Parcial: falta la inscripción al plan y los horarios (parte de Nicolas)                |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20                                           | Sí, alumno, inscripción, horarios y cupos                                               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19                                           | Sí                                                                                     |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19                                                         | Parcial: la activación por HTTP llega con la inscripción                               |
-| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19                                                  | Parcial: la baja por HTTP llega con la inscripción                                     |
-| US-09 | Modificación de datos de alumno                           |   2    | PI-17                                                         | Parcial: falta el cambio de plan y horarios (parte de Nicolas)                         |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21                                                  | Sí                                                                                     |
+| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
+| US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23                                                  | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18                                                         | Parcial: faltan los filtros por plan y profesora, y que la profesora vea a sus alumnos |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3)                |
@@ -209,17 +210,18 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-11         | Alta de plan con su precio inicial                                 | US-11, US-12        | Servicios          | Demostración                                               | Sí           |
 | PI-12         | Modificación y baja de planes                                      | US-11               | Servicios          | Demostración                                               | Sí           |
 | PI-13         | Actualización de precio con fecha de vigencia                      | US-12               | Servicios          | Demostración                                               | Parcial      |
-| PI-14         | 08/10/2026                                                         | Francisco Andrade   | Aprobado           | Nueva corrida con la profesora viendo los planes           |
-| PI-15 a PI-18 | 08/10/2026                                                         | Francisco Andrade   | Aprobado           | Todos sus tests pasan (ver sección 7)                      |
-| PI-19         | 08/10/2026                                                         | Francisco Andrade   | Aprobado (parcial) | Pasan F-01 a F-03; falta la parte por HTTP (inscripciones) |
 | PI-14         | Permisos sobre planes                                              | US-02, US-11        | Servicios          | Demostración                                               | Sí           |
 | PI-15         | Pre-inscripción de un alumno mayor                                 | US-05               | Servicios          | Demostración                                               | Sí           |
 | PI-16         | Alumno menor con tutor                                             | US-05, US-06        | Servicios          | Demostración                                               | Sí           |
 | PI-17         | Modificación de datos del alumno                                   | US-06, US-09        | Servicios          | Demostración                                               | Sí           |
 | PI-18         | Búsqueda y consulta de alumnos                                     | US-08, US-10        | Servicios          | Demostración                                               | Sí           |
 | PI-19         | Cambios de estado del alumno contra la base                        | US-06, US-07, US-08 | Servicios          | Comunes                                                    | Parcial      |
+| PI-20         | Preinscripción, reglas de plan y cupo                              | US-05               | Servicios          | Demostración                                               | Sí           |
+| PI-21         | Activación idempotente y revalidación de cupo                       | US-07               | Servicios          | Demostración                                               | Sí           |
+| PI-22         | Baja del alumno y reactivación con historial                        | US-08               | Servicios          | Demostración                                               | Sí           |
+| PI-23         | Cambio de plan y horarios                                           | US-09               | Servicios          | Demostración                                               | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-19 son del Sprint 2: planes y precios (PI-11 a PI-14) y alumnos (PI-15 a PI-19).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-23 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19) e inscripciones (PI-20 a PI-23).
 
 ### 6.2 Detalle
 
@@ -468,11 +470,61 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Resultado esperado:** en el paso 1 el alumno y su usuario quedan `ACTIVO`, con el rol `ALUMNO` una sola vez, y el login responde 200. En el paso 2 la tutora recibe el rol `TUTOR` y puede entrar; el menor no recibe roles. En el paso 3 el alumno queda `BAJA` con su fecha de baja y su login responde 403; al reactivarlo vuelve a `ACTIVO`, sin fecha de baja, y puede entrar de nuevo. El alumno nunca se borra.
 
-**Automatizado:** Parcial (F-01 a F-03). La activación y la baja por HTTP se prueban cuando existan los endpoints de inscripción.
+**Automatizado:** Parcial (F-01 a F-03). La activación y la baja por HTTP se cubren además en PI-21 y PI-22 (G-04 a G-08).
+
+#### PI-20 — Preinscripción, reglas de plan, filtros y cupo
+
+**US:** US-05, US-10 · **Precondición:** escenario de demostración cargado; sesión de Marina; alumno inactivo y horarios activos.
+
+1. Marina crea una inscripción para el plan Básico y dos horarios funcionales.
+2. Consulta las inscripciones filtrando por alumno, plan, profesora, actividad y estado.
+3. Intenta duplicar el plan para el mismo alumno y asignar un horario cuyo cupo está completo.
+4. Intenta usar una actividad incompatible con un plan exclusivo, horarios de otra profesora para un plan `profesora_unica` y más clases semanales que las permitidas.
+
+**Resultado esperado:** el paso 1 responde 201 y guarda una inscripción `PREINSCRIPTA`, sus asignaciones vigentes y el precio del plan que rige hoy. El paso 2 devuelve esa inscripción. Los duplicados y cupos agotados responden 409; las incompatibilidades de plan, profesora y frecuencia responden 400. Ninguna operación rechazada agrega una inscripción.
+
+**Automatizado:** Sí (G-01 a G-03).
+
+#### PI-21 — Activación idempotente y revalidación de cupo
+
+**US:** US-07 · **Precondición:** escenario de demostración cargado; sesión de Marina; inscripción `PREINSCRIPTA`.
+
+1. Marina activa la inscripción y repite la misma operación.
+2. El alumno inicia sesión con su correo.
+3. Se preinscriben dos alumnos en el último cupo; luego se reduce el cupo y se intenta activar desde una profesora y desde Marina.
+
+**Resultado esperado:** las dos activaciones del paso 1 responden 200, el alumno y su usuario quedan `ACTIVO`, con un solo rol `ALUMNO`, y el login responde 200. En el paso 3 la profesora recibe 403; Marina recibe 409 cuando ya no hay cupo, y la inscripción sigue `PREINSCRIPTA`.
+
+**Automatizado:** Sí (G-04 y G-05).
+
+#### PI-22 — Baja del alumno y reactivación con historial
+
+**US:** US-08 · **Precondición:** escenario de demostración cargado; sesión de Marina; inscripción vigente.
+
+1. Marina da de baja al alumno indicando `MUDANZA`.
+2. Otro alumno ocupa el cupo liberado.
+3. Marina intenta dar de baja nuevamente al primero.
+4. Reactiva a un alumno dado de baja con cupo disponible y, en otro escenario, cuando otro alumno ya ocupa el cupo.
+
+**Resultado esperado:** la baja responde 200; la inscripción queda `BAJA` con motivo y fecha, sus horarios se cierran y el alumno queda dado de baja. El segundo alumno puede ocupar el cupo. Repetir la baja responde 409. La reactivación válida crea otra inscripción `ACTIVA` y conserva la anterior; sin cupo responde 409 y el historial no cambia.
+
+**Automatizado:** Sí (G-06 a G-08).
+
+#### PI-23 — Cambio de plan y horarios
+
+**US:** US-09 · **Precondición:** escenario de demostración cargado; sesión de Marina; inscripción vigente.
+
+1. Marina cambia el plan de una inscripción activa a otro plan.
+2. En otro escenario intenta cambiar a un plan que requiere un horario sin cupo.
+3. Actualiza los horarios de la inscripción; prueba además un cambio sin cupo y un intento de edición de una profesora.
+
+**Resultado esperado:** el paso 1 responde 200 y, en una transacción, conserva la inscripción anterior como `BAJA` con motivo `CAMBIO_PLAN` y crea otra con el precio vigente. El cambio sin cupo responde 409 y deja intacta la inscripción original. Al cambiar horarios se cierran los anteriores y se agregan los nuevos; si no hay cupo responde 409 sin aplicar cambios. La profesora recibe 403. Las cuotas no se modifican: todavía no forman parte del modelo del Sprint 2.
+
+**Automatizado:** Sí (G-09 a G-11).
 
 ## 7. Tests automatizados
 
-91 tests en seis archivos:
+102 tests en siete archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -482,6 +534,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 15 (E-01 a E-15) | PI-15, PI-16, PI-17, PI-18        |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 11 (G-01 a G-11) | PI-20, PI-21, PI-22, PI-23        |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -509,6 +562,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-09 a E-11 | Cambio de teléfono; menor que pasa a mayor (sin email se rechaza, con email pierde el tutor); DNI de otro usuario                                                               | PI-17 |
 | E-12 a E-15 | Búsqueda sin acentos, por tutor y por DNI exacto; dados de baja fuera del listado; paginación por apellido con total; la profesora todavía no consulta ni edita                 | PI-18 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
+| G-01 a G-03 | Inscripción preinscripta, precio vigente, filtros, validación de reglas, duplicados y cupo                                                                                   | PI-20 |
+| G-04, G-05  | Activación idempotente, rol `ALUMNO`, login, autorización de propietaria y revalidación de cupo                                                                               | PI-21 |
+| G-06 a G-08 | Baja que libera cupo; reactivación con nuevo historial y rechazo cuando no hay cupo                                                                                          | PI-22 |
+| G-09 a G-11 | Cambio transaccional de plan, cambio de horarios, rechazos por cupo y control de acceso                                                                                      | PI-23 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -555,30 +612,33 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 
 ### 8.1 Ejecuciones completas
 
-| Fecha      | Motivo                                                                | Tests | Resultado    | Duración | Observaciones                                                                                                 |
-| :--------- | :-------------------------------------------------------------------- | :---: | :----------- | :------: | :------------------------------------------------------------------------------------------------------------ |
-| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados |  4,4 s   | Pasaron también los 669 tests unitarios                                                                       |
-| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades                                           |
-| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados |  14,5 s  | Pasaron también los 669 tests unitarios                                                                       |
-| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada                                            |
-| 08/10/2026 | Planes y precios con vigencia (PI-11 a PI-14)                         |  73   | 73 aprobados |  27,0 s  | Pasaron también los 763 tests unitarios; las 12 fallas provocadas fueron detectadas                           |
-| 08/10/2026 | Alumnos y tutores (PI-15 a PI-19); la profesora ve los planes (PI-14) |  91   | 91 aprobados |  28,3 s  | Pasaron también los 854 tests unitarios; las 19 fallas provocadas fueron detectadas                           |
-| 08/10/2026 | Planes y alumnos en el escenario de demostración                      |  91   | 91 aprobados |  33,3 s  | Los tests de planes y alumnos pasan a contar contra lo que había; las fallas provocadas se vuelven a detectar |
+| Fecha      | Motivo                                                                | Tests | Resultado     | Duración | Observaciones                                                                                                      |
+| :--------- | :-------------------------------------------------------------------- | :---: | :------------ | :------: | :----------------------------------------------------------------------------------------------------------------- |
+| 07/10/2026 | Primera corrida                                                       |  41   | 41 aprobados  |  4,4 s   | Pasaron también los 669 tests unitarios                                                                            |
+| 07/10/2026 | PI-03 (paso 4) a PI-06 automatizados                                  |  57   | 57 aprobados  |  7,0 s   | Fallas provocadas detectadas en cupo efectivo y baja de actividades                                                |
+| 07/10/2026 | Datos de prueba con las actividades del Estudio Inicial (sin Pilates) |  57   | 57 aprobados  |  14,5 s  | Pasaron también los 669 tests unitarios                                                                            |
+| 07/10/2026 | El centro no abre los domingos (PI-05, pasos 6 y 7)                   |  59   | 59 aprobados  |  13,1 s  | Pasaron también los 673 tests unitarios; falla provocada detectada                                                 |
+| 08/10/2026 | Planes y precios con vigencia (PI-11 a PI-14)                         |  73   | 73 aprobados  |  27,0 s  | Pasaron también los 763 tests unitarios; las 12 fallas provocadas fueron detectadas                                |
+| 08/10/2026 | Alumnos y tutores (PI-15 a PI-19); la profesora ve los planes (PI-14) |  91   | 91 aprobados  |  28,3 s  | Pasaron también los 854 tests unitarios; las 19 fallas provocadas fueron detectadas                                |
+| 08/10/2026 | Planes y alumnos en el escenario de demostración                      |  91   | 91 aprobados  |  33,3 s  | Los tests de planes y alumnos pasan a contar contra lo que había; las fallas provocadas se vuelven a detectar      |
+| 09/10/2026 | Inscripciones y ciclo de vida (PI-20 a PI-23)                         | 102   | 102 aprobados | 21,9 s   | Pasaron también los 859 tests unitarios; build correcto. Se corrigió y volvió a probar la reactivación de alumnos |
 
 ### 8.2 Resultado por caso
 
-| Caso          | Fecha      | Ejecutó           | Resultado          | Observaciones                                                    |
-| :------------ | :--------- | :---------------- | :----------------- | :--------------------------------------------------------------- |
-| PI-01 a PI-09 | 07/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                            |
-| PI-10         | —          | —                 | Pendiente          | Verificación manual en el navegador                              |
-| PI-11, PI-12  | 08/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                            |
-| PI-13         | 08/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan D-08 a D-12; falta el precio aplicado al cobrar (Sprint 3) |
+| Caso          | Fecha      | Ejecutó           | Resultado          | Observaciones                                                                    |
+| :------------ | :--------- | :---------------- | :----------------- | :------------------------------------------------------------------------------- |
+| PI-01 a PI-09 | 07/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                                            |
+| PI-10         | —          | —                 | Pendiente          | Verificación manual en el navegador                                              |
+| PI-11 a PI-12 | 08/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                                            |
+| PI-13         | 08/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan D-08 a D-12; falta el precio aplicado al cobrar (Sprint 3)                 |
+| PI-14 a PI-19 | 08/10/2026 | Francisco Andrade | Aprobado           | PI-19 se complementa con las operaciones HTTP cubiertas en PI-21 y PI-22         |
+| PI-20 a PI-23 | 09/10/2026 | Nicolas           | Aprobado           | Pasan G-01 a G-11; la reactivación crea una nueva inscripción y valida el cupo   |
 
 ### 8.3 Defectos
 
-| ID  | Caso | Descripción                                                 | Severidad | Responsable | Corregido en |
-| :-- | :--- | :---------------------------------------------------------- | :-------- | :---------- | :----------- |
-| —   | —    | Sin defectos en las corridas del 07/10/2026 y el 08/10/2026 | —         | —           | —            |
+| ID   | Caso  | Descripción                                                                                                                    | Severidad | Responsable | Corregido en        |
+| :--- | :---- | :----------------------------------------------------------------------------------------------------------------------------- | :-------- | :---------- | :------------------ |
+| D-01 | PI-22 | La preparación compartida de inscripción rechazaba alumnos en `BAJA`, impidiendo completar la reactivación por HTTP. Corregido: solo la reactivación puede preparar para un alumno dado de baja. | Media     | Nicolas     | `InscripcionService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -589,7 +649,7 @@ Los defectos se numeran D-01, D-02…
 | PI-06 | Baja de una actividad con horarios activos: el backend la rechaza con 409 y pide dar de baja los horarios primero (US-03 / CA-03). Falta confirmarlo con la propietaria; si prefiere darla de baja y desasignar los horarios, es un cambio de regla. Cuando existan inscripciones se revisa si el bloqueo se limita a horarios con alumnos inscriptos | Abierto |
 | PI-14 | La profesora carga pre-inscripciones (US-05) y necesita ver los planes. Resuelto: la matriz inicial le da `PLANES_VER` y `ALUMNOS_EDITAR`. En una base ya cargada (producción) la carga del catálogo no agrega permisos a permisos que ya existían: la propietaria se los otorga desde la matriz                                                      | Cerrado |
 | PI-18 | La profesora todavía no consulta ni edita alumnos: US-10 le permite ver solo a los que tiene a cargo, y eso sale de las inscripciones. Cuando existan, PI-18 pasa a verificar que ve a sus alumnos y no a los demás                                                                                                                                   | Abierto |
-| PI-19 | La activación, la baja y la reactivación se prueban sobre el componente porque todavía no tienen endpoint. Cuando la inscripción las use, se suman los casos por HTTP                                                                                                                                                                                 | Abierto |
+| PI-19 | La activación, la baja y la reactivación se probaron sobre el componente; PI-21 y PI-22 ahora las cubren también por HTTP                                                                                                                                                                                                                           | Cerrado |
 
 ## 10. Cómo sumar casos
 
@@ -624,3 +684,4 @@ Los defectos se numeran D-01, D-02…
 |   1.3   | 08/10/2026 | Casos PI-11 a PI-14 (planes y precios, Sprint 2), fábrica `crearPlan` y tests D-01 a D-14                                                                    | Francisco Andrade |
 |   1.4   | 08/10/2026 | Casos PI-15 a PI-19 (alumnos y tutores), PI-14 actualizado (la profesora ve los planes), fábrica `crearAlumno` y tests E-01 a E-15 y F-01 a F-03             | Francisco Andrade |
 |   1.5   | 08/10/2026 | Planes y alumnos en el escenario de demostración (sección 4.1); D-02, D-03, D-06, D-13, D-14, E-02, E-13 y E-14 cuentan o filtran sin depender del escenario | Francisco Andrade |
+|   1.6   | 09/10/2026 | Casos PI-20 a PI-23, fábrica de horarios y tests G-01 a G-11; activación, baja, reactivación y cambios de inscripción                          | Nicolas           |

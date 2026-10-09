@@ -4,6 +4,7 @@ import { registrarDocumentacionProfesoras } from "./modules/gestion-personas/pro
 import { registrarDocumentacionActividades } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.openapi.js";
 import { registrarDocumentacionHorarios } from "./modules/gestion-servicio-entrenamiento/horario/horario.openapi.js";
 import { registrarDocumentacionPlanes } from "./modules/gestion-servicio-entrenamiento/plan/plan.openapi.js";
+import { registrarDocumentacionInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.openapi.js";
 import { registrarDocumentacionSeguridad } from "./modules/gestion-usuarios/rol/rol.openapi.js";
 import { registrarDocumentacionSesion } from "./modules/gestion-usuarios/sesion/sesion.openapi.js";
 import { registrarDocumentacionUsuarios } from "./modules/gestion-usuarios/usuario/usuario.openapi.js";
@@ -34,4 +35,5 @@ export function registrarDocumentacionApi(
   registrarDocumentacionActividades(registro);
   registrarDocumentacionHorarios(registro);
   registrarDocumentacionPlanes(registro);
+  registrarDocumentacionInscripciones(registro);
 }

@@ -121,8 +121,9 @@ model profesoras {
   fecha_alta   DateTime  @default(now()) @db.Date
   fecha_baja   DateTime? @db.Date
 
-  usuario  usuarios   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
-  horarios horarios[]
+  usuario       usuarios        @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  horarios      horarios[]
+  inscripciones inscripciones[]
 }
 
 model horarios {
@@ -136,8 +137,9 @@ model horarios {
   fecha_alta   DateTime  @default(now()) @db.Date
   fecha_baja   DateTime? @db.Date
 
-  actividad actividades @relation(fields: [id_actividad], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_actividades")
-  profesora profesoras  @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_profesoras")
+  actividad     actividades            @relation(fields: [id_actividad], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_actividades")
+  profesora     profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_profesoras")
+  inscripciones inscripcion_horarios[]
 
   @@index([id_actividad], map: "IXFK_horarios_actividades")
   @@index([id_profesora], map: "IXFK_horarios_profesoras")
@@ -163,8 +165,9 @@ model planes {
   fecha_alta             DateTime  @default(now()) @db.Date
   fecha_baja             DateTime? @db.Date
 
-  actividad_exclusiva actividades?   @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  actividad_exclusiva actividades?    @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
   precios             plan_precios[]
+  inscripciones       inscripciones[]
 }
 
 model plan_precios {
@@ -175,7 +178,8 @@ model plan_precios {
   // NULL = vigente
   fecha_vigencia_hasta DateTime? @db.Date
 
-  plan planes @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_plan_precios_planes")
+  plan          planes          @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_plan_precios_planes")
+  inscripciones inscripciones[]
 
   @@index([id_plan], map: "IXFK_plan_precios_planes")
 }
@@ -204,6 +208,64 @@ model alumnos {
   fecha_alta             DateTime      @default(now()) @db.Timestamp(6)
   fecha_baja             DateTime?     @db.Timestamp(6)
 
-  usuario     usuarios  @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
-  responsable usuarios? @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
+  usuario       usuarios        @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
+  responsable   usuarios?       @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
+  inscripciones inscripciones[]
+}
+
+enum estado_inscripcion {
+  PREINSCRIPTA
+  ACTIVA
+  BAJA
+}
+
+enum motivo_baja {
+  ABANDONO
+  MUDANZA
+  SALUD
+  ECONOMICO
+  CAMBIO_PLAN
+  OTRO
+}
+
+model inscripciones {
+  id_inscripcion     Int                @id(map: "PK_inscripciones") @default(autoincrement())
+  id_alumno          Int
+  id_plan            Int
+  id_plan_precio     Int
+  id_profesora       Int
+  id_promocion       Int?
+  sin_cargo          Boolean
+  fecha_inicio       DateTime           @db.Date
+  fecha_fin_estimado DateTime?          @db.Date
+  estado             estado_inscripcion
+  motivo_baja        motivo_baja?
+  observaciones      String?            @db.VarChar(500)
+  fecha_alta         DateTime           @default(now()) @db.Timestamp(6)
+  fecha_baja         DateTime?          @db.Timestamp(6)
+
+  alumno      alumnos                @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_alumnos")
+  plan        planes                 @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_planes")
+  plan_precio plan_precios           @relation(fields: [id_plan_precio], references: [id_plan_precio], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_plan_precios")
+  profesora   profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_profesoras")
+  horarios    inscripcion_horarios[]
+
+  @@index([id_alumno], map: "IXFK_inscripciones_alumnos")
+  @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
+  @@index([id_plan], map: "IXFK_inscripciones_planes")
+  @@index([id_profesora], map: "IXFK_inscripciones_profesoras")
+}
+
+model inscripcion_horarios {
+  id_inscripcion Int
+  id_horario     Int
+  fecha_desde    DateTime  @db.Date
+  fecha_hasta    DateTime? @db.Date
+
+  inscripcion inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripcion_horarios_inscripciones")
+  horario     horarios      @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripcion_horarios_horarios")
+
+  @@id([id_inscripcion, id_horario], map: "PK_inscripcion_horarios")
+  @@index([id_horario], map: "IXFK_inscripcion_horarios_horarios")
+  @@index([id_inscripcion], map: "IXFK_inscripcion_horarios_inscripciones")
 }

@@ -20,6 +20,9 @@ import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/hora
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
 import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
 import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
+import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
+import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
+import { GestionInscripcionesYClasesService } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -44,18 +47,28 @@ export function construirDependencias({
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
   const planService = new PlanService(new PlanRepository(prisma), actividadService);
+  const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
+  const inscripcionService = new InscripcionService(
+    new InscripcionRepository(prisma),
+    alumnoService,
+    planService,
+    horarioService,
+    profesorService,
+  );
+  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
     actividadService,
     horarioService,
     planService,
+    gestionInscripcionesYClases,
   );
-  const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
   const gestionPersonas = new GestionPersonasService(profesorService, horarioService, alumnoService);
 
   return {
     gestionUsuarios,
     gestionPersonas,
     gestionServicioEntrenamiento,
+    gestionInscripcionesYClases,
     autenticacion,
     autorizacion: rolService,
   };

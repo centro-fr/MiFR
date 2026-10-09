@@ -14,6 +14,11 @@ import { createAlumnoRoutes } from "./modules/gestion-personas/alumno/alumno.rou
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
 import { createPlanRoutes } from "./modules/gestion-servicio-entrenamiento/plan/plan.routes.js";
+import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
+import {
+  createInscripcionAlumnoRoutes,
+  createInscripcionRoutes,
+} from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
@@ -23,6 +28,7 @@ export interface AppDependencies {
   gestionUsuarios: ILogicaUsuarios;
   gestionPersonas: ILogicaPersonas;
   gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
+  gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -73,6 +79,14 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   api.use(
     "/planes",
     createPlanRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
+  );
+  api.use(
+    "/inscripciones",
+    createInscripcionRoutes(deps.gestionInscripcionesYClases, deps.autenticacion, deps.autorizacion),
+  );
+  api.use(
+    "/alumnos",
+    createInscripcionAlumnoRoutes(deps.gestionInscripcionesYClases, deps.autenticacion, deps.autorizacion),
   );
   app.use("/api/v1", api);
 

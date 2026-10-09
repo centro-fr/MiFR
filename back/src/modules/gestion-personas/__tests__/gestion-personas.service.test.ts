@@ -13,6 +13,7 @@ describe("GestionPersonasService", () => {
   beforeEach(() => {
     profesoras = { darDeBaja: vi.fn() };
     horarios = {
+      buscarPorIds: vi.fn(),
       tieneActivosDeActividad: vi.fn(),
       tieneActivosDeProfesora: vi.fn().mockResolvedValue(false),
     };
@@ -40,7 +41,11 @@ describe("GestionPersonasService delega en Profesor", () => {
       crear: vi.fn().mockResolvedValue({ id_profesora: 1 }),
       listar: vi.fn().mockResolvedValue([]),
     };
-    const horarios = { tieneActivosDeActividad: vi.fn(), tieneActivosDeProfesora: vi.fn() };
+    const horarios = {
+      buscarPorIds: vi.fn(),
+      tieneActivosDeActividad: vi.fn(),
+      tieneActivosDeProfesora: vi.fn(),
+    };
     const servicio = new GestionPersonasService(
       profesoras as unknown as ProfesorService,
       horarios,
@@ -60,7 +65,11 @@ describe("GestionPersonasService delega en Alumno", () => {
     obtenerPorId: vi.fn().mockResolvedValue("resultado"),
     actualizar: vi.fn().mockResolvedValue("resultado"),
   };
-  const horarios = { tieneActivosDeActividad: vi.fn(), tieneActivosDeProfesora: vi.fn() };
+  const horarios = {
+    buscarPorIds: vi.fn(),
+    tieneActivosDeActividad: vi.fn(),
+    tieneActivosDeProfesora: vi.fn(),
+  };
   const servicio = new GestionPersonasService(
     {} as ProfesorService,
     horarios,

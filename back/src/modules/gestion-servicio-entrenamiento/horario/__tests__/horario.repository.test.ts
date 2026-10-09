@@ -154,7 +154,8 @@ describe("HorarioRepository", () => {
   it("darDeBaja registra la fecha de hoy en Argentina sin borrar el horario", async () => {
     await repositorio.darDeBaja(7);
 
-    expect(prisma.horarios.update).toHaveBeenCalledWith({
+    expect(transaccion.$executeRaw.mock.calls[0][1]).toBe("inscripcion-horario:7");
+    expect(transaccion.horarios.update).toHaveBeenCalledWith({
       where: { id_horario: 7 },
       data: { fecha_baja: HOY_EN_ARGENTINA },
       include: CON_DATOS,
