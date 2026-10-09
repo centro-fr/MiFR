@@ -7,7 +7,7 @@ import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
 // Casos PI-20 a PI-27: preinscripción, activación, baja/reactivación y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
-const { app, prisma } = entorno;
+const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
 const CARLA = "carla.ruiz@example.com";
 
@@ -177,17 +177,9 @@ describe("PI-21: activación", () => {
     const horarios = await horariosFuncionales();
     const creada = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
 
-    const primeraActivacion = await comoMarina(
-      "post",
-      `/inscripciones/${creada.body.id_inscripcion}/activar`,
-    );
-    const segundaActivacion = await comoMarina(
-      "post",
-      `/inscripciones/${creada.body.id_inscripcion}/activar`,
-    );
+    await infoInscripciones.activar(creada.body.id_inscripcion);
+    await infoInscripciones.activar(creada.body.id_inscripcion);
 
-    expect(primeraActivacion.status).toBe(200);
-    expect(segundaActivacion.status).toBe(200);
     expect((await obtenerInscripcion(creada.body.id_inscripcion))?.estado).toBe("ACTIVA");
     expect(await prisma.alumnos.findUnique({ where: { id_alumno: alumno.id_alumno } })).toMatchObject({
       estado: "ACTIVO",
@@ -198,27 +190,23 @@ describe("PI-21: activación", () => {
     expect(login.status).toBe(200);
   });
 
-  it("revalida el cupo al activar y restringe la operación a la propietaria", async () => {
+  it("revalida el cupo al activar y no expone la activación en la API", async () => {
     const idHorario = await crearHorarioConCupo(2);
     const primero = await crearAlumno(prisma);
     const segundo = await crearAlumno(prisma);
-    const inscripcionPrimero = await inscribir(primero.id_alumno, [idHorario]);
+    await inscribir(primero.id_alumno, [idHorario]);
     const inscripcionSegundo = await inscribir(segundo.id_alumno, [idHorario]);
-    const tokenLucia = await entorno.iniciarSesion(LUCIA);
     await prisma.horarios.update({ where: { id_horario: idHorario }, data: { cupo_maximo: 1 } });
 
-    const prohibida = await como(
-      tokenLucia,
-      "post",
-      `/inscripciones/${inscripcionPrimero.body.id_inscripcion}/activar`,
-    );
-    const sinCupo = await comoMarina(
+    const porHttp = await comoMarina(
       "post",
       `/inscripciones/${inscripcionSegundo.body.id_inscripcion}/activar`,
     );
 
-    expect(prohibida.status).toBe(403);
-    expect(sinCupo.status).toBe(409);
+    expect(porHttp.status).toBe(404);
+    await expect(infoInscripciones.activar(inscripcionSegundo.body.id_inscripcion)).rejects.toThrow(
+      "No hay cupo disponible",
+    );
     expect((await obtenerInscripcion(inscripcionSegundo.body.id_inscripcion))?.estado).toBe("PREINSCRIPTA");
   });
 });
@@ -290,7 +278,7 @@ describe("PI-23: cambios de plan y horarios", () => {
     const alumno = await crearAlumno(prisma);
     const horarios = await horariosFuncionales();
     const anterior = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
-    await comoMarina("post", `/inscripciones/${anterior.body.id_inscripcion}/activar`);
+    await infoInscripciones.activar(anterior.body.id_inscripcion);
     const nuevoPlan = await crearPlan(prisma, { nombre: "Plan renovado", precio: 32000 });
 
     const cambio = await comoMarina(

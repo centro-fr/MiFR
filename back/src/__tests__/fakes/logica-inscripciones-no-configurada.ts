@@ -8,13 +8,8 @@ export const logicaInscripcionesNoConfigurada = {
   crearInscripcion: operacionNoConfigurada,
   listarInscripciones: operacionNoConfigurada,
   obtenerInscripcion: operacionNoConfigurada,
-  activarInscripcion: operacionNoConfigurada,
   darDeBajaAlumno: operacionNoConfigurada,
   reactivarAlumno: operacionNoConfigurada,
   cambiarPlan: operacionNoConfigurada,
   actualizarHorarios: operacionNoConfigurada,
-  obtenerIdsDeAlumnos: operacionNoConfigurada,
-  resumirInscripcionesVigentes: operacionNoConfigurada,
-  contarInscriptosVigentesEnHorario: operacionNoConfigurada,
-  tieneInscriptosVigentesDeActividad: operacionNoConfigurada,
 } satisfies ILogicaInscripcionesYClases;

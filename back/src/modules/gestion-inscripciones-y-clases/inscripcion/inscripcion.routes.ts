@@ -39,12 +39,6 @@ export function createInscripcionRoutes(logica: ILogicaInscripciones, acceso: Co
     controller.obtener,
   );
   router.post(
-    "/:id/activar",
-    ...soloPropietaria,
-    validate({ params: inscripcionIdParamSchema }),
-    controller.activar,
-  );
-  router.post(
     "/:id/cambio-plan",
     ...soloPropietaria,
     validate({ params: inscripcionIdParamSchema, body: cambiarPlanSchema }),

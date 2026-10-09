@@ -2,7 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../../app.js";
-import { construirDependencias } from "../../composicion.js";
+import { construirSistema } from "../../composicion.js";
+import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IAutenticacionGoogleAuth } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
 import { JwtService } from "../../modules/gestion-usuarios/sesion/jwt.service.js";
 import { crearPrismaDePrueba } from "./base-de-prueba.js";
@@ -18,19 +19,20 @@ const googleSimulado: IAutenticacionGoogleAuth = {
 export interface EntornoDeIntegracion {
   app: Express;
   prisma: PrismaClient;
+  // Hasta que exista el cobro (Sprint 3), el alta definitiva solo se alcanza por esta interfaz.
+  infoInscripciones: IInfoInscripciones;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
 
 export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
-  const app = createApp(
-    construirDependencias({
-      prisma,
-      googleAuth: googleSimulado,
-      jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
-    }),
-  );
+  const { dependencias, infoInscripciones } = construirSistema({
+    prisma,
+    googleAuth: googleSimulado,
+    jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
+  });
+  const app = createApp(dependencias);
 
   // La sesión se abre por el endpoint real de login, así el token es el mismo que recibe el front.
   async function iniciarSesion(email: string): Promise<string> {
@@ -43,5 +45,5 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     return respuesta.body.token as string;
   }
 
-  return { app, prisma, iniciarSesion, cerrar: () => prisma.$disconnect() };
+  return { app, prisma, infoInscripciones, iniciarSesion, cerrar: () => prisma.$disconnect() };
 }

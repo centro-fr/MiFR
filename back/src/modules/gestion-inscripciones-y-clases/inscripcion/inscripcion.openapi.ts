@@ -159,17 +159,6 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
 
   registro.registerPath({
     method: "post",
-    path: "/inscripciones/{id}/activar",
-    tags,
-    security,
-    summary: "Activar una pre-inscripción",
-    description: `${propietariaEditar} La activación vuelve a verificar el cupo y es idempotente.`,
-    request: { params: inscripcionIdParamSchema },
-    responses: { 200: respuestas, ...respuestasDeError(400, 401, 403, 404, 409) },
-  });
-
-  registro.registerPath({
-    method: "post",
     path: "/alumnos/{id}/baja",
     tags,
     security,

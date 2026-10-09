@@ -23,10 +23,6 @@ export function createInscripcionController(logica: ILogicaInscripciones) {
       res.json(await logica.obtenerInscripcion(Number(req.params.id)));
     },
 
-    async activar(req: Request, res: Response) {
-      res.json(await logica.activarInscripcion(Number(req.params.id)));
-    },
-
     async darDeBajaAlumno(req: Request, res: Response) {
       await logica.darDeBajaAlumno(Number(req.params.id), req.body as DarDeBajaAlumnoInput);
       res.json({ mensaje: "Alumno dado de baja" });

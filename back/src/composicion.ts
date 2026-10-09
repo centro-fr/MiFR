@@ -23,6 +23,7 @@ import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.
 import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
 import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
 import { GestionInscripcionesYClasesService } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.service.js";
+import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -30,14 +31,21 @@ export interface PiezasDeInfraestructura {
   jwtService: JwtService;
 }
 
+// Lo que arma el composition root: las dependencias de la API y las interfaces que todavía no
+// consume ningún componente desde la API, como el alta definitiva que va a disparar el cobro.
+export interface Sistema {
+  dependencias: AppDependencies;
+  infoInscripciones: IInfoInscripciones;
+}
+
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
 // que recibe. Está separado de index.ts, que lee el entorno y levanta el servidor, para que los
 // tests de integración usen este mismo cableado con una base de prueba y Google simulado.
-export function construirDependencias({
-  prisma,
-  googleAuth,
-  jwtService,
-}: PiezasDeInfraestructura): AppDependencies {
+export function construirDependencias(piezas: PiezasDeInfraestructura): AppDependencies {
+  return construirSistema(piezas).dependencias;
+}
+
+export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInfraestructura): Sistema {
   const rolService = new RolService(new RolRepository(prisma));
   const usuarioService = new UsuarioService(new UsuarioRepository(prisma), rolService);
   const autenticacion = new SesionService(usuarioService, googleAuth, jwtService, rolService);
@@ -60,16 +68,19 @@ export function construirDependencias({
     actividadService,
     horarioService,
     planService,
-    gestionInscripcionesYClases,
+    inscripcionService,
   );
   const gestionPersonas = new GestionPersonasService(profesorService, horarioService, alumnoService);
 
   return {
-    gestionUsuarios,
-    gestionPersonas,
-    gestionServicioEntrenamiento,
-    gestionInscripcionesYClases,
-    autenticacion,
-    autorizacion: rolService,
+    dependencias: {
+      gestionUsuarios,
+      gestionPersonas,
+      gestionServicioEntrenamiento,
+      gestionInscripcionesYClases,
+      autenticacion,
+      autorizacion: rolService,
+    },
+    infoInscripciones: inscripcionService,
   };
 }
