@@ -1,9 +1,16 @@
-import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
+import type { Plan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
 import type {
   ActualizarHorariosInput,
   CambiarPlanInput,
@@ -14,6 +21,7 @@ import type {
 import type { InscripcionRepository } from "./inscripcion.repository.js";
 import type { IInfoInscripciones } from "./interface/i-info-inscripciones.js";
 import type {
+  FechasDeBaja,
   FiltroAlumnosPorInscripcion,
   EstadoInscripcion,
   FiltroInscripciones,
@@ -22,6 +30,8 @@ import type {
 } from "./inscripcion.types.js";
 
 const ESTADOS_VIGENTES: EstadoInscripcion[] = ["PREINSCRIPTA", "ACTIVA"];
+
+type ReglasDelPlan = Pick<Plan, "tipo" | "clases_por_semana" | "profesora_unica" | "id_actividad_exclusiva">;
 
 interface DatosDeInscripcion {
   id_alumno: number;
@@ -55,14 +65,35 @@ export class InscripcionService implements IInfoInscripciones {
     return this.resolverResultado(resultado);
   }
 
-  listar(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
-    return this.repositorio.listar(filtro);
+  // US-10: la profesora solo ve las inscripciones que tiene a cargo; la propietaria, todas.
+  async listar(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {
+    if (solicitante.esPropietaria) return this.repositorio.listar(filtro);
+
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (!profesora) return [];
+    if (filtro.id_profesora !== undefined && filtro.id_profesora !== profesora.id_profesora) return [];
+    return this.repositorio.listar({ ...filtro, id_profesora: profesora.id_profesora });
+  }
+
+  async obtenerPara(id: number, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    const inscripcion = await this.obtenerPorId(id);
+    if (solicitante.esPropietaria) return inscripcion;
+
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (profesora?.id_profesora !== inscripcion.id_profesora) {
+      throw new ForbiddenError("Solo puede ver las inscripciones que tiene a cargo");
+    }
+    return inscripcion;
   }
 
   async obtenerPorId(id: number): Promise<InscripcionConDatos> {
     const inscripcion = await this.repositorio.buscarPorId(id);
     if (!inscripcion) throw new NotFoundError("Inscripción no encontrada");
     return inscripcion;
+  }
+
+  listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.repositorio.listarVigentesPorAlumno(idAlumno);
   }
 
   async activar(id: number): Promise<InscripcionConDatos> {
@@ -84,7 +115,7 @@ export class InscripcionService implements IInfoInscripciones {
     if (!alumno) throw new NotFoundError("Alumno no encontrado");
     if (alumno.estado === "BAJA") throw new ConflictError("El alumno ya está dado de baja");
 
-    await this.repositorio.darDeBajaAlumno(idAlumno, input, new Date());
+    await this.repositorio.darDeBajaAlumno(idAlumno, input, this.fechasDeBaja());
     await this.alumnos.darDeBaja(idAlumno);
   }
 
@@ -131,20 +162,14 @@ export class InscripcionService implements IInfoInscripciones {
       actual,
       input,
       nuevoPlan.id_plan_precio,
-      fechaActualArgentina(),
+      this.fechasDeBaja(),
     );
     return this.resolverResultado(resultado);
   }
 
   async actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos> {
     const actual = await this.obtenerInscripcionVigente(id);
-    await this.validarHorarios(
-      actual.id_plan,
-      actual.id_profesora,
-      input.ids_horarios,
-      actual.plan.profesora_unica,
-      actual.plan.id_actividad_exclusiva,
-    );
+    await this.validarHorarios(actual.plan, actual.id_profesora, input.ids_horarios);
     const resultado = await this.repositorio.actualizarHorarios(actual, input, fechaActualArgentina());
     return this.resolverResultado(resultado);
   }
@@ -157,12 +182,8 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.resumirInscripcionesVigentes(idsAlumnos);
   }
 
-  contarInscriptosVigentesEnHorario(idHorario: number): Promise<number> {
-    return this.repositorio.contarInscriptosVigentesEnHorario(idHorario);
-  }
-
-  tieneInscriptosVigentesDeActividad(idActividad: number): Promise<boolean> {
-    return this.repositorio.tieneInscriptosVigentesDeActividad(idActividad);
+  contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
+    return this.repositorio.contarInscriptosVigentes(idsHorarios);
   }
 
   private async obtenerInscripcionVigente(id: number): Promise<InscripcionConDatos> {
@@ -193,51 +214,46 @@ export class InscripcionService implements IInfoInscripciones {
       throw new ValidationError("La fecha estimada de fin debe ser posterior al inicio");
     }
     const precio = await this.planes.precioVigente(input.id_plan, hoy);
-    if (!precio) throw new ConflictError("El plan no tiene un precio vigente para la fecha de inicio");
-    await this.validarHorarios(
-      input.id_plan,
-      input.id_profesora,
-      input.ids_horarios,
-      plan.profesora_unica,
-      plan.id_actividad_exclusiva,
-    );
+    if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
+    await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
 
     return { ...input, fecha_inicio: fechaInicio, id_plan_precio: precio.id_plan_precio };
   }
 
+  private fechasDeBaja(): FechasDeBaja {
+    return { instante: new Date(), dia: fechaActualArgentina() };
+  }
+
   private async validarHorarios(
-    idPlan: number,
+    plan: ReglasDelPlan,
     idProfesora: number,
     idsHorarios: number[],
-    profesoraUnica: boolean,
-    idActividadExclusiva: number | null,
   ): Promise<void> {
-    const [profesora, plan, horarios] = await Promise.all([
+    const [profesora, horarios] = await Promise.all([
       this.profesoras.buscarPorId(idProfesora),
-      this.planes.buscarPorId(idPlan),
       this.horarios.buscarPorIds(idsHorarios),
     ]);
     if (!profesora) throw new NotFoundError("Profesora no encontrada, inactiva o sin el rol PROFESORA");
-    if (!plan || plan.fecha_baja) throw new ConflictError("El plan no existe o está dado de baja");
     if (horarios.length !== idsHorarios.length || horarios.some(({ fecha_baja }) => fecha_baja !== null)) {
       throw new ConflictError("Uno o más horarios no existen o están dados de baja");
     }
     if (new Set(horarios.map(({ id_profesora }) => id_profesora)).size > 1) {
       throw new ValidationError("Todos los horarios deben pertenecer a una misma profesora");
     }
-    if (profesoraUnica && horarios.some(({ id_profesora: asignada }) => asignada !== idProfesora)) {
+    if (plan.profesora_unica && horarios.some(({ id_profesora: asignada }) => asignada !== idProfesora)) {
       throw new ValidationError("El plan exige que los horarios sean de la profesora a cargo");
     }
     if (horarios.some(({ actividad }) => !actividad.activo)) {
       throw new ConflictError("Uno o más horarios pertenecen a una actividad dada de baja");
     }
     if (
-      idActividadExclusiva !== null &&
-      horarios.some(({ id_actividad }) => id_actividad !== idActividadExclusiva)
+      plan.id_actividad_exclusiva !== null &&
+      horarios.some(({ id_actividad }) => id_actividad !== plan.id_actividad_exclusiva)
     ) {
       throw new ValidationError("Los horarios deben corresponder a la actividad exclusiva del plan");
     }
-    if (plan.tipo === "MENSUAL" && idsHorarios.length > (plan.clases_por_semana ?? 0)) {
+    // Un mensual sin clases_por_semana es un pase libre: no tiene tope de horarios.
+    if (plan.clases_por_semana !== null && idsHorarios.length > plan.clases_por_semana) {
       throw new ValidationError("La cantidad de horarios supera las clases por semana del plan");
     }
   }

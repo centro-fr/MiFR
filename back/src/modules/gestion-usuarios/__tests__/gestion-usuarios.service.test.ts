@@ -42,23 +42,28 @@ describe("GestionUsuariosService", () => {
   });
 
   it.each([
-    ["iniciarSesion", ["id-token"], "sesion"],
-    ["iniciarSesionDesarrollo", ["ana@example.com"], "sesion"],
-    ["obtenerPerfil", [1], "sesion"],
-    ["crear", [{ nombre: "Ana" }], "usuarios"],
-    ["listar", [], "usuarios"],
-    ["obtenerPorId", [1], "usuarios"],
-    ["actualizar", [1, { telefono: "351" }], "usuarios"],
-    ["eliminar", [1], "usuarios"],
-    ["asignarRol", [1, "ALUMNO"], "usuarios"],
-    ["quitarRol", [1, "ALUMNO"], "usuarios"],
-    ["obtenerMatriz", [], "autorizacion"],
-    ["actualizarMatriz", [[{ rol: "PROFESORA", permiso: "RUTINAS_EDITAR", otorgado: true }]], "autorizacion"],
-  ] as const)("%s se delega al componente dueño", async (metodo, argumentos, componente) => {
-    const destino = (componentes[componente] as Record<string, ReturnType<typeof vi.fn>>)[metodo];
+    ["iniciarSesion", ["id-token"], "sesion", "iniciarSesion"],
+    ["iniciarSesionDesarrollo", ["ana@example.com"], "sesion", "iniciarSesionDesarrollo"],
+    ["obtenerPerfil", [1], "sesion", "obtenerPerfil"],
+    ["crearUsuario", [{ nombre: "Ana" }], "usuarios", "crear"],
+    ["listarUsuarios", [], "usuarios", "listar"],
+    ["obtenerUsuarioPorId", [1], "usuarios", "obtenerPorId"],
+    ["actualizarUsuario", [1, { telefono: "351" }], "usuarios", "actualizar"],
+    ["eliminarUsuario", [1], "usuarios", "eliminar"],
+    ["asignarRol", [1, "ALUMNO"], "usuarios", "asignarRol"],
+    ["quitarRol", [1, "ALUMNO"], "usuarios", "quitarRol"],
+    ["obtenerMatriz", [], "autorizacion", "obtenerMatriz"],
+    [
+      "actualizarMatriz",
+      [[{ rol: "PROFESORA", permiso: "RUTINAS_EDITAR", otorgado: true }]],
+      "autorizacion",
+      "actualizarMatriz",
+    ],
+  ] as const)("%s se delega al componente dueño", async (metodo, argumentos, componente, metodoDestino) => {
+    const destino = (componentes[componente] as Record<string, ReturnType<typeof vi.fn>>)[metodoDestino];
     const llamar = gestion[metodo] as (...args: unknown[]) => Promise<unknown>;
 
-    await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`${componente}.${metodo}`);
+    await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`${componente}.${metodoDestino}`);
     expect(destino).toHaveBeenCalledWith(...argumentos);
   });
 });

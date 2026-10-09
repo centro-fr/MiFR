@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { auditar } from "../../../shared/utils/auditoria.js";
-import type { ILogicaServicioEntrenamiento } from "../interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaPlanes } from "../interface/i-logica-servicio-entrenamiento.js";
 import type {
   ActualizarPlanInput,
   CrearPlanInput,
@@ -8,7 +8,7 @@ import type {
   RegistrarPrecioInput,
 } from "./plan.schemas.js";
 
-export function createPlanController(logica: ILogicaServicioEntrenamiento) {
+export function createPlanController(logica: ILogicaPlanes) {
   return {
     async listar(req: Request<{}, {}, {}, ListarPlanQuery>, res: Response) {
       const planes = await logica.listarPlanes(req.query);

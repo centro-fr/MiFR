@@ -7,9 +7,14 @@ const fecha = z
   .date("La fecha debe tener formato AAAA-MM-DD")
   .transform((valor) => new Date(`${valor}T00:00:00Z`));
 
+// El tope es el máximo de clases por semana de un plan (ck_planes_x1): más horarios no entran en
+// ninguno, y sin tope una lista enorme llegaba hasta las consultas de cupo.
+const MAXIMO_HORARIOS = 7;
+
 const ids_horarios = z
   .array(idSchema)
   .min(1, "Debe seleccionar al menos un horario")
+  .max(MAXIMO_HORARIOS, `No se pueden elegir más de ${MAXIMO_HORARIOS} horarios`)
   .refine((ids) => new Set(ids).size === ids.length, "No se puede repetir un horario");
 
 const datosDePlanYHorarios = {
@@ -33,8 +38,9 @@ export const cambiarPlanSchema = z.object(datosDePlanYHorarios);
 
 export const actualizarHorariosSchema = z.object({ ids_horarios });
 
+// CAMBIO_PLAN no se acepta: lo pone el cambio de plan, y un alumno que se va no cambia de plan.
 export const darDeBajaAlumnoSchema = z.object({
-  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]),
+  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
 });
 
 export const listarInscripcionesQuerySchema = z.object({

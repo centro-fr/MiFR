@@ -51,7 +51,6 @@ const OPERACIONES_ESPERADAS = [
   "get /inscripciones",
   "post /inscripciones",
   "get /inscripciones/{id}",
-  "post /inscripciones/{id}/activar",
   "post /alumnos/{id}/baja",
   "post /alumnos/{id}/reactivar",
   "post /inscripciones/{id}/cambio-plan",

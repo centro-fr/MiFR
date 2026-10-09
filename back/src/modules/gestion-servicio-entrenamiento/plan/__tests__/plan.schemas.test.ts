@@ -9,6 +9,10 @@ import {
 const mensual = { tipo: "MENSUAL", nombre: "Básico 2 días", clases_por_semana: 2, precio: 25000 };
 
 describe("crearPlanSchema", () => {
+  it.each([-0, -1, 1.5])("rechaza dias_gracia %j", (dias_gracia) => {
+    expect(crearPlanSchema.safeParse({ ...mensual, dias_gracia }).success).toBe(false);
+  });
+
   it("completa dias_gracia en 0 y profesora_unica en false si no vienen", () => {
     expect(crearPlanSchema.parse(mensual)).toMatchObject({ dias_gracia: 0, profesora_unica: false });
   });

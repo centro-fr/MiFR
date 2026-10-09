@@ -28,23 +28,23 @@ export class GestionUsuariosService implements ILogicaUsuarios {
     return this.sesion.obtenerPerfil(idUsuario);
   }
 
-  crear(input: CrearUsuarioInput): Promise<UsuarioConRoles> {
+  crearUsuario(input: CrearUsuarioInput): Promise<UsuarioConRoles> {
     return this.usuarios.crear(input);
   }
 
-  listar(): Promise<UsuarioConRoles[]> {
+  listarUsuarios(): Promise<UsuarioConRoles[]> {
     return this.usuarios.listar();
   }
 
-  obtenerPorId(id: number): Promise<UsuarioConRoles> {
+  obtenerUsuarioPorId(id: number): Promise<UsuarioConRoles> {
     return this.usuarios.obtenerPorId(id);
   }
 
-  actualizar(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {
+  actualizarUsuario(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {
     return this.usuarios.actualizar(id, input);
   }
 
-  eliminar(id: number): Promise<void> {
+  eliminarUsuario(id: number): Promise<void> {
     return this.usuarios.eliminar(id);
   }
 

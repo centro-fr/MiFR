@@ -25,14 +25,17 @@ Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corri
 
 ### Contra las reglas del proyecto
 
-- No hay `new` de clases concretas fuera de `src/index.ts`, tampoco de librerías (`PrismaClient`, `OAuth2Client`, etc.). `prisma/seed.ts` queda afuera porque es otro punto de entrada.
+- No hay `new` de clases concretas fuera del composition root (`src/index.ts` y `src/composicion.ts`), tampoco de librerías (`PrismaClient`, `OAuth2Client`, etc.). `prisma/seed.ts` queda afuera porque es otro punto de entrada.
 - `PrismaClient` solo lo recibe por constructor un `*.repository.ts`; ningún service ni controller lo usa.
 - Cada service que tiene interfaz la implementa con `implements`.
-- Las dependencias entre componentes se tipan contra interfaces, no contra clases concretas.
+- Las dependencias entre componentes se tipan contra interfaces, no contra clases concretas. La fachada del subsistema puede recibir concretos los services de sus propios componentes; lo que viene de otro subsistema llega por interfaz (`IInfo*`).
+- Cada controller y cada router de componente dependen de la parte de la `ILogica*` de su componente (`ILogicaPlanes`), no de la del subsistema entero.
 - No hay `any` ni `console.log` de depuración.
 - No hay comentarios que narren cambios (`// se agregó`, `// modificado`, `// antes era`) ni bloques de código comentado.
 - Toda ruta que recibe cuerpo o parámetros pasa por `validate({ ... })`.
-- Los handlers asincrónicos están envueltos en `asyncHandler`.
+- Las rutas usan los guardias de `ControlDeAcceso` (`acceso.sesion`, `acceso.permiso(...)`), no `requierePermiso(autorizacion, ...)` armado a mano.
+- Ningún middleware propio llama a un guardia async sin esperarlo (`await`).
+- `app.ts` y `openapi.ts` montan un router y un registro por subsistema, no por componente.
 - No hay secretos escritos en el código.
 
 ## Formato del reporte

@@ -5,14 +5,10 @@ import type {
   DarDeBajaAlumnoInput,
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
+import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 import type { InscripcionService } from "./inscripcion/inscripcion.service.js";
 import type { ILogicaInscripcionesYClases } from "./interface/i-logica-inscripciones-y-clases.js";
-import type {
-  FiltroAlumnosPorInscripcion,
-  FiltroInscripciones,
-  InscripcionConDatos,
-  ResumenInscripcionAlumno,
-} from "./inscripcion/inscripcion.types.js";
+import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";
 
 export class GestionInscripcionesYClasesService implements ILogicaInscripcionesYClases {
   constructor(private readonly inscripciones: InscripcionService) {}
@@ -21,16 +17,12 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     return this.inscripciones.crear(input);
   }
 
-  listarInscripciones(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
-    return this.inscripciones.listar(filtro);
+  listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {
+    return this.inscripciones.listar(filtro, solicitante);
   }
 
-  obtenerInscripcion(id: number): Promise<InscripcionConDatos> {
-    return this.inscripciones.obtenerPorId(id);
-  }
-
-  activarInscripcion(id: number): Promise<InscripcionConDatos> {
-    return this.inscripciones.activar(id);
+  obtenerInscripcion(id: number, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    return this.inscripciones.obtenerPara(id, solicitante);
   }
 
   darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput): Promise<void> {
@@ -47,21 +39,5 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
 
   actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos> {
     return this.inscripciones.actualizarHorarios(id, input);
-  }
-
-  obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]> {
-    return this.inscripciones.obtenerIdsDeAlumnos(filtro);
-  }
-
-  resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]> {
-    return this.inscripciones.resumirInscripcionesVigentes(idsAlumnos);
-  }
-
-  contarInscriptosVigentesEnHorario(idHorario: number): Promise<number> {
-    return this.inscripciones.contarInscriptosVigentesEnHorario(idHorario);
-  }
-
-  tieneInscriptosVigentesDeActividad(idActividad: number): Promise<boolean> {
-    return this.inscripciones.tieneInscriptosVigentesDeActividad(idActividad);
   }
 }

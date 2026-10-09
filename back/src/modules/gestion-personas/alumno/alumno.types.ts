@@ -27,6 +27,8 @@ export interface FiltroAlumno {
   dni?: string;
   estado?: EstadoAlumno;
   incluirBajas?: boolean;
+  // Restringe el listado a esos alumnos: los que salen de los filtros por inscripción (US-10).
+  ids?: number[];
   limit: number;
   offset: number;
 }

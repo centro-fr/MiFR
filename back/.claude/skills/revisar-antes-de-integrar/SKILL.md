@@ -31,7 +31,9 @@ Correr `git status` y `git diff dev...HEAD` para ver todo lo que trae la rama, n
 
 - `pnpm test` y `pnpm test:integration` pasan enteros (la base de prueba se levanta con `docker compose --profile test up -d db-test`).
 - Si la rama agrega o cambia endpoints, permisos o reglas que dependen de la base, tiene sus tests de integración y quedaron registrados en `PRUEBAS-INTEGRACION.md` (skill `tests-integracion`).
-- La lógica de service que se agregó tiene tests: camino feliz y cada error que puede lanzar.
+- Todo lo que se agregó o cambió tiene sus tests (tabla de `.claude/rules/testing.md`): service, repositorio, schemas, rutas, fachada y `shared/`. Señalar cada archivo nuevo sin su `__tests__/` correspondiente.
+- `pnpm test:coverage` sigue en 100 % de sentencias, ramas y funciones. Si bajó, la rama no se integra.
+- Cada regla nueva se verificó rompiéndola a propósito, y quedó anotada en la sección 7.1 de `PRUEBAS-INTEGRACION.md`.
 - `pnpm build` compila.
 - `pnpm format:check` pasa. Si no, el formateo va en un commit propio con `style(...)`.
 
