@@ -30,6 +30,12 @@ describe("catálogo de permisos", () => {
     for (const critico of PERMISOS_CRITICOS) expect(MATRIZ_INICIAL.PROPIETARIA).toContain(critico);
   });
 
+  it("la profesora arranca pudiendo registrar cobros en efectivo, no confirmarlos (US-15, US-17)", () => {
+    expect(MATRIZ_INICIAL.PROFESORA).toContain("PAGOS_REGISTRAR");
+    expect(MATRIZ_INICIAL.PROFESORA).not.toContain("PAGOS_CONFIRMAR");
+    expect(PERMISOS_EXCLUSIVOS_PROPIETARIA).not.toContain("PAGOS_REGISTRAR");
+  });
+
   it("ningún otro rol arranca con un permiso exclusivo de la propietaria", () => {
     for (const rol of ["PROFESORA", "ALUMNO", "TUTOR"] as const) {
       for (const exclusivo of PERMISOS_EXCLUSIVOS_PROPIETARIA) {
