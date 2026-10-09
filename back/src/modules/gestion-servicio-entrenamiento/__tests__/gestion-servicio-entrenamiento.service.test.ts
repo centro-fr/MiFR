@@ -53,16 +53,23 @@ describe("GestionServicioEntrenamientoService", () => {
     expect(actividades.darDeBaja).not.toHaveBeenCalled();
   });
 
-  it("darDeBajaHorario informa las inscripciones vigentes", async () => {
+  it("darDeBajaHorario lanza ConflictError si el horario tiene alumnos inscriptos", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentesEnHorario).mockResolvedValue(2);
+
+    await expect(servicio.darDeBajaHorario(3)).rejects.toThrow(ConflictError);
+    expect(horarios.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("darDeBajaHorario da de baja el horario sin alumnos inscriptos", async () => {
     vi.mocked(horarios.darDeBaja).mockResolvedValue({ id_horario: 3 } as unknown as Awaited<
       ReturnType<HorarioService["darDeBaja"]>
     >);
-    vi.mocked(inscripciones.contarInscriptosVigentesEnHorario).mockResolvedValue(2);
 
     await expect(servicio.darDeBajaHorario(3)).resolves.toEqual({
       horario: { id_horario: 3 },
-      advertencia: "El horario tiene 2 inscripción(es) vigente(s); reubicarlas antes de continuar.",
+      advertencia: "El horario no tenía alumnos inscriptos.",
     });
+    expect(inscripciones.contarInscriptosVigentesEnHorario).toHaveBeenCalledWith(3);
   });
 });
 

@@ -128,7 +128,8 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Dar de baja un horario",
-    description: "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica.",
+    description:
+      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica. Con alumnos inscriptos responde 409: primero hay que reubicarlos.",
     request: { params: horarioIdParamSchema },
     responses: {
       200: respuestaJson("Horario dado de baja", horarioConAdvertenciaSchema),

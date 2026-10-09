@@ -14,11 +14,11 @@ const CARLA = "carla.ruiz@example.com";
 let tokenMarina: string;
 let datosDemo: Awaited<ReturnType<typeof cargarDatosDemo>>;
 
-function como(token: string, metodo: "get" | "post" | "patch", ruta: string) {
+function como(token: string, metodo: "get" | "post" | "patch" | "delete", ruta: string) {
   return request(app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
 }
 
-function comoMarina(metodo: "get" | "post" | "patch", ruta: string) {
+function comoMarina(metodo: "get" | "post" | "patch" | "delete", ruta: string) {
   return como(tokenMarina, metodo, ruta);
 }
 
@@ -370,5 +370,24 @@ describe("PI-23: cambios de plan y horarios", () => {
         ({ id_horario, fecha_hasta }) => id_horario === horarios[0].id_horario && fecha_hasta,
       ),
     ).toBe(true);
+  });
+});
+
+describe("PI-24: baja de un horario con alumnos inscriptos", () => {
+  it("no da de baja un horario con inscriptos vigentes y sí cuando el alumno se fue", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    const alumno = await crearAlumno(prisma);
+    await inscribir(alumno.id_alumno, [idHorario]);
+
+    const conInscriptos = await comoMarina("delete", `/horarios/${idHorario}`);
+    expect(conInscriptos.status).toBe(409);
+    expect(await prisma.horarios.findUnique({ where: { id_horario: idHorario } })).toMatchObject({
+      fecha_baja: null,
+    });
+
+    await darDeBaja(alumno.id_alumno);
+    const sinInscriptos = await comoMarina("delete", `/horarios/${idHorario}`);
+    expect(sinInscriptos.status).toBe(200);
+    expect(sinInscriptos.body.horario.fecha_baja).not.toBeNull();
   });
 });

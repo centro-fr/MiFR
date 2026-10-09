@@ -63,15 +63,20 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.horarios.actualizar(id, input);
   }
 
-  darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
-    return this.horarios.darDeBaja(id).then(async (horario) => {
-      const cantidad = await this.inscripciones.contarInscriptosVigentesEnHorario(id);
-      const advertencia =
-        cantidad > 0
-          ? `El horario tiene ${cantidad} inscripción(es) vigente(s); reubicarlas antes de continuar.`
-          : "El horario no tiene alumnos inscriptos.";
-      return { horario, advertencia };
-    });
+  // US-04: un horario con alumnos inscriptos no se da de baja; primero hay que reubicarlos.
+  // Horario no conoce a Inscripcion, así que el cruce lo hace el subsistema. La advertencia queda
+  // en la respuesta porque el front ya la muestra.
+  async darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
+    const inscriptos = await this.inscripciones.contarInscriptosVigentesEnHorario(id);
+    if (inscriptos > 0) {
+      throw new ConflictError(
+        `El horario tiene ${inscriptos} alumno(s) inscripto(s): hay que reubicarlos antes de darlo de baja`,
+      );
+    }
+    return {
+      horario: await this.horarios.darDeBaja(id),
+      advertencia: "El horario no tenía alumnos inscriptos.",
+    };
   }
 
   crearPlan(input: CrearPlanInput): Promise<Plan> {
