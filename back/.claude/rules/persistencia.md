@@ -39,7 +39,7 @@ Un repositorio no lanza errores de negocio ni valida: devuelve lo que hay, o `nu
 
 ## Esquema y migraciones
 
-- El esquema vive en `prisma/schema.prisma` y tiene que reflejar `docs/diagrams/der.puml`: mismos atributos, mismos tipos, mismos valores de enumerado. Ver `arquitectura.md`.
+- El esquema vive en `prisma/schema.prisma` y tiene que reflejar `docs/diagrams/puml/der.puml`: mismos atributos, mismos tipos, mismos valores de enumerado. Ver `arquitectura.md`.
 - Tablas y columnas en `snake_case`, en plural para las tablas: `usuarios`, `usuario_roles`, `id_usuario`, `fecha_alta`.
 - Todo cambio de esquema pasa por `pnpm prisma:migrate` con un nombre descriptivo. Nunca SQL manual contra la base.
 - La migración generada se commitea junto al cambio de esquema, en el mismo commit.
