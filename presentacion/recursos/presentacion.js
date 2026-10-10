@@ -25,6 +25,21 @@
 
   const ultimoIndice = filminas.length - 1;
   const diapositiva = document.querySelector('.diapositiva');
+  const contenido = document.querySelector('.contenido');
+  if (contenido) {
+    const h2 = contenido.querySelector('h2');
+    if (h2) {
+      const header = document.createElement('header');
+      header.className = 'encabezado-diapositiva';
+      header.innerHTML = `<div class="marca-mifr"><span class="icono-mifr"></span>MiFR</div>`;
+      header.prepend(h2);
+      contenido.prepend(header);
+    }
+    const footer = document.createElement('footer');
+    footer.className = 'pie-diapositiva';
+    footer.innerHTML = `<span>2026</span><span>${indiceActual + 1} / ${filminas.length}</span>`;
+    contenido.append(footer);
+  }
   const controles = crearControles();
   let pausada = leerPausaGuardada();
   let navegando = false;

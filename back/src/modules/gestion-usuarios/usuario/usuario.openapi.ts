@@ -107,7 +107,8 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     summary: "Modificar un usuario",
     description:
       "Cada usuario puede editar sus propios datos; para editar los de otro requiere `USUARIOS_EDITAR`. " +
-      "Cambiar `estado` requiere siempre `USUARIOS_EDITAR`.",
+      "Cambiar `dni` o `fecha_nacimiento` requiere siempre `USUARIOS_EDITAR`, y cambiar `estado` además " +
+      "el rol PROPIETARIA. Responde 409 si se intenta dejar inactiva a la única propietaria activa.",
     request: {
       params: usuarioIdParamSchema,
       body: cuerpoJson(
@@ -124,8 +125,9 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     security,
     summary: "Eliminar un usuario",
     description:
-      "Requiere el permiso `USUARIOS_EDITAR`. Responde 409 si el usuario tiene registros asociados " +
-      "(por ejemplo, un perfil de profesora): en ese caso se da de baja cambiando su `estado`.",
+      "Requiere el rol PROPIETARIA y el permiso `USUARIOS_EDITAR`. Responde 409 si el usuario tiene registros " +
+      "asociados (por ejemplo, un perfil de profesora): en ese caso se da de baja cambiando su `estado`. " +
+      "También responde 409 si es la única propietaria activa.",
     request: { params: usuarioIdParamSchema },
     responses: { 204: { description: "Usuario eliminado" }, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
@@ -136,7 +138,7 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Asignar un rol a un usuario",
-    description: "Requiere el permiso `USUARIOS_EDITAR`.",
+    description: "Requiere el rol PROPIETARIA y el permiso `USUARIOS_EDITAR`.",
     request: {
       params: usuarioIdParamSchema,
       body: cuerpoJson(asignarRolSchema.openapi("AsignarRol", { example: { rol: "PROFESORA" } })),
@@ -150,8 +152,10 @@ export function registrarDocumentacionUsuarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Quitar un rol a un usuario",
-    description: "Requiere el permiso `USUARIOS_EDITAR`.",
+    description:
+      "Requiere el rol PROPIETARIA y el permiso `USUARIOS_EDITAR`. Responde 409 si se intenta quitar " +
+      "PROPIETARIA a la única propietaria activa.",
     request: { params: rolParamSchema },
-    responses: { 200: usuario, ...respuestasDeError(400, 401, 403, 404) },
+    responses: { 200: usuario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 }

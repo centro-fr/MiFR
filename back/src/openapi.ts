@@ -1,10 +1,8 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { registrarDocumentacionProfesoras } from "./modules/gestion-personas/profesor/profesor.openapi.js";
-import { registrarDocumentacionActividades } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.openapi.js";
-import { registrarDocumentacionHorarios } from "./modules/gestion-servicio-entrenamiento/horario/horario.openapi.js";
-import { registrarDocumentacionSeguridad } from "./modules/gestion-usuarios/rol/rol.openapi.js";
-import { registrarDocumentacionSesion } from "./modules/gestion-usuarios/sesion/sesion.openapi.js";
-import { registrarDocumentacionUsuarios } from "./modules/gestion-usuarios/usuario/usuario.openapi.js";
+import { registrarDocumentacionGestionInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.openapi.js";
+import { registrarDocumentacionGestionPersonas } from "./modules/gestion-personas/gestion-personas.openapi.js";
+import { registrarDocumentacionGestionServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.openapi.js";
+import { registrarDocumentacionGestionUsuarios } from "./modules/gestion-usuarios/gestion-usuarios.openapi.js";
 import { GUIA_DE_PRUEBA } from "./openapi-guia.js";
 import { registrarSeguridadBearer } from "./shared/openapi/registro.js";
 
@@ -24,10 +22,8 @@ export function registrarDocumentacionApi(
   { loginDesarrollo = false }: { loginDesarrollo?: boolean } = {},
 ): void {
   registrarSeguridadBearer(registro);
-  registrarDocumentacionSesion(registro, { loginDesarrollo });
-  registrarDocumentacionUsuarios(registro);
-  registrarDocumentacionSeguridad(registro);
-  registrarDocumentacionProfesoras(registro);
-  registrarDocumentacionActividades(registro);
-  registrarDocumentacionHorarios(registro);
+  registrarDocumentacionGestionUsuarios(registro, { loginDesarrollo });
+  registrarDocumentacionGestionPersonas(registro);
+  registrarDocumentacionGestionServicioEntrenamiento(registro);
+  registrarDocumentacionGestionInscripcionesYClases(registro);
 }

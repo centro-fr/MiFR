@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schemas.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { FiltroHorario, HorarioConDatos } from "./horario.types.js";
@@ -13,6 +14,22 @@ interface CriterioSuperposicion {
   dia_semana: number;
   hora_inicio: string;
   hora_fin: string;
+}
+
+type Transaccion = Prisma.TransactionClient;
+
+// La fachada cuenta los inscriptos antes de dar de baja para responder con un mensaje claro, pero entre
+// ese conteo y la baja podía entrar una inscripción. Se vuelve a contar acá, con el mismo bloqueo que
+// toma la inscripción: es la misma regla que IInfoInscripciones.contarInscriptosVigentes, repetida porque
+// solo dentro del bloqueo el conteo es definitivo.
+function contarInscriptosVigentes(transaccion: Transaccion, idsHorarios: number[]): Promise<number> {
+  return transaccion.inscripcion_horarios.count({
+    where: {
+      id_horario: { in: idsHorarios },
+      fecha_hasta: null,
+      inscripcion: { estado: { in: ["PREINSCRIPTA", "ACTIVA"] }, alumno: { estado: { not: "BAJA" } } },
+    },
+  });
 }
 
 function convertirHora(hora: string): Date {
@@ -64,7 +81,7 @@ export class HorarioRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   crear(input: CrearHorarioInput): Promise<HorarioConDatos | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearAgenda(transaccion, input.id_profesora, input.dia_semana);
       if (await existeSuperposicion(transaccion, input)) return null;
 
@@ -92,10 +109,11 @@ export class HorarioRepository {
     return this.prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }
 
-  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return this.prisma.horarios
-      .count({ where: { id_actividad: idActividad, fecha_baja: null } })
-      .then((cantidad) => cantidad > 0);
+  buscarPorIds(ids: number[]): Promise<HorarioConDatos[]> {
+    return this.prisma.horarios.findMany({
+      where: { id_horario: { in: ids } },
+      include: CON_DATOS,
+    });
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {
@@ -109,7 +127,7 @@ export class HorarioRepository {
     input: ActualizarHorarioInput,
     criterio: CriterioSuperposicion,
   ): Promise<HorarioConDatos | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearAgenda(transaccion, criterio.id_profesora, criterio.dia_semana);
       if (await existeSuperposicion(transaccion, criterio, id)) return null;
 
@@ -121,11 +139,40 @@ export class HorarioRepository {
     });
   }
 
-  darDeBaja(id: number): Promise<HorarioConDatos> {
-    return this.prisma.horarios.update({
-      where: { id_horario: id },
-      data: { fecha_baja: fechaActualArgentina() },
-      include: CON_DATOS,
+  // US-03: la baja de la actividad arrastra sus horarios activos. Toma el mismo bloqueo por horario
+  // que la inscripción (en el mismo orden, para no trabarse con ella), así ninguna entra en un
+  // horario que se está cerrando. Devuelve null, sin dar nada de baja, si alguno tiene inscriptos.
+  darDeBajaDeActividad(idActividad: number): Promise<number | null> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      const activos = await transaccion.horarios.findMany({
+        where: { id_actividad: idActividad, fecha_baja: null },
+        select: { id_horario: true },
+      });
+      const claves = activos.map(({ id_horario }) => `inscripcion-horario:${id_horario}`).sort();
+      for (const clave of claves) {
+        await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
+      }
+      const ids = activos.map(({ id_horario }) => id_horario);
+      if ((await contarInscriptosVigentes(transaccion, ids)) > 0) return null;
+      const { count } = await transaccion.horarios.updateMany({
+        where: { id_actividad: idActividad, fecha_baja: null },
+        data: { fecha_baja: fechaActualArgentina() },
+      });
+      return count;
+    });
+  }
+
+  // Devuelve null, sin darlo de baja, si tiene inscriptos.
+  darDeBaja(id: number): Promise<HorarioConDatos | null> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      const clave = `inscripcion-horario:${id}`;
+      await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
+      if ((await contarInscriptosVigentes(transaccion, [id])) > 0) return null;
+      return transaccion.horarios.update({
+        where: { id_horario: id },
+        data: { fecha_baja: fechaActualArgentina() },
+        include: CON_DATOS,
+      });
     });
   }
 }

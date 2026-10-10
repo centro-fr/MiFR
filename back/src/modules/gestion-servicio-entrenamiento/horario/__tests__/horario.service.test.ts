@@ -11,9 +11,10 @@ function crearRepositorioMock() {
     crear: vi.fn(),
     listar: vi.fn(),
     buscarPorId: vi.fn(),
+    buscarPorIds: vi.fn(),
     actualizar: vi.fn(),
     darDeBaja: vi.fn(),
-    tieneActivosDeActividad: vi.fn(),
+    darDeBajaDeActividad: vi.fn(),
     tieneActivosDeProfesora: vi.fn(),
   };
 }
@@ -58,7 +59,11 @@ describe("HorarioService", () => {
   beforeEach(() => {
     repositorio = crearRepositorioMock();
     actividades = { buscarPorId: vi.fn().mockResolvedValue(actividad) };
-    profesoras = { buscarPorId: vi.fn().mockResolvedValue(profesora), listar: vi.fn() };
+    profesoras = {
+      buscarPorId: vi.fn().mockResolvedValue(profesora),
+      buscarPorUsuario: vi.fn(),
+      listar: vi.fn(),
+    };
     servicio = new HorarioService(repositorio as unknown as HorarioRepository, actividades, profesoras);
   });
 
@@ -173,14 +178,31 @@ describe("HorarioService", () => {
     expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
-  it("darDeBaja conserva el registro y advierte sobre inscripciones pendientes de módulo", async () => {
+  it("darDeBaja conserva el registro para que la fachada consulte las inscripciones", async () => {
     repositorio.buscarPorId.mockResolvedValue(horarioBase);
     repositorio.darDeBaja.mockResolvedValue({ ...horarioBase, fecha_baja: new Date() });
 
-    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({
-      horario: { fecha_baja: expect.any(Date) },
-      advertencia: expect.stringContaining("inscripciones futuras"),
-    });
+    await expect(servicio.darDeBaja(1)).resolves.toMatchObject({ fecha_baja: expect.any(Date) });
+  });
+
+  it("darDeBaja lanza ConflictError si una inscripción entró antes de tomar el bloqueo", async () => {
+    repositorio.buscarPorId.mockResolvedValue(horarioBase);
+    repositorio.darDeBaja.mockResolvedValue(null);
+
+    await expect(servicio.darDeBaja(1)).rejects.toThrow("alumnos inscriptos");
+  });
+
+  it("buscarPorIds no consulta la base si no recibe ids", async () => {
+    await expect(servicio.buscarPorIds([])).resolves.toEqual([]);
+    expect(repositorio.buscarPorIds).not.toHaveBeenCalled();
+  });
+
+  it("buscarPorIds devuelve horarios con el cupo efectivo", async () => {
+    repositorio.buscarPorIds.mockResolvedValue([horarioBase]);
+
+    await expect(servicio.buscarPorIds([1])).resolves.toMatchObject([
+      { id_horario: 1, cupo_maximo_efectivo: 20 },
+    ]);
   });
 
   it("listar devuelve los horarios con su cupo efectivo", async () => {
@@ -270,11 +292,17 @@ describe("HorarioService", () => {
     expect(repositorio.darDeBaja).not.toHaveBeenCalled();
   });
 
-  it("tieneActivosDeActividad consulta al repositorio", async () => {
-    repositorio.tieneActivosDeActividad.mockResolvedValue(true);
+  it("darDeBajaDeActividad pide al repositorio la baja de los horarios de la actividad", async () => {
+    repositorio.darDeBajaDeActividad.mockResolvedValue(3);
 
-    await expect(servicio.tieneActivosDeActividad(7)).resolves.toBe(true);
-    expect(repositorio.tieneActivosDeActividad).toHaveBeenCalledWith(7);
+    await expect(servicio.darDeBajaDeActividad(7)).resolves.toBe(3);
+    expect(repositorio.darDeBajaDeActividad).toHaveBeenCalledWith(7);
+  });
+
+  it("darDeBajaDeActividad lanza ConflictError si algún horario quedó con inscriptos", async () => {
+    repositorio.darDeBajaDeActividad.mockResolvedValue(null);
+
+    await expect(servicio.darDeBajaDeActividad(7)).rejects.toThrow(ConflictError);
   });
 
   it("tieneActivosDeProfesora consulta al repositorio", async () => {

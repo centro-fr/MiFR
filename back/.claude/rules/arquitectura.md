@@ -16,7 +16,8 @@ Define las capas, los componentes y los nombres de las interfaces. Es la fuente 
 - Cada componente es una subcarpeta: `Usuario` es `usuario/`, `Sesion` es `sesion/`, `Rol` es `rol/`. El nombre lo pone el diagrama, aunque el componente maneje también los permisos.
 - Cada interfaz del diagrama tiene su archivo, en la carpeta de quien la provee:
   - Las que provee un componente van en el componente: `IAutorizacion` (provista por `Rol`) es `rol/interface/i-autorizacion.ts`.
-  - Las `ILogica*` las provee el subsistema entero, no un componente: van en la raíz del subsistema. `ILogicaUsuarios` es `gestion-usuarios/interface/i-logica-usuarios.ts` y la realiza `gestion-usuarios/gestion-usuarios.service.ts`, que pasa cada operación al componente dueño.
+  - Las `ILogica*` las provee el subsistema entero, no un componente: van en la raíz del subsistema. `ILogicaUsuarios` es `gestion-usuarios/interface/i-logica-usuarios.ts` y la realiza `gestion-usuarios/gestion-usuarios.service.ts`, que pasa cada operación al componente dueño. En ese mismo archivo se divide en una parte por componente (`ILogicaSesion`, `ILogicaCuentasDeUsuario`, `ILogicaMatrizPermisos`) y la `ILogica*` es su unión; ver `interfaces.md`.
+- Cada subsistema tiene en su raíz un `<subsistema>.routes.ts` y un `<subsistema>.openapi.ts` que montan los de sus componentes. `app.ts` y `openapi.ts` tienen una línea por subsistema.
 
 Antes de crear un módulo, buscar su nombre en el diagrama. No inventar nombres.
 
@@ -34,7 +35,7 @@ Todavía no existen. Cuando se implementen los ciclos de vida descritos en `patr
 
 El diagrama organiza el sistema en cuatro capas. Sirve como mapa para ubicar código nuevo:
 
-1. **Capa de presentación web.** El frontend (`front/`). Consume las interfaces `ILogica*` a través de la API, y solo esas: los controllers reciben la `ILogica*` del subsistema, nunca `IAutenticacion` ni `IAutorizacion` (esas las usan los middlewares y los otros subsistemas). No es parte de este paquete.
+1. **Capa de presentación web.** El frontend (`front/`). Consume las interfaces `ILogica*` a través de la API, y solo esas: cada controller recibe la parte de la `ILogica*` de su componente, nunca `IAutenticacion` ni `IAutorizacion`. Esas dos las usan los guardias, que `app.ts` junta una sola vez en un `ControlDeAcceso`, y los otros subsistemas. No es parte de este paquete.
 
 2. **Capa de lógica de negocio persistente.** Los subsistemas de `src/modules/`: gestión de usuarios, servicio de entrenamiento, personas, inscripciones y clases, honorarios, cuotas y pagos, rutinas y progreso, notificaciones e insignias. Cada uno expone sus interfaces `ILogica*` y consume `IAutenticacion` e `IAutorizacion`. Acá vive la lógica que necesita leer o escribir en la base.
 
@@ -50,6 +51,7 @@ El diagrama organiza el sistema en cuatro capas. Sirve como mapa para ubicar có
 | Consultas a la base | `modules/.../<x>.repository.ts` |
 | Traducción HTTP (leer `req`, armar `res`) | `<x>.controller.ts` |
 | Definición de rutas y middlewares | `<x>.routes.ts` |
+| Montaje de los routers de un subsistema | `<subsistema>.routes.ts` |
 | Validación de entrada | `<x>.schemas.ts` con Zod |
 | Un cálculo puro, sin base | Módulo de cálculos (capa 3) |
 | Algo que usan varios módulos | `shared/` |

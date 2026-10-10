@@ -11,6 +11,10 @@ import type {
 } from "./horario.types.js";
 import type { IInfoHorarios } from "./interface/i-info-horarios.js";
 
+// La baja se rechaza también si una inscripción entró después del primer conteo de la fachada.
+const HORARIO_CON_INSCRIPTOS =
+  "El horario tiene alumnos inscriptos: hay que reubicarlos antes de darlo de baja";
+
 function horaComoTexto(valor: Date): string {
   return `${String(valor.getUTCHours()).padStart(2, "0")}:${String(valor.getUTCMinutes()).padStart(2, "0")}`;
 }
@@ -41,6 +45,12 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(await this.obtenerHorario(id));
   }
 
+  async buscarPorIds(ids: number[]): Promise<HorarioRespuesta[]> {
+    if (ids.length === 0) return [];
+    const horarios = await this.repositorio.buscarPorIds(ids);
+    return horarios.map((horario) => this.conCupoEfectivo(horario));
+  }
+
   async actualizar(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
     const actual = await this.obtenerHorarioActivo(id);
     const idActividad = input.id_actividad ?? actual.id_actividad;
@@ -68,17 +78,17 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(horario);
   }
 
-  async darDeBaja(id: number): Promise<HorarioConAdvertencia> {
+  async darDeBaja(id: number): Promise<HorarioRespuesta> {
     await this.obtenerHorarioActivo(id);
-    return {
-      horario: this.conCupoEfectivo(await this.repositorio.darDeBaja(id)),
-      advertencia:
-        "No se verificaron inscripciones futuras; el módulo de inscripciones aún no está disponible.",
-    };
+    const horario = await this.repositorio.darDeBaja(id);
+    if (!horario) throw new ConflictError(HORARIO_CON_INSCRIPTOS);
+    return this.conCupoEfectivo(horario);
   }
 
-  tieneActivosDeActividad(idActividad: number): Promise<boolean> {
-    return this.repositorio.tieneActivosDeActividad(idActividad);
+  async darDeBajaDeActividad(idActividad: number): Promise<number> {
+    const cantidad = await this.repositorio.darDeBajaDeActividad(idActividad);
+    if (cantidad === null) throw new ConflictError(HORARIO_CON_INSCRIPTOS);
+    return cantidad;
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {

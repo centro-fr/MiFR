@@ -44,22 +44,24 @@ back/
   vitest.config.ts                    unitarios: excluye *.integration.test.ts
   vitest.integration.config.ts        integración: globalSetup, sin paralelismo, logs silenciados
   src/
-    composicion.ts                    construirDependencias(): el cableado compartido
+    composicion.ts                    construirSistema() y construirDependencias(): el cableado compartido
     shared/db/catalogo-seguridad.ts   cargarCatalogoSeguridad(): roles, permisos y matriz inicial
-    shared/db/datos-demo.ts           cargarDatosDemo(): profesoras, actividades y horarios de desarrollo
+    shared/db/datos-demo.ts           cargarDatosDemo(): profesoras, actividades, horarios, planes, alumnos e inscripciones
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email)
-      fabricas.ts                     crearUsuario(prisma, { roles, estado })
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva hasta que exista el cobro)
+      fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...)
 ```
 
 ## Datos disponibles
 
 - **Catálogo de seguridad:** se carga solo en cada `reiniciarBase`.
 - **`crearUsuario`:** usuarios con los roles y el estado que se pidan, con correos `usuarioN@example.com`.
-- **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Devuelve los ids de profesoras por correo y de actividades por código.
-- Los horarios tienen que caer entre las 07:00 y las 20:00 (horario de atención): fuera de esa franja la API responde 400 antes de llegar a la regla que se quiere probar.
+- **`crearPlan`:** plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026); se le puede pasar nombre, tipo, precio, fecha de vigencia y actividad exclusiva. Devuelve `id_plan` e `id_plan_precio`, que es lo que necesita una inscripción.
+- **`crearAlumno`:** alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles), mayor de edad y con email `alumnoN@example.com`; se le puede pasar nombre, apellido, DNI, email (`null` para un menor), fecha de nacimiento, estado y `id_usuario_responsable`. Devuelve `id_alumno` e `id_usuario`.
+- **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Planes Básico, Intermedio, Personalizado 2 días (exclusivo de Entrenamiento Personalizado, profesora única) y Clase suelta, con precios desde el 01/01/2026; alumnos pre-inscriptos Sofía Medina (mayor) y Mateo Romero (menor, tutora Paula Romero). Devuelve los ids de profesoras por correo, de actividades por código, de planes por nombre y de alumnos por DNI. Como el escenario ya trae planes y alumnos, los tests cuentan contra lo que había o filtran por sus propios nombres.
+- Los horarios tienen que caer de lunes a sábado, entre las 07:00 y las 20:00 (horario de atención): un domingo o una hora fuera de esa franja hacen que la API responda 400 antes de llegar a la regla que se quiere probar.
 
 ## Archivos y códigos asignados
 
@@ -67,9 +69,14 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 
 | Letra | Archivo | Tema | Último código |
 | :--- | :--- | :--- | :--- |
-| A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos | A-41 |
-| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-13 |
+| A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos, administración de roles e identidad de la cuenta | A-48 |
+| B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-16 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
+| D | `src/__tests__/integracion/planes.integration.test.ts` | Planes, baja lógica y precios con fecha de vigencia | D-14 |
+| E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
+| F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
+| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación y paginación | G-17 |
+| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado y el historial de cuotas (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`) | H-06 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

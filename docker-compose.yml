@@ -7,8 +7,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mifr
+    # Solo en la propia máquina: el usuario y la contraseña están en el repositorio y son de superusuario.
     ports:
-      - "55432:5432"
+      - "127.0.0.1:55432:5432"
     volumes:
       - mifr-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -29,7 +30,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mifr_test
     ports:
-      - "55433:5432"
+      - "127.0.0.1:55433:5432"
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:
@@ -54,8 +55,10 @@ services:
       DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
       PORT: 3000
       CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:5173,http://localhost:3001}
+    # Con back/.env de desarrollo la API trae el login sin Google: se publica solo en la propia
+    # máquina, no en la red local. Adentro del contenedor escucha en todas las interfaces (HOST del Dockerfile).
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       db:
         condition: service_healthy

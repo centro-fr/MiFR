@@ -108,12 +108,20 @@ describe("crearUsuarioSchema", () => {
     },
   );
 
-  it.each(["-0", "0", "abc", "------", "123456", "1234567890123456", "11 1234 56a", "54+1112345678"])(
-    "rechaza el teléfono %j",
-    (telefono) => {
-      expect(crearUsuarioSchema.safeParse({ ...minimo, telefono }).success).toBe(false);
-    },
-  );
+  it.each([
+    "-0",
+    "0",
+    "abc",
+    "------",
+    "123456",
+    "1234567890123456",
+    "11 1234 56a",
+    "54+1112345678",
+    "-1234567",
+    "+-3511234567",
+  ])("rechaza el teléfono %j", (telefono) => {
+    expect(crearUsuarioSchema.safeParse({ ...minimo, telefono }).success).toBe(false);
+  });
 
   it.each(["3511234567", "+54 9 351 123-4567", "(0351) 423-4567", "4234567"])(
     "acepta el teléfono %j",

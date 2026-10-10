@@ -32,10 +32,11 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 
 ## Buenas prácticas
 
-- Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega.
+- Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega. Las reglas de cada tipo de campo (números, `-0`, largos, textos, emails, fechas) están en `validaciones.md`.
 - Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
-- Envolver los handlers asincrónicos con `asyncHandler` para que los rechazos lleguen al manejador de errores.
-- Proteger las rutas con `requiereSesion(autenticacion)` y `requierePermiso(autorizacion, "CODIGO")` en la definición de la ruta, no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `requiereRol` queda para lo que la spec ata a un rol y no a un permiso.
+- Pasar los handlers asincrónicos directo a la ruta: Express 5 manda sus rechazos al manejador de errores, así que no hace falta envolverlos.
+- Proteger las rutas con los guardias del `ControlDeAcceso` que recibe el router (`acceso.sesion`, `acceso.permiso("CODIGO")`, `acceso.propioOPermiso("CODIGO")`), en la definición de la ruta y no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `acceso.rol(...)` queda para lo que la spec ata a un rol y no a un permiso.
+- Si un middleware propio envuelve un guardia, lo espera (`await guardia(req, res, next)`). Los guardias son async: sin el `await` el rechazo se pierde y el pedido queda colgado.
 - Instanciar solo en el composition root (`index.ts` y `composicion.ts`), también las clases de librerías: quien las usa las recibe por constructor.
 - Usar los tipos de dominio de `<x>.types.ts`, no los de `@prisma/client` directamente.
 - Mantener los controllers finos: leer de `req`, llamar al service, responder. Nada más.
@@ -45,7 +46,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 ## Malas prácticas
 
 - `any`. Si el tipo no se sabe, `unknown` y estrechar.
-- Usar el cliente de Prisma fuera de un repositorio.
+- Usar el cliente de Prisma fuera de un repositorio (la única excepción es `UnidadDeTrabajoPrisma`, ver `persistencia.md`).
 - Hacer `new` de una clase concreta fuera del composition root (`index.ts` y `composicion.ts`).
 - Poner lógica de negocio en un controller, en una ruta o en un middleware.
 - Devolver la entidad cruda cuando tiene campos que el cliente no debería ver.
@@ -70,12 +71,13 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | Variable | Para qué |
 | --- | --- |
 | `DATABASE_URL` | Conexión a PostgreSQL |
-| `GOOGLE_CLIENT_ID` | Validación del token de Google |
-| `JWT_SECRET` | Firma del token propio |
+| `GOOGLE_CLIENT_ID` | Validación del token de Google. Obligatoria con `NODE_ENV=production`; sin ella el login con Google se rechaza |
+| `JWT_SECRET` | Firma del token propio. Obligatoria; en producción, de al menos 32 caracteres |
 | `JWT_EXPIRES_IN` | Vigencia del token, por defecto `8h` |
 | `PORT` | Puerto de la API, por defecto `3000` |
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
+| `HOST` | Interfaz en la que escucha la API. Por defecto `127.0.0.1` fuera de producción y `0.0.0.0` en producción; el Dockerfile la fija en `0.0.0.0` |
 | `LOGIN_DESARROLLO` | Con `true` habilita `POST /auth/desarrollo` (login por email, sin Google). Prohibida con `NODE_ENV=production`: la API no arranca |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.

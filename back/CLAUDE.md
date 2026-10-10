@@ -2,9 +2,9 @@
 
 API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usuarios y roles, alumnos, planes, inscripciones, clases, cuotas, pagos, honorarios, rutinas y notificaciones.
 
-**Stack:** Node + TypeScript (ESM), Express, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
+**Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados tres de los nueve subsistemas del diagrama de arquitectura, con lo que pide el sprint 1: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor) y `gestion-servicio-entrenamiento` (actividad, horario). Los otros seis todavía no tienen carpeta.
+**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). `gestion-cuotas-y-pagos` (cuota, pago) y `calculos-del-negocio` están escritos pero todavía no se montan en `app.ts`: esperan los calculadores (ver `SPRINT-3.md`). Los demás subsistemas del diagrama todavía no tienen carpeta.
 
 ## Comandos
 
@@ -36,17 +36,20 @@ No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la ver
 src/
   index.ts    composition root: lee el entorno, crea las piezas de infraestructura y levanta el servidor
   composicion.ts  construirDependencias(): arma los componentes; lo usan index.ts y los tests de integración
-  app.ts      createApp(deps): arma Express y recibe las dependencias tipadas por interfaz
+  app.ts      createApp(deps): arma Express, crea el ControlDeAcceso y monta un router por subsistema
   modules/<subsistema>/
-      interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación)
+      interface/       i-logica-*.ts  (la interfaz del subsistema, la única que ve la presentación,
+                                       dividida en una parte por componente)
       <subsistema>.service.ts         (la realiza pasando cada operación a su componente)
+      <subsistema>.routes.ts          (monta los routers de sus componentes)
+      <subsistema>.openapi.ts         (registra la documentación de sus componentes)
   modules/<subsistema>/<componente>/
       interface/       i-*.ts
       __tests__/       *.test.ts (unitarios)   *.integration.test.ts (contra Postgres)
       <x>.routes.ts    <x>.controller.ts   <x>.service.ts
       <x>.repository.ts   <x>.schemas.ts   <x>.types.ts
       <x>.openapi.ts                  (documentación Swagger de sus rutas)
-  openapi.ts  registra en un OpenAPIRegistry los <x>.openapi.ts de cada componente
+  openapi.ts  registra en un OpenAPIRegistry los <subsistema>.openapi.ts
   shared/     transversal: db/  errors/  middlewares/  openapi/  utils/
 prisma/       schema.prisma, migrations/, seed.ts
 ```
@@ -56,14 +59,14 @@ prisma/       schema.prisma, migrations/, seed.ts
 Recorrido de una petición:
 
 ```text
-routes → validate(schemas) → controller → service (implementa I*) → repository → prisma
+routes (guardias de acceso) → validate(schemas) → controller → fachada ILogica* → service → repository → prisma
 ```
 
 ## Documentación de la API (Swagger)
 
 Fuera de producción, la API publica Swagger UI en `/api/v1/docs` y el documento en `/api/v1/docs/openapi.json`. Con `NODE_ENV=production` no se publica.
 
-El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; `src/openapi.ts` los junta e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
+El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; el `<subsistema>.openapi.ts` junta los de sus componentes, `src/openapi.ts` los de cada subsistema, e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
 
 Los errores se lanzan como subclases de `AppError` y los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
 
@@ -80,7 +83,8 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 7. Los comentarios explican el porqué, nunca el cambio. Nada de `// se agregó`, `// antes era así` ni código comentado.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
-10. Toda ruta valida su entrada con Zod y toda lógica nueva de un service viene con su test. Lo que cruza capas o depende de la base viene además con sus tests de integración (skill `tests-integracion`).
+10. Toda ruta valida su entrada con Zod, con los esquemas compartidos de `shared/utils/` (ver `.claude/rules/validaciones.md`). Todo lo que se agrega o se cambia en el back viene con sus tests en el mismo trabajo: unitarios de cada pieza (service, repositorio, schemas, rutas, fachada y utilidades de `shared/`) y, si cruza capas o depende de la base, de integración (skill `tests-integracion`). La cobertura de los unitarios se mantiene en 100 %. El detalle está en `.claude/rules/testing.md`.
+11. Todo agregado al back (endpoint, permiso, entidad, módulo o regla de negocio) pasa por la skill `auditar-cambios` antes de integrarse: dependencias, compilación, tests, arquitectura, seguridad y correctitud. Una rama con hallazgos BLOQUEANTES no se integra.
 
 ## Reglas detalladas
 
@@ -95,10 +99,12 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 | `persistencia.md` | Al tocar Prisma, el esquema o un repositorio |
 | `testing.md` | Al escribir tests |
 | `documentacion.md` | Al comentar código o dudar de una buena práctica |
+| `validaciones.md` | Al escribir o cambiar un schema de Zod |
+| `seguridad.md` | Al agregar o cambiar una ruta, un permiso o un flujo que cruce componentes |
 | `mcp.md` | Al explorar el código con herramientas |
 
 ## Skills
 
-En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura` y `revisar-antes-de-integrar`.
+En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura`, `auditar-cambios` y `revisar-antes-de-integrar`.
 
 > Claude Code busca las skills y la configuración en la carpeta donde se abre la sesión. Para que estas aparezcan hay que abrir la sesión parada en `back/`. Si se abre en la raíz del repositorio, el `CLAUDE.md` igual se carga, pero las skills no.

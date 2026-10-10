@@ -1,17 +1,17 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
 import helmet from "helmet";
-import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
-import { createRolRoutes } from "./modules/gestion-usuarios/rol/rol.routes.js";
-import { createSesionRoutes } from "./modules/gestion-usuarios/sesion/sesion.routes.js";
-import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
-import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
-import { createUsuarioRoutes } from "./modules/gestion-usuarios/usuario/usuario.routes.js";
-import { createActividadRoutes } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.routes.js";
-import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
-import { createProfesorRoutes } from "./modules/gestion-personas/profesor/profesor.routes.js";
+import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
+import { createGestionInscripcionesYClasesRoutes } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
-import { createHorarioRoutes } from "./modules/gestion-servicio-entrenamiento/horario/horario.routes.js";
+import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
+import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
+import { createGestionServicioEntrenamientoRoutes } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.routes.js";
+import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
+import { createGestionUsuariosRoutes } from "./modules/gestion-usuarios/gestion-usuarios.routes.js";
+import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
+import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
+import { crearControlDeAcceso } from "./shared/middlewares/auth.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
@@ -21,6 +21,7 @@ export interface AppDependencies {
   gestionUsuarios: ILogicaUsuarios;
   gestionPersonas: ILogicaPersonas;
   gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
+  gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -50,23 +51,15 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
+  const acceso = crearControlDeAcceso(deps.autenticacion, deps.autorizacion);
   api.use(
-    "/auth",
-    createSesionRoutes(deps.gestionUsuarios, deps.autenticacion, {
-      loginDesarrollo: opciones.loginDesarrollo,
-    }),
+    createGestionUsuariosRoutes(deps.gestionUsuarios, acceso, { loginDesarrollo: opciones.loginDesarrollo }),
   );
-  api.use("/usuarios", createUsuarioRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
-  api.use("/seguridad", createRolRoutes(deps.gestionUsuarios, deps.autenticacion, deps.autorizacion));
-  api.use(
-    "/actividades",
-    createActividadRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
-  );
-  api.use("/profesoras", createProfesorRoutes(deps.gestionPersonas, deps.autenticacion, deps.autorizacion));
-  api.use(
-    "/horarios",
-    createHorarioRoutes(deps.gestionServicioEntrenamiento, deps.autenticacion, deps.autorizacion),
-  );
+  api.use(createGestionPersonasRoutes(deps.gestionPersonas, acceso));
+  api.use(createGestionServicioEntrenamientoRoutes(deps.gestionServicioEntrenamiento, acceso));
+  // Va después de GestionPersonas: su /alumnos exige rol PROPIETARIA a todo lo que le llega, y
+  // montado antes bloquearía las rutas de alumnos que GestionPersonas abre a otros roles.
+  api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

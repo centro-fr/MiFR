@@ -64,10 +64,10 @@ El modo sale de `NODE_ENV` en `back/.env`: con `development` se publica Swagger,
    | `GOOGLE_CLIENT_ID` | El mismo client ID que usa el front |
    | `CORS_ORIGENES` | La URL de Netlify, por ejemplo `https://mifr.netlify.app` |
 
-   `JWT_SECRET` lo genera Render solo, con un valor aleatorio. Ningún secreto se escribe en el repositorio.
+   `JWT_SECRET` lo genera Render solo, con un valor aleatorio. Ningún secreto se escribe en el repositorio. Con `NODE_ENV=production` la API no arranca si falta `GOOGLE_CLIENT_ID` o `CORS_ORIGENES`, o si `JWT_SECRET` tiene menos de 32 caracteres: el log del deploy dice cuál.
 3. En el primer deploy, el contenedor aplica todas las migraciones sobre la base vacía.
 4. Probar `https://<servicio>.onrender.com/health`: tiene que responder `{"status":"ok"}`.
-5. Anotar la URL que asignó Render. Si no es `https://mifr-api.onrender.com`, corregirla en la regla de `/api/*` de `netlify.toml`.
+5. Anotar la URL que asignó Render. Si no es `https://mifr-api.onrender.com`, corregirla en la regla de `/api/*` de `netlify.toml`. Los subdominios de `onrender.com` son de quien los registra primero: comprobar en el dashboard de Render que el servicio con esa URL es el del proyecto, porque Netlify le reenvía los tokens de sesión y de Google. Si después se renombra o se borra el servicio, `netlify.toml` se corrige en el mismo cambio. Lo más firme es un dominio propio (por ejemplo `api.<dominio>` con un CNAME a Render).
 
 ### 3. Primera propietaria
 
@@ -128,6 +128,6 @@ Con un monitor gratuito, por ejemplo UptimeRobot, crear un chequeo HTTP a `https
 - [ ] `/health` responde en Render.
 - [ ] Primera propietaria cargada con el seed.
 - [ ] URL de Netlify agregada en Google Cloud Console.
-- [ ] URL de Render verificada en la regla de `/api/*` de `netlify.toml`.
+- [ ] URL de Render verificada en la regla de `/api/*` de `netlify.toml`, y comprobado en el dashboard que ese servicio es del proyecto.
 - [ ] Sitio de Netlify creado; `https://<sitio>/api/v1/auth/me` sin token responde 401 (llega a la API).
 - [ ] Monitor de `/health` cada 10 minutos.

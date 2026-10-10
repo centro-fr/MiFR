@@ -115,6 +115,21 @@ describe("ProfesorService", () => {
     await expect(servicio.buscarPorId(1)).resolves.toBeNull();
   });
 
+  it("buscarPorUsuario devuelve la profesora activa de ese usuario", async () => {
+    repositorio.buscarPorUsuarioId.mockResolvedValue(perfil);
+
+    await expect(servicio.buscarPorUsuario(5)).resolves.toEqual(perfil);
+    expect(repositorio.buscarPorUsuarioId).toHaveBeenCalledWith(5);
+  });
+
+  it("buscarPorUsuario devuelve null si el usuario no tiene perfil de profesora o está dada de baja", async () => {
+    repositorio.buscarPorUsuarioId.mockResolvedValueOnce(null);
+    await expect(servicio.buscarPorUsuario(5)).resolves.toBeNull();
+
+    repositorio.buscarPorUsuarioId.mockResolvedValueOnce({ ...perfil, fecha_baja: new Date() });
+    await expect(servicio.buscarPorUsuario(5)).resolves.toBeNull();
+  });
+
   it("listar devuelve las profesoras del repositorio", async () => {
     repositorio.listar.mockResolvedValue([perfil]);
 

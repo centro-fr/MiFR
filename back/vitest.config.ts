@@ -22,6 +22,8 @@ export default defineConfig({
         "src/shared/db/datos-demo.ts",
       ],
       reporter: ["text-summary", "text"],
+      // La regla del proyecto es 100 %: el umbral hace que una baja falle el comando y no dependa de leer el reporte.
+      thresholds: { 100: true },
     },
   },
 });

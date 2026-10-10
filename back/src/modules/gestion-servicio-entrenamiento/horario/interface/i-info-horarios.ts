@@ -1,4 +1,6 @@
+import type { HorarioRespuesta } from "../horario.types.js";
+
 export interface IInfoHorarios {
-  tieneActivosDeActividad(idActividad: number): Promise<boolean>;
+  buscarPorIds(ids: number[]): Promise<HorarioRespuesta[]>;
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean>;
 }

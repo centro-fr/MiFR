@@ -1,0 +1,83 @@
+import type { estado_inscripcion, inscripciones, motivo_baja, Prisma } from "@prisma/client";
+import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
+
+export type Inscripcion = inscripciones;
+export type EstadoInscripcion = estado_inscripcion;
+export type MotivoBaja = motivo_baja;
+
+export const INCLUIR_DATOS_INSCRIPCION = {
+  alumno: {
+    select: {
+      id_alumno: true,
+      estado: true,
+      usuario: { select: { nombre: true, apellido: true } },
+    },
+  },
+  plan: true,
+  plan_precio: true,
+  profesora: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+  horarios: {
+    include: {
+      horario: {
+        include: {
+          actividad: true,
+          profesora: { include: { usuario: { select: { nombre: true, apellido: true } } } },
+        },
+      },
+    },
+    orderBy: { fecha_desde: "asc" },
+  },
+} satisfies Prisma.inscripcionesInclude;
+
+export type InscripcionConDatos = Prisma.inscripcionesGetPayload<{
+  include: typeof INCLUIR_DATOS_INSCRIPCION;
+}>;
+
+// Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
+// informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las
+// respuestas de inscripciones.
+export const INCLUIR_DATOS_COBRO = {
+  alumno: {
+    select: {
+      id_alumno: true,
+      estado: true,
+      id_usuario: true,
+      id_usuario_responsable: true,
+      usuario: { select: { nombre: true, apellido: true } },
+    },
+  },
+} satisfies Prisma.inscripcionesInclude;
+
+export type InscripcionACobrar = Prisma.inscripcionesGetPayload<{ include: typeof INCLUIR_DATOS_COBRO }>;
+
+// fecha_baja de la inscripción es TIMESTAMP (el instante, en UTC) y las vigencias de
+// inscripcion_horarios son DATE (el día de Argentina, ver fecha-argentina.ts).
+export interface FechasDeBaja {
+  instante: Date;
+  dia: Date;
+}
+
+export interface FiltroInscripciones extends Partial<Paginacion> {
+  id_alumno?: number;
+  id_plan?: number;
+  id_profesora?: number;
+  id_actividad?: number;
+  estado?: EstadoInscripcion;
+}
+
+export interface FiltroAlumnosPorInscripcion {
+  id_plan?: number;
+  id_profesora?: number;
+  id_actividad?: number;
+}
+
+export interface ResumenInscripcionAlumno {
+  id_alumno: number;
+  id_inscripcion: number;
+  estado: EstadoInscripcion;
+  id_plan: number;
+  nombre_plan: string;
+  id_profesora: number;
+  nombre_profesora: string;
+  ids_horarios: number[];
+}

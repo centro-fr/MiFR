@@ -26,7 +26,7 @@ const horarioSchema = z
     id_horario: z.number().int(),
     id_actividad: z.number().int(),
     id_profesora: z.number().int(),
-    dia_semana: z.number().int().min(1).max(7).openapi({ description: "1 = lunes, 7 = domingo" }),
+    dia_semana: z.number().int().min(1).max(6).openapi({ description: "1 = lunes … 6 = sábado" }),
     hora_inicio: horaSchema,
     hora_fin: horaSchema,
     cupo_maximo: z.number().int().nullable(),
@@ -42,6 +42,20 @@ const horarioSchema = z
   })
   .openapi("Horario");
 
+const horarioConOcupacionSchema = horarioSchema
+  .extend({
+    inscriptos: z
+      .number()
+      .int()
+      .openapi({ description: "Alumnos con una inscripción vigente en el horario" }),
+    cupo_disponible: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: "Lugares que quedan; null si el horario no tiene cupo" }),
+  })
+  .openapi("HorarioConOcupacion");
+
 const horarioConAdvertenciaSchema = z
   .object({ horario: horarioSchema, advertencia: z.string() })
   .openapi("HorarioConAdvertencia");
@@ -53,7 +67,8 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
   const reglas =
     "La actividad y la profesora tienen que estar activas, y la profesora no puede tener otro " +
     "horario superpuesto ese día (409). `cupo_maximo` es obligatorio si la actividad es PERSONALIZADA " +
-    "y no tiene cupo propio. Las horas tienen que estar entre las 07:00 y las 20:00, el horario del centro (400).";
+    "y no tiene cupo propio. El día va de lunes a sábado y las horas entre las 07:00 y las 20:00, el " +
+    "horario del centro (400).";
 
   registro.registerPath({
     method: "get",
@@ -61,10 +76,12 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Listar horarios activos",
-    description: "Requiere el permiso `HORARIOS_VER`.",
+    description:
+      "Requiere el permiso `HORARIOS_VER`. Cada horario trae cuántos alumnos tiene inscriptos y cuántos " +
+      "lugares le quedan, para elegirlo al pre-inscribir.",
     request: { query: listarHorarioQuerySchema },
     responses: {
-      200: respuestaJson("Horarios", z.array(horarioSchema)),
+      200: respuestaJson("Horarios", z.array(horarioConOcupacionSchema)),
       ...respuestasDeError(400, 401, 403),
     },
   });
@@ -98,9 +115,12 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Obtener un horario",
-    description: "Requiere el permiso `HORARIOS_VER`.",
+    description: "Requiere el permiso `HORARIOS_VER`. Trae los inscriptos y los lugares que quedan.",
     request: { params: horarioIdParamSchema },
-    responses: { 200: horario, ...respuestasDeError(400, 401, 403, 404) },
+    responses: {
+      200: respuestaJson("Horario", horarioConOcupacionSchema),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
   });
 
   registro.registerPath({
@@ -127,7 +147,8 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Dar de baja un horario",
-    description: "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica.",
+    description:
+      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica. Con alumnos inscriptos responde 409: primero hay que reubicarlos.",
     request: { params: horarioIdParamSchema },
     responses: {
       200: respuestaJson("Horario dado de baja", horarioConAdvertenciaSchema),

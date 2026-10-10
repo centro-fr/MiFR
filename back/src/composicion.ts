@@ -14,8 +14,16 @@ import { GestionServicioEntrenamientoService } from "./modules/gestion-servicio-
 import { ProfesorRepository } from "./modules/gestion-personas/profesor/profesor.repository.js";
 import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.service.js";
 import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
+import { AlumnoRepository } from "./modules/gestion-personas/alumno/alumno.repository.js";
+import { AlumnoService } from "./modules/gestion-personas/alumno/alumno.service.js";
 import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
+import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
+import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
+import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
+import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
+import { GestionInscripcionesYClasesService } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.service.js";
+import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -23,14 +31,21 @@ export interface PiezasDeInfraestructura {
   jwtService: JwtService;
 }
 
+// Lo que arma el composition root: las dependencias de la API y las interfaces que todavía no
+// consume ningún componente desde la API, como el alta definitiva que va a disparar el cobro.
+export interface Sistema {
+  dependencias: AppDependencies;
+  infoInscripciones: IInfoInscripciones;
+}
+
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
 // que recibe. Está separado de index.ts, que lee el entorno y levanta el servidor, para que los
 // tests de integración usen este mismo cableado con una base de prueba y Google simulado.
-export function construirDependencias({
-  prisma,
-  googleAuth,
-  jwtService,
-}: PiezasDeInfraestructura): AppDependencies {
+export function construirDependencias(piezas: PiezasDeInfraestructura): AppDependencies {
+  return construirSistema(piezas).dependencias;
+}
+
+export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInfraestructura): Sistema {
   const rolService = new RolService(new RolRepository(prisma));
   const usuarioService = new UsuarioService(new UsuarioRepository(prisma), rolService);
   const autenticacion = new SesionService(usuarioService, googleAuth, jwtService, rolService);
@@ -39,17 +54,38 @@ export function construirDependencias({
   const actividadService = new ActividadService(new ActividadRepository(prisma));
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
+  const planService = new PlanService(new PlanRepository(prisma), actividadService);
+  const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
+  const inscripcionService = new InscripcionService(
+    new InscripcionRepository(prisma),
+    alumnoService,
+    planService,
+    horarioService,
+    profesorService,
+  );
+  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
     actividadService,
     horarioService,
+    planService,
+    inscripcionService,
   );
-  const gestionPersonas = new GestionPersonasService(profesorService, horarioService);
+  const gestionPersonas = new GestionPersonasService(
+    profesorService,
+    horarioService,
+    alumnoService,
+    inscripcionService,
+  );
 
   return {
-    gestionUsuarios,
-    gestionPersonas,
-    gestionServicioEntrenamiento,
-    autenticacion,
-    autorizacion: rolService,
+    dependencias: {
+      gestionUsuarios,
+      gestionPersonas,
+      gestionServicioEntrenamiento,
+      gestionInscripcionesYClases,
+      autenticacion,
+      autorizacion: rolService,
+    },
+    infoInscripciones: inscripcionService,
   };
 }

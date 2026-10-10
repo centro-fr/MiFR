@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  AlumnoExistenteError,
   AppError,
   ConflictError,
   ForbiddenError,
+  MontoDistintoError,
   NotFoundError,
   UnauthorizedError,
   UsuarioNoRegistradoError,
@@ -26,6 +28,20 @@ describe("errores de la aplicación", () => {
 
     expect(error).toMatchObject({ statusCode: 403, code: "USUARIO_NO_REGISTRADO" });
     expect(error.message).toContain("Pedile a quien administra el centro");
+  });
+
+  it("AlumnoExistenteError responde 409 con un código propio y el id del alumno que ya existe", () => {
+    const error = new AlumnoExistenteError(7);
+
+    expect(error).toMatchObject({ statusCode: 409, code: "ALUMNO_EXISTENTE" });
+    expect(error.message).toContain("alumno 7");
+  });
+
+  it("MontoDistintoError responde 409 con un código propio y el monto esperado", () => {
+    const error = new MontoDistintoError(28000);
+
+    expect(error).toMatchObject({ statusCode: 409, code: "MONTO_DISTINTO" });
+    expect(error.message).toContain("28000");
   });
 
   it("acepta un mensaje personalizado", () => {
