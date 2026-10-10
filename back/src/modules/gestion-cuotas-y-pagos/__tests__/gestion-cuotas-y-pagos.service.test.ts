@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IUnidadDeTrabajo } from "../../../shared/db/transaccion.js";
 import { ForbiddenError, NotFoundError } from "../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { CuotaService } from "../cuota/cuota.service.js";
@@ -29,6 +30,15 @@ function crearMocks() {
     };
   return {
     orden,
+    // Marca en el orden qué pasos quedan dentro de la transacción; si la operación falla, no la confirma.
+    unidadDeTrabajo: {
+      ejecutar: vi.fn(async (operacion: () => Promise<unknown>) => {
+        orden.push("abrir transacción");
+        const resultado = await operacion();
+        orden.push("confirmar transacción");
+        return resultado;
+      }),
+    },
     cuotas: {
       buscarInscripcion: vi.fn(registrar("buscarInscripcion", inscripcion)),
       prepararCobro: vi.fn(registrar("prepararCobro", cuota)),
@@ -60,10 +70,11 @@ describe("GestionCuotasYPagosService", () => {
     gestion = new GestionCuotasYPagosService(
       mocks.cuotas as unknown as CuotaService,
       mocks.pagos as unknown as PagoService,
+      mocks.unidadDeTrabajo as unknown as IUnidadDeTrabajo,
     );
   });
 
-  it("el cobro en efectivo verifica quién cobra antes de preparar la cuota y da el alta antes de guardar", async () => {
+  it("el cobro en efectivo verifica quién cobra antes de preparar la cuota y guarda el alta y el pago en una transacción", async () => {
     await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).resolves.toEqual({ id_pago: 7 });
 
     expect(mocks.orden).toEqual([
@@ -71,8 +82,10 @@ describe("GestionCuotasYPagosService", () => {
       "profesoraQueCobra",
       "prepararCobro",
       "prepararEfectivo",
+      "abrir transacción",
       "darAltaDefinitiva",
       "guardar",
+      "confirmar transacción",
     ]);
     expect(mocks.cuotas.buscarInscripcion).toHaveBeenCalledWith(12);
     expect(mocks.cuotas.prepararCobro).toHaveBeenCalledWith(inscripcion);
@@ -88,11 +101,19 @@ describe("GestionCuotasYPagosService", () => {
     expect(mocks.cuotas.prepararCobro).not.toHaveBeenCalled();
   });
 
-  it("si el alta falla, por ejemplo sin cupo, no se guarda el pago", async () => {
+  it("si el alta falla, por ejemplo sin cupo, no se guarda el pago ni se confirma la transacción", async () => {
     mocks.cuotas.darAltaDefinitiva.mockRejectedValue(new Error("sin cupo"));
 
     await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).rejects.toThrow("sin cupo");
     expect(mocks.pagos.guardar).not.toHaveBeenCalled();
+    expect(mocks.orden).not.toContain("confirmar transacción");
+  });
+
+  it("si el pago falla después del alta, el error sale de la transacción para que la deshaga", async () => {
+    mocks.pagos.guardar.mockRejectedValue(new Error("se cayó la base"));
+
+    await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).rejects.toThrow("se cayó la base");
+    expect(mocks.orden.slice(-2)).toEqual(["abrir transacción", "darAltaDefinitiva"]);
   });
 
   it("la transferencia que informa el alumno verifica el titular primero y queda pendiente: no da el alta", async () => {
@@ -105,6 +126,7 @@ describe("GestionCuotasYPagosService", () => {
       "prepararTransferencia",
       "guardar",
     ]);
+    expect(mocks.unidadDeTrabajo.ejecutar).not.toHaveBeenCalled();
     expect(mocks.pagos.verificarTitular).toHaveBeenCalledWith(inscripcion, alumna);
   });
 
@@ -121,7 +143,7 @@ describe("GestionCuotasYPagosService", () => {
     await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).rejects.toThrow(NotFoundError);
   });
 
-  it("la transferencia que carga la propietaria da el alta antes de guardarse", async () => {
+  it("la transferencia que carga la propietaria da el alta y se guarda en una transacción", async () => {
     await gestion.registrarTransferenciaRecibida(
       { ...transferencia, confirmar_monto_distinto: false },
       solicitante,
@@ -131,15 +153,23 @@ describe("GestionCuotasYPagosService", () => {
       "buscarInscripcion",
       "prepararCobro",
       "prepararTransferenciaRecibida",
+      "abrir transacción",
       "darAltaDefinitiva",
       "guardar",
+      "confirmar transacción",
     ]);
   });
 
-  it("aprobar valida, da el alta de la inscripción del pago y recién después confirma", async () => {
+  it("aprobar valida y después da el alta y confirma el pago en una transacción", async () => {
     await gestion.aprobarTransferencia(7, { confirmar_monto_distinto: false }, solicitante);
 
-    expect(mocks.orden).toEqual(["prepararAprobacion", "darAltaDefinitiva", "confirmar"]);
+    expect(mocks.orden).toEqual([
+      "prepararAprobacion",
+      "abrir transacción",
+      "darAltaDefinitiva",
+      "confirmar",
+      "confirmar transacción",
+    ]);
     expect(mocks.cuotas.darAltaDefinitiva).toHaveBeenCalledWith(12);
     expect(mocks.pagos.confirmar).toHaveBeenCalledWith(7, solicitante);
   });
