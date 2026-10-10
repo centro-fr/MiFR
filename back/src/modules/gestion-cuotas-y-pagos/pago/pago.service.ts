@@ -9,6 +9,7 @@ import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { CuotaACobrar } from "../cuota/cuota.types.js";
+import type { IInfoPagos } from "./interface/i-info-pagos.js";
 import type { PagoRepository } from "./pago.repository.js";
 import type {
   AprobarTransferenciaInput,
@@ -39,7 +40,7 @@ function verificarMonto(monto: number, esperado: number, confirmado: boolean): v
 // Componente "Pago" de la vista arquitectónica (GestionCuotasYPagos): el cobro en efectivo
 // (US-15), la transferencia que informa el alumno (US-16) y su revisión (US-17). Qué cuota se paga
 // lo decide Cuota; la fachada los coordina.
-export class PagoService {
+export class PagoService implements IInfoPagos {
   constructor(
     private readonly repositorio: PagoRepository,
     private readonly profesoras: IInfoProfesores,
