@@ -3,7 +3,7 @@ import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
-// Casos PI-28 en adelante: cuotas y pagos (US-15, US-16, US-17) sobre los datos de db:seed:demo.
+// Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) sobre los datos de db:seed:demo.
 // Sofía Medina está pre-inscripta y sin cuotas; Valentina Herrera ya pagó su primera cuota.
 const entorno = crearEntornoDeIntegracion();
 const { prisma } = entorno;

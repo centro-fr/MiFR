@@ -296,3 +296,128 @@ describe("escrituras sobre actividades y horarios cargados", () => {
     },
   );
 });
+
+async function delegarUsuariosEditarAProfesora(tokenPropietaria: string): Promise<void> {
+  const cambio = await request(app)
+    .put("/api/v1/seguridad/matriz")
+    .set(...autorizacion(tokenPropietaria))
+    .send({ cambios: [{ rol: "PROFESORA", permiso: "USUARIOS_EDITAR", otorgado: true }] });
+  expect(cambio.status).toBe(200);
+}
+
+async function rolesDe(idUsuario: number): Promise<string[]> {
+  const filas = await prisma.usuario_roles.findMany({
+    where: { id_usuario: idUsuario },
+    include: { rol: true },
+  });
+  return filas.map(({ rol }) => rol.codigo).sort();
+}
+
+describe("PI-28: administración de roles y cuentas reservada a la propietaria", () => {
+  it("con USUARIOS_EDITAR delegado, una profesora no se hace propietaria ni deja afuera a la dueña", async () => {
+    const duena = await sesionCon("PROPIETARIA");
+    const profesora = await sesionCon("PROFESORA");
+    await delegarUsuariosEditarAProfesora(duena.token);
+    const comoProfesora = autorizacion(profesora.token);
+    const idDuena = duena.usuario.id_usuario;
+
+    const respuestas = await Promise.all([
+      request(app)
+        .post(`/api/v1/usuarios/${profesora.usuario.id_usuario}/roles`)
+        .set(...comoProfesora)
+        .send({ rol: "PROPIETARIA" }),
+      request(app)
+        .delete(`/api/v1/usuarios/${idDuena}/roles/PROPIETARIA`)
+        .set(...comoProfesora),
+      request(app)
+        .patch(`/api/v1/usuarios/${idDuena}`)
+        .set(...comoProfesora)
+        .send({ estado: "INACTIVO" }),
+      request(app)
+        .delete(`/api/v1/usuarios/${idDuena}`)
+        .set(...comoProfesora),
+    ]);
+
+    expect(respuestas.map(({ status }) => status)).toEqual([403, 403, 403, 403]);
+    expect(await rolesDe(profesora.usuario.id_usuario)).toEqual(["PROFESORA"]);
+    expect(await rolesDe(idDuena)).toEqual(["PROPIETARIA"]);
+    const duenaEnLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: idDuena } });
+    expect(duenaEnLaBase?.estado).toBe("ACTIVO");
+  });
+
+  it("la única propietaria activa no se puede quitar el rol ni dejarse inactiva", async () => {
+    const duena = await sesionCon("PROPIETARIA");
+    const idDuena = duena.usuario.id_usuario;
+
+    const quitarRol = await request(app)
+      .delete(`/api/v1/usuarios/${idDuena}/roles/PROPIETARIA`)
+      .set(...autorizacion(duena.token));
+    const desactivar = await request(app)
+      .patch(`/api/v1/usuarios/${idDuena}`)
+      .set(...autorizacion(duena.token))
+      .send({ estado: "INACTIVO" });
+
+    expect([quitarRol.status, desactivar.status]).toEqual([409, 409]);
+    expect(await rolesDe(idDuena)).toEqual(["PROPIETARIA"]);
+    const enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: idDuena } });
+    expect(enLaBase?.estado).toBe("ACTIVO");
+  });
+
+  it("con otra propietaria activa, una puede dejar el rol", async () => {
+    const duena = await sesionCon("PROPIETARIA");
+    await crearUsuario(prisma, { roles: ["PROPIETARIA"] });
+
+    const respuesta = await request(app)
+      .delete(`/api/v1/usuarios/${duena.usuario.id_usuario}/roles/PROPIETARIA`)
+      .set(...autorizacion(duena.token));
+
+    expect(respuesta.status).toBe(200);
+    expect(await rolesDe(duena.usuario.id_usuario)).toEqual([]);
+  });
+});
+
+describe("PI-29: identidad de la cuenta", () => {
+  it.each([{ dni: "30111222" }, { fecha_nacimiento: "1975-05-05" }])(
+    "un usuario sin permisos no cambia su propio %j",
+    async (cambio) => {
+      const { usuario, token } = await sesionCon("ALUMNO");
+
+      const respuesta = await request(app)
+        .patch(`/api/v1/usuarios/${usuario.id_usuario}`)
+        .set(...autorizacion(token))
+        .send(cambio);
+
+      expect(respuesta.status).toBe(403);
+      const enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: usuario.id_usuario } });
+      expect(enLaBase).toMatchObject({ dni: null, fecha_nacimiento: new Date("1990-01-01") });
+    },
+  );
+
+  it("un usuario sin permisos sí cambia su propio teléfono", async () => {
+    const { usuario, token } = await sesionCon("ALUMNO");
+
+    const respuesta = await request(app)
+      .patch(`/api/v1/usuarios/${usuario.id_usuario}`)
+      .set(...autorizacion(token))
+      .send({ telefono: "3794 112233" });
+
+    expect(respuesta.status).toBe(200);
+    const enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: usuario.id_usuario } });
+    expect(enLaBase?.telefono).toBe("3794 112233");
+  });
+
+  it("dar de alta un usuario con un DNI que ya existe responde 409, no 500", async () => {
+    const { token } = await sesionCon("PROPIETARIA");
+    const existente = await crearUsuario(prisma, { roles: [] });
+    await prisma.usuarios.update({ where: { id_usuario: existente.id_usuario }, data: { dni: "30111222" } });
+    const usuariosAntes = await prisma.usuarios.count();
+
+    const respuesta = await request(app)
+      .post("/api/v1/usuarios")
+      .set(...autorizacion(token))
+      .send({ nombre: "Otra", apellido: "Persona", dni: "30111222", fecha_nacimiento: "1990-01-01" });
+
+    expect(respuesta.status).toBe(409);
+    expect(await prisma.usuarios.count()).toBe(usuariosAntes);
+  });
+});
