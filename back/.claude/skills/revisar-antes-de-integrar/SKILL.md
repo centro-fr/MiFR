@@ -11,6 +11,10 @@ No hace merge ni commitea: reporta y espera.
 
 ## Qué revisar
 
+### La auditoría
+
+La rama tiene que haber pasado por la skill `auditar-cambios` sin hallazgos BLOQUEANTES. Si no se corrió, o si se commiteó algo después, correrla primero.
+
 ### El diff
 
 Correr `git status` y `git diff dev...HEAD` para ver todo lo que trae la rama, no solo el último commit.
