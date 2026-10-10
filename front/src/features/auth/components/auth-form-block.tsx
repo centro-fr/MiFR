@@ -11,7 +11,6 @@ interface AuthFormBlockProps {
   onLogin: () => void;
   onRetry: () => void;
   onClear: () => void;
-  onContact: () => void;
   overlay?: ReactNode;
   buttonClassName?: string;
   hintClassName?: string;
@@ -26,7 +25,6 @@ export function AuthFormBlock({
   onLogin,
   onRetry,
   onClear,
-  onContact,
   overlay,
   buttonClassName,
   hintClassName,
@@ -39,7 +37,7 @@ export function AuthFormBlock({
     <div className="w-full">
       {errorCode && !isLoading && (
         <div className="mb-4">
-          <AuthStateBanner code={errorCode} onContact={onContact} onRetry={onRetry} />
+          <AuthStateBanner code={errorCode} onRetry={onRetry} />
         </div>
       )}
       <GoogleAuthButton
@@ -52,7 +50,7 @@ export function AuthFormBlock({
         className={buttonClassName}
       />
       <p className={cn("mt-4 text-center text-sm font-medium text-slate-600 dark:text-slate-400", hintClassName)}>
-        {isLoading ? "Conectando con Google Identity Services..." : "Usá tu cuenta de Google"}
+        {isLoading ? "Conectando con Google Identity Services…" : "Usá tu cuenta de Google"}
       </p>
       {showRetry && (
         <Button
@@ -65,19 +63,6 @@ export function AuthFormBlock({
           )}
         >
           ← Cancelar y volver al inicio
-        </Button>
-      )}
-      {isAccessDenied && !isLoading && (
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onContact}
-          className={cn(
-            "mt-2 min-h-[44px] w-full text-center text-sm font-bold text-primary-dark hover:text-primary",
-            actionClassName,
-          )}
-        >
-          Contactar administración para solicitar acceso
         </Button>
       )}
     </div>

@@ -4,15 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ContactModal } from "@/components/modals/contact-modal";
-import { LegalModal } from "@/components/modals/legal-modal";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
 import { GisOfficialOverlay } from "@/features/auth/components/gis-official-overlay";
 import { LoginHero } from "@/features/auth/components/login-hero";
 import { MobileAuthView } from "@/features/auth/components/mobile-auth-view";
 import { LoginDesarrolloPanel } from "@/features/auth/components/login-desarrollo-panel";
 import { mapLoginError, useLogin, type LoginVariables } from "@/features/auth/hooks/use-login";
-import type { LegalModalType } from "@/features/auth/schemas/contact";
 import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
@@ -22,8 +19,6 @@ const LOGIN_DESARROLLO = import.meta.env.VITE_LOGIN_DESARROLLO === "true";
 
 function useLoginFlow() {
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null);
-  const [isContactOpen, setIsContactOpen] = useState(false);
-  const [legalType, setLegalType] = useState<LegalModalType>(null);
   const loginMutation = useLogin();
   const navigate = useNavigate();
 
@@ -56,10 +51,6 @@ function useLoginFlow() {
   return {
     errorCode,
     isLoading: loginMutation.isPending,
-    isContactOpen,
-    setIsContactOpen,
-    legalType,
-    setLegalType,
     startLogin,
     cancelLogin,
     clearError,
@@ -70,7 +61,7 @@ type Flow = ReturnType<typeof useLoginFlow>;
 
 function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => void; overlay?: ReactNode }) {
   return (
-    <main className="h-dvh w-full overflow-x-clip bg-canvas">
+    <main className="min-h-dvh w-full overflow-x-clip bg-canvas">
       <div className="lg:hidden">
         <MobileAuthView
           errorCode={flow.errorCode}
@@ -78,8 +69,6 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
           onLogin={onLogin}
           onRetry={onLogin}
           onClear={flow.clearError}
-          onContact={() => flow.setIsContactOpen(true)}
-          onOpenLegal={(type) => flow.setLegalType(type)}
           overlay={overlay}
         />
       </div>
@@ -97,15 +86,10 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
             onLogin={onLogin}
             onRetry={onLogin}
             onClear={flow.clearError}
-            onContact={() => flow.setIsContactOpen(true)}
-            onOpenLegal={(type) => flow.setLegalType(type)}
             overlay={overlay}
           />
         </div>
       </div>
-
-      <ContactModal isOpen={flow.isContactOpen} onClose={() => flow.setIsContactOpen(false)} />
-      <LegalModal type={flow.legalType} onClose={() => flow.setLegalType(null)} />
     </main>
   );
 }
@@ -162,10 +146,10 @@ function LoginSinConfigurar() {
     <main className="flex h-dvh items-center justify-center bg-canvas px-4">
       <Alert
         variant="destructive"
-        className="max-w-md rounded-2xl border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 [&>svg]:text-amber-600"
+        className="max-w-md rounded-2xl border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 [&>svg]:text-amber-600"
       >
         <AlertTitle>Falta configurar el login</AlertTitle>
-        <AlertDescription className="text-sm text-amber-900">
+        <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
           Definí <code>VITE_GOOGLE_CLIENT_ID</code>, o en desarrollo{" "}
           <code>VITE_LOGIN_DESARROLLO=true</code> (con <code>LOGIN_DESARROLLO=true</code> en el back) o{" "}
           <code>VITE_USE_MOCKS=true</code>.

@@ -46,9 +46,9 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
   }, {} as Record<DiaSemana, number>);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-slate-50/50">
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-50/50 dark:bg-white/5">
       {/* Selector de días */}
-      <div className="bg-white px-3 py-2.5 border-b border-slate-200 shrink-0 sticky top-0 z-10 shadow-2xs">
+      <div className="bg-card px-3 py-2.5 border-b border-border shrink-0 sticky top-0 z-10 shadow-2xs">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-center select-none no-scrollbar">
           {DIAS_TAB.map((dia) => {
             const isSelected = selectedDay === dia.id;
@@ -62,16 +62,16 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 className={cn(
                   'shrink-0 gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition-all',
                   isSelected
-                    ? 'bg-[#E91E82] text-white shadow-xs scale-102 hover:bg-[#E91E82]'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300',
+                    ? 'bg-primary text-white shadow-xs scale-102 hover:bg-primary'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/15 active:bg-slate-300 dark:active:bg-white/20',
                 )}
               >
                 <span>{dia.label}</span>
                 <Badge
                   variant="outline"
                   className={cn(
-                    'rounded-full border-0 px-1.5 py-0.5 text-xs font-extrabold',
-                    isSelected ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-600',
+                    'rounded-full border-0 px-1.5 py-0.5 text-sm font-extrabold',
+                    isSelected ? 'bg-white/25 text-white' : 'bg-slate-200/80 dark:bg-white/15 text-slate-600 dark:text-slate-300',
                   )}
                 >
                   {count}
@@ -86,7 +86,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
       <div className="p-3 sm:p-4 space-y-3 flex-1 overflow-y-auto">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-extrabold text-[#181C26] uppercase tracking-wide">
+            <h3 className="text-sm font-extrabold text-dark dark:text-white uppercase tracking-wide">
               {selectedDay}
             </h3>
             <span className="text-sm font-semibold text-slate-400">
@@ -99,7 +99,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
               type="button"
               variant="secondary"
               onClick={() => onAddForDay(selectedDay)}
-              className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-pink-50 px-2.5 py-1.5 text-sm font-bold text-[#E91E82] hover:bg-pink-100 hover:text-[#BC1266] [&_svg]:size-3.5"
+              className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-pink-50 dark:bg-primary/15 px-2.5 py-1.5 text-sm font-bold text-primary hover:bg-pink-100 dark:hover:bg-primary/25 hover:text-primary-dark dark:hover:text-pink-300 [&_svg]:size-3.5"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
               <span>Nueva clase</span>
@@ -108,15 +108,15 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
         </div>
 
         {horariosDelDia.length === 0 ? (
-          <Card className="rounded-2xl border-slate-200 p-8 text-center shadow-2xs">
+          <Card className="rounded-2xl border-border p-8 text-center shadow-2xs">
             <CardContent className="p-0">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#E91E82] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-primary/15 text-primary flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-bold text-slate-800">
+              <h4 className="text-sm font-bold text-foreground">
                 No hay clases programadas para este día
               </h4>
-              <p className="text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
                 {isFilterActive
                   ? 'Ninguna clase coincide con los filtros activos para este día.'
                   : 'El salón se encuentra libre durante todo este día.'}
@@ -141,7 +141,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
               <Card
                 key={horario.id}
                 onClick={() => onEdit(horario)}
-                className="relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border-slate-200/80 p-4 shadow-xs transition hover:shadow-md active:scale-[0.99]"
+                className="relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border-slate-200/80 dark:border-white/10 p-4 shadow-xs transition hover:shadow-md active:scale-[0.99]"
               >
                 {/* Indicador de modalidad */}
                 <div
@@ -151,8 +151,8 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
 
                 {/* Horario y profesora */}
                 <div className="flex items-center justify-between gap-2">
-                  <Badge variant="outline" className="gap-1.5 rounded-lg border-0 bg-slate-100 px-2.5 py-1 text-sm font-extrabold text-slate-800">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <Badge variant="outline" className="gap-1.5 rounded-lg border-0 bg-slate-100 dark:bg-white/10 px-2.5 py-1 text-sm font-extrabold text-foreground">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>
                       {horario.horaInicio} - {horario.horaFin} hs
                     </span>
@@ -160,7 +160,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
 
                   <Badge
                     variant="outline"
-                    className="max-w-[160px] truncate rounded-md border-0 px-2.5 py-0.5 text-xs font-extrabold shadow-2xs"
+                    className="max-w-[160px] truncate rounded-md border-0 px-2.5 py-0.5 text-sm font-extrabold shadow-2xs"
                     style={{
                       backgroundColor: theme.badgeBg,
                       color: theme.badgeText,
@@ -173,16 +173,16 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 {/* Actividad y modalidad */}
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-base font-extrabold text-slate-900 leading-tight">
+                    <h4 className="text-base font-extrabold text-foreground leading-tight">
                       {horario.actividadNombre}
                     </h4>
                     <Badge
                       variant="outline"
                       className={cn(
-                        'shrink-0 rounded-md border-0 px-2 py-0.5 text-xs font-bold',
+                        'shrink-0 rounded-md border-0 px-2 py-0.5 text-sm font-bold',
                         horario.actividadTipo === 'PERSONALIZADA'
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-blue-100 text-blue-800',
+                          ? 'bg-purple-100 dark:bg-violet-500/20 text-purple-800 dark:text-violet-200'
+                          : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200',
                       )}
                     >
                       {horario.actividadTipo === 'PERSONALIZADA' ? 'Personalizada 1:1' : 'Grupal'}
@@ -191,14 +191,14 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                 </div>
 
                 {/* Cupo */}
-                <div className="flex items-center gap-1 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-sm text-slate-600">
+                <div className="flex items-center gap-1 bg-slate-50 dark:bg-white/5 rounded-xl p-2.5 border border-slate-100 dark:border-white/10 text-sm text-slate-600 dark:text-slate-300">
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>Cupo:</span>
-                  <strong className="text-slate-900">{textoCupo(horario.cupoMaximo)}</strong>
+                  <strong className="text-foreground">{textoCupo(horario.cupoMaximo)}</strong>
                 </div>
 
                 {/* Acciones */}
-                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-white/10">
                   <Button
                     type="button"
                     variant="secondary"
@@ -206,7 +206,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                       e.stopPropagation();
                       onEdit(horario);
                     }}
-                    className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 [&_svg]:size-3.5"
+                    className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-slate-100 dark:bg-white/10 px-3 py-1.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/15 hover:text-slate-900 dark:hover:text-white [&_svg]:size-3.5"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     <span>Editar</span>
@@ -219,7 +219,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                       e.stopPropagation();
                       onDelete(horario);
                     }}
-                    className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-100 hover:text-red-700 [&_svg]:size-3.5"
+                    className="inline-flex h-auto min-h-[44px] gap-1 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 [&_svg]:size-3.5"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Eliminar</span>

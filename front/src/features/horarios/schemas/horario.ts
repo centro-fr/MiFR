@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { actividadApiSchema } from "@/features/actividades/schemas/actividad";
-import { HORA_APERTURA, HORA_CIERRE } from "@/features/horarios/utils/cronograma";
+import { HORA_APERTURA, HORA_CIERRE, HORA_MAX_INICIO } from "@/features/horarios/utils/cronograma";
 
 // Contrato de /api/v1/profesoras y /api/v1/horarios (back: profesor.openapi.ts y horario.openapi.ts).
 
@@ -40,7 +40,14 @@ export const horarioConAdvertenciaApiSchema = z.object({
 
 // Mismas reglas que crearHorarioSchema del back (horario.schemas.ts), con mensajes para el
 // formulario. La superposición de la profesora se valida aparte, contra el cronograma.
-const hora = z
+const horaInicio = z
+  .string()
+  .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm")
+  .refine((valor) => valor >= HORA_APERTURA && valor <= HORA_MAX_INICIO, {
+    message: `Los horarios tienen que estar entre las ${HORA_APERTURA} y las ${HORA_MAX_INICIO} hs.`,
+  });
+
+const horaFin = z
   .string()
   .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "La hora debe tener formato HH:mm")
   .refine((valor) => valor >= HORA_APERTURA && valor <= HORA_CIERRE, {
@@ -53,8 +60,8 @@ export const horarioFormSchema = z
     actividadId: z.string().regex(/^\d+$/, "Elegí una actividad."),
     profesoraId: z.string().regex(/^\d+$/, "Elegí una profesora."),
     diaSemana: z.enum(["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]),
-    horaInicio: hora,
-    horaFin: hora,
+    horaInicio,
+    horaFin,
     cupoPropio: z
       .number({ invalid_type_error: "El cupo tiene que ser un número." })
       .int("El cupo tiene que ser un número entero.")

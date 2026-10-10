@@ -41,17 +41,21 @@ export function PendingChangesDock({ cantidad, guardando, onGuardar, onDescartar
       aria-live="polite"
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md animate-fadeIn"
     >
-      <div className="flex items-center gap-3 rounded-2xl bg-[#181C26] text-white shadow-2xl border border-white/10 pl-4 pr-2.5 py-2.5">
-        <span aria-hidden="true" className="w-2 h-2 rounded-full bg-[#E91E82] animate-pulse shrink-0" />
+      {/* En mobile el mensaje y los botones van en filas separadas: en una sola fila los botones
+          se llevaban todo el ancho y el mensaje quedaba truncado (y a 320 px el botón se salía). */}
+      <div className="flex flex-col gap-2 rounded-2xl bg-dark text-white shadow-2xl border border-white/10 p-3 sm:flex-row sm:items-center sm:gap-3 sm:py-2.5 sm:pl-4 sm:pr-2.5">
+        <div className="flex min-w-0 items-center gap-3 sm:flex-1">
+          <span aria-hidden="true" className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
 
-        <p className="min-w-0 flex-1 text-sm leading-snug">
-          <span className="block font-bold truncate">
-            {cantidad === 1 ? "1 cambio sin guardar" : `${cantidad} cambios sin guardar`}
-          </span>
-          <span className="block font-medium text-slate-300 truncate">Se aplican al guardar</span>
-        </p>
+          <p className="min-w-0 flex-1 text-sm leading-snug">
+            <span className="block font-bold truncate">
+              {cantidad === 1 ? "1 cambio sin guardar" : `${cantidad} cambios sin guardar`}
+            </span>
+            <span className="block font-medium text-slate-300 truncate">Se aplican al guardar</span>
+          </p>
+        </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0 sm:gap-1">
           <Button
             type="button"
             variant="ghost"
@@ -59,7 +63,7 @@ export function PendingChangesDock({ cantidad, guardando, onGuardar, onDescartar
             disabled={guardando}
             aria-live="polite"
             className={cn(
-              "h-auto min-h-[44px] rounded-xl px-3 text-sm font-bold disabled:cursor-not-allowed",
+              "h-auto min-h-[44px] flex-1 rounded-xl px-3 text-sm font-bold disabled:cursor-not-allowed sm:flex-none",
               confirmandoDescarte
                 ? "text-red-300 hover:bg-white/10 hover:text-red-200"
                 : "text-slate-300 hover:bg-white/10 hover:text-white",
@@ -72,7 +76,7 @@ export function PendingChangesDock({ cantidad, guardando, onGuardar, onDescartar
             type="button"
             onClick={onGuardar}
             disabled={guardando}
-            className="inline-flex h-auto min-h-[44px] items-center gap-1.5 rounded-xl bg-[#E91E82] px-4 text-sm font-bold text-white transition hover:bg-[#BC1266] disabled:cursor-wait [&_svg]:size-3.5"
+            className="inline-flex h-auto min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 sm:flex-none text-sm font-bold text-white transition hover:bg-primary-dark disabled:cursor-wait [&_svg]:size-3.5"
           >
             {guardando ? (
               <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />

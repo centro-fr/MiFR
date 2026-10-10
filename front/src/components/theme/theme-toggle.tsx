@@ -21,14 +21,18 @@ export const ThemeToggle = forwardRef<HTMLButtonElement, ThemeToggleProps>(
         ref={ref}
         type="button"
         {...props}
-        onClick={alternarTema}
+        onClick={(evento) => {
+          // El tema nuevo se revela desde el centro del botón (ver theme-store).
+          const caja = evento.currentTarget.getBoundingClientRect();
+          alternarTema({ x: caja.left + caja.width / 2, y: caja.top + caja.height / 2 });
+        }}
         aria-pressed={esOscuro}
         aria-label={etiqueta}
         title={etiqueta}
         className={cn(
           "flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors",
           "text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-white/10",
-          compacto && "h-10 min-h-0 w-10 justify-center p-0",
+          compacto && "h-11 min-h-0 w-11 justify-center p-0",
           className,
         )}
       >

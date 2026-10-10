@@ -41,13 +41,13 @@ export function OwnerDashboardPage() {
           <h1 id="dashboard-titulo" className="text-xl font-extrabold text-slate-900 sm:text-2xl dark:text-white">
             Hola, {nombre}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Este es el resumen de tu sesión y los accesos directos a tu centro.
           </p>
         </header>
 
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-          <Card className="rounded-2xl border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-surface-low">
+          <Card className="rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low">
             <CardContent className="flex items-start gap-3 p-4">
               <span
                 aria-hidden="true"
@@ -57,13 +57,13 @@ export function OwnerDashboardPage() {
               </span>
               <div className="min-w-0">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Tu sesión</h2>
-                <p className="truncate text-sm text-slate-500 dark:text-slate-400">{user?.email ?? "Sin correo"}</p>
+                <p className="truncate text-sm text-muted-foreground">{user?.email ?? "Sin correo"}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {roles.map((rol) => (
                     <Badge
                       key={rol}
                       variant="outline"
-                      className="rounded-full border-0 bg-[#FDF2F7] px-2.5 py-1 text-xs font-bold text-primary-dark dark:bg-primary/20 dark:text-pink-300"
+                      className="rounded-full border-0 bg-[#FDF2F7] px-2.5 py-1 text-sm font-bold text-primary-dark dark:bg-primary/20 dark:text-pink-300"
                     >
                       {ETIQUETAS_ROL[rol]}
                     </Badge>
@@ -73,7 +73,7 @@ export function OwnerDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-surface-low">
+          <Card className="rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low">
             <CardContent className="flex items-start gap-3 p-4">
               <span
                 aria-hidden="true"
@@ -83,8 +83,8 @@ export function OwnerDashboardPage() {
               </span>
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Permisos activos</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Tenés <strong className="font-bold text-slate-800 dark:text-slate-100">{cantidadPermisos}</strong>{" "}
+                <p className="text-sm text-muted-foreground">
+                  Tenés <strong className="font-bold text-foreground">{cantidadPermisos}</strong>{" "}
                   permisos habilitados en tu sesión.
                 </p>
               </div>
@@ -101,7 +101,7 @@ export function OwnerDashboardPage() {
               <Link
                 key={to}
                 to={to}
-                className="group flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-primary/40 hover:bg-[#FDF2F7]/40 dark:border-white/10 dark:bg-surface-low dark:hover:border-primary/50 dark:hover:bg-primary/10"
+                className="group flex items-start gap-3 rounded-2xl border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/40 hover:bg-[#FDF2F7]/40 dark:bg-surface-low dark:hover:border-primary/50 dark:hover:bg-primary/10"
               >
                 <span
                   aria-hidden="true"
@@ -111,7 +111,7 @@ export function OwnerDashboardPage() {
                 </span>
                 <span>
                   <span className="block text-base font-bold text-slate-900 dark:text-white">{titulo}</span>
-                  <span className="block text-sm text-slate-500 dark:text-slate-400">{descripcion}</span>
+                  <span className="block text-sm text-muted-foreground">{descripcion}</span>
                 </span>
               </Link>
             ))}

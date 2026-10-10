@@ -29,7 +29,7 @@ const ESTILOS: Record<NivelAcceso, { clases: string; texto: string; textoCorto: 
   },
   [2]: {
     clases:
-      "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-white/10 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15",
+      "border-border bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15",
     texto: "Sin acceso",
     textoCorto: "Sin acceso",
     Icono: X,

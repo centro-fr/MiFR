@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -33,5 +34,12 @@ export default defineConfig(({ mode }) => {
     build: { chunkSizeWarningLimit: 600 },
     server: { proxy, headers },
     preview: { proxy, headers },
+    test: {
+      environment: 'jsdom',
+      // Sin globals: cada test importa describe/it/expect de vitest, igual que en el back.
+      globals: false,
+      setupFiles: ['./src/test/setup.ts'],
+      css: false,
+    },
   }
 })

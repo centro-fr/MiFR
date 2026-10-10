@@ -6,7 +6,6 @@ import { cn } from "@/utils/cn";
 
 interface AuthStateBannerProps {
   code: AuthErrorCode;
-  onContact: () => void;
   onRetry: () => void;
 }
 
@@ -30,21 +29,25 @@ function BotonBanner({ children, onClick, className }: { children: string; onCli
   );
 }
 
-export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerProps) {
+// Texto del cartel rojo según el error. Si no hay uno propio, se usa el genérico.
+const MENSAJES_ERROR: Partial<Record<AuthErrorCode, string>> = {
+  POPUP_BLOQUEADO: "Tu navegador bloqueó la ventana de Google. Habilitá los popups para este sitio e intentá nuevamente.",
+  INVALID_GOOGLE_TOKEN: "No pudimos validar tu cuenta de Google. Volvé a intentarlo.",
+  ERROR_SERVIDOR: "El servidor tuvo un problema. Intentá de nuevo en unos minutos.",
+};
+const MENSAJE_GENERICO = "Verificá tu conexión o el bloqueo de ventanas emergentes.";
+
+export function AuthStateBanner({ code, onRetry }: AuthStateBannerProps) {
   const isAccessDenied = code === "ACCESO_NO_HABILITADO" || code === "USUARIO_INACTIVO";
 
   if (isAccessDenied) {
     return (
-      <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-amber-200 bg-amber-50 [&>svg]:bg-amber-100 [&>svg]:text-amber-800")}>
+      <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 [&>svg]:bg-amber-100 [&>svg]:text-amber-800 dark:[&>svg]:bg-amber-500/20 dark:[&>svg]:text-amber-300")}>
         <XCircle aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-0.5">
-          <AlertTitle className="text-sm font-bold leading-snug text-amber-900">Acceso no habilitado</AlertTitle>
-          <AlertDescription className="text-sm text-amber-800">
-            Tu cuenta no está habilitada. Contactá al centro para solicitar acceso.
-            <br />
-            <BotonBanner onClick={onContact} className="text-amber-900">
-              Contactar administración MiFR
-            </BotonBanner>
+          <AlertTitle className="text-sm font-bold leading-snug text-amber-900 dark:text-amber-200">Acceso no habilitado</AlertTitle>
+          <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
+            Tu cuenta no tiene acceso a MiFR.
           </AlertDescription>
         </div>
       </Alert>
@@ -70,16 +73,14 @@ export function AuthStateBanner({ code, onContact, onRetry }: AuthStateBannerPro
   }
 
   return (
-    <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-rose-200 bg-rose-50 [&>svg]:bg-rose-100 [&>svg]:text-rose-700")}>
+    <Alert aria-live="assertive" className={cn(CLASES_BASE, "border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 [&>svg]:bg-rose-100 [&>svg]:text-rose-700 dark:[&>svg]:bg-rose-500/20 dark:[&>svg]:text-rose-300")}>
       <AlertTriangle aria-hidden="true" />
       <div className="min-w-0 flex-1 space-y-0.5">
-        <AlertTitle className="text-sm font-bold leading-snug text-rose-900">No pudimos iniciar sesión</AlertTitle>
-        <AlertDescription className="text-sm text-rose-800">
-          {code === "POPUP_BLOQUEADO"
-            ? "Tu navegador bloqueó la ventana de Google. Habilitá los popups para este sitio e intentá nuevamente."
-            : "Verificá tu conexión o el bloqueo de ventanas emergentes."}
+        <AlertTitle className="text-sm font-bold leading-snug text-rose-900 dark:text-rose-200">No pudimos iniciar sesión</AlertTitle>
+        <AlertDescription className="text-sm text-rose-800 dark:text-rose-300">
+          {MENSAJES_ERROR[code] ?? MENSAJE_GENERICO}
           <br />
-          <BotonBanner onClick={onRetry} className="text-rose-900">
+          <BotonBanner onClick={onRetry} className="text-rose-900 dark:text-rose-200">
             Reintentar ahora
           </BotonBanner>
         </AlertDescription>

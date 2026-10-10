@@ -1,6 +1,11 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
-import { actividadFormSchema, type ActividadFormData } from "@/features/actividades/schemas/actividad";
+import {
+  actividadFormSchema,
+  CUPO_MAXIMO_GRUPAL,
+  CUPO_MAXIMO_PERSONALIZADA,
+  type ActividadFormData,
+} from "@/features/actividades/schemas/actividad";
 import type { Actividad, ModalidadActividad } from "@/types/actividad";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,12 +32,22 @@ interface Props {
 type ErroresCampo = Partial<Record<keyof ActividadFormData, string>>;
 
 const MODALIDADES: { valor: ModalidadActividad; titulo: string; detalle: string; icono: string }[] = [
-  { valor: "GRUPAL", titulo: "Grupal", detalle: "Cupo opcional: vacío es sin límite.", icono: "👥" },
-  { valor: "PERSONALIZADA", titulo: "Personalizada", detalle: "Cupo máximo obligatorio.", icono: "👤" },
+  {
+    valor: "GRUPAL",
+    titulo: "Grupal",
+    detalle: `Cupo opcional (máx. ${CUPO_MAXIMO_GRUPAL}). Vacío = sin límite.`,
+    icono: "👥",
+  },
+  {
+    valor: "PERSONALIZADA",
+    titulo: "Personalizada",
+    detalle: `Cupo obligatorio (máx. ${CUPO_MAXIMO_PERSONALIZADA}).`,
+    icono: "👤",
+  },
 ];
 
 const CLASE_INPUT =
-  "rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 font-semibold text-slate-800 focus:border-[#E91E82] focus:ring-2 focus:ring-pink-100 focus:bg-white dark:border-white/15 dark:bg-white/5 dark:text-slate-100 dark:focus:bg-white/10";
+  "rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 font-semibold text-foreground focus:border-primary focus:ring-2 focus:ring-pink-100 focus:bg-white dark:border-white/15 dark:bg-white/5 dark:focus:bg-white/10";
 
 function Campo({ id, etiqueta, error, children }: { id: string; etiqueta: ReactNode; error?: string; children: ReactNode }) {
   return (
@@ -90,35 +105,47 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
     >
       <DialogContent
         hideClose
+        bottomSheetOnMobile
         onOpenAutoFocus={(evento) => {
           evento.preventDefault();
-          (actividad === null ? codigoRef : nombreRef).current?.focus();
+          // En mobile no forzamos el foco automático para evitar que el teclado virtual
+          // se abra de golpe y altere la fluidez de la animación.
+          if (typeof window !== "undefined" && window.innerWidth >= 640) {
+            (actividad === null ? codigoRef : nombreRef).current?.focus();
+          }
         }}
-        className="my-auto flex max-h-[90dvh] w-full max-w-[640px] flex-col gap-0 overflow-hidden rounded-3xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl dark:border-white/10 dark:bg-surface-low"
+        className="w-full sm:max-w-[640px] border-border bg-white p-0 shadow-2xl dark:bg-surface-low"
       >
-        <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-6 dark:border-white/10 dark:from-white/5 dark:to-surface-low">
-          <div>
-            <DialogTitle className="text-base font-extrabold text-slate-900 dark:text-white">
-              {actividad ? "Editar actividad" : "Nueva actividad"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
-              Datos, modalidad y cupo de la disciplina.
-            </DialogDescription>
+        <div className="flex flex-col border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:p-6 dark:border-white/10 dark:from-white/5 dark:to-surface-low">
+          {/* Indicador táctil para mobile */}
+          <div
+            className="mx-auto -mt-1 mb-3 h-1.5 w-12 rounded-full bg-slate-300/80 dark:bg-white/20 sm:hidden"
+            aria-hidden="true"
+          />
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
+                {actividad ? "Editar actividad" : "Nueva actividad"}
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                Datos, modalidad y cupo de la disciplina.
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white [&_svg]:size-5"
+            >
+              <X aria-hidden="true" className="h-5 w-5" />
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="h-11 w-11 shrink-0 rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white [&_svg]:size-5"
-          >
-            <X aria-hidden="true" className="h-5 w-5" />
-          </Button>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col text-sm">
-          <div className="flex-1 space-y-6 overflow-y-auto p-6">
+          <div className="flex-1 space-y-4 sm:space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
             {errorGuardado && (
               <Alert className="rounded-xl border-rose-200 bg-rose-50 p-3 dark:border-rose-500/30 dark:bg-rose-500/10">
                 <AlertDescription className="text-sm font-semibold text-rose-700 dark:text-rose-300">
@@ -127,14 +154,14 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
               <Campo
                 id="actividad-codigo"
-                etiqueta={<>Código <span className="text-[#E91E82]">*</span></>}
+                etiqueta={<>Código <span className="text-primary">*</span></>}
                 error={errores.codigo}
               >
                 <Input
-                  id="actividad-codigo"
+                  id="actividad-codigo" autoComplete="off"
                   ref={codigoRef}
                   type="text"
                   value={codigo}
@@ -150,11 +177,11 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
 
               <Campo
                 id="actividad-nombre"
-                etiqueta={<>Nombre <span className="text-[#E91E82]">*</span></>}
+                etiqueta={<>Nombre <span className="text-primary">*</span></>}
                 error={errores.nombre}
               >
                 <Input
-                  id="actividad-nombre"
+                  id="actividad-nombre" autoComplete="off"
                   ref={nombreRef}
                   type="text"
                   value={nombre}
@@ -174,7 +201,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               error={errores.descripcion}
             >
               <Textarea
-                id="actividad-descripcion"
+                id="actividad-descripcion" autoComplete="off"
                 rows={3}
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -184,13 +211,13 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             </Campo>
 
             <fieldset className="space-y-2">
-              <legend className="block text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Modalidad <span className="text-[#E91E82]">*</span>
+              <legend className="block text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Modalidad <span className="text-primary">*</span>
               </legend>
               <RadioGroup
                 value={modalidad}
                 onValueChange={(valor) => setModalidad(valor as ModalidadActividad)}
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3"
               >
                 {MODALIDADES.map(({ valor, titulo, detalle, icono }) => (
                   <Label
@@ -199,7 +226,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
                     className={cn(
                       "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border-2 p-3.5 transition-all",
                       modalidad === valor
-                        ? "border-[#E91E82] bg-pink-50/60 shadow-sm dark:bg-pink-500/10"
+                        ? "border-primary bg-pink-50/60 shadow-sm dark:bg-pink-500/10"
                         : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/15 dark:bg-transparent",
                     )}
                   >
@@ -208,7 +235,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
                       <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">
                         <span aria-hidden="true">{icono}</span> {titulo}
                       </span>
-                      <span className="mt-0.5 block text-sm leading-tight text-slate-600 dark:text-slate-400">{detalle}</span>
+                      <span className="mt-0.5 block text-xs sm:text-sm leading-tight text-slate-600 dark:text-slate-400">{detalle}</span>
                     </span>
                   </Label>
                 ))}
@@ -219,22 +246,37 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               id="actividad-cupo"
               etiqueta={
                 modalidad === "PERSONALIZADA" ? (
-                  <>Cupo máximo <span className="text-[#E91E82]">*</span></>
+                  <>
+                    Cupo máximo <span className="text-primary">*</span>{" "}
+                    <span className="font-normal lowercase text-slate-400">
+                      (obligatorio, máx. {CUPO_MAXIMO_PERSONALIZADA})
+                    </span>
+                  </>
                 ) : (
-                  <>Cupo máximo <span className="font-normal lowercase text-slate-400">(vacío = sin límite)</span></>
+                  <>
+                    Cupo máximo{" "}
+                    <span className="font-normal lowercase text-slate-400">
+                      (opcional, vacío = sin límite, máx. {CUPO_MAXIMO_GRUPAL})
+                    </span>
+                  </>
                 )
               }
               error={errores.cupoMaximo}
             >
               <Input
-                id="actividad-cupo"
+                id="actividad-cupo" autoComplete="off"
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={32767}
+                max={modalidad === "PERSONALIZADA" ? CUPO_MAXIMO_PERSONALIZADA : CUPO_MAXIMO_GRUPAL}
+                placeholder={
+                  modalidad === "PERSONALIZADA"
+                    ? `Ej: 20 (máx. ${CUPO_MAXIMO_PERSONALIZADA})`
+                    : `Ej: 30 (opcional, máx. ${CUPO_MAXIMO_GRUPAL})`
+                }
                 value={cupo}
-                // Solo dígitos: ni "-", ni "-0", ni "e" llegan al estado (Zod valida al guardar).
-                onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+                // Solo dígitos y máximo 2 caracteres para no permitir cupos desproporcionados (ej: 99999)
+                onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
                 aria-invalid={Boolean(errores.cupoMaximo)}
                 aria-describedby={errores.cupoMaximo ? "actividad-cupo-error" : undefined}
                 className={CLASE_INPUT}
@@ -242,7 +284,7 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             </Campo>
           </div>
 
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 p-6 sm:flex-row sm:items-center sm:justify-end sm:gap-3 dark:border-white/10 dark:bg-white/5">
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:p-6 dark:border-white/10 dark:bg-white/5 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Button
               type="button"
               variant="outline"
@@ -254,9 +296,9 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
             <Button
               type="submit"
               disabled={guardando}
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#E91E82] px-6 text-sm font-extrabold text-white shadow-md shadow-[#E91E82]/30 transition-all hover:bg-[#BC1266] sm:w-auto"
+              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary px-6 text-sm font-extrabold text-white shadow-md shadow-primary/30 transition-all hover:bg-primary-dark sm:w-auto"
             >
-              {guardando ? "Guardando..." : "Guardar actividad"}
+              {guardando ? "Guardando…" : "Guardar actividad"}
             </Button>
           </div>
         </form>
