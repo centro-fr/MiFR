@@ -202,10 +202,19 @@ export class AlumnoService implements IInfoAlumnos {
     }
 
     this.validarTutor(tutor.fecha_nacimiento, tutor.dni !== undefined && tutor.dni === dniAlumno);
-    const existente =
-      (tutor.dni ? await this.usuarios.buscarPorDni(tutor.dni) : null) ??
-      (await this.usuarios.buscarPorEmail(tutor.email));
+    const porDni = tutor.dni ? await this.usuarios.buscarPorDni(tutor.dni) : null;
+    const porEmail = await this.usuarios.buscarPorEmail(tutor.email);
+    const existente = porDni ?? porEmail;
     if (!existente) return { nuevo: tutor };
+
+    // Se reusa solo si el DNI y el email cargados son de la misma cuenta: si no, con el DNI de otra
+    // persona quedaría a cargo del menor una cuenta que no es la del tutor que se quiso cargar.
+    const sonLaMismaCuenta = porDni
+      ? porDni.id_usuario === porEmail?.id_usuario
+      : !(tutor.dni && porEmail?.dni);
+    if (!sonLaMismaCuenta) {
+      throw new ConflictError("El DNI y el email del tutor corresponden a cuentas distintas");
+    }
 
     this.validarTutor(existente.fecha_nacimiento, existente.id_usuario === idUsuarioAlumno);
     return { id_usuario: existente.id_usuario };

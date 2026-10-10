@@ -197,9 +197,59 @@ describe("GestionPersonasService", () => {
     });
   });
 
-  it("crearAlumno llega al componente Alumno", async () => {
-    mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4 });
+  describe("crearAlumno", () => {
+    const tutor = {
+      id_usuario: 20,
+      nombre: "Laura",
+      apellido: "Pérez",
+      dni: "30111222",
+      email: "laura@example.com",
+      telefono: "3794 112233",
+      fecha_nacimiento: new Date("1985-03-02"),
+      direccion: "Calle 1",
+      estado: "ACTIVO",
+    };
 
-    await expect(servicio.crearAlumno({ nombre: "Ana" } as never)).resolves.toEqual({ id_alumno: 4 });
+    it("llega al componente Alumno y a la propietaria le devuelve el tutor completo", async () => {
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: tutor });
+
+      await expect(servicio.crearAlumno({ nombre: "Ana" } as never, PROPIETARIA)).resolves.toEqual({
+        id_alumno: 4,
+        responsable: tutor,
+      });
+    });
+
+    it("a la profesora le devuelve del tutor solo id, nombre y apellido", async () => {
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: tutor });
+
+      await expect(servicio.crearAlumno({ nombre: "Ana" } as never, PROFESORA)).resolves.toEqual({
+        id_alumno: 4,
+        responsable: { id_usuario: 20, nombre: "Laura", apellido: "Pérez" },
+      });
+    });
+
+    it("a la profesora le devuelve un alumno sin tutor tal cual", async () => {
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: null });
+
+      await expect(servicio.crearAlumno({ nombre: "Ana" } as never, PROFESORA)).resolves.toEqual({
+        id_alumno: 4,
+        responsable: null,
+      });
+    });
+
+    it("no deja que una profesora elija como tutor una cuenta existente por su id", async () => {
+      await expect(
+        servicio.crearAlumno({ nombre: "Ana", tutor: { id_usuario: 1 } } as never, PROFESORA),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mocks.alumnos.crear).not.toHaveBeenCalled();
+    });
+
+    it("la propietaria sí elige una cuenta existente como tutor", async () => {
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: tutor });
+
+      await servicio.crearAlumno({ nombre: "Ana", tutor: { id_usuario: 20 } } as never, PROPIETARIA);
+
+      expect(mocks.alumnos.crear).toHaveBeenCalled();
+    });
   });
 });

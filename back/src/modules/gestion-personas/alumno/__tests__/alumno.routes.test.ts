@@ -60,6 +60,7 @@ describe("rutas de alumnos", () => {
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(2, "ALUMNOS_EDITAR");
     expect(logica.crearAlumno).toHaveBeenCalledWith(
       expect.objectContaining({ email: "ana@example.com", fecha_nacimiento: new Date("1995-04-20") }),
+      { idUsuario: 2, esPropietaria: false },
     );
   });
 

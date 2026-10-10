@@ -20,7 +20,7 @@ export function createAlumnoController(logica: ILogicaAlumnos) {
     },
 
     async crear(req: Request, res: Response) {
-      const alumno = await logica.crearAlumno(req.body as CrearAlumnoInput);
+      const alumno = await logica.crearAlumno(req.body as CrearAlumnoInput, solicitanteDe(req));
       res.status(201).json(alumno);
     },
 

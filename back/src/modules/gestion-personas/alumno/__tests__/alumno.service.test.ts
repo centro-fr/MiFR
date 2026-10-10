@@ -178,10 +178,11 @@ describe("AlumnoService", () => {
       });
     });
 
-    it("reutiliza un tutor que ya existe con ese DNI", async () => {
+    it("reutiliza un tutor que ya existe con ese DNI y ese email", async () => {
       usuarios.buscarPorDni.mockImplementation(async (dni: string) =>
         dni === "30111222" ? usuario(20) : null,
       );
+      usuarios.buscarPorEmail.mockResolvedValue(usuario(20));
       repositorio.crear.mockResolvedValue(menorConTutor);
 
       await servicio.crear(altaMenor);
@@ -197,6 +198,47 @@ describe("AlumnoService", () => {
       repositorio.crear.mockResolvedValue(menorConTutor);
 
       await servicio.crear({ ...altaMenor, tutor: tutorSinDni });
+
+      expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+        id_usuario: 21,
+      });
+    });
+
+    it.each([
+      [
+        "el DNI es de una cuenta y el email de otra",
+        () => {
+          usuarios.buscarPorDni.mockImplementation(async (dni: string) =>
+            dni === "30111222" ? usuario(20) : null,
+          );
+          usuarios.buscarPorEmail.mockResolvedValue(usuario(21));
+        },
+      ],
+      [
+        "el DNI es de una cuenta con otro email",
+        () =>
+          usuarios.buscarPorDni.mockImplementation(async (dni: string) =>
+            dni === "30111222" ? usuario(20) : null,
+          ),
+      ],
+      [
+        "el email es de una cuenta con otro DNI",
+        () => usuarios.buscarPorEmail.mockResolvedValue({ ...usuario(21), dni: "29999888" }),
+      ],
+    ])("no reutiliza un tutor existente si %s", async (_caso, preparar) => {
+      preparar();
+
+      await expect(servicio.crear(altaMenor)).rejects.toThrow(
+        "El DNI y el email del tutor corresponden a cuentas distintas",
+      );
+      expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("reutiliza la cuenta del email si todavía no tiene DNI cargado", async () => {
+      usuarios.buscarPorEmail.mockResolvedValue({ ...usuario(21), dni: null });
+      repositorio.crear.mockResolvedValue(menorConTutor);
+
+      await servicio.crear(altaMenor);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 21,
@@ -239,6 +281,7 @@ describe("AlumnoService", () => {
       usuarios.buscarPorDni.mockImplementation(async (dni: string) =>
         dni === "30111222" ? usuario(20, MENOR) : null,
       );
+      usuarios.buscarPorEmail.mockResolvedValue(usuario(20, MENOR));
 
       await expect(servicio.crear(altaMenor)).rejects.toThrow(ValidationError);
     });

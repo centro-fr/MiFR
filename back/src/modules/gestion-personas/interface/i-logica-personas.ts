@@ -22,9 +22,14 @@ export interface ILogicaProfesoras {
 export type AlumnoEnListado = Alumno & { inscripcion: ResumenInscripcionAlumno | null };
 export type PaginaListadoAlumnos = Omit<PaginaAlumnos, "datos"> & { datos: AlumnoEnListado[] };
 export type FichaAlumno = Alumno & { inscripciones: InscripcionConDatos[] };
+// A una profesora el alta le devuelve del tutor solo su identificación (ver GestionPersonasService).
+export type AlumnoDadoDeAlta = Omit<Alumno, "responsable"> & {
+  responsable:
+    Alumno["responsable"] | Pick<NonNullable<Alumno["responsable"]>, "id_usuario" | "nombre" | "apellido">;
+};
 
 export interface ILogicaAlumnos {
-  crearAlumno(input: CrearAlumnoInput): Promise<Alumno>;
+  crearAlumno(input: CrearAlumnoInput, solicitante: Solicitante): Promise<AlumnoDadoDeAlta>;
   listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos>;
   obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput, solicitante: Solicitante): Promise<Alumno>;
