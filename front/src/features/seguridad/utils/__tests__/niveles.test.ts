@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   cambiosParaNivel,
+  codigosDelNivel,
+  codigosEditables,
   derivarNivel,
   motivoBloqueoCelda,
   NIVEL_COMPLETO,
@@ -104,11 +106,16 @@ describe("motivoBloqueoCelda", () => {
     expect(motivo).toBe("Permiso exclusivo de la propietaria");
   });
 
-  // Alcanza un exclusivo apagado para bloquear toda la celda.
-  it("bloquea si al rol le falta al menos uno de los exclusivos del módulo", () => {
+  // Un exclusivo otorgado por error se puede revocar aunque falte otro exclusivo del módulo.
+  it("permite editar si el rol tiene algún exclusivo del módulo, para poder revocarlo", () => {
     const matriz = crearMatriz({ PROFESORA: ["HONORARIOS_VER_TODOS"] });
 
-    expect(motivoBloqueoCelda(matriz, "PROFESORA", "HONORARIOS")).not.toBeNull();
+    expect(motivoBloqueoCelda(matriz, "PROFESORA", "HONORARIOS")).toBeNull();
+  });
+
+  // PAGOS mezcla una acción de la profesora (registrar cobros) con exclusivos de la propietaria.
+  it("permite editar un módulo con exclusivos si tiene permisos que el rol sí puede tener", () => {
+    expect(motivoBloqueoCelda(crearMatriz(), "PROFESORA", "PAGOS")).toBeNull();
   });
 
   // Los módulos comunes son editables para los roles no propietarios.
@@ -233,5 +240,72 @@ describe("nivelesEquivalentes", () => {
     expect(nivelesEquivalentes(matriz, "PROFESORA", "HONORARIOS", NIVEL_COMPLETO, NIVEL_SIN_ACCESO)).toBe(
       true,
     );
+  });
+});
+
+describe("permisos exclusivos dentro de un módulo editable", () => {
+  // El back rechaza otorgar un exclusivo a otro rol: la celda nunca lo intenta.
+  it("deja fuera de la celda los exclusivos que el rol no tiene", () => {
+    expect(codigosEditables(crearMatriz(), "PROFESORA", "PAGOS")).toEqual(["PAGOS_REGISTRAR"]);
+  });
+
+  it("incluye un exclusivo que el rol ya tiene, para poder revocarlo", () => {
+    const matriz = crearMatriz({ PROFESORA: ["PAGOS_CONFIRMAR"] });
+
+    expect(codigosEditables(matriz, "PROFESORA", "PAGOS")).toEqual(["PAGOS_REGISTRAR", "PAGOS_CONFIRMAR"]);
+  });
+
+  // Antes la profesora con PAGOS_REGISTRAR se veía "solo ver" (1 de 3 permisos).
+  it("muestra completo a la profesora que registra cobros", () => {
+    const matriz = crearMatriz({ PROFESORA: ["PAGOS_REGISTRAR"] });
+    const codigos = codigosDelNivel(matriz, "PROFESORA", "PAGOS");
+
+    expect(derivarNivel(codigos, new Set(matriz.matriz.PROFESORA))).toBe(NIVEL_COMPLETO);
+  });
+
+  // Una celda bloqueada calcula el nivel con todos sus permisos: sin acceso no se ve como completa.
+  it("calcula el nivel de una celda bloqueada con todos sus permisos", () => {
+    const matriz = crearMatriz();
+
+    expect(codigosDelNivel(matriz, "PROFESORA", "HONORARIOS")).toEqual(["HONORARIOS_VER_TODOS", "HONORARIOS_LIQUIDAR"]);
+  });
+
+  it("otorga solo PAGOS_REGISTRAR al pasar la celda a completo", () => {
+    expect(cambiosParaNivel(crearMatriz(), "PROFESORA", "PAGOS", NIVEL_COMPLETO)).toEqual([
+      { rol: "PROFESORA", permiso: "PAGOS_REGISTRAR", otorgado: true },
+    ]);
+  });
+
+  it("quita PAGOS_REGISTRAR al pasar la celda a sin acceso", () => {
+    const matriz = crearMatriz({ PROFESORA: ["PAGOS_REGISTRAR"] });
+
+    expect(cambiosParaNivel(matriz, "PROFESORA", "PAGOS", NIVEL_SIN_ACCESO)).toEqual([
+      { rol: "PROFESORA", permiso: "PAGOS_REGISTRAR", otorgado: false },
+    ]);
+  });
+
+  // Con un exclusivo apagado y otro otorgado por error, la celda solo puede revocar.
+  it("nunca otorga un exclusivo, aunque la celda se pase a completo", () => {
+    const matriz = crearMatriz({ PROFESORA: ["HONORARIOS_VER_TODOS"] });
+
+    expect(cambiosParaNivel(matriz, "PROFESORA", "HONORARIOS", NIVEL_COMPLETO)).toEqual([]);
+    expect(cambiosParaNivel(matriz, "PROFESORA", "HONORARIOS", NIVEL_SIN_ACCESO)).toEqual([
+      { rol: "PROFESORA", permiso: "HONORARIOS_VER_TODOS", otorgado: false },
+    ]);
+  });
+
+  it("conserva el valor del servidor de los exclusivos en la vista previa", () => {
+    const valores = valoresParaNivel(crearMatriz(), "PROFESORA", "PAGOS", NIVEL_COMPLETO);
+
+    expect(Object.fromEntries(valores)).toEqual({
+      PAGOS_REGISTRAR: true,
+      PAGOS_CONFIRMAR: false,
+      PAGOS_RENDICION_VER: false,
+    });
+  });
+
+  // Una sola acción asignable: "solo ver" y "completo" dan lo mismo y el ciclo los saltea.
+  it("considera equivalentes completo y lectura en PAGOS para la profesora", () => {
+    expect(nivelesEquivalentes(crearMatriz(), "PROFESORA", "PAGOS", NIVEL_COMPLETO, NIVEL_LECTURA)).toBe(true);
   });
 });

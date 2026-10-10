@@ -28,6 +28,7 @@ export interface ItemMenu {
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
+  // Listado de alumnos (US-10). La baja (US-08) se abre desde el listado: /app/alumnos/baja/:idAlumno.
   { etiqueta: "Alumnos", icono: Users, to: "/app/alumnos" },
   // US-03: disciplinas y cupos.
   { etiqueta: "Actividades", icono: Dumbbell, to: "/app/actividades" },

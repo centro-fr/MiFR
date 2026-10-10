@@ -68,6 +68,22 @@ export const router = createBrowserRouter([
       },
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
       {
+        // Baja de alumno (US-08): ficha del alumno con la acción de baja. Se entra desde el
+        // listado (US-10, lo implementa otro equipo).
+        path: "alumnos/baja/:idAlumno",
+        element: (
+          <PermissionGuard permission="ALUMNOS_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/alumnos/pages/ficha-alumno-page"), "FichaAlumnoPage"),
+          },
+        ],
+      },
+      {
         path: "seguridad/permisos",
         element: (
           <PermissionGuard roles={["PROPIETARIA"]} permission="SEGURIDAD_MATRIZ_VER">
