@@ -185,6 +185,13 @@ describe("HorarioService", () => {
     await expect(servicio.darDeBaja(1)).resolves.toMatchObject({ fecha_baja: expect.any(Date) });
   });
 
+  it("darDeBaja lanza ConflictError si una inscripción entró antes de tomar el bloqueo", async () => {
+    repositorio.buscarPorId.mockResolvedValue(horarioBase);
+    repositorio.darDeBaja.mockResolvedValue(null);
+
+    await expect(servicio.darDeBaja(1)).rejects.toThrow("alumnos inscriptos");
+  });
+
   it("buscarPorIds no consulta la base si no recibe ids", async () => {
     await expect(servicio.buscarPorIds([])).resolves.toEqual([]);
     expect(repositorio.buscarPorIds).not.toHaveBeenCalled();
@@ -290,6 +297,12 @@ describe("HorarioService", () => {
 
     await expect(servicio.darDeBajaDeActividad(7)).resolves.toBe(3);
     expect(repositorio.darDeBajaDeActividad).toHaveBeenCalledWith(7);
+  });
+
+  it("darDeBajaDeActividad lanza ConflictError si algún horario quedó con inscriptos", async () => {
+    repositorio.darDeBajaDeActividad.mockResolvedValue(null);
+
+    await expect(servicio.darDeBajaDeActividad(7)).rejects.toThrow(ConflictError);
   });
 
   it("tieneActivosDeProfesora consulta al repositorio", async () => {
