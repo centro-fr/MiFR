@@ -13,6 +13,8 @@ import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
 
 type CuotaDeLaSituacion = SituacionDeCuotas["cuotas"][number];
 
+const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
+
 function estaConfirmada(cuota: CuotaDeLaSituacion): boolean {
   return cuota.estados_pagos.includes("CONFIRMADO");
 }
@@ -114,11 +116,14 @@ export class CuotaService implements IInfoCuotas {
     );
   }
 
-  // Pago adelantado (US-15): un mensual al día sigue desde donde termina su cuota vigente. Una
-  // clase suelta cubre siempre el día del cobro.
+  // Pago adelantado (US-15): un mensual al día sigue el día después del vencimiento de su cuota
+  // vigente, para que ningún día quede cubierto por dos cuotas. El vencimiento cuenta como cubierto,
+  // así que quien paga el mismo día en que vence también sigue desde el siguiente. Una clase suelta
+  // cubre siempre el día del cobro.
   private desdeCuandoCubre(situacion: SituacionDeCuotas, hoy: Date): Date {
     const vigente = vencimientoConfirmado(situacion);
-    return situacion.tipo_plan === "MENSUAL" && vigente !== null && vigente > hoy ? vigente : hoy;
+    if (situacion.tipo_plan !== "MENSUAL" || vigente === null || vigente < hoy) return hoy;
+    return new Date(vigente.getTime() + UN_DIA_EN_MS);
   }
 
   historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {

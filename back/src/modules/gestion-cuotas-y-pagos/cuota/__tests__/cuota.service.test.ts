@@ -14,6 +14,7 @@ import type { SituacionDeCuotas } from "../cuota.types.js";
 const AHORA = new Date("2026-10-09T15:00:00Z");
 const HOY = new Date("2026-10-09T00:00:00Z");
 const DIA_DESPUES = new Date("2026-10-10T00:00:00Z");
+const DOS_DIAS_DESPUES = new Date("2026-10-11T00:00:00Z");
 const VENCIMIENTO_CALCULADO = new Date("2026-11-09T00:00:00Z");
 
 const inscripcion = {
@@ -88,7 +89,7 @@ describe("CuotaService", () => {
       });
     });
 
-    it("un mensual al día que paga por adelantado sigue desde donde termina su cuota vigente", async () => {
+    it("un mensual al día que paga por adelantado sigue el día después del vencimiento vigente", async () => {
       mocks.repositorio.situacionDeInscripciones.mockResolvedValue([
         situacion([cuota(1, ["CONFIRMADO"], DIA_DESPUES)]),
       ]);
@@ -97,6 +98,19 @@ describe("CuotaService", () => {
         numeroCuota: 2,
         idCuotaExistente: null,
       });
+      expect(mocks.vencimientos.calcularVencimiento).toHaveBeenCalledWith({
+        tipoPlan: "MENSUAL",
+        desde: DOS_DIAS_DESPUES,
+      });
+    });
+
+    it("quien paga el mismo día en que vence su cuota sigue desde el día siguiente", async () => {
+      mocks.repositorio.situacionDeInscripciones.mockResolvedValue([
+        situacion([cuota(1, ["CONFIRMADO"], HOY)]),
+      ]);
+
+      await servicio.prepararCobro(inscripcion);
+
       expect(mocks.vencimientos.calcularVencimiento).toHaveBeenCalledWith({
         tipoPlan: "MENSUAL",
         desde: DIA_DESPUES,
