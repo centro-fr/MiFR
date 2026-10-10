@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import type {
   ActualizarHorariosInput,
   CambiarPlanInput,
@@ -159,7 +160,7 @@ export class InscripcionRepository {
   }
 
   async crear(input: DatosNuevaInscripcion, idsHorarios: number[], fecha: Date): Promise<ResultadoOperacion> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
       const duplicada = await transaccion.inscripciones.findFirst({
         where: {
@@ -206,7 +207,7 @@ export class InscripcionRepository {
     const actual = await this.buscarPorId(id);
     if (!actual) return { resultado: "no-vigente" };
 
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const idsHorarios = actual.horarios
         .filter(({ fecha_hasta }) => fecha_hasta === null)
         .map(({ id_horario }) => id_horario);
@@ -232,7 +233,7 @@ export class InscripcionRepository {
     input: DarDeBajaAlumnoInput,
     fechas: FechasDeBaja,
   ): Promise<number[]> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const vigentes = await transaccion.inscripciones.findMany({
         where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
         select: {
@@ -267,7 +268,7 @@ export class InscripcionRepository {
     idsHorarios: number[],
     fecha: Date,
   ): Promise<ResultadoOperacion> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
       const existente = await transaccion.inscripciones.findFirst({
         where: {
@@ -304,7 +305,7 @@ export class InscripcionRepository {
     const horariosAnteriores = actual.horarios
       .filter(({ fecha_hasta }) => fecha_hasta === null)
       .map(({ id_horario }) => id_horario);
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(
         transaccion,
         clavesDeInscripcion(actual.id_alumno, [...horariosAnteriores, ...idsHorarios], actual.id_plan).concat(
@@ -365,7 +366,7 @@ export class InscripcionRepository {
     const horariosAnteriores = actual.horarios
       .filter(({ fecha_hasta }) => fecha_hasta === null)
       .map(({ id_horario }) => id_horario);
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(
         transaccion,
         clavesDeInscripcion(actual.id_alumno, [...horariosAnteriores, ...input.ids_horarios]),

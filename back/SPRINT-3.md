@@ -125,7 +125,7 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 ### Hecho (US-15)
 
 - [x] Agregar al `.puml` y a EA que `Cuota` requiere `IInfoPlanes` y que `GestionPersonas` requiere `IInfoCuotas` (regla dura 2).
-- [x] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`. Test de integración PI-28.
+- [x] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`. Test de integración PI-33.
 - [x] Subsistema `gestion-cuotas-y-pagos/` con `ILogicaCuotasPagos`, su fachada y los componentes `cuota/` (`IInfoCuotas`) y `pago/`.
 - [x] `POST /api/v1/pagos/efectivo`: genera la cuota del período y el pago `CONFIRMADO` en una transacción, con un bloqueo por inscripción. `rendido = false` y `id_profesora_cobra` si cobró una profesora; si cobró la propietaria, no hay nada que rendir.
 - [x] **Reglas**:
@@ -134,19 +134,21 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
   - [x] Monto distinto del esperado → 409 `MONTO_DISTINTO`, salvo que venga `confirmar_monto_distinto: true`.
   - [x] Alumno dado de baja → 409.
   - [x] El pago confirmado dispara el alta definitiva (`IInfoInscripciones.activar`, US-07), **antes** de guardar el pago: sin cupo, el cobro se rechaza sin dejar un pago registrado.
-  - [x] Pago adelantado de un alumno al día → la cuota nueva empieza donde termina la vigente.
+  - [x] Pago adelantado de un alumno al día → la cuota nueva empieza el día después del vencimiento de la vigente, también si paga el mismo día en que vence (ver decisiones). Test PI-36.
 - [x] `GET /api/v1/pagos/:id/comprobante`: número, fecha, monto, alumno, plan, cuota y quién cobró. Lo ven la propietaria, quien registró el pago y el alumno o su tutor.
 - [x] Permiso nuevo `PAGOS_REGISTRAR` (propietaria y profesora) en el catálogo.
 - [x] `IInfoCuotas`: habilitación de varias inscripciones en una consulta, con `ICalculoHabilitacion` y `VENCIDOS_PUEDEN_ASISTIR`. Por eso `Cuota` también requiere `IInfoParametros` (ya en el `.puml`).
 - [x] Tests unitarios del service, el repositorio, los schemas, las rutas y la fachada, con fakes de las interfaces de Rosario.
+- [x] El alta definitiva, la activación del alumno, su rol y el pago se guardan en una sola transacción (`IUnidadDeTrabajo`, ver `persistencia.md`): si falla un paso no queda ninguno. Vale para el efectivo, la transferencia que carga la propietaria y la aprobación. Test de integración PI-35, sobre los componentes.
+- [x] Integrado a `dev` el 10/10/2026, junto con las correcciones de la auditoría (quién paga se verifica antes del estado de la inscripción, el alta solo en el primer pago, comprobante con 404 para quien no corresponde, transferencias paginadas e `IInfoPagos`).
 
 ### Espera a los calculadores de Rosario
 
-`composicion.ts` necesita las implementaciones de `ICalculoVencimiento`, `ICalculoHabilitacion` e `IInfoParametros` para armar `CuotaService`. Hasta entonces el subsistema no está montado y la rama `cuotas` no se integra a `dev`.
+`composicion.ts` necesita las implementaciones de `ICalculoVencimiento`, `ICalculoHabilitacion` e `IInfoParametros` para armar `CuotaService`. El código ya está en `dev`, pero hasta entonces el subsistema no está montado en la API. Al montarlo, `composicion.ts` crea también `UnidadDeTrabajoPrisma`.
 
 - [ ] Montar el subsistema en `app.ts`, `openapi.ts` y `composicion.ts`, y sumar las operaciones a `src/__tests__/openapi.test.ts`.
-- [ ] Tests de integración del cobro, la transferencia y su revisión por HTTP (transacción, alta definitiva, pendiente que no habilita, rechazo sin motivo) y su registro en `PRUEBAS-INTEGRACION.md`.
-- [ ] Agregar en EA que `Cuota` requiere `IInfoParametros` y regenerar el `.jpg` y el `.pdf`.
+- [ ] Tests de integración del cobro, la transferencia y su revisión por HTTP (alta definitiva, pendiente que no habilita, rechazo sin motivo) y su registro en `PRUEBAS-INTEGRACION.md`. La transacción del cobro ya está probada sobre los componentes (PI-35, con `armarCuotasYPagos`).
+- [x] Agregar en EA que `Cuota` requiere `IInfoParametros` y regenerar el `.jpg` y el `.pdf`.
 
 ## US-16 y US-17 – Transferencias
 
@@ -177,8 +179,9 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 - [x] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
 - [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
 - [x] Ficha con la inscripción vigente y sus horarios.
-- [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota.
-- [ ] Historial de pagos en la ficha, visible solo para la propietaria.
+- [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota. Espera a los calculadores: sin ellos `composicion.ts` no puede darle `IInfoCuotas` a `GestionPersonasService`.
+- [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
+- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas` cuando se monte el subsistema (espera a los calculadores).
 
 ## Lo que necesita el front para el Sprint 2
 
@@ -192,7 +195,7 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 - [x] Revisión de inscripciones: activación fuera de la API (va por `IInfoInscripciones.activar`), baja de horario bloqueada con inscriptos, fechas DATE con el día de Argentina, pase libre sin tope de horarios y tests al 100 %.
 - [x] Vista arquitectónica sin `CalculadorCupo` ni `ICalculoCupo`: el cupo lo resuelven `IInfoHorarios` e `IInfoInscripciones`.
 - [x] Reflejar en el `.eap` de Enterprise Architect la quita de `ICalculoCupo` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
-- [ ] Integrar a `dev` (solo `back/`).
+- [x] Integrar a `dev` (solo `back/`).
 
 ---
 
@@ -252,6 +255,8 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 - [x] **Instancias de clase.** El SDD propone un generador. **Decidido:** se crean al pedir las clases del día, sin proceso programado; el único `(id_horario, fecha_clase)` del DER hace que pedirlas dos veces no las duplique.
 - [x] **Cierre automático (US-21).** Hace falta algo que corra al terminar cada clase. En Render el servidor se duerme sin tráfico, así que un `cron` dentro del proceso no es confiable. **Decidido:** las clases vencidas se cierran al leerlas (clases del día, historial, informes) y además con un intervalo dentro del proceso mientras está despierto. Si hace falta exactitud, se suma un Cron Job de Render que llame a un endpoint interno.
 - [x] **"Se abrió la ventana" (US-21).** No hay columna para eso. **Decidido:** el cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano; sin ninguna, se entiende que no se tomó asistencia y no inventa faltas. El cierre con el botón de la profesora siempre genera los ausentes, aunque no haya marcado a nadie (por ejemplo, porque no vino ningún alumno).
+- [x] **Pago adelantado.** La cuota nueva empieza el día después del vencimiento de la vigente, para que ningún día quede cubierto por dos cuotas; el día del vencimiento cuenta como cubierto, así que quien paga ese mismo día también sigue desde el siguiente. **Decidido con Francisco** (10/10/2026). Como `ICalculoVencimiento` calcula de fecha a fecha desde ese primer día, las cuotas adelantadas se corren un día por mes (vence el 10/11, la siguiente vence el 11/12).
+- [x] **Historial de pagos en la ficha (US-10).** **Decidido:** llega por `IInfoCuotas`, como ya está en el diagrama: la ficha muestra las cuotas con sus pagos, y el componente `Cuota` ya lee los pagos para calcular la habilitación.
 - [x] **Alta definitiva desde el cobro.** `ILogica*` es solo para la presentación. **Decidido:** `IInfoInscripciones.activar(idInscripcion)`, como `IInfoAlumnos.activar`, idempotente.
 - [x] **Diagrama.** Agregar a la vista arquitectónica que `Cuota` requiere `IInfoPlanes`, y que `GestionInscripcionesYClases` y `GestionPersonas` requieren `IInfoCuotas`. **Decidido:** cada responsable las agrega al `.puml` y a EA en el primer commit de su parte, antes de codificarla (regla dura 2): Francisco las de `Cuota` y `GestionPersonas`, Nicolas la de `GestionInscripcionesYClases`.
 - [x] **Permisos nuevos.** **Decidido:** `PAGOS_REGISTRAR` (propietaria y profesora; lo agrega Francisco) y `PARAMETROS_EDITAR` (exclusivo de la propietaria: la matriz no deja otorgárselo a otro rol; lo agrega Rosario). En una base ya cargada, la propietaria se los otorga a la profesora desde la matriz.

@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import type { Alumno, FiltroAlumno, TutorResuelto } from "./alumno.types.js";
 
 const DATOS_PERSONALES = {
@@ -79,7 +80,7 @@ export class AlumnoRepository {
     ficha: DatosFichaAlumno,
     tutor: TutorResuelto | null,
   ): Promise<Alumno> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const idResponsable = tutor ? await idDelTutor(transaccion, tutor) : null;
       return transaccion.alumnos.create({
         data: {
@@ -132,7 +133,7 @@ export class AlumnoRepository {
     ficha: DatosFichaAlumno,
     tutor: CambioDeTutor,
   ): Promise<Alumno> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const responsable =
         tutor === undefined
           ? undefined
@@ -153,7 +154,7 @@ export class AlumnoRepository {
       alumno.id_usuario,
       ...(alumno.id_usuario_responsable ? [alumno.id_usuario_responsable] : []),
     ];
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await transaccion.usuarios.updateMany({
         where: { id_usuario: { in: ids } },
         data: { estado: "ACTIVO" },

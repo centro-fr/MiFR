@@ -39,7 +39,7 @@ Primero el comando `/security-review` sobre la rama. Después, a mano, las pregu
 - **Identidad:** no se vincula una identidad externa (Google) a una cuenta existente sin verificar `email_verified`, ni se pisa un `google_id` que ya estaba puesto.
 - **Entrada:** todo body, params y query pasa por `validate` con los esquemas de `shared/utils/`. Ningún `$queryRawUnsafe` ni `Prisma.raw`. Ningún `orderBy` ni nombre de campo que venga del cliente.
 - **Errores:** las carreras de "verificar y después insertar" terminan en `ConflictError` (409), no en un P2002 que responde 500. Ningún mensaje de error devuelve datos de otra persona.
-- **Atomicidad:** si una operación cambia dos estados que dependen entre sí (alta de inscripción y pago, baja de alumno e inscripciones), los dos van en la misma transacción.
+- **Atomicidad:** si una operación cambia dos estados que dependen entre sí (alta de inscripción y pago, baja de alumno e inscripciones), los dos van en la misma transacción: `IUnidadDeTrabajo` en la fachada y `enTransaccion` en los repositorios (ver `persistencia.md`). Ningún repositorio nuevo llama a `this.prisma.$transaction(async ...)` directo.
 - **Volumen:** los listados nuevos tienen `take` o paginación y un `select` que no traiga columnas sensibles (`google_id`, `dni`, `direccion`) si el consumidor no las usa.
 - **Logs:** no se loguean tokens, cuerpos completos ni datos personales que no hagan falta para auditar.
 - **Configuración:** una variable de entorno nueva se valida al arrancar, igual que `CORS_ORIGENES`, y va a `.env.example` sin el valor real.
@@ -67,5 +67,5 @@ Si hay BLOQUEANTES, la rama no se integra. Si no hay hallazgos, decirlo en una l
 Se anota acá lo aceptado conscientemente, para no reportarlo en cada auditoría:
 
 - `gestion-cuotas-y-pagos` todavía no está montado en `app.ts` ni en `composicion.ts`: espera los calculadores (ver `SPRINT-3.md`).
-- El alta definitiva de una inscripción y el guardado de su primer pago van en transacciones separadas (ver el comentario de `GestionCuotasYPagosService`). Si el guardado falla después del alta, la inscripción queda ACTIVA sin cuota confirmada, pero no habilita a asistir. Unirlas en una sola transacción exige pasar la transacción entre componentes; se decidió no hacerlo por ahora.
+- La baja de un alumno y la de sus inscripciones, y la activación de un alumno fuera del cobro, todavía no usan `IUnidadDeTrabajo`.
 - No hay linter: typescript-eslint no soporta TypeScript 7 (ver `back/CLAUDE.md`).

@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient, plan_precios } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "./plan.types.js";
@@ -137,7 +138,7 @@ export class PlanRepository {
     { precio, fecha_vigencia_desde }: RegistrarPrecioInput,
   ): Promise<PrecioPlan | null> {
     const hoy = fechaActualArgentina();
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearPreciosDelPlan(transaccion, idPlan);
       await transaccion.plan_precios.deleteMany({
         where: { id_plan: idPlan, fecha_vigencia_desde: { gte: fecha_vigencia_desde, gt: hoy } },

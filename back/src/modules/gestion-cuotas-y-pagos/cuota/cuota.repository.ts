@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { SituacionDeCuotas } from "./cuota.types.js";
+import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
+import type { CuotaDelHistorial, SituacionDeCuotas } from "./cuota.types.js";
 
 export class CuotaRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -31,6 +32,41 @@ export class CuotaRepository {
         ...cuota,
         estados_pagos: pagos.map(({ estado }) => estado),
       })),
+    }));
+  }
+
+  // De todas las inscripciones del alumno, de la cuota más nueva a la más vieja, con un tope como
+  // todo listado: a una cuota por mes, cien cubren más de ocho años.
+  async historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
+    const filas = await this.prisma.cuotas.findMany({
+      where: { inscripcion: { id_alumno: idAlumno } },
+      select: {
+        id_cuota: true,
+        id_inscripcion: true,
+        numero_cuota: true,
+        fecha_vencimiento: true,
+        monto: true,
+        inscripcion: { select: { plan: { select: { nombre: true } } } },
+        pagos: {
+          select: {
+            id_pago: true,
+            forma_pago: true,
+            estado: true,
+            monto: true,
+            fecha_pago: true,
+            motivo_rechazo: true,
+          },
+          orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
+        },
+      },
+      orderBy: [{ fecha_generacion: "desc" }, { id_cuota: "desc" }],
+      take: LIMITE_MAXIMO,
+    });
+    return filas.map(({ inscripcion, monto, pagos, ...cuota }) => ({
+      ...cuota,
+      plan: inscripcion.plan.nombre,
+      monto: monto.toNumber(),
+      pagos: pagos.map((pago) => ({ ...pago, monto: pago.monto.toNumber() })),
     }));
   }
 }

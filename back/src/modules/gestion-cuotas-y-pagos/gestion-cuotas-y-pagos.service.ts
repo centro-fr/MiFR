@@ -1,3 +1,4 @@
+import type { IUnidadDeTrabajo } from "../../shared/db/transaccion.js";
 import { ForbiddenError, NotFoundError } from "../../shared/errors/app-error.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 import type { InscripcionACobrar } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -25,14 +26,14 @@ import type {
 // Quién paga se verifica antes de preparar la cuota: si no, los errores de una inscripción ajena
 // (baja, transferencia pendiente, sin precio) le contarían su estado a cualquiera.
 //
-// En el primer pago confirmado, el alta definitiva (US-07) va antes de guardar el pago: si la
-// inscripción ya no tiene cupo, el cobro se rechaza sin dejar un pago registrado. Si después falla
-// el guardado, la inscripción queda ACTIVA sin una cuota confirmada: la habilitación se calcula con
-// las cuotas pagas, así que el alumno sigue sin poder asistir, y el reintento del cobro la completa.
+// Un pago confirmado y el alta definitiva que dispara (US-07) se guardan en una sola transacción:
+// la inscripción, el alumno, su usuario, el rol y el pago quedan todos o ninguno. El alta va primero
+// para que una inscripción sin cupo rechace el cobro antes de calcular nada más.
 export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
   constructor(
     private readonly cuotas: CuotaService,
     private readonly pagos: PagoService,
+    private readonly unidadDeTrabajo: IUnidadDeTrabajo,
   ) {}
 
   async registrarCobroEfectivo(input: RegistrarEfectivoInput, solicitante: Solicitante): Promise<Pago> {
@@ -40,8 +41,7 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     const idProfesoraCobra = await this.pagos.profesoraQueCobra(inscripcion, solicitante);
     const cuota = await this.cuotas.prepararCobro(inscripcion);
     const datos = this.pagos.prepararEfectivo(cuota, input, solicitante, idProfesoraCobra);
-    await this.cuotas.darAltaDefinitiva(inscripcion.id_inscripcion);
-    return this.pagos.guardar(cuota, datos);
+    return this.conAltaDefinitiva(inscripcion.id_inscripcion, () => this.pagos.guardar(cuota, datos));
   }
 
   // Queda pendiente: no da el alta ni cambia la habilitación hasta que la apruebe la propietaria.
@@ -61,8 +61,7 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
       await this.inscripcionACobrar(input.id_inscripcion, solicitante),
     );
     const datos = await this.pagos.prepararTransferenciaRecibida(cuota, input, solicitante);
-    await this.cuotas.darAltaDefinitiva(cuota.inscripcion.id_inscripcion);
-    return this.pagos.guardar(cuota, datos);
+    return this.conAltaDefinitiva(cuota.inscripcion.id_inscripcion, () => this.pagos.guardar(cuota, datos));
   }
 
   async aprobarTransferencia(
@@ -71,8 +70,7 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     solicitante: Solicitante,
   ): Promise<Pago> {
     const idInscripcion = await this.pagos.prepararAprobacion(id, input);
-    await this.cuotas.darAltaDefinitiva(idInscripcion);
-    return this.pagos.confirmar(id, solicitante);
+    return this.conAltaDefinitiva(idInscripcion, () => this.pagos.confirmar(id, solicitante));
   }
 
   rechazarTransferencia(
@@ -93,6 +91,13 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
 
   obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante> {
     return this.pagos.obtenerComprobante(id, solicitante);
+  }
+
+  private conAltaDefinitiva(idInscripcion: number, confirmarPago: () => Promise<Pago>): Promise<Pago> {
+    return this.unidadDeTrabajo.ejecutar(async () => {
+      await this.cuotas.darAltaDefinitiva(idInscripcion);
+      return confirmarPago();
+    });
   }
 
   // A quien no es propietaria no se le confirma si existe una inscripción: para una ajena recibe el

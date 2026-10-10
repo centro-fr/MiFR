@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { clienteEnCurso } from "../../../shared/db/transaccion.js";
 import type { CodigoRol, Rol } from "../usuario/usuario.types.js";
 import type { AsignacionPermiso, ClavePermisoRol, Permiso } from "./rol.types.js";
 
@@ -10,7 +11,10 @@ export class RolRepository {
   }
 
   async asignarRol(idUsuario: number, idRol: number): Promise<void> {
-    await this.prisma.usuario_roles.create({ data: { id_usuario: idUsuario, id_rol: idRol } });
+    // En el alta del primer pago el rol se da dentro de la transacción del cobro: si el pago falla, no queda.
+    await clienteEnCurso(this.prisma).usuario_roles.create({
+      data: { id_usuario: idUsuario, id_rol: idRol },
+    });
   }
 
   async quitarRol(idUsuario: number, idRol: number): Promise<void> {
