@@ -94,6 +94,7 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones           |
 | Alumnos                          | Fábrica `crearAlumno` (`back/src/__tests__/integracion/fabricas.ts`): alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles) y mayor de edad por defecto; se le puede pasar nombre, apellido, DNI, email (o `null` para un menor), fecha de nacimiento, estado y tutor. La van a usar los casos de inscripciones |
 | Horarios                         | Fábrica `crearHorarioDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): horario directo para el test con actividad, profesora, día, horas y cupo propios configurables                                                                                                                                       |
+| Cuotas y pagos                   | `armarCuotasYPagos` (`back/src/__tests__/integracion/cobro.ts`): arma el subsistema con los componentes y repositorios reales sobre la base de prueba. Mientras los calculadores no estén implementados, el subsistema no se monta en la API: el armado reemplaza solo los cálculos puros (vencimiento a 30 días, habilitación y parámetros fijos). Se le puede pasar otro `PagoRepository` para simular una falla al guardar el pago |
 | Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                                    |
 
 Cuando las pruebas necesiten otro tipo de dato, se agrega una fábrica reutilizable en `fabricas.ts`, igual que `crearUsuario`.
@@ -166,7 +167,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27                      | Sí                                                                                     |
 | US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31                      | Sí, alumno, inscripción, horarios y cupos                                               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21                                                  | Sí                                                                                     |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35                                    | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32                      | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
@@ -174,9 +175,9 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3)                |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
-| US-15 | Registro de cobro en efectivo                             |   3    |                                                               |                                                                                        |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    |                                                               |                                                                                        |
-| US-17 | Aprobación o rechazo de transferencias                    |   3    |                                                               |                                                                                        |
+| US-15 | Registro de cobro en efectivo                             |   3    | PI-33, PI-34, PI-35                                           | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
+| US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
 | US-18 | Cálculo del estado de habilitación del alumno             |   3    |                                                               |                                                                                        |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                                        |
@@ -238,8 +239,11 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-30         | La profesora pre-inscribe solo a su cargo                           | US-05, US-10        | Servicios          | Demostración                                               | Sí           |
 | PI-31         | El tutor en el alta de un menor                                     | US-05, US-06        | Servicios          | Demostración                                               | Sí           |
 | PI-32         | Paginación de inscripciones                                         | US-10               | Servicios          | Demostración                                               | Sí           |
+| PI-33         | Restricciones de cuotas y pagos en la base                          | US-15, US-16, US-17 | Servicios          | Demostración                                               | Sí           |
+| PI-34         | El pago del alumno activo de la demostración                        | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
+| PI-35         | El primer pago y el alta definitiva se guardan juntos               | US-07, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`.
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
 ### 6.2 Detalle
 
@@ -645,9 +649,41 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (G-17).
 
+#### PI-33 — Restricciones de cuotas y pagos en la base
+
+**US:** US-15, US-16, US-17 · **Precondición:** escenario de demostración cargado.
+
+1. Se insertan directamente en la base cuotas con número 0, monto negativo y un número repetido para la misma inscripción.
+2. Se insertan pagos con monto 0, rechazados sin motivo y por transferencia con una profesora que cobra.
+
+**Resultado esperado:** la base rechaza cada fila con su restricción del DER (`ck_cuotas_x1`, `ck_cuotas_x2`, el único `(id_inscripcion, numero_cuota)`, `ck_pagos_x1`, `ck_pagos_x2` y `ck_pagos_x3`) y solo guarda las válidas.
+
+**Automatizado:** Sí (H-01, H-02).
+
+#### PI-34 — El pago del alumno activo de la demostración
+
+**US:** US-07, US-15 · **Precondición:** escenario de demostración cargado.
+
+1. Se consultan las cuotas de la inscripción de Valentina Herrera.
+
+**Resultado esperado:** una sola cuota, la número 1, con un pago en efectivo confirmado que cobró Carla y que está pendiente de rendición. Volver a cargar el escenario no la duplica.
+
+**Automatizado:** Sí (H-03).
+
+#### PI-35 — El primer pago y el alta definitiva se guardan juntos
+
+**US:** US-07, US-15 · **Precondición:** escenario de demostración cargado; Sofía Medina pre-inscripta con Lucía, sin cuotas; cuotas y pagos armado con `armarCuotasYPagos`.
+
+1. Lucía registra el cobro en efectivo de Sofía, y el guardado del pago falla después de que el alta ya escribió la inscripción, el alumno y su rol.
+2. Lucía registra el mismo cobro sin fallas.
+
+**Resultado esperado:** en el paso 1 el cobro falla y la base queda igual que antes: la inscripción sigue PREINSCRIPTA, Sofía y su usuario siguen como estaban, sin el rol ALUMNO, y no hay cuotas ni pagos. En el paso 2 quedan la inscripción ACTIVA, Sofía y su usuario ACTIVOS, el rol ALUMNO y la cuota 1 con su pago en efectivo confirmado.
+
+**Automatizado:** Sí (H-04, H-05).
+
 ## 7. Tests automatizados
 
-127 tests en ocho archivos. Los tres de `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` (restricciones del DER en cuotas y pagos y el primer pago del escenario de demostración) se documentan con los casos de cuotas y pagos del Sprint 3:
+129 tests en ocho archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -658,6 +694,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 17 (G-01 a G-17) | PI-20 a PI-24, PI-27, PI-30, PI-32 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 5 (H-01 a H-05)  | PI-33, PI-34, PI-35               |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -701,6 +738,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-13        | Inscriptos y lugares que quedan en el detalle y el listado de horarios; los dados de baja no cuentan; sin cupo, `cupo_disponible: null`                                     | PI-27 |
 | G-14 a G-16 | La profesora pre-inscribe a su nombre a un alumno libre; no a nombre de otra, sin cargo ni a un alumno de otra profesora (403, sin inscripciones nuevas); la propietaria sí      | PI-30 |
 | G-17        | `limit` y `offset` devuelven la página pedida; `limit=101` responde 400                                                                                                       | PI-32 |
+| H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
+| H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
+| H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -751,6 +791,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La profesora puede indicar el tutor por `id_usuario`                                  | E-21                                                                                                       |
 | La profesora recibe todos los datos personales del tutor                              | E-22                                                                                                       |
 | Se reusa un tutor aunque el DNI y el email sean de cuentas distintas                  | E-23                                                                                                       |
+| El cobro da el alta y guarda el pago fuera de una misma transacción                   | H-04                                                                                                       |
+| Cada repositorio abre su propia transacción aunque haya una en curso                  | H-04                                                                                                       |
+| El rol del alumno se asigna fuera de la transacción del cobro                         | H-04                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -773,6 +816,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 09/10/2026 | Ocupación de horarios (PI-27), alumno activo en la demostración y validaciones | 109 | 109 aprobados | 61,2 s | Pasaron también los 990 tests unitarios; falla provocada detectada |
 | 09/10/2026 | La baja de actividad arrastra sus horarios sin alumnos (PI-06)        | 110 | 110 aprobados | 60,0 s | Pasaron también los 991 tests unitarios; falla provocada detectada (B-11) |
 | 10/10/2026 | Correcciones de la auditoría de seguridad (PI-28 a PI-32)             | 127 | 127 aprobados | 103,6 s | Antes de sumar los casos nuevos pasaron los 113 existentes. Pasaron también los 1182 tests unitarios, con cobertura del 100 %; build correcto. Las 10 fallas provocadas fueron detectadas (una, con las dos defensas rotas) |
+| 10/10/2026 | El primer pago y el alta en una sola transacción (PI-33 a PI-35)      | 129 | 129 aprobados | 218,1 s | Pasaron también los 1188 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -786,6 +830,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-20 a PI-23 | 09/10/2026 | Nicolas           | Aprobado           | Pasan G-01 a G-11; la reactivación crea una nueva inscripción y valida el cupo   |
 | PI-21, PI-24 a PI-27 | 09/10/2026 | Francisco Andrade | Aprobado     | PI-21 pasa a activar por `IInfoInscripciones` (D-02); pasan G-12, G-13 y E-15 a E-20 |
 | PI-28 a PI-32 | 10/10/2026 | Francisco Andrade | Aprobado           | Pasan A-42 a A-48, E-21 a E-23 y G-14 a G-17 (defectos D-07 a D-14)              |
+| PI-33 a PI-35 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-05 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
 
 ### 8.3 Defectos
 
@@ -805,6 +850,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-12 | PI-31 | Una profesora podía indicar como tutor a cualquier usuario y la respuesta del alta le devolvía su DNI, dirección y demás datos. Corregido: no elige por id y recibe solo id, nombre y apellido | Alta | Francisco Andrade | `GestionPersonasService` |
 | D-13 | PI-31 | Un tutor se reusaba por DNI aunque el email cargado fuera de otra cuenta. Corregido: responde 409 | Alta | Francisco Andrade | `AlumnoService` |
 | D-14 | PI-32 | Los listados de inscripciones y transferencias devolvían la tabla entera. Corregido: `limit` y `offset`, hasta 100 por pedido | Baja | Francisco Andrade | `inscripcion.repository.ts`, `pago.repository.ts` |
+| D-15 | PI-35 | El alta definitiva, la activación del alumno, su rol y el pago se guardaban en transacciones separadas: si fallaba un paso, el alumno podía quedar con la inscripción activa sin pago, o pre-inscripto con la inscripción activa y sin forma de destrabarlo. Corregido: van en una sola transacción (`IUnidadDeTrabajo`) | Alta | Francisco Andrade | `GestionCuotasYPagosService`, `shared/db/transaccion.ts` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -856,3 +902,4 @@ Los defectos se numeran D-01, D-02…
 |   1.6   | 09/10/2026 | Casos PI-20 a PI-23, fábrica de horarios y tests G-01 a G-11; activación, baja, reactivación y cambios de inscripción                          | Nicolas           |
 |   1.7   | 09/10/2026 | PI-21 activa por `IInfoInscripciones` (la ruta HTTP ya no existe); casos PI-24 a PI-27, PI-06 actualizado (la baja de actividad arrastra sus horarios sin alumnos) y tests B-16, G-12, G-13 y E-15 a E-20 (E-15 deja de ser "la profesora no consulta"); inscripciones y un alumno activo en el escenario de demostración; defectos D-02 a D-06 | Francisco Andrade |
 |   1.8   | 10/10/2026 | Casos PI-28 a PI-32 (correcciones de la auditoría de seguridad) y tests A-42 a A-48, E-21 a E-23 y G-14 a G-17; defectos D-07 a D-14; puntos a confirmar de PI-29 a PI-31 cerrados | Francisco Andrade |
+|   1.9   | 10/10/2026 | Casos PI-33 a PI-35 (cuotas y pagos) y archivo H con los tests H-01 a H-05; los tests de cuotas y pagos pasan de PI-28 a PI-33 y PI-34; fábrica `armarCuotasYPagos`; defecto D-15 | Francisco Andrade |
