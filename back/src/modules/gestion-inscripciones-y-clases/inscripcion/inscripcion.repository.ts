@@ -15,6 +15,7 @@ import {
   type InscripcionConDatos,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
+import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
 
 const ESTADOS_VIGENTES = ["PREINSCRIPTA", "ACTIVA"] as const;
 
@@ -152,6 +153,8 @@ export class InscripcionRepository {
       },
       include: INCLUIR_DATOS_INSCRIPCION,
       orderBy: [{ fecha_alta: "desc" }, { id_inscripcion: "desc" }],
+      take: filtro.limit ?? LIMITE_MAXIMO,
+      skip: filtro.offset ?? 0,
     });
   }
 

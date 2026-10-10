@@ -2,6 +2,7 @@ import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema, textoSchema } from "../../../shared/utils/esquemas-texto.js";
+import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
 const monto = montoSchema("monto");
 const observaciones = textoOpcionalSchema(255, { multilinea: true }).optional();
@@ -45,6 +46,7 @@ export const rechazarTransferenciaSchema = z.object({ motivo_rechazo: textoSchem
 export const listarTransferenciasQuerySchema = z.object({
   estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]).optional(),
   id_alumno: idDesdeTextoSchema.optional(),
+  ...paginacionSchema(LIMITE_MAXIMO),
 });
 
 export const pagoIdParamSchema = z.object({ id: idDesdeTextoSchema });

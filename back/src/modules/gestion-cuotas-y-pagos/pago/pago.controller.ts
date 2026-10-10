@@ -71,7 +71,7 @@ export function createPagoController(logica: ILogicaPagos) {
     },
 
     async listarTransferencias(req: Request, res: Response) {
-      res.json(await logica.listarTransferencias(req.query as ListarTransferenciasQuery));
+      res.json(await logica.listarTransferencias(req.query as unknown as ListarTransferenciasQuery));
     },
 
     async listarMisTransferencias(req: Request, res: Response) {

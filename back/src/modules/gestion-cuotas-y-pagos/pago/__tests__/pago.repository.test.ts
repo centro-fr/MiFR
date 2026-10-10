@@ -166,6 +166,14 @@ describe("PagoRepository", () => {
       expect(prisma.pagos.findMany.mock.calls[1][0].where).toEqual({ forma_pago: "TRANSFERENCIA" });
     });
 
+    it("listarTransferencias trae como mucho 100 por pedido, o la página pedida", async () => {
+      await repositorio.listarTransferencias({});
+      await repositorio.listarTransferencias({ limit: 10, offset: 30 });
+
+      expect(prisma.pagos.findMany.mock.calls[0][0]).toMatchObject({ take: 100, skip: 0 });
+      expect(prisma.pagos.findMany.mock.calls[1][0]).toMatchObject({ take: 10, skip: 30 });
+    });
+
     it("listarTransferenciasDeUsuario trae las del alumno y las de los menores a cargo", async () => {
       await repositorio.listarTransferenciasDeUsuario(30);
 
@@ -175,6 +183,7 @@ describe("PagoRepository", () => {
           cuota: { inscripcion: { alumno: { OR: [{ id_usuario: 30 }, { id_usuario_responsable: 30 }] } } },
         },
         orderBy: [{ fecha_pago: "desc" }, { id_pago: "desc" }],
+        take: 100,
       });
     });
   });

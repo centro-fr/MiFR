@@ -10,9 +10,9 @@ import {
 } from "../../../shared/utils/esquemas-persona.js";
 import { textoBusquedaSchema, textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import { paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
 const LIMITE_POR_DEFECTO = 20;
-const LIMITE_MAXIMO = 100;
 
 // Para columnas que admiten NULL: "" borra el valor, igual que en textoOpcionalSchema.
 function opcionalAnulable<T extends z.ZodTypeAny>(esquema: T) {
@@ -100,17 +100,7 @@ export const listarAlumnoQuerySchema = z.object({
     .enum(["true", "false"])
     .transform((valor) => valor === "true")
     .optional(),
-  limit: z
-    .string()
-    .regex(/^\d{1,3}$/, "limit inválido")
-    .transform(Number)
-    .pipe(z.number().int().min(1).max(LIMITE_MAXIMO))
-    .default(String(LIMITE_POR_DEFECTO)),
-  offset: z
-    .string()
-    .regex(/^\d{1,9}$/, "offset inválido")
-    .transform(Number)
-    .default("0"),
+  ...paginacionSchema(LIMITE_POR_DEFECTO),
 });
 
 export type CrearAlumnoInput = z.infer<typeof crearAlumnoSchema>;

@@ -49,7 +49,17 @@ describe("actualizarHorariosSchema y listarInscripcionesQuerySchema", () => {
     expect(listarInscripcionesQuerySchema.parse({ id_plan: "1", estado: "ACTIVA" })).toEqual({
       id_plan: 1,
       estado: "ACTIVA",
+      limit: 100,
+      offset: 0,
     });
     expect(listarInscripcionesQuerySchema.safeParse({ estado: "PENDIENTE" }).success).toBe(false);
+  });
+
+  it("pagina el listado con un tope de 100 por pedido", () => {
+    expect(listarInscripcionesQuerySchema.parse({ limit: "20", offset: "40" })).toMatchObject({
+      limit: 20,
+      offset: 40,
+    });
+    expect(listarInscripcionesQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
   });
 });

@@ -65,7 +65,7 @@ describe("rutas de inscripciones", () => {
     expect(respuesta.status).toBe(200);
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(2, "ALUMNOS_VER");
     expect(logica.listarInscripciones).toHaveBeenCalledWith(
-      { id_plan: 1, estado: "ACTIVA" },
+      { id_plan: 1, estado: "ACTIVA", limit: 100, offset: 0 },
       { idUsuario: 2, esPropietaria: false },
     );
   });

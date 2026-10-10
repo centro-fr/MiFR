@@ -86,7 +86,10 @@ describe("schemas de pagos", () => {
       expect(listarTransferenciasQuerySchema.parse({ estado: "PENDIENTE", id_alumno: "5" })).toEqual({
         estado: "PENDIENTE",
         id_alumno: 5,
+        limit: 100,
+        offset: 0,
       });
+      expect(listarTransferenciasQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
       expect(listarTransferenciasQuerySchema.safeParse({ estado: "VENCIDA" }).success).toBe(false);
       expect(listarTransferenciasQuerySchema.safeParse({ id_alumno: "-0" }).success).toBe(false);
     });

@@ -144,7 +144,12 @@ describe("rutas de pagos", () => {
       await como("propietaria", "get", "/transferencias?estado=PENDIENTE&id_alumno=5");
       await como("propietaria", "post", "/7/aprobar").send({ confirmar_monto_distinto: true });
 
-      expect(logica.listarTransferencias).toHaveBeenCalledWith({ estado: "PENDIENTE", id_alumno: 5 });
+      expect(logica.listarTransferencias).toHaveBeenCalledWith({
+        estado: "PENDIENTE",
+        id_alumno: 5,
+        limit: 100,
+        offset: 0,
+      });
       expect(logica.aprobarTransferencia).toHaveBeenCalledWith(
         7,
         { confirmar_monto_distinto: true },

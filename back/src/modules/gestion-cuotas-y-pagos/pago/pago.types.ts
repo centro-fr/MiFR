@@ -1,4 +1,5 @@
 import type { estado_pago, forma_pago, pagos } from "@prisma/client";
+import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 
 export type FormaPago = forma_pago;
 export type EstadoPago = estado_pago;
@@ -36,7 +37,7 @@ export type TransferenciaEnRevision = TransferenciaConAlumno & {
   supera_24_horas: boolean;
 };
 
-export interface FiltroTransferencias {
+export interface FiltroTransferencias extends Partial<Paginacion> {
   estado?: EstadoPago;
   id_alumno?: number;
 }

@@ -1,4 +1,5 @@
 import type { estado_inscripcion, inscripciones, motivo_baja, Prisma } from "@prisma/client";
+import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 
 export type Inscripcion = inscripciones;
 export type EstadoInscripcion = estado_inscripcion;
@@ -56,7 +57,7 @@ export interface FechasDeBaja {
   dia: Date;
 }
 
-export interface FiltroInscripciones {
+export interface FiltroInscripciones extends Partial<Paginacion> {
   id_alumno?: number;
   id_plan?: number;
   id_profesora?: number;

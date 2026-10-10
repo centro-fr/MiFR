@@ -9,6 +9,7 @@ import type {
   PagoParaComprobante,
   TransferenciaConAlumno,
 } from "./pago.types.js";
+import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
 
 type Transaccion = Prisma.TransactionClient;
 
@@ -109,6 +110,8 @@ export class PagoRepository {
       },
       include: CON_ALUMNO,
       orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
+      take: filtro.limit ?? LIMITE_MAXIMO,
+      skip: filtro.offset ?? 0,
     });
     return filas.map(conAlumno);
   }
@@ -124,6 +127,7 @@ export class PagoRepository {
       },
       include: CON_ALUMNO,
       orderBy: [{ fecha_pago: "desc" }, { id_pago: "desc" }],
+      take: LIMITE_MAXIMO,
     });
     return filas.map(conAlumno);
   }

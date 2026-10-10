@@ -127,6 +127,14 @@ describe("InscripcionRepository", () => {
       expect(prisma.inscripciones.findMany.mock.calls[1][0].where).toEqual({});
     });
 
+    it("listar trae como mucho 100 por pedido, o la página pedida", async () => {
+      await repositorio.listar({});
+      await repositorio.listar({ limit: 20, offset: 40 });
+
+      expect(prisma.inscripciones.findMany.mock.calls[0][0]).toMatchObject({ take: 100, skip: 0 });
+      expect(prisma.inscripciones.findMany.mock.calls[1][0]).toMatchObject({ take: 20, skip: 40 });
+    });
+
     it("buscarVigentePorAlumno busca la más reciente pre-inscripta o activa", async () => {
       await repositorio.buscarVigentePorAlumno(5);
 

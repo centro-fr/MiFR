@@ -166,7 +166,8 @@ export function registrarDocumentacionPagos(registro: OpenAPIRegistry): void {
     summary: "Transferencias para revisar (US-17)",
     description:
       `${propietariaConfirma} Ordenadas por antigüedad, con las horas desde que se cargaron y la marca de las ` +
-      "pendientes que pasaron las 24 horas. Filtros por estado y alumno.",
+      "pendientes que pasaron las 24 horas. Filtros por estado y alumno. Paginado con `limit` (por defecto y " +
+      "como máximo 100) y `offset`.",
     request: { query: listarTransferenciasQuerySchema },
     responses: {
       200: respuestaJson("Transferencias", z.array(transferenciaEnRevisionSchema)),
