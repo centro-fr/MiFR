@@ -20,7 +20,8 @@ import { UsuarioRepository } from "../../modules/gestion-usuarios/usuario/usuari
 import { UsuarioService } from "../../modules/gestion-usuarios/usuario/usuario.service.js";
 import { UnidadDeTrabajoPrisma } from "../../shared/db/transaccion.js";
 
-const UN_MES_EN_MS = 30 * 24 * 60 * 60 * 1000;
+export const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
+const UN_MES_EN_MS = 30 * UN_DIA_EN_MS;
 
 // Los calculadores (capa no persistente) todavía no están implementados, así que el subsistema no se
 // arma en composicion.ts. El test lo arma con los componentes reales y reemplaza solo los cálculos
@@ -33,11 +34,17 @@ const habilitaciones: ICalculoHabilitacion = {
 };
 const parametros = { obtener: async () => true } as unknown as IInfoParametros;
 
+export interface CuotasYPagosArmado {
+  gestion: GestionCuotasYPagosService;
+  // IInfoCuotas, lo que consumen los otros subsistemas.
+  cuotas: CuotaService;
+}
+
 export function armarCuotasYPagos(
   prisma: PrismaClient,
   infoInscripciones: IInfoInscripciones,
   pagoRepositorio: PagoRepository = new PagoRepository(prisma),
-): GestionCuotasYPagosService {
+): CuotasYPagosArmado {
   const rolService = new RolService(new RolRepository(prisma));
   const usuarioService = new UsuarioService(new UsuarioRepository(prisma), rolService);
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
@@ -53,9 +60,10 @@ export function armarCuotasYPagos(
     habilitaciones,
     parametros,
   );
-  return new GestionCuotasYPagosService(
+  const gestion = new GestionCuotasYPagosService(
     cuotaService,
     new PagoService(pagoRepositorio, profesorService),
     new UnidadDeTrabajoPrisma(prisma),
   );
+  return { gestion, cuotas: cuotaService };
 }

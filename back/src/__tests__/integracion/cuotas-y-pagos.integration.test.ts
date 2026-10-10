@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PagoRepository } from "../../modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
 import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo.js";
 import { reiniciarBase } from "./base-de-prueba.js";
-import { armarCuotasYPagos } from "./cobro.js";
+import { armarCuotasYPagos, UN_DIA_EN_MS } from "./cobro.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
 // Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) sobre los datos de db:seed:demo.
@@ -127,7 +127,7 @@ async function estadoDelAlta() {
 }
 
 describe("PI-35: el primer pago y el alta definitiva se guardan juntos", () => {
-  async function cobrarComoLucia(gestion: ReturnType<typeof armarCuotasYPagos>) {
+  async function cobrarComoLucia({ gestion }: ReturnType<typeof armarCuotasYPagos>) {
     const lucia = await prisma.usuarios.findUniqueOrThrow({ where: { email: "lucia.gomez@example.com" } });
     return gestion.registrarCobroEfectivo(
       { id_inscripcion: idInscripcion, monto: 1, confirmar_monto_distinto: true },
@@ -157,5 +157,31 @@ describe("PI-35: el primer pago y el alta definitiva se guardan juntos", () => {
     expect(despues.cuotas).toEqual([
       { numero_cuota: 1, pagos: [{ forma_pago: "EFECTIVO", estado: "CONFIRMADO" }] },
     ]);
+  });
+});
+
+describe("PI-36: el pago adelantado y el historial de cuotas de la ficha", () => {
+  it("el pago adelantado empieza el día después del vencimiento vigente y el historial muestra las dos cuotas", async () => {
+    const datos = await cargarDatosDemo(prisma);
+    const idAlumno = datos.idAlumno.get("39222333")!;
+    const idInscripcionValentina = datos.idInscripcion.get("39222333")!;
+    const { gestion, cuotas } = armarCuotasYPagos(prisma, infoInscripciones);
+    const [primera] = await cuotas.historialDeAlumno(idAlumno);
+
+    await gestion.registrarCobroEfectivo(
+      { id_inscripcion: idInscripcionValentina, monto: 1, confirmar_monto_distinto: true },
+      { idUsuario: idMarina, esPropietaria: true },
+    );
+
+    const historial = await cuotas.historialDeAlumno(idAlumno);
+    expect(historial.map(({ numero_cuota }) => numero_cuota)).toEqual([2, 1]);
+    // El cálculo de prueba suma 30 días a "desde": la cuota 2 cubre desde el día siguiente al vencimiento de la 1.
+    const desdeLaSegunda = new Date(primera.fecha_vencimiento.getTime() + UN_DIA_EN_MS);
+    expect(historial[0].fecha_vencimiento).toEqual(new Date(desdeLaSegunda.getTime() + 30 * UN_DIA_EN_MS));
+    expect(historial[0]).toMatchObject({
+      plan: "Intermedio",
+      pagos: [{ forma_pago: "EFECTIVO", estado: "CONFIRMADO", monto: 1, motivo_rechazo: null }],
+    });
+    expect(historial[1]).toMatchObject({ numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] });
   });
 });
