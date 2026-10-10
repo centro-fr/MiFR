@@ -46,7 +46,7 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 ## Malas prácticas
 
 - `any`. Si el tipo no se sabe, `unknown` y estrechar.
-- Usar el cliente de Prisma fuera de un repositorio.
+- Usar el cliente de Prisma fuera de un repositorio (la única excepción es `UnidadDeTrabajoPrisma`, ver `persistencia.md`).
 - Hacer `new` de una clase concreta fuera del composition root (`index.ts` y `composicion.ts`).
 - Poner lógica de negocio en un controller, en una ruta o en un middleware.
 - Devolver la entidad cruda cuando tiene campos que el cliente no debería ver.

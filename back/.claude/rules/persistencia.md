@@ -37,6 +37,14 @@ Los fragmentos de consulta que se repiten se extraen a una constante del módulo
 
 Un repositorio no lanza errores de negocio ni valida: devuelve lo que hay, o `null`. Decidir que un `null` es un `NotFoundError` es trabajo del service.
 
+## Transacciones
+
+Las transacciones interactivas se abren con `enTransaccion(this.prisma, async (transaccion) => ...)` de `shared/db/transaccion.ts`, nunca con `this.prisma.$transaction(async ...)` directo. Si ya hay una transacción abierta en esa operación, `enTransaccion` se suma a ella en lugar de abrir otra. Las escrituras de una sola sentencia que pueden formar parte de una operación más grande (como dar un rol en el alta del primer pago) usan `clienteEnCurso(this.prisma)`.
+
+Cuando varias escrituras de distintos componentes tienen que confirmarse juntas, la fachada que las coordina recibe `IUnidadDeTrabajo` y las envuelve en `unidadDeTrabajo.ejecutar(...)`. Es el caso del cobro: el alta definitiva de la inscripción, la activación del alumno, su rol y el pago quedan todos o ninguno. La transacción viaja con `AsyncLocalStorage`, así que no pasa por los services ni por las interfaces entre componentes, y Prisma sigue sin salir de los repositorios. `UnidadDeTrabajoPrisma` es la única pieza fuera de un repositorio que recibe el cliente, y la instancia el composition root.
+
+Dentro de una unidad, los bloqueos se toman siempre en el mismo orden (primero los de la inscripción, después el del cobro) para que dos operaciones no se esperen entre sí.
+
 ## Esquema y migraciones
 
 - El esquema vive en `prisma/schema.prisma` y tiene que reflejar `docs/diagrams/puml/der.puml`: mismos atributos, mismos tipos, mismos valores de enumerado. Ver `arquitectura.md`.
