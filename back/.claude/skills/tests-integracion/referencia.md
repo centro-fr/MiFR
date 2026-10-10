@@ -76,7 +76,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
 | G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación y paginación | G-17 |
-| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración y el cobro en una sola transacción (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`) | H-05 |
+| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado y el historial de cuotas (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`) | H-06 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

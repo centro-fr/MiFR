@@ -170,12 +170,12 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35                                    | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
-| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32                      | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
+| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36               | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3)                |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
-| US-15 | Registro de cobro en efectivo                             |   3    | PI-33, PI-34, PI-35                                           | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
+| US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36                                                 | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
 | US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
 | US-18 | Cálculo del estado de habilitación del alumno             |   3    |                                                               |                                                                                        |
@@ -242,6 +242,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-33         | Restricciones de cuotas y pagos en la base                          | US-15, US-16, US-17 | Servicios          | Demostración                                               | Sí           |
 | PI-34         | El pago del alumno activo de la demostración                        | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
 | PI-35         | El primer pago y el alta definitiva se guardan juntos               | US-07, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
+| PI-36         | El pago adelantado y el historial de cuotas de la ficha             | US-10, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -681,9 +682,20 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (H-04, H-05).
 
+#### PI-36 — El pago adelantado y el historial de cuotas de la ficha
+
+**US:** US-10, US-15 · **Precondición:** escenario de demostración cargado (Valentina Herrera al día, con su primera cuota pagada); cuotas y pagos armado con `armarCuotasYPagos`.
+
+1. Marina registra un pago en efectivo de Valentina antes de que venza su cuota.
+2. Se pide el historial de cuotas de Valentina.
+
+**Resultado esperado:** se genera la cuota 2, que cubre desde el día siguiente al vencimiento de la cuota 1. El historial trae las dos cuotas, de la más nueva a la más vieja, cada una con su plan y sus pagos.
+
+**Automatizado:** Sí (H-06).
+
 ## 7. Tests automatizados
 
-129 tests en ocho archivos:
+130 tests en ocho archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -694,7 +706,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 17 (G-01 a G-17) | PI-20 a PI-24, PI-27, PI-30, PI-32 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 5 (H-01 a H-05)  | PI-33, PI-34, PI-35               |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 6 (H-01 a H-06)  | PI-33 a PI-36                     |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -741,6 +753,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
+| H-06        | El pago adelantado cubre desde el día siguiente al vencimiento vigente; el historial trae las cuotas con su plan y sus pagos, de la más nueva a la más vieja        | PI-36 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -794,6 +807,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El cobro da el alta y guarda el pago fuera de una misma transacción                   | H-04                                                                                                       |
 | Cada repositorio abre su propia transacción aunque haya una en curso                  | H-04                                                                                                       |
 | El rol del alumno se asigna fuera de la transacción del cobro                         | H-04                                                                                                       |
+| El pago adelantado vuelve a empezar el mismo día en que vence la cuota vigente        | H-06                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -817,6 +831,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 09/10/2026 | La baja de actividad arrastra sus horarios sin alumnos (PI-06)        | 110 | 110 aprobados | 60,0 s | Pasaron también los 991 tests unitarios; falla provocada detectada (B-11) |
 | 10/10/2026 | Correcciones de la auditoría de seguridad (PI-28 a PI-32)             | 127 | 127 aprobados | 103,6 s | Antes de sumar los casos nuevos pasaron los 113 existentes. Pasaron también los 1182 tests unitarios, con cobertura del 100 %; build correcto. Las 10 fallas provocadas fueron detectadas (una, con las dos defensas rotas) |
 | 10/10/2026 | El primer pago y el alta en una sola transacción (PI-33 a PI-35)      | 129 | 129 aprobados | 218,1 s | Pasaron también los 1188 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
+| 10/10/2026 | Pago adelantado desde el día siguiente e historial de cuotas (PI-36) | 130 | 130 aprobados | 201,8 s | Pasaron también los 1191 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
 
 ### 8.2 Resultado por caso
 
@@ -830,7 +845,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-20 a PI-23 | 09/10/2026 | Nicolas           | Aprobado           | Pasan G-01 a G-11; la reactivación crea una nueva inscripción y valida el cupo   |
 | PI-21, PI-24 a PI-27 | 09/10/2026 | Francisco Andrade | Aprobado     | PI-21 pasa a activar por `IInfoInscripciones` (D-02); pasan G-12, G-13 y E-15 a E-20 |
 | PI-28 a PI-32 | 10/10/2026 | Francisco Andrade | Aprobado           | Pasan A-42 a A-48, E-21 a E-23 y G-14 a G-17 (defectos D-07 a D-14)              |
-| PI-33 a PI-35 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-05 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
+| PI-33 a PI-36 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-06 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
 
 ### 8.3 Defectos
 
@@ -903,3 +918,4 @@ Los defectos se numeran D-01, D-02…
 |   1.7   | 09/10/2026 | PI-21 activa por `IInfoInscripciones` (la ruta HTTP ya no existe); casos PI-24 a PI-27, PI-06 actualizado (la baja de actividad arrastra sus horarios sin alumnos) y tests B-16, G-12, G-13 y E-15 a E-20 (E-15 deja de ser "la profesora no consulta"); inscripciones y un alumno activo en el escenario de demostración; defectos D-02 a D-06 | Francisco Andrade |
 |   1.8   | 10/10/2026 | Casos PI-28 a PI-32 (correcciones de la auditoría de seguridad) y tests A-42 a A-48, E-21 a E-23 y G-14 a G-17; defectos D-07 a D-14; puntos a confirmar de PI-29 a PI-31 cerrados | Francisco Andrade |
 |   1.9   | 10/10/2026 | Casos PI-33 a PI-35 (cuotas y pagos) y archivo H con los tests H-01 a H-05; los tests de cuotas y pagos pasan de PI-28 a PI-33 y PI-34; fábrica `armarCuotasYPagos`; defecto D-15 | Francisco Andrade |
+|   2.0   | 10/10/2026 | Caso PI-36 y test H-06: el pago adelantado empieza el día después del vencimiento vigente e historial de cuotas y pagos para la ficha | Francisco Andrade |
