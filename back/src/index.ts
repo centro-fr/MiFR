@@ -8,17 +8,26 @@ import { GoogleAutenticacion } from "./modules/gestion-usuarios/sesion/google-au
 import { JwtService } from "./modules/gestion-usuarios/sesion/jwt.service.js";
 import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "./openapi.js";
 import { opcionesDelClientePrisma } from "./shared/db/client.js";
-import { leerOrigenesPermitidos } from "./shared/utils/origenes-permitidos.js";
+import { leerConfiguracion } from "./shared/utils/configuracion.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 
 // Composition root junto con composicion.ts: lee el entorno, crea las piezas de infraestructura
 // (base, Google, JWT) y levanta el servidor.
+const resultado = leerConfiguracion(process.env);
+if (!resultado.valida) {
+  for (const error of resultado.errores) console.error(error);
+  process.exit(1);
+}
+const { configuracion } = resultado;
+
 const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
-const googleClientId = process.env.GOOGLE_CLIENT_ID as string;
 const dependencias = construirDependencias({
   prisma,
-  googleAuth: new GoogleAutenticacion(new OAuth2Client(googleClientId), googleClientId),
-  jwtService: new JwtService(process.env.JWT_SECRET as string, process.env.JWT_EXPIRES_IN ?? "8h"),
+  googleAuth: new GoogleAutenticacion(
+    new OAuth2Client(configuracion.googleClientId),
+    configuracion.googleClientId ?? "",
+  ),
+  jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
 });
 
 function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
@@ -27,25 +36,12 @@ function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   return new OpenApiGeneratorV3(registro.definitions).generateDocument(CONFIGURACION_DOCUMENTO_API);
 }
 
-const esProduccion = process.env.NODE_ENV === "production";
-const origenesPermitidos = leerOrigenesPermitidos(process.env.CORS_ORIGENES);
-
-// En producción no se arranca con CORS abierto: mejor fallar al inicio que publicar la API a cualquier origen.
-if (esProduccion && !origenesPermitidos) {
-  console.error("Falta CORS_ORIGENES: con NODE_ENV=production hay que indicar los orígenes permitidos");
-  process.exit(1);
-}
-
-const loginDesarrollo = process.env.LOGIN_DESARROLLO === "true";
-
-// El login de desarrollo entra sin verificar la identidad con Google: en producción sería
-// una puerta abierta, así que el proceso no arranca.
-if (esProduccion && loginDesarrollo) {
-  console.error("LOGIN_DESARROLLO=true no está permitido con NODE_ENV=production");
-  process.exit(1);
-}
+const { esProduccion, loginDesarrollo, origenesPermitidos, host, port } = configuracion;
 if (loginDesarrollo) {
   console.warn("LOGIN_DESARROLLO activo: POST /api/v1/auth/desarrollo permite entrar sin Google");
+}
+if (!configuracion.googleClientId) {
+  console.warn("GOOGLE_CLIENT_ID no está configurado: el login con Google va a rechazar todos los tokens");
 }
 
 const app = createApp(dependencias, {
@@ -54,7 +50,6 @@ const app = createApp(dependencias, {
   loginDesarrollo,
 });
 
-const port = Number(process.env.PORT ?? 3000);
-app.listen(port, () => {
-  console.log(`API escuchando en http://localhost:${port}`);
+app.listen(port, host, () => {
+  console.log(`API escuchando en http://${host}:${port}`);
 });

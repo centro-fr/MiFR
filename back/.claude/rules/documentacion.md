@@ -71,12 +71,13 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | Variable | Para qué |
 | --- | --- |
 | `DATABASE_URL` | Conexión a PostgreSQL |
-| `GOOGLE_CLIENT_ID` | Validación del token de Google |
-| `JWT_SECRET` | Firma del token propio |
+| `GOOGLE_CLIENT_ID` | Validación del token de Google. Obligatoria con `NODE_ENV=production`; sin ella el login con Google se rechaza |
+| `JWT_SECRET` | Firma del token propio. Obligatoria; en producción, de al menos 32 caracteres |
 | `JWT_EXPIRES_IN` | Vigencia del token, por defecto `8h` |
 | `PORT` | Puerto de la API, por defecto `3000` |
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
+| `HOST` | Interfaz en la que escucha la API. Por defecto `127.0.0.1` fuera de producción y `0.0.0.0` en producción; el Dockerfile la fija en `0.0.0.0` |
 | `LOGIN_DESARROLLO` | Con `true` habilita `POST /auth/desarrollo` (login por email, sin Google). Prohibida con `NODE_ENV=production`: la API no arranca |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.
