@@ -114,6 +114,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Rol     -right- I_Autorizacion
     Sesion  ..> Usuario
     Usuario ..> Rol
+    Sesion  ..> Rol
   }
   interface "ILogicaUsuarios" as I_LogicaUsuarios
   GestionUsuarios -down- I_LogicaUsuarios
