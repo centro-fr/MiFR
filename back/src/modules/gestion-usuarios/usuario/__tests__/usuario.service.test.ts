@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, UnauthorizedError } from "../../../../shared/errors/app-error.js";
 import { UsuarioService } from "../usuario.service.js";
 import type { IAutorizacion } from "../../rol/interface/i-autorizacion.js";
 import type { UsuarioRepository } from "../usuario.repository.js";
@@ -46,8 +46,25 @@ function crearRepositorioMock() {
     actualizar: vi.fn(),
     vincularGoogleId: vi.fn(),
     eliminar: vi.fn(),
+    contarPropietariasActivas: vi.fn(),
   };
 }
+
+// La propietaria: tieneRol responde según los roles que trae el usuario.
+function tieneRolSegunRoles(usuario: UsuarioConRoles, rol: string) {
+  return usuario.roles.some((r) => r.rol.codigo === rol);
+}
+const rolPropietaria = {
+  id_rol: 1,
+  codigo: "PROPIETARIA" as const,
+  nombre: "Propietaria",
+  descripcion: null,
+};
+const propietaria = (cambios: Partial<UsuarioConRoles> = {}) =>
+  crearUsuario({
+    roles: [{ id_usuario: 1, id_rol: 1, rol: rolPropietaria, fecha_asignacion: new Date() }],
+    ...cambios,
+  });
 
 function crearAutorizacionMock() {
   return { asignarRol: vi.fn(), quitarRol: vi.fn(), tieneRol: vi.fn(), tienePermiso: vi.fn() };
@@ -95,6 +112,25 @@ describe("UsuarioService", () => {
 
       await expect(service.crear(nuevoUsuario)).rejects.toBeInstanceOf(ConflictError);
       expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("crear lanza ConflictError si el dni ya es de otro usuario, en lugar de dejar fallar la base", async () => {
+      repositorio.buscarPorEmailOGoogleId.mockResolvedValue(null);
+      repositorio.buscarPorDni.mockResolvedValue(crearUsuario({ id_usuario: 2, dni: "30111222" }));
+
+      await expect(service.crear({ ...nuevoUsuario, dni: "30111222" })).rejects.toThrow(
+        "Ya existe un usuario con ese dni",
+      );
+      expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("crear no consulta el dni si no viene", async () => {
+      repositorio.buscarPorEmailOGoogleId.mockResolvedValue(null);
+      repositorio.crear.mockResolvedValue(crearUsuario());
+
+      await service.crear(nuevoUsuario);
+
+      expect(repositorio.buscarPorDni).not.toHaveBeenCalled();
     });
   });
 
@@ -190,6 +226,16 @@ describe("UsuarioService", () => {
       expect(repositorio.vincularGoogleId).not.toHaveBeenCalled();
       expect(repositorio.crear).not.toHaveBeenCalled();
     });
+
+    it("identificarPorGoogle no reasigna una cuenta ya vinculada a otra cuenta de Google con el mismo email", async () => {
+      repositorio.buscarPorGoogleId.mockResolvedValue(null);
+      repositorio.buscarPorEmail.mockResolvedValue(crearUsuario({ google_id: "google-original" }));
+      repositorio.vincularGoogleId.mockResolvedValue(null);
+
+      await expect(service.identificarPorGoogle("google-otra", "test@example.com")).rejects.toBeInstanceOf(
+        UnauthorizedError,
+      );
+    });
   });
 
   describe("actualizar", () => {
@@ -245,6 +291,46 @@ describe("UsuarioService", () => {
       await expect(service.actualizar(99, { nombre: "Nueva" })).rejects.toBeInstanceOf(NotFoundError);
       expect(repositorio.actualizar).not.toHaveBeenCalled();
     });
+
+    it("actualizar no deja inactiva a la única propietaria activa", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.contarPropietariasActivas.mockResolvedValue(1);
+
+      await expect(service.actualizar(1, { estado: "INACTIVO" })).rejects.toThrow("única propietaria activa");
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("actualizar deja inactiva a una propietaria si queda otra activa", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.contarPropietariasActivas.mockResolvedValue(2);
+      repositorio.actualizar.mockResolvedValue(propietaria({ estado: "INACTIVO" }));
+
+      await expect(service.actualizar(1, { estado: "INACTIVO" })).resolves.toMatchObject({
+        estado: "INACTIVO",
+      });
+    });
+
+    it("actualizar no cuenta propietarias al dejar inactivo a alguien que no lo es", async () => {
+      repositorio.buscarPorId.mockResolvedValue(crearUsuario());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.actualizar.mockResolvedValue(crearUsuario({ estado: "INACTIVO" }));
+
+      await service.actualizar(1, { estado: "INACTIVO" });
+
+      expect(repositorio.contarPropietariasActivas).not.toHaveBeenCalled();
+    });
+
+    it("actualizar permite reactivar a una propietaria inactiva sin contar las activas", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria({ estado: "INACTIVO" }));
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.actualizar.mockResolvedValue(propietaria());
+
+      await service.actualizar(1, { estado: "ACTIVO" });
+
+      expect(repositorio.contarPropietariasActivas).not.toHaveBeenCalled();
+    });
   });
 
   describe("eliminar", () => {
@@ -268,6 +354,15 @@ describe("UsuarioService", () => {
       repositorio.buscarPorId.mockResolvedValue(null);
 
       await expect(service.eliminar(99)).rejects.toBeInstanceOf(NotFoundError);
+      expect(repositorio.eliminar).not.toHaveBeenCalled();
+    });
+
+    it("eliminar no borra a la única propietaria activa", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.contarPropietariasActivas.mockResolvedValue(1);
+
+      await expect(service.eliminar(1)).rejects.toBeInstanceOf(ConflictError);
       expect(repositorio.eliminar).not.toHaveBeenCalled();
     });
   });
@@ -334,6 +429,25 @@ describe("UsuarioService", () => {
 
       await expect(service.quitarRol(99, "ALUMNO")).rejects.toBeInstanceOf(NotFoundError);
       expect(autorizacion.quitarRol).not.toHaveBeenCalled();
+    });
+
+    it("quitarRol no le quita PROPIETARIA a la única propietaria activa", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.contarPropietariasActivas.mockResolvedValue(1);
+
+      await expect(service.quitarRol(1, "PROPIETARIA")).rejects.toBeInstanceOf(ConflictError);
+      expect(autorizacion.quitarRol).not.toHaveBeenCalled();
+    });
+
+    it("quitarRol le quita PROPIETARIA si queda otra propietaria activa", async () => {
+      repositorio.buscarPorId.mockResolvedValue(propietaria());
+      autorizacion.tieneRol.mockImplementation(tieneRolSegunRoles);
+      repositorio.contarPropietariasActivas.mockResolvedValue(2);
+
+      await service.quitarRol(1, "PROPIETARIA");
+
+      expect(autorizacion.quitarRol).toHaveBeenCalledWith(1, "PROPIETARIA");
     });
   });
 });

@@ -42,11 +42,19 @@ export class UsuarioRepository {
     return this.prisma.usuarios.update({ where: { id_usuario: id }, data, ...CON_ROLES });
   }
 
-  vincularGoogleId(id: number, googleId: string): Promise<UsuarioConRoles> {
-    return this.prisma.usuarios.update({
-      where: { id_usuario: id },
+  // Solo vincula si la cuenta todavía no tiene google_id: la condición va en el UPDATE para que dos
+  // logins simultáneos con cuentas de Google distintas no se pisen. Devuelve null si ya estaba vinculada.
+  async vincularGoogleId(id: number, googleId: string): Promise<UsuarioConRoles | null> {
+    const { count } = await this.prisma.usuarios.updateMany({
+      where: { id_usuario: id, google_id: null },
       data: { google_id: googleId },
-      ...CON_ROLES,
+    });
+    return count === 0 ? null : this.buscarPorId(id);
+  }
+
+  contarPropietariasActivas(): Promise<number> {
+    return this.prisma.usuarios.count({
+      where: { estado: "ACTIVO", roles: { some: { rol: { codigo: "PROPIETARIA" } } } },
     });
   }
 
