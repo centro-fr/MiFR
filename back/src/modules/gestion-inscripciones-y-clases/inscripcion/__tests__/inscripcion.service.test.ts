@@ -117,7 +117,7 @@ describe("InscripcionService", () => {
 
   describe("crear", () => {
     it("pre-inscribe con el precio vigente hoy y los horarios elegidos", async () => {
-      await expect(servicio.crear(alta)).resolves.toBe(inscripcion);
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toBe(inscripcion);
 
       expect(mocks.planes.precioVigente).toHaveBeenCalledWith(1, HOY);
       expect(mocks.repositorio.crear).toHaveBeenCalledWith(
@@ -153,15 +153,62 @@ describe("InscripcionService", () => {
     ] as const)("rechaza si %s", async (_caso, preparar, error) => {
       preparar();
 
-      await expect(servicio.crear(alta)).rejects.toThrow(error);
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(error);
       expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    describe("pedido por una profesora", () => {
+      it("pre-inscribe a su nombre un alumno que no está con otra profesora", async () => {
+        mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([{ ...inscripcion, id_profesora: 3 }]);
+
+        await expect(servicio.crear(alta, PROFESORA)).resolves.toBe(inscripcion);
+        expect(mocks.profesores.buscarPorUsuario).toHaveBeenCalledWith(2);
+        expect(mocks.repositorio.listarVigentesPorAlumno).toHaveBeenCalledWith(5);
+      });
+
+      it.each([
+        ["a nombre de otra profesora", { ...alta, id_profesora: 9 }, "a su propio cargo"],
+        [
+          "sin cargo",
+          { ...alta, sin_cargo: true },
+          "Solo la propietaria puede dar una inscripción sin cargo",
+        ],
+      ])("rechaza con 403 una pre-inscripción %s", async (_caso, pedido, mensaje) => {
+        mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([]);
+
+        await expect(servicio.crear(pedido, PROFESORA)).rejects.toThrow(mensaje);
+        expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+      });
+
+      it("rechaza con 403 si quien pide no tiene un perfil de profesora activo", async () => {
+        mocks.profesores.buscarPorUsuario.mockResolvedValue(null);
+
+        await expect(servicio.crear(alta, PROFESORA)).rejects.toBeInstanceOf(ForbiddenError);
+        expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+      });
+
+      it("rechaza con 403 un alumno que tiene una inscripción vigente con otra profesora", async () => {
+        mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([{ ...inscripcion, id_profesora: 7 }]);
+
+        await expect(servicio.crear(alta, PROFESORA)).rejects.toThrow("a cargo de otra profesora");
+        expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+      });
+
+      it("a la propietaria no le aplica ninguna de esas restricciones", async () => {
+        await servicio.crear({ ...alta, id_profesora: 9, sin_cargo: true }, PROPIETARIA);
+
+        expect(mocks.profesores.buscarPorUsuario).not.toHaveBeenCalled();
+        expect(mocks.repositorio.listarVigentesPorAlumno).not.toHaveBeenCalled();
+      });
     });
 
     it("rechaza un inicio anterior a hoy y un fin estimado que no es posterior al inicio", async () => {
       await expect(
-        servicio.crear({ ...alta, fecha_inicio: new Date("2026-10-08T00:00:00Z") }),
+        servicio.crear({ ...alta, fecha_inicio: new Date("2026-10-08T00:00:00Z") }, PROPIETARIA),
       ).rejects.toThrow(ValidationError);
-      await expect(servicio.crear({ ...alta, fecha_fin_estimado: HOY })).rejects.toThrow(ValidationError);
+      await expect(servicio.crear({ ...alta, fecha_fin_estimado: HOY }, PROPIETARIA)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it.each([
@@ -171,7 +218,7 @@ describe("InscripcionService", () => {
     ])("traduce el resultado del repositorio %s a ConflictError", async (_caso, resultado, mensaje) => {
       mocks.repositorio.crear.mockResolvedValue(resultado);
 
-      await expect(servicio.crear(alta)).rejects.toThrow(mensaje);
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(mensaje);
     });
   });
 
@@ -196,7 +243,7 @@ describe("InscripcionService", () => {
     ] as const)("rechaza si %s", async (_caso, preparar, error) => {
       preparar();
 
-      await expect(servicio.crear(alta)).rejects.toThrow(error);
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(error);
     });
 
     it("rechaza horarios de dos profesoras distintas", async () => {
@@ -205,39 +252,45 @@ describe("InscripcionService", () => {
         { ...horario, id_horario: 9, id_profesora: 4 },
       ]);
 
-      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).rejects.toThrow("misma profesora");
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).rejects.toThrow(
+        "misma profesora",
+      );
     });
 
     it("con profesora única exige que los horarios sean de la profesora a cargo", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, profesora_unica: true });
 
-      await expect(servicio.crear({ ...alta, id_profesora: 7 })).rejects.toThrow(ValidationError);
+      await expect(servicio.crear({ ...alta, id_profesora: 7 }, PROPIETARIA)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it("con actividad exclusiva exige horarios de esa actividad", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, id_actividad_exclusiva: 99 });
 
-      await expect(servicio.crear(alta)).rejects.toThrow("actividad exclusiva");
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow("actividad exclusiva");
     });
 
     it("en un plan mensual no acepta más horarios que clases por semana", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: 1 });
       mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
 
-      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).rejects.toThrow("clases por semana");
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).rejects.toThrow(
+        "clases por semana",
+      );
     });
 
     it("un mensual sin clases por semana es un pase libre y acepta varios horarios", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: null });
       mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
 
-      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] })).resolves.toBe(inscripcion);
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).resolves.toBe(inscripcion);
     });
 
     it("una clase suelta no tiene tope de horarios", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, tipo: "CLASE_SUELTA", clases_por_semana: null });
 
-      await expect(servicio.crear(alta)).resolves.toBe(inscripcion);
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toBe(inscripcion);
     });
   });
 

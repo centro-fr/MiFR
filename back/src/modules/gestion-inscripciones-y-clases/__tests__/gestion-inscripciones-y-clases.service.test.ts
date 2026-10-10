@@ -19,7 +19,7 @@ describe("GestionInscripcionesYClasesService", () => {
   const gestion = new GestionInscripcionesYClasesService(inscripciones as unknown as InscripcionService);
 
   it.each([
-    ["crearInscripcion", [{ id_alumno: 5, ...cambios }], "crear"],
+    ["crearInscripcion", [{ id_alumno: 5, ...cambios }, solicitante], "crear"],
     ["listarInscripciones", [{ id_plan: 1 }, solicitante], "listar"],
     ["obtenerInscripcion", [12, solicitante], "obtenerPara"],
     ["darDeBajaAlumno", [5, { motivo_baja: "ABANDONO" }], "darDeBajaAlumno"],

@@ -59,10 +59,30 @@ export class InscripcionService implements IInfoInscripciones {
     private readonly profesoras: IInfoProfesores,
   ) {}
 
-  async crear(input: CrearInscripcionInput): Promise<InscripcionConDatos> {
+  async crear(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input, solicitante);
     const datos = await this.prepararInscripcion({ ...input, estado: "PREINSCRIPTA" });
     const resultado = await this.repositorio.crear(datos, input.ids_horarios, fechaActualArgentina());
     return this.resolverResultado(resultado);
+  }
+
+  // Una inscripción vigente deja al alumno "a cargo" de la profesora, que desde ahí ve y edita su ficha
+  // (US-10). Por eso una profesora solo preinscribe a su nombre, alumnos que no están con otra profesora,
+  // y sin bonificar: si no, con preinscribirse alcanzaba para ver los datos de cualquier alumno.
+  private async verificarQuePuedePreinscribir(
+    input: CrearInscripcionInput,
+    solicitante: Solicitante,
+  ): Promise<void> {
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (profesora?.id_profesora !== input.id_profesora) {
+      throw new ForbiddenError("Solo puede preinscribir alumnos a su propio cargo");
+    }
+    if (input.sin_cargo) throw new ForbiddenError("Solo la propietaria puede dar una inscripción sin cargo");
+
+    const vigentes = await this.repositorio.listarVigentesPorAlumno(input.id_alumno);
+    if (vigentes.some((vigente) => vigente.id_profesora !== profesora.id_profesora)) {
+      throw new ForbiddenError("El alumno está a cargo de otra profesora: lo inscribe la propietaria");
+    }
   }
 
   // US-10: la profesora solo ve las inscripciones que tiene a cargo; la propietaria, todas.

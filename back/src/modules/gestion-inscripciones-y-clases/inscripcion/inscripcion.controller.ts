@@ -17,7 +17,9 @@ export function createInscripcionController(logica: ILogicaInscripciones) {
     },
 
     async crear(req: Request, res: Response) {
-      res.status(201).json(await logica.crearInscripcion(req.body as CrearInscripcionInput));
+      res
+        .status(201)
+        .json(await logica.crearInscripcion(req.body as CrearInscripcionInput, solicitanteDe(req)));
     },
 
     async obtener(req: Request, res: Response) {

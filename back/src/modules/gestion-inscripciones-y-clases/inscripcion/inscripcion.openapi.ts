@@ -146,7 +146,10 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Crear una pre-inscripción",
-    description: `Requiere el permiso \`ALUMNOS_EDITAR\`. ${reglasDeAlta}`,
+    description:
+      `Requiere el permiso \`ALUMNOS_EDITAR\`. Una profesora solo pre-inscribe a su propio nombre ` +
+      "(`id_profesora` es su perfil), sin cargo no, y alumnos que no tienen una inscripción vigente con otra " +
+      `profesora; si no, 403. ${reglasDeAlta}`,
     request: {
       body: cuerpoJson(
         crearInscripcionSchema.openapi("CrearInscripcion", {
