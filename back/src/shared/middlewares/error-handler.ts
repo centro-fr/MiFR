@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../errors/app-error.js";
@@ -12,6 +13,13 @@ const ERRORES_DEL_CUERPO: Record<string, { code: string; message: string }> = {
   },
 };
 
+// Las restricciones de la base son la última defensa ante dos pedidos simultáneos que pasaron la misma
+// verificación (por ejemplo, dos altas con el mismo DNI): son un conflicto del pedido, no un error interno.
+const ERRORES_DE_LA_BASE: Record<string, { status: number; code: string; message: string }> = {
+  P2002: { status: 409, code: "CONFLICT", message: "Ya existe un registro con esos datos" },
+  P2025: { status: 404, code: "NOT_FOUND", message: "El registro ya no existe" },
+};
+
 interface ErrorDelCliente {
   status: number;
   type?: string;
@@ -23,7 +31,7 @@ function esErrorDelCliente(err: unknown): err is ErrorDelCliente {
   return typeof status === "number" && status >= 400 && status < 500;
 }
 
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof ZodError) {
     res.status(400).json({
       error: { code: "VALIDATION_ERROR", message: "Datos inválidos", details: err.flatten() },
@@ -46,7 +54,23 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
-  console.error(err);
+  const deLaBase =
+    err instanceof Prisma.PrismaClientKnownRequestError ? ERRORES_DE_LA_BASE[err.code] : undefined;
+  if (deLaBase) {
+    res.status(deLaBase.status).json({ error: { code: deLaBase.code, message: deLaBase.message } });
+    return;
+  }
+
+  // Con la ruta y quién pidió, para poder rastrear el error en los logs del servidor.
+  console.error(
+    JSON.stringify({
+      error: "INTERNAL_ERROR",
+      metodo: req.method,
+      ruta: req.path,
+      usuario: req.usuario?.id_usuario,
+    }),
+    err,
+  );
   res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Error interno del servidor" } });
 }
 

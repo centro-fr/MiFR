@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Prisma } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import {
@@ -96,7 +97,49 @@ describe("errorHandler", () => {
     expect(res.json).toHaveBeenCalledWith({
       error: { code: "INTERNAL_ERROR", message: "Error interno del servidor" },
     });
-    expect(consola).toHaveBeenCalledWith(error);
+    expect(consola).toHaveBeenCalledWith(expect.stringContaining("INTERNAL_ERROR"), error);
+  });
+
+  it("registra el error inesperado con el método, la ruta y quién pidió", () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+    const conContexto = { method: "POST", path: "/api/v1/alumnos", usuario: { id_usuario: 3 } } as Request;
+
+    errorHandler(new Error("x"), conContexto, res as unknown as Response, next);
+
+    expect(JSON.parse(consola.mock.calls[0][0] as string)).toEqual({
+      error: "INTERNAL_ERROR",
+      metodo: "POST",
+      ruta: "/api/v1/alumnos",
+      usuario: 3,
+    });
+  });
+
+  it.each([
+    ["P2002", 409, "CONFLICT"],
+    ["P2025", 404, "NOT_FOUND"],
+  ])("traduce el error %s de la base a %i sin exponer su detalle", (codigo, status, code) => {
+    const error = new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (dni)", {
+      code: codigo,
+      clientVersion: "6",
+    });
+
+    errorHandler(error, req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(status);
+    expect(res.json.mock.calls[0][0].error.code).toBe(code);
+    expect(res.json.mock.calls[0][0].error.message).not.toContain("dni");
+  });
+
+  it("deja como error interno los demás errores conocidos de la base", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Prisma.PrismaClientKnownRequestError("Foreign key", {
+      code: "P2003",
+      clientVersion: "6",
+    });
+
+    errorHandler(error, req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });
 
