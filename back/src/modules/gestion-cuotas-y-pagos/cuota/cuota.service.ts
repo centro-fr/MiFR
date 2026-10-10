@@ -8,7 +8,7 @@ import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/in
 import type { IInfoParametros } from "../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { CuotaRepository } from "./cuota.repository.js";
-import type { CuotaACobrar, SituacionDeCuotas } from "./cuota.types.js";
+import type { CuotaACobrar, CuotaDelHistorial, SituacionDeCuotas } from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
 
 type CuotaDeLaSituacion = SituacionDeCuotas["cuotas"][number];
@@ -119,5 +119,9 @@ export class CuotaService implements IInfoCuotas {
   private desdeCuandoCubre(situacion: SituacionDeCuotas, hoy: Date): Date {
     const vigente = vencimientoConfirmado(situacion);
     return situacion.tipo_plan === "MENSUAL" && vigente !== null && vigente > hoy ? vigente : hoy;
+  }
+
+  historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
+    return this.repositorio.historialDeAlumno(idAlumno);
   }
 }

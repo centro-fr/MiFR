@@ -40,7 +40,10 @@ function cuota(
 
 function crearMocks() {
   return {
-    repositorio: { situacionDeInscripciones: vi.fn().mockResolvedValue([situacion()]) },
+    repositorio: {
+      situacionDeInscripciones: vi.fn().mockResolvedValue([situacion()]),
+      historialDeAlumno: vi.fn().mockResolvedValue(["historial"]),
+    },
     inscripciones: { buscarParaCobro: vi.fn().mockResolvedValue(inscripcion), activar: vi.fn() },
     planes: { precioVigente: vi.fn().mockResolvedValue({ precio: 30000 }) },
     vencimientos: { calcularVencimiento: vi.fn().mockReturnValue(VENCIMIENTO_CALCULADO) },
@@ -165,6 +168,11 @@ describe("CuotaService", () => {
   it("buscarInscripcion trae la inscripción con lo que necesita el cobro, o null", async () => {
     await expect(servicio.buscarInscripcion(12)).resolves.toBe(inscripcion);
     expect(mocks.inscripciones.buscarParaCobro).toHaveBeenCalledWith(12);
+  });
+
+  it("historialDeAlumno devuelve las cuotas del alumno con sus pagos", async () => {
+    await expect(servicio.historialDeAlumno(5)).resolves.toEqual(["historial"]);
+    expect(mocks.repositorio.historialDeAlumno).toHaveBeenCalledWith(5);
   });
 
   it("darAltaDefinitiva activa la inscripción (US-07)", async () => {

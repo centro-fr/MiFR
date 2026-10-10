@@ -1,7 +1,8 @@
-import type { estado_pago, tipo_plan } from "@prisma/client";
+import type { estado_pago, forma_pago, tipo_plan } from "@prisma/client";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 
 export type EstadoPago = estado_pago;
+export type FormaPago = forma_pago;
 
 // Las cuotas de una inscripción con el estado de sus pagos, de la más nueva a la más vieja. Es lo
 // que hace falta para decidir qué cuota se cobra y si el alumno está al día.
@@ -14,6 +15,25 @@ export interface SituacionDeCuotas {
     numero_cuota: number;
     fecha_vencimiento: Date;
     estados_pagos: EstadoPago[];
+  }[];
+}
+
+// Una cuota con todos sus pagos, también los rechazados, para el historial de la ficha del alumno
+// (US-10). El plan sale de la inscripción, que puede no ser la vigente.
+export interface CuotaDelHistorial {
+  id_cuota: number;
+  id_inscripcion: number;
+  plan: string;
+  numero_cuota: number;
+  fecha_vencimiento: Date;
+  monto: number;
+  pagos: {
+    id_pago: number;
+    forma_pago: FormaPago;
+    estado: EstadoPago;
+    monto: number;
+    fecha_pago: Date;
+    motivo_rechazo: string | null;
   }[];
 }
 
