@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import type { ActualizarHorarioInput, CrearHorarioInput } from "./horario.schemas.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { FiltroHorario, HorarioConDatos } from "./horario.types.js";
@@ -80,7 +81,7 @@ export class HorarioRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   crear(input: CrearHorarioInput): Promise<HorarioConDatos | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearAgenda(transaccion, input.id_profesora, input.dia_semana);
       if (await existeSuperposicion(transaccion, input)) return null;
 
@@ -126,7 +127,7 @@ export class HorarioRepository {
     input: ActualizarHorarioInput,
     criterio: CriterioSuperposicion,
   ): Promise<HorarioConDatos | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearAgenda(transaccion, criterio.id_profesora, criterio.dia_semana);
       if (await existeSuperposicion(transaccion, criterio, id)) return null;
 
@@ -142,7 +143,7 @@ export class HorarioRepository {
   // que la inscripción (en el mismo orden, para no trabarse con ella), así ninguna entra en un
   // horario que se está cerrando. Devuelve null, sin dar nada de baja, si alguno tiene inscriptos.
   darDeBajaDeActividad(idActividad: number): Promise<number | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const activos = await transaccion.horarios.findMany({
         where: { id_actividad: idActividad, fecha_baja: null },
         select: { id_horario: true },
@@ -163,7 +164,7 @@ export class HorarioRepository {
 
   // Devuelve null, sin darlo de baja, si tiene inscriptos.
   darDeBaja(id: number): Promise<HorarioConDatos | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const clave = `inscripcion-horario:${id}`;
       await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
       if ((await contarInscriptosVigentes(transaccion, [id])) > 0) return null;

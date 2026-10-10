@@ -1,4 +1,5 @@
 import type { pagos, Prisma, PrismaClient } from "@prisma/client";
+import { enTransaccion } from "../../../shared/db/transaccion.js";
 import type {
   CuotaAGuardar,
   DatosDePago,
@@ -42,7 +43,7 @@ export class PagoRepository {
   // Cuota y pago en una transacción, con un bloqueo por inscripción: dos cobros simultáneos no
   // pueden generar la misma cuota. Devuelve null si mientras tanto otro cobro ya la tomó.
   guardar(cuota: CuotaAGuardar, datos: DatosDePago): Promise<Pago | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const clave = `cobro-inscripcion:${cuota.idInscripcion}`;
       await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
       const idCuota = await this.cuotaParaElPago(transaccion, cuota, datos.fecha_pago);
@@ -89,7 +90,7 @@ export class PagoRepository {
       motivo_rechazo: string | null;
     },
   ): Promise<Pago | null> {
-    return this.prisma.$transaction(async (transaccion) => {
+    return enTransaccion(this.prisma, async (transaccion) => {
       const { count } = await transaccion.pagos.updateMany({
         where: { id_pago: id, estado: "PENDIENTE" },
         data: resolucion,
