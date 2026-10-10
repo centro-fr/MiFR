@@ -9,6 +9,8 @@ const prisma = {
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
+    count: vi.fn(),
     delete: vi.fn(),
   },
   usuario_roles: { deleteMany: vi.fn() },
@@ -114,13 +116,31 @@ describe("UsuarioRepository", () => {
     });
   });
 
-  it("vincularGoogleId guarda solo el google_id", async () => {
-    await repositorio.vincularGoogleId(1, "google-123");
+  it("vincularGoogleId guarda solo el google_id y solo si la cuenta no tenía uno", async () => {
+    prisma.usuarios.updateMany.mockResolvedValue({ count: 1 });
+    prisma.usuarios.findUnique.mockResolvedValue({ id_usuario: 1 });
 
-    expect(prisma.usuarios.update).toHaveBeenCalledWith({
-      where: { id_usuario: 1 },
+    await expect(repositorio.vincularGoogleId(1, "google-123")).resolves.toEqual({ id_usuario: 1 });
+    expect(prisma.usuarios.updateMany).toHaveBeenCalledWith({
+      where: { id_usuario: 1, google_id: null },
       data: { google_id: "google-123" },
-      ...CON_ROLES,
+    });
+    expect(prisma.usuarios.findUnique).toHaveBeenCalledWith({ where: { id_usuario: 1 }, ...CON_ROLES });
+  });
+
+  it("vincularGoogleId devuelve null sin releer si la cuenta ya estaba vinculada", async () => {
+    prisma.usuarios.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(repositorio.vincularGoogleId(1, "google-123")).resolves.toBeNull();
+    expect(prisma.usuarios.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("contarPropietariasActivas cuenta usuarios ACTIVOS con el rol PROPIETARIA", async () => {
+    prisma.usuarios.count.mockResolvedValue(2);
+
+    await expect(repositorio.contarPropietariasActivas()).resolves.toBe(2);
+    expect(prisma.usuarios.count).toHaveBeenCalledWith({
+      where: { estado: "ACTIVO", roles: { some: { rol: { codigo: "PROPIETARIA" } } } },
     });
   });
 

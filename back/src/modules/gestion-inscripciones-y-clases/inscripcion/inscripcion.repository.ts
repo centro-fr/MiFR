@@ -6,13 +6,16 @@ import type {
   DarDeBajaAlumnoInput,
 } from "./inscripcion.schemas.js";
 import {
+  INCLUIR_DATOS_COBRO,
   INCLUIR_DATOS_INSCRIPCION,
+  type InscripcionACobrar,
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
   type InscripcionConDatos,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
+import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
 
 const ESTADOS_VIGENTES = ["PREINSCRIPTA", "ACTIVA"] as const;
 
@@ -126,6 +129,13 @@ export class InscripcionRepository {
     });
   }
 
+  buscarParaCobro(id: number): Promise<InscripcionACobrar | null> {
+    return this.prisma.inscripciones.findUnique({
+      where: { id_inscripcion: id },
+      include: INCLUIR_DATOS_COBRO,
+    });
+  }
+
   listar(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
     return this.prisma.inscripciones.findMany({
       where: {
@@ -143,6 +153,8 @@ export class InscripcionRepository {
       },
       include: INCLUIR_DATOS_INSCRIPCION,
       orderBy: [{ fecha_alta: "desc" }, { id_inscripcion: "desc" }],
+      take: filtro.limit ?? LIMITE_MAXIMO,
+      skip: filtro.offset ?? 0,
     });
   }
 

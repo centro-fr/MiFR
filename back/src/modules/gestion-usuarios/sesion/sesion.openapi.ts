@@ -55,7 +55,10 @@ export function registrarDocumentacionSesion(
     tags,
     security: [],
     summary: "Iniciar sesión con Google",
-    description: "Recibe el `id_token` de Google Identity Services. Solo ingresan usuarios ya dados de alta.",
+    description:
+      "Recibe el `id_token` de Google Identity Services. Solo ingresan usuarios ya dados de alta, con el email " +
+      "verificado por Google. Una cuenta se vincula a Google en su primer login y después no se reasigna a otra " +
+      "cuenta de Google con el mismo email (401).",
     request: {
       body: cuerpoJson(
         googleLoginSchema.openapi("GoogleLogin", {

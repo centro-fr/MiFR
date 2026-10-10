@@ -11,13 +11,44 @@
 </head>
 <body>
   <main class="diapositiva diapositiva--contenido">
-    <div class="contenido contenido--centrado">
-      <p class="subtitulo animable" style="--orden: 0">Bloque 2 · Producto</p>
-      <h2 class="animable" style="--orden: 1">MiFR: objetivo y roles</h2>
-      <p class="bajada bajada--ancha animable" style="--orden: 2">Un sistema web que centraliza alumnos, planes, pagos, asistencia y honorarios en <span class="resaltado">un único registro compartido</span>, donde cada rol ve solo lo que le corresponde. Una persona puede tener <span class="resaltado">varios roles</span>: la dueña, por ejemplo, también dicta clases.</p>
-      <ul class="dispositivos dispositivos--denso">
+            <style>
+      .grilla-dispositivos {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+      .grilla-dispositivos .dispositivo {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .grilla-dispositivos .dispositivo:first-child {
+        grid-column: 1 / -1;
+      }
+      @media (min-width: 900px) {
+        .grilla-dispositivos {
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: space-between;
+          gap: clamp(1rem, 3vw, 4rem);
+        }
+        .grilla-dispositivos .dispositivo {
+          flex: 1;
+        }
+        .grilla-dispositivos .dispositivo:first-child {
+          flex: 1.5;
+        }
+      }
+    </style>
+    <div class="contenido">
+      <h2 class="animable" style="--orden: 1">MiFR</h2>
+      <div class="cuerpo-centrado">
+      <p class="bajada bajada--ancha animable" style="--orden: 2">Un sistema web que centraliza alumnos, planes, pagos, asistencia y honorarios en <span class="resaltado">un único registro compartido</span>, donde cada rol ve solo lo que le corresponde. Una persona puede tener <span class="resaltado">varios roles</span>: la propietaria, por ejemplo, también dicta clases.</p>
+      <ul class="dispositivos grilla-dispositivos" style="gap: 2.5rem;">
         <li class="dispositivo animable" style="--orden: 3">
-          <div class="mockup-pc mockup-pc--chico" aria-hidden="true">
+          <div class="mockup-pc" aria-hidden="true">
             <div class="barra-navegador">
               <span class="boton-ventana boton-ventana--cerrar"></span>
               <span class="boton-ventana boton-ventana--minimizar"></span>
@@ -25,28 +56,30 @@
             </div>
             <div class="pantalla"><div class="pantalla__icono">👑<span>Panel de administración</span></div></div>
           </div>
-          <p><strong>Responsable del centro</strong>PC de recepción o de su casa. Todo; es el único rol con datos financieros.</p>
+          <p style="max-width: 100%; font-size: 1rem;"><strong>Responsable del centro</strong>PC de recepción o de su casa. Todo; es el único rol con datos financieros.</p>
         </li>
         <li class="dispositivo animable" style="--orden: 4">
           <div class="mockup-mobile mockup-mobile--chico" aria-hidden="true">
             <div class="pantalla"><div class="pantalla__icono">🧑‍🏫<span>Asistencia</span></div></div>
           </div>
-          <p><strong>Profesora</strong>Celular. Asistencia, cobros en efectivo y rutinas.</p>
+          <p style="max-width: 100%; font-size: 0.95rem;"><strong>Profesora</strong>Celular. Asistencia, cobros en efectivo y rutinas.</p>
         </li>
         <li class="dispositivo animable" style="--orden: 5">
           <div class="mockup-mobile mockup-mobile--chico" aria-hidden="true">
             <div class="pantalla"><div class="pantalla__icono">📱<span>Mi cuota</span></div></div>
           </div>
-          <p><strong>Alumno / Tutor</strong>Celular. Cuota, clases, transferencias y progreso.</p>
+          <p style="max-width: 100%; font-size: 0.95rem;"><strong>Alumno / Tutor</strong>Celular. Cuota, clases, transferencias y progreso.</p>
         </li>
         <li class="dispositivo animable" style="--orden: 6">
           <div class="mockup-mobile mockup-mobile--chico" aria-hidden="true">
             <div class="pantalla"><div class="pantalla__icono">🌐<span>Cupos</span></div></div>
           </div>
-          <p><strong>Visitante</strong>Cualquier dispositivo. Panel público de cupos y promociones.</p>
+          <p style="max-width: 100%; font-size: 0.95rem;"><strong>Visitante</strong>Cualquier dispositivo. Panel público de cupos y promociones.</p>
         </li>
       </ul>
-    </div>
+    
+      </div></div>
   </main>
 </body>
 </html>
+

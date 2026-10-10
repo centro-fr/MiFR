@@ -9,7 +9,7 @@ Genera un componente siguiendo exactamente la estructura de `modules/gestion-usu
 
 ## Antes de escribir nada
 
-1. **Buscar el nombre en el diagrama.** Abrir `docs/diagrams/vista_arquitectonica.puml` y encontrar el subsistema y el componente. De ahí salen el nombre de la carpeta y el de la interfaz. No inventar nombres: si el diagrama dice `GestionInscripcionesYClases` con componente `Inscripcion` e interfaz `ILogicaInscripcionesYClases`, eso es lo que se usa.
+1. **Buscar el nombre en el diagrama.** Abrir `docs/diagrams/puml/vista_arquitectonica.puml` y encontrar el subsistema y el componente. De ahí salen el nombre de la carpeta y el de la interfaz. No inventar nombres: si el diagrama dice `GestionInscripcionesYClases` con componente `Inscripcion` e interfaz `ILogicaInscripcionesYClases`, eso es lo que se usa.
 
 2. **Verificar que la entidad exista en el esquema.** Si el modelo de Prisma todavía no está, correr primero la skill `nueva-entidad`.
 

@@ -1,4 +1,5 @@
 import type { estado_inscripcion, inscripciones, motivo_baja, Prisma } from "@prisma/client";
+import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 
 export type Inscripcion = inscripciones;
 export type EstadoInscripcion = estado_inscripcion;
@@ -32,6 +33,23 @@ export type InscripcionConDatos = Prisma.inscripcionesGetPayload<{
   include: typeof INCLUIR_DATOS_INSCRIPCION;
 }>;
 
+// Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
+// informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las
+// respuestas de inscripciones.
+export const INCLUIR_DATOS_COBRO = {
+  alumno: {
+    select: {
+      id_alumno: true,
+      estado: true,
+      id_usuario: true,
+      id_usuario_responsable: true,
+      usuario: { select: { nombre: true, apellido: true } },
+    },
+  },
+} satisfies Prisma.inscripcionesInclude;
+
+export type InscripcionACobrar = Prisma.inscripcionesGetPayload<{ include: typeof INCLUIR_DATOS_COBRO }>;
+
 // fecha_baja de la inscripción es TIMESTAMP (el instante, en UTC) y las vigencias de
 // inscripcion_horarios son DATE (el día de Argentina, ver fecha-argentina.ts).
 export interface FechasDeBaja {
@@ -39,7 +57,7 @@ export interface FechasDeBaja {
   dia: Date;
 }
 
-export interface FiltroInscripciones {
+export interface FiltroInscripciones extends Partial<Paginacion> {
   id_alumno?: number;
   id_plan?: number;
   id_profesora?: number;

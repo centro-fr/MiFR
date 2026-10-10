@@ -70,6 +70,18 @@ export class ValidationError extends AppError {
   }
 }
 
+// US-15 y US-17: un monto distinto del esperado se acepta solo si quien lo carga lo confirma. El
+// mensaje dice cuál era el esperado para que el front pueda mostrarlo y pedir la confirmación.
+export class MontoDistintoError extends AppError {
+  constructor(esperado: number) {
+    super(
+      409,
+      `El monto no coincide con el esperado (${esperado}). Para registrarlo igual, confirmá el monto distinto`,
+      "MONTO_DISTINTO",
+    );
+  }
+}
+
 // US-05: el front muestra la advertencia y ofrece abrir la ficha del alumno que ya existe.
 export class AlumnoExistenteError extends AppError {
   constructor(idAlumno: number) {

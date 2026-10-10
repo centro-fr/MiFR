@@ -13,11 +13,18 @@ import type {
 export function createInscripcionController(logica: ILogicaInscripciones) {
   return {
     async listar(req: Request, res: Response) {
-      res.json(await logica.listarInscripciones(req.query as ListarInscripcionesQuery, solicitanteDe(req)));
+      res.json(
+        await logica.listarInscripciones(
+          req.query as unknown as ListarInscripcionesQuery,
+          solicitanteDe(req),
+        ),
+      );
     },
 
     async crear(req: Request, res: Response) {
-      res.status(201).json(await logica.crearInscripcion(req.body as CrearInscripcionInput));
+      res
+        .status(201)
+        .json(await logica.crearInscripcion(req.body as CrearInscripcionInput, solicitanteDe(req)));
     },
 
     async obtener(req: Request, res: Response) {

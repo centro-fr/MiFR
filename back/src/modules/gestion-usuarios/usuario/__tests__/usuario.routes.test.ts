@@ -377,6 +377,32 @@ describe("rutas de usuarios", () => {
       );
     });
 
+    it.each([{ dni: "40123456" }, { fecha_nacimiento: "1980-01-01" }])(
+      "responde 403 si alguien sin permiso cambia su propio %j (identifican a la persona)",
+      async (cambio) => {
+        const response = await request(app)
+          .patch(`/api/v1/usuarios/${ID_ALUMNO}`)
+          .set("Authorization", ALUMNO)
+          .send(cambio);
+
+        expect(response.status).toBe(403);
+        expect(autorizacion.tienePermiso).toHaveBeenCalledWith(ID_ALUMNO, "USUARIOS_EDITAR");
+        expect(service.actualizarUsuario).not.toHaveBeenCalled();
+      },
+    );
+
+    it("responde 403 si quien tiene USUARIOS_EDITAR delegado intenta cambiar un estado sin ser propietaria", async () => {
+      autorizacion.tienePermiso.mockResolvedValue(true);
+
+      const response = await request(app)
+        .patch("/api/v1/usuarios/1")
+        .set("Authorization", token(["PROFESORA"]))
+        .send({ estado: "INACTIVO" });
+
+      expect(response.status).toBe(403);
+      expect(service.actualizarUsuario).not.toHaveBeenCalled();
+    });
+
     it("responde 400 con body vacío", async () => {
       const response = await request(app)
         .patch("/api/v1/usuarios/1")
@@ -441,6 +467,28 @@ describe("rutas de usuarios", () => {
       const response = await request(app).delete("/api/v1/usuarios/1").set("Authorization", ALUMNO);
 
       expect(response.status).toBe(403);
+      expect(service.eliminarUsuario).not.toHaveBeenCalled();
+    });
+  });
+
+  // La propietaria puede delegar USUARIOS_EDITAR: quien lo recibe no puede administrar roles ni cuentas.
+  describe("con USUARIOS_EDITAR delegado a quien no es propietaria", () => {
+    beforeEach(() => {
+      autorizacion.tienePermiso.mockResolvedValue(true);
+    });
+
+    it.each([
+      ["POST", "/api/v1/usuarios/2/roles", { rol: "PROPIETARIA" }],
+      ["DELETE", "/api/v1/usuarios/1/roles/PROPIETARIA", undefined],
+      ["DELETE", "/api/v1/usuarios/1", undefined],
+    ] as const)("responde 403 a %s %s", async (metodo, ruta, body) => {
+      const pedido = metodo === "POST" ? request(app).post(ruta).send(body) : request(app).delete(ruta);
+
+      const response = await pedido.set("Authorization", token(["PROFESORA"]));
+
+      expect(response.status).toBe(403);
+      expect(service.asignarRol).not.toHaveBeenCalled();
+      expect(service.quitarRol).not.toHaveBeenCalled();
       expect(service.eliminarUsuario).not.toHaveBeenCalled();
     });
   });

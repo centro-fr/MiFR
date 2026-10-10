@@ -415,3 +415,83 @@ describe("PI-27: ocupación de los horarios", () => {
     expect(funcionalSinCupo.cupo_disponible).toBeNull();
   });
 });
+
+describe("PI-30: la profesora pre-inscribe solo a su cargo", () => {
+  async function horariosDeLucia(): Promise<number[]> {
+    const horarios = await prisma.horarios.findMany({
+      where: { id_profesora: datosDemo.idProfesora.get(LUCIA), fecha_baja: null },
+      select: { id_horario: true },
+      orderBy: { dia_semana: "asc" },
+    });
+    return horarios.map(({ id_horario }) => id_horario);
+  }
+
+  function comoLucia(token: string, cuerpo: Record<string, unknown>) {
+    return como(token, "post", "/inscripciones").send({
+      id_plan: datosDemo.idPlan.get("Básico"),
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ...cuerpo,
+    });
+  }
+
+  it("pre-inscribe a su nombre a un alumno que no está con otra profesora", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const alumno = await crearAlumno(prisma);
+
+    const respuesta = await comoLucia(tokenLucia, {
+      id_alumno: alumno.id_alumno,
+      ids_horarios: await horariosDeLucia(),
+    });
+
+    expect(respuesta.status).toBe(201);
+    const inscripcion = await obtenerInscripcion(respuesta.body.id_inscripcion);
+    expect(inscripcion).toMatchObject({ id_profesora: datosDemo.idProfesora.get(LUCIA), sin_cargo: false });
+  });
+
+  it("no pre-inscribe a nombre de otra profesora, sin cargo, ni a un alumno a cargo de otra", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const alumno = await crearAlumno(prisma);
+    const horarios = await horariosDeLucia();
+    const inscripcionesAntes = await prisma.inscripciones.count();
+
+    const aNombreDeCarla = await comoLucia(tokenLucia, {
+      id_alumno: alumno.id_alumno,
+      id_profesora: datosDemo.idProfesora.get(CARLA),
+      ids_horarios: horarios,
+    });
+    const sinCargo = await comoLucia(tokenLucia, {
+      id_alumno: alumno.id_alumno,
+      ids_horarios: horarios,
+      sin_cargo: true,
+    });
+    const alumnoDeCarla = await comoLucia(tokenLucia, {
+      id_alumno: datosDemo.idAlumno.get("52111222"),
+      ids_horarios: horarios,
+    });
+
+    expect([aNombreDeCarla.status, sinCargo.status, alumnoDeCarla.status]).toEqual([403, 403, 403]);
+    expect(await prisma.inscripciones.count()).toBe(inscripcionesAntes);
+  });
+
+  it("la propietaria pre-inscribe sin esas restricciones", async () => {
+    const respuesta = await inscribir(datosDemo.idAlumno.get("52111222")!, await horariosDeLucia());
+
+    expect(respuesta.status).toBe(201);
+  });
+});
+
+describe("PI-32: paginación de inscripciones", () => {
+  it("devuelve la página pedida y no acepta más de 100 por pedido", async () => {
+    const todas = await comoMarina("get", "/inscripciones");
+    const segunda = await comoMarina("get", "/inscripciones?limit=1&offset=1");
+    const demasiadas = await comoMarina("get", "/inscripciones?limit=101");
+
+    expect(todas.status).toBe(200);
+    expect(todas.body.length).toBeGreaterThan(1);
+    expect(segunda.status).toBe(200);
+    expect(segunda.body.map(({ id_inscripcion }: { id_inscripcion: number }) => id_inscripcion)).toEqual([
+      todas.body[1].id_inscripcion,
+    ]);
+    expect(demasiadas.status).toBe(400);
+  });
+});

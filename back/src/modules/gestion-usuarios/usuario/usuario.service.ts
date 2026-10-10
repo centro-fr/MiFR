@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, UnauthorizedError } from "../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../rol/interface/i-autorizacion.js";
 import type { UsuarioRepository } from "./usuario.repository.js";
 import type { ActualizarUsuarioInput, CrearUsuarioInput } from "./usuario.schemas.js";
@@ -16,6 +16,9 @@ export class UsuarioService implements IInfoUsuarios {
   async crear(input: CrearUsuarioInput): Promise<UsuarioConRoles> {
     const existente = await this.repositorio.buscarPorEmailOGoogleId(input.email, input.google_id);
     if (existente) throw new ConflictError("Ya existe un usuario con ese email o google_id");
+    if (input.dni && (await this.repositorio.buscarPorDni(input.dni))) {
+      throw new ConflictError("Ya existe un usuario con ese dni");
+    }
 
     return this.repositorio.crear(input);
   }
@@ -42,17 +45,23 @@ export class UsuarioService implements IInfoUsuarios {
     return this.repositorio.buscarPorDni(dni);
   }
 
-  // Quien fue dado de alta con su email y sin google_id queda vinculado en su primer login.
+  // Quien fue dado de alta con su email y sin google_id queda vinculado en su primer login. Una cuenta
+  // ya vinculada no se reasigna a otra cuenta de Google con el mismo email: eso se lo quitaría a su dueña.
   async identificarPorGoogle(googleId: string, email: string): Promise<UsuarioConRoles | null> {
     const porGoogleId = await this.repositorio.buscarPorGoogleId(googleId);
     if (porGoogleId) return porGoogleId;
 
     const porEmail = await this.repositorio.buscarPorEmail(email);
-    return porEmail ? this.repositorio.vincularGoogleId(porEmail.id_usuario, googleId) : null;
+    if (!porEmail) return null;
+
+    const vinculado = await this.repositorio.vincularGoogleId(porEmail.id_usuario, googleId);
+    if (!vinculado) throw new UnauthorizedError("La cuenta ya está vinculada a otra cuenta de Google");
+    return vinculado;
   }
 
   async actualizar(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles> {
-    await this.obtenerPorId(id);
+    const usuario = await this.obtenerPorId(id);
+    if (input.estado === "INACTIVO") await this.verificarQueNoEsLaUltimaPropietaria(usuario);
 
     if (input.dni) {
       const existente = await this.repositorio.buscarPorDni(input.dni);
@@ -64,7 +73,7 @@ export class UsuarioService implements IInfoUsuarios {
   }
 
   async eliminar(id: number): Promise<void> {
-    await this.obtenerPorId(id);
+    await this.verificarQueNoEsLaUltimaPropietaria(await this.obtenerPorId(id));
     if (!(await this.repositorio.eliminar(id))) {
       throw new ConflictError(
         "El usuario tiene registros asociados y no se puede eliminar; para darlo de baja, cambiá su estado a INACTIVO",
@@ -87,8 +96,17 @@ export class UsuarioService implements IInfoUsuarios {
     if (!this.autorizacion.tieneRol(usuario, rol)) {
       throw new NotFoundError("El usuario no tiene ese rol asignado");
     }
+    if (rol === "PROPIETARIA") await this.verificarQueNoEsLaUltimaPropietaria(usuario);
 
     await this.autorizacion.quitarRol(id, rol);
     return this.obtenerPorId(id);
+  }
+
+  // Sin una propietaria activa nadie puede administrar la seguridad, y recuperarla exige tocar la base.
+  private async verificarQueNoEsLaUltimaPropietaria(usuario: UsuarioConRoles): Promise<void> {
+    if (usuario.estado !== "ACTIVO" || !this.autorizacion.tieneRol(usuario, "PROPIETARIA")) return;
+    if ((await this.repositorio.contarPropietariasActivas()) <= 1) {
+      throw new ConflictError("Es la única propietaria activa: primero hay que dar de alta otra");
+    }
   }
 }

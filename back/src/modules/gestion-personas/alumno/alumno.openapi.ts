@@ -118,7 +118,9 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
       "Requiere el permiso `ALUMNOS_EDITAR` (propietaria y profesora). El alumno queda INACTIVO y sin acceso " +
       `hasta que se confirma el primer pago; la inscripción se carga aparte. ${reglasDeEdad} Responde 409 con ` +
       "el código `ALUMNO_EXISTENTE` si el DNI ya es de un alumno, y 409 `CONFLICT` si el DNI o el email ya son " +
-      "de otro usuario.",
+      "de otro usuario. Un tutor cargado con sus datos reusa la cuenta existente solo si el DNI y el email son de " +
+      "la misma cuenta (si no, 409). Una profesora no puede indicar el tutor por `id_usuario` (403) y del tutor " +
+      "recibe solo `id_usuario`, `nombre` y `apellido`.",
     request: {
       body: cuerpoJson(
         crearAlumnoSchema.openapi("CrearAlumno", {

@@ -13,8 +13,8 @@ import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/ins
 export class GestionInscripcionesYClasesService implements ILogicaInscripcionesYClases {
   constructor(private readonly inscripciones: InscripcionService) {}
 
-  crearInscripcion(input: CrearInscripcionInput): Promise<InscripcionConDatos> {
-    return this.inscripciones.crear(input);
+  crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    return this.inscripciones.crear(input, solicitante);
   }
 
   listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {

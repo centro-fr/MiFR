@@ -72,6 +72,9 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
 .diapositiva--contenido {
   background: var(--color-fondo-oscuro);
   color: var(--color-texto-sobre-oscuro);
+  align-items: stretch;
+  padding-top: clamp(1rem, 3vh, 2rem);
+  padding-bottom: clamp(1rem, 3vh, 2rem);
 }
 
 .logo { display: block; width: clamp(5.5rem, 16vh, 9rem); height: auto; aspect-ratio: 1; }
@@ -107,6 +110,7 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
   font-size: var(--tamano-texto);
   line-height: 1.6;
   color: var(--color-texto-secundario-sobre-oscuro);
+  text-align: justify;
 }
 
 .columna-mockup { display: flex; justify-content: center; }
@@ -194,9 +198,10 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
 .bajada {
   margin: 0 0 1.5rem;
   max-width: 60ch;
-  font-size: var(--tamano-texto);
+  font-size: 1.4rem;
   line-height: 1.6;
-  color: var(--color-texto-secundario-sobre-oscuro);
+  color: var(--color-texto-sobre-oscuro);
+  text-align: justify;
 }
 
 .bajada--ancha { max-width: 80ch; }
@@ -208,7 +213,7 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
   border-radius: 0 0.75rem 0.75rem 0;
   background: var(--color-superficie-oscura);
   font-size: calc(var(--tamano-texto) * 1.1);
-  text-align: left;
+  text-align: justify;
 }
 
 .mensaje-clave strong, .resaltado { color: var(--color-acento); }
@@ -634,7 +639,7 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
   row-gap: clamp(1rem, 3vh, 1.75rem);
 }
 
-.islas--grilla .isla__icono { width: 4.5rem; height: 4.5rem; font-size: 2.1rem; }
+.islas--grilla .isla__icono { width: 5.5rem; height: 5.5rem; font-size: 2.6rem; }
 
 /* En 2×2 el conector cortado une solo a las islas de una misma fila */
 .islas--grilla .isla::after { content: none; }
@@ -1012,7 +1017,7 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
 }
 
 /* Logo arriba y nombre abajo; el logo escala con el alto para entrar en pantallas bajas */
-.tecnologias { display: flex; gap: clamp(0.6rem, 1.5vw, 1.1rem); justify-content: center; margin: 0; padding: 0; list-style: none; }
+.tecnologias { display: flex; flex-wrap: wrap; gap: clamp(0.6rem, 1.5vw, 1.1rem); justify-content: center; margin: 0; padding: 0; list-style: none; }
 .tecnologias li { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; font-size: clamp(0.65rem, 1.6vh, 0.8rem); }
 .tecnologias img { width: clamp(1.5rem, 4.5vh, 2.4rem); height: auto; aspect-ratio: 1; }
 /* Conector: etiqueta arriba (opcional) y flecha debajo, centrados entre dos capas */
@@ -1251,3 +1256,70 @@ h1, h2 { font-family: var(--fuente-titulo); font-weight: var(--peso-titulo); fon
   .diapositiva, .animable { animation: none; transition: none; }
   .boton-nav, .indicador::before { transition: none; }
 }
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 72rem;
+}
+.contenido > h2 {
+  flex-shrink: 0;
+}
+.cuerpo-centrado {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 0.5rem;
+}
+
+/* --- Header y Footer global para filminas de contenido --- */
+.contenido {
+  position: relative;
+}
+.encabezado-diapositiva {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  width: 100%;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.75rem;
+}
+.encabezado-diapositiva h2 {
+  margin: 0;
+  font-size: var(--tamano-titulo);
+  color: var(--color-texto-sobre-oscuro);
+  line-height: 1.15;
+}
+.marca-mifr {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--color-texto-sobre-oscuro);
+}
+.icono-mifr {
+  display: inline-block;
+  width: 2.2rem;
+  height: 2.2rem;
+  background: url('../recursos/logo-fr-original.png') no-repeat center;
+  background-size: contain;
+  border-radius: 0.4rem;
+}
+.pie-diapositiva {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--color-texto-secundario-sobre-oscuro);
+}
+

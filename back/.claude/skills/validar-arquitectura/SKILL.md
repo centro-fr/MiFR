@@ -9,14 +9,14 @@ Auditoría **de solo lectura**. Reporta hallazgos con `archivo:línea`, no corri
 
 ## Qué verificar
 
-### Contra el DER (`docs/diagrams/der.puml`)
+### Contra el DER (`docs/diagrams/puml/der.puml`)
 
 - Cada modelo de `prisma/schema.prisma` existe en el DER.
 - Los atributos coinciden en nombre y tipo, y los opcionales también.
 - Los enumerados tienen exactamente los mismos valores, sin agregados ni faltantes.
 - Las relaciones y cardinalidades se corresponden.
 
-### Contra la vista arquitectónica (`docs/diagrams/vista_arquitectonica.puml`)
+### Contra la vista arquitectónica (`docs/diagrams/puml/vista_arquitectonica.puml`)
 
 - Cada carpeta de `src/modules/` corresponde a un subsistema del diagrama.
 - Cada componente del diagrama que ya esté implementado tiene su subcarpeta.

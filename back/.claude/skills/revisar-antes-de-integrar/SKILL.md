@@ -11,6 +11,10 @@ No hace merge ni commitea: reporta y espera.
 
 ## Qué revisar
 
+### La auditoría
+
+La rama tiene que haber pasado por la skill `auditar-cambios` sin hallazgos BLOQUEANTES. Si no se corrió, o si se commiteó algo después, correrla primero.
+
 ### El diff
 
 Correr `git status` y `git diff dev...HEAD` para ver todo lo que trae la rama, no solo el último commit.
@@ -39,8 +43,8 @@ Correr `git status` y `git diff dev...HEAD` para ver todo lo que trae la rama, n
 
 ### Los diagramas
 
-- Si se agregó o cambió una entidad, `docs/diagrams/der.puml` lo refleja.
-- Si se agregó un módulo o una interfaz, `docs/diagrams/vista_arquitectonica.puml` lo refleja.
+- Si se agregó o cambió una entidad, `docs/diagrams/puml/der.puml` lo refleja.
+- Si se agregó un módulo o una interfaz, `docs/diagrams/puml/vista_arquitectonica.puml` lo refleja.
 - Si se implementó un ciclo de vida con estados, existe su diagrama de máquina de estados.
 
 ### La configuración

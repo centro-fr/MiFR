@@ -69,13 +69,13 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 
 | Letra | Archivo | Tema | Último código |
 | :--- | :--- | :--- | :--- |
-| A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos | A-41 |
+| A | `src/__tests__/integracion/control-de-acceso.integration.test.ts` | Autenticación, permisos por rol, datos propios, relectura de permisos, administración de roles e identidad de la cuenta | A-48 |
 | B | `src/__tests__/integracion/actividades-y-horarios.integration.test.ts` | Cupos, asignación de horarios, modificación y baja de actividades | B-16 |
 | C | `src/shared/db/__tests__/catalogo-seguridad.integration.test.ts` | Carga del catálogo de seguridad | C-03 |
 | D | `src/__tests__/integracion/planes.integration.test.ts` | Planes, baja lógica y precios con fecha de vigencia | D-14 |
-| E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda y lo que ve la profesora | E-20 |
+| E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
-| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción, alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación de horarios | G-13 |
+| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación y paginación | G-17 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

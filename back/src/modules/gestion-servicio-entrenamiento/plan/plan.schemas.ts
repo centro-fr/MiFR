@@ -1,13 +1,11 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
-import { enteroNoNegativoSchema } from "../../../shared/utils/esquemas-numero.js";
+import { enteroNoNegativoSchema, montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import {
   textoBusquedaSchema,
   textoOpcionalSchema,
   textoSchema,
 } from "../../../shared/utils/esquemas-texto.js";
-
-const PRECIO_MAXIMO = 99_999_999.99;
 
 const tipo = z.enum(["MENSUAL", "CLASE_SUELTA"]);
 const nombre = textoSchema(40);
@@ -17,15 +15,7 @@ const dias_gracia = enteroNoNegativoSchema(365);
 const id_actividad_exclusiva = idSchema.nullable().optional();
 const profesora_unica = z.boolean();
 
-// NUMERIC(10,2): con más de dos decimales Postgres redondearía en silencio. La comparación
-// tolera el error de representación de los decimales en coma flotante (19.99 * 100).
-const precio = z
-  .number()
-  .positive("El precio tiene que ser mayor a 0")
-  .max(PRECIO_MAXIMO, `El precio no puede superar ${PRECIO_MAXIMO}`)
-  .refine((valor) => Math.abs(Math.round(valor * 100) - valor * 100) < 1e-6, {
-    message: "El precio admite como máximo dos decimales",
-  });
+const precio = montoSchema("precio");
 
 // Llega como AAAA-MM-DD y se guarda en una columna DATE: se convierte a las 00:00 UTC, que es
 // como Prisma espera ese tipo.

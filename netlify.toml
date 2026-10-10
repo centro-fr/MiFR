@@ -9,7 +9,9 @@
 # Netlify cumple el papel de "Servidor Web" de docs/diagrams/puml/vista_despliegue.puml: sirve el
 # front y reenvía /api a la API en Render. El navegador solo habla con Netlify (mismo origen).
 # Va antes del fallback de la SPA porque Netlify aplica la primera regla que coincide.
-# La URL tiene que coincidir con la que Render le asigne al servicio mifr-api de render.yaml.
+# La URL tiene que coincidir con la que Render le asigne al servicio mifr-api de render.yaml, y ese servicio
+# tiene que ser del proyecto: por esta regla pasan los tokens de sesión y de Google. Ver el checklist de
+# back/DESPLIEGUE.md antes de publicar o al renombrar o borrar el servicio en Render.
 [[redirects]]
   from = "/api/*"
   to = "https://mifr-api.onrender.com/api/:splat"

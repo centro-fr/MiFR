@@ -11,6 +11,10 @@ import type {
 } from "./horario.types.js";
 import type { IInfoHorarios } from "./interface/i-info-horarios.js";
 
+// La baja se rechaza también si una inscripción entró después del primer conteo de la fachada.
+const HORARIO_CON_INSCRIPTOS =
+  "El horario tiene alumnos inscriptos: hay que reubicarlos antes de darlo de baja";
+
 function horaComoTexto(valor: Date): string {
   return `${String(valor.getUTCHours()).padStart(2, "0")}:${String(valor.getUTCMinutes()).padStart(2, "0")}`;
 }
@@ -76,11 +80,15 @@ export class HorarioService implements IInfoHorarios {
 
   async darDeBaja(id: number): Promise<HorarioRespuesta> {
     await this.obtenerHorarioActivo(id);
-    return this.conCupoEfectivo(await this.repositorio.darDeBaja(id));
+    const horario = await this.repositorio.darDeBaja(id);
+    if (!horario) throw new ConflictError(HORARIO_CON_INSCRIPTOS);
+    return this.conCupoEfectivo(horario);
   }
 
-  darDeBajaDeActividad(idActividad: number): Promise<number> {
-    return this.repositorio.darDeBajaDeActividad(idActividad);
+  async darDeBajaDeActividad(idActividad: number): Promise<number> {
+    const cantidad = await this.repositorio.darDeBajaDeActividad(idActividad);
+    if (cantidad === null) throw new ConflictError(HORARIO_CON_INSCRIPTOS);
+    return cantidad;
   }
 
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean> {

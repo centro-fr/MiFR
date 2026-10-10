@@ -25,6 +25,7 @@ import type {
   FiltroAlumnosPorInscripcion,
   EstadoInscripcion,
   FiltroInscripciones,
+  InscripcionACobrar,
   InscripcionConDatos,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
@@ -59,10 +60,30 @@ export class InscripcionService implements IInfoInscripciones {
     private readonly profesoras: IInfoProfesores,
   ) {}
 
-  async crear(input: CrearInscripcionInput): Promise<InscripcionConDatos> {
+  async crear(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
+    if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input, solicitante);
     const datos = await this.prepararInscripcion({ ...input, estado: "PREINSCRIPTA" });
     const resultado = await this.repositorio.crear(datos, input.ids_horarios, fechaActualArgentina());
     return this.resolverResultado(resultado);
+  }
+
+  // Una inscripción vigente deja al alumno "a cargo" de la profesora, que desde ahí ve y edita su ficha
+  // (US-10). Por eso una profesora solo preinscribe a su nombre, alumnos que no están con otra profesora,
+  // y sin bonificar: si no, con preinscribirse alcanzaba para ver los datos de cualquier alumno.
+  private async verificarQuePuedePreinscribir(
+    input: CrearInscripcionInput,
+    solicitante: Solicitante,
+  ): Promise<void> {
+    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+    if (profesora?.id_profesora !== input.id_profesora) {
+      throw new ForbiddenError("Solo puede preinscribir alumnos a su propio cargo");
+    }
+    if (input.sin_cargo) throw new ForbiddenError("Solo la propietaria puede dar una inscripción sin cargo");
+
+    const vigentes = await this.repositorio.listarVigentesPorAlumno(input.id_alumno);
+    if (vigentes.some((vigente) => vigente.id_profesora !== profesora.id_profesora)) {
+      throw new ForbiddenError("El alumno está a cargo de otra profesora: lo inscribe la propietaria");
+    }
   }
 
   // US-10: la profesora solo ve las inscripciones que tiene a cargo; la propietaria, todas.
@@ -92,6 +113,10 @@ export class InscripcionService implements IInfoInscripciones {
     return inscripcion;
   }
 
+  buscarParaCobro(id: number): Promise<InscripcionACobrar | null> {
+    return this.repositorio.buscarParaCobro(id);
+  }
+
   listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
     return this.repositorio.listarVigentesPorAlumno(idAlumno);
   }
@@ -99,10 +124,9 @@ export class InscripcionService implements IInfoInscripciones {
   async activar(id: number): Promise<InscripcionConDatos> {
     const actual = await this.obtenerPorId(id);
     if (actual.estado === "BAJA") throw new ConflictError("No se puede activar una inscripción dada de baja");
-    if (actual.estado === "ACTIVA") {
-      await this.alumnos.activar(actual.id_alumno);
-      return actual;
-    }
+    // El alta es la del primer pago (US-07): con la inscripción ya activa no se vuelve a tocar al alumno ni a
+    // su tutor, para no reactivar una cuenta que la propietaria haya desactivado después.
+    if (actual.estado === "ACTIVA") return actual;
 
     const resultado = await this.repositorio.activar(id);
     const inscripcion = this.resolverResultado(resultado);

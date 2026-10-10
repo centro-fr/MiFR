@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
+import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
 const fecha = z
   .string({ invalid_type_error: "La fecha debe tener formato AAAA-MM-DD" })
@@ -49,6 +50,7 @@ export const listarInscripcionesQuerySchema = z.object({
   id_profesora: idDesdeTextoSchema.optional(),
   id_actividad: idDesdeTextoSchema.optional(),
   estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]).optional(),
+  ...paginacionSchema(LIMITE_MAXIMO),
 });
 
 export const inscripcionIdParamSchema = z.object({ id: idDesdeTextoSchema });

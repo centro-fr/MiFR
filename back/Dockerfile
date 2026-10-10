@@ -27,6 +27,9 @@ RUN pnpm --filter back deploy --prod --legacy /prod \
 FROM node:22-alpine AS produccion
 RUN apk add --no-cache openssl
 ENV NODE_ENV=production
+# Dentro del contenedor la API escucha en todas las interfaces; qué se expone afuera lo decide quien lo
+# publica (Render, o docker-compose.yml solo en 127.0.0.1).
+ENV HOST=0.0.0.0
 WORKDIR /app
 COPY --from=dependencias-produccion --chown=node:node /prod/node_modules ./node_modules
 COPY --from=dependencias-produccion --chown=node:node /prod/package.json ./package.json

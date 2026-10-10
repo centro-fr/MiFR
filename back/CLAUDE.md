@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados cuatro de los nueve subsistemas del diagrama de arquitectura: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). Los otros cinco todavía no tienen carpeta.
+**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). `gestion-cuotas-y-pagos` (cuota, pago) y `calculos-del-negocio` están escritos pero todavía no se montan en `app.ts`: esperan los calculadores (ver `SPRINT-3.md`). Los demás subsistemas del diagrama todavía no tienen carpeta.
 
 ## Comandos
 
@@ -84,6 +84,7 @@ Estas no se discuten. El detalle y el porqué están en `.claude/rules/`.
 8. Nada de `any`, secretos escritos en el código ni `console.log` de depuración.
 9. No se introduce un patrón de diseño sin un caso concreto que lo justifique.
 10. Toda ruta valida su entrada con Zod, con los esquemas compartidos de `shared/utils/` (ver `.claude/rules/validaciones.md`). Todo lo que se agrega o se cambia en el back viene con sus tests en el mismo trabajo: unitarios de cada pieza (service, repositorio, schemas, rutas, fachada y utilidades de `shared/`) y, si cruza capas o depende de la base, de integración (skill `tests-integracion`). La cobertura de los unitarios se mantiene en 100 %. El detalle está en `.claude/rules/testing.md`.
+11. Todo agregado al back (endpoint, permiso, entidad, módulo o regla de negocio) pasa por la skill `auditar-cambios` antes de integrarse: dependencias, compilación, tests, arquitectura, seguridad y correctitud. Una rama con hallazgos BLOQUEANTES no se integra.
 
 ## Reglas detalladas
 
@@ -99,10 +100,11 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 | `testing.md` | Al escribir tests |
 | `documentacion.md` | Al comentar código o dudar de una buena práctica |
 | `validaciones.md` | Al escribir o cambiar un schema de Zod |
+| `seguridad.md` | Al agregar o cambiar una ruta, un permiso o un flujo que cruce componentes |
 | `mcp.md` | Al explorar el código con herramientas |
 
 ## Skills
 
-En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura` y `revisar-antes-de-integrar`.
+En `.claude/skills/`: `nuevo-modulo`, `nueva-entidad`, `tests-integracion`, `validar-arquitectura`, `auditar-cambios` y `revisar-antes-de-integrar`.
 
 > Claude Code busca las skills y la configuración en la carpeta donde se abre la sesión. Para que estas aparezcan hay que abrir la sesión parada en `back/`. Si se abre en la raíz del repositorio, el `CLAUDE.md` igual se carga, pero las skills no.

@@ -130,7 +130,8 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     summary: "Listar inscripciones",
     description:
       "Requiere el permiso `ALUMNOS_VER`. Admite filtros por alumno, plan, profesora, actividad y estado. " +
-      "Una profesora solo recibe las inscripciones que tiene a cargo; la propietaria, todas.",
+      "Una profesora solo recibe las inscripciones que tiene a cargo; la propietaria, todas. Paginado con " +
+      "`limit` (por defecto y como máximo 100) y `offset`.",
     request: { query: listarInscripcionesQuerySchema },
     responses: {
       200: respuestaJson("Inscripciones", z.array(inscripcionSchema)),
@@ -144,7 +145,10 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Crear una pre-inscripción",
-    description: `Requiere el permiso \`ALUMNOS_EDITAR\`. ${reglasDeAlta}`,
+    description:
+      `Requiere el permiso \`ALUMNOS_EDITAR\`. Una profesora solo pre-inscribe a su propio nombre ` +
+      "(`id_profesora` es su perfil), sin cargo no, y alumnos que no tienen una inscripción vigente con otra " +
+      `profesora; si no, 403. ${reglasDeAlta}`,
     request: {
       body: cuerpoJson(
         crearInscripcionSchema.openapi("CrearInscripcion", {

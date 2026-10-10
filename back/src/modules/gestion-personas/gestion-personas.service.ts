@@ -6,7 +6,12 @@ import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/in
 import type { AlumnoService } from "./alumno/alumno.service.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno/alumno.schemas.js";
 import type { Alumno, PaginaAlumnos } from "./alumno/alumno.types.js";
-import type { FichaAlumno, ILogicaPersonas, PaginaListadoAlumnos } from "./interface/i-logica-personas.js";
+import type {
+  AlumnoDadoDeAlta,
+  FichaAlumno,
+  ILogicaPersonas,
+  PaginaListadoAlumnos,
+} from "./interface/i-logica-personas.js";
 import type { ProfesorService } from "./profesor/profesor.service.js";
 import type { CrearProfesoraInput } from "./profesor/profesor.schemas.js";
 import type { Profesora } from "./profesor/profesor.types.js";
@@ -46,8 +51,20 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.profesoras.darDeBaja(id);
   }
 
-  crearAlumno(input: CrearAlumnoInput): Promise<Alumno> {
-    return this.alumnos.crear(input);
+  // Una profesora carga al tutor con sus datos: elegir una cuenta existente por su id queda para la
+  // propietaria. Y del tutor que resulte solo ve el nombre, porque puede ser una cuenta que ya existía
+  // y cuyos datos personales no le corresponde ver.
+  async crearAlumno(input: CrearAlumnoInput, solicitante: Solicitante): Promise<AlumnoDadoDeAlta> {
+    if (!solicitante.esPropietaria && input.tutor && "id_usuario" in input.tutor) {
+      throw new ForbiddenError(
+        "Una profesora carga los datos del tutor; elegir una cuenta existente es de la propietaria",
+      );
+    }
+    const alumno = await this.alumnos.crear(input);
+    if (solicitante.esPropietaria || !alumno.responsable) return alumno;
+
+    const { id_usuario, nombre, apellido } = alumno.responsable;
+    return { ...alumno, responsable: { id_usuario, nombre, apellido } };
   }
 
   async listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos> {

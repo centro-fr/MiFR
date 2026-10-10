@@ -1,0 +1,78 @@
+name: back
+
+# Corre los chequeos de la skill auditar-cambios que no necesitan criterio humano, para que una rama
+# que rompe la compilación, los tests, la cobertura o trae una dependencia vulnerable no llegue a dev.
+on:
+  pull_request:
+    branches: [dev, main]
+    paths: ["back/**", "pnpm-lock.yaml", ".github/workflows/back.yml"]
+  push:
+    branches: [dev]
+    paths: ["back/**", "pnpm-lock.yaml", ".github/workflows/back.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: back-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: back
+
+    services:
+      db-test:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: mifr_test
+        ports: ["55433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U user -d mifr_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      DATABASE_URL_TEST: postgresql://user:password@localhost:55433/mifr_test?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile --filter back...
+
+      - name: Generar el cliente de Prisma
+        run: pnpm prisma:generate
+
+      - name: Compilar
+        run: pnpm build
+
+      - name: Formato
+        run: pnpm format:check
+
+      - name: Tests unitarios con cobertura
+        run: pnpm test:coverage
+
+      - name: Tests de integración
+        run: pnpm test:integration
+
+      # Solo dependencias de producción: lo que llega a la imagen de Docker. Las de desarrollo
+      # (vitest, coverage) se revisan en la skill auditar-cambios y no frenan la integración.
+      - name: Auditar dependencias de producción
+        run: pnpm audit --prod --audit-level=high

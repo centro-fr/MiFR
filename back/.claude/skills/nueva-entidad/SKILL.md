@@ -5,11 +5,11 @@ description: Agrega una entidad al schema.prisma copiando sus atributos, tipos y
 
 # Agregar una entidad al esquema
 
-El objetivo es que `prisma/schema.prisma` no se aparte de `docs/diagrams/der.puml`. La deriva entre los dos es el error más caro de detectar tarde, porque se descubre cuando ya hay datos.
+El objetivo es que `prisma/schema.prisma` no se aparte de `docs/diagrams/puml/der.puml`. La deriva entre los dos es el error más caro de detectar tarde, porque se descubre cuando ya hay datos.
 
 ## Procedimiento
 
-1. **Leer la entidad en el DER.** Abrir `docs/diagrams/der.puml` y ubicarla. Copiar de ahí: los atributos con sus nombres exactos, los tipos, los opcionales, los enumerados con todos sus valores, y las relaciones con otras entidades. No improvisar campos que el DER no tiene, ni omitir los que sí tiene.
+1. **Leer la entidad en el DER.** Abrir `docs/diagrams/puml/der.puml` y ubicarla. Copiar de ahí: los atributos con sus nombres exactos, los tipos, los opcionales, los enumerados con todos sus valores, y las relaciones con otras entidades. No improvisar campos que el DER no tiene, ni omitir los que sí tiene.
 
    Si el DER no la tiene o está incompleto, **frenar y avisar**. Se corrige el DER primero; ese es el orden que fija `.claude/rules/arquitectura.md`.
 

@@ -122,44 +122,53 @@ Valores que configura la propietaria. Lo piden US-16 (datos bancarios para trans
 
 **Responsable:** Francisco
 
-### Pendiente (US-15)
+### Hecho (US-15)
 
 - [x] Agregar al `.puml` y a EA que `Cuota` requiere `IInfoPlanes` y que `GestionPersonas` requiere `IInfoCuotas` (regla dura 2).
-- [ ] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`.
-- [ ] Subsistema nuevo `gestion-cuotas-y-pagos/` con `ILogicaCuotasPagos`, su fachada y los componentes `cuota/` (`IInfoCuotas`) y `pago/` (`IInfoPagos`). Montar las rutas en `app.ts` y armarlo en `composicion.ts`.
-- [ ] `POST /api/v1/pagos/efectivo`: genera la cuota del período y el pago `CONFIRMADO` en una transacción. `rendido = false` y `id_profesora_cobra` si cobró una profesora (la rendición es US-19, Sprint 4).
-- [ ] **Reglas**:
-  - [ ] Lo registra la profesora a cargo de la inscripción o la propietaria.
-  - [ ] El monto esperado es el precio vigente del plan a la fecha del cobro (`IInfoPlanes.precioVigente`, US-12). Las promociones son de US-13 (Sprint 4).
-  - [ ] Monto distinto del esperado → 409, salvo que venga `confirmarMontoDistinto: true`.
-  - [ ] Alumno dado de baja → 409.
-  - [ ] Si es el primer pago de una inscripción `PREINSCRIPTA`, dispara el alta definitiva (`IInfoInscripciones.activar`, US-07).
-  - [ ] Pago adelantado de un alumno al día → la cuota nueva empieza donde termina la vigente.
-- [ ] `GET /api/v1/pagos/:id/comprobante`: datos del comprobante (número, fecha, monto, alumno, plan, período, quién cobró).
-- [ ] Permiso nuevo `PAGOS_REGISTRAR` (propietaria y profesora) en el catálogo.
-- [ ] `IInfoCuotas`: estado de habilitación de una o varias inscripciones (con `ICalculoHabilitacion`), para la lista de asistencia y US-10.
-- [ ] Tests del service (monto, primer pago, alumno de baja, pago adelantado) y de integración (transacción, alta definitiva).
+- [x] Modelos `cuotas` y `pagos` en Prisma + migración, con los CHECK del SQL de EA (`ck_cuotas_x1`, `ck_cuotas_x2`, `ck_pagos_forma_pago`, `ck_pagos_estado`, `ck_pagos_x1`, `ck_pagos_x2`, `ck_pagos_x3`) y el único `(id_inscripcion, numero_cuota)`. Test de integración PI-28.
+- [x] Subsistema `gestion-cuotas-y-pagos/` con `ILogicaCuotasPagos`, su fachada y los componentes `cuota/` (`IInfoCuotas`) y `pago/`.
+- [x] `POST /api/v1/pagos/efectivo`: genera la cuota del período y el pago `CONFIRMADO` en una transacción, con un bloqueo por inscripción. `rendido = false` y `id_profesora_cobra` si cobró una profesora; si cobró la propietaria, no hay nada que rendir.
+- [x] **Reglas**:
+  - [x] Lo registra la profesora a cargo de la inscripción o la propietaria (`PAGOS_REGISTRAR`).
+  - [x] El monto esperado es el precio vigente del plan a la fecha del cobro (`IInfoPlanes.precioVigente`, US-12). Las promociones son de US-13 (Sprint 4).
+  - [x] Monto distinto del esperado → 409 `MONTO_DISTINTO`, salvo que venga `confirmar_monto_distinto: true`.
+  - [x] Alumno dado de baja → 409.
+  - [x] El pago confirmado dispara el alta definitiva (`IInfoInscripciones.activar`, US-07), **antes** de guardar el pago: sin cupo, el cobro se rechaza sin dejar un pago registrado.
+  - [x] Pago adelantado de un alumno al día → la cuota nueva empieza donde termina la vigente.
+- [x] `GET /api/v1/pagos/:id/comprobante`: número, fecha, monto, alumno, plan, cuota y quién cobró. Lo ven la propietaria, quien registró el pago y el alumno o su tutor.
+- [x] Permiso nuevo `PAGOS_REGISTRAR` (propietaria y profesora) en el catálogo.
+- [x] `IInfoCuotas`: habilitación de varias inscripciones en una consulta, con `ICalculoHabilitacion` y `VENCIDOS_PUEDEN_ASISTIR`. Por eso `Cuota` también requiere `IInfoParametros` (ya en el `.puml`).
+- [x] Tests unitarios del service, el repositorio, los schemas, las rutas y la fachada, con fakes de las interfaces de Rosario.
+
+### Espera a los calculadores de Rosario
+
+`composicion.ts` necesita las implementaciones de `ICalculoVencimiento`, `ICalculoHabilitacion` e `IInfoParametros` para armar `CuotaService`. Hasta entonces el subsistema no está montado y la rama `cuotas` no se integra a `dev`.
+
+- [ ] Montar el subsistema en `app.ts`, `openapi.ts` y `composicion.ts`, y sumar las operaciones a `src/__tests__/openapi.test.ts`.
+- [ ] Tests de integración del cobro, la transferencia y su revisión por HTTP (transacción, alta definitiva, pendiente que no habilita, rechazo sin motivo) y su registro en `PRUEBAS-INTEGRACION.md`.
+- [ ] Agregar en EA que `Cuota` requiere `IInfoParametros` y regenerar el `.jpg` y el `.pdf`.
 
 ## US-16 y US-17 – Transferencias
 
 **Responsable:** Francisco
 
-### Pendiente (US-16 y US-17)
+### Hecho (US-16 y US-17)
 
-- [ ] `POST /api/v1/pagos/transferencia`: el alumno o su tutor informa monto, fecha y hora de la transferencia y, opcional, el titular de la cuenta. Queda `PENDIENTE`. **Sin comprobante adjunto** (ver decisiones).
-- [ ] `GET /api/v1/pagos/mis-transferencias`: las del alumno o de los menores a cargo del tutor.
-- [ ] `GET /api/v1/pagos/transferencias`: solo la propietaria. Filtros por estado, alumno y fecha; ordenadas por antigüedad, con las horas desde la carga y la marca de las que pasaron las 24 horas.
-- [ ] `POST /api/v1/pagos/:id/aprobar` y `POST /api/v1/pagos/:id/rechazar` (con motivo obligatorio): rol `PROPIETARIA` + `PAGOS_CONFIRMAR`.
-- [ ] **Reglas**:
-  - [ ] Solo se informa sobre una inscripción propia o de un menor a cargo; alumno dado de baja o sin inscripción → 409.
-  - [ ] Pendiente: no cambia la habilitación y no bloquea la asistencia (US-16).
-  - [ ] Aprobada: registra quién y cuándo (`id_usuario_confirma`, `fecha_confirmacion`); si es el primer pago, dispara el alta definitiva.
-  - [ ] Rechazada: `motivo_rechazo` obligatorio (`ck_pagos_x2`); la cuota queda sin pago confirmado.
-  - [ ] Solo se aprueba o rechaza una `PENDIENTE`; dos aprobaciones seguidas no duplican nada.
-  - [ ] Monto distinto del esperado → se aprueba solo con confirmación.
-  - [ ] Misma transferencia informada dos veces (alumno, monto y fecha) → 409.
+- [x] `POST /api/v1/pagos/transferencia`: el alumno o su tutor informa monto, fecha y hora de la transferencia y, opcional, el titular de la cuenta. Queda `PENDIENTE`. **Sin comprobante adjunto**.
+- [x] `POST /api/v1/pagos/transferencia-recibida`: la propietaria carga una transferencia que ya vio en su cuenta y queda `CONFIRMADA`. **Decidido con Francisco:** es como paga la primera cuota por transferencia un alumno nuevo, que todavía no puede entrar al sistema (su usuario queda `INACTIVO` hasta el primer pago, US-05).
+- [x] `GET /api/v1/pagos/mis-transferencias`: las del alumno o de los menores a cargo del tutor.
+- [x] `GET /api/v1/pagos/transferencias`: solo la propietaria. Filtros por estado y alumno; ordenadas por antigüedad, con las horas desde la carga y la marca de las que pasaron las 24 horas. El filtro por fecha queda para cuando el front lo pida.
+- [x] `POST /api/v1/pagos/:id/aprobar` y `POST /api/v1/pagos/:id/rechazar` (con motivo obligatorio): rol `PROPIETARIA` + `PAGOS_CONFIRMAR`.
+- [x] **Reglas**:
+  - [x] Solo se informa sobre una inscripción propia o de un menor a cargo (si no, 403); alumno dado de baja → 409.
+  - [x] Pendiente: no da el alta ni cambia la habilitación. Mientras haya una pendiente, la inscripción no admite otro pago (409).
+  - [x] Aprobada: registra quién y cuándo (`id_usuario_confirma`, `fecha_confirmacion`) y dispara el alta definitiva.
+  - [x] Rechazada: `motivo_rechazo` obligatorio (`ck_pagos_x2`); la cuota queda sin pago confirmado y el próximo pago la reusa, sin saltear números.
+  - [x] Solo se aprueba o rechaza una `PENDIENTE`; dos aprobaciones seguidas no duplican nada.
+  - [x] Monto distinto del esperado → se aprueba solo con confirmación.
+  - [x] Misma transferencia informada dos veces (alumno, monto y día de Argentina) → 409.
 - [ ] El aviso a la propietaria y al alumno es de notificaciones (US-25, Sprint 4): por ahora alcanza con el listado.
-- [ ] Tests del service y de integración (pendiente que no habilita, aprobación con alta definitiva, rechazo sin motivo).
+- [ ] Tests de integración: ver "Espera a los calculadores de Rosario" en US-15.
 
 ## Lo que queda de US-10 (del Sprint 2)
 

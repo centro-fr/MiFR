@@ -9,6 +9,7 @@ const verifyIdToken = vi.fn();
 const googlePayload = {
   sub: "google-123",
   email: "test@example.com",
+  email_verified: true,
   given_name: "Ana",
   family_name: "Perez",
 };
@@ -67,7 +68,9 @@ describe("GoogleAutenticacion", () => {
   });
 
   it("devuelve nombre y apellido vacíos si la cuenta de Google no los tiene", async () => {
-    verifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: "google-123", email: "test@example.com" }) });
+    verifyIdToken.mockResolvedValue({
+      getPayload: () => ({ sub: "google-123", email: "test@example.com", email_verified: true }),
+    });
 
     await expect(autenticacion.verificarToken("id-token")).resolves.toEqual({
       googleId: "google-123",
@@ -82,4 +85,30 @@ describe("GoogleAutenticacion", () => {
 
     await expect(autenticacion.verificarToken("token-vencido")).rejects.toThrow("Token de Google inválido");
   });
+
+  it.each([false, undefined])(
+    "lanza UnauthorizedError si Google no verificó el email (email_verified %s)",
+    async (emailVerificado) => {
+      verifyIdToken.mockResolvedValue({
+        getPayload: () => ({ ...googlePayload, email_verified: emailVerificado }),
+      });
+
+      await expect(autenticacion.verificarToken("id-token")).rejects.toThrow(
+        "El email de la cuenta de Google no está verificado",
+      );
+    },
+  );
+
+  it.each(["", undefined])(
+    "rechaza el login sin consultar a Google si no hay Client ID configurado (%j)",
+    async (clientId) => {
+      const sinClientId = new GoogleAutenticacion(
+        { verifyIdToken } as unknown as OAuth2Client,
+        clientId as unknown as string,
+      );
+
+      await expect(sinClientId.verificarToken("id-token")).rejects.toBeInstanceOf(UnauthorizedError);
+      expect(verifyIdToken).not.toHaveBeenCalled();
+    },
+  );
 });

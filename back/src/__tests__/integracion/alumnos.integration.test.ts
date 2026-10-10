@@ -373,3 +373,57 @@ describe("PI-26 (escenario): el alumno activo de la demostración", () => {
     ]);
   });
 });
+
+describe("PI-31: el tutor en el alta de un menor", () => {
+  const PAULA = {
+    nombre: "Paula",
+    apellido: "Romero",
+    dni: "31222333",
+    telefono: "3794 445566",
+    email: "paula.romero@example.com",
+    fecha_nacimiento: "1984-06-21",
+  };
+  const MENOR_NUEVO = { nombre: "Lola", apellido: "Romero", fecha_nacimiento: MENOR };
+
+  it("una profesora no elige como tutor una cuenta existente por su id", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const marina = await prisma.usuarios.findUniqueOrThrow({ where: { email: EMAIL_MULTIROL_DEMO } });
+    const antes = await contarFilas();
+
+    const respuesta = await como(tokenLucia, "post", "/alumnos").send({
+      ...MENOR_NUEVO,
+      tutor: { id_usuario: marina.id_usuario },
+    });
+
+    expect(respuesta.status).toBe(403);
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  it("con el DNI y el email de la misma tutora se reusa su cuenta, y la profesora ve solo su nombre", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const paula = await prisma.usuarios.findUniqueOrThrow({ where: { email: PAULA.email } });
+    const antes = await contarFilas();
+
+    const respuesta = await como(tokenLucia, "post", "/alumnos").send({ ...MENOR_NUEVO, tutor: PAULA });
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.responsable).toEqual({
+      id_usuario: paula.id_usuario,
+      nombre: "Paula",
+      apellido: "Romero",
+    });
+    expect(await contarFilas()).toEqual({ usuarios: antes.usuarios + 1, alumnos: antes.alumnos + 1 });
+  });
+
+  it("si el DNI es de una cuenta y el email de otra, rechaza sin guardar nada", async () => {
+    const antes = await contarFilas();
+
+    const respuesta = await comoMarina("post", "/alumnos").send({
+      ...MENOR_NUEVO,
+      tutor: { ...PAULA, email: EMAIL_MULTIROL_DEMO },
+    });
+
+    expect(respuesta.status).toBe(409);
+    expect(await contarFilas()).toEqual(antes);
+  });
+});

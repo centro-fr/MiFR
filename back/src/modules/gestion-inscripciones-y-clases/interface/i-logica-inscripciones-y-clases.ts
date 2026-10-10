@@ -11,7 +11,7 @@ import type { FiltroInscripciones, InscripcionConDatos } from "../inscripcion/in
 // La parte de ILogicaInscripcionesYClases que usa el controller de Inscripcion. No es una
 // interfaz nueva del diagrama: cuando exista el componente Clase, sumará la suya.
 export interface ILogicaInscripciones {
-  crearInscripcion(input: CrearInscripcionInput): Promise<InscripcionConDatos>;
+  crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos>;
   listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]>;
   obtenerInscripcion(id: number, solicitante: Solicitante): Promise<InscripcionConDatos>;
   darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput): Promise<void>;

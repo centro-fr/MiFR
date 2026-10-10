@@ -48,6 +48,7 @@ export const CATALOGO_PERMISOS = [
   { codigo: "ALUMNOS_EDITAR", modulo: "ALUMNOS", descripcion: "Inscribir, modificar y dar de baja alumnos" },
   { codigo: "PLANES_VER", modulo: "PLANES", descripcion: "Ver los planes y sus precios" },
   { codigo: "PLANES_EDITAR", modulo: "PLANES", descripcion: "Crear y modificar planes y precios" },
+  { codigo: "PAGOS_REGISTRAR", modulo: "PAGOS", descripcion: "Registrar cobros en efectivo" },
   { codigo: "PAGOS_CONFIRMAR", modulo: "PAGOS", descripcion: "Confirmar o rechazar pagos" },
   { codigo: "PAGOS_RENDICION_VER", modulo: "PAGOS", descripcion: "Ver la rendición de efectivo" },
   {
@@ -95,12 +96,14 @@ export const MATRIZ_INICIAL: Record<CodigoRol, readonly CodigoPermiso[]> = {
   PROPIETARIA: CATALOGO_PERMISOS.map((permiso) => permiso.codigo),
   // La profesora pre-inscribe alumnos (US-05): para eso necesita ver los planes y dar de alta al
   // alumno. Cambiar el plan o dar de baja sigue siendo de la propietaria, que lo exige por rol.
+  // También cobra en efectivo a los alumnos a su cargo (US-15).
   PROFESORA: [
     "ACTIVIDADES_VER",
     "HORARIOS_VER",
     "PLANES_VER",
     "ALUMNOS_VER",
     "ALUMNOS_EDITAR",
+    "PAGOS_REGISTRAR",
     "ASISTENCIAS_MARCAR",
     "RUTINAS_VER",
     "RUTINAS_EDITAR",
