@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// En JSON "-0" es un número válido y z.number().min(0) lo acepta, porque -0 >= 0. Se rechaza
-// igual que un negativo: nadie escribe -0 a propósito y no debería llegar a la base.
 const MONTO_MAXIMO = 99_999_999.99;
 
 // Montos de dinero en columnas NUMERIC(10,2) (precios, cuotas, pagos): mayor a 0, hasta lo que
@@ -17,6 +15,8 @@ export function montoSchema(nombre: string) {
     });
 }
 
+// En JSON "-0" es un número válido y z.number().min(0) lo acepta, porque -0 >= 0. Se rechaza
+// igual que un negativo: nadie escribe -0 a propósito y no debería llegar a la base.
 export function enteroNoNegativoSchema(maximo: number) {
   return z
     .number()

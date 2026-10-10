@@ -441,6 +441,7 @@ async function cargarInscripciones(
       where: { id_alumno, estado: { in: ["PREINSCRIPTA", "ACTIVA"] } },
     });
     if (existente) {
+      await completarPrimerPago(prisma, existente, hoy);
       idInscripcionPorDni.set(inscripcion.dniAlumno, existente.id_inscripcion);
       continue;
     }
@@ -480,6 +481,28 @@ async function cargarInscripciones(
     idInscripcionPorDni.set(inscripcion.dniAlumno, creada.id_inscripcion);
   }
   return idInscripcionPorDni;
+}
+
+// Una base cargada antes de que existieran los pagos tiene a los alumnos activos sin su primera cuota:
+// se la agrega para que el escenario quede igual que en una base nueva.
+async function completarPrimerPago(
+  prisma: PrismaClient,
+  inscripcion: { id_inscripcion: number; id_plan_precio: number; id_profesora: number; estado: string },
+  hoy: Date,
+): Promise<void> {
+  if (inscripcion.estado !== "ACTIVA") return;
+  if (await prisma.cuotas.findFirst({ where: { id_inscripcion: inscripcion.id_inscripcion } })) return;
+
+  const precio = await prisma.plan_precios.findUniqueOrThrow({
+    where: { id_plan_precio: inscripcion.id_plan_precio },
+  });
+  await cargarPrimerPagoEnEfectivo(
+    prisma,
+    inscripcion.id_inscripcion,
+    inscripcion.id_profesora,
+    precio.precio.toNumber(),
+    hoy,
+  );
 }
 
 // Un alumno activo ya pagó su primera cuota (US-07): se la cobró en efectivo su profesora y todavía
