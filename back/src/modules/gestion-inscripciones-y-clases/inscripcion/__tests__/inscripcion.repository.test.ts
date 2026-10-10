@@ -1,7 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InscripcionRepository } from "../inscripcion.repository.js";
-import { INCLUIR_DATOS_INSCRIPCION, type InscripcionConDatos } from "../inscripcion.types.js";
+import {
+  INCLUIR_DATOS_COBRO,
+  INCLUIR_DATOS_INSCRIPCION,
+  type InscripcionConDatos,
+} from "../inscripcion.types.js";
 
 const transaccion = {
   $executeRaw: vi.fn(),
@@ -81,6 +85,15 @@ describe("InscripcionRepository", () => {
   });
 
   describe("consultas", () => {
+    it("buscarParaCobro trae solo la inscripción con su alumno y su tutor", async () => {
+      await repositorio.buscarParaCobro(12);
+
+      expect(prisma.inscripciones.findUnique).toHaveBeenCalledWith({
+        where: { id_inscripcion: 12 },
+        include: INCLUIR_DATOS_COBRO,
+      });
+    });
+
     it("buscarPorId y listarVigentesPorAlumno traen los datos de la inscripción", async () => {
       await repositorio.buscarPorId(12);
       await repositorio.listarVigentesPorAlumno(5);

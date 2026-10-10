@@ -25,6 +25,7 @@ import type {
   FiltroAlumnosPorInscripcion,
   EstadoInscripcion,
   FiltroInscripciones,
+  InscripcionACobrar,
   InscripcionConDatos,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
@@ -112,8 +113,8 @@ export class InscripcionService implements IInfoInscripciones {
     return inscripcion;
   }
 
-  buscarPorId(id: number): Promise<InscripcionConDatos | null> {
-    return this.repositorio.buscarPorId(id);
+  buscarParaCobro(id: number): Promise<InscripcionACobrar | null> {
+    return this.repositorio.buscarParaCobro(id);
   }
 
   listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
@@ -123,10 +124,9 @@ export class InscripcionService implements IInfoInscripciones {
   async activar(id: number): Promise<InscripcionConDatos> {
     const actual = await this.obtenerPorId(id);
     if (actual.estado === "BAJA") throw new ConflictError("No se puede activar una inscripción dada de baja");
-    if (actual.estado === "ACTIVA") {
-      await this.alumnos.activar(actual.id_alumno);
-      return actual;
-    }
+    // El alta es la del primer pago (US-07): con la inscripción ya activa no se vuelve a tocar al alumno ni a
+    // su tutor, para no reactivar una cuenta que la propietaria haya desactivado después.
+    if (actual.estado === "ACTIVA") return actual;
 
     const resultado = await this.repositorio.activar(id);
     const inscripcion = this.resolverResultado(resultado);

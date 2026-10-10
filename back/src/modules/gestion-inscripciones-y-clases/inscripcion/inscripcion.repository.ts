@@ -6,7 +6,9 @@ import type {
   DarDeBajaAlumnoInput,
 } from "./inscripcion.schemas.js";
 import {
+  INCLUIR_DATOS_COBRO,
   INCLUIR_DATOS_INSCRIPCION,
+  type InscripcionACobrar,
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
@@ -123,6 +125,13 @@ export class InscripcionRepository {
     return this.prisma.inscripciones.findUnique({
       where: { id_inscripcion: id },
       include: INCLUIR_DATOS_INSCRIPCION,
+    });
+  }
+
+  buscarParaCobro(id: number): Promise<InscripcionACobrar | null> {
+    return this.prisma.inscripciones.findUnique({
+      where: { id_inscripcion: id },
+      include: INCLUIR_DATOS_COBRO,
     });
   }
 

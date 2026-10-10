@@ -152,6 +152,17 @@ describe("rutas de pagos", () => {
       );
     });
 
+    it("aprueba un pedido sin cuerpo, como lo manda el front en el caso normal", async () => {
+      const respuesta = await como("propietaria", "post", "/7/aprobar");
+
+      expect(respuesta.status).toBe(200);
+      expect(logica.aprobarTransferencia).toHaveBeenCalledWith(
+        7,
+        { confirmar_monto_distinto: false },
+        { idUsuario: 1, esPropietaria: true },
+      );
+    });
+
     it("rechazar sin motivo responde 400; una ya resuelta, 409", async () => {
       expect((await como("propietaria", "post", "/7/rechazar").send({})).status).toBe(400);
 

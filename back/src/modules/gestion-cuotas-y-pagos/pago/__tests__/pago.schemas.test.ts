@@ -71,6 +71,10 @@ describe("schemas de pagos", () => {
       expect(aprobarTransferenciaSchema.parse({})).toEqual({ confirmar_monto_distinto: false });
     });
 
+    it("aprobar acepta un pedido sin cuerpo (Express 5 deja req.body undefined)", () => {
+      expect(aprobarTransferenciaSchema.parse(undefined)).toEqual({ confirmar_monto_distinto: false });
+    });
+
     it.each([{}, { motivo_rechazo: "" }, { motivo_rechazo: "-0" }, { motivo_rechazo: "a".repeat(256) }])(
       "rechazar exige un motivo con letras de hasta 255 caracteres: %j",
       (cuerpo) => {

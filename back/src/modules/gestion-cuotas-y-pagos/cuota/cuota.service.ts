@@ -1,8 +1,9 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Habilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { ICalculoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
 import type { ICalculoVencimiento } from "../../calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
+import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoParametros } from "../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
@@ -49,22 +50,27 @@ export class CuotaService implements IInfoCuotas {
     private readonly parametros: IInfoParametros,
   ) {}
 
-  async prepararCobro(idInscripcion: number): Promise<CuotaACobrar> {
-    const inscripcion = await this.inscripciones.buscarPorId(idInscripcion);
-    if (!inscripcion) throw new NotFoundError("Inscripción no encontrada");
+  buscarInscripcion(idInscripcion: number): Promise<InscripcionACobrar | null> {
+    return this.inscripciones.buscarParaCobro(idInscripcion);
+  }
+
+  // Recibe la inscripción ya resuelta: la fachada verifica antes quién paga, para que estos errores
+  // (baja, transferencia pendiente, precio) no cuenten nada de una inscripción ajena.
+  async prepararCobro(inscripcion: InscripcionACobrar): Promise<CuotaACobrar> {
     if (inscripcion.estado === "BAJA" || inscripcion.alumno.estado === "BAJA") {
       throw new ConflictError(
         "El alumno está dado de baja: hay que reactivarlo antes de registrarle un pago",
       );
     }
 
-    const [situacion] = await this.repositorio.situacionDeInscripciones([idInscripcion]);
+    const hoy = fechaActualArgentina();
+    const [[situacion], precio] = await Promise.all([
+      this.repositorio.situacionDeInscripciones([inscripcion.id_inscripcion]),
+      this.planes.precioVigente(inscripcion.id_plan, hoy),
+    ]);
     if (tienePagoPendiente(situacion)) {
       throw new ConflictError("La inscripción tiene una transferencia pendiente de revisión");
     }
-
-    const hoy = fechaActualArgentina();
-    const precio = await this.planes.precioVigente(inscripcion.id_plan, hoy);
     if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
 
     const sinPagar = cuotaSinPagar(situacion);
@@ -80,8 +86,8 @@ export class CuotaService implements IInfoCuotas {
     };
   }
 
-  // US-07: el primer pago confirmado da el alta definitiva. activar es idempotente, así que se
-  // llama en cada confirmación; con la inscripción dada de baja o sin cupo, rechaza el cobro.
+  // US-07: el primer pago confirmado da el alta definitiva. Con la inscripción ya activa no hace
+  // nada, así que se llama en cada confirmación; con la inscripción dada de baja o sin cupo, rechaza el cobro.
   async darAltaDefinitiva(idInscripcion: number): Promise<void> {
     await this.inscripciones.activar(idInscripcion);
   }

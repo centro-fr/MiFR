@@ -9,9 +9,6 @@ export const INCLUIR_DATOS_INSCRIPCION = {
     select: {
       id_alumno: true,
       estado: true,
-      // Quién es el alumno y quién su tutor: los únicos que pueden informar sus pagos (US-16).
-      id_usuario: true,
-      id_usuario_responsable: true,
       usuario: { select: { nombre: true, apellido: true } },
     },
   },
@@ -34,6 +31,23 @@ export const INCLUIR_DATOS_INSCRIPCION = {
 export type InscripcionConDatos = Prisma.inscripcionesGetPayload<{
   include: typeof INCLUIR_DATOS_INSCRIPCION;
 }>;
+
+// Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
+// informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las
+// respuestas de inscripciones.
+export const INCLUIR_DATOS_COBRO = {
+  alumno: {
+    select: {
+      id_alumno: true,
+      estado: true,
+      id_usuario: true,
+      id_usuario_responsable: true,
+      usuario: { select: { nombre: true, apellido: true } },
+    },
+  },
+} satisfies Prisma.inscripcionesInclude;
+
+export type InscripcionACobrar = Prisma.inscripcionesGetPayload<{ include: typeof INCLUIR_DATOS_COBRO }>;
 
 // fecha_baja de la inscripción es TIMESTAMP (el instante, en UTC) y las vigencias de
 // inscripcion_horarios son DATE (el día de Argentina, ver fecha-argentina.ts).

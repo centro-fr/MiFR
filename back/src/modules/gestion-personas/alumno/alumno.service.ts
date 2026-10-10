@@ -146,6 +146,8 @@ export class AlumnoService implements IInfoAlumnos {
     if (alumno.estado === "BAJA") {
       throw new ConflictError("El alumno está dado de baja: primero hay que reactivarlo");
     }
+    // Ya dado de alta: no se reactivan su cuenta ni la del tutor, que la propietaria pudo haber desactivado.
+    if (alumno.estado === "ACTIVO") return alumno;
 
     const activado = await this.repositorio.activar(alumno);
     const idDestinatario = alumno.id_usuario_responsable ?? alumno.id_usuario;

@@ -36,7 +36,8 @@ export const registrarTransferenciaRecibidaSchema = informarTransferenciaSchema.
   confirmar_monto_distinto,
 });
 
-export const aprobarTransferenciaSchema = z.object({ confirmar_monto_distinto });
+// Aprobar normalmente no lleva cuerpo: sin él, Express 5 deja req.body undefined.
+export const aprobarTransferenciaSchema = z.object({ confirmar_monto_distinto }).default({});
 
 // ck_pagos_x2 del DER: el rechazo lleva motivo.
 export const rechazarTransferenciaSchema = z.object({ motivo_rechazo: textoSchema(255) });

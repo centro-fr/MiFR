@@ -1,5 +1,5 @@
 import type { estado_pago, tipo_plan } from "@prisma/client";
-import type { InscripcionConDatos } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
+import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 
 export type EstadoPago = estado_pago;
 
@@ -21,7 +21,7 @@ export interface SituacionDeCuotas {
 // una transferencia rechazada), o una nueva que sigue a la vigente. Monto y vencimiento se
 // calculan a la fecha del cobro.
 export interface CuotaACobrar {
-  inscripcion: InscripcionConDatos;
+  inscripcion: InscripcionACobrar;
   idCuotaExistente: number | null;
   numeroCuota: number;
   fechaVencimiento: Date;

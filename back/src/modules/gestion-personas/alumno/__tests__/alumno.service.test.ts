@@ -452,14 +452,24 @@ describe("AlumnoService", () => {
       expect(autorizacion.asignarRol).toHaveBeenCalledWith(20, "TUTOR");
     });
 
-    it("es idempotente: no vuelve a asignar un rol que ya tiene", async () => {
-      repositorio.buscarPorId.mockResolvedValue(crearAlumno({ estado: "ACTIVO" }));
+    it("no vuelve a asignar un rol que ya tiene", async () => {
+      repositorio.buscarPorId.mockResolvedValue(crearAlumno());
       repositorio.activar.mockResolvedValue(crearAlumno({ estado: "ACTIVO" }));
       usuarios.obtenerPorId.mockResolvedValue(usuario(10));
       autorizacion.tieneRol.mockReturnValue(true);
 
       await servicio.activar(1);
 
+      expect(autorizacion.asignarRol).not.toHaveBeenCalled();
+    });
+
+    it("con el alumno ya activo no reactiva su cuenta ni la del tutor, ni toca roles", async () => {
+      const activo = { ...menorConTutor, estado: "ACTIVO" as const };
+      repositorio.buscarPorId.mockResolvedValue(activo);
+
+      await expect(servicio.activar(1)).resolves.toBe(activo);
+      expect(repositorio.activar).not.toHaveBeenCalled();
+      expect(usuarios.obtenerPorId).not.toHaveBeenCalled();
       expect(autorizacion.asignarRol).not.toHaveBeenCalled();
     });
 

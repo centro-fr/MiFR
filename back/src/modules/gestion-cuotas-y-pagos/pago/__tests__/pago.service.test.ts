@@ -74,9 +74,26 @@ describe("PagoService", () => {
 
   afterEach(() => vi.useRealTimers());
 
+  describe("profesoraQueCobra (US-15)", () => {
+    it("devuelve la profesora a cargo que cobra, o null si cobra la propietaria", async () => {
+      await expect(servicio.profesoraQueCobra(cuota.inscripcion, PROFESORA)).resolves.toBe(3);
+      expect(mocks.profesoras.buscarPorUsuario).toHaveBeenCalledWith(2);
+
+      await expect(servicio.profesoraQueCobra(cuota.inscripcion, PROPIETARIA)).resolves.toBeNull();
+    });
+
+    it("rechaza a otra profesora y a quien no es profesora", async () => {
+      mocks.profesoras.buscarPorUsuario.mockResolvedValueOnce({ id_profesora: 9 });
+      await expect(servicio.profesoraQueCobra(cuota.inscripcion, PROFESORA)).rejects.toThrow(ForbiddenError);
+
+      mocks.profesoras.buscarPorUsuario.mockResolvedValueOnce(null);
+      await expect(servicio.profesoraQueCobra(cuota.inscripcion, PROFESORA)).rejects.toThrow(ForbiddenError);
+    });
+  });
+
   describe("prepararEfectivo (US-15)", () => {
-    it("la profesora a cargo cobra: el pago queda confirmado y pendiente de rendición", async () => {
-      await expect(servicio.prepararEfectivo(cuota, efectivo, PROFESORA)).resolves.toEqual({
+    it("la profesora a cargo cobra: el pago queda confirmado y pendiente de rendición", () => {
+      expect(servicio.prepararEfectivo(cuota, efectivo, PROFESORA, 3)).toEqual({
         forma_pago: "EFECTIVO",
         estado: "CONFIRMADO",
         monto: 30000,
@@ -90,36 +107,27 @@ describe("PagoService", () => {
         fecha_confirmacion: AHORA,
         observaciones: null,
       });
-      expect(mocks.profesoras.buscarPorUsuario).toHaveBeenCalledWith(2);
     });
 
-    it("si cobra la propietaria no hay profesora ni nada que rendir", async () => {
-      await expect(servicio.prepararEfectivo(cuota, efectivo, PROPIETARIA)).resolves.toMatchObject({
+    it("si cobra la propietaria no hay profesora ni nada que rendir", () => {
+      expect(servicio.prepararEfectivo(cuota, efectivo, PROPIETARIA, null)).toMatchObject({
         id_profesora_cobra: null,
         rendido: true,
       });
-      expect(mocks.profesoras.buscarPorUsuario).not.toHaveBeenCalled();
     });
 
-    it("rechaza a otra profesora y a quien no es profesora", async () => {
-      mocks.profesoras.buscarPorUsuario.mockResolvedValueOnce({ id_profesora: 9 });
-      await expect(servicio.prepararEfectivo(cuota, efectivo, PROFESORA)).rejects.toThrow(ForbiddenError);
-
-      mocks.profesoras.buscarPorUsuario.mockResolvedValueOnce(null);
-      await expect(servicio.prepararEfectivo(cuota, efectivo, PROFESORA)).rejects.toThrow(ForbiddenError);
-    });
-
-    it("un monto distinto del esperado pasa solo confirmado", async () => {
-      await expect(
-        servicio.prepararEfectivo(cuota, { ...efectivo, monto: 25000 }, PROPIETARIA),
-      ).rejects.toThrow(MontoDistintoError);
-      await expect(
+    it("un monto distinto del esperado pasa solo confirmado", () => {
+      expect(() =>
+        servicio.prepararEfectivo(cuota, { ...efectivo, monto: 25000 }, PROPIETARIA, null),
+      ).toThrow(MontoDistintoError);
+      expect(
         servicio.prepararEfectivo(
           cuota,
           { ...efectivo, monto: 25000, confirmar_monto_distinto: true },
           PROPIETARIA,
+          null,
         ),
-      ).resolves.toMatchObject({ monto: 25000 });
+      ).toMatchObject({ monto: 25000 });
     });
   });
 
@@ -150,10 +158,17 @@ describe("PagoService", () => {
       });
     });
 
-    it("nadie más informa transferencias de ese alumno", async () => {
-      await expect(
-        servicio.prepararTransferencia(cuota, transferencia, { idUsuario: 99, esPropietaria: false }),
-      ).rejects.toThrow(ForbiddenError);
+    it.each([
+      ["la alumna", ALUMNA],
+      ["la tutora", TUTORA],
+    ])("verificarTitular deja pasar a %s", (_caso, solicitante) => {
+      expect(() => servicio.verificarTitular(cuota.inscripcion, solicitante)).not.toThrow();
+    });
+
+    it("verificarTitular rechaza a cualquier otro", () => {
+      expect(() =>
+        servicio.verificarTitular(cuota.inscripcion, { idUsuario: 99, esPropietaria: false }),
+      ).toThrow(ForbiddenError);
     });
 
     it("la misma transferencia (alumno, monto y día de Argentina) no se informa dos veces", async () => {
@@ -337,7 +352,8 @@ describe("PagoService", () => {
     it("lo ven quien registró el pago y el alumno; nadie más", async () => {
       await expect(servicio.obtenerComprobante(7, PROFESORA)).resolves.toBeDefined();
       await expect(servicio.obtenerComprobante(7, ALUMNA)).resolves.toBeDefined();
-      await expect(servicio.obtenerComprobante(7, TUTORA)).rejects.toThrow(ForbiddenError);
+      // A quien no le corresponde se le responde como si el pago no existiera.
+      await expect(servicio.obtenerComprobante(7, TUTORA)).rejects.toThrow(NotFoundError);
     });
 
     it("sin profesora que cobró sale null; no existe o no está confirmado, error", async () => {

@@ -6,7 +6,7 @@ import {
 } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
-import type { InscripcionConDatos } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
+import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { CuotaACobrar } from "../cuota/cuota.types.js";
 import type { PagoRepository } from "./pago.repository.js";
@@ -45,12 +45,13 @@ export class PagoService {
     private readonly profesoras: IInfoProfesores,
   ) {}
 
-  async prepararEfectivo(
+  // idProfesoraCobra sale de profesoraQueCobra, que la fachada consulta antes de preparar la cuota.
+  prepararEfectivo(
     cuota: CuotaACobrar,
     input: RegistrarEfectivoInput,
     solicitante: Solicitante,
-  ): Promise<DatosDePago> {
-    const idProfesoraCobra = await this.profesoraQueCobra(cuota.inscripcion, solicitante);
+    idProfesoraCobra: number | null,
+  ): DatosDePago {
     verificarMonto(input.monto, cuota.monto, input.confirmar_monto_distinto);
     const ahora = new Date();
     return {
@@ -73,20 +74,25 @@ export class PagoService {
 
   // US-16: la informa el alumno o el tutor del menor, y queda pendiente hasta que la revise la
   // propietaria. El monto distinto se acepta acá y se confirma al aprobarla.
+  // Quién paga se verifica antes con verificarTitular.
   async prepararTransferencia(
     cuota: CuotaACobrar,
     input: InformarTransferenciaInput,
     solicitante: Solicitante,
   ): Promise<DatosDePago> {
-    const { alumno } = cuota.inscripcion;
+    await this.verificarQueNoEstaRepetida(cuota.inscripcion.alumno.id_alumno, input);
+    return this.datosDeTransferencia(input, solicitante, "PENDIENTE");
+  }
+
+  // US-16: una transferencia la informa el alumno o el tutor del menor.
+  verificarTitular(inscripcion: InscripcionACobrar, solicitante: Solicitante): void {
+    const { alumno } = inscripcion;
     if (
       solicitante.idUsuario !== alumno.id_usuario &&
       solicitante.idUsuario !== alumno.id_usuario_responsable
     ) {
       throw new ForbiddenError("Solo podés informar transferencias tuyas o de un menor a tu cargo");
     }
-    await this.verificarQueNoEstaRepetida(alumno.id_alumno, input);
-    return this.datosDeTransferencia(input, solicitante, "PENDIENTE");
   }
 
   // La carga la propietaria cuando ya vio el ingreso en su cuenta: así paga la primera cuota un
@@ -153,14 +159,19 @@ export class PagoService {
     return this.repositorio.listarTransferenciasDeUsuario(solicitante.idUsuario);
   }
 
-  // El comprobante lo ven la propietaria, quien registró el pago y el alumno o su tutor.
+  // El comprobante lo ven la propietaria, quien registró el pago y el alumno o su tutor. A cualquier
+  // otro se le responde igual que si el pago no existiera, para no revelar qué pagos hay.
   async obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante> {
     const pago = await this.repositorio.buscarParaComprobante(id);
-    if (!pago) throw new NotFoundError("Pago no encontrado");
-    const { alumno } = pago.cuota.inscripcion;
-    const interesados = [pago.id_usuario_registra, alumno.id_usuario, alumno.id_usuario_responsable];
-    if (!solicitante.esPropietaria && !interesados.includes(solicitante.idUsuario)) {
-      throw new ForbiddenError("No podés ver el comprobante de este pago");
+    const interesados = pago
+      ? [
+          pago.id_usuario_registra,
+          pago.cuota.inscripcion.alumno.id_usuario,
+          pago.cuota.inscripcion.alumno.id_usuario_responsable,
+        ]
+      : [];
+    if (!pago || (!solicitante.esPropietaria && !interesados.includes(solicitante.idUsuario))) {
+      throw new NotFoundError("Pago no encontrado");
     }
     if (pago.estado !== "CONFIRMADO") throw new ConflictError("Solo un pago confirmado tiene comprobante");
     return armarComprobante(pago);
@@ -168,10 +179,7 @@ export class PagoService {
 
   // US-15: cobra la profesora a cargo de la inscripción o la propietaria. Devuelve la profesora que
   // queda con el efectivo, o null si cobró la propietaria.
-  private async profesoraQueCobra(
-    inscripcion: InscripcionConDatos,
-    solicitante: Solicitante,
-  ): Promise<number | null> {
+  async profesoraQueCobra(inscripcion: InscripcionACobrar, solicitante: Solicitante): Promise<number | null> {
     if (solicitante.esPropietaria) return null;
     const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
     if (!profesora || profesora.id_profesora !== inscripcion.id_profesora) {

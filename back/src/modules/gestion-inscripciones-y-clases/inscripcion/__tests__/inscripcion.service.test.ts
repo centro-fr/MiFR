@@ -68,6 +68,7 @@ function crearMocks() {
       listar: vi.fn().mockResolvedValue([]),
       listarVigentesPorAlumno: vi.fn(),
       buscarPorId: vi.fn().mockResolvedValue(inscripcion),
+      buscarParaCobro: vi.fn(),
       buscarVigentePorAlumno: vi.fn().mockResolvedValue(null),
       activar: vi.fn().mockResolvedValue(ok),
       darDeBajaAlumno: vi.fn(),
@@ -327,10 +328,11 @@ describe("InscripcionService", () => {
       await expect(servicio.obtenerPara(12, PROFESORA)).rejects.toThrow(ForbiddenError);
     });
 
-    it("buscarPorId devuelve null si no existe, sin lanzar", async () => {
-      mocks.repositorio.buscarPorId.mockResolvedValue(null);
+    it("buscarParaCobro devuelve null si no existe, sin lanzar", async () => {
+      mocks.repositorio.buscarParaCobro.mockResolvedValue(null);
 
-      await expect(servicio.buscarPorId(99)).resolves.toBeNull();
+      await expect(servicio.buscarParaCobro(99)).resolves.toBeNull();
+      expect(mocks.repositorio.buscarParaCobro).toHaveBeenCalledWith(99);
     });
 
     it("obtenerPorId lanza NotFoundError si no existe", async () => {
@@ -350,11 +352,11 @@ describe("InscripcionService", () => {
       expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
     });
 
-    it("si ya estaba activa solo reintenta el paso del alumno", async () => {
-      await servicio.activar(12);
+    it("si ya estaba activa no toca la inscripción ni al alumno: el alta es la del primer pago", async () => {
+      await expect(servicio.activar(12)).resolves.toBe(inscripcion);
 
       expect(mocks.repositorio.activar).not.toHaveBeenCalled();
-      expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
+      expect(mocks.alumnos.activar).not.toHaveBeenCalled();
     });
 
     it("rechaza una inscripción dada de baja y no activa sin cupo", async () => {

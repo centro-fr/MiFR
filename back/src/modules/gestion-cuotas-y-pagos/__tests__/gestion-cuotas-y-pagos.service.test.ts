@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ForbiddenError, NotFoundError } from "../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { CuotaService } from "../cuota/cuota.service.js";
 import { GestionCuotasYPagosService } from "../gestion-cuotas-y-pagos.service.js";
 import type { PagoService } from "../pago/pago.service.js";
 
 const solicitante: Solicitante = { idUsuario: 1, esPropietaria: true };
-const cuota = { inscripcion: { id_inscripcion: 12 } };
+const alumna: Solicitante = { idUsuario: 30, esPropietaria: false };
+const inscripcion = { id_inscripcion: 12 };
+const cuota = { inscripcion };
 const datos = { estado: "CONFIRMADO" };
 const efectivo = { id_inscripcion: 12, monto: 30000, confirmar_monto_distinto: false };
 const transferencia = { id_inscripcion: 12, monto: 30000, fecha_hora_transferencia: new Date() };
@@ -18,14 +21,23 @@ function crearMocks() {
       orden.push(nombre);
       return Promise.resolve(valor);
     };
+  const registrarSincronico =
+    (nombre: string, valor?: unknown) =>
+    (..._args: unknown[]) => {
+      orden.push(nombre);
+      return valor;
+    };
   return {
     orden,
     cuotas: {
+      buscarInscripcion: vi.fn(registrar("buscarInscripcion", inscripcion)),
       prepararCobro: vi.fn(registrar("prepararCobro", cuota)),
       darAltaDefinitiva: vi.fn(registrar("darAltaDefinitiva")),
     },
     pagos: {
-      prepararEfectivo: vi.fn(registrar("prepararEfectivo", datos)),
+      profesoraQueCobra: vi.fn(registrar("profesoraQueCobra", 7)),
+      verificarTitular: vi.fn(registrarSincronico("verificarTitular")),
+      prepararEfectivo: vi.fn(registrarSincronico("prepararEfectivo", datos)),
       prepararTransferencia: vi.fn(registrar("prepararTransferencia", datos)),
       prepararTransferenciaRecibida: vi.fn(registrar("prepararTransferenciaRecibida", datos)),
       guardar: vi.fn(registrar("guardar", { id_pago: 7 })),
@@ -51,13 +63,29 @@ describe("GestionCuotasYPagosService", () => {
     );
   });
 
-  it("el cobro en efectivo da el alta definitiva antes de guardar el pago", async () => {
+  it("el cobro en efectivo verifica quién cobra antes de preparar la cuota y da el alta antes de guardar", async () => {
     await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).resolves.toEqual({ id_pago: 7 });
 
-    expect(mocks.orden).toEqual(["prepararCobro", "prepararEfectivo", "darAltaDefinitiva", "guardar"]);
-    expect(mocks.cuotas.prepararCobro).toHaveBeenCalledWith(12);
+    expect(mocks.orden).toEqual([
+      "buscarInscripcion",
+      "profesoraQueCobra",
+      "prepararCobro",
+      "prepararEfectivo",
+      "darAltaDefinitiva",
+      "guardar",
+    ]);
+    expect(mocks.cuotas.buscarInscripcion).toHaveBeenCalledWith(12);
+    expect(mocks.cuotas.prepararCobro).toHaveBeenCalledWith(inscripcion);
+    expect(mocks.pagos.prepararEfectivo).toHaveBeenCalledWith(cuota, efectivo, solicitante, 7);
     expect(mocks.cuotas.darAltaDefinitiva).toHaveBeenCalledWith(12);
     expect(mocks.pagos.guardar).toHaveBeenCalledWith(cuota, datos);
+  });
+
+  it("si quien cobra no es la profesora a cargo, no llega a mirar el estado de la inscripción", async () => {
+    mocks.pagos.profesoraQueCobra.mockRejectedValue(new ForbiddenError());
+
+    await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).rejects.toThrow(ForbiddenError);
+    expect(mocks.cuotas.prepararCobro).not.toHaveBeenCalled();
   });
 
   it("si el alta falla, por ejemplo sin cupo, no se guarda el pago", async () => {
@@ -67,10 +95,30 @@ describe("GestionCuotasYPagosService", () => {
     expect(mocks.pagos.guardar).not.toHaveBeenCalled();
   });
 
-  it("la transferencia que informa el alumno queda pendiente: no da el alta", async () => {
-    await gestion.informarTransferencia(transferencia, solicitante);
+  it("la transferencia que informa el alumno verifica el titular primero y queda pendiente: no da el alta", async () => {
+    await gestion.informarTransferencia(transferencia, alumna);
 
-    expect(mocks.orden).toEqual(["prepararCobro", "prepararTransferencia", "guardar"]);
+    expect(mocks.orden).toEqual([
+      "buscarInscripcion",
+      "verificarTitular",
+      "prepararCobro",
+      "prepararTransferencia",
+      "guardar",
+    ]);
+    expect(mocks.pagos.verificarTitular).toHaveBeenCalledWith(inscripcion, alumna);
+  });
+
+  it("a quien no es propietaria, una inscripción inexistente le responde igual que una ajena", async () => {
+    mocks.cuotas.buscarInscripcion.mockResolvedValue(null);
+
+    await expect(gestion.informarTransferencia(transferencia, alumna)).rejects.toThrow(ForbiddenError);
+    expect(mocks.pagos.verificarTitular).not.toHaveBeenCalled();
+  });
+
+  it("a la propietaria una inscripción inexistente le responde 404", async () => {
+    mocks.cuotas.buscarInscripcion.mockResolvedValue(null);
+
+    await expect(gestion.registrarCobroEfectivo(efectivo, solicitante)).rejects.toThrow(NotFoundError);
   });
 
   it("la transferencia que carga la propietaria da el alta antes de guardarse", async () => {
@@ -80,6 +128,7 @@ describe("GestionCuotasYPagosService", () => {
     );
 
     expect(mocks.orden).toEqual([
+      "buscarInscripcion",
       "prepararCobro",
       "prepararTransferenciaRecibida",
       "darAltaDefinitiva",
