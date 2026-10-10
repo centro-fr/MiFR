@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>02 · La organización y cómo funciona hoy</title>
+  <title>02 · La organización hoy</title>
   <link rel="stylesheet" href="../recursos/tema.css">
   <link rel="stylesheet" href="../recursos/estilos.css">
   <script src="filminas.js" defer></script>
@@ -11,27 +11,43 @@
 </head>
 <body>
   <main class="diapositiva diapositiva--contenido">
+    <style>
+      .lista-iconos--grande {
+        font-size: 1.2rem;
+        gap: 2.5rem;
+      }
+      .lista-iconos--grande li {
+        grid-template-columns: 2.5rem 1fr;
+        align-items: center;
+      }
+      .grilla-asimetrica {
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 900px) {
+        .grilla-asimetrica {
+          grid-template-columns: auto auto;
+          justify-content: center;
+          gap: 5rem;
+        }
+      }
+    </style>
     <div class="contenido">
-      <p class="subtitulo animable" style="--orden: 0">Bloque 1 · Problemática</p>
-      <h2 class="animable" style="--orden: 1">La organización y cómo funciona hoy</h2>
-      <div class="dos-columnas">
-        <ul class="lista-iconos animable" style="--orden: 2" aria-label="Ficha de la organización">
+      <h2 class="animable" style="--orden: 0">La organización hoy</h2>
+      <div class="cuerpo-centrado">
+      <!-- <p class="bajada bajada--ancha animable" style="--orden: 1">Un gimnasio local en constante crecimiento, operando con procesos manuales centralizados en su propietaria.</p> -->
+      <div class="dos-columnas grilla-asimetrica" style="align-items: center;">
+        <ul class="lista-iconos lista-iconos--grande animable" style="--orden: 2" aria-label="Ficha de la organización">
           <li><span aria-hidden="true">📍</span><span>Perico, Jujuy · sede única · ~240 m²</span></li>
           <li><span aria-hidden="true">👥</span><span><strong>50 → 75 alumnos</strong> en un año · 4 → 5 profesoras</span></li>
           <li><span aria-hidden="true">🏋️</span><span>7 disciplinas, grupales y personalizadas</span></li>
           <li><span aria-hidden="true">💳</span><span>Planes por frecuencia semanal, <strong>atados a una profesora</strong></span></li>
         </ul>
-        <div class="soportes animable" style="--orden: 3">
-          <p class="columna-titulo">Los 4 soportes desconectados</p>
-          <ul class="islas islas--grilla">
-            <li class="isla"><span class="isla__icono" aria-hidden="true">📓</span>Cuaderno de la dueña</li>
-            <li class="isla"><span class="isla__icono" aria-hidden="true">📒</span>Cuaderno de cada profe</li>
-            <li class="isla"><span class="isla__icono" aria-hidden="true">🎫</span>Tarjeta de cartón</li>
-            <li class="isla"><span class="isla__icono" aria-hidden="true">💬</span>WhatsApp</li>
-          </ul>
+        <div class="animable" style="--orden: 3; display: flex; justify-content: center;">
+          <img src="../recursos/logo-fr-original.png" alt="Logo de FR Centro de Entrenamiento" style="max-width: 380px; width: 100%; height: auto;">
         </div>
       </div>
-    </div>
+    
+      </div></div>
   </main>
 </body>
 </html>
