@@ -30,9 +30,10 @@ Seguir la skill `validar-arquitectura`, pero solo sobre los archivos del diff y 
 
 ## 3. Seguridad
 
-Primero el comando `/security-review` sobre la rama. Después, a mano, esta lista sobre cada archivo del diff. Son los puntos que ya fallaron o estuvieron cerca de fallar en este backend:
+Primero el comando `/security-review` sobre la rama. Después, a mano, las preguntas del final de `.claude/rules/seguridad.md` sobre cada ruta nueva o modificada, y esta lista sobre cada archivo del diff. Son los puntos que ya fallaron en este backend; el porqué de cada uno está en esa regla:
 
-- **Guardias:** toda ruta nueva pasa por `acceso.sesion` y además por `acceso.permiso(...)` o `acceso.rol(...)`. Si la ruta solo pide sesión, el service verifica que el recurso sea del solicitante.
+- **Guardias:** toda ruta nueva pasa por `acceso.sesion` y además por `acceso.permiso(...)` o `acceso.rol(...)`. Si la ruta solo pide sesión, el service verifica que el recurso sea del solicitante. Lo que administra la seguridad (roles, bajas de cuentas, estado, matriz) exige también `acceso.rol("PROPIETARIA")`, porque los permisos se pueden delegar.
+- **Orden:** la verificación de quién pide va antes de cualquier error que dependa del estado del recurso, y a quien no tiene derecho un recurso inexistente se le responde igual que uno ajeno.
 - **Alcance por solicitante:** si una PROFESORA, un ALUMNO o un TUTOR pueden llegar a la operación, el service recibe al `solicitante` y filtra por él, tanto al leer como al escribir. Los datos de terceros no se aceptan por el body (`id_profesora`, `id_alumno`, `sin_cargo`, `estado`) sin chequear que el solicitante pueda usarlos.
 - **Escalada de privilegios:** nada que asigne roles, permisos o tutorías, o que reactive usuarios, puede quedar al alcance de quien no sea la PROPIETARIA, salvo que la regla de negocio lo diga y tenga test.
 - **Identidad:** no se vincula una identidad externa (Google) a una cuenta existente sin verificar `email_verified`, ni se pisa un `google_id` que ya estaba puesto.
@@ -66,4 +67,5 @@ Si hay BLOQUEANTES, la rama no se integra. Si no hay hallazgos, decirlo en una l
 Se anota acá lo aceptado conscientemente, para no reportarlo en cada auditoría:
 
 - `gestion-cuotas-y-pagos` todavía no está montado en `app.ts` ni en `composicion.ts`: espera los calculadores (ver `SPRINT-3.md`).
+- El alta definitiva de una inscripción y el guardado de su primer pago van en transacciones separadas (ver el comentario de `GestionCuotasYPagosService`). Si el guardado falla después del alta, la inscripción queda ACTIVA sin cuota confirmada, pero no habilita a asistir. Unirlas en una sola transacción exige pasar la transacción entre componentes; se decidió no hacerlo por ahora.
 - No hay linter: typescript-eslint no soporta TypeScript 7 (ver `back/CLAUDE.md`).

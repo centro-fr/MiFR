@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados cuatro de los nueve subsistemas del diagrama de arquitectura: `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). Los otros cinco todavía no tienen carpeta.
+**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan) y `gestion-inscripciones-y-clases` (inscripción). `gestion-cuotas-y-pagos` (cuota, pago) y `calculos-del-negocio` están escritos pero todavía no se montan en `app.ts`: esperan los calculadores (ver `SPRINT-3.md`). Los demás subsistemas del diagrama todavía no tienen carpeta.
 
 ## Comandos
 
@@ -100,6 +100,7 @@ Están en `.claude/rules/`. No hace falta leerlas todas: se consulta la que corr
 | `testing.md` | Al escribir tests |
 | `documentacion.md` | Al comentar código o dudar de una buena práctica |
 | `validaciones.md` | Al escribir o cambiar un schema de Zod |
+| `seguridad.md` | Al agregar o cambiar una ruta, un permiso o un flujo que cruce componentes |
 | `mcp.md` | Al explorar el código con herramientas |
 
 ## Skills
