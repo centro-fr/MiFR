@@ -5,7 +5,7 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
 | US-11 | Alta y edición de planes vigentes | Completa | Francisco |
-| US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro, Sprint 3) | Francisco |
+| US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro del Sprint 3, PI-40) | Francisco |
 | US-05 | Pre-inscripción de alumno nuevo | Completa | Francisco (alumno) + Nicolas (inscripción) |
 | US-06 | Asociación de tutor a alumno menor | Completa | Francisco |
 | US-07 | Alta definitiva al confirmarse el primer pago | Completa | Nicolas |
@@ -83,15 +83,16 @@ Cómo trabajar en paralelo sin bloquearse:
 
 - [x] `POST /api/v1/planes/:id/precios`: cierra el precio vigente (`fecha_vigencia_hasta = fecha_nueva - 1 día`) e inserta el nuevo, en una transacción.
 - [x] `GET /api/v1/planes/:id/precios`: historial del plan.
-- [x] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usa `Inscripcion` para guardar `id_plan_precio` y lo va a usar el cobro del Sprint 3.
+- [x] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usan `Inscripcion`, para guardar `id_plan_precio`, y el cobro del Sprint 3, para el monto de la cuota.
 - [x] **Reglas**:
   - [x] Precio mayor a 0.
   - [x] Fecha de vigencia hoy o futura; en el pasado → 400.
   - [x] Si ya hay un precio programado a futuro, el nuevo lo reemplaza (se resuelve por el más reciente) en lugar de dejar dos vigencias superpuestas.
   - [x] Plan dado de baja → 409.
   - [x] Las inscripciones guardan `id_plan_precio`, así que un cambio de precio nunca altera lo ya cobrado.
+  - [x] El cobro aplica el precio que rige el día del cobro: antes de la fecha de vigencia, el anterior; desde esa fecha (incluida), el nuevo. La cuota guarda ese monto.
 - [x] Auditoría del cambio (evento `PRECIO_PLAN_REGISTRADO` con el precio nuevo, su fecha y el usuario) con `shared/utils/auditoria.ts`: el DER no tiene columna para el usuario que lo hizo. El valor anterior queda en el historial de `plan_precios`.
-- [x] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia: PI-13 (tests D-08 a D-12).
+- [x] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia: PI-13 (tests D-08 a D-12). El precio que aplica el cobro antes y después de la vigencia, y que la cuota ya cobrada no cambia: PI-40 (tests H-07 a H-09).
 
 ---
 
