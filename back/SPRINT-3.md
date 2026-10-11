@@ -7,7 +7,7 @@ Sprint 3: **Núcleo Transaccional y Operación Diaria** (según `docs/v.1.1 Spri
 | US-15 | Registro de cobro en efectivo | Pendiente | Francisco |
 | US-16 | Registro de pago por transferencia | Pendiente | Francisco |
 | US-17 | Aprobación o rechazo de transferencias | Pendiente | Francisco |
-| US-18 | Cálculo del estado de habilitación del alumno | Pendiente | Rosario |
+| US-18 | Cálculo del estado de habilitación del alumno | Hecho | Rosario |
 | US-20 | Registro de asistencia por clase | Pendiente | Nicolas |
 | US-21 | Registro automático de inasistencias | Pendiente | Nicolas |
 
@@ -87,17 +87,18 @@ Cómo trabajar en paralelo sin bloquearse:
 
 Es el Strategy que anticipa `.claude/rules/patrones.md`: dos algoritmos de vencimiento según `planes.tipo`. La habilitación **no se persiste** (`arquitectura.md`): se calcula cada vez que se consulta.
 
-### Pendiente (US-18)
+### Hecho (US-18)
 
-- [ ] Subsistema `src/modules/calculos-del-negocio/` (el nombre sale del diagrama: "Calculos del negocio"), sin repositorio ni Prisma. Los calculadores reciben datos y devuelven resultados.
-- [ ] `CalculadorVencimientoCuota` implementa `ICalculoVencimiento`: dada la fecha de pago y el plan, devuelve hasta cuándo cubre la cuota.
-  - [ ] `MENSUAL`: de fecha a fecha, un mes después del pago (31/01 → 28 o 29/02, como hace `esMenorDeEdad` con el 29 de febrero).
-  - [ ] `CLASE_SUELTA`: vence al terminar la clase contratada, sin días de gracia.
-- [ ] `CalculadorHabilitacion` implementa `ICalculoHabilitacion`: dados el vencimiento vigente, los días de gracia del plan, si hay un pago pendiente de confirmación y la fecha, devuelve el estado (`AL_DIA`, `POR_VENCER`, `VENCIDA`, `CLASE_SUELTA_VIGENTE`, `CLASE_SUELTA_VENCIDA`), los días restantes y si puede asistir.
-  - [ ] Días de gracia 0 → sin período de gracia.
-  - [ ] Con una transferencia pendiente se mantiene el estado anterior y no se bloquea la asistencia (US-16).
-  - [ ] Si un alumno vencido puede asistir lo decide `IInfoParametros` (ver decisiones).
-- [ ] Tests parametrizados con fechas: antes del vencimiento, el mismo día, dentro y fuera de la gracia, fin de mes, año bisiesto, clase suelta el día de la clase y el siguiente.
+- [x] Subsistema `src/modules/calculos-del-negocio/` (el nombre sale del diagrama: "Calculos del negocio"), sin repositorio ni Prisma. Los calculadores reciben datos y devuelven resultados.
+- [x] `CalculadorVencimientoCuota` implementa `ICalculoVencimiento`: dada la fecha de pago y el plan, devuelve hasta cuándo cubre la cuota.
+  - [x] `MENSUAL`: de fecha a fecha, un mes después del pago (31/01 → 28 o 29/02, como hace `esMenorDeEdad` con el 29 de febrero).
+  - [x] `CLASE_SUELTA`: vence al terminar la clase contratada, sin días de gracia.
+- [x] `CalculadorHabilitacion` implementa `ICalculoHabilitacion`: dados el vencimiento vigente, los días de gracia del plan, si hay un pago pendiente de confirmación y la fecha, devuelve el estado (`AL_DIA`, `POR_VENCER`, `VENCIDA`, `CLASE_SUELTA_VIGENTE`, `CLASE_SUELTA_VENCIDA`), los días restantes y si puede asistir.
+  - [x] Días de gracia 0 → sin período de gracia.
+  - [x] Con una transferencia pendiente se mantiene el estado anterior y no se bloquea la asistencia (US-16).
+  - [x] Si un alumno vencido puede asistir lo decide `VENCIDOS_PUEDEN_ASISTIR` (`IInfoParametros`), que el calculador recibe ya resuelto.
+  - [x] Sin una cuota paga (`vencimiento` nulo) da `PENDIENTE_DE_PAGO` y no habilita a asistir, con o sin transferencia pendiente.
+- [x] Tests parametrizados con fechas: antes del vencimiento, el mismo día, dentro y fuera de la gracia, fin de mes, año bisiesto, clase suelta el día de la clase y el siguiente.
 
 ## ParametrosSistema
 
