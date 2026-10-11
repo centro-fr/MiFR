@@ -148,7 +148,9 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     description:
       `Requiere el permiso \`ALUMNOS_EDITAR\`. Una profesora solo pre-inscribe a su propio nombre ` +
       "(`id_profesora` es su perfil), sin cargo no, y alumnos que no tienen una inscripción vigente con otra " +
-      `profesora; si no, 403. ${reglasDeAlta}`,
+      `profesora; si no, 403. ${reglasDeAlta} ` +
+      "Si alguna actividad de los horarios tiene `requiere_medidas`, `medidas` (peso en kg y talla en cm) es " +
+      "obligatorio (400 si falta); se guarda como la primera medición del alumno, a nombre de la profesora a cargo.",
     request: {
       body: cuerpoJson(
         crearInscripcionSchema.openapi("CrearInscripcion", {
@@ -157,6 +159,7 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
             id_plan: 1,
             id_profesora: 1,
             ids_horarios: [1, 2],
+            medidas: { peso_kg: 62.5, talla_cm: 168 },
           },
         }),
       ),

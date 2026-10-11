@@ -5,7 +5,9 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../../shared/errors/app-error.js";
+import type { IUnidadDeTrabajo } from "../../../../shared/db/transaccion.js";
 import type { Solicitante } from "../../../../shared/utils/solicitante.types.js";
+import type { IInfoProgreso } from "../../../gestion-rutinas-y-progreso/registro-progreso/interface/i-info-progreso.js";
 import type { IInfoAlumnos } from "../../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
@@ -35,8 +37,13 @@ const horario = {
   id_profesora: 3,
   id_actividad: 4,
   fecha_baja: null,
-  actividad: { activo: true },
+  actividad: { activo: true, nombre: "Funcional", requiere_medidas: false },
 };
+const horarioQuePideMedidas = {
+  ...horario,
+  actividad: { activo: true, nombre: "Entrenamiento personalizado", requiere_medidas: true },
+};
+const medidas = { peso_kg: 62.5, talla_cm: 168 };
 const inscripcion = {
   id_inscripcion: 12,
   id_alumno: 5,
@@ -94,6 +101,9 @@ function crearMocks() {
       buscarPorId: vi.fn().mockResolvedValue({ id_profesora: 3 }),
       buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }),
     },
+    progreso: { registrarMedicionInicial: vi.fn().mockResolvedValue(undefined) },
+    // Corre la operación como lo haría la transacción, y deja ver qué quedó adentro.
+    unidadDeTrabajo: { ejecutar: vi.fn((operacion: () => Promise<unknown>) => operacion()) },
   };
 }
 
@@ -111,6 +121,8 @@ describe("InscripcionService", () => {
       mocks.planes as unknown as IInfoPlanes,
       mocks.horarios as unknown as IInfoHorarios,
       mocks.profesores as unknown as IInfoProfesores,
+      mocks.progreso as unknown as IInfoProgreso,
+      mocks.unidadDeTrabajo as unknown as IUnidadDeTrabajo,
     );
   });
 
@@ -156,6 +168,53 @@ describe("InscripcionService", () => {
 
       await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(error);
       expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    describe("peso y talla (US-05)", () => {
+      it("si una actividad de los horarios los pide y faltan, rechaza sin guardar nada", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horarioQuePideMedidas, id_horario: 9 }]);
+
+        await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).rejects.toThrow(
+          new ValidationError("Entrenamiento personalizado pide el peso y la talla para pre-inscribir"),
+        );
+        expect(mocks.unidadDeTrabajo.ejecutar).not.toHaveBeenCalled();
+        expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+      });
+
+      it("con las medidas, guarda la inscripción y la medición inicial en la misma transacción", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]);
+        mocks.unidadDeTrabajo.ejecutar.mockImplementation(async (operacion) => {
+          expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+          const resultado = await operacion();
+          expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalled();
+          return resultado;
+        });
+
+        await expect(servicio.crear({ ...alta, medidas }, PROPIETARIA)).resolves.toBe(inscripcion);
+        expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalledWith({
+          idAlumno: 5,
+          idProfesora: 3,
+          pesoKg: 62.5,
+          tallaCm: 168,
+        });
+        expect(mocks.repositorio.crear.mock.calls[0][0]).not.toHaveProperty("medidas");
+      });
+
+      it("sin cupo no registra la medición", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]);
+        mocks.repositorio.crear.mockResolvedValue({ resultado: "sin-cupo" });
+
+        await expect(servicio.crear({ ...alta, medidas }, PROPIETARIA)).rejects.toThrow(ConflictError);
+        expect(mocks.progreso.registrarMedicionInicial).not.toHaveBeenCalled();
+      });
+
+      it("si ninguna actividad las pide, no las exige; si llegan igual, las guarda", async () => {
+        await servicio.crear(alta, PROPIETARIA);
+        expect(mocks.progreso.registrarMedicionInicial).not.toHaveBeenCalled();
+
+        await servicio.crear({ ...alta, medidas }, PROPIETARIA);
+        expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalledOnce();
+      });
     });
 
     describe("pedido por una profesora", () => {

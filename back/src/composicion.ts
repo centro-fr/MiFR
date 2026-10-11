@@ -22,6 +22,9 @@ import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/pl
 import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
 import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
 import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
+import { RegistroProgresoRepository } from "./modules/gestion-rutinas-y-progreso/registro-progreso/registro-progreso.repository.js";
+import { RegistroProgresoService } from "./modules/gestion-rutinas-y-progreso/registro-progreso/registro-progreso.service.js";
+import { UnidadDeTrabajoPrisma } from "./shared/db/transaccion.js";
 import { GestionInscripcionesYClasesService } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
@@ -62,6 +65,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     planService,
     horarioService,
     profesorService,
+    new RegistroProgresoService(new RegistroProgresoRepository(prisma)),
+    new UnidadDeTrabajoPrisma(prisma),
   );
   const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(

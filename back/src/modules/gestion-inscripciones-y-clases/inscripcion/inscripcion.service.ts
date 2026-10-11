@@ -4,10 +4,13 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/app-error.js";
+import type { IUnidadDeTrabajo } from "../../../shared/db/transaccion.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
+import type { IInfoProgreso } from "../../gestion-rutinas-y-progreso/registro-progreso/interface/i-info-progreso.js";
+import type { HorarioRespuesta } from "../../gestion-servicio-entrenamiento/horario/horario.types.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { Plan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
@@ -51,6 +54,20 @@ type DatosPreparados = Omit<DatosDeInscripcion, "ids_horarios" | "fecha_inicio">
   id_plan_precio: number;
 };
 
+interface InscripcionPreparada {
+  datos: DatosPreparados;
+  horarios: HorarioRespuesta[];
+}
+
+// US-05: si alguna actividad de los horarios elegidos pide peso y talla, la pre-inscripción sin ellos
+// no se guarda. Si llegan sin que nadie los pida, se guardan igual.
+function verificarMedidas(horarios: HorarioRespuesta[], medidas: CrearInscripcionInput["medidas"]): void {
+  const queLasPide = horarios.find(({ actividad }) => actividad.requiere_medidas);
+  if (queLasPide && !medidas) {
+    throw new ValidationError(`${queLasPide.actividad.nombre} pide el peso y la talla para pre-inscribir`);
+  }
+}
+
 export class InscripcionService implements IInfoInscripciones {
   constructor(
     private readonly repositorio: InscripcionRepository,
@@ -58,13 +75,33 @@ export class InscripcionService implements IInfoInscripciones {
     private readonly planes: IInfoPlanes,
     private readonly horarios: IInfoHorarios,
     private readonly profesoras: IInfoProfesores,
+    private readonly progreso: IInfoProgreso,
+    private readonly unidadDeTrabajo: IUnidadDeTrabajo,
   ) {}
 
+  // La inscripción y la medición inicial van juntas: sin cupo no queda una medición suelta.
   async crear(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
     if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input, solicitante);
-    const datos = await this.prepararInscripcion({ ...input, estado: "PREINSCRIPTA" });
-    const resultado = await this.repositorio.crear(datos, input.ids_horarios, fechaActualArgentina());
-    return this.resolverResultado(resultado);
+    const { medidas, ...datosDeInscripcion } = input;
+    const { datos, horarios } = await this.prepararInscripcion({
+      ...datosDeInscripcion,
+      estado: "PREINSCRIPTA",
+    });
+    verificarMedidas(horarios, medidas);
+
+    return this.unidadDeTrabajo.ejecutar(async () => {
+      const resultado = await this.repositorio.crear(datos, input.ids_horarios, fechaActualArgentina());
+      const inscripcion = this.resolverResultado(resultado);
+      if (medidas) {
+        await this.progreso.registrarMedicionInicial({
+          idAlumno: datos.id_alumno,
+          idProfesora: datos.id_profesora,
+          pesoKg: medidas.peso_kg,
+          tallaCm: medidas.talla_cm,
+        });
+      }
+      return inscripcion;
+    });
   }
 
   // Una inscripción vigente deja al alumno "a cargo" de la profesora, que desde ahí ve y edita su ficha
@@ -157,7 +194,7 @@ export class InscripcionService implements IInfoInscripciones {
       throw new ConflictError("El alumno dado de baja ya tiene una pre-inscripción vigente");
     }
 
-    const datos = await this.prepararInscripcion(
+    const { datos } = await this.prepararInscripcion(
       {
         ...input,
         id_alumno: idAlumno,
@@ -177,7 +214,7 @@ export class InscripcionService implements IInfoInscripciones {
     if (actual.id_plan === input.id_plan) {
       throw new ConflictError("La inscripción ya tiene el plan seleccionado");
     }
-    const nuevoPlan = await this.prepararInscripcion({
+    const { datos: nuevoPlan } = await this.prepararInscripcion({
       ...input,
       id_alumno: actual.id_alumno,
       estado: actual.estado === "ACTIVA" ? "ACTIVA" : "PREINSCRIPTA",
@@ -221,7 +258,7 @@ export class InscripcionService implements IInfoInscripciones {
   private async prepararInscripcion(
     input: DatosDeInscripcion,
     permitirAlumnoDeBaja = false,
-  ): Promise<DatosPreparados> {
+  ): Promise<InscripcionPreparada> {
     const alumno = await this.alumnos.buscarPorId(input.id_alumno);
     if (!alumno || (alumno.estado === "BAJA" && !permitirAlumnoDeBaja)) {
       throw new NotFoundError("Alumno inexistente o dado de baja");
@@ -239,9 +276,12 @@ export class InscripcionService implements IInfoInscripciones {
     }
     const precio = await this.planes.precioVigente(input.id_plan, hoy);
     if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
-    await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
+    const horarios = await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
 
-    return { ...input, fecha_inicio: fechaInicio, id_plan_precio: precio.id_plan_precio };
+    return {
+      datos: { ...input, fecha_inicio: fechaInicio, id_plan_precio: precio.id_plan_precio },
+      horarios,
+    };
   }
 
   private fechasDeBaja(): FechasDeBaja {
@@ -252,7 +292,7 @@ export class InscripcionService implements IInfoInscripciones {
     plan: ReglasDelPlan,
     idProfesora: number,
     idsHorarios: number[],
-  ): Promise<void> {
+  ): Promise<HorarioRespuesta[]> {
     const [profesora, horarios] = await Promise.all([
       this.profesoras.buscarPorId(idProfesora),
       this.horarios.buscarPorIds(idsHorarios),
@@ -280,6 +320,7 @@ export class InscripcionService implements IInfoInscripciones {
     if (plan.clases_por_semana !== null && idsHorarios.length > plan.clases_por_semana) {
       throw new ValidationError("La cantidad de horarios supera las clases por semana del plan");
     }
+    return horarios;
   }
 
   private resolverResultado(
