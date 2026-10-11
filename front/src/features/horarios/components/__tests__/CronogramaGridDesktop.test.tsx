@@ -72,4 +72,51 @@ describe("CronogramaGridDesktop", () => {
     expect(botonEliminar.tabIndex).toBeGreaterThanOrEqual(0);
     expect(botonEditar.parentElement).toHaveClass("sr-only", "group-focus-within:not-sr-only");
   });
+
+  it("distribuye 2 clases contiguas que comparten franja horaria (ej: 10:00 a 11:30 y 11:30 a 13:00) mitad arriba y mitad abajo a ancho completo", () => {
+    const horario1 = crearHorarioFrontend({
+      id: "1",
+      diaSemana: "LUNES",
+      horaInicio: "10:00",
+      horaFin: "11:30",
+      actividadNombre: "Funcional Grupal",
+      profesoraNombre: "Lucía Gómez",
+    });
+    const horario2 = crearHorarioFrontend({
+      id: "2",
+      diaSemana: "LUNES",
+      horaInicio: "11:30",
+      horaFin: "13:00",
+      actividadNombre: "Entrenamiento Personalizado",
+      profesoraNombre: "Carla Ruiz",
+    });
+
+    render(<CronogramaGridDesktop {...defaultProps} horarios={[horario1, horario2]} todosLosHorarios={[horario1, horario2]} />);
+
+    expect(screen.getByText("Funcional Grupal")).toBeInTheDocument();
+    expect(screen.getByText("Entrenamiento Personalizado")).toBeInTheDocument();
+
+    const contenedor1 = screen.getByText("Funcional Grupal").closest("div[style*='position: absolute']");
+    const contenedor2 = screen.getByText("Entrenamiento Personalizado").closest("div[style*='position: absolute']");
+
+    expect(contenedor1).toHaveStyle({ left: "3px", right: "3px" });
+    expect(contenedor2).toHaveStyle({ left: "3px", right: "3px" });
+
+    // La primera clase empieza a las 10:00 (top base) y dura 90 min (156px)
+    // La segunda clase empieza a las 11:30 (top 156px + 2px = 158px) ocupando la mitad inferior de la casilla de las 11
+    expect(contenedor1).toHaveStyle({ top: "2px", height: "152px" });
+    expect(contenedor2).toHaveStyle({ top: "158px", height: "152px" });
+  });
+
+  it("renderiza clases nocturnas hasta las 23:00 y expande las franjas horarias", () => {
+    const horarioNocturno = crearHorarioFrontend({
+      diaSemana: "VIERNES",
+      horaInicio: "22:00",
+      horaFin: "23:00",
+    });
+
+    render(<CronogramaGridDesktop {...defaultProps} horarios={[horarioNocturno]} todosLosHorarios={[horarioNocturno]} />);
+
+    expect(screen.getByText("22:00 - 23:00")).toBeInTheDocument();
+  });
 });

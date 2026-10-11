@@ -32,12 +32,16 @@ describe("crearHorarioSchema", () => {
     expect(crearHorarioSchema.safeParse({ ...minimo, cupo_maximo }).success).toBe(false);
   });
 
-  it.each(["8:00", "08:0", "24:00", "08:60", "-0:00", "06:59", "20:01", "08:00:00", ""])(
+  it.each(["8:00", "08:0", "24:00", "08:60", "-0:00", "06:59", "23:01", "08:00:00", ""])(
     "rechaza la hora %j",
     (hora_inicio) => {
       expect(crearHorarioSchema.safeParse({ ...minimo, hora_inicio }).success).toBe(false);
     },
   );
+
+  it("acepta horario nocturno hasta las 23:00", () => {
+    expect(crearHorarioSchema.safeParse({ ...minimo, hora_inicio: "22:00", hora_fin: "23:00" }).success).toBe(true);
+  });
 
   it("rechaza que la hora de fin no sea posterior a la de inicio", () => {
     expect(crearHorarioSchema.safeParse({ ...minimo, hora_fin: "08:00" }).success).toBe(false);
