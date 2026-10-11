@@ -247,12 +247,14 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoAsistencia"    as I_InfoAsistencia
     interface "IInfoParametros"    as R_GIC_InfoParametros
     interface "IInfoProgreso"      as R_GIC_InfoProgreso
+    interface "IInfoParametros"    as R_GIC_InfoParametrosInsc
 
     Inscripcion -left-( R_GIC_InfoHorarios
     Inscripcion -left-( R_GIC_InfoProfesoresInsc
     Inscripcion -left-( R_GIC_InfoAlumnos
     Inscripcion -left-( R_GIC_InfoPlanes
     Inscripcion -left-( R_GIC_InfoProgreso
+    Inscripcion -left-( R_GIC_InfoParametrosInsc
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
     Clase       -right-( R_GIC_InfoProfesoresClase
