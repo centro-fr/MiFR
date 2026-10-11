@@ -113,7 +113,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] Mayor de edad → email obligatorio (decidido); el tutor también lo lleva, porque es quien entra.
 - [x] `IInfoAlumnos.activar(id)`: pasa alumno y usuario a `ACTIVO` y asigna el rol `ALUMNO`, o `TUTOR` al responsable si es menor. Tiene que ser idempotente: la va a llamar `Inscripcion` y un pago confirmado dos veces no puede duplicar nada.
 - [x] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id)` para US-08 (la baja deja al usuario `INACTIVO`; el tutor no se toca porque puede tener otros alumnos).
-- [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada (producción) la carga del catálogo no los agrega: la propietaria se los otorga desde la matriz.
+- [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada la carga del catálogo no los agrega, porque ya existían: mientras estemos en desarrollo, se regenera la base (ver `DESPLIEGUE.md`).
 - [x] Tests del service (menor sin tutor, reutilización del tutor, activación idempotente) y de integración: PI-15, PI-16 y PI-19 (tests E-01 a E-08 y F-01 a F-03).
 
 ## US-05, US-07 y US-08 – Inscripción, alta definitiva y baja
