@@ -31,7 +31,7 @@ export function LoginDesarrolloPanel({ errorCode, isLoading, onSubmit }: Props) 
     <main className="flex h-dvh items-center justify-center bg-canvas px-4">
       <Card
         aria-labelledby="login-desarrollo-titulo"
-        className="w-full max-w-sm gap-4 rounded-2xl border-2 border-dashed border-amber-300 p-6 shadow-sm"
+        className="w-full max-w-sm gap-4 rounded-2xl border-2 border-dashed border-amber-300 p-6 dark:border-amber-500/40 shadow-sm"
       >
         <CardHeader className="flex items-center gap-2 p-0 text-amber-700 dark:text-amber-300">
           <FlaskConical aria-hidden="true" className="h-5 w-5" />
@@ -52,6 +52,7 @@ export function LoginDesarrolloPanel({ errorCode, isLoading, onSubmit }: Props) 
               type="email"
               required
               autoComplete="email"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="marina.sosa@example.com"
@@ -59,13 +60,13 @@ export function LoginDesarrolloPanel({ errorCode, isLoading, onSubmit }: Props) 
             />
 
             {errorCode && (
-              <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                 {MENSAJES[errorCode] ?? "No se pudo iniciar sesión. ¿Está activo LOGIN_DESARROLLO en el back?"}
               </p>
             )}
 
             <Button type="submit" disabled={isLoading} className="mt-2 w-full rounded-xl text-sm font-extrabold">
-              {isLoading ? "Entrando..." : "Entrar (desarrollo)"}
+              {isLoading ? "Entrando…" : "Entrar (desarrollo)"}
             </Button>
           </form>
         </CardContent>

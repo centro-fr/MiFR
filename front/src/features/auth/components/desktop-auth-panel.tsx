@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { AuthFormBlock } from "@/features/auth/components/auth-form-block";
 import type { AuthErrorCode } from "@/types/auth";
 
@@ -9,14 +8,12 @@ interface DesktopAuthPanelProps {
   onLogin: () => void;
   onRetry: () => void;
   onClear: () => void;
-  onContact: () => void;
-  onOpenLegal: (type: "terms" | "privacy") => void;
   overlay?: ReactNode;
 }
 
 // Columna derecha 50%: bloque compacto y centrado a la misma altura visual
 // que el hero izquierdo. Logo único (centrado) para evitar duplicación.
-export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onClear, onContact, onOpenLegal, overlay }: DesktopAuthPanelProps) {
+export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onClear, overlay }: DesktopAuthPanelProps) {
   return (
     <div className="flex w-full flex-col items-center justify-center overflow-y-auto bg-white px-8 py-8 lg:h-full lg:w-1/2 lg:px-12 dark:bg-surface-low">
       <div className="flex w-full max-w-[460px] flex-col items-center">
@@ -38,19 +35,10 @@ export function DesktopAuthPanel({ errorCode, isLoading, onLogin, onRetry, onCle
           onLogin={onLogin}
           onRetry={onRetry}
           onClear={onClear}
-          onContact={onContact}
           overlay={overlay}
           buttonClassName="lg:h-[76px] lg:px-10 lg:text-lg"
           hintClassName="text-[15px]"
         />
-
-        <footer className="mt-3 border-t border-slate-100 pt-2 text-center dark:border-white/10">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            <Button type="button" variant="link" onClick={() => onOpenLegal("terms")} className="h-auto min-h-[44px] px-0 font-medium text-inherit underline-offset-2 hover:text-inherit hover:no-underline">Términos</Button>
-            {" · "}
-            <Button type="button" variant="link" onClick={() => onOpenLegal("privacy")} className="h-auto min-h-[44px] px-0 font-medium text-inherit underline-offset-2 hover:text-inherit hover:no-underline">Privacidad</Button>
-          </p>
-        </footer>
       </div>
     </div>
   );

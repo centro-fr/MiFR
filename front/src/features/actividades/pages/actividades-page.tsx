@@ -106,6 +106,9 @@ export function ActividadesPage() {
         toast.info(`Actividad "${actividadBaja.nombre}" dada de baja`);
         setActividadBaja(null);
       },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo dar de baja la actividad."));
+      },
     });
   };
 
@@ -114,23 +117,16 @@ export function ActividadesPage() {
   return (
     <OwnerLayout>
       <div className="px-4 py-5 md:p-8 max-w-[1180px] mx-auto w-full">
-        <div className="flex items-center gap-2 text-sm font-medium mb-2 select-none">
-          <span className="text-slate-400">MiFR Centro</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-600 font-semibold dark:text-slate-300">Actividades y Horarios</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-[#E91E82] font-semibold">Actividades</span>
-        </div>
         <div className="flex items-start justify-between gap-3 mb-5 md:mb-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-[22px] md:text-2xl font-black text-[#181C26] dark:text-white tracking-tight">
+              <h1 className="text-[22px] md:text-2xl font-black text-dark dark:text-white tracking-tight">
                 Actividades
               </h1>
               {!isPending && !isError && (
                 <Badge
                   variant="outline"
-                  className="rounded-full border-pink-200 bg-pink-100 px-2.5 py-1 text-sm font-extrabold text-[#BC1266] dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300"
+                  className="rounded-full border-pink-200 bg-pink-100 px-2.5 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300"
                 >
                   {actividades.length} activas
                 </Badge>
@@ -143,7 +139,7 @@ export function ActividadesPage() {
           <Button
             onClick={abrirNueva}
             type="button"
-            className="min-h-[44px] rounded-xl bg-[#E91E82] px-4 text-sm font-extrabold text-white shadow-lg shadow-[#E91E82]/30 transition-transform hover:bg-[#BC1266] active:scale-95 md:px-5"
+            className="min-h-[44px] rounded-xl bg-primary px-4 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 md:px-5"
           >
             + Nueva<span className="hidden md:inline"> actividad</span>
           </Button>
@@ -151,7 +147,7 @@ export function ActividadesPage() {
 
         {isPending ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm font-semibold text-slate-600 dark:text-slate-400">
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-[#E91E82]" />
+            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
             Cargando actividades…
           </div>
         ) : isError ? (
@@ -167,7 +163,7 @@ export function ActividadesPage() {
           <EmptyActividades onNuevo={abrirNueva} />
         ) : (
           <>
-            <div className="md:hidden space-y-3 pb-8">
+            <div className="grid grid-cols-1 gap-3 pb-8 md:grid-cols-2 xl:hidden">
               {SECCIONES.map((seccion) =>
                 actividades
                   .filter((actividad) => actividad.modalidad === seccion.modalidad)
@@ -197,7 +193,10 @@ export function ActividadesPage() {
           actividad={actividadBaja}
           dandoDeBaja={darDeBaja.isPending}
           errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja la actividad.") : null}
-          onClose={() => setActividadBaja(null)}
+          onClose={() => {
+            darDeBaja.reset();
+            setActividadBaja(null);
+          }}
           onConfirm={confirmarBaja}
         />
       )}
@@ -211,18 +210,18 @@ function EmptyActividades({ onNuevo }: { onNuevo: () => void }) {
       <CardContent className="flex flex-col items-center justify-center gap-3 p-0">
         <span
           aria-hidden="true"
-          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-pink-100 text-[#BC1266] dark:bg-pink-500/15 dark:text-pink-300"
+          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-pink-100 text-primary-dark dark:bg-pink-500/15 dark:text-pink-300"
         >
           <CalendarPlus className="h-8 w-8" />
         </span>
-        <h2 className="text-xl font-extrabold tracking-tight text-[#181C26] dark:text-white">Todavía no hay actividades</h2>
+        <h2 className="text-xl font-extrabold tracking-tight text-dark dark:text-white">Todavía no hay actividades</h2>
         <p className="max-w-[320px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           Creá la primera disciplina del centro para empezar a diagramar horarios.
         </p>
         <Button
           type="button"
           onClick={onNuevo}
-          className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#E91E82] px-5 text-sm font-extrabold text-white shadow-lg shadow-[#E91E82]/30 transition-transform hover:bg-[#BC1266] active:scale-95"
+          className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
         >
           + Nueva actividad
         </Button>
@@ -238,7 +237,7 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
         type="button"
         variant="outline"
         onClick={() => onEditar(actividad)}
-        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:border-[#E91E82] hover:text-[#E91E82] md:min-h-0 md:px-2.5 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
+        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary pointer-fine:min-h-0 md:px-2.5 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
       >
         Editar
       </Button>
@@ -246,7 +245,7 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
         type="button"
         variant="outline"
         onClick={() => onBaja(actividad)}
-        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-3 py-1.5 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white md:min-h-0 md:px-2.5 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
+        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-3 py-1.5 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white pointer-fine:min-h-0 md:px-2.5 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
       >
         Dar de baja
       </Button>
@@ -256,19 +255,19 @@ function BotonesAcciones({ actividad, onEditar, onBaja }: { actividad: Actividad
 
 function ActividadCard({ actividad, badge, ...acciones }: { actividad: Actividad; badge: string } & AccionesActividad) {
   return (
-    <Card className="rounded-xl border-slate-200 bg-white p-3.5 shadow-sm dark:border-white/10 dark:bg-surface-low">
+    <Card className="rounded-xl border-border bg-white p-3.5 shadow-sm dark:bg-surface-low">
       <Badge variant="outline" className={`inline-flex rounded-md border px-2 py-1 text-sm font-extrabold leading-none ${badge}`}>
         {textoModalidad(actividad.modalidad)}
       </Badge>
-      <h2 className="text-base font-black text-[#181C26] dark:text-white mt-2 leading-tight">{actividad.nombre}</h2>
-      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</p>
+      <h2 className="text-base font-black text-dark dark:text-white mt-2 leading-tight">{actividad.nombre}</h2>
+      <p className="text-sm font-semibold text-muted-foreground">{actividad.codigo}</p>
       {actividad.descripcion && (
         <p className="text-sm text-slate-600 mt-2 leading-relaxed line-clamp-3 dark:text-slate-400">{actividad.descripcion}</p>
       )}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-white/10">
         <div>
-          <div className="text-sm text-slate-500 font-semibold uppercase tracking-wide dark:text-slate-400">Cupo</div>
-          <div className="text-sm text-slate-800 dark:text-slate-100 font-extrabold mt-0.5">
+          <div className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">Cupo</div>
+          <div className="text-sm text-foreground font-extrabold mt-0.5">
             {textoCupoActividad(actividad.cupoMaximo)}
           </div>
         </div>
@@ -280,11 +279,11 @@ function ActividadCard({ actividad, badge, ...acciones }: { actividad: Actividad
 
 function TablaActividades({ actividades, acciones }: { actividades: Actividad[]; acciones: AccionesActividad }) {
   return (
-    <Card className="hidden overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm md:block dark:border-white/10 dark:bg-surface-low">
+    <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm xl:block dark:bg-surface-low">
       <div className="overflow-x-auto">
         <Table className="w-full min-w-[760px] text-left text-sm">
           <TableHeader>
-            <TableRow className="border-b border-slate-200 bg-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+            <TableRow className="border-b border-border bg-slate-100 text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:bg-white/5 dark:text-slate-200">
               <TableHead scope="col" className="w-[50%] px-6 py-4">Actividad</TableHead>
               <TableHead scope="col" className="w-[18%] px-4 py-4">Modalidad</TableHead>
               <TableHead scope="col" className="w-[16%] px-4 py-4">Cupo máximo</TableHead>
@@ -297,15 +296,15 @@ function TablaActividades({ actividades, acciones }: { actividades: Actividad[];
               if (deLaSeccion.length === 0) return null;
               return [
                 <TableRow key={seccion.modalidad} className={`border-y font-bold ${seccion.encabezado}`}>
-                  <TableHead scope="colgroup" colSpan={4} className="px-6 py-2.5 text-left text-xs uppercase tracking-wider">
+                  <TableHead scope="colgroup" colSpan={4} className="px-6 py-2.5 text-left text-sm uppercase tracking-wider">
                     {seccion.titulo} ({deLaSeccion.length})
                   </TableHead>
                 </TableRow>,
                 ...deLaSeccion.map((actividad) => (
                   <TableRow key={actividad.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                     <TableCell className="px-6 py-4 align-top">
-                      <div className="font-black text-sm text-[#181C26] dark:text-white">{actividad.nombre}</div>
-                      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">{actividad.codigo}</div>
+                      <div className="font-black text-sm text-dark dark:text-white">{actividad.nombre}</div>
+                      <div className="text-sm font-semibold text-muted-foreground">{actividad.codigo}</div>
                       {actividad.descripcion && (
                         <p className="text-sm text-slate-600 mt-1 leading-relaxed max-w-xl dark:text-slate-400">
                           {actividad.descripcion}
@@ -313,7 +312,7 @@ function TablaActividades({ actividades, acciones }: { actividades: Actividad[];
                       )}
                     </TableCell>
                     <TableCell className="px-4 py-4 align-top">
-                      <Badge variant="outline" className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold ${seccion.badge}`}>
+                      <Badge variant="outline" className={`inline-flex rounded-lg border px-2.5 py-1 text-sm font-bold ${seccion.badge}`}>
                         {textoModalidad(actividad.modalidad)}
                       </Badge>
                     </TableCell>

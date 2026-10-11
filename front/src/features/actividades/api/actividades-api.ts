@@ -23,7 +23,7 @@ export function aActividad(api: ActividadApi): Actividad {
 function aCuerpo(datos: ActividadFormData): ActualizarActividadBody {
   return {
     nombre: datos.nombre,
-    // El back no acepta null en la descripción: vacía se manda como texto vacío.
+    // El back acepta null o string vacío en la descripción; textoOpcionalSchema lo normaliza a null.
     descripcion: datos.descripcion,
     modalidad: datos.modalidad,
     cupo_maximo: datos.cupoMaximo,

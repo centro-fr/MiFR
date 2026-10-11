@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarDays,
   ClipboardCheck,
+  Dumbbell,
   LayoutDashboard,
   Receipt,
   Settings,
@@ -28,16 +29,10 @@ export interface ItemMenu {
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
   { etiqueta: "Alumnos", icono: Users, to: "/app/alumnos" },
-  {
-    etiqueta: "Actividades y Horarios",
-    icono: CalendarDays,
-    hijos: [
-      // US-03: disciplinas y cupos.
-      { etiqueta: "Actividades", to: "/app/actividades" },
-      // US-04: cronograma semanal con profesoras asignadas.
-      { etiqueta: "Horarios", to: "/app/horarios" },
-    ],
-  },
+  // US-03: disciplinas y cupos.
+  { etiqueta: "Actividades", icono: Dumbbell, to: "/app/actividades" },
+  // US-04: cronograma semanal con profesoras asignadas.
+  { etiqueta: "Horarios", icono: CalendarDays, to: "/app/horarios" },
   { etiqueta: "Planes y Precios", icono: Tag, to: "/app/planes" },
   // Glosario: nunca "pago" en la UI. Cobro = efectivo de profesora, transferencia = aviso del alumno.
   { etiqueta: "Cobros y Cuotas", icono: Banknote, to: "/app/pagos" },

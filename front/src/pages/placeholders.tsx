@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 function PlaceholderShell({ title, body }: { title: string; body: string }) {
   const { user, logout } = useAuth();
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-4 px-4 py-10 text-slate-100">
-      <p className="text-xs uppercase tracking-wider text-slate-400">MiFR · Vista temporal US-01</p>
+    <main className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-4 px-4 py-10 text-foreground">
+      <p className="text-sm uppercase tracking-wider text-muted-foreground">MiFR · Vista temporal US-01</p>
       <h1 className="text-2xl font-extrabold">{title}</h1>
-      <p className="max-w-prose text-sm text-slate-300">{body}</p>
+      <p className="max-w-prose text-sm text-muted-foreground">{body}</p>
       {user && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-muted-foreground">
           Sesión: {user.nombre} {user.apellido} · {user.roles.join(" + ")}
         </p>
       )}
@@ -32,9 +32,9 @@ export function StudentHomePage() {
 
 export function NotFoundPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-canvas px-4 text-center text-slate-100">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-center text-foreground">
       <h1 className="text-2xl font-extrabold">Página no encontrada</h1>
-      <p className="text-sm text-slate-400">La ruta que buscás no existe.</p>
+      <p className="text-sm text-muted-foreground">La ruta que buscás no existe.</p>
       <a href="/login" className="min-h-[44px] content-center text-sm font-bold text-primary hover:underline">
         Volver al inicio de sesión
       </a>

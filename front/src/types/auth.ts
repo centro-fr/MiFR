@@ -19,6 +19,7 @@ export type AuthErrorCode =
   | "USUARIO_INACTIVO"
   | "INVALID_GOOGLE_TOKEN"
   | "RED_ERROR"
+  | "ERROR_SERVIDOR"
   | "POPUP_BLOQUEADO"
   | "POPUP_CANCELADO";
 

@@ -14,6 +14,32 @@ export function mensajeDeErrorApi(error: unknown, mensajePorDefecto: string): st
   if (!error.response) return "No se pudo conectar con el servidor. Revisá tu conexión.";
   if (error.response.status === 403) return "No tenés permisos para realizar esta acción.";
 
-  const data = error.response.data as { error?: { message?: string } } | undefined;
+  interface DetalleErrorApi {
+    formErrors?: string[];
+    fieldErrors?: Record<string, string[]>;
+  }
+
+  interface RespuestaErrorApi {
+    error?: {
+      code?: string;
+      message?: string;
+      details?: DetalleErrorApi;
+    };
+  }
+
+  const data = error.response.data as RespuestaErrorApi | undefined;
+  if (data?.error?.details) {
+    const { formErrors, fieldErrors } = data.error.details;
+    const detallesCampos = fieldErrors
+      ? Object.entries(fieldErrors)
+          .flatMap(([campo, mensajes]) => (mensajes ?? []).map((m) => `${campo}: ${m}`))
+          .filter(Boolean)
+      : [];
+    const todos = [...(formErrors ?? []), ...detallesCampos];
+    if (todos.length > 0) {
+      return todos.join(". ");
+    }
+  }
+
   return data?.error?.message ?? mensajePorDefecto;
 }
