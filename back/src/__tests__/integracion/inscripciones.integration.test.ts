@@ -5,7 +5,8 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
-// Casos PI-20 a PI-27: preinscripción, activación, baja/reactivación y cambios de plan/horarios.
+// Casos PI-20 a PI-27, PI-30, PI-32 y PI-37: preinscripción (con peso y talla si la actividad los pide),
+// activación, baja/reactivación y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -493,5 +494,120 @@ describe("PI-32: paginación de inscripciones", () => {
       todas.body[1].id_inscripcion,
     ]);
     expect(demasiadas.status).toBe(400);
+  });
+});
+
+describe("PI-37: peso y talla al pre-inscribir en una actividad que los pide", () => {
+  const MEDIDAS = { peso_kg: 62.5, talla_cm: 168 };
+
+  async function horarioPersonalizadoDeCarla(): Promise<number> {
+    const horario = await prisma.horarios.findFirstOrThrow({
+      where: {
+        id_actividad: datosDemo.idActividad.get("ENTRENAMIENTO_PERS"),
+        id_profesora: datosDemo.idProfesora.get(CARLA),
+        fecha_baja: null,
+      },
+      orderBy: { dia_semana: "asc" },
+    });
+    return horario.id_horario;
+  }
+
+  function preinscribirPersonalizado(idAlumno: number, idHorario: number, medidas?: typeof MEDIDAS) {
+    return comoMarina("post", "/inscripciones").send({
+      id_alumno: idAlumno,
+      id_plan: datosDemo.idPlan.get("Personalizado 2 días"),
+      id_profesora: datosDemo.idProfesora.get(CARLA),
+      ids_horarios: [idHorario],
+      ...(medidas ? { medidas } : {}),
+    });
+  }
+
+  async function contarFilas() {
+    return {
+      inscripciones: await prisma.inscripciones.count(),
+      registros: await prisma.registros_progreso.count(),
+      medidas: await prisma.medidas_corporales.count(),
+    };
+  }
+
+  it("sin peso ni talla responde 400 y no guarda ni la inscripción ni la medición", async () => {
+    const { id_alumno } = await crearAlumno(prisma);
+    const antes = await contarFilas();
+
+    const respuesta = await preinscribirPersonalizado(id_alumno, await horarioPersonalizadoDeCarla());
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.message).toBe(
+      "Entrenamiento Personalizado pide el peso y la talla para pre-inscribir",
+    );
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  it("con peso y talla pre-inscribe y guarda la medición inicial a nombre de la profesora a cargo", async () => {
+    const { id_alumno } = await crearAlumno(prisma);
+
+    const respuesta = await preinscribirPersonalizado(
+      id_alumno,
+      await horarioPersonalizadoDeCarla(),
+      MEDIDAS,
+    );
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.estado).toBe("PREINSCRIPTA");
+    const registros = await prisma.registros_progreso.findMany({
+      where: { id_alumno },
+      include: { medidas: { include: { tipo_medida: true } } },
+    });
+    expect(registros).toHaveLength(1);
+    expect(registros[0].id_profesora).toBe(datosDemo.idProfesora.get(CARLA));
+    expect(
+      registros[0].medidas
+        .map(({ valor, tipo_medida }) => [tipo_medida.codigo, tipo_medida.unidad, valor.toNumber()])
+        .sort(),
+    ).toEqual([
+      ["PESO", "kg", 62.5],
+      ["TALLA", "cm", 168],
+    ]);
+  });
+
+  it("una actividad que no los pide no los exige, hasta que la propietaria la marca", async () => {
+    const { id_alumno } = await crearAlumno(prisma);
+    const [{ id_horario }] = await horariosFuncionales();
+
+    expect((await inscribir(id_alumno, [id_horario])).status).toBe(201);
+    expect(await prisma.registros_progreso.count({ where: { id_alumno } })).toBe(0);
+
+    const marcar = await comoMarina("patch", `/actividades/${datosDemo.idActividad.get("FUNCIONAL")}`).send({
+      requiere_medidas: true,
+    });
+    expect(marcar.status).toBe(200);
+    expect(marcar.body.requiere_medidas).toBe(true);
+
+    const otro = await crearAlumno(prisma);
+    expect((await inscribir(otro.id_alumno, [id_horario])).status).toBe(400);
+  });
+
+  it("si la pre-inscripción falla por cupo, la medición tampoco queda", async () => {
+    await prisma.actividades.update({
+      where: { id_actividad: datosDemo.idActividad.get("FUNCIONAL") },
+      data: { requiere_medidas: true },
+    });
+    const idHorario = await crearHorarioConCupo(1);
+    const primero = await crearAlumno(prisma);
+    const segundo = await crearAlumno(prisma);
+    const pedir = (idAlumno: number) =>
+      comoMarina("post", "/inscripciones").send({
+        id_alumno: idAlumno,
+        id_plan: datosDemo.idPlan.get("Básico"),
+        id_profesora: datosDemo.idProfesora.get(LUCIA),
+        ids_horarios: [idHorario],
+        medidas: MEDIDAS,
+      });
+    expect((await pedir(primero.id_alumno)).status).toBe(201);
+
+    const respuesta = await pedir(segundo.id_alumno);
+
+    expect(respuesta.status).toBe(409);
+    expect(await prisma.registros_progreso.count({ where: { id_alumno: segundo.id_alumno } })).toBe(0);
   });
 });
