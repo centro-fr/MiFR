@@ -368,6 +368,8 @@ export class InscripcionRepository {
         where: { id_inscripcion: actual.id_inscripcion, fecha_hasta: null },
         data: { fecha_hasta: dia },
       });
+      // Una pre-inscripción conserva su inicio: si empezara hoy, cambiar de plan renovaría la reserva de cupo.
+      const fechaInicio = vigente.estado === "PREINSCRIPTA" ? actual.fecha_inicio : dia;
       const nueva = await transaccion.inscripciones.create({
         data: {
           id_alumno: actual.id_alumno,
@@ -375,7 +377,7 @@ export class InscripcionRepository {
           id_plan_precio: idPlanPrecio,
           id_profesora: nuevoPlan.id_profesora,
           sin_cargo: nuevoPlan.sin_cargo,
-          fecha_inicio: dia,
+          fecha_inicio: fechaInicio,
           fecha_fin_estimado: nuevoPlan.fecha_fin_estimado,
           observaciones: nuevoPlan.observaciones,
           estado: vigente.estado,

@@ -441,6 +441,19 @@ describe("InscripcionRepository", () => {
       });
     });
 
+    it("una pre-inscripción conserva su fecha de inicio para no renovar la reserva de cupo", async () => {
+      conCupoLibre([9]);
+      const empezoAntes = new Date("2026-10-02T00:00:00Z");
+
+      await repositorio.cambiarPlan({ ...actual, fecha_inicio: empezoAntes }, cambio, 16, fechas, RESERVAS);
+
+      expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
+        estado: "PREINSCRIPTA",
+        fecha_inicio: empezoAntes,
+        horarios: { create: [{ id_horario: 9, fecha_desde: DIA }] },
+      });
+    });
+
     it("no cambia si dejó de estar vigente, si el plan nuevo ya está vigente o si no hay cupo", async () => {
       transaccion.inscripciones.findUnique.mockResolvedValueOnce({ estado: "BAJA" });
       await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
