@@ -1,5 +1,6 @@
 import type { HorarioPreInscripcion, PreInscripcionPendiente } from "@/types/alta-definitiva";
 import type { DiaSemana } from "@/types/horarios";
+import { normalizarParaBuscar } from "@/utils/texto";
 
 // Lógica de la lista de pre-inscripciones pendientes (US-07). Funciones puras: se testean sin render.
 
@@ -26,28 +27,15 @@ const DIA_CORTO: Record<DiaSemana, string> = {
   DOMINGO: "Dom",
 };
 
-const FORMATO_PRECIO = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-export function formatearPrecio(precio: number): string {
-  return FORMATO_PRECIO.format(precio);
-}
-
-/** Sin tildes ni mayúsculas: "Benítez" se encuentra buscando "benitez". */
-function normalizar(texto: string): string {
-  return texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
-}
+// Se sigue exportando desde acá: la usan la lista y el modal de US-07.
+export { formatearPrecio } from "@/utils/moneda";
 
 function coincideBusqueda(pendiente: PreInscripcionPendiente, busqueda: string): boolean {
-  const texto = normalizar(busqueda);
+  const texto = normalizarParaBuscar(busqueda);
   if (texto === "") return true;
   const nombres = [`${pendiente.nombre} ${pendiente.apellido}`];
   if (pendiente.tutor) nombres.push(`${pendiente.tutor.nombre} ${pendiente.tutor.apellido}`);
-  if (nombres.some((nombre) => normalizar(nombre).includes(texto))) return true;
+  if (nombres.some((nombre) => normalizarParaBuscar(nombre).includes(texto))) return true;
   // El DNI se guarda solo con dígitos: "42.990" también tiene que encontrarlo.
   const digitos = busqueda.replace(/\D/g, "");
   return digitos !== "" && (pendiente.dni ?? "").includes(digitos);

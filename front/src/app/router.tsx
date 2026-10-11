@@ -25,7 +25,6 @@ const carga = { hydrateFallbackElement: <SessionSplash /> };
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
   { path: "alumnos", seccion: "Alumnos" },
-  { path: "planes", seccion: "Planes y Precios" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
@@ -95,6 +94,31 @@ export const router = createBrowserRouter([
           {
             index: true,
             lazy: paginaPerezosa(() => import("@/features/alumnos/pages/ficha-alumno-page"), "FichaAlumnoPage"),
+          },
+        ],
+      },
+      {
+        // US-11: planes vigentes. Los ve quien tiene PLANES_VER; crearlos y editarlos, la propietaria.
+        path: "planes",
+        children: [
+          {
+            element: (
+              <PermissionGuard permission="PLANES_VER">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") }],
+          },
+          {
+            element: (
+              <PermissionGuard roles={["PROPIETARIA"]} permission="PLANES_EDITAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              { path: "nuevo", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "NuevoPlanPage") },
+              { path: ":idPlan/editar", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "EditarPlanPage") },
+            ],
           },
         ],
       },
