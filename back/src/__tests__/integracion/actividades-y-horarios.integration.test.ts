@@ -313,6 +313,69 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     expect(reto3m?.activo).toBe(false);
   });
 
+  // Yoga con un horario sin alumnos y un plan que solo sirve para Yoga.
+  async function yogaConPlanExclusivo() {
+    const actividad = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+    const idYoga = actividad.body.id_actividad as number;
+    const horario = await crearHorario({
+      id_actividad: idYoga,
+      id_profesora: idProfesora(LUCIA),
+      dia_semana: SABADO,
+      hora_inicio: "10:00",
+      hora_fin: "11:00",
+    });
+    const plan = await comoMarina("post", "/planes").send({
+      tipo: "MENSUAL",
+      nombre: "Yoga 2 días",
+      clases_por_semana: 2,
+      dias_gracia: 5,
+      precio: 20000,
+      id_actividad_exclusiva: idYoga,
+    });
+    expect([horario.status, plan.status]).toEqual([201, 201]);
+    return { idYoga, idPlan: plan.body.id_plan as number };
+  }
+
+  it("no se puede dar de baja una actividad con planes vigentes que son solo de ella", async () => {
+    const { idYoga, idPlan } = await yogaConPlanExclusivo();
+
+    const respuesta = await comoMarina("delete", `/actividades/${idYoga}`);
+
+    expect(respuesta.status).toBe(409);
+    expect(respuesta.body.error.message).toBe(
+      "La actividad tiene planes vigentes que son solo de ella (Yoga 2 días): " +
+        "dalos de baja o pasalos a otra actividad antes de darla de baja",
+    );
+    expect(await prisma.actividades.findUnique({ where: { id_actividad: idYoga } })).toMatchObject({
+      activo: true,
+    });
+    expect(await prisma.horarios.count({ where: { id_actividad: idYoga, fecha_baja: null } })).toBe(1);
+    expect(await prisma.planes.findUnique({ where: { id_plan: idPlan } })).toMatchObject({
+      fecha_baja: null,
+    });
+  });
+
+  it("con sus planes exclusivos dados de baja, la actividad se da de baja; los planes generales no la frenan", async () => {
+    const { idYoga, idPlan } = await yogaConPlanExclusivo();
+    expect((await comoMarina("delete", `/planes/${idPlan}`)).status).toBe(200);
+
+    const respuesta = await comoMarina("delete", `/actividades/${idYoga}`);
+
+    expect(respuesta.status).toBe(200);
+    expect(await prisma.actividades.findUnique({ where: { id_actividad: idYoga } })).toMatchObject({
+      activo: false,
+    });
+    expect(await prisma.horarios.count({ where: { id_actividad: idYoga, fecha_baja: null } })).toBe(0);
+    // El escenario trae planes vigentes para cualquier actividad (Básico, Intermedio, Clase suelta).
+    expect(
+      await prisma.planes.count({ where: { id_actividad_exclusiva: null, fecha_baja: null } }),
+    ).toBeGreaterThan(0);
+  });
+
   it("una actividad no puede pasar a personalizada sin cupo", async () => {
     const respuesta = await comoMarina("patch", `/actividades/${idActividad("FUNCIONAL")}`).send({
       modalidad: "PERSONALIZADA",
