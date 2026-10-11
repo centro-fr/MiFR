@@ -56,6 +56,7 @@ export const inscripcionSchema = z
     fecha_fin_estimado: fechaSchema.nullable(),
     estado: estadoInscripcionSchema,
     motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]).nullable(),
+    detalle_baja: z.string().nullable(),
     observaciones: z.string().nullable(),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
@@ -200,7 +201,9 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Dar de baja al alumno",
-    description: `${propietariaEditar} La baja es lógica: conserva la inscripción y cierra sus horarios vigentes.`,
+    description:
+      `${propietariaEditar} La baja es lógica: conserva la inscripción y cierra sus horarios vigentes. ` +
+      "`detalle_baja` (opcional, hasta 200 caracteres) explica un motivo `OTRO`; con otro motivo responde 400.",
     request: {
       params: inscripcionIdParamSchema,
       body: cuerpoJson(darDeBajaAlumnoSchema),

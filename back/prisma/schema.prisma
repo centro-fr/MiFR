@@ -264,6 +264,7 @@ model inscripciones {
   fecha_fin_estimado DateTime?          @db.Date
   estado             estado_inscripcion
   motivo_baja        motivo_baja?
+  detalle_baja       String?            @db.VarChar(200)
   observaciones      String?            @db.VarChar(500)
   fecha_alta         DateTime           @default(now()) @db.Timestamp(6)
   fecha_baja         DateTime?          @db.Timestamp(6)
