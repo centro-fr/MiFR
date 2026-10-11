@@ -57,6 +57,45 @@ describe("darDeBajaAlumnoSchema", () => {
     expect(darDeBajaAlumnoSchema.safeParse({ motivo_baja: "CAMBIO_PLAN" }).success).toBe(false);
     expect(darDeBajaAlumnoSchema.safeParse({}).success).toBe(false);
   });
+
+  it("acepta el detalle con el motivo OTRO, recortado y en varias líneas", () => {
+    expect(
+      darDeBajaAlumnoSchema.parse({ motivo_baja: "OTRO", detalle_baja: "  Se mudó de barrio.\nNo vuelve  " }),
+    ).toEqual({ motivo_baja: "OTRO", detalle_baja: "Se mudó de barrio.\nNo vuelve" });
+  });
+
+  it("deja el detalle vacío como null y lo acepta con cualquier motivo", () => {
+    expect(darDeBajaAlumnoSchema.parse({ motivo_baja: "OTRO", detalle_baja: "   " })).toEqual({
+      motivo_baja: "OTRO",
+      detalle_baja: null,
+    });
+    expect(darDeBajaAlumnoSchema.safeParse({ motivo_baja: "ABANDONO", detalle_baja: "" }).success).toBe(true);
+    expect(darDeBajaAlumnoSchema.safeParse({ motivo_baja: "SALUD", detalle_baja: null }).success).toBe(true);
+  });
+
+  it("rechaza el detalle con un motivo que no es OTRO", () => {
+    const resultado = darDeBajaAlumnoSchema.safeParse({
+      motivo_baja: "MUDANZA",
+      detalle_baja: "Se fue a Córdoba",
+    });
+
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues[0]).toMatchObject({
+      path: ["detalle_baja"],
+      message: "El detalle solo se carga con el motivo OTRO",
+    });
+  });
+
+  it("rechaza un detalle de más de 200 caracteres, sin letras o con caracteres de control", () => {
+    const detalles = ["a".repeat(201), "123", "Se fue\u0000"];
+
+    for (const detalle_baja of detalles) {
+      expect(darDeBajaAlumnoSchema.safeParse({ motivo_baja: "OTRO", detalle_baja }).success).toBe(false);
+    }
+    expect(
+      darDeBajaAlumnoSchema.safeParse({ motivo_baja: "OTRO", detalle_baja: "a".repeat(200) }).success,
+    ).toBe(true);
+  });
 });
 
 describe("actualizarHorariosSchema y listarInscripcionesQuerySchema", () => {

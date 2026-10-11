@@ -6,8 +6,9 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
-// Casos PI-20 a PI-27, PI-30, PI-32, PI-37 y PI-38: preinscripción (con peso y talla si la actividad los
-// pide, y con la reserva de cupo que vence), activación, baja/reactivación y cambios de plan/horarios.
+// Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38 y PI-41: preinscripción (con peso y talla si la actividad
+// los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
+// reactivación y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -720,6 +721,116 @@ describe("PI-38: la reserva de cupo de una pre-inscripción sin pagar vence", ()
     expect(baja.status).toBe(409);
     expect(await prisma.horarios.findUnique({ where: { id_horario: idHorario } })).toMatchObject({
       fecha_baja: null,
+    });
+  });
+});
+
+describe("PI-41: el detalle de la baja con el motivo OTRO", () => {
+  const DETALLE = "Se pasó a un gimnasio más cerca de su casa";
+
+  async function alumnoConDosInscripciones() {
+    const alumno = await crearAlumno(prisma);
+    const horarios = await horariosFuncionales();
+    const basico = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
+    const intermedio = await inscribir(
+      alumno.id_alumno,
+      [horarios[1].id_horario],
+      datosDemo.idPlan.get("Intermedio"),
+    );
+    expect([basico.status, intermedio.status]).toEqual([201, 201]);
+    return { idAlumno: alumno.id_alumno, ids: [basico.body.id_inscripcion, intermedio.body.id_inscripcion] };
+  }
+
+  function bajasDe(idAlumno: number) {
+    return comoMarina("get", `/inscripciones?id_alumno=${idAlumno}&estado=BAJA`);
+  }
+
+  it("guarda el detalle en todas las inscripciones vigentes y el listado de bajas lo devuelve", async () => {
+    const { idAlumno, ids } = await alumnoConDosInscripciones();
+
+    const baja = await comoMarina("post", `/alumnos/${idAlumno}/baja`).send({
+      motivo_baja: "OTRO",
+      detalle_baja: DETALLE,
+    });
+
+    expect(baja.status).toBe(200);
+    const guardadas = await prisma.inscripciones.findMany({
+      where: { id_inscripcion: { in: ids } },
+      select: { estado: true, motivo_baja: true, detalle_baja: true },
+    });
+    expect(guardadas).toEqual([
+      { estado: "BAJA", motivo_baja: "OTRO", detalle_baja: DETALLE },
+      { estado: "BAJA", motivo_baja: "OTRO", detalle_baja: DETALLE },
+    ]);
+    const listado = await bajasDe(idAlumno);
+    expect(listado.status).toBe(200);
+    expect(listado.body.map((inscripcion: { detalle_baja: string }) => inscripcion.detalle_baja)).toEqual([
+      DETALLE,
+      DETALLE,
+    ]);
+  });
+
+  it("acepta el motivo OTRO sin detalle, o con el detalle vacío, y deja la columna en null", async () => {
+    const sinDetalle = await crearAlumno(prisma);
+    const conDetalleVacio = await crearAlumno(prisma);
+    const [horario] = await horariosFuncionales();
+    await inscribir(sinDetalle.id_alumno, [horario.id_horario]);
+    await inscribir(conDetalleVacio.id_alumno, [horario.id_horario]);
+
+    const respuestas = await Promise.all([
+      comoMarina("post", `/alumnos/${sinDetalle.id_alumno}/baja`).send({ motivo_baja: "OTRO" }),
+      comoMarina("post", `/alumnos/${conDetalleVacio.id_alumno}/baja`).send({
+        motivo_baja: "OTRO",
+        detalle_baja: "   ",
+      }),
+    ]);
+
+    expect(respuestas.map(({ status }) => status)).toEqual([200, 200]);
+    const guardadas = await prisma.inscripciones.findMany({
+      where: { id_alumno: { in: [sinDetalle.id_alumno, conDetalleVacio.id_alumno] } },
+      select: { motivo_baja: true, detalle_baja: true },
+    });
+    expect(guardadas).toEqual([
+      { motivo_baja: "OTRO", detalle_baja: null },
+      { motivo_baja: "OTRO", detalle_baja: null },
+    ]);
+  });
+
+  it("rechaza el detalle con otro motivo o de más de 200 caracteres, sin dar de baja nada", async () => {
+    const { idAlumno, ids } = await alumnoConDosInscripciones();
+    const antes = await prisma.inscripciones.findMany({ where: { id_inscripcion: { in: ids } } });
+
+    const conOtroMotivo = await comoMarina("post", `/alumnos/${idAlumno}/baja`).send({
+      motivo_baja: "MUDANZA",
+      detalle_baja: DETALLE,
+    });
+    const muyLargo = await comoMarina("post", `/alumnos/${idAlumno}/baja`).send({
+      motivo_baja: "OTRO",
+      detalle_baja: "a".repeat(201),
+    });
+
+    for (const respuesta of [conOtroMotivo, muyLargo]) {
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+    }
+    expect(await prisma.inscripciones.findMany({ where: { id_inscripcion: { in: ids } } })).toEqual(antes);
+    expect(await prisma.alumnos.findUnique({ where: { id_alumno: idAlumno } })).toMatchObject({
+      estado: "INACTIVO",
+    });
+  });
+
+  it("la base rechaza un detalle sin el motivo OTRO aunque se saltee la API", async () => {
+    const { ids } = await alumnoConDosInscripciones();
+
+    await expect(
+      prisma.inscripciones.update({
+        where: { id_inscripcion: ids[0] },
+        data: { estado: "BAJA", motivo_baja: "CAMBIO_PLAN", detalle_baja: DETALLE },
+      }),
+    ).rejects.toThrow(/ck_inscripciones_x2/);
+    expect(await prisma.inscripciones.findUnique({ where: { id_inscripcion: ids[0] } })).toMatchObject({
+      estado: "PREINSCRIPTA",
+      detalle_baja: null,
     });
   });
 });

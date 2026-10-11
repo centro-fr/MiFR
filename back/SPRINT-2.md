@@ -124,7 +124,7 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Hecho (inscripción)
 
 - [x] Diagramar la máquina de estados `PREINSCRIPTA → ACTIVA → BAJA` en [estados_inscripcion.puml](../docs/diagrams/puml/estados_inscripcion.puml) antes de implementarla. El flujo no requiere una jerarquía State: las transiciones y sus reglas quedan en el service.
-- [x] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migraciones y restricciones (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, PK compuesta de `inscripcion_horarios`).
+- [x] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migraciones y restricciones (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, `ck_inscripciones_x2`, PK compuesta de `inscripcion_horarios`).
 - [x] Subsistema `gestion-inscripciones-y-clases/` con `ILogicaInscripcionesYClases`, su fachada y `IInfoInscripciones`; rutas montadas en `app.ts` y composición en `composicion.ts`.
 - [x] `POST /api/v1/inscripciones` crea una inscripción `PREINSCRIPTA` con horarios, profesora a cargo y el `id_plan_precio` vigente hoy.
 - [x] `GET /api/v1/inscripciones` (filtros por alumno, plan, profesora, actividad y estado) y `GET /api/v1/inscripciones/:id`.
@@ -135,7 +135,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] El cupo efectivo del horario (propio o heredado de la actividad) cuenta inscripciones `PREINSCRIPTA` o `ACTIVA` con horario vigente (`fecha_hasta` nula). Sin cupo → 409; las operaciones que compiten por el cupo se serializan en transacción.
   - [x] Un alumno no puede tener dos inscripciones activas o pre-inscriptas al mismo plan.
 - [x] `IInfoInscripciones.activar(id)` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. No está en la API: US-07 dice que el alta definitiva la dispara el pago confirmado, así que la va a llamar el cobro del Sprint 3.
-- [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409.
+- [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409. Con el motivo `OTRO` acepta `detalle_baja` (opcional, hasta 200 caracteres), que se guarda en cada inscripción dada de baja; con otro motivo el detalle responde 400. La columna se sumó al DER el 11/10/2026 (PI-41).
 - [x] `POST /api/v1/alumnos/:id/reactivar` crea una inscripción nueva, conserva la anterior como historial, valida cupos y reactiva al alumno. Sin cupo responde 409 sin cambiar su estado.
 - [x] Baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`. Una profesora solo ve las inscripciones que tiene a cargo.
 - [x] `IInfoInscripciones` expone ids de alumnos por plan/profesora/actividad y el resumen vigente por lote (sin N+1), además del conteo de cupo para horarios.

@@ -257,6 +257,7 @@ package "INSCRIPCIONES Y CLASES" {
       fecha_fin_estimado : DATE
     * estado : ENUM <color:#000000><<PREINSCRIPTA|ACTIVA|BAJA>></color>
       motivo_baja : ENUM <color:#000000><<ABANDONO|MUDANZA|SALUD|ECONOMICO|CAMBIO_PLAN|OTRO>></color> <color:#6B7280><size:11>obligatorio si BAJA</size></color>
+      detalle_baja : VARCHAR(200) <color:#6B7280><size:11>solo con motivo_baja OTRO</size></color>
       observaciones : VARCHAR(500)
     * fecha_alta : TIMESTAMP
       fecha_baja : TIMESTAMP

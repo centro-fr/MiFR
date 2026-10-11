@@ -48,9 +48,16 @@ export const cambiarPlanSchema = z.object(datosDePlanYHorarios);
 export const actualizarHorariosSchema = z.object({ ids_horarios });
 
 // CAMBIO_PLAN no se acepta: lo pone el cambio de plan, y un alumno que se va no cambia de plan.
-export const darDeBajaAlumnoSchema = z.object({
-  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
-});
+// El detalle explica un motivo OTRO (ck_inscripciones_x2); un texto vacío llega como null y no cuenta.
+export const darDeBajaAlumnoSchema = z
+  .object({
+    motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
+    detalle_baja: textoOpcionalSchema(200, { multilinea: true }).optional(),
+  })
+  .refine((baja) => baja.detalle_baja == null || baja.motivo_baja === "OTRO", {
+    message: "El detalle solo se carga con el motivo OTRO",
+    path: ["detalle_baja"],
+  });
 
 export const listarInscripcionesQuerySchema = z.object({
   id_alumno: idDesdeTextoSchema.optional(),

@@ -280,7 +280,12 @@ export class InscripcionRepository {
 
       await transaccion.inscripciones.updateMany({
         where: { id_inscripcion: { in: idsInscripciones } },
-        data: { estado: "BAJA", motivo_baja: input.motivo_baja, fecha_baja: fechas.instante },
+        data: {
+          estado: "BAJA",
+          motivo_baja: input.motivo_baja,
+          detalle_baja: input.detalle_baja ?? null,
+          fecha_baja: fechas.instante,
+        },
       });
       await transaccion.inscripcion_horarios.updateMany({
         where: { id_inscripcion: { in: idsInscripciones }, fecha_hasta: null },

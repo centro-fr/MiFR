@@ -360,11 +360,34 @@ describe("InscripcionRepository", () => {
       expect(clavesBloqueadas()).toEqual(["inscripcion-horario:8", "inscripcion-horario:9"]);
       expect(transaccion.inscripciones.updateMany).toHaveBeenCalledWith({
         where: { id_inscripcion: { in: [12, 13] } },
-        data: { estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: INSTANTE },
+        data: { estado: "BAJA", motivo_baja: "MUDANZA", detalle_baja: null, fecha_baja: INSTANTE },
       });
       expect(transaccion.inscripcion_horarios.updateMany).toHaveBeenCalledWith({
         where: { id_inscripcion: { in: [12, 13] }, fecha_hasta: null },
         data: { fecha_hasta: DIA },
+      });
+    });
+
+    it("guarda el detalle del motivo OTRO en todas las vigentes", async () => {
+      transaccion.inscripciones.findMany.mockResolvedValue([
+        { id_inscripcion: 12, horarios: [] },
+        { id_inscripcion: 13, horarios: [] },
+      ]);
+
+      await repositorio.darDeBajaAlumno(
+        5,
+        { motivo_baja: "OTRO", detalle_baja: "Se pasó a un gimnasio más cerca" },
+        { instante: INSTANTE, dia: DIA },
+      );
+
+      expect(transaccion.inscripciones.updateMany).toHaveBeenCalledWith({
+        where: { id_inscripcion: { in: [12, 13] } },
+        data: {
+          estado: "BAJA",
+          motivo_baja: "OTRO",
+          detalle_baja: "Se pasó a un gimnasio más cerca",
+          fecha_baja: INSTANTE,
+        },
       });
     });
 
