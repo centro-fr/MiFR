@@ -719,10 +719,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 3. Con una reserva vencida en un horario libre y otra en un horario que ya ocupó otro alumno, se confirma el primer pago de las dos (`IInfoInscripciones.activar`).
 4. Se cambia `DIAS_RESERVA_PREINSCRIPCION` a 7 y se repite el paso 2.
 5. Marina intenta dar de baja un horario que solo tiene una pre-inscripción con la reserva vencida.
+6. Marina le cambia el plan a una pre-inscripción con la reserva vencida, en un horario con cupo 2.
 
-**Resultado esperado:** en el paso 1 el otro alumno recibe 409 por cupo; la inscripción trae `reserva: { vence: hoy, vencida: false }` y el horario, 1 inscripto y 0 lugares. En el paso 2 el horario figura con 0 inscriptos y 1 lugar, el listado trae la reserva vencida (`vence` ayer) y la pre-inscripción nueva responde 201 con su reserva hasta dentro de 3 días; la vencida sigue PREINSCRIPTA. En el paso 3 la del horario libre queda ACTIVA y la otra recibe "No hay cupo disponible" y sigue PREINSCRIPTA. En el paso 4 la misma pre-inscripción vuelve a ocupar el lugar (409) y vence dentro de 3 días. En el paso 5 la baja responde 409 y el horario sigue activo.
+**Resultado esperado:** en el paso 1 el otro alumno recibe 409 por cupo; la inscripción trae `reserva: { vence: hoy, vencida: false }` y el horario, 1 inscripto y 0 lugares. En el paso 2 el horario figura con 0 inscriptos y 1 lugar, el listado trae la reserva vencida (`vence` ayer) y la pre-inscripción nueva responde 201 con su reserva hasta dentro de 3 días; la vencida sigue PREINSCRIPTA. En el paso 3 la del horario libre queda ACTIVA y la otra recibe "No hay cupo disponible" y sigue PREINSCRIPTA. En el paso 4 la misma pre-inscripción vuelve a ocupar el lugar (409) y vence dentro de 3 días. En el paso 5 la baja responde 409 y el horario sigue activo. En el paso 6 el cambio responde 200: la pre-inscripción nueva conserva la fecha de inicio de la anterior, su reserva sigue vencida con el mismo vencimiento y el horario figura con 0 inscriptos y 2 lugares.
 
-**Automatizado:** Sí (G-22 a G-26).
+**Automatizado:** Sí (G-22 a G-27).
 
 #### PI-39 — Carga de los parámetros del sistema
 
@@ -739,7 +740,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-143 tests en nueve archivos:
+144 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -749,7 +750,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 26 (G-01 a G-26) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38 |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 27 (G-01 a G-27) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 6 (H-01 a H-06)  | PI-33 a PI-36                     |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 
@@ -800,6 +801,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-24        | El pago tardío activa si el lugar sigue libre y responde sin cupo si otro lo ocupó                                                                                            | PI-38 |
 | G-25        | Con `DIAS_RESERVA_PREINSCRIPCION` en 7, la misma pre-inscripción vuelve a ocupar el lugar                                                                                    | PI-38 |
 | G-26        | Una pre-inscripción con la reserva vencida sigue en el horario y no deja darlo de baja                                                                                       | PI-38 |
+| G-27        | Cambiar de plan conserva la fecha de inicio de la pre-inscripción: la reserva no se renueva y sigue sin ocupar lugar                                                         | PI-38 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
@@ -869,6 +871,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La reserva figura vencida el último día en que todavía guarda el lugar                | G-22                                                                                                       |
 | La ocupación de los horarios cuenta las reservas vencidas                             | G-23                                                                                                       |
 | Volver a correr la carga de parámetros pisa los valores configurados                  | I-02                                                                                                       |
+| Cambiar de plan hace empezar hoy a la pre-inscripción y le renueva la reserva           | G-27                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -895,6 +898,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 10/10/2026 | Pago adelantado desde el día siguiente e historial de cuotas (PI-36) | 130 | 130 aprobados | 201,8 s | Pasaron también los 1191 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
 | 11/10/2026 | Peso y talla al pre-inscribir (PI-37)                                 | 134 | 134 aprobados | 128,0 s | Pasaron también los 1212 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 | 11/10/2026 | Reserva de la pre-inscripción que vence y parámetros del sistema (PI-38, PI-39) | 143 | 143 aprobados | 94,9 s | Antes de sumar los casos nuevos pasaron los 134 existentes. Pasaron también los 1233 tests unitarios, con cobertura del 100 %; build correcto. Las 5 fallas provocadas fueron detectadas |
+| 11/10/2026 | Cambiar de plan no renueva la reserva de la pre-inscripción (PI-38)   | 144 | 144 aprobados | 92,3 s | Pasaron también los 1234 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
 
 ### 8.2 Resultado por caso
 
@@ -910,7 +914,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-28 a PI-32 | 10/10/2026 | Francisco Andrade | Aprobado           | Pasan A-42 a A-48, E-21 a E-23 y G-14 a G-17 (defectos D-07 a D-14)              |
 | PI-33 a PI-36 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-06 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
 | PI-37         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-18 a G-21 (defecto D-16)                                                  |
-| PI-38, PI-39  | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-22 a G-26 e I-01 a I-04 (defecto D-17)                                   |
+| PI-38, PI-39  | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-22 a G-27 e I-01 a I-04 (defectos D-17 y D-18)                                   |
 
 ### 8.3 Defectos
 
@@ -933,6 +937,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-15 | PI-35 | El alta definitiva, la activación del alumno, su rol y el pago se guardaban en transacciones separadas: si fallaba un paso, el alumno podía quedar con la inscripción activa sin pago, o pre-inscripto con la inscripción activa y sin forma de destrabarlo. Corregido: van en una sola transacción (`IUnidadDeTrabajo`) | Alta | Francisco Andrade | `GestionCuotasYPagosService`, `shared/db/transaccion.ts` |
 | D-16 | PI-37 | La pre-inscripción no recibía peso ni talla y ninguna actividad podía marcarse como que los pide, así que el criterio de US-05 "en clase que requiere peso/talla sin cargarlos, falla" no se cumplía. Corregido: `actividades.requiere_medidas` y `medidas` en `POST /inscripciones`, guardadas en `registros_progreso` | Media | Francisco Andrade | `InscripcionService`, `RegistroProgresoService` |
 | D-17 | PI-38 | Una pre-inscripción que nunca se pagaba ocupaba el cupo para siempre; en las clases personalizadas, con 4 lugares, trababa el horario. Corregido: deja de ocupar lugar `DIAS_RESERVA_PREINSCRIPCION` días después de su inicio (parámetro, 3 por defecto) y las respuestas marcan la reserva vencida | Media | Francisco Andrade | `InscripcionService`, `inscripcion.repository.ts`, `ParametrosSistemaService` |
+| D-18 | PI-38 | Cambiar de plan creaba la pre-inscripción nueva con inicio hoy, así que le renovaba la reserva de cupo: cambiando de plan se podía guardar el lugar sin pagar indefinidamente. Corregido: una pre-inscripción conserva su fecha de inicio al cambiar de plan | Media | Francisco Andrade | `inscripcion.repository.ts` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -990,3 +995,4 @@ Los defectos se numeran D-01, D-02…
 |   2.0   | 10/10/2026 | Caso PI-36 y test H-06: el pago adelantado empieza el día después del vencimiento vigente e historial de cuotas y pagos para la ficha | Francisco Andrade |
 |   2.1   | 11/10/2026 | Caso PI-37 y tests G-18 a G-21: peso y talla al pre-inscribir en una actividad con `requiere_medidas`; defecto D-16 y punto a confirmar de PI-37 cerrado | Francisco Andrade |
 |   2.2   | 11/10/2026 | Casos PI-38 (la reserva de cupo de una pre-inscripción vence) y PI-39 (carga de los parámetros del sistema), tests G-22 a G-26 y archivo I con I-01 a I-04; parámetros del sistema en los datos comunes; defecto D-17 y punto a confirmar de PI-38 cerrado | Francisco Andrade |
+|   2.3   | 11/10/2026 | PI-38: paso 6 (cambiar de plan no renueva la reserva) y test G-27; defecto D-18 | Francisco Andrade |
