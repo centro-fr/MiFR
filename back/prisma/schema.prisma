@@ -190,6 +190,23 @@ model plan_precios {
   @@index([id_plan], map: "IXFK_plan_precios_planes")
 }
 
+enum tipo_dato_parametro {
+  ENTERO
+  DECIMAL
+  TEXTO
+  BOOLEANO
+}
+
+// Configuración del centro que cambia la propietaria. El valor se guarda como texto y se convierte
+// según tipo_dato al leerlo (IInfoParametros).
+model parametros_sistema {
+  clave               String              @id(map: "PK_parametros_sistema") @db.VarChar(50)
+  valor               String              @db.VarChar(100)
+  tipo_dato           tipo_dato_parametro
+  descripcion         String?             @db.VarChar(150)
+  fecha_actualizacion DateTime            @updatedAt @db.Timestamp(6)
+}
+
 // ============================================================
 // PERSONAS DEL NEGOCIO
 // ============================================================
