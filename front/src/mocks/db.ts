@@ -4,11 +4,17 @@ import type { RoleCode } from "@/types/auth";
 import { matrizInicial } from "@/mocks/data/catalogo-permisos";
 import {
   ACTIVIDADES_SEMILLA,
+  ALUMNOS_SEMILLA,
   HORARIOS_SEMILLA,
   ID_USUARIO_SESION_INICIAL,
+  INSCRIPCIONES_SEMILLA,
+  PLANES_SEMILLA,
   PROFESORAS_SEMILLA,
   USUARIOS_SEMILLA,
+  type AlumnoMockRegistro,
   type HorarioSemilla,
+  type InscripcionMockRegistro,
+  type PlanSemilla,
   type UsuarioSemilla,
 } from "@/mocks/data/semilla";
 
@@ -27,6 +33,9 @@ interface BaseMock {
   actividades: ActividadApi[];
   profesoras: ProfesoraMock[];
   horarios: HorarioMock[];
+  planes: PlanSemilla[];
+  alumnos: AlumnoMockRegistro[];
+  inscripciones: InscripcionMockRegistro[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
 }
@@ -40,6 +49,9 @@ export const db: BaseMock = {
     fecha_alta: "2026-01-01T00:00:00.000Z",
     fecha_baja: null,
   })),
+  planes: structuredClone(PLANES_SEMILLA),
+  alumnos: structuredClone(ALUMNOS_SEMILLA),
+  inscripciones: structuredClone(INSCRIPCIONES_SEMILLA),
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
   idUsuarioSesion: ID_USUARIO_SESION_INICIAL,

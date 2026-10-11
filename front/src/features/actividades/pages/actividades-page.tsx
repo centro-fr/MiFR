@@ -116,32 +116,32 @@ export function ActividadesPage() {
 
   return (
     <OwnerLayout>
-      <div className="px-4 py-5 md:p-8 max-w-[1180px] mx-auto w-full">
-        <div className="flex items-start justify-between gap-3 mb-5 md:mb-6">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-[22px] md:text-2xl font-black text-dark dark:text-white tracking-tight">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
                 Actividades
               </h1>
               {!isPending && !isError && (
                 <Badge
                   variant="outline"
-                  className="rounded-full border-pink-200 bg-pink-100 px-2.5 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300"
+                  className="rounded-full border-pink-200 bg-pink-100 px-3 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300 shadow-2xs"
                 >
                   {actividades.length} activas
                 </Badge>
               )}
             </div>
-            <p className="hidden md:block text-sm text-slate-600 mt-1 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
               Administrá las disciplinas y cupos del centro.
             </p>
           </div>
           <Button
             onClick={abrirNueva}
             type="button"
-            className="min-h-[44px] rounded-xl bg-primary px-4 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 md:px-5"
+            className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
           >
-            + Nueva<span className="hidden md:inline"> actividad</span>
+            + Nueva actividad
           </Button>
         </div>
 

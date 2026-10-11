@@ -41,7 +41,7 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 
 - Nombre completo
 - Fecha de nacimiento / edad
-- Teléfonos (contacto y emergencia)
+- Teléfonos (contacto, emergencia y de tutor en caso de menor)
 - Email
 - Tutor (si es menor de edad)
 - Plan asignado (nombre, frecuencia, precio)

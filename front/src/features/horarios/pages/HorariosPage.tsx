@@ -196,15 +196,18 @@ export const HorariosPage: React.FC = () => {
   return (
     <OwnerLayout>
       {/* CONTENIDO PRINCIPAL */}
-      <div className="flex flex-col min-w-0 bg-transparent">
+      <div className="space-y-6 min-w-0">
         {/* ENCABEZADO */}
-        <header className="bg-transparent border-0 px-0 py-2 md:py-3">
-          <div>
-            <div className="flex items-center gap-3.5 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
                 Horarios
               </h1>
-              <Badge variant="outline" className="rounded-full border-pink-100 dark:border-primary/30 bg-pink-50 dark:bg-primary/15 px-3 py-1 text-sm font-bold text-primary shadow-2xs">
+              <Badge
+                variant="outline"
+                className="rounded-full border-pink-200 bg-pink-100 px-3 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300 shadow-2xs"
+              >
                 {totalHorarios} clases asignadas
               </Badge>
             </div>
@@ -212,7 +215,7 @@ export const HorariosPage: React.FC = () => {
               Armá y gestioná el cronograma semanal del salón.
             </p>
           </div>
-        </header>
+        </div>
 
         {/* BARRA DE FILTROS RESPONSIVE */}
         <div className="bg-transparent border-0 px-0 py-2">
@@ -329,8 +332,8 @@ export const HorariosPage: React.FC = () => {
               </Badge>
             )}
 
-            {/* Botón Nuevo Horario a la altura de los filtros a la derecha (solo en desktop) */}
-            <div className="hidden md:flex ml-auto items-center">
+            {/* Botón Nuevo Horario a la altura de los filtros a la derecha (solo en desktop con grilla semanal) */}
+            <div className="hidden xl:flex ml-auto items-center">
               <Button
                 type="button"
                 onClick={() => handleOpenCreate('LUNES', '08:00')}
