@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { cargarCatalogoSeguridad } from "../../shared/db/catalogo-seguridad.js";
+import { cargarParametrosIniciales } from "../../shared/db/parametros-iniciales.js";
 
 // Por defecto, la base del servicio db-test de docker-compose.yml. En CI se pasa por variable.
 export const URL_BASE_DE_PRUEBA =
@@ -21,7 +22,8 @@ export function crearPrismaDePrueba(): PrismaClient {
   return new PrismaClient({ datasourceUrl: URL_BASE_DE_PRUEBA, log: ["error"] });
 }
 
-// Deja la base como recién sembrada: sin datos y con roles, permisos y la matriz inicial.
+// Deja la base como recién sembrada: sin datos y con roles, permisos, la matriz inicial y los
+// parámetros del sistema.
 // Se trunca todo lo que exista en el esquema para no tener que mantener la lista de tablas a mano.
 export async function reiniciarBase(prisma: PrismaClient): Promise<void> {
   const tablas = await prisma.$queryRaw<{ tablename: string }[]>`
@@ -30,4 +32,5 @@ export async function reiniciarBase(prisma: PrismaClient): Promise<void> {
   const lista = tablas.map(({ tablename }) => `"${tablename}"`).join(", ");
   await prisma.$executeRawUnsafe(`TRUNCATE ${lista} RESTART IDENTITY CASCADE`);
   await cargarCatalogoSeguridad(prisma);
+  await cargarParametrosIniciales(prisma);
 }

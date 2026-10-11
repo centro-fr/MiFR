@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { cargarCatalogoSeguridad } from "../src/shared/db/catalogo-seguridad.js";
+import { cargarParametrosIniciales } from "../src/shared/db/parametros-iniciales.js";
 import {
   ACTIVIDADES_DEMO,
   ALUMNOS_DEMO,
@@ -31,6 +32,7 @@ async function main(prisma: PrismaClient): Promise<void> {
   const emailMultirol = args[0] ?? EMAIL_MULTIROL_DEMO;
 
   await cargarCatalogoSeguridad(prisma);
+  await cargarParametrosIniciales(prisma);
   const { idProfesora, horariosCreados } = await cargarDatosDemo(prisma, emailMultirol);
 
   console.log(
