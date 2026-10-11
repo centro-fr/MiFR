@@ -690,6 +690,27 @@ describe("PI-38: la reserva de cupo de una pre-inscripción sin pagar vence", ()
     expect(reserva.body.reserva).toEqual({ vence: enFormatoApi(-3), vencida: false });
   });
 
+  it("cambiar de plan conserva el inicio de la pre-inscripción y no renueva su reserva", async () => {
+    const idHorario = await crearHorarioConCupo(2);
+    const idReserva = await preinscribirQueEmpezoHace(4, idHorario);
+    const nuevoPlan = await crearPlan(prisma, { nombre: "Plan de la reserva vencida" });
+
+    const cambio = await comoMarina("post", `/inscripciones/${idReserva}/cambio-plan`).send({
+      id_plan: nuevoPlan.id_plan,
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [idHorario],
+    });
+
+    expect(cambio.status).toBe(200);
+    expect(cambio.body).toMatchObject({
+      estado: "PREINSCRIPTA",
+      fecha_inicio: enFormatoApi(4),
+      reserva: { vence: enFormatoApi(1), vencida: true },
+    });
+    const horario = await comoMarina("get", `/horarios/${idHorario}`);
+    expect(horario.body).toMatchObject({ inscriptos: 0, cupo_disponible: 2 });
+  });
+
   it("una pre-inscripción con la reserva vencida sigue en el horario y no deja darlo de baja", async () => {
     const idHorario = await crearHorarioConCupo(1);
     await preinscribirQueEmpezoHace(4, idHorario);
