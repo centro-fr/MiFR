@@ -17,8 +17,8 @@ import type { PreInscripcionPendiente } from "@/types/alta-definitiva";
 const MAYORIA_DE_EDAD = 18;
 
 const CLASE_VER_FICHA =
-  "inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-100 px-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15";
-const CLASE_CONFIRMAR = "min-h-[44px] rounded-xl bg-primary px-3 font-extrabold text-white shadow-md hover:bg-primary-dark";
+  "inline-flex min-h-[44px] items-center justify-center whitespace-nowrap rounded-xl bg-slate-100 px-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15";
+const CLASE_CONFIRMAR = "min-h-[44px] whitespace-nowrap rounded-xl bg-primary px-3 font-extrabold text-white shadow-md hover:bg-primary-dark";
 
 interface AccionesProps {
   pendiente: PreInscripcionPendiente;
@@ -178,11 +178,12 @@ interface ListaPendientesProps {
 }
 
 // Tabla en escritorio y tarjetas en mobile, como el diseño. Se oculta con CSS (display: none),
-// así el lector de pantalla solo lee la versión visible.
+// así el lector de pantalla solo lee la versión visible. La tabla recién entra en xl: con el
+// sidebar abierto, sus siete columnas no caben antes y "Acciones" quedaba fuera de la vista.
 export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: ListaPendientesProps) {
   return (
     <>
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:block dark:bg-surface-low">
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-white shadow-sm xl:block dark:bg-surface-low">
         <Table>
           <TableHeader>
             <TableRow>
@@ -204,7 +205,7 @@ export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: Lis
           </TableBody>
         </Table>
       </div>
-      <ul aria-label="Pre-inscripciones pendientes" className="flex flex-col gap-3 md:hidden">
+      <ul aria-label="Pre-inscripciones pendientes" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
         {pendientes.map((pendiente) => (
           <TarjetaPendiente key={pendiente.idInscripcion} pendiente={pendiente} puedeConfirmar={puedeConfirmar} onConfirmar={onConfirmar} />
         ))}

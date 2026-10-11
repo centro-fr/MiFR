@@ -6,6 +6,7 @@ import { horariosHandlers } from "@/mocks/handlers/horarios";
 import { inscripcionesHandlers } from "@/mocks/handlers/inscripciones";
 import { pagosHandlers } from "@/mocks/handlers/pagos";
 import { personasHandlers } from "@/mocks/handlers/personas";
+import { planesHandlers } from "@/mocks/handlers/planes";
 import { seguridadHandlers } from "@/mocks/handlers/seguridad";
 
 export const worker = setupWorker(
@@ -16,5 +17,6 @@ export const worker = setupWorker(
   ...horariosHandlers,
   ...alumnosHandlers,
   ...inscripcionesHandlers,
+  ...planesHandlers,
   ...pagosHandlers,
 );

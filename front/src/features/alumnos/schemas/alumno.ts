@@ -44,7 +44,17 @@ export const motivoBajaSchema = z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMI
   invalid_type_error: "Elegí el motivo de la baja.",
 });
 
-export const bajaAlumnoFormSchema = z.object({ motivo: motivoBajaSchema });
+// Texto libre que acompaña a "Otro motivo". El back todavía no lo guarda (falta el campo).
+export const LARGO_MAXIMO_DETALLE_BAJA = 200;
+
+export const bajaAlumnoFormSchema = z.object({
+  motivo: motivoBajaSchema,
+  detalle: z
+    .string()
+    .trim()
+    .max(LARGO_MAXIMO_DETALLE_BAJA, `Usá hasta ${LARGO_MAXIMO_DETALLE_BAJA} caracteres.`)
+    .optional(),
+});
 
 // Cuerpo de POST /alumnos/:id/baja.
 export const bajaAlumnoBodySchema = z.object({ motivo_baja: motivoBajaSchema });

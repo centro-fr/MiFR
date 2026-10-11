@@ -31,7 +31,7 @@ const ESTILO_ESTADO: Record<EstadoAlumno, { texto: string; clases: string }> = {
   },
 };
 
-// Edición (US-09), reactivación (US-08) y cobros todavía no están implementados.
+// Edición (US-09) y cobros todavía no están implementados.
 const TITULO_PROXIMAMENTE = "Disponible próximamente";
 
 export function BadgeEstadoAlumno({ estado }: { estado: EstadoAlumno }) {
@@ -63,37 +63,52 @@ function DatosIdentificatorios({ alumno }: { alumno: FichaAlumno }) {
   );
 }
 
-function BotonBajaOReactivar({ estaDeBaja, onDarDeBaja }: { estaDeBaja: boolean; onDarDeBaja: () => void }) {
-  const clases =
-    "col-span-2 rounded-xl border-rose-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-600 hover:bg-rose-600 hover:text-white sm:col-span-1 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600";
+interface AccionesFichaProps {
+  estaDeBaja: boolean;
+  onDarDeBaja: () => void;
+  onReactivar: () => void;
+}
+
+// Ocupa toda la fila en la grilla de dos columnas de mobile.
+const ANCHO_BOTON_ESTADO = "min-[360px]:col-span-2 sm:col-span-1";
+
+function BotonBajaOReactivar({ estaDeBaja, onDarDeBaja, onReactivar }: AccionesFichaProps) {
   if (estaDeBaja) {
     return (
-      <Button disabled variant="outline" title={TITULO_PROXIMAMENTE} className={clases}>
+      <Button
+        type="button"
+        onClick={onReactivar}
+        className={cn("rounded-xl bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700", ANCHO_BOTON_ESTADO)}
+      >
         <RotateCcw aria-hidden="true" />
         Reactivar
       </Button>
     );
   }
   return (
-    <Button type="button" variant="outline" onClick={onDarDeBaja} className={clases}>
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onDarDeBaja}
+      className={cn(
+        "rounded-xl border-rose-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-600 hover:bg-rose-600 hover:text-white dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600",
+        ANCHO_BOTON_ESTADO,
+      )}
+    >
       Dar de baja
     </Button>
   );
 }
 
-interface AccionesFichaProps {
-  estaDeBaja: boolean;
-  onDarDeBaja: () => void;
-}
-
-function AccionesFicha({ estaDeBaja, onDarDeBaja }: AccionesFichaProps) {
+function AccionesFicha(props: AccionesFichaProps) {
   const { hasRole, hasPermission } = usePermissions();
   // Como en el back (inscripcion.routes.ts): la profesora también tiene ALUMNOS_EDITAR para
   // pre-inscribir, pero dar de baja o reactivar es solo de la propietaria.
-  const puedeDarDeBaja = hasRole("PROPIETARIA") && hasPermission("ALUMNOS_EDITAR");
+  const puedeDarDeBajaOReactivar = hasRole("PROPIETARIA") && hasPermission("ALUMNOS_EDITAR");
 
+  // En una columna por debajo de 360px: a dos columnas, "Registrar cobro" no entra y se corta.
   return (
-    <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3.5 sm:flex sm:flex-wrap sm:border-0 sm:pt-0 dark:border-white/10">
+    <div className="grid grid-cols-1 gap-2 border-t border-slate-100 pt-3.5 min-[360px]:grid-cols-2 sm:flex sm:flex-wrap sm:border-0 sm:pt-0 dark:border-white/10">
       <Can permission="ALUMNOS_EDITAR">
         <Button disabled title={TITULO_PROXIMAMENTE} className="rounded-xl bg-primary px-4 font-bold text-white">
           <Pencil aria-hidden="true" />
@@ -108,7 +123,7 @@ function AccionesFicha({ estaDeBaja, onDarDeBaja }: AccionesFichaProps) {
         <Wallet aria-hidden="true" className="text-emerald-400" />
         Registrar cobro
       </Button>
-      {puedeDarDeBaja && <BotonBajaOReactivar estaDeBaja={estaDeBaja} onDarDeBaja={onDarDeBaja} />}
+      {puedeDarDeBajaOReactivar && <BotonBajaOReactivar {...props} />}
     </div>
   );
 }
@@ -116,9 +131,10 @@ function AccionesFicha({ estaDeBaja, onDarDeBaja }: AccionesFichaProps) {
 interface EncabezadoFichaProps {
   alumno: FichaAlumno;
   onDarDeBaja: () => void;
+  onReactivar: () => void;
 }
 
-export function EncabezadoFicha({ alumno, onDarDeBaja }: EncabezadoFichaProps) {
+export function EncabezadoFicha({ alumno, onDarDeBaja, onReactivar }: EncabezadoFichaProps) {
   return (
     <section
       aria-label="Resumen del alumno"
@@ -141,7 +157,7 @@ export function EncabezadoFicha({ alumno, onDarDeBaja }: EncabezadoFichaProps) {
           <DatosIdentificatorios alumno={alumno} />
         </div>
       </div>
-      <AccionesFicha estaDeBaja={alumno.estado === "BAJA"} onDarDeBaja={onDarDeBaja} />
+      <AccionesFicha estaDeBaja={alumno.estado === "BAJA"} onDarDeBaja={onDarDeBaja} onReactivar={onReactivar} />
     </section>
   );
 }

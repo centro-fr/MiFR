@@ -13,7 +13,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { bajaAlumnoFormSchema } from "@/features/alumnos/schemas/alumno";
+import { Textarea } from "@/components/ui/textarea";
+import { LARGO_MAXIMO_DETALLE_BAJA, bajaAlumnoFormSchema } from "@/features/alumnos/schemas/alumno";
 import type { FichaAlumno, MotivoBaja } from "@/types/alumno";
 
 const ETIQUETAS_MOTIVO: Record<MotivoBaja, string> = {
@@ -31,22 +32,30 @@ interface Props {
   dandoDeBaja: boolean;
   errorBaja: string | null;
   onClose: () => void;
-  onConfirm: (motivo: MotivoBaja) => void;
+  /** `detalle` solo llega con "Otro motivo" y si se escribió algo. */
+  onConfirm: (motivo: MotivoBaja, detalle?: string) => void;
 }
 
 // US-08: la baja es lógica y conserva el historial. El motivo se guarda en inscripciones.motivo_baja.
 export function ModalBajaAlumno({ alumno, dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
   const [motivo, setMotivo] = useState<string>("");
+  const [detalle, setDetalle] = useState("");
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
+  const [errorDetalle, setErrorDetalle] = useState<string | null>(null);
+  const esOtroMotivo = motivo === "OTRO";
 
   const confirmar = (evento: FormEvent) => {
     evento.preventDefault();
-    const resultado = bajaAlumnoFormSchema.safeParse({ motivo: motivo || undefined });
+    const resultado = bajaAlumnoFormSchema.safeParse({ motivo: motivo || undefined, detalle: esOtroMotivo ? detalle : undefined });
     if (!resultado.success) {
-      setErrorMotivo(resultado.error.issues[0].message);
+      const { fieldErrors } = resultado.error.flatten();
+      setErrorMotivo(fieldErrors.motivo?.[0] ?? null);
+      setErrorDetalle(fieldErrors.detalle?.[0] ?? null);
       return;
     }
-    onConfirm(resultado.data.motivo);
+    const { motivo: motivoElegido, detalle: detalleEscrito } = resultado.data;
+    if (detalleEscrito) onConfirm(motivoElegido, detalleEscrito);
+    else onConfirm(motivoElegido);
   };
 
   const elegirMotivo = (valor: string) => {
@@ -110,6 +119,17 @@ export function ModalBajaAlumno({ alumno, dandoDeBaja, errorBaja, onClose, onCon
             )}
           </fieldset>
 
+          {esOtroMotivo && (
+            <DetalleOtroMotivo
+              valor={detalle}
+              error={errorDetalle}
+              onChange={(valor) => {
+                setDetalle(valor);
+                setErrorDetalle(null);
+              }}
+            />
+          )}
+
           {errorBaja && (
             <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
               <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">{errorBaja}</AlertDescription>
@@ -139,5 +159,44 @@ export function ModalBajaAlumno({ alumno, dandoDeBaja, errorBaja, onClose, onCon
         </form>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+interface PropsDetalle {
+  valor: string;
+  error: string | null;
+  onChange: (valor: string) => void;
+}
+
+function DetalleOtroMotivo({ valor, error, onChange }: PropsDetalle) {
+  const idAyuda = "ayuda-detalle-baja";
+  const idError = "error-detalle-baja";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor="detalle-baja" className="text-sm font-bold text-slate-800 dark:text-slate-200">
+        ¿Cuál es el motivo? <span className="font-medium text-muted-foreground">(opcional)</span>
+      </Label>
+      {/* Aparece al elegir "Otro motivo": el foco va directo a la caja para escribir. */}
+      <Textarea
+        id="detalle-baja"
+        autoFocus
+        rows={3}
+        value={valor}
+        maxLength={LARGO_MAXIMO_DETALLE_BAJA}
+        onChange={(evento) => onChange(evento.target.value)}
+        aria-invalid={error !== null}
+        aria-describedby={error ? `${idAyuda} ${idError}` : idAyuda}
+        placeholder="Por ejemplo: cambió de horario de trabajo"
+        className="rounded-xl border-slate-200 text-sm dark:border-white/15"
+      />
+      <p id={idAyuda} className="text-right text-xs text-muted-foreground">
+        {valor.length}/{LARGO_MAXIMO_DETALLE_BAJA}
+      </p>
+      {error && (
+        <p id={idError} role="alert" className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

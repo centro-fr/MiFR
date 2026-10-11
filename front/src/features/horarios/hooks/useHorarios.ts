@@ -23,7 +23,7 @@ import type { Actividad } from "@/types/actividad";
 import type { DiaSemana, Horario, HorarioFormData } from "@/types/horarios";
 
 export const HORARIOS_QUERY_KEY = ["horarios"] as const;
-const PROFESORAS_QUERY_KEY = ["profesoras"] as const;
+export const PROFESORAS_QUERY_KEY = ["profesoras"] as const;
 const PREFIJO_BORRADOR = "nuevo-";
 
 type Resultado = { ok: true } | { ok: false; error: string };

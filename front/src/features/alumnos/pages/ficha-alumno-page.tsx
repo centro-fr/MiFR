@@ -9,12 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DatosPersonales } from "@/features/alumnos/components/datos-personales";
 import { EncabezadoFicha } from "@/features/alumnos/components/encabezado-ficha";
 import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
+import { ModalReactivarAlumno } from "@/features/alumnos/components/modal-reactivar-alumno";
 import { PestanasFicha } from "@/features/alumnos/components/pestanas-ficha";
 import {
   esAlumnoNoEncontrado,
   useDarDeBajaAlumno,
   useFichaAlumno,
 } from "@/features/alumnos/hooks/use-ficha-alumno";
+import { useReactivarAlumno } from "@/features/alumnos/hooks/use-reactivacion";
+import type { ReactivarAlumnoBody } from "@/features/alumnos/schemas/reactivacion";
 import type { FichaAlumno, MotivoBaja } from "@/types/alumno";
 
 // El listado lo implementa otro equipo (US-10); hasta entonces muestra "En construcción".
@@ -76,41 +79,86 @@ function ErrorFicha({ error, onReintentar }: { error: unknown; onReintentar: () 
   );
 }
 
-function FichaConAcciones({ alumno }: { alumno: FichaAlumno }) {
+// Cada flujo (baja, reactivación) maneja su modal y su mutación; la ficha solo los dispara.
+function useFlujoBaja(alumno: FichaAlumno) {
   const darDeBaja = useDarDeBajaAlumno();
-  const [bajaAbierta, setBajaAbierta] = useState(false);
+  const [abierta, setAbierta] = useState(false);
 
-  const abrirBaja = () => {
+  const abrir = () => {
     darDeBaja.reset();
-    setBajaAbierta(true);
+    setAbierta(true);
   };
 
-  const confirmarBaja = (motivo: MotivoBaja) => {
+  // El modal también entrega el texto de "Otro motivo", pero el back todavía no tiene dónde
+  // guardarlo. Cuando lo agregue, sumarlo acá a la mutación y al cuerpo de darDeBajaAlumno.
+  const confirmar = (motivo: MotivoBaja) => {
     darDeBaja.mutate(
       { id: alumno.id, motivo },
       {
         onSuccess: () => {
-          setBajaAbierta(false);
+          setAbierta(false);
           toast.info(`${alumno.nombre} ${alumno.apellido} quedó dado de baja`);
         },
       },
     );
   };
 
+  const modal = abierta && (
+    <ModalBajaAlumno
+      alumno={alumno}
+      dandoDeBaja={darDeBaja.isPending}
+      errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.") : null}
+      onClose={() => setAbierta(false)}
+      onConfirm={confirmar}
+    />
+  );
+  return { abrir, modal };
+}
+
+function useFlujoReactivacion(alumno: FichaAlumno) {
+  const reactivar = useReactivarAlumno();
+  const [abierta, setAbierta] = useState(false);
+
+  const abrir = () => {
+    reactivar.reset();
+    setAbierta(true);
+  };
+
+  const confirmar = (cuerpo: ReactivarAlumnoBody) => {
+    reactivar.mutate(
+      { id: alumno.id, cuerpo },
+      {
+        onSuccess: () => {
+          setAbierta(false);
+          toast.success(`${alumno.nombre} ${alumno.apellido} quedó activo de nuevo`);
+        },
+      },
+    );
+  };
+
+  const modal = abierta && (
+    <ModalReactivarAlumno
+      alumno={alumno}
+      reactivando={reactivar.isPending}
+      errorReactivacion={reactivar.isError ? mensajeDeErrorApi(reactivar.error, "No se pudo reactivar al alumno.") : null}
+      onClose={() => setAbierta(false)}
+      onConfirm={confirmar}
+    />
+  );
+  return { abrir, modal };
+}
+
+function FichaConAcciones({ alumno }: { alumno: FichaAlumno }) {
+  const baja = useFlujoBaja(alumno);
+  const reactivacion = useFlujoReactivacion(alumno);
+
   return (
     <>
-      <EncabezadoFicha alumno={alumno} onDarDeBaja={abrirBaja} />
+      <EncabezadoFicha alumno={alumno} onDarDeBaja={baja.abrir} onReactivar={reactivacion.abrir} />
       <PestanasFicha />
       <DatosPersonales alumno={alumno} />
-      {bajaAbierta && (
-        <ModalBajaAlumno
-          alumno={alumno}
-          dandoDeBaja={darDeBaja.isPending}
-          errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.") : null}
-          onClose={() => setBajaAbierta(false)}
-          onConfirm={confirmarBaja}
-        />
-      )}
+      {baja.modal}
+      {reactivacion.modal}
     </>
   );
 }

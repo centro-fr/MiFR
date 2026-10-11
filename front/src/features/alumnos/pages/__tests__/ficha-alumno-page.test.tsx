@@ -18,6 +18,10 @@ vi.mock("@/features/alumnos/hooks/use-ficha-alumno", async (importOriginal) => (
   useFichaAlumno: vi.fn(),
   useDarDeBajaAlumno: vi.fn(),
 }));
+// Estos tests no abren la reactivación: alcanza con una mutación inerte.
+vi.mock("@/features/alumnos/hooks/use-reactivacion", () => ({
+  useReactivarAlumno: () => ({ mutate: vi.fn(), reset: vi.fn(), isPending: false, isError: false, error: null }),
+}));
 
 // jsdom no trae ResizeObserver y el RadioGroup de Radix lo usa para medir.
 vi.stubGlobal("ResizeObserver", class {

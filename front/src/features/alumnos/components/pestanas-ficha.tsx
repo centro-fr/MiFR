@@ -12,7 +12,9 @@ const PESTANAS = [
 export function PestanasFicha() {
   return (
     <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">
-      <nav aria-label="Secciones de la ficha" className="max-w-full overflow-x-auto">
+      {/* relative: el nav es el bloque contenedor de los sr-only (absolute); sin él, el
+          overflow no los recorta y ensanchan la página en mobile. */}
+      <nav aria-label="Secciones de la ficha" className="relative max-w-full overflow-x-auto">
         <ul className="flex gap-1">
           {PESTANAS.map(({ etiqueta, disponible }) => (
             <li key={etiqueta}>

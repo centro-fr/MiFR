@@ -42,6 +42,8 @@ export const inscripcionesHandlers = [
       .filter((i) => !estado || i.estado === estado)
       .filter((i) => !idAlumno || i.id_alumno === Number(idAlumno))
       .filter((i) => idProfesora === null || i.id_profesora === idProfesora)
+      // Como el back: la más reciente primero.
+      .sort((a, b) => b.fecha_alta.localeCompare(a.fecha_alta) || b.id_inscripcion - a.id_inscripcion)
       .slice(offset, offset + limit);
     return HttpResponse.json(inscripciones.map(inscripcionConDatos));
   }),
