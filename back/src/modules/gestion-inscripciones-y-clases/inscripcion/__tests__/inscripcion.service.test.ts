@@ -5,15 +5,18 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../../shared/errors/app-error.js";
+import type { IUnidadDeTrabajo } from "../../../../shared/db/transaccion.js";
 import type { Solicitante } from "../../../../shared/utils/solicitante.types.js";
+import type { IInfoProgreso } from "../../../gestion-rutinas-y-progreso/registro-progreso/interface/i-info-progreso.js";
 import type { IInfoAlumnos } from "../../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
+import type { IInfoParametros } from "../../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { InscripcionRepository } from "../inscripcion.repository.js";
 import type { CrearInscripcionInput, ReactivarAlumnoInput } from "../inscripcion.schemas.js";
 import { InscripcionService } from "../inscripcion.service.js";
-import type { InscripcionConDatos } from "../inscripcion.types.js";
+import type { InscripcionGuardada } from "../inscripcion.types.js";
 
 const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
 const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
@@ -21,6 +24,9 @@ const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
 // 15:00 UTC del 9 de octubre: en Argentina también es el 9.
 const AHORA = new Date("2026-10-09T15:00:00Z");
 const HOY = new Date("2026-10-09T00:00:00Z");
+const DIAS_RESERVA = 3;
+// Con 3 días de reserva, el 9 todavía guardan su lugar las pre-inscripciones que empezaron desde el 6.
+const INICIO_RESERVAS = new Date("2026-10-06T00:00:00Z");
 
 const plan = {
   id_plan: 1,
@@ -35,18 +41,26 @@ const horario = {
   id_profesora: 3,
   id_actividad: 4,
   fecha_baja: null,
-  actividad: { activo: true },
+  actividad: { activo: true, nombre: "Funcional", requiere_medidas: false },
 };
+const horarioQuePideMedidas = {
+  ...horario,
+  actividad: { activo: true, nombre: "Entrenamiento personalizado", requiere_medidas: true },
+};
+const medidas = { peso_kg: 62.5, talla_cm: 168 };
 const inscripcion = {
   id_inscripcion: 12,
   id_alumno: 5,
   id_plan: 1,
   id_profesora: 3,
   estado: "ACTIVA",
+  fecha_inicio: HOY,
   plan,
-} as unknown as InscripcionConDatos;
-const preinscripta = { ...inscripcion, estado: "PREINSCRIPTA" } as InscripcionConDatos;
+} as unknown as InscripcionGuardada;
+const preinscripta = { ...inscripcion, estado: "PREINSCRIPTA" } as InscripcionGuardada;
 const ok = { resultado: "ok", inscripcion };
+// Una inscripción activa no reserva nada.
+const respuesta = { ...inscripcion, reserva: null };
 const alta: CrearInscripcionInput = {
   id_alumno: 5,
   id_plan: 1,
@@ -78,6 +92,7 @@ function crearMocks() {
       obtenerIdsDeAlumnos: vi.fn().mockResolvedValue([5]),
       resumirInscripcionesVigentes: vi.fn().mockResolvedValue([]),
       contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map([[8, 2]])),
+      contarLugaresOcupados: vi.fn().mockResolvedValue(new Map([[8, 1]])),
     },
     alumnos: {
       buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO" }),
@@ -94,6 +109,10 @@ function crearMocks() {
       buscarPorId: vi.fn().mockResolvedValue({ id_profesora: 3 }),
       buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }),
     },
+    progreso: { registrarMedicionInicial: vi.fn().mockResolvedValue(undefined) },
+    parametros: { obtener: vi.fn().mockResolvedValue(DIAS_RESERVA) },
+    // Corre la operación como lo haría la transacción, y deja ver qué quedó adentro.
+    unidadDeTrabajo: { ejecutar: vi.fn((operacion: () => Promise<unknown>) => operacion()) },
   };
 }
 
@@ -111,6 +130,9 @@ describe("InscripcionService", () => {
       mocks.planes as unknown as IInfoPlanes,
       mocks.horarios as unknown as IInfoHorarios,
       mocks.profesores as unknown as IInfoProfesores,
+      mocks.progreso as unknown as IInfoProgreso,
+      mocks.parametros as unknown as IInfoParametros,
+      mocks.unidadDeTrabajo as unknown as IUnidadDeTrabajo,
     );
   });
 
@@ -118,7 +140,7 @@ describe("InscripcionService", () => {
 
   describe("crear", () => {
     it("pre-inscribe con el precio vigente hoy y los horarios elegidos", async () => {
-      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toBe(inscripcion);
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
 
       expect(mocks.planes.precioVigente).toHaveBeenCalledWith(1, HOY);
       expect(mocks.repositorio.crear).toHaveBeenCalledWith(
@@ -130,6 +152,7 @@ describe("InscripcionService", () => {
         }),
         [8],
         HOY,
+        INICIO_RESERVAS,
       );
     });
 
@@ -158,11 +181,58 @@ describe("InscripcionService", () => {
       expect(mocks.repositorio.crear).not.toHaveBeenCalled();
     });
 
+    describe("peso y talla (US-05)", () => {
+      it("si una actividad de los horarios los pide y faltan, rechaza sin guardar nada", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horarioQuePideMedidas, id_horario: 9 }]);
+
+        await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).rejects.toThrow(
+          new ValidationError("Entrenamiento personalizado pide el peso y la talla para pre-inscribir"),
+        );
+        expect(mocks.unidadDeTrabajo.ejecutar).not.toHaveBeenCalled();
+        expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+      });
+
+      it("con las medidas, guarda la inscripción y la medición inicial en la misma transacción", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]);
+        mocks.unidadDeTrabajo.ejecutar.mockImplementation(async (operacion) => {
+          expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+          const resultado = await operacion();
+          expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalled();
+          return resultado;
+        });
+
+        await expect(servicio.crear({ ...alta, medidas }, PROPIETARIA)).resolves.toEqual(respuesta);
+        expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalledWith({
+          idAlumno: 5,
+          idProfesora: 3,
+          pesoKg: 62.5,
+          tallaCm: 168,
+        });
+        expect(mocks.repositorio.crear.mock.calls[0][0]).not.toHaveProperty("medidas");
+      });
+
+      it("sin cupo no registra la medición", async () => {
+        mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]);
+        mocks.repositorio.crear.mockResolvedValue({ resultado: "sin-cupo" });
+
+        await expect(servicio.crear({ ...alta, medidas }, PROPIETARIA)).rejects.toThrow(ConflictError);
+        expect(mocks.progreso.registrarMedicionInicial).not.toHaveBeenCalled();
+      });
+
+      it("si ninguna actividad las pide, no las exige; si llegan igual, las guarda", async () => {
+        await servicio.crear(alta, PROPIETARIA);
+        expect(mocks.progreso.registrarMedicionInicial).not.toHaveBeenCalled();
+
+        await servicio.crear({ ...alta, medidas }, PROPIETARIA);
+        expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalledOnce();
+      });
+    });
+
     describe("pedido por una profesora", () => {
       it("pre-inscribe a su nombre un alumno que no está con otra profesora", async () => {
         mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([{ ...inscripcion, id_profesora: 3 }]);
 
-        await expect(servicio.crear(alta, PROFESORA)).resolves.toBe(inscripcion);
+        await expect(servicio.crear(alta, PROFESORA)).resolves.toEqual(respuesta);
         expect(mocks.profesores.buscarPorUsuario).toHaveBeenCalledWith(2);
         expect(mocks.repositorio.listarVigentesPorAlumno).toHaveBeenCalledWith(5);
       });
@@ -285,13 +355,15 @@ describe("InscripcionService", () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: null });
       mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
 
-      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).resolves.toBe(inscripcion);
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).resolves.toEqual(
+        respuesta,
+      );
     });
 
     it("una clase suelta no tiene tope de horarios", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, tipo: "CLASE_SUELTA", clases_por_semana: null });
 
-      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toBe(inscripcion);
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
     });
   });
 
@@ -318,8 +390,8 @@ describe("InscripcionService", () => {
     });
 
     it("obtenerPara devuelve la inscripción a la propietaria y a la profesora a cargo", async () => {
-      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toBe(inscripcion);
-      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toBe(inscripcion);
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toEqual(respuesta);
+      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toEqual(respuesta);
     });
 
     it("obtenerPara lanza ForbiddenError si la profesora no está a cargo", async () => {
@@ -348,12 +420,12 @@ describe("InscripcionService", () => {
 
       await servicio.activar(12);
 
-      expect(mocks.repositorio.activar).toHaveBeenCalledWith(12);
+      expect(mocks.repositorio.activar).toHaveBeenCalledWith(12, INICIO_RESERVAS);
       expect(mocks.alumnos.activar).toHaveBeenCalledWith(5);
     });
 
     it("si ya estaba activa no toca la inscripción ni al alumno: el alta es la del primer pago", async () => {
-      await expect(servicio.activar(12)).resolves.toBe(inscripcion);
+      await expect(servicio.activar(12)).resolves.toEqual(respuesta);
 
       expect(mocks.repositorio.activar).not.toHaveBeenCalled();
       expect(mocks.alumnos.activar).not.toHaveBeenCalled();
@@ -404,6 +476,7 @@ describe("InscripcionService", () => {
         expect.objectContaining({ id_alumno: 5, id_plan_precio: 15, estado: "ACTIVA" }),
         [8],
         HOY,
+        INICIO_RESERVAS,
       );
       expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
     });
@@ -429,7 +502,7 @@ describe("InscripcionService", () => {
     it("con una inscripción activa que quedó abierta solo reactiva al alumno", async () => {
       mocks.repositorio.buscarVigentePorAlumno.mockResolvedValue(inscripcion);
 
-      await expect(servicio.reactivarAlumno(5, reactivacion)).resolves.toBe(inscripcion);
+      await expect(servicio.reactivarAlumno(5, reactivacion)).resolves.toEqual(respuesta);
       expect(mocks.repositorio.reactivar).not.toHaveBeenCalled();
       expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
     });
@@ -456,6 +529,7 @@ describe("InscripcionService", () => {
         expect.objectContaining({ id_plan: 2 }),
         15,
         { instante: AHORA, dia: HOY },
+        INICIO_RESERVAS,
       );
     });
 
@@ -483,6 +557,7 @@ describe("InscripcionService", () => {
         inscripcion,
         { ids_horarios: [8] },
         HOY,
+        INICIO_RESERVAS,
       );
     });
   });
@@ -493,7 +568,77 @@ describe("InscripcionService", () => {
       await expect(servicio.resumirInscripcionesVigentes([5])).resolves.toEqual([]);
       await expect(servicio.contarInscriptosVigentes([8])).resolves.toEqual(new Map([[8, 2]]));
       mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcion]);
-      await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([inscripcion]);
+      await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([respuesta]);
+    });
+
+    it("contarLugaresOcupados no cuenta las pre-inscripciones con la reserva vencida", async () => {
+      await expect(servicio.contarLugaresOcupados([8])).resolves.toEqual(new Map([[8, 1]]));
+
+      expect(mocks.parametros.obtener).toHaveBeenCalledWith("DIAS_RESERVA_PREINSCRIPCION");
+      expect(mocks.repositorio.contarLugaresOcupados).toHaveBeenCalledWith([8], INICIO_RESERVAS);
+    });
+  });
+
+  describe("reserva de la pre-inscripción", () => {
+    const empezo = (dia: string) =>
+      ({ ...preinscripta, fecha_inicio: new Date(`${dia}T00:00:00Z`) }) as InscripcionGuardada;
+
+    it("guarda el lugar hasta DIAS_RESERVA_PREINSCRIPCION días después del inicio, ese día incluido", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(empezo("2026-10-06"));
+
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({
+        reserva: { vence: HOY, vencida: false },
+      });
+      expect(mocks.parametros.obtener).toHaveBeenCalledWith("DIAS_RESERVA_PREINSCRIPCION");
+    });
+
+    it("pasado ese día la reserva figura vencida", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(empezo("2026-10-05"));
+
+      await expect(servicio.obtenerPara(12, PROFESORA)).resolves.toMatchObject({
+        reserva: { vence: new Date("2026-10-08T00:00:00Z"), vencida: true },
+      });
+    });
+
+    it("con el parámetro en 0 vence el mismo día de inicio", async () => {
+      mocks.parametros.obtener.mockResolvedValue(0);
+      mocks.repositorio.buscarPorId.mockResolvedValueOnce(empezo("2026-10-09"));
+      mocks.repositorio.buscarPorId.mockResolvedValueOnce(empezo("2026-10-08"));
+
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({
+        reserva: { vence: HOY, vencida: false },
+      });
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({
+        reserva: { vencida: true },
+      });
+    });
+
+    it("una pre-inscripción que empieza más adelante no vence antes de empezar", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(empezo("2026-11-02"));
+
+      await expect(servicio.obtenerPara(12, PROPIETARIA)).resolves.toMatchObject({
+        reserva: { vence: new Date("2026-11-05T00:00:00Z"), vencida: false },
+      });
+    });
+
+    it("listar suma la reserva solo a las pre-inscriptas y lee el parámetro una vez", async () => {
+      mocks.repositorio.listar.mockResolvedValue([empezo("2026-10-09"), inscripcion]);
+
+      const listado = await servicio.listar({}, PROPIETARIA);
+
+      expect(listado.map(({ reserva }) => reserva)).toEqual([
+        { vence: new Date("2026-10-12T00:00:00Z"), vencida: false },
+        null,
+      ]);
+      expect(mocks.parametros.obtener).toHaveBeenCalledTimes(1);
+    });
+
+    it("la pre-inscripción recién creada sale con su reserva", async () => {
+      mocks.repositorio.crear.mockResolvedValue({ resultado: "ok", inscripcion: empezo("2026-10-09") });
+
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toMatchObject({
+        reserva: { vence: new Date("2026-10-12T00:00:00Z"), vencida: false },
+      });
     });
   });
 });

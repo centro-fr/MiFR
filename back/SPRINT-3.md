@@ -49,6 +49,7 @@ Cuota    ──> IInfoInscripciones (Inscripcion)   la inscripción a cobrar y s
          ──> IInfoPlanes (Plan)                  precio vigente a la fecha del cobro  [falta en el diagrama]
 Pago     ──> IInfoProfesores (Profesor)          quién cobró en efectivo
 CierreAsistencia ──> IInfoParametros             hasta cuándo queda abierta la asistencia
+Inscripcion      ──> IInfoParametros             DIAS_RESERVA_PREINSCRIPCION: hasta cuándo una pre-inscripción sin pagar guarda su lugar
 
 GestionInscripcionesYClases (fachada) ──> IInfoCuotas   estado de cuota en la lista de asistencia  [falta en el diagrama]
 GestionPersonas (fachada)             ──> IInfoCuotas   estado de cuota en el listado y la ficha (US-10)  [falta en el diagrama]
@@ -102,17 +103,26 @@ Es el Strategy que anticipa `.claude/rules/patrones.md`: dos algoritmos de venci
 
 **Responsable:** Rosario
 
-Valores que configura la propietaria. Lo piden US-16 (datos bancarios para transferir), US-18 (política de vencidos) y US-21 (cierre de la asistencia).
+Valores que configura la propietaria. Lo piden US-16 (datos bancarios para transferir), US-18 (política de vencidos), US-21 (cierre de la asistencia) y US-05 (plazo de la reserva de cupo de la pre-inscripción).
+
+### Hecho (ParametrosSistema)
+
+La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva de la pre-inscripción. Rosario sigue con la edición desde la API.
+
+- [x] Modelo `parametros_sistema` en Prisma + migración (`ck_parametros_sistema_tipo_dato`).
+- [x] Componente `gestion-servicio-entrenamiento/parametros-sistema/` con `IInfoParametros` (`ParametrosSistemaService`: lee un valor ya convertido a su tipo; si la clave todavía no tiene fila, rige su valor inicial del catálogo). Montado en `composicion.ts`.
+- [x] Catálogo con el tipo y el valor inicial de cada parámetro (`parametros-sistema.catalogo.ts`) y carga en los seeds (`cargarParametrosIniciales`), sin pisar los que la propietaria ya cambió. Test de integración PI-39.
 
 ### Pendiente (ParametrosSistema)
 
-- [ ] Modelo `parametros_sistema` en Prisma + migración (`ck_parametros_sistema_tipo_dato`).
-- [ ] Componente `gestion-servicio-entrenamiento/parametros-sistema/` con `IInfoParametros` (leer un valor ya convertido a su tipo). Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
+- [ ] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
 - [ ] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
-- [ ] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
-  - [ ] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`).
-  - [ ] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
-  - [ ] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
+- [x] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
+  - [x] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`, vacíos hasta que la propietaria los cargue).
+  - [x] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
+  - [x] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
+  - [x] `DIAS_RESERVA_PREINSCRIPCION` (`ENTERO`, por defecto `3`).
+- [ ] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
 - [ ] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
 - [ ] Tests del service, de las rutas y de integración.
 
@@ -256,6 +266,7 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 - [x] **Cierre automático (US-21).** Hace falta algo que corra al terminar cada clase. En Render el servidor se duerme sin tráfico, así que un `cron` dentro del proceso no es confiable. **Decidido:** las clases vencidas se cierran al leerlas (clases del día, historial, informes) y además con un intervalo dentro del proceso mientras está despierto. Si hace falta exactitud, se suma un Cron Job de Render que llame a un endpoint interno.
 - [x] **"Se abrió la ventana" (US-21).** No hay columna para eso. **Decidido:** el cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano; sin ninguna, se entiende que no se tomó asistencia y no inventa faltas. El cierre con el botón de la profesora siempre genera los ausentes, aunque no haya marcado a nadie (por ejemplo, porque no vino ningún alumno).
 - [x] **Pago adelantado.** La cuota nueva empieza el día después del vencimiento de la vigente, para que ningún día quede cubierto por dos cuotas; el día del vencimiento cuenta como cubierto, así que quien paga ese mismo día también sigue desde el siguiente. **Decidido con Francisco** (10/10/2026). Como `ICalculoVencimiento` calcula de fecha a fecha desde ese primer día, las cuotas adelantadas se corren un día por mes (vence el 10/11, la siguiente vence el 11/12).
+- [x] **Reserva de cupo de la pre-inscripción (US-05, US-07).** El diseño del front decía que el cupo se liberaba a las 72 hs para una lista de espera, y no estaba en ninguna spec. **Decidido con Francisco** (11/10/2026): una pre-inscripción sin pagar guarda su lugar hasta `DIAS_RESERVA_PREINSCRIPCION` días después de su fecha de inicio (parámetro, 3 por defecto; con 0 vence el mismo día). Se cuenta desde el inicio y no desde el alta, para que quien se anota con anticipación no pierda el lugar antes de empezar. Pasado el plazo sigue PREINSCRIPTA, pero deja de ocupar cupo para el alta y para la ocupación de los horarios; si después paga, el alta vuelve a pedir cupo (409 si otro ocupó el lugar). Sigue contando para la baja del horario, porque todavía está en él. Cambiar de plan conserva la fecha de inicio de la pre-inscripción, así que no renueva la reserva. Se calcula al consultar, sin proceso programado, y las respuestas traen `reserva: { vence, vencida }`. Sin lista de espera: no está en el backlog y pediría tablas nuevas. Falta anotarlo en la spec de US-05.
 - [x] **Historial de pagos en la ficha (US-10).** **Decidido:** llega por `IInfoCuotas`, como ya está en el diagrama: la ficha muestra las cuotas con sus pagos, y el componente `Cuota` ya lee los pagos para calcular la habilitación.
 - [x] **Alta definitiva desde el cobro.** `ILogica*` es solo para la presentación. **Decidido:** `IInfoInscripciones.activar(idInscripcion)`, como `IInfoAlumnos.activar`, idempotente.
 - [x] **Diagrama.** Agregar a la vista arquitectónica que `Cuota` requiere `IInfoPlanes`, y que `GestionInscripcionesYClases` y `GestionPersonas` requieren `IInfoCuotas`. **Decidido:** cada responsable las agrega al `.puml` y a EA en el primer commit de su parte, antes de codificarla (regla dura 2): Francisco las de `Cuota` y `GestionPersonas`, Nicolas la de `GestionInscripcionesYClases`.

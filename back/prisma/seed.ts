@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CATALOGO_PERMISOS, CATALOGO_ROLES } from "../src/modules/gestion-usuarios/rol/rol.catalogo.js";
 import { cargarCatalogoSeguridad } from "../src/shared/db/catalogo-seguridad.js";
+import { cargarParametrosIniciales } from "../src/shared/db/parametros-iniciales.js";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
   }
 
   await cargarCatalogoSeguridad(prisma);
+  await cargarParametrosIniciales(prisma);
   const propietaria = await prisma.roles.findUniqueOrThrow({ where: { codigo: "PROPIETARIA" } });
 
   const usuario = await prisma.usuarios.upsert({
@@ -35,6 +37,7 @@ async function main(): Promise<void> {
 
   console.log(`Roles cargados: ${CATALOGO_ROLES.map((r) => r.codigo).join(", ")}`);
   console.log(`Permisos cargados: ${CATALOGO_PERMISOS.length}`);
+  console.log("Parámetros del sistema cargados (los que ya existían quedan como estaban)");
   console.log(`Propietaria lista: ${email} (id_usuario=${usuario.id_usuario})`);
 }
 

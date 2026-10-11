@@ -22,6 +22,7 @@ interface ActividadDemo {
   descripcion: string;
   modalidad: modalidad_actividad;
   cupo_maximo: number | null;
+  requiere_medidas: boolean;
 }
 
 interface HorarioDemo {
@@ -66,6 +67,7 @@ export const ACTIVIDADES_DEMO: ActividadDemo[] = [
     descripcion: "Clase grupal de entrenamiento funcional",
     modalidad: "GRUPAL",
     cupo_maximo: null,
+    requiere_medidas: false,
   },
   {
     codigo: "ENTRENAMIENTO_PERS",
@@ -73,6 +75,8 @@ export const ACTIVIDADES_DEMO: ActividadDemo[] = [
     descripcion: "Preparación física general con rutina individual",
     modalidad: "PERSONALIZADA",
     cupo_maximo: 4,
+    // La rutina individual parte del peso y la talla: la pre-inscripción los pide (US-05).
+    requiere_medidas: true,
   },
 ];
 

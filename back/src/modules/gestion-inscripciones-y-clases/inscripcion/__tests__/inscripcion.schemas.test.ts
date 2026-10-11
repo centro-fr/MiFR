@@ -9,6 +9,25 @@ import {
 const alta = { id_alumno: 5, id_plan: 1, id_profesora: 3, ids_horarios: [8] };
 
 describe("crearInscripcionSchema", () => {
+  it("acepta peso y talla opcionales y rechaza valores fuera de rango, en texto o incompletos", () => {
+    expect(crearInscripcionSchema.parse(alta)).not.toHaveProperty("medidas");
+    expect(
+      crearInscripcionSchema.parse({ ...alta, medidas: { peso_kg: 62.5, talla_cm: 168 } }),
+    ).toMatchObject({
+      medidas: { peso_kg: 62.5, talla_cm: 168 },
+    });
+    for (const medidas of [
+      { peso_kg: 62.5 },
+      { peso_kg: 0, talla_cm: 168 },
+      { peso_kg: 62.5, talla_cm: 1.68 },
+      { peso_kg: "62", talla_cm: 168 },
+      { peso_kg: 62.555, talla_cm: 168 },
+      null,
+    ]) {
+      expect(crearInscripcionSchema.safeParse({ ...alta, medidas }).success).toBe(false);
+    }
+  });
+
   it("completa sin_cargo en false y convierte las fechas a días UTC", () => {
     expect(crearInscripcionSchema.parse({ ...alta, fecha_inicio: "2026-11-02" })).toMatchObject({
       sin_cargo: false,

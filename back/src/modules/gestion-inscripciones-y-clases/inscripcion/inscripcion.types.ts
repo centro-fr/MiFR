@@ -29,9 +29,20 @@ export const INCLUIR_DATOS_INSCRIPCION = {
   },
 } satisfies Prisma.inscripcionesInclude;
 
-export type InscripcionConDatos = Prisma.inscripcionesGetPayload<{
+// La inscripción como la devuelve la base, antes de sumarle la reserva.
+export type InscripcionGuardada = Prisma.inscripcionesGetPayload<{
   include: typeof INCLUIR_DATOS_INSCRIPCION;
 }>;
+
+// Hasta qué día una pre-inscripción sin pagar guarda su lugar (DIAS_RESERVA_PREINSCRIPCION después del
+// inicio). Se calcula al responder y no se guarda, porque depende del parámetro y del día de hoy.
+export interface ReservaDeCupo {
+  vence: Date;
+  vencida: boolean;
+}
+
+// reserva es null salvo en las PREINSCRIPTA: una inscripción activa o dada de baja no reserva nada.
+export type InscripcionConDatos = InscripcionGuardada & { reserva: ReservaDeCupo | null };
 
 // Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
 // informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las

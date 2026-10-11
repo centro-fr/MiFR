@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
+import { medidaCorporalSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
@@ -27,10 +28,17 @@ const datosDePlanYHorarios = {
   observaciones: textoOpcionalSchema(500, { multilinea: true }).optional(),
 };
 
+// US-05: obligatorias si alguna actividad de los horarios tiene requiere_medidas (lo decide el service).
+const medidas = z.object({
+  peso_kg: medidaCorporalSchema("El peso", "kg", 2, 400),
+  talla_cm: medidaCorporalSchema("La talla", "cm", 40, 250),
+});
+
 export const crearInscripcionSchema = z.object({
   id_alumno: idSchema,
   ...datosDePlanYHorarios,
   fecha_inicio: fecha.optional(),
+  medidas: medidas.optional(),
 });
 
 export const reactivarAlumnoSchema = z.object(datosDePlanYHorarios);
