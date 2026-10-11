@@ -24,7 +24,7 @@ export function EnConstruccionPage({ seccion }: EnConstruccionPageProps) {
     <OwnerLayout>
       <Card
         aria-labelledby="en-construccion-titulo"
-        className="mx-auto w-full max-w-[640px] rounded-2xl border-slate-200 bg-white px-6 py-12 text-center shadow-sm sm:px-10 dark:border-white/10 dark:bg-surface-low"
+        className="mx-auto w-full max-w-[640px] rounded-2xl border-border bg-white px-6 py-12 text-center shadow-sm sm:px-10 dark:bg-surface-low"
       >
         <CardContent className="flex flex-col items-center gap-5 p-0">
           <span
@@ -41,7 +41,7 @@ export function EnConstruccionPage({ seccion }: EnConstruccionPageProps) {
             >
               Esta sección está en construcción
             </h1>
-            <p className="text-sm text-slate-500 sm:text-base dark:text-slate-400">
+            <p className="text-sm text-muted-foreground sm:text-base">
               {seccion ? (
                 <>
                   La sección <strong className="font-bold text-slate-700 dark:text-slate-200">{seccion}</strong> todavía no

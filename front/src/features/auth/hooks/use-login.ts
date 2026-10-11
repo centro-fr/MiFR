@@ -20,10 +20,10 @@ function mapLoginError(error: unknown): AuthErrorCode {
     if (codigo === "USUARIO_NO_REGISTRADO" || codigo === "ACCESO_NO_HABILITADO") return "ACCESO_NO_HABILITADO";
     if (codigo === "FORBIDDEN" || codigo === "USUARIO_INACTIVO") return "USUARIO_INACTIVO";
     if (codigo === "UNAUTHORIZED" || codigo === "INVALID_GOOGLE_TOKEN") return "INVALID_GOOGLE_TOKEN";
-    if (error.response.status >= 500) return "RED_ERROR";
-    return "RED_ERROR";
+    if (error.response.status >= 500) return "ERROR_SERVIDOR";
+    return "ERROR_SERVIDOR";
   }
-  return "RED_ERROR";
+  return "ERROR_SERVIDOR";
 }
 
 export function useLogin() {

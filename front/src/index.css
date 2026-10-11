@@ -63,6 +63,13 @@
   /* Menú lateral: rosa profundo (vino). Blanco sobre este fondo da 12.2:1
      y pink-200 8.8:1; se usa igual en tema claro y oscuro. */
   --color-sidebar: #651538;
+  --color-sidebar-foreground: #ffffff;
+  --color-sidebar-primary: #e91e82;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: rgba(255, 255, 255, 0.1);
+  --color-sidebar-accent-foreground: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.1);
+  --color-sidebar-ring: #e91e82;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
   --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -290,6 +297,15 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Cambio de tema claro/oscuro: theme-store revela la captura nueva con un círculo
+   (clip-path) sobre la vieja. Se anula el fundido por defecto del navegador para que
+   nunca se mezclen las dos capturas. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 html {

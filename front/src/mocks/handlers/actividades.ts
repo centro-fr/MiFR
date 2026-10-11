@@ -1,5 +1,10 @@
 import { http, HttpResponse, delay } from "msw";
-import type { ActividadApi, CrearActividadBody } from "@/features/actividades/schemas/actividad";
+import {
+  CUPO_MAXIMO_GRUPAL,
+  CUPO_MAXIMO_PERSONALIZADA,
+  type ActividadApi,
+  type CrearActividadBody,
+} from "@/features/actividades/schemas/actividad";
 import { db, siguienteId } from "@/mocks/db";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 
@@ -12,12 +17,20 @@ function buscarActividad(id: number): ActividadApi | undefined {
   return db.actividades.find((actividad) => actividad.id_actividad === id);
 }
 
-function cupoObligatorioFaltante(modalidad: ActividadApi["modalidad"], cupo: number | null | undefined) {
-  return modalidad === "PERSONALIZADA" && cupo == null;
+function validarCupoActividad(modalidad: ActividadApi["modalidad"], cupo: number | null | undefined): string | null {
+  if (modalidad === "PERSONALIZADA") {
+    if (cupo == null) return "El cupo máximo es obligatorio para la modalidad PERSONALIZADA";
+    if (cupo < 1 || cupo > CUPO_MAXIMO_PERSONALIZADA) {
+      return `El cupo máximo para la modalidad PERSONALIZADA debe estar entre 1 y ${CUPO_MAXIMO_PERSONALIZADA}`;
+    }
+  }
+  if (modalidad === "GRUPAL" && cupo != null) {
+    if (cupo < 1 || cupo > CUPO_MAXIMO_GRUPAL) {
+      return `El cupo máximo para la modalidad GRUPAL debe estar entre 1 y ${CUPO_MAXIMO_GRUPAL}`;
+    }
+  }
+  return null;
 }
-
-const ERROR_CUPO = () =>
-  errorApi(400, "VALIDATION_ERROR", "El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
 
 export const actividadesHandlers = [
   http.get("*/api/v1/actividades", async ({ request }) => {
@@ -56,7 +69,8 @@ export const actividadesHandlers = [
     if (denegado) return denegado;
 
     const datos = (await request.json()) as CrearActividadBody;
-    if (cupoObligatorioFaltante(datos.modalidad, datos.cupo_maximo)) return ERROR_CUPO();
+    const errorCupo = validarCupoActividad(datos.modalidad, datos.cupo_maximo);
+    if (errorCupo) return errorApi(400, "VALIDATION_ERROR", errorCupo);
     if (db.actividades.some((actividad) => actividad.codigo === datos.codigo)) {
       return errorApi(409, "CONFLICT", "Ya existe una actividad con ese código");
     }
@@ -88,7 +102,8 @@ export const actividadesHandlers = [
     const cambios = (await request.json()) as Partial<CrearActividadBody>;
     const modalidad = cambios.modalidad ?? actividad.modalidad;
     const cupo = cambios.cupo_maximo !== undefined ? cambios.cupo_maximo : actividad.cupo_maximo;
-    if (cupoObligatorioFaltante(modalidad, cupo)) return ERROR_CUPO();
+    const errorCupoPatch = validarCupoActividad(modalidad, cupo);
+    if (errorCupoPatch) return errorApi(400, "VALIDATION_ERROR", errorCupoPatch);
 
     Object.assign(actividad, {
       nombre: cambios.nombre ?? actividad.nombre,

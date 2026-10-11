@@ -1,14 +1,37 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import type { ComponentType } from "react";
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-route";
 import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
-import { ActividadesPage } from "@/features/actividades/pages/actividades-page";
-import { LoginPage } from "@/features/auth/pages/login-page";
-import { HorariosPage } from "@/features/horarios/pages/HorariosPage";
-import { PermisosPage } from "@/features/seguridad/pages/permisos-page";
+import { SessionSplash } from "@/components/guards/session-splash";
 import { EnConstruccionPage } from "@/pages/en-construccion-page";
 import { NotFoundPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
-import { OwnerDashboardPage } from "@/pages/owner-dashboard-page";
+
+/**
+ * Importa la página recién al navegar a su ruta: cada una queda en su propio chunk
+ * y el bundle inicial no carga pantallas que la persona todavía no visitó.
+ */
+function paginaPerezosa<Modulo extends Record<string, unknown>>(
+  importar: () => Promise<Modulo>,
+  nombre: keyof Modulo,
+): NonNullable<RouteObject["lazy"]> {
+  return async () => ({ Component: (await importar())[nombre] as ComponentType });
+}
+
+// Mientras baja el chunk de la primera ruta se muestra el splash de sesión, no una pantalla en blanco.
+const carga = { hydrateFallbackElement: <SessionSplash /> };
+
+// Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
+// normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
+const SECCIONES_EN_CONSTRUCCION = [
+  { path: "alumnos", seccion: "Alumnos" },
+  { path: "planes", seccion: "Planes y Precios" },
+  { path: "pagos", seccion: "Cobros y Cuotas" },
+  { path: "asistencia", seccion: "Asistencia" },
+  { path: "honorarios", seccion: "Honorarios" },
+  { path: "notificaciones", seccion: "Notificaciones" },
+  { path: "reportes", seccion: "Reportes" },
+];
 
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
@@ -17,78 +40,52 @@ export const router = createBrowserRouter([
     path: "/login",
     element: (
       <GuestOnlyRoute>
-        <LoginPage />
+        <Outlet />
       </GuestOnlyRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/auth/pages/login-page"), "LoginPage") }],
   },
   {
-    path: "/app/dashboard",
+    // Layout sin ruta propia: exige sesión a todo lo que cuelga de /app.
+    path: "/app",
     element: (
       <ProtectedRoute>
-        <OwnerDashboardPage />
+        <Outlet />
       </ProtectedRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    children: [
+      { index: true, element: <NotFoundPage /> },
+      { path: "dashboard", lazy: paginaPerezosa(() => import("@/pages/owner-dashboard-page"), "OwnerDashboardPage") },
+      { path: "hoy", element: <TeacherHomePage /> },
+      { path: "inicio", element: <StudentHomePage /> },
+      {
+        path: "actividades",
+        lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage"),
+      },
+      { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
+      {
+        path: "seguridad/permisos",
+        element: (
+          <PermissionGuard roles={["PROPIETARIA"]} permission="SEGURIDAD_MATRIZ_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/seguridad/pages/permisos-page"), "PermisosPage"),
+          },
+        ],
+      },
+      ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({
+        path,
+        element: <EnConstruccionPage seccion={seccion} />,
+      })),
+    ],
   },
-  {
-    path: "/app/hoy",
-    element: (
-      <ProtectedRoute>
-        <TeacherHomePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/app/inicio",
-    element: (
-      <ProtectedRoute>
-        <StudentHomePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/app/actividades",
-    element: (
-      <ProtectedRoute>
-        <ActividadesPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/app/horarios",
-    element: (
-      <ProtectedRoute>
-        <HorariosPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/app/seguridad/permisos",
-    element: (
-      <ProtectedRoute>
-        <PermissionGuard roles={["PROPIETARIA"]} permission="SEGURIDAD_MATRIZ_VER">
-          <PermisosPage />
-        </PermissionGuard>
-      </ProtectedRoute>
-    ),
-  },
-  // Secciones sin funcionalidad real: pantalla genérica "En construcción"
-  // dentro del layout normal (con sidebar). Al implementar cada sección,
-  // reemplazar su ruta por la página real.
-  ...[
-    { path: "/app/alumnos", seccion: "Alumnos" },
-    { path: "/app/planes", seccion: "Planes y Precios" },
-    { path: "/app/pagos", seccion: "Cobros y Cuotas" },
-    { path: "/app/asistencia", seccion: "Asistencia" },
-    { path: "/app/honorarios", seccion: "Honorarios" },
-    { path: "/app/notificaciones", seccion: "Notificaciones" },
-    { path: "/app/reportes", seccion: "Reportes" },
-  ].map(({ path, seccion }) => ({
-    path,
-    element: (
-      <ProtectedRoute>
-        <EnConstruccionPage seccion={seccion} />
-      </ProtectedRoute>
-    ),
-  })),
   { path: "*", element: <NotFoundPage /> },
 ]);

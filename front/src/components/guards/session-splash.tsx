@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 export function SessionSplash() {
   return (
     <main
-      className="flex h-dvh min-h-screen w-full flex-col items-center justify-center gap-6 bg-bg-light text-slate-900 dark:bg-canvas dark:text-slate-100"
+      className="flex h-dvh min-h-screen w-full flex-col items-center justify-center gap-6 bg-bg-light text-foreground dark:bg-canvas"
       role="status"
       aria-live="polite"
       aria-label="Cargando sesión"
@@ -22,7 +22,7 @@ export function SessionSplash() {
         </div>
       </div>
       <Loader2 aria-hidden="true" className="h-9 w-9 animate-spin text-primary" />
-      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Cargando sesión…</p>
+      <p className="text-sm font-medium text-muted-foreground">Cargando sesión…</p>
     </main>
   );
 }
