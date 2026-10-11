@@ -48,6 +48,11 @@ export const CATALOGO_PERMISOS = [
   { codigo: "ALUMNOS_EDITAR", modulo: "ALUMNOS", descripcion: "Inscribir, modificar y dar de baja alumnos" },
   { codigo: "PLANES_VER", modulo: "PLANES", descripcion: "Ver los planes y sus precios" },
   { codigo: "PLANES_EDITAR", modulo: "PLANES", descripcion: "Crear y modificar planes y precios" },
+  {
+    codigo: "PARAMETROS_EDITAR",
+    modulo: "PARAMETROS",
+    descripcion: "Ver y modificar los parámetros del sistema",
+  },
   { codigo: "PAGOS_REGISTRAR", modulo: "PAGOS", descripcion: "Registrar cobros en efectivo" },
   { codigo: "PAGOS_CONFIRMAR", modulo: "PAGOS", descripcion: "Confirmar o rechazar pagos" },
   { codigo: "PAGOS_RENDICION_VER", modulo: "PAGOS", descripcion: "Ver la rendición de efectivo" },
@@ -80,6 +85,7 @@ export const PERMISOS_EXCLUSIVOS_PROPIETARIA: readonly CodigoPermiso[] = [
   "HONORARIOS_VER_TODOS",
   "HONORARIOS_LIQUIDAR",
   "REPORTES_COBRANZA_VER",
+  "PARAMETROS_EDITAR",
 ];
 
 // El DER no tiene columna para marcarlos: la lista vive acá. La matriz no deja
