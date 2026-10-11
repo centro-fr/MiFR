@@ -131,22 +131,39 @@ export function Paso2PlanYProfesora({
             <Label htmlFor="selector-profesora" className="text-xs font-medium">
               Profesora Asignada
             </Label>
-            <Select
-              value={idProfesoraSeleccionada ? String(idProfesoraSeleccionada) : ""}
-              onValueChange={(val) => onSeleccionarProfesora(Number(val))}
-              disabled={esSoloProfesora}
-            >
-              <SelectTrigger id="selector-profesora" className="w-full">
-                <SelectValue placeholder="Seleccioná una profesora" />
-              </SelectTrigger>
-              <SelectContent>
-                {profesoras.map((prof) => (
-                  <SelectItem key={prof.id} value={prof.id}>
-                    {prof.nombre} {prof.apellido}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {esSoloProfesora ? (
+              <div className="flex items-center gap-2.5 p-2 rounded-xl border border-border/80 bg-muted/40 min-h-[42px]">
+                <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                  <User className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {profesoras.find((p) => Number(p.id) === idProfesoraSeleccionada)
+                      ? `${profesoras.find((p) => Number(p.id) === idProfesoraSeleccionada)!.nombre} ${profesoras.find((p) => Number(p.id) === idProfesoraSeleccionada)!.apellido}`
+                      : "Profesora asignada"}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 shrink-0">
+                  Tu perfil
+                </Badge>
+              </div>
+            ) : (
+              <Select
+                value={idProfesoraSeleccionada ? String(idProfesoraSeleccionada) : ""}
+                onValueChange={(val) => onSeleccionarProfesora(Number(val))}
+              >
+                <SelectTrigger id="selector-profesora" className="w-full">
+                  <SelectValue placeholder="Seleccioná una profesora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profesoras.map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      {prof.nombre} {prof.apellido}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {esSoloProfesora && (
               <p className="text-[11px] text-muted-foreground">
                 Asignada automáticamente a tu perfil.

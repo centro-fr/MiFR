@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -78,6 +78,13 @@ export function usePreinscripcion({
   const [sinCargo, setSinCargo] = useState<boolean>(false);
   const [fechaInicio, setFechaInicio] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [observacionesInscripcion, setObservacionesInscripcion] = useState<string>("");
+
+  // Sincronizar automáticamente idProfesora cuando la lista asíncrona de profesoras termina de cargar
+  useEffect(() => {
+    if (esSoloProfesora && idProfesoraInicial !== null && idProfesora !== idProfesoraInicial) {
+      setIdProfesora(idProfesoraInicial);
+    }
+  }, [esSoloProfesora, idProfesoraInicial, idProfesora]);
 
   // Estado de envío
   const [enviando, setEnviando] = useState(false);
@@ -181,11 +188,11 @@ export function usePreinscripcion({
     setDatosAlumno(VALOR_INICIAL_ALUMNO);
     setErroresPaso1({});
     setIdPlan(null);
-    setIdProfesora(null);
+    setIdProfesora(esSoloProfesora ? idProfesoraInicial : null);
     setIdsHorarios([]);
     setSinCargo(false);
     setObservacionesInscripcion("");
-  }, []);
+  }, [esSoloProfesora, idProfesoraInicial]);
 
   // Confirmar y guardar la pre-inscripción
   const confirmarPreinscripcion = useCallback(async () => {
