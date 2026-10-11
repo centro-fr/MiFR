@@ -21,6 +21,7 @@ export const actividadSchema = z
     descripcion: z.string().nullable(),
     modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]),
     cupo_maximo: z.number().int().nullable(),
+    requiere_medidas: z.boolean(),
     activo: z.boolean(),
   })
   .openapi("Actividad");
@@ -52,7 +53,8 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
     summary: "Dar de alta una actividad",
     description:
       "Requiere el rol PROPIETARIA y el permiso `ACTIVIDADES_EDITAR`. " +
-      "`cupo_maximo` es obligatorio para la modalidad PERSONALIZADA.",
+      "`cupo_maximo` es obligatorio para la modalidad PERSONALIZADA. " +
+      "Con `requiere_medidas: true`, la pre-inscripción en la actividad exige peso y talla (por defecto, false).",
     request: {
       body: cuerpoJson(
         crearActividadSchema.openapi("CrearActividad", {
@@ -87,7 +89,8 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
     summary: "Modificar una actividad activa",
     description:
       "Requiere el rol PROPIETARIA y el permiso `ACTIVIDADES_EDITAR`. " +
-      "`cupo_maximo: null` quita el cupo, salvo en la modalidad PERSONALIZADA.",
+      "`cupo_maximo: null` quita el cupo, salvo en la modalidad PERSONALIZADA. " +
+      "`requiere_medidas` cambia si la pre-inscripción exige peso y talla; no afecta a las inscripciones que ya existen.",
     request: {
       params: actividadIdParamSchema,
       body: cuerpoJson(
