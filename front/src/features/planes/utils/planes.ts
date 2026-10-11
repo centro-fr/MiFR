@@ -124,6 +124,8 @@ export function cambiosDelPlan(plan: Plan, valores: PlanFormValues, actividades:
   return cambios;
 }
 
+// El back siempre exige que todos los horarios sean de una misma profesora (validarHorarios en
+// inscripcion.service.ts); profesora_unica solo agrega que sea la que está a cargo del alumno.
 export function textoProfesora(profesoraUnica: boolean): string {
-  return profesoraUnica ? "Siempre la misma" : "Cualquiera del horario";
+  return profesoraUnica ? "La profesora a cargo" : "Puede ser otra profesora";
 }

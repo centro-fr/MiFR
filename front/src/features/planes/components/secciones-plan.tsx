@@ -185,8 +185,11 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
       <AvisoModalidad actividad={actividad} />
       <label htmlFor="plan-profesora-unica" className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/15">
         <span className="flex flex-col">
-          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Siempre con la misma profesora</span>
-          <span className="text-sm text-muted-foreground">El alumno toma todas sus clases con la profesora a cargo de su inscripción.</span>
+          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Solo con la profesora a cargo</span>
+          <span className="text-sm text-muted-foreground">
+            Activado, todos sus horarios son de la profesora a cargo de su inscripción. Desactivado, pueden ser de otra, pero siempre de
+            una sola.
+          </span>
         </span>
         <Switch id="plan-profesora-unica" checked={valores.profesoraUnica} onCheckedChange={(profesoraUnica) => onChange({ profesoraUnica })} />
       </label>
