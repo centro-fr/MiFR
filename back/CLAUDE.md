@@ -68,7 +68,7 @@ Fuera de producción, la API publica Swagger UI en `/api/v1/docs` y el documento
 
 El documento se genera con `@asteasolutions/zod-to-openapi` a partir de los mismos esquemas Zod de `<x>.schemas.ts`, así que el contrato de entrada no se escribe dos veces. Cada componente tiene su `<x>.openapi.ts`, que registra sus rutas y define los esquemas de respuesta; el `<subsistema>.openapi.ts` junta los de sus componentes, `src/openapi.ts` los de cada subsistema, e `index.ts` crea el registro y genera el documento. Al agregar una ruta hay que documentarla ahí y sumarla a la lista de `src/__tests__/openapi.test.ts`, que falla si una operación falta o sobra.
 
-Los errores se lanzan como subclases de `AppError` y los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
+Los errores del pedido o del negocio se lanzan como subclases de `AppError`; los internos (configuración rota, estados imposibles), como `Error` común, que responde 500 genérico y queda en el log. Los captura `shared/middlewares/error-handler.ts`. Nadie devuelve errores a mano.
 
 ## Reglas duras
 

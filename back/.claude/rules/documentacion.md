@@ -33,7 +33,8 @@ Cuando el código se aparta de un diagrama, se actualiza el diagrama primero. Ve
 ## Buenas prácticas
 
 - Validar toda entrada con Zod en la capa de rutas, con `validate({ body, params, query })`. El service confía en lo que le llega. Las reglas de cada tipo de campo (números, `-0`, largos, textos, emails, fechas) están en `validaciones.md`.
-- Lanzar errores tipados de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`), nunca `throw new Error`. Cada uno ya trae su código HTTP.
+- Los errores que causa el pedido o una regla de negocio se lanzan como `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `ForbiddenError`, `ValidationError`): cada uno trae su código HTTP y su mensaje le llega al cliente.
+- Lo que no es culpa del pedido (un dato mal configurado en la base, un estado que el sistema no debería poder tener) se lanza como `Error` común, con un mensaje que sirva para diagnosticarlo. El `errorHandler` responde 500 genérico, sin mostrar el detalle, y lo registra en el log con la ruta y quién pidió. Nunca un `AppError` con 500: su mensaje le llega al cliente y no queda en el log. Ejemplo: un parámetro del sistema guardado con un valor que no respeta su tipo (`ParametrosSistemaService`).
 - Pasar los handlers asincrónicos directo a la ruta: Express 5 manda sus rechazos al manejador de errores, así que no hace falta envolverlos.
 - Proteger las rutas con los guardias del `ControlDeAcceso` que recibe el router (`acceso.sesion`, `acceso.permiso("CODIGO")`, `acceso.propioOPermiso("CODIGO")`), en la definición de la ruta y no adentro del controller. Los códigos salen de `rol/rol.catalogo.ts`; `acceso.rol(...)` queda para lo que la spec ata a un rol y no a un permiso.
 - Si un middleware propio envuelve un guardia, lo espera (`await guardia(req, res, next)`). Los guardias son async: sin el `await` el rechazo se pierde y el pedido queda colgado.
