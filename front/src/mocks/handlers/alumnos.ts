@@ -1,51 +1,253 @@
 import { http, HttpResponse, delay } from "msw";
+import {
+  actualizarAlumnoSchema,
+  type AlumnoDetalle,
+  type AlumnoResumen,
+  type EstadoAlumno,
+  type EstadoCuota,
+} from "@/features/alumnos/schemas/alumno";
 import { db, siguienteId } from "@/mocks/db";
-import { verificarAcceso } from "@/mocks/handlers/respuestas";
-import type { Alumno, CrearAlumnoPayload, PaginaAlumnos } from "@/types/alumno";
-import type { AlumnoMockRegistro } from "@/mocks/data/semilla";
+import {
+  errorApi,
+  idDeRuta,
+  idInvalido,
+  permisosDeRoles,
+  verificarAcceso,
+} from "@/mocks/handlers/respuestas";
+import { normalizarBusqueda } from "@/features/alumnos/utils/normalizar-busqueda";
+import type { CrearAlumnoPayload } from "@/types/alumno";
 
-function mapearAlumno(reg: AlumnoMockRegistro): Alumno {
+const LIMITE_MAXIMO = 50;
+
+function estadoDeVista(alumno: AlumnoDetalle): EstadoAlumno {
+  if (alumno.estado === "BAJA" || alumno.inscripcion?.estado === "BAJA") return "BAJA";
+  return alumno.inscripcion?.estado === "PREINSCRIPTA" ? "PENDIENTE" : "ACTIVO";
+}
+
+function resumen(alumno: AlumnoDetalle): AlumnoResumen {
+  const inscripcion = alumno.inscripcion;
   return {
-    id_alumno: reg.id_alumno,
-    id_usuario: reg.id_usuario,
-    id_responsable_menor: reg.id_responsable_menor,
-    cont_emerg_nombre: reg.cont_emerg_nombre,
-    cont_emerg_telefono: reg.cont_emerg_telefono,
-    apto_medico: reg.apto_medico,
-    fecha_apto_medico: reg.fecha_apto_medico,
-    observaciones: reg.observaciones,
-    estado: reg.estado,
-    usuario: {
-      id_usuario: reg.id_usuario,
-      nombre: reg.nombre,
-      apellido: reg.apellido,
-      dni: reg.dni,
-      email: reg.email,
-      telefono: reg.telefono,
-      fecha_nacimiento: reg.fecha_nacimiento,
-      direccion: reg.direccion,
-      estado: reg.estado === "ACTIVO" ? "ACTIVO" : "INACTIVO",
-    },
-    responsable: reg.tutor_nombre
-      ? {
-          id_usuario: reg.id_responsable_menor ?? 999,
-          nombre: reg.tutor_nombre,
-          apellido: reg.tutor_apellido ?? "",
-          dni: reg.tutor_dni ?? null,
-          email: reg.tutor_email ?? null,
-          telefono: reg.tutor_telefono ?? null,
-          fecha_nacimiento: reg.tutor_fecha_nacimiento ?? "1980-01-01",
-          direccion: null,
-          estado: "ACTIVO",
-        }
-      : null,
-    plan: (() => {
-      const ins = db.inscripciones.find((i) => i.id_alumno === reg.id_alumno && i.estado !== "BAJA");
-      const p = ins ? db.planes.find((plan) => plan.id_plan === ins.id_plan) : null;
-      return p ? { id_plan: p.id_plan, nombre: p.nombre, tipo: p.tipo } : null;
-    })(),
-    estado_cuota: reg.estado === "ACTIVO" ? "AL_DIA" : null,
+    id_alumno: alumno.id_alumno,
+    nombre_completo: `${alumno.usuario.nombre} ${alumno.usuario.apellido}`,
+    dni: alumno.usuario.dni,
+    telefono: alumno.usuario.telefono ?? alumno.tutor?.telefono ?? null,
+    estado: estadoDeVista(alumno),
+    plan: inscripcion?.plan?.nombre ?? null,
+    id_plan: inscripcion?.plan?.id_plan ?? null,
+    estado_cuota: inscripcion?.estado_cuota ?? null,
+    fecha_vencimiento: inscripcion?.fecha_vencimiento ?? null,
+    profesora: inscripcion?.profesora ?? null,
+    id_profesora: inscripcion?.id_profesora ?? null,
+    actividad: inscripcion?.horarios[0]?.actividad ?? null,
+    id_actividad: inscripcion?.horarios[0]?.id_actividad ?? null,
   };
+}
+
+function alumnaVisibleParaSesion(alumno: AlumnoDetalle): boolean {
+  const usuario = db.usuarios.find((item) => item.id_usuario === db.idUsuarioSesion);
+  if (!usuario) return false;
+  if (usuario.roles.includes("PROPIETARIA")) return true;
+  if (!usuario.roles.includes("PROFESORA")) return false;
+  const idProfesora = db.profesoras.find((item) => item.id_usuario === usuario.id_usuario)?.id_profesora;
+  return idProfesora !== undefined && alumno.inscripcion?.id_profesora === idProfesora;
+}
+
+function listar(request: Request): AlumnoResumen[] {
+  const parametros = new URL(request.url).searchParams;
+  const texto = normalizarBusqueda((parametros.get("busqueda") ?? parametros.get("q") ?? "").trim());
+  const estado = parametros.get("estado");
+  const incluirBajas = parametros.get("incluir_bajas") === "true";
+  const idPlan = Number(parametros.get("id_plan"));
+  const idProfesora = Number(parametros.get("id_profesora"));
+  const idActividad = Number(parametros.get("id_actividad"));
+  const estadoCuota = parametros.get("estado_cuota") as EstadoCuota | null;
+
+  const visibles = db.alumnos.filter(alumnaVisibleParaSesion);
+  const coincidenciasExactas = texto
+    ? visibles.filter(
+        (alumno) =>
+          String(alumno.id_alumno) === texto || alumno.usuario.dni === texto || alumno.tutor?.dni === texto,
+      )
+    : visibles;
+  const coincidencias = coincidenciasExactas.length
+    ? coincidenciasExactas
+    : visibles.filter((alumno) => {
+        if (!texto) return true;
+        const contenido = [
+          alumno.usuario.nombre,
+          alumno.usuario.apellido,
+          alumno.usuario.dni ?? "",
+          alumno.usuario.telefono ?? "",
+          alumno.usuario.email ?? "",
+          alumno.tutor?.nombre ?? "",
+          alumno.tutor?.apellido ?? "",
+          alumno.tutor?.dni ?? "",
+          alumno.tutor?.telefono ?? "",
+          alumno.tutor?.email ?? "",
+        ].join(" ");
+        return normalizarBusqueda(contenido).includes(texto);
+      });
+
+  return coincidencias
+    .map(resumen)
+    .filter((alumno) => {
+      if (estado === "BAJA" || estado === "ACTIVO" || estado === "PENDIENTE") {
+        return alumno.estado === estado;
+      }
+      return alumno.estado !== "BAJA" || incluirBajas;
+    })
+    .filter((alumno) => !Number.isInteger(idPlan) || idPlan <= 0 || alumno.id_plan === idPlan)
+    .filter(
+      (alumno) => !Number.isInteger(idProfesora) || idProfesora <= 0 || alumno.id_profesora === idProfesora,
+    )
+    .filter(
+      (alumno) =>
+        !parametros.has("id_actividad") ||
+        !Number.isInteger(idActividad) ||
+        idActividad <= 0 ||
+        alumno.id_actividad === idActividad,
+    )
+    .filter((alumno) => !estadoCuota || alumno.estado_cuota === estadoCuota)
+    .sort((a, b) => a.nombre_completo.localeCompare(b.nombre_completo, "es"));
+}
+
+async function manejadorActualizarAlumno({
+  request,
+  params,
+}: {
+  request: Request;
+  params: Record<string, string | readonly string[] | undefined>;
+}) {
+  await delay(350);
+  const denegado = verificarAcceso(request, { permiso: "ALUMNOS_VER" });
+  if (denegado) return denegado;
+  const id = idDeRuta(params.id);
+  if (!id) return idInvalido();
+
+  const alumno = db.alumnos.find((item) => item.id_alumno === id);
+  if (!alumno || !alumnaVisibleParaSesion(alumno))
+    return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+
+  const entrada: unknown = await request.json().catch(() => null);
+  const validacion = actualizarAlumnoSchema.safeParse(entrada);
+  if (!validacion.success) {
+    return errorApi(
+      400,
+      "VALIDATION_ERROR",
+      validacion.error.issues[0]?.message ?? "Los datos no son válidos",
+    );
+  }
+
+  const sesion = db.usuarios.find((item) => item.id_usuario === db.idUsuarioSesion);
+  const permisos = sesion ? permisosDeRoles(sesion.roles) : [];
+  const esPropietaria =
+    sesion?.roles.includes("PROPIETARIA") === true && permisos.includes("ALUMNOS_EDITAR");
+  const esProfesora =
+    sesion?.roles.includes("PROFESORA") === true && permisos.includes("ALUMNOS_CONTACTO_EDITAR");
+  if (!esPropietaria && !esProfesora)
+    return errorApi(403, "FORBIDDEN", "No tiene permisos para editar alumnos");
+
+  const cambios = validacion.data;
+  if (!esPropietaria) {
+    const camposPersonalesSinPermiso =
+      cambios.usuario.nombre !== alumno.usuario.nombre ||
+      cambios.usuario.apellido !== alumno.usuario.apellido ||
+      cambios.usuario.dni !== alumno.usuario.dni ||
+      cambios.usuario.fecha_nacimiento !== alumno.usuario.fecha_nacimiento ||
+      JSON.stringify(cambios.tutor) !== JSON.stringify(alumno.tutor) ||
+      cambios.apto_medico !== alumno.apto_medico ||
+      cambios.fecha_apto_medico !== alumno.fecha_apto_medico ||
+      cambios.id_plan !== (alumno.inscripcion?.plan?.id_plan ?? null) ||
+      cambios.id_horarios.join(",") !==
+        alumno.inscripcion?.horarios.map((horario) => horario.id_horario).join(",");
+    if (camposPersonalesSinPermiso) {
+      return errorApi(
+        403,
+        "FORBIDDEN",
+        "Solo la propietaria puede modificar datos personales, médicos o del plan",
+      );
+    }
+  }
+
+  const emailEnUso = db.usuarios.some(
+    (usuario) =>
+      usuario.id_usuario !== alumno.usuario.id_usuario &&
+      usuario.email.toLocaleLowerCase("es") === (cambios.usuario.email ?? "").toLocaleLowerCase("es"),
+  );
+  const dniEnUso = db.alumnos.some(
+    (otroAlumno) =>
+      otroAlumno.id_alumno !== alumno.id_alumno &&
+      cambios.usuario.dni !== null &&
+      otroAlumno.usuario.dni === cambios.usuario.dni,
+  );
+  if (emailEnUso) return errorApi(409, "CONFLICT", "Ya existe una persona registrada con ese email");
+  if (dniEnUso) return errorApi(409, "CONFLICT", "Ya existe una persona registrada con ese DNI");
+
+  let idUsuarioResponsable: number | null = null;
+  if (cambios.tutor) {
+    const tutorRegistrado = db.usuarios.find(
+      (usuario) =>
+        usuario.roles.includes("TUTOR") &&
+        usuario.email.toLocaleLowerCase("es") === cambios.tutor?.email?.toLocaleLowerCase("es"),
+    );
+    if (!tutorRegistrado) {
+      return errorApi(
+        400,
+        "VALIDATION_ERROR",
+        "El tutor debe estar registrado antes de asociarlo al alumno",
+      );
+    }
+    idUsuarioResponsable = tutorRegistrado.id_usuario;
+    tutorRegistrado.nombre = cambios.tutor.nombre;
+    tutorRegistrado.apellido = cambios.tutor.apellido;
+    tutorRegistrado.email = cambios.tutor.email ?? "";
+  }
+
+  const cambioPlan = cambios.id_plan !== (alumno.inscripcion?.plan?.id_plan ?? null);
+  const horariosActuales = alumno.inscripcion?.horarios.map((horario) => horario.id_horario) ?? [];
+  const cambioHorarios = cambios.id_horarios.join(",") !== horariosActuales.join(",");
+  if (
+    cambios.id_horarios.some(
+      (idHorario) => !alumno.horarios_disponibles.some((horario) => horario.id_horario === idHorario),
+    )
+  ) {
+    return errorApi(400, "VALIDATION_ERROR", "Uno de los horarios seleccionados ya no está disponible");
+  }
+  if ((cambioPlan || cambioHorarios) && !alumno.inscripcion) {
+    return errorApi(409, "CONFLICT", "El alumno no tiene una inscripción que se pueda modificar");
+  }
+  if ((cambioPlan || cambioHorarios) && alumno.inscripcion) {
+    const nuevoPlan = alumno.planes_disponibles.find((plan) => plan.id_plan === cambios.id_plan);
+    if (cambios.id_plan !== null && !nuevoPlan) {
+      return errorApi(400, "VALIDATION_ERROR", "El plan seleccionado ya no está vigente");
+    }
+    alumno.inscripcion.plan = nuevoPlan ?? null;
+    alumno.inscripcion.horarios = alumno.horarios_disponibles.filter((horario) =>
+      cambios.id_horarios.includes(horario.id_horario),
+    );
+  }
+
+  alumno.usuario = {
+    ...alumno.usuario,
+    ...cambios.usuario,
+    dni: cambios.usuario.dni || null,
+    telefono: cambios.usuario.telefono || null,
+    email: cambios.usuario.email || null,
+  };
+  const usuarioRegistrado = db.usuarios.find((usuario) => usuario.id_usuario === alumno.usuario.id_usuario);
+  if (usuarioRegistrado) {
+    usuarioRegistrado.nombre = alumno.usuario.nombre;
+    usuarioRegistrado.apellido = alumno.usuario.apellido;
+    usuarioRegistrado.email = alumno.usuario.email ?? "";
+  }
+  alumno.tutor = cambios.tutor;
+  alumno.id_usuario_responsable = idUsuarioResponsable;
+  alumno.cont_emerg_nombre = cambios.cont_emerg_nombre || null;
+  alumno.cont_emerg_telefono = cambios.cont_emerg_telefono || null;
+  alumno.apto_medico = cambios.apto_medico;
+  alumno.fecha_apto_medico = cambios.fecha_apto_medico;
+  alumno.observaciones = cambios.observaciones || null;
+  return HttpResponse.json(alumno);
 }
 
 export const alumnosHandlers = [
@@ -54,49 +256,60 @@ export const alumnosHandlers = [
     const denegado = verificarAcceso(request, { permiso: "ALUMNOS_VER" });
     if (denegado) return denegado;
 
-    const url = new URL(request.url);
-    const busqueda = url.searchParams.get("busqueda")?.toLowerCase().trim();
-    const estado = url.searchParams.get("estado");
-    const incluirBajas = url.searchParams.get("incluirBajas") === "true";
-    const limit = Number(url.searchParams.get("limit") || 20);
-    const offset = Number(url.searchParams.get("offset") || 0);
-
-    const lista = db.alumnos.filter((a) => {
-      if (!incluirBajas && a.estado === "BAJA") return false;
-      if (estado && a.estado !== estado) return false;
-      if (busqueda) {
-        const nombreCompleto = `${a.nombre} ${a.apellido} ${a.tutor_nombre ?? ""} ${a.tutor_apellido ?? ""}`.toLowerCase();
-        const dniMatch = a.dni?.includes(busqueda) || a.tutor_dni?.includes(busqueda);
-        return nombreCompleto.includes(busqueda) || !!dniMatch;
-      }
-      return true;
+    const parametros = new URL(request.url).searchParams;
+    const estado = parametros.get("estado");
+    const estadoCuota = parametros.get("estado_cuota");
+    const busqueda = parametros.get("busqueda") ?? parametros.get("q");
+    const incluirBajas = parametros.get("incluir_bajas");
+    const parametrosNumericos = ["id_plan", "id_profesora", "id_actividad"];
+    const parametrosInvalidos = parametrosNumericos.some((nombre) => {
+      const valor = parametros.get(nombre);
+      return valor !== null && valor !== "" && (!/^\d+$/.test(valor) || Number(valor) < 1);
     });
-
-    const total = lista.length;
-    const paginados = lista.slice(offset, offset + limit).map(mapearAlumno);
-
-    const respuesta: PaginaAlumnos = {
-      datos: paginados,
-      total,
+    if (
+      (estado !== null && !["TODOS", "ACTIVO", "PENDIENTE", "BAJA"].includes(estado)) ||
+      (estadoCuota !== null && !["AL_DIA", "POR_VENCER", "VENCIDA"].includes(estadoCuota)) ||
+      (incluirBajas !== null && !["true", "false"].includes(incluirBajas)) ||
+      (busqueda !== null && busqueda.length > 120) ||
+      parametrosInvalidos
+    ) {
+      return errorApi(400, "VALIDATION_ERROR", "Los filtros de alumnos no son válidos");
+    }
+    const limiteSolicitado = Number(parametros.get("limit") ?? 10);
+    const offsetSolicitado = Number(parametros.get("offset") ?? 0);
+    if (
+      !Number.isInteger(limiteSolicitado) ||
+      limiteSolicitado < 1 ||
+      !Number.isInteger(offsetSolicitado) ||
+      offsetSolicitado < 0 ||
+      offsetSolicitado > 1_000_000
+    ) {
+      return errorApi(400, "VALIDATION_ERROR", "Los parámetros de paginación no son válidos");
+    }
+    const limit = Math.min(limiteSolicitado, LIMITE_MAXIMO);
+    const alumnos = listar(request);
+    return HttpResponse.json({
+      items: alumnos.slice(offsetSolicitado, offsetSolicitado + limit),
+      total: alumnos.length,
       limit,
-      offset,
-    };
-
-    return HttpResponse.json(respuesta);
+      offset: offsetSolicitado,
+    });
   }),
 
   http.get("*/api/v1/alumnos/:id", async ({ request, params }) => {
-    await delay(150);
+    await delay(180);
     const denegado = verificarAcceso(request, { permiso: "ALUMNOS_VER" });
     if (denegado) return denegado;
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
 
-    const id = Number(params.id);
-    const alumno = db.alumnos.find((a) => a.id_alumno === id);
-    if (!alumno) {
-      return HttpResponse.json({ codigo: "ALUMNO_NO_ENCONTRADO", mensaje: "El alumno no existe" }, { status: 404 });
-    }
-
-    return HttpResponse.json(mapearAlumno(alumno));
+    const alumno = db.alumnos.find((item) => item.id_alumno === id);
+    if (!alumno || !alumnaVisibleParaSesion(alumno))
+      return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+    const usuario = db.usuarios.find((item) => item.id_usuario === db.idUsuarioSesion);
+    const respuesta = structuredClone(alumno);
+    if (!usuario?.roles.includes("PROPIETARIA")) respuesta.historial_cobros = [];
+    return HttpResponse.json(respuesta);
   }),
 
   http.post("*/api/v1/alumnos", async ({ request }) => {
@@ -106,84 +319,126 @@ export const alumnosHandlers = [
 
     const body = (await request.json()) as CrearAlumnoPayload;
 
-    // Verificar unicidad de DNI si viene informado
     if (body.dni) {
-      const existeDni = db.alumnos.some((a) => a.dni === body.dni && a.estado !== "BAJA");
+      const existeDni = db.alumnos.some((a) => a.usuario.dni === body.dni && a.estado !== "BAJA");
       if (existeDni) {
-        return HttpResponse.json(
-          {
-            codigo: "ALUMNO_EXISTENTE",
-            mensaje: `Ya existe un alumno registrado con el DNI ${body.dni}`,
-          },
-          { status: 409 },
-        );
+        return errorApi(409, "ALUMNO_EXISTENTE", `Ya existe un alumno registrado con el DNI ${body.dni}`);
+      }
+    }
+
+    if (body.email) {
+      const emailEnUso = db.usuarios.some(
+        (u) => u.email && u.email.toLowerCase() === body.email?.toLowerCase(),
+      );
+      if (emailEnUso) {
+        return errorApi(409, "CONFLICT", "Ya existe un usuario registrado con ese email");
       }
     }
 
     const nuevoIdAlumno = siguienteId(db.alumnos.map((a) => a.id_alumno));
     const nuevoIdUsuario = siguienteId(db.usuarios.map((u) => u.id_usuario));
 
+    const tutorInput = body.tutor && "nombre" in body.tutor ? body.tutor : null;
     let idResponsable: number | null = null;
-    let tutorNombre: string | undefined;
-    let tutorApellido: string | undefined;
-    let tutorDni: string | undefined;
-    let tutorEmail: string | undefined;
-    let tutorTelefono: string | undefined;
-    let tutorFechaNacimiento: string | undefined;
+    let tutorDatos: AlumnoDetalle["tutor"] = null;
 
-    if (body.tutor && "nombre" in body.tutor) {
-      // Reutilizar tutor existente si coincide DNI o email (caso hermanos)
+    if (tutorInput && tutorInput.nombre) {
       const tutorExistente = db.alumnos.find(
         (a) =>
-          (body.tutor && "dni" in body.tutor && body.tutor.dni && a.tutor_dni === body.tutor.dni) ||
-          (body.tutor && "email" in body.tutor && body.tutor.email && a.tutor_email === body.tutor.email),
+          (Boolean(tutorInput.dni) && a.tutor?.dni === tutorInput.dni) ||
+          (Boolean(tutorInput.email) && a.tutor?.email === tutorInput.email),
       );
 
-      if (tutorExistente?.id_responsable_menor) {
-        idResponsable = tutorExistente.id_responsable_menor;
-        tutorNombre = tutorExistente.tutor_nombre;
-        tutorApellido = tutorExistente.tutor_apellido;
-        tutorDni = tutorExistente.tutor_dni;
-        tutorEmail = tutorExistente.tutor_email;
-        tutorTelefono = tutorExistente.tutor_telefono;
-        tutorFechaNacimiento = tutorExistente.tutor_fecha_nacimiento;
+      if (tutorExistente?.id_usuario_responsable) {
+        idResponsable = tutorExistente.id_usuario_responsable;
+        tutorDatos = tutorExistente.tutor;
       } else {
         idResponsable = siguienteId([...db.usuarios.map((u) => u.id_usuario), nuevoIdUsuario]);
-        tutorNombre = body.tutor.nombre;
-        tutorApellido = body.tutor.apellido;
-        tutorDni = body.tutor.dni;
-        tutorEmail = body.tutor.email;
-        tutorTelefono = body.tutor.telefono;
-        tutorFechaNacimiento = body.tutor.fecha_nacimiento;
+        tutorDatos = {
+          nombre: tutorInput.nombre,
+          apellido: tutorInput.apellido,
+          dni: tutorInput.dni ?? null,
+          email: tutorInput.email ?? null,
+          telefono: tutorInput.telefono ?? null,
+        };
+        db.usuarios.push({
+          id_usuario: idResponsable,
+          nombre: tutorInput.nombre,
+          apellido: tutorInput.apellido,
+          dni: tutorInput.dni ?? null,
+          email: tutorInput.email,
+          telefono: tutorInput.telefono,
+          fecha_nacimiento: tutorInput.fecha_nacimiento ?? "1980-01-01",
+          direccion: null,
+          roles: ["TUTOR"],
+          estado: "ACTIVO",
+        });
       }
     }
 
-    const nuevoRegistro: AlumnoMockRegistro = {
-      id_alumno: nuevoIdAlumno,
+    db.usuarios.push({
       id_usuario: nuevoIdUsuario,
-      id_responsable_menor: idResponsable,
       nombre: body.nombre,
       apellido: body.apellido,
       dni: body.dni ?? null,
-      email: body.email ?? null,
+      email: body.email ?? "",
       telefono: body.telefono ?? null,
       fecha_nacimiento: body.fecha_nacimiento,
       direccion: body.direccion ?? null,
+      roles: ["ALUMNO"],
+      estado: "ACTIVO",
+    });
+
+    const nuevoAlumno: AlumnoDetalle = {
+      id_alumno: nuevoIdAlumno,
+      id_usuario_responsable: idResponsable,
+      usuario: {
+        id_usuario: nuevoIdUsuario,
+        nombre: body.nombre,
+        apellido: body.apellido,
+        dni: body.dni ?? null,
+        email: body.email ?? null,
+        telefono: body.telefono ?? null,
+        fecha_nacimiento: body.fecha_nacimiento,
+        direccion: body.direccion ?? null,
+      },
+      tutor: tutorDatos,
       cont_emerg_nombre: body.cont_emerg_nombre ?? null,
       cont_emerg_telefono: body.cont_emerg_telefono ?? null,
       apto_medico: body.apto_medico ?? false,
       fecha_apto_medico: body.fecha_apto_medico ?? null,
       observaciones: body.observaciones ?? null,
-      estado: "INACTIVO", // Los preinscriptos quedan INACTIVO hasta su primer pago
-      tutor_nombre: tutorNombre,
-      tutor_apellido: tutorApellido,
-      tutor_dni: tutorDni,
-      tutor_email: tutorEmail,
-      tutor_telefono: tutorTelefono,
-      tutor_fecha_nacimiento: tutorFechaNacimiento,
+      estado: "INACTIVO",
+      fecha_alta: new Date().toISOString().slice(0, 10),
+      inscripcion: null,
+      planes_disponibles: db.planes.map((p) => ({
+        id_plan: p.id_plan,
+        nombre: p.nombre,
+        tipo: p.tipo as "MENSUAL" | "CLASE_SUELTA",
+        precio: p.precio,
+      })),
+      horarios_disponibles: db.horarios.map((h) => {
+        const act = db.actividades.find((a) => a.id_actividad === h.id_actividad);
+        const prof = db.profesoras.find((p) => p.id_profesora === h.id_profesora);
+        const uProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
+        return {
+          id_horario: h.id_horario,
+          id_actividad: h.id_actividad,
+          actividad: act?.nombre ?? "Actividad",
+          dia_semana: h.dia_semana,
+          hora_inicio: h.hora_inicio,
+          hora_fin: h.hora_fin,
+          profesora: uProf ? `${uProf.nombre} ${uProf.apellido}` : "Profesora",
+        };
+      }),
+      historial_cobros: [],
+      historial_asistencia: [],
     };
 
-    db.alumnos.unshift(nuevoRegistro);
-    return HttpResponse.json(mapearAlumno(nuevoRegistro), { status: 201 });
+    db.alumnos.unshift(nuevoAlumno);
+    return HttpResponse.json(nuevoAlumno, { status: 201 });
   }),
+
+  http.put("*/api/v1/alumnos/:id", manejadorActualizarAlumno),
+  http.patch("*/api/v1/alumnos/:id", manejadorActualizarAlumno),
 ];

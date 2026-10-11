@@ -21,7 +21,14 @@ function marcarActivo(item: ItemMenu, ruta: string): ItemConEstado {
     const hijos = item.hijos.map((hijo) => ({ ...hijo, esActivo: ruta === hijo.to }));
     return { ...item, hijos, esActivo: hijos.some((hijo) => hijo.esActivo) };
   }
-  return { ...item, hijos: undefined, esActivo: item.activo ?? (item.to !== undefined && ruta === item.to) };
+  return {
+    ...item,
+    hijos: undefined,
+    esActivo:
+      item.activo ??
+      (item.to !== undefined &&
+        (ruta === item.to || (item.to === "/app/alumnos" && ruta.startsWith("/app/alumnos/")))),
+  };
 }
 
 function construirMigas(items: ItemConEstado[]): Miga[] {

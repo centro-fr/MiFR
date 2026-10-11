@@ -12,6 +12,11 @@ export interface UsuarioSemilla {
   nombre: string;
   apellido: string;
   roles: RoleCode[];
+  dni?: string | null;
+  telefono?: string | null;
+  fecha_nacimiento?: string;
+  direccion?: string | null;
+  estado?: "ACTIVO" | "INACTIVO";
 }
 
 export interface HorarioSemilla {
@@ -34,6 +39,11 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
     apellido: "Sosa",
     roles: ["PROPIETARIA", "PROFESORA"],
   },
+  { id_usuario: 4, email: "camila.perez@example.com", nombre: "Camila", apellido: "Pérez", roles: ["ALUMNO"] },
+  { id_usuario: 5, email: "valentina.lopez@example.com", nombre: "Valentina", apellido: "López", roles: ["ALUMNO"] },
+  { id_usuario: 6, email: "julian.fernandez@example.com", nombre: "Julián", apellido: "Fernández", roles: ["ALUMNO"] },
+  { id_usuario: 7, email: "micaela.garcia@example.com", nombre: "Micaela", apellido: "García", roles: ["ALUMNO"] },
+  { id_usuario: 8, email: "mariana.lopez@example.com", nombre: "Mariana", apellido: "López", roles: ["TUTOR"] },
 ];
 
 // Usuario con el que arranca la sesión del mock: la propietaria multi-rol de la seed.

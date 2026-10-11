@@ -68,7 +68,11 @@ export const router = createBrowserRouter([
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
       {
         path: "alumnos",
-        lazy: paginaPerezosa(() => import("@/features/alumnos/pages/AlumnosPage"), "AlumnosPage"),
+        lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage"),
+      },
+      {
+        path: "alumnos/:id",
+        lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage"),
       },
       {
         path: "seguridad/permisos",

@@ -1,28 +1,46 @@
 import { apiClient } from "@/api/client";
-import type { Alumno, CrearAlumnoPayload, PaginaAlumnos } from "@/types/alumno";
+import {
+  actualizarAlumnoSchema,
+  alumnoDetalleSchema,
+  respuestaAlumnosSchema,
+  type ActualizarAlumnoInput,
+  type AlumnoDetalle,
+  type RespuestaAlumnos,
+} from "@/features/alumnos/schemas/alumno";
+import type { CrearAlumnoPayload } from "@/types/alumno";
 
-export interface FiltroListarAlumnos {
-  busqueda?: string;
-  dni?: string;
-  estado?: "ACTIVO" | "INACTIVO" | "BAJA";
-  limit?: number;
-  offset?: number;
-  incluirBajas?: boolean;
+export interface FiltrosAlumnos {
+  q: string;
+  estado: string;
+  id_plan: string;
+  id_profesora: string;
+  id_actividad: string;
+  estado_cuota: string;
+  incluir_bajas: boolean;
+  limit: number;
+  offset: number;
 }
 
-export async function listarAlumnos(filtros?: FiltroListarAlumnos): Promise<PaginaAlumnos> {
-  const { data } = await apiClient.get<PaginaAlumnos>("/alumnos", {
-    params: filtros,
-  });
+// Ruta prevista en el SDD de Alumnos e Inscripciones; hasta que exista el módulo backend,
+// estas llamadas funcionan con los handlers MSW del front.
+export async function listarAlumnos(filtros: FiltrosAlumnos): Promise<RespuestaAlumnos> {
+  const params = Object.fromEntries(Object.entries(filtros).filter(([, valor]) => valor !== ""));
+  const { data } = await apiClient.get("/alumnos", { params });
+  return respuestaAlumnosSchema.parse(data);
+}
+
+export async function obtenerAlumno(id: number): Promise<AlumnoDetalle> {
+  const { data } = await apiClient.get(`/alumnos/${id}`);
+  return alumnoDetalleSchema.parse(data);
+}
+
+export async function crearAlumno(cuerpo: CrearAlumnoPayload): Promise<{ id_alumno: number }> {
+  const { data } = await apiClient.post<{ id_alumno: number }>("/alumnos", cuerpo);
   return data;
 }
 
-export async function obtenerAlumno(id: number): Promise<Alumno> {
-  const { data } = await apiClient.get<Alumno>(`/alumnos/${id}`);
-  return data;
-}
-
-export async function crearAlumno(cuerpo: CrearAlumnoPayload): Promise<Alumno> {
-  const { data } = await apiClient.post<Alumno>("/alumnos", cuerpo);
-  return data;
+export async function actualizarAlumno(id: number, cambios: ActualizarAlumnoInput): Promise<AlumnoDetalle> {
+  const cuerpo = actualizarAlumnoSchema.parse(cambios);
+  const { data } = await apiClient.put(`/alumnos/${id}`, cuerpo);
+  return alumnoDetalleSchema.parse(data);
 }

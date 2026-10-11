@@ -26,8 +26,8 @@ function mapearInscripcion(ins: InscripcionMockRegistro): Inscripcion {
     alumno: alumno
       ? {
           id_alumno: alumno.id_alumno,
-          estado: alumno.estado,
-          usuario: { nombre: alumno.nombre, apellido: alumno.apellido },
+          estado: alumno.estado === "ACTIVO" ? "ACTIVO" : "INACTIVO",
+          usuario: { nombre: alumno.usuario.nombre, apellido: alumno.usuario.apellido },
         }
       : undefined,
     plan: plan
@@ -87,6 +87,49 @@ export const inscripcionesHandlers = [
     };
 
     db.inscripciones.unshift(nuevaInscripcion);
+
+    // Vincular la inscripción al alumno en db.alumnos
+    const alumno = db.alumnos.find((a) => a.id_alumno === body.id_alumno);
+    if (alumno) {
+      const plan = db.planes.find((p) => p.id_plan === body.id_plan);
+      const prof = db.profesoras.find((pr) => pr.id_profesora === body.id_profesora);
+      const usuarioProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
+      const nomProf = usuarioProf ? `${usuarioProf.nombre} ${usuarioProf.apellido}` : null;
+      const horariosAsignados = db.horarios
+        .filter((h) => body.ids_horarios.includes(h.id_horario))
+        .map((h) => {
+          const act = db.actividades.find((ac) => ac.id_actividad === h.id_actividad);
+          return {
+            id_horario: h.id_horario,
+            id_actividad: h.id_actividad,
+            actividad: act?.nombre ?? "Actividad",
+            dia_semana: h.dia_semana,
+            hora_inicio: h.hora_inicio,
+            hora_fin: h.hora_fin,
+            profesora: nomProf ?? "Profesora",
+          };
+        });
+
+      alumno.inscripcion = {
+        id_inscripcion: nuevoId,
+        estado: "PREINSCRIPTA",
+        plan: plan
+          ? {
+              id_plan: plan.id_plan,
+              nombre: plan.nombre,
+              tipo: plan.tipo as "MENSUAL" | "CLASE_SUELTA",
+              precio: plan.precio,
+            }
+          : null,
+        id_profesora: body.id_profesora,
+        profesora: nomProf,
+        horarios: horariosAsignados,
+        estado_cuota: null,
+        fecha_vencimiento: null,
+        fecha_inicio: body.fecha_inicio ?? hoy,
+      };
+    }
+
     return HttpResponse.json(mapearInscripcion(nuevaInscripcion), { status: 201 });
   }),
 ];

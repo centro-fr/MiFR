@@ -1,17 +1,17 @@
 import type { ActividadApi } from "@/features/actividades/schemas/actividad";
 import type { ProfesoraApi } from "@/features/horarios/schemas/horario";
+import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import type { RoleCode } from "@/types/auth";
 import { matrizInicial } from "@/mocks/data/catalogo-permisos";
+import { ALUMNOS_SEMILLA } from "@/mocks/data/alumnos";
 import {
   ACTIVIDADES_SEMILLA,
-  ALUMNOS_SEMILLA,
   HORARIOS_SEMILLA,
   ID_USUARIO_SESION_INICIAL,
   INSCRIPCIONES_SEMILLA,
   PLANES_SEMILLA,
   PROFESORAS_SEMILLA,
   USUARIOS_SEMILLA,
-  type AlumnoMockRegistro,
   type HorarioSemilla,
   type InscripcionMockRegistro,
   type PlanSemilla,
@@ -30,11 +30,11 @@ export interface HorarioMock extends HorarioSemilla {
 // así un horario nuevo ve las actividades y profesoras que ya existen.
 interface BaseMock {
   usuarios: UsuarioSemilla[];
+  alumnos: AlumnoDetalle[];
   actividades: ActividadApi[];
   profesoras: ProfesoraMock[];
   horarios: HorarioMock[];
   planes: PlanSemilla[];
-  alumnos: AlumnoMockRegistro[];
   inscripciones: InscripcionMockRegistro[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
@@ -42,6 +42,7 @@ interface BaseMock {
 
 export const db: BaseMock = {
   usuarios: structuredClone(USUARIOS_SEMILLA),
+  alumnos: structuredClone(ALUMNOS_SEMILLA),
   actividades: structuredClone(ACTIVIDADES_SEMILLA),
   profesoras: structuredClone(PROFESORAS_SEMILLA),
   horarios: HORARIOS_SEMILLA.map((horario) => ({
@@ -50,7 +51,6 @@ export const db: BaseMock = {
     fecha_baja: null,
   })),
   planes: structuredClone(PLANES_SEMILLA),
-  alumnos: structuredClone(ALUMNOS_SEMILLA),
   inscripciones: structuredClone(INSCRIPCIONES_SEMILLA),
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.

@@ -11,10 +11,10 @@ import { seguridadHandlers } from "@/mocks/handlers/seguridad";
 export const worker = setupWorker(
   ...authHandlers,
   ...seguridadHandlers,
+  ...alumnosHandlers,
   ...actividadesHandlers,
   ...personasHandlers,
   ...horariosHandlers,
   ...planesHandlers,
-  ...alumnosHandlers,
   ...inscripcionesHandlers,
 );

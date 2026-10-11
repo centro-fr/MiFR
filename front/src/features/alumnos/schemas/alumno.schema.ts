@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { esMenorDeEdad } from "../utils/edad";
+import { calcularEdad, esMenorDeEdad } from "../utils/edad";
 
 export const nombrePersona = z
   .string()
@@ -45,7 +45,11 @@ export const fechaNacimientoRegex = z
     if (isNaN(d.getTime())) return false;
     const hoy = new Date();
     return d <= hoy;
-  }, "La fecha de nacimiento no puede ser futura");
+  }, "La fecha de nacimiento no puede ser futura")
+  .refine((val) => {
+    const edad = calcularEdad(val);
+    return edad !== null;
+  }, "La edad no puede superar los 120 años");
 
 export const tutorFormSchema = z
   .object({
@@ -89,7 +93,11 @@ export const tutorFormSchema = z
         if (isNaN(d.getTime())) return false;
         const hoy = new Date();
         return d <= hoy;
-      }, "La fecha de nacimiento no puede ser futura"),
+      }, "La fecha de nacimiento no puede ser futura")
+      .refine((val) => {
+        const edad = calcularEdad(val);
+        return edad !== null;
+      }, "La edad del tutor no puede superar los 120 años"),
   })
   .superRefine((data, ctx) => {
     if (data.fecha_nacimiento && esMenorDeEdad(data.fecha_nacimiento)) {
@@ -165,12 +173,15 @@ export const alumnoFormSchema = z
           message: "El correo electrónico es obligatorio para alumnos mayores",
           path: ["email"],
         });
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Formato de correo electrónico inválido",
-          path: ["email"],
-        });
+      } else {
+        const resultadoEmail = emailPersona.safeParse(data.email);
+        if (!resultadoEmail.success) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: resultadoEmail.error.issues[0]?.message ?? "Formato de correo electrónico inválido",
+            path: ["email"],
+          });
+        }
       }
     }
 

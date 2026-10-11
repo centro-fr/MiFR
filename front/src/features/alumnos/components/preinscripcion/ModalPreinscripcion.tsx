@@ -11,6 +11,9 @@ import { Paso1DatosPersonales } from "./Paso1DatosPersonales";
 import { Paso2PlanYProfesora } from "./Paso2PlanYProfesora";
 import { Paso3SeleccionHorarios } from "./Paso3SeleccionHorarios";
 import { Paso4ResumenConfirmacion } from "./Paso4ResumenConfirmacion";
+import { useQuery } from "@tanstack/react-query";
+import { usePlanes } from "../../hooks/use-planes";
+import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { usePreinscripcion } from "../../hooks/use-preinscripcion";
 import type { Plan } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
@@ -19,20 +22,37 @@ import type { HorarioApi } from "@/features/horarios/schemas/horario";
 interface ModalPreinscripcionProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  planes: Plan[];
-  profesoras: ProfesoraDatos[];
-  horarios: HorarioApi[];
+  planes?: Plan[];
+  profesoras?: ProfesoraDatos[];
+  horarios?: HorarioApi[];
   onExito?: () => void;
 }
 
 export function ModalPreinscripcion({
   open,
   onOpenChange,
-  planes,
-  profesoras,
-  horarios,
+  planes: planesProp,
+  profesoras: profesorasProp,
+  horarios: horariosProp,
   onExito,
 }: ModalPreinscripcionProps) {
+  const { data: planesQuery = [] } = usePlanes();
+  const { data: profesorasQuery = [] } = useQuery({
+    queryKey: ["profesoras"],
+    queryFn: listarProfesoras,
+    staleTime: 5 * 60_000,
+    enabled: open && !profesorasProp,
+  });
+  const { data: horariosQuery = [] } = useQuery({
+    queryKey: ["horarios"],
+    queryFn: listarHorarios,
+    staleTime: 5 * 60_000,
+    enabled: open && !horariosProp,
+  });
+
+  const planes = planesProp ?? planesQuery;
+  const profesoras = profesorasProp ?? profesorasQuery;
+  const horarios = horariosProp ?? horariosQuery;
   const {
     paso,
     setPaso,

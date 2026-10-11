@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { esMenorDeEdad } from "../../utils/edad";
+import { esMenorDeEdad, obtenerLimitesFechaNacimiento } from "../../utils/edad";
 import type { AlumnoFormData } from "../../schemas/alumno.schema";
 
 interface Paso1DatosPersonalesProps {
@@ -21,6 +21,8 @@ export function Paso1DatosPersonales({
   edadCalculada,
   menorDeEdad,
 }: Paso1DatosPersonalesProps) {
+  const limitesFecha = obtenerLimitesFechaNacimiento();
+
   const actualizarCampo = <K extends keyof AlumnoFormData>(campo: K, valor: AlumnoFormData[K]) => {
     onChange({
       ...datos,
@@ -45,9 +47,119 @@ export function Paso1DatosPersonales({
     });
   };
 
+  const seccionTutor = menorDeEdad && (
+    <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="flex items-start gap-2.5">
+        <ShieldAlert className="size-5 text-primary shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-sm font-semibold text-foreground">
+            Datos del Tutor / Responsable ({edadCalculada} {edadCalculada === 1 ? "año" : "años"})
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Requerido para alumnos menores de edad.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-nombre" className="text-xs font-medium">
+            Nombre del Tutor <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tutor-nombre"
+            placeholder="Nombre"
+            value={datos.tutor?.nombre || ""}
+            onChange={(e) => actualizarTutor("nombre", e.target.value)}
+            className={errores["tutor.nombre"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.nombre"] && <p className="text-xs text-destructive">{errores["tutor.nombre"]}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-apellido" className="text-xs font-medium">
+            Apellido del Tutor <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tutor-apellido"
+            placeholder="Apellido"
+            value={datos.tutor?.apellido || ""}
+            onChange={(e) => actualizarTutor("apellido", e.target.value)}
+            className={errores["tutor.apellido"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.apellido"] && <p className="text-xs text-destructive">{errores["tutor.apellido"]}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-email" className="text-xs font-medium">
+            Email del Tutor <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tutor-email"
+            type="email"
+            placeholder="tutor@ejemplo.com"
+            value={datos.tutor?.email || ""}
+            onChange={(e) => actualizarTutor("email", e.target.value)}
+            className={errores["tutor.email"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.email"] && <p className="text-xs text-destructive">{errores["tutor.email"]}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-telefono" className="text-xs font-medium">
+            Teléfono del Tutor <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tutor-telefono"
+            placeholder="Ej: 3515556677"
+            value={datos.tutor?.telefono || ""}
+            onChange={(e) => actualizarTutor("telefono", e.target.value)}
+            className={errores["tutor.telefono"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.telefono"] && <p className="text-xs text-destructive">{errores["tutor.telefono"]}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-fecha-nac" className="text-xs font-medium">
+            Fecha Nac. Tutor <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tutor-fecha-nac"
+            type="date"
+            min={limitesFecha.min}
+            max={limitesFecha.max}
+            value={datos.tutor?.fecha_nacimiento || ""}
+            onChange={(e) => actualizarTutor("fecha_nacimiento", e.target.value)}
+            className={errores["tutor.fecha_nacimiento"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.fecha_nacimiento"] && (
+            <p className="text-xs text-destructive">{errores["tutor.fecha_nacimiento"]}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="tutor-dni" className="text-xs font-medium">
+            DNI del Tutor
+          </Label>
+          <Input
+            id="tutor-dni"
+            placeholder="Opcional"
+            value={datos.tutor?.dni || ""}
+            onChange={(e) => actualizarTutor("dni", e.target.value)}
+            className={errores["tutor.dni"] ? "border-destructive focus-visible:ring-destructive" : ""}
+          />
+          {errores["tutor.dni"] && <p className="text-xs text-destructive">{errores["tutor.dni"]}</p>}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* 1. Datos básicos del Alumno */}
+      {/* Si es menor de edad, los datos del tutor salen PRIMEROS */}
+      {seccionTutor}
+
+      {/* Datos básicos del Alumno */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <User className="size-4 text-primary" />
@@ -92,6 +204,8 @@ export function Paso1DatosPersonales({
             <Input
               id="alumno-fecha-nac"
               type="date"
+              min={limitesFecha.min}
+              max={limitesFecha.max}
               value={datos.fecha_nacimiento}
               onChange={(e) => {
                 const nuevaFecha = e.target.value;
@@ -106,7 +220,6 @@ export function Paso1DatosPersonales({
             />
             {errores.fecha_nacimiento && <p className="text-xs text-destructive">{errores.fecha_nacimiento}</p>}
           </div>
-
 
           <div className="space-y-1.5">
             <Label htmlFor="alumno-email" className="text-xs font-medium">
@@ -173,112 +286,6 @@ export function Paso1DatosPersonales({
           </div>
         </div>
       </div>
-
-      {/* 2. Sección Tutor Legal si es menor de edad */}
-      {menorDeEdad && (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-start gap-2.5">
-            <ShieldAlert className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                Datos del Tutor / Responsable ({edadCalculada} {edadCalculada === 1 ? "año" : "años"})
-              </h4>
-              <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
-                Requerido para alumnos menores de edad.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-nombre" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                Nombre del Tutor <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tutor-nombre"
-                placeholder="Nombre"
-                value={datos.tutor?.nombre || ""}
-                onChange={(e) => actualizarTutor("nombre", e.target.value)}
-                className={errores["tutor.nombre"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.nombre"] && <p className="text-xs text-destructive">{errores["tutor.nombre"]}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-apellido" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                Apellido del Tutor <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tutor-apellido"
-                placeholder="Apellido"
-                value={datos.tutor?.apellido || ""}
-                onChange={(e) => actualizarTutor("apellido", e.target.value)}
-                className={errores["tutor.apellido"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.apellido"] && <p className="text-xs text-destructive">{errores["tutor.apellido"]}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-email" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                Email del Tutor <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tutor-email"
-                type="email"
-                placeholder="tutor@ejemplo.com"
-                value={datos.tutor?.email || ""}
-                onChange={(e) => actualizarTutor("email", e.target.value)}
-                className={errores["tutor.email"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.email"] && <p className="text-xs text-destructive">{errores["tutor.email"]}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-telefono" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                Teléfono del Tutor <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tutor-telefono"
-                placeholder="Ej: 3515556677"
-                value={datos.tutor?.telefono || ""}
-                onChange={(e) => actualizarTutor("telefono", e.target.value)}
-                className={errores["tutor.telefono"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.telefono"] && <p className="text-xs text-destructive">{errores["tutor.telefono"]}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-fecha-nac" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                Fecha Nac. Tutor <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tutor-fecha-nac"
-                type="date"
-                value={datos.tutor?.fecha_nacimiento || ""}
-                onChange={(e) => actualizarTutor("fecha_nacimiento", e.target.value)}
-                className={errores["tutor.fecha_nacimiento"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.fecha_nacimiento"] && (
-                <p className="text-xs text-destructive">{errores["tutor.fecha_nacimiento"]}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="tutor-dni" className="text-xs font-medium text-amber-950 dark:text-amber-100">
-                DNI del Tutor
-              </Label>
-              <Input
-                id="tutor-dni"
-                placeholder="Opcional"
-                value={datos.tutor?.dni || ""}
-                onChange={(e) => actualizarTutor("dni", e.target.value)}
-                className={errores["tutor.dni"] ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
-              {errores["tutor.dni"] && <p className="text-xs text-destructive">{errores["tutor.dni"]}</p>}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 3. Apto Médico y Observaciones */}
       <div className="pt-2 border-t border-border/40 space-y-4">
