@@ -79,6 +79,16 @@ DATABASE_URL="<cadena directa de Neon>" pnpm --filter back db:seed -- <email-de-
 
 El seed carga los roles y los permisos y deja como propietaria a esa persona.
 
+Volver a correr el seed no pisa la matriz de permisos: la matriz inicial (`MATRIZ_INICIAL` en `rol.catalogo.ts`) se aplica solo a los permisos que se crean en esa corrida, para respetar lo que la propietaria cambió. Por eso, si un cambio le da a un rol un permiso que ya existía, ese permiso no le llega a una base ya cargada. Mientras el proyecto está en desarrollo y ninguna base tiene datos reales, eso se resuelve regenerando la base:
+
+```bash
+pnpm --filter back exec prisma migrate reset --force --skip-seed
+pnpm --filter back db:seed -- <email-de-google> <nombre> <apellido> <AAAA-MM-DD>
+pnpm --filter back db:seed:demo   # solo en una base local
+```
+
+Cuando Neon tenga datos reales ya no se puede borrar: desde ahí, un cambio así va con una migración de datos que agregue las filas que faltan en `rol_permisos` (ver `back/.claude/rules/seguridad.md`).
+
 ### 4. Google
 
 En Google Cloud Console, en el client OAuth que usa el sistema, agregar la URL de Netlify en **Orígenes autorizados de JavaScript**. Sin eso, el botón de Google falla en el sitio publicado.
