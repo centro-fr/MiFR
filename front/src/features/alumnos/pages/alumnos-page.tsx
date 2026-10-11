@@ -1,0 +1,560 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Loader2,
+  Search,
+  UserRound,
+  Users,
+} from "lucide-react";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { OwnerLayout } from "@/components/layout/owner-layout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import type { EstadoCuota } from "@/features/alumnos/schemas/alumno";
+import { cn } from "@/utils/cn";
+
+const TAMANO_PAGINA = 25;
+const FILTROS_INICIALES = {
+  estado: "TODOS",
+  id_plan: "",
+  id_profesora: "",
+  id_actividad: "",
+  estado_cuota: "",
+  incluir_bajas: false,
+};
+
+const PLANES = [
+  { id: "1", etiqueta: "Funcional mensual" },
+  { id: "2", etiqueta: "Pilates Reformer mensual" },
+  { id: "3", etiqueta: "Clase suelta" },
+];
+
+const PROFESORAS = [
+  { id: "1", etiqueta: "Lucía Gómez" },
+  { id: "2", etiqueta: "Carla Ruiz" },
+];
+
+const ACTIVIDADES = [
+  { id: "1", etiqueta: "Funcional grupal" },
+  { id: "2", etiqueta: "Pilates Reformer" },
+];
+
+const OPCIONES_CUOTA: { valor: EstadoCuota; etiqueta: string }[] = [
+  { valor: "AL_DIA", etiqueta: "Al día" },
+  { valor: "POR_VENCER", etiqueta: "Por vencer" },
+  { valor: "VENCIDA", etiqueta: "Vencida" },
+];
+
+function etiquetaEstado(estado: string): string {
+  if (estado === "ACTIVO") return "Activo";
+  if (estado === "PENDIENTE") return "Pendiente";
+  return "Baja";
+}
+
+function colorEstado(estado: string): string {
+  if (estado === "ACTIVO") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-200";
+  }
+  if (estado === "PENDIENTE") {
+    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-200";
+  }
+  return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200";
+}
+
+function etiquetaCuota(estado: EstadoCuota | null): string {
+  if (estado === "AL_DIA") return "Al día";
+  if (estado === "POR_VENCER") return "Por vencer";
+  if (estado === "VENCIDA") return "Vencida";
+  return "Sin cuotas";
+}
+
+function colorCuota(estado: EstadoCuota | null): string {
+  if (estado === "AL_DIA") {
+    return "border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-200";
+  }
+  if (estado === "POR_VENCER") {
+    return "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-200";
+  }
+  if (estado === "VENCIDA") {
+    return "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-700 dark:bg-rose-950/70 dark:text-rose-200";
+  }
+  return "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200";
+}
+
+function iniciales(nombre: string): string {
+  return nombre
+    .split(/\s+/u)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0))
+    .join("")
+    .toLocaleUpperCase("es");
+}
+
+function Filtro({
+  id,
+  etiqueta,
+  valor,
+  opciones,
+  onChange,
+}: {
+  id: string;
+  etiqueta: string;
+  valor: string;
+  opciones: { id: string; etiqueta: string }[];
+  onChange: (valor: string) => void;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className="grid min-w-0 gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200"
+    >
+      {etiqueta}
+      <select
+        id={id}
+        value={valor}
+        onChange={(evento) => onChange(evento.target.value)}
+        className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base font-normal text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82] md:text-sm dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100"
+      >
+        {opciones.map((opcion) => (
+          <option key={opcion.id} value={opcion.id}>
+            {opcion.etiqueta}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function AlumnosPage() {
+  const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
+  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
+    return () => window.clearTimeout(temporizador);
+  }, [busqueda]);
+
+  const consulta = useAlumnos({
+    q: busquedaDebounced,
+    ...filtros,
+    limit: TAMANO_PAGINA,
+    offset: pagina * TAMANO_PAGINA,
+  });
+  const respuesta = consulta.data;
+  const paginas = Math.max(1, Math.ceil((respuesta?.total ?? 0) / TAMANO_PAGINA));
+  const rangoInicio = respuesta && respuesta.total > 0 ? respuesta.offset + 1 : 0;
+  const rangoFin = Math.min((respuesta?.offset ?? 0) + TAMANO_PAGINA, respuesta?.total ?? 0);
+
+  function cambiarFiltro(nombre: keyof typeof FILTROS_INICIALES, valor: string | boolean) {
+    setPagina(0);
+    setFiltros((anteriores) => ({ ...anteriores, [nombre]: valor }));
+  }
+
+  function controlesFiltros(prefijo: string) {
+    return (
+      <>
+        <Filtro
+          id={`${prefijo}-filtro-estado`}
+          etiqueta="Estado"
+          valor={filtros.estado}
+          opciones={[
+            { id: "TODOS", etiqueta: "Activos y pendientes" },
+            { id: "ACTIVO", etiqueta: "Activo" },
+            { id: "PENDIENTE", etiqueta: "Pendiente" },
+          ]}
+          onChange={(valor) => cambiarFiltro("estado", valor)}
+        />
+        <Filtro
+          id={`${prefijo}-filtro-plan`}
+          etiqueta="Plan"
+          valor={filtros.id_plan}
+          opciones={[{ id: "", etiqueta: "Todos los planes" }, ...PLANES]}
+          onChange={(valor) => cambiarFiltro("id_plan", valor)}
+        />
+        <Filtro
+          id={`${prefijo}-filtro-profesora`}
+          etiqueta="Profesora"
+          valor={filtros.id_profesora}
+          opciones={[{ id: "", etiqueta: "Todas las profesoras" }, ...PROFESORAS]}
+          onChange={(valor) => cambiarFiltro("id_profesora", valor)}
+        />
+        <Filtro
+          id={`${prefijo}-filtro-actividad`}
+          etiqueta="Actividad"
+          valor={filtros.id_actividad}
+          opciones={[{ id: "", etiqueta: "Todas las actividades" }, ...ACTIVIDADES]}
+          onChange={(valor) => cambiarFiltro("id_actividad", valor)}
+        />
+        <Filtro
+          id={`${prefijo}-filtro-cuota`}
+          etiqueta="Estado de cuota"
+          valor={filtros.estado_cuota}
+          opciones={[
+            { id: "", etiqueta: "Todos" },
+            ...OPCIONES_CUOTA.map(({ valor, etiqueta }) => ({
+              id: valor,
+              etiqueta,
+            })),
+          ]}
+          onChange={(valor) => cambiarFiltro("estado_cuota", valor)}
+        />
+        <label
+          htmlFor={`${prefijo}-incluir-bajas`}
+          className="flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 dark:border-slate-600 dark:text-slate-100"
+        >
+          <input
+            id={`${prefijo}-incluir-bajas`}
+            type="checkbox"
+            checked={filtros.incluir_bajas}
+            onChange={(evento) =>
+              cambiarFiltro("incluir_bajas", evento.target.checked)
+            }
+            className="h-4 w-4 accent-[#E91E82]"
+          />
+          Incluir dados de baja
+        </label>
+      </>
+    );
+  }
+
+  return (
+    <OwnerLayout>
+      <main       className="mx-auto w-full max-w-[1240px] py-5 md:py-8">
+        <header className="mb-5 flex items-start justify-between gap-3 md:mb-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black tracking-tight text-[#181C26] dark:text-white">Alumnos</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Buscá y consultá las fichas del centro de entrenamiento.
+            </p>
+          </div>
+          {respuesta && (
+            <Badge className="min-h-8 shrink-0 rounded-full border border-pink-200 bg-pink-100 px-3 text-sm font-bold text-[#BC1266] hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-950/70 dark:text-pink-200 dark:hover:bg-pink-950/70">
+              {respuesta.total} {respuesta.total === 1 ? "alumno registrado" : "alumnos registrados"}
+            </Badge>
+          )}
+        </header>
+
+        <section aria-label="Buscar alumnos" className="mb-4">
+          <label htmlFor="buscar-alumnos" className="sr-only">
+            Buscar por nombre, DNI, teléfono o email
+          </label>
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+            />
+            <Input
+              id="buscar-alumnos"
+              value={busqueda}
+              onChange={(evento) => {
+                setPagina(0);
+                setBusqueda(evento.target.value);
+              }}
+              placeholder="Buscar por nombre, DNI o identificador…"
+              autoComplete="off"
+              className="min-h-12 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 pl-10 text-base shadow-sm md:min-h-11 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
+            />
+          </div>
+        </section>
+
+        <div className="mb-2 flex items-center gap-2 overflow-x-auto pb-1 lg:hidden">
+          <span className="sr-only">Filtrar rápidamente por estado de cuota</span>
+          {[
+            { valor: "", etiqueta: "Todas las cuotas" },
+            ...OPCIONES_CUOTA.map(({ valor, etiqueta }) => ({ valor, etiqueta })),
+          ].map((opcion) => {
+            const seleccionado = filtros.estado_cuota === opcion.valor;
+            return (
+              <button
+                key={opcion.etiqueta}
+                type="button"
+                aria-pressed={seleccionado}
+                onClick={() => cambiarFiltro("estado_cuota", opcion.valor)}
+                className={cn(
+                  "min-h-[44px] shrink-0 rounded-full border px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82]",
+                  seleccionado
+                    ? "border-[#E91E82] bg-pink-50 text-[#BC1266] dark:border-pink-500 dark:bg-pink-950/60 dark:text-pink-200"
+                    : "border-slate-200 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
+                )}
+              >
+                {opcion.etiqueta}
+              </button>
+            );
+          })}
+        </div>
+        <details className="relative mb-4 lg:hidden">
+          <summary className="flex min-h-[44px] w-fit cursor-pointer list-none items-center gap-2 rounded-full bg-[#181C26] px-4 text-sm font-bold text-white dark:bg-slate-700">
+            <Filter aria-hidden="true" className="h-4 w-4" />
+            Más filtros
+          </summary>
+          <div className="absolute inset-x-0 z-20 mt-2 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+            {controlesFiltros("mobile")}
+          </div>
+        </details>
+        <section
+          aria-label="Filtros de alumnos"
+          className="mb-5 hidden grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:grid lg:grid-cols-6 dark:border-slate-600 dark:bg-slate-800"
+        >
+          {controlesFiltros("desktop")}
+        </section>
+        {consulta.isFetching && !consulta.isPending && (
+          <p role="status" className="mb-3 text-sm text-slate-500 dark:text-slate-400">
+            Actualizando resultados…
+          </p>
+        )}
+
+        {consulta.isPending ? (
+          <div
+            role="status"
+            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+          >
+            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-[#E91E82]" />
+            Cargando alumnos…
+          </div>
+        ) : consulta.isError ? (
+          <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
+            <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
+            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {mensajeDeErrorApi(consulta.error, "No se pudo cargar el listado de alumnos.")}
+            </p>
+            <Button
+              type="button"
+              onClick={() => void consulta.refetch()}
+              className="min-h-[44px] rounded-lg bg-[#BC1266] text-white hover:bg-[#9D1055] dark:bg-pink-700 dark:hover:bg-pink-600"
+            >
+              Reintentar
+            </Button>
+          </Card>
+        ) : respuesta?.total === 0 ? (
+          <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-[#BC1266] dark:bg-pink-950/70 dark:text-pink-200">
+              <Users aria-hidden="true" className="h-7 w-7" />
+            </span>
+            <h2 className="text-lg font-extrabold text-[#181C26] dark:text-white">
+              {busquedaDebounced ||
+              filtros.estado !== "TODOS" ||
+              filtros.id_plan ||
+              filtros.id_profesora ||
+              filtros.id_actividad ||
+              filtros.estado_cuota ||
+              filtros.incluir_bajas
+                ? "No encontramos alumnos"
+                : "Todavía no hay alumnos"}
+            </h2>
+            <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+              {busquedaDebounced
+                ? "Probá con otro nombre, DNI, teléfono o email, o cambiá los filtros."
+                : "Cuando haya alumnos registrados, vas a poder consultarlos desde acá."}
+            </p>
+            {(busqueda ||
+              filtros.estado !== "TODOS" ||
+              filtros.id_plan ||
+              filtros.id_profesora ||
+              filtros.id_actividad ||
+              filtros.estado_cuota ||
+              filtros.incluir_bajas) && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setBusqueda("");
+                  setFiltros(FILTROS_INICIALES);
+                  setPagina(0);
+                }}
+                className="min-h-[44px]"
+              >
+                Limpiar búsqueda y filtros
+              </Button>
+            )}
+          </Card>
+        ) : (
+          <>
+            <div className="grid gap-3 xl:hidden">
+              {respuesta?.items.map((alumno) => (
+                <Link
+                  key={alumno.id_alumno}
+                  to={`/app/alumnos/${alumno.id_alumno}`}
+                  className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82]"
+                >
+                  <Card className="rounded-xl border-slate-200 bg-white p-4 text-slate-900 shadow-sm transition hover:border-pink-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-pink-500">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-sm font-extrabold text-[#BC1266] dark:bg-pink-950/70 dark:text-pink-200">
+                        {iniciales(alumno.nombre_completo)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h2 className="break-words text-base font-extrabold text-[#181C26] dark:text-white">
+                          {alumno.nombre_completo}
+                        </h2>
+                        <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-400">
+                          DNI {alumno.dni ?? "Sin DNI"} · ALU-{String(alumno.id_alumno).padStart(3, "0")}
+                        </p>
+                      </div>
+                      <Badge
+                        className={cn(
+                          "min-h-7 shrink-0 border px-2 text-sm font-bold hover:bg-inherit",
+                          colorCuota(alumno.estado_cuota),
+                        )}
+                      >
+                        {etiquetaCuota(alumno.estado_cuota)}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 border-t border-slate-200 pt-3 text-sm dark:border-slate-600">
+                      <div className="min-w-0">
+                        <p className="text-slate-600 dark:text-slate-300">Plan</p>
+                        <p className="break-words font-semibold text-slate-800 dark:text-slate-100">
+                          {alumno.plan ?? "Sin plan"}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-slate-600 dark:text-slate-300">Estado</p>
+                        <p className={cn("font-bold", colorEstado(alumno.estado))}>
+                          {etiquetaEstado(alumno.estado)}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-slate-600 dark:text-slate-300">Profesora</p>
+                        <p className="break-words font-semibold text-slate-800 dark:text-slate-100">
+                          {alumno.profesora ?? "A definir"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-600">
+                      <span className="min-w-0 break-all text-sm text-slate-600 dark:text-slate-400">
+                        {alumno.telefono || "Sin teléfono"}
+                      </span>
+                      <span className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-lg px-3 text-sm font-bold text-[#BC1266] dark:text-pink-200">
+                        <UserRound aria-hidden="true" className="size-4" />
+                        Ver ficha
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            <Card className="hidden overflow-hidden rounded-xl border-slate-200 bg-white text-slate-900 xl:block dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <tr>
+                      <th scope="col" className="px-5 py-4">
+                        Alumno
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Plan
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Cuota
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Teléfono
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Profesora
+                      </th>
+                      <th scope="col" className="px-5 py-4 text-right">
+                        Ficha
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {respuesta?.items.map((alumno) => (
+                      <tr key={alumno.id_alumno} className="hover:bg-slate-50 dark:hover:bg-slate-700/60">
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-[#181C26] dark:text-white">
+                            {alumno.nombre_completo}
+                          </div>
+                          <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                            {alumno.dni ? `DNI ${alumno.dni}` : "Sin DNI"}
+                            {" · "}ALU-{String(alumno.id_alumno).padStart(3, "0")}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <Badge className={cn("min-h-7 border px-2 text-sm", colorEstado(alumno.estado))}>
+                            {etiquetaEstado(alumno.estado)}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4 font-medium text-slate-800 dark:text-slate-100">
+                          {alumno.plan ?? "Sin plan"}
+                        </td>
+                        <td className="px-4 py-4">
+                          <Badge
+                            className={cn(
+                              "min-h-7 border px-2 text-sm font-bold hover:bg-inherit",
+                              colorCuota(alumno.estado_cuota),
+                            )}
+                          >
+                            {etiquetaCuota(alumno.estado_cuota)}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4 text-slate-800 dark:text-slate-100">
+                          {alumno.telefono ?? "Sin teléfono"}
+                        </td>
+                        <td className="px-4 py-4 text-slate-800 dark:text-slate-100">
+                          {alumno.profesora ?? "A definir"}
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <Button asChild variant="outline" className="min-h-[40px]">
+                            <Link to={`/app/alumnos/${alumno.id_alumno}`}>Ver ficha</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </>
+        )}
+
+        {respuesta && respuesta.total > 0 && (
+          <nav
+            aria-label="Paginación de alumnos"
+            className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row"
+          >
+            <p aria-live="polite" className="text-sm text-slate-600 dark:text-slate-400">
+              {rangoInicio}–{rangoFin} de {respuesta.total} alumnos
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagina === 0}
+                onClick={() => setPagina((actual) => Math.max(0, actual - 1))}
+                className="min-h-[44px]"
+              >
+                <ChevronLeft aria-hidden="true" className="mr-1 h-4 w-4" />
+                Anterior
+              </Button>
+              <span className="px-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {pagina + 1} / {paginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagina + 1 >= paginas}
+                onClick={() => setPagina((actual) => Math.min(paginas - 1, actual + 1))}
+                className="min-h-[44px]"
+              >
+                Siguiente
+                <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </nav>
+        )}
+      </main>
+    </OwnerLayout>
+  );
+}

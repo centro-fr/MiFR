@@ -24,7 +24,6 @@ const carga = { hydrateFallbackElement: <SessionSplash /> };
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "alumnos", seccion: "Alumnos" },
   { path: "planes", seccion: "Planes y Precios" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
@@ -67,6 +66,14 @@ export const router = createBrowserRouter([
         lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage"),
       },
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
+      {
+        path: "alumnos",
+        lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage"),
+      },
+      {
+        path: "alumnos/:id",
+        lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage"),
+      },
       {
         path: "seguridad/permisos",
         element: (

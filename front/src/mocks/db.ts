@@ -1,7 +1,9 @@
 import type { ActividadApi } from "@/features/actividades/schemas/actividad";
 import type { ProfesoraApi } from "@/features/horarios/schemas/horario";
+import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import type { RoleCode } from "@/types/auth";
 import { matrizInicial } from "@/mocks/data/catalogo-permisos";
+import { ALUMNOS_SEMILLA } from "@/mocks/data/alumnos";
 import {
   ACTIVIDADES_SEMILLA,
   HORARIOS_SEMILLA,
@@ -24,6 +26,7 @@ export interface HorarioMock extends HorarioSemilla {
 // así un horario nuevo ve las actividades y profesoras que ya existen.
 interface BaseMock {
   usuarios: UsuarioSemilla[];
+  alumnos: AlumnoDetalle[];
   actividades: ActividadApi[];
   profesoras: ProfesoraMock[];
   horarios: HorarioMock[];
@@ -33,6 +36,7 @@ interface BaseMock {
 
 export const db: BaseMock = {
   usuarios: structuredClone(USUARIOS_SEMILLA),
+  alumnos: structuredClone(ALUMNOS_SEMILLA),
   actividades: structuredClone(ACTIVIDADES_SEMILLA),
   profesoras: structuredClone(PROFESORAS_SEMILLA),
   horarios: HORARIOS_SEMILLA.map((horario) => ({
