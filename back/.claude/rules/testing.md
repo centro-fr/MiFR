@@ -66,7 +66,7 @@ Corren la app real (`construirDependencias` de `composicion.ts`, el mismo cablea
 - Archivo con sufijo `.integration.test.ts`. `pnpm test` los excluye; corren con `pnpm test:integration`, que usa `vitest.integration.config.ts`.
 - Los que recorren varios componentes por HTTP van en `src/__tests__/integracion/`. Los de un componente puntual van en el `__tests__/` del componente.
 - Base: `docker compose --profile test up -d db-test` (puerto 55433, en memoria). Las migraciones se aplican solas al arrancar la suite.
-- Cada test empieza con `reiniciarBase(prisma)`: vacía las tablas y vuelve a cargar roles, permisos y la matriz inicial.
+- Cada test empieza con `reiniciarBase(prisma)`: vacía las tablas y vuelve a cargar roles, permisos, la matriz inicial y los parámetros del sistema con su valor inicial.
 - El escenario se arma con las fábricas de `src/__tests__/integracion/fabricas.ts` o con `cargarDatosDemo` (los datos de `db:seed:demo`); la sesión se abre con `entorno.iniciarSesion(email)`, que pasa por el login real.
 - Solo corren contra una base cuyo nombre termine en `_test`: si no, fallan antes de tocar nada.
 - Van pocos y apuntados: lo que un mock no puede mostrar (permisos que salen de la base, restricciones de Postgres, transacciones, cableado). No repetir lo que ya cubre un unitario.

@@ -46,6 +46,7 @@ back/
   src/
     composicion.ts                    construirSistema() y construirDependencias(): el cableado compartido
     shared/db/catalogo-seguridad.ts   cargarCatalogoSeguridad(): roles, permisos y matriz inicial
+    shared/db/parametros-iniciales.ts cargarParametrosIniciales(): parámetros del sistema con su valor inicial
     shared/db/datos-demo.ts           cargarDatosDemo(): profesoras, actividades, horarios, planes, alumnos e inscripciones
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
@@ -75,8 +76,9 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | D | `src/__tests__/integracion/planes.integration.test.ts` | Planes, baja lógica y precios con fecha de vigencia | D-14 |
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
-| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora y el peso y la talla), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación y paginación | G-21 |
+| G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora, el peso y la talla y la reserva de cupo que vence), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación y paginación | G-26 |
 | H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado y el historial de cuotas (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`) | H-06 |
+| I | `src/shared/db/__tests__/parametros-iniciales.integration.test.ts` | Carga de los parámetros del sistema | I-04 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 
