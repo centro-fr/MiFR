@@ -1,24 +1,29 @@
+import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { PagoRepository } from "../../modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
-import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo.js";
+import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "../../shared/db/datos-demo.js";
+import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { armarCuotasYPagos, UN_DIA_EN_MS } from "./cobro.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
-// Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) sobre los datos de db:seed:demo.
-// Sofía Medina está pre-inscripta y sin cuotas; Valentina Herrera ya pagó su primera cuota.
+// Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) y el precio que aplica el cobro
+// (US-12) sobre los datos de db:seed:demo. Sofía Medina está pre-inscripta en el Básico y sin
+// cuotas; Valentina Herrera está en el Intermedio y ya pagó su primera cuota.
 const entorno = crearEntornoDeIntegracion();
 const { prisma, infoInscripciones } = entorno;
 const DNI_SOFIA = "38111222";
+const DNI_VALENTINA = "39222333";
 const VENCIMIENTO = new Date("2026-11-09T00:00:00Z");
 
+let datos: DatosDemoCargados;
 let idInscripcion: number;
 let idMarina: number;
 let idCarla: number;
 
 beforeEach(async () => {
   await reiniciarBase(prisma);
-  const datos = await cargarDatosDemo(prisma);
+  datos = await cargarDatosDemo(prisma);
   idInscripcion = datos.idInscripcion.get(DNI_SOFIA)!;
   idCarla = datos.idProfesora.get("carla.ruiz@example.com")!;
   idMarina = (await prisma.usuarios.findUniqueOrThrow({ where: { email: EMAIL_MULTIROL_DEMO } })).id_usuario;
@@ -183,5 +188,82 @@ describe("PI-36: el pago adelantado y el historial de cuotas de la ficha", () =>
       pagos: [{ forma_pago: "EFECTIVO", estado: "CONFIRMADO", monto: 1, motivo_rechazo: null }],
     });
     expect(historial[1]).toMatchObject({ numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] });
+  });
+});
+
+describe("PI-40: el cobro aplica el precio vigente el día del cobro", () => {
+  // El precio se carga por la API, como lo hace la propietaria, para probar juntos Plan y Cuota.
+  async function cargarPrecio(nombrePlan: string, precio: number, desde: Date) {
+    const token = await entorno.iniciarSesion(EMAIL_MULTIROL_DEMO);
+    const respuesta = await request(entorno.app)
+      .post(`/api/v1/planes/${datos.idPlan.get(nombrePlan)}/precios`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ precio, fecha_vigencia_desde: desde.toISOString().slice(0, 10) });
+    expect(respuesta.status).toBe(201);
+  }
+
+  // Sin confirmar un monto distinto: el cobro solo pasa si el monto es el precio que rige hoy.
+  function cobrarComoMarina(idInscripcionACobrar: number, monto: number) {
+    return armarCuotasYPagos(prisma, infoInscripciones).gestion.registrarCobroEfectivo(
+      { id_inscripcion: idInscripcionACobrar, monto, confirmar_monto_distinto: false },
+      { idUsuario: idMarina, esPropietaria: true },
+    );
+  }
+
+  async function montosDeCuotas(idInscripcionCobrada: number) {
+    const cuotas = await prisma.cuotas.findMany({
+      where: { id_inscripcion: idInscripcionCobrada },
+      orderBy: { numero_cuota: "asc" },
+      include: { pagos: true },
+    });
+    return cuotas.map((cuota) => ({
+      numero_cuota: cuota.numero_cuota,
+      monto: cuota.monto.toNumber(),
+      pagos: cuota.pagos.map((pago) => pago.monto.toNumber()),
+    }));
+  }
+
+  it("un aumento programado para mañana no cambia lo que se cobra hoy", async () => {
+    const manana = new Date(fechaActualArgentina().getTime() + UN_DIA_EN_MS);
+    await cargarPrecio("Básico", 28000, manana);
+
+    await cobrarComoMarina(idInscripcion, 25000);
+
+    expect(await montosDeCuotas(idInscripcion)).toEqual([{ numero_cuota: 1, monto: 25000, pagos: [25000] }]);
+  });
+
+  it("un aumento que rige desde hoy ya se cobra hoy, y el precio anterior se rechaza sin guardar nada", async () => {
+    await cargarPrecio("Básico", 28000, fechaActualArgentina());
+    const antes = await estadoDelAlta();
+
+    await expect(cobrarComoMarina(idInscripcion, 25000)).rejects.toMatchObject({
+      statusCode: 409,
+      code: "MONTO_DISTINTO",
+      message: expect.stringContaining("(28000)"),
+    });
+    expect(await estadoDelAlta()).toEqual(antes);
+
+    await cobrarComoMarina(idInscripcion, 28000);
+    expect(await montosDeCuotas(idInscripcion)).toEqual([{ numero_cuota: 1, monto: 28000, pagos: [28000] }]);
+  });
+
+  it("un aumento no toca la cuota ya cobrada y la siguiente se cobra al precio nuevo", async () => {
+    const idInscripcionValentina = datos.idInscripcion.get(DNI_VALENTINA)!;
+    const cobradas = await prisma.cuotas.findMany({
+      where: { id_inscripcion: idInscripcionValentina },
+      include: { pagos: true },
+    });
+
+    await cargarPrecio("Intermedio", 35000, fechaActualArgentina());
+    await cobrarComoMarina(idInscripcionValentina, 35000);
+
+    const [primera, segunda] = await prisma.cuotas.findMany({
+      where: { id_inscripcion: idInscripcionValentina },
+      orderBy: { numero_cuota: "asc" },
+      include: { pagos: true },
+    });
+    expect([primera]).toEqual(cobradas);
+    expect(segunda.monto.toNumber()).toBe(35000);
+    expect(segunda.pagos.map((pago) => pago.monto.toNumber())).toEqual([35000]);
   });
 });
