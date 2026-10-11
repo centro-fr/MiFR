@@ -31,6 +31,7 @@ describe("ActividadService", () => {
     descripcion: null,
     modalidad: "GRUPAL",
     cupo_maximo: 20,
+    requiere_medidas: false,
     activo: true,
   };
 

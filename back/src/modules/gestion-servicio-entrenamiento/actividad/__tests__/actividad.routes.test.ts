@@ -17,6 +17,7 @@ const actividad: Actividad = {
   descripcion: null,
   modalidad: "GRUPAL",
   cupo_maximo: 20,
+  requiere_medidas: false,
   activo: true,
 };
 
