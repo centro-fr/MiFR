@@ -10,8 +10,13 @@ PREINSCRIPTA --> BAJA : cambiar de plan / CAMBIO_PLAN
 ACTIVA --> BAJA : cambiar de plan / CAMBIO_PLAN
 
 note right of PREINSCRIPTA
-  Reserva cupo y no habilita al alumno.
-  El alumno permanece INACTIVO.
+  No habilita al alumno: permanece INACTIVO.
+  Reserva cupo hasta DIAS_RESERVA_PREINSCRIPCION días
+  después de fecha_inicio (parámetro del sistema).
+  Vencido el plazo sigue PREINSCRIPTA, pero deja de
+  ocupar lugar: el primer pago vuelve a pedir cupo.
+  Cambiar de plan conserva fecha_inicio, así que
+  no renueva la reserva.
 end note
 
 note right of ACTIVA
