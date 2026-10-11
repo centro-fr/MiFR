@@ -70,6 +70,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] `clases_por_semana` entre 1 y 7 en los mensuales.
   - [x] Precio inicial mayor a 0.
   - [x] Si tiene actividad exclusiva, la actividad tiene que existir y estar activa.
+  - [x] Una actividad con planes vigentes exclusivos no se da de baja (409 con los nombres de los planes): primero hay que dar de baja esos planes o pasarlos a otra actividad. Lo resuelve la fachada `GestionServicioEntrenamientoService` (PI-06, tests B-17 y B-18).
   - [x] Un plan nunca se borra: se le pone `fecha_baja`. Un plan dado de baja no admite inscripciones nuevas (lo controla `Inscripcion` con `IInfoPlanes`); las que ya tiene siguen.
   - [x] Nombre de plan duplicado entre los vigentes → 409.
 - [x] Protegido con `PLANES_VER` / `PLANES_EDITAR`.
