@@ -174,6 +174,7 @@ CREATE TABLE actividades
 	descripcion varchar(255) NULL,
 	modalidad varchar(13) NOT NULL,
 	cupo_maximo smallint NULL,	-- > 0; obligatorio si PERSONALIZADA
+	requiere_medidas boolean NOT NULL,	-- default false; peso y talla al pre-inscribir
 	activo boolean NOT NULL
 )
 ;
@@ -983,6 +984,10 @@ COMMENT ON TABLE actividades
 
 COMMENT ON COLUMN actividades.cupo_maximo
 	IS '> 0; obligatorio si PERSONALIZADA'
+;
+
+COMMENT ON COLUMN actividades.requiere_medidas
+	IS 'default false; peso y talla al pre-inscribir'
 ;
 
  
