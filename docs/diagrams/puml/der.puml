@@ -122,6 +122,7 @@ package "SERVICIO ENTRENAMIENTO" {
       descripcion : VARCHAR(255)
     * modalidad : ENUM <color:#000000><<GRUPAL|PERSONALIZADA>></color>
       cupo_maximo : SMALLINT <color:#6B7280><size:11>> 0; obligatorio si PERSONALIZADA</size></color>
+    * requiere_medidas : BOOLEAN <color:#6B7280><size:11>default false; peso y talla al pre-inscribir</size></color>
     * activo : BOOLEAN
   }
   entity "horarios" as horarios <<Servicio>> {
