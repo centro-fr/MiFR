@@ -172,7 +172,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41                                    | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36               | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
-| US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                                     |
+| US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
@@ -213,7 +213,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-03         | Permisos sobre actividades y horarios                              | US-01 a US-04       | Servicios          | Comunes + demostración (paso 4)                            | Sí           |
 | PI-04         | Actividad personalizada → horario con cupo heredado                | US-03, US-04        | Servicios          | Demostración                                               | Sí           |
 | PI-05         | Validaciones al asignar profesora y horario                        | US-02, US-04        | Servicios          | Demostración                                               | Sí           |
-| PI-06         | Modificación y baja de actividades con horarios                    | US-03, US-04        | Servicios          | Demostración                                               | Sí           |
+| PI-06         | Modificación y baja de actividades con horarios y planes           | US-03, US-04, US-11 | Servicios          | Demostración                                               | Sí           |
 | PI-07         | Acceso a los datos propios                                         | US-01, US-02        | Servicios          | Comunes                                                    | Sí           |
 | PI-08         | Los cambios de permisos rigen desde el pedido siguiente            | US-01, US-02        | Servicios          | Comunes                                                    | Sí           |
 | PI-09         | Carga del catálogo de seguridad                                    | US-02               | Servicios          | Comunes                                                    | Sí           |
@@ -325,19 +325,21 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (B-05 a B-09, B-14, B-15).
 
-#### PI-06 — Modificación y baja de actividades con horarios
+#### PI-06 — Modificación y baja de actividades con horarios y planes
 
-**US:** US-03, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
+**US:** US-03, US-04, US-11 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
 
 1. Marina cambia la descripción de Funcional Grupal.
 2. Marina intenta dar de baja Funcional Grupal.
 3. Marina crea una actividad nueva, sin horarios, y la da de baja.
 4. Marina intenta cambiar Funcional Grupal de grupal a personalizada sin indicar cupo.
 5. Marina crea la actividad Yoga con dos horarios sin alumnos y la da de baja.
+6. Marina crea la actividad Yoga con un horario sin alumnos y el plan "Yoga 2 días", exclusivo de Yoga, e intenta dar de baja Yoga.
+7. Marina da de baja el plan "Yoga 2 días" y después da de baja Yoga. En el escenario siguen vigentes los planes que sirven para cualquier actividad.
 
-**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran).
+**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran). El paso 6 se rechaza con 409 ("La actividad tiene planes vigentes que son solo de ella (Yoga 2 días): dalos de baja o pasalos a otra actividad antes de darla de baja"); la actividad, su horario y el plan siguen activos. En el paso 7 la baja responde 200 y el horario queda dado de baja: un plan exclusivo dado de baja y los planes para cualquier actividad no la frenan.
 
-**Automatizado:** Sí (B-10 a B-13 y B-16).
+**Automatizado:** Sí (B-10 a B-13 y B-16 a B-18).
 
 #### PI-07 — Acceso a los datos propios
 
@@ -767,12 +769,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-151 tests en nueve archivos:
+153 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 48 (A-01 a A-48) | PI-01 a PI-03, PI-07, PI-08, PI-28, PI-29 |
-|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 16 (B-01 a B-16) | PI-04, PI-05, PI-06               |
+|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 18 (B-01 a B-18) | PI-04, PI-05, PI-06               |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
@@ -802,6 +804,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con alumnos inscriptos; baja sin horarios; no pasar a personalizada sin cupo                                          | PI-06 |
 | B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                                     | PI-05 |
 | B-16        | La baja de una actividad sin alumnos da de baja también sus horarios, que no se borran                                                                                        | PI-06 |
+| B-17        | Una actividad con un plan vigente exclusivo no se da de baja (409 con el nombre del plan); la actividad, su horario y el plan quedan igual                                   | PI-06 |
+| B-18        | Con su plan exclusivo dado de baja, la actividad se da de baja aunque haya planes vigentes para cualquier actividad                                                         | PI-06 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
 | D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
 | D-05 a D-07 | Cambio de frecuencia; baja lógica que saca el plan del listado; no hay segunda baja ni edición de un plan dado de baja                                                          | PI-12 |
@@ -911,6 +915,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La baja no guarda el detalle del motivo `OTRO`                                         | G-28                                                                                                       |
 | El schema acepta el detalle con cualquier motivo                                       | G-30 (el pedido llega a la base, que lo rechaza con el check, y no responde 400)                          |
 | La base de prueba sin el check `ck_inscripciones_x2`                                   | G-31                                                                                                       |
+| La baja de una actividad no revisa sus planes exclusivos vigentes                      | B-17                                                                                                       |
+| Los planes dados de baja también frenan la baja de la actividad                        | B-18                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -940,6 +946,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 11/10/2026 | Cambiar de plan no renueva la reserva de la pre-inscripción (PI-38)   | 144 | 144 aprobados | 92,3 s | Pasaron también los 1234 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
 | 11/10/2026 | El cobro aplica el precio vigente el día del cobro (PI-40)            | 147 | 147 aprobados | 115,5 s | Solo se sumaron tests. Pasaron también los 1234 tests unitarios y el chequeo de tipos. Las 2 fallas provocadas fueron detectadas; antes de PI-40, ningún test de integración las detectaba |
 | 11/10/2026 | El detalle de la baja con el motivo OTRO (PI-41)                      | 151 | 151 aprobados | 130,1 s | Con la base de prueba recreada desde cero, así que la migración nueva se aplicó completa. Pasaron también los 1241 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
+| 11/10/2026 | Los planes exclusivos vigentes frenan la baja de la actividad (PI-06) | 153 | 153 aprobados | 133,5 s | Pasaron también los 1242 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -958,6 +965,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-38, PI-39  | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-22 a G-27 e I-01 a I-04 (defectos D-17 y D-18)                                   |
 | PI-40         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan H-07 a H-09 sobre los componentes; sin defectos                            |
 | PI-41         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-28 a G-31 (punto a confirmar de PI-41 cerrado)                           |
+| PI-06         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan B-10 a B-13 y B-16 a B-18 (defecto D-19)                                   |
 
 ### 8.3 Defectos
 
@@ -981,6 +989,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-16 | PI-37 | La pre-inscripción no recibía peso ni talla y ninguna actividad podía marcarse como que los pide, así que el criterio de US-05 "en clase que requiere peso/talla sin cargarlos, falla" no se cumplía. Corregido: `actividades.requiere_medidas` y `medidas` en `POST /inscripciones`, guardadas en `registros_progreso` | Media | Francisco Andrade | `InscripcionService`, `RegistroProgresoService` |
 | D-17 | PI-38 | Una pre-inscripción que nunca se pagaba ocupaba el cupo para siempre; en las clases personalizadas, con 4 lugares, trababa el horario. Corregido: deja de ocupar lugar `DIAS_RESERVA_PREINSCRIPCION` días después de su inicio (parámetro, 3 por defecto) y las respuestas marcan la reserva vencida | Media | Francisco Andrade | `InscripcionService`, `inscripcion.repository.ts`, `ParametrosSistemaService` |
 | D-18 | PI-38 | Cambiar de plan creaba la pre-inscripción nueva con inicio hoy, así que le renovaba la reserva de cupo: cambiando de plan se podía guardar el lugar sin pagar indefinidamente. Corregido: una pre-inscripción conserva su fecha de inicio al cambiar de plan | Media | Francisco Andrade | `inscripcion.repository.ts` |
+| D-19 | PI-06 | La baja de una actividad no revisaba sus planes exclusivos: la actividad quedaba dada de baja y esos planes seguían vigentes y ofrecidos, pero inscribir en ellos fallaba porque ya no tenían horarios. Corregido: la baja responde 409 y nombra los planes vigentes exclusivos, que hay que dar de baja o pasar a otra actividad | Media | Francisco Andrade | `GestionServicioEntrenamientoService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -988,7 +997,7 @@ Los defectos se numeran D-01, D-02…
 
 | Caso  | Punto                                                                                                                                                                                                                                                                                                                                                 | Estado  |
 | :---- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
-| PI-06 | Baja de una actividad con horarios activos. Resuelto: se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, la baja de la actividad da de baja también sus horarios en el mismo paso | Cerrado |
+| PI-06 | Baja de una actividad con horarios activos. Resuelto: se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, la baja de la actividad da de baja también sus horarios en el mismo paso. También se bloquea si tiene planes vigentes exclusivos (US-11, decidido el 11/10/2026) | Cerrado |
 | PI-14 | La profesora carga pre-inscripciones (US-05) y necesita ver los planes. Resuelto: la matriz inicial le da `PLANES_VER` y `ALUMNOS_EDITAR`. En una base ya cargada la carga del catálogo no se los agrega, porque los permisos ya existían: mientras estemos en desarrollo se regenera la base (`DESPLIEGUE.md`), y cuando Neon tenga datos reales irá una migración de datos (`seguridad.md`, regla 10)                                                      | Cerrado |
 | PI-18 | La profesora todavía no consulta ni edita alumnos: US-10 le permite ver solo a los que tiene a cargo, y eso sale de las inscripciones. Resuelto en PI-25: ve y edita solo a los alumnos con una inscripción vigente a su cargo                                                                                                                         | Cerrado |
 | PI-19 | La activación, la baja y la reactivación se probaron sobre el componente; PI-21 y PI-22 ahora las cubren también por HTTP                                                                                                                                                                                                                           | Cerrado |
@@ -1042,3 +1051,4 @@ Los defectos se numeran D-01, D-02…
 |   2.3   | 11/10/2026 | PI-38: paso 6 (cambiar de plan no renueva la reserva) y test G-27; defecto D-18 | Francisco Andrade |
 |   2.4   | 11/10/2026 | Caso PI-40 y tests H-07 a H-09: el cobro aplica el precio vigente el día del cobro. PI-13 y la US-12 pasan a automatizadas por completo | Francisco Andrade |
 |   2.5   | 11/10/2026 | Caso PI-41 y tests G-28 a G-31: el detalle de la baja con el motivo OTRO; punto a confirmar de PI-41 cerrado | Francisco Andrade |
+|   2.6   | 11/10/2026 | PI-06: pasos 6 y 7 (los planes exclusivos vigentes frenan la baja de la actividad) y tests B-17 y B-18; PI-06 pasa a cubrir US-11; defecto D-19 | Francisco Andrade |
