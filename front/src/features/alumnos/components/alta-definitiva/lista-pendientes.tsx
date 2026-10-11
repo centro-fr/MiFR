@@ -1,0 +1,214 @@
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { SinDato } from "@/features/alumnos/components/seccion-ficha";
+import {
+  calcularEdad,
+  formatearDiaDeTimestamp,
+  formatearDni,
+  formatearFecha,
+  inicialesDe,
+  textoEdad,
+} from "@/features/alumnos/utils/formato-ficha";
+import { actividadesDe, formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
+import type { PreInscripcionPendiente } from "@/types/alta-definitiva";
+
+const MAYORIA_DE_EDAD = 18;
+
+const CLASE_VER_FICHA =
+  "inline-flex min-h-[44px] items-center justify-center rounded-xl bg-slate-100 px-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15";
+const CLASE_CONFIRMAR = "min-h-[44px] rounded-xl bg-primary px-3 font-extrabold text-white shadow-md hover:bg-primary-dark";
+
+interface AccionesProps {
+  pendiente: PreInscripcionPendiente;
+  puedeConfirmar: boolean;
+  onConfirmar: (pendiente: PreInscripcionPendiente) => void;
+}
+
+function Acciones({ pendiente, puedeConfirmar, onConfirmar }: AccionesProps) {
+  const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
+  return (
+    <>
+      {/* La ficha es la de US-08: tiene el mismo "Volver al listado". */}
+      <Link to={`/app/alumnos/baja/${pendiente.idAlumno}`} aria-label={`Ver ficha de ${nombre}`} className={CLASE_VER_FICHA}>
+        Ver ficha
+      </Link>
+      {puedeConfirmar && (
+        <Button type="button" onClick={() => onConfirmar(pendiente)} aria-label={`Confirmar alta de ${nombre}`} className={CLASE_CONFIRMAR}>
+          Confirmar alta
+        </Button>
+      )}
+    </>
+  );
+}
+
+function Avatar({ pendiente }: { pendiente: PreInscripcionPendiente }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-tr from-primary-dark to-primary text-sm font-bold text-white"
+    >
+      {inicialesDe(pendiente.nombre, pendiente.apellido)}
+    </span>
+  );
+}
+
+/** Edad, o "Menor · Tutor/a: …" para quien entra al sistema con su tutor. */
+function Identidad({ pendiente }: { pendiente: PreInscripcionPendiente }) {
+  const edad = calcularEdad(pendiente.fechaNacimiento);
+  if (edad < MAYORIA_DE_EDAD && pendiente.tutor) {
+    return (
+      <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+        {textoEdad(edad)} · Tutor/a: {pendiente.tutor.nombre} {pendiente.tutor.apellido}
+      </span>
+    );
+  }
+  return <span className="text-sm text-muted-foreground">{textoEdad(edad)}</span>;
+}
+
+/** El teléfono del alumno o, si no tiene, el de su tutor/a. */
+function Contacto({ pendiente }: { pendiente: PreInscripcionPendiente }) {
+  if (pendiente.telefono) return <span className="font-semibold">{pendiente.telefono}</span>;
+  if (pendiente.tutor?.telefono) {
+    return (
+      <span className="flex flex-col">
+        <span className="font-semibold">{pendiente.tutor.telefono}</span>
+        <span className="text-xs text-muted-foreground">Tel. del tutor/a</span>
+      </span>
+    );
+  }
+  return <SinDato texto="Sin teléfono" />;
+}
+
+function FilaPendiente(props: AccionesProps) {
+  const { pendiente } = props;
+  return (
+    <TableRow>
+      <TableHead scope="row" className="py-3 font-normal">
+        <div className="flex items-center gap-3">
+          <Avatar pendiente={pendiente} />
+          <div className="flex min-w-0 flex-col">
+            <span className="font-bold text-slate-900 dark:text-white">
+              {pendiente.nombre} {pendiente.apellido}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {pendiente.dni ? `DNI ${formatearDni(pendiente.dni)}` : "Sin DNI"}
+              {pendiente.email && ` · ${pendiente.email}`}
+            </span>
+          </div>
+        </div>
+      </TableHead>
+      <TableCell>
+        <div className="flex flex-col">
+          <Identidad pendiente={pendiente} />
+          <span className="text-xs text-muted-foreground">{formatearFecha(pendiente.fechaNacimiento)}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <Contacto pendiente={pendiente} />
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="font-bold text-slate-900 dark:text-white">{pendiente.nombrePlan}</span>
+          <span className="text-xs text-muted-foreground">{formatearPrecio(pendiente.precio)}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="font-bold text-slate-900 dark:text-white">{pendiente.profesora}</span>
+          <span className="text-xs font-semibold text-primary-dark dark:text-pink-300">{textoHorarios(pendiente.horarios)}</span>
+          <span className="text-xs text-muted-foreground">{actividadesDe(pendiente.horarios)}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-sm">{formatearDiaDeTimestamp(pendiente.fechaPreInscripcion)}</TableCell>
+      <TableCell>
+        <div className="flex justify-end gap-2">
+          <Acciones {...props} />
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function DatoTarjeta({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className="text-muted-foreground">{etiqueta}</dt>
+      <dd className="text-right font-bold text-slate-900 dark:text-white">{children}</dd>
+    </div>
+  );
+}
+
+function TarjetaPendiente(props: AccionesProps) {
+  const { pendiente } = props;
+  return (
+    <li className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-3.5 dark:bg-surface-low">
+      <div className="flex items-center gap-2.5">
+        <Avatar pendiente={pendiente} />
+        <div className="flex min-w-0 flex-col">
+          <span className="font-bold text-slate-900 dark:text-white">
+            {pendiente.nombre} {pendiente.apellido}
+          </span>
+          <Identidad pendiente={pendiente} />
+        </div>
+      </div>
+      <dl className="flex flex-col gap-1.5 rounded-xl bg-slate-50 p-2.5 text-sm dark:bg-white/5">
+        <DatoTarjeta etiqueta="Plan">
+          {pendiente.nombrePlan} ({formatearPrecio(pendiente.precio)})
+        </DatoTarjeta>
+        <DatoTarjeta etiqueta="Profesora">{pendiente.profesora}</DatoTarjeta>
+        <DatoTarjeta etiqueta="Horario">{textoHorarios(pendiente.horarios)}</DatoTarjeta>
+        <DatoTarjeta etiqueta="Contacto">
+          <Contacto pendiente={pendiente} />
+        </DatoTarjeta>
+        <DatoTarjeta etiqueta="Pre-inscripción">{formatearDiaDeTimestamp(pendiente.fechaPreInscripcion)}</DatoTarjeta>
+      </dl>
+      <div className="grid grid-cols-2 gap-2">
+        <Acciones {...props} />
+      </div>
+    </li>
+  );
+}
+
+interface ListaPendientesProps {
+  pendientes: PreInscripcionPendiente[];
+  puedeConfirmar: boolean;
+  onConfirmar: (pendiente: PreInscripcionPendiente) => void;
+}
+
+// Tabla en escritorio y tarjetas en mobile, como el diseño. Se oculta con CSS (display: none),
+// así el lector de pantalla solo lee la versión visible.
+export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: ListaPendientesProps) {
+  return (
+    <>
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-white shadow-sm md:block dark:bg-surface-low">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col">Alumno</TableHead>
+              <TableHead scope="col">Edad</TableHead>
+              <TableHead scope="col">Contacto</TableHead>
+              <TableHead scope="col">Plan elegido</TableHead>
+              <TableHead scope="col">Profesora y horario</TableHead>
+              <TableHead scope="col">Pre-inscripción</TableHead>
+              <TableHead scope="col" className="text-right">
+                Acciones
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pendientes.map((pendiente) => (
+              <FilaPendiente key={pendiente.idInscripcion} pendiente={pendiente} puedeConfirmar={puedeConfirmar} onConfirmar={onConfirmar} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <ul aria-label="Pre-inscripciones pendientes" className="flex flex-col gap-3 md:hidden">
+        {pendientes.map((pendiente) => (
+          <TarjetaPendiente key={pendiente.idInscripcion} pendiente={pendiente} puedeConfirmar={puedeConfirmar} onConfirmar={onConfirmar} />
+        ))}
+      </ul>
+    </>
+  );
+}

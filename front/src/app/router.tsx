@@ -68,6 +68,21 @@ export const router = createBrowserRouter([
       },
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
       {
+        // Alta definitiva (US-07): pre-inscripciones que esperan su primer pago. Actor: la propietaria.
+        path: "alumnos/pendientes",
+        element: (
+          <PermissionGuard roles={["PROPIETARIA"]} permission="ALUMNOS_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/alumnos/pages/pendientes-de-alta-page"), "PendientesDeAltaPage"),
+          },
+        ],
+      },
+      {
         // Baja de alumno (US-08): ficha del alumno con la acción de baja. Se entra desde el
         // listado (US-10, lo implementa otro equipo).
         path: "alumnos/baja/:idAlumno",

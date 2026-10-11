@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/utils/cn";
+import { useContadoresMenu } from "./use-contadores-menu";
 import { useOwnerNavigation, type ItemConEstado, type Miga } from "./use-owner-navigation";
 import type { RoleCode } from "@/types/auth";
 
@@ -72,6 +73,25 @@ function entradaEscalonada(indice: number): EntradaEscalonada {
   return { className: "animate-drawer-item", style: { animationDelay: `${Math.min(indice, 10) * 22}ms` } };
 }
 
+/**
+ * Número de pendientes junto a una opción (en ámbar, como el diseño). El lector de pantalla
+ * lo lee como parte del nombre del enlace: "Pendientes de alta, 2 pendientes".
+ */
+function Contador({ valor, className }: { valor?: number; className?: string }) {
+  if (!valor) return null;
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={cn("min-w-5 rounded-full bg-amber-400 px-1.5 text-center text-xs leading-5 font-bold text-amber-950", className)}
+      >
+        {valor}
+      </span>
+      <span className="sr-only">, {valor === 1 ? "1 pendiente" : `${valor} pendientes`}</span>
+    </>
+  );
+}
+
 interface PropsItem {
   item: ItemConEstado;
   alNavegar: () => void;
@@ -109,9 +129,11 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton isActive={item.esActivo} tooltip={item.etiqueta} className={CLASES_ITEM}>
+          <SidebarMenuButton isActive={item.esActivo} tooltip={item.etiqueta} className={cn(CLASES_ITEM, "relative")}>
             <Icono aria-hidden="true" />
             <span>{item.etiqueta}</span>
+            {/* Contraído solo se ve el ícono: el número va como punto en la esquina. */}
+            <Contador valor={item.contador} className="absolute top-0 right-0 min-w-4 px-1 text-[10px] leading-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
@@ -119,6 +141,7 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
             <DropdownMenuItem key={hijo.to} asChild>
               <Link to={hijo.to} aria-current={hijo.esActivo ? "page" : undefined}>
                 {hijo.etiqueta}
+                <Contador valor={hijo.contador} className="ml-auto" />
               </Link>
             </DropdownMenuItem>
           ))}
@@ -146,9 +169,11 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
       >
         <Icono aria-hidden="true" />
         <span>{item.etiqueta}</span>
+        {/* Abierto, el número se ve en la sub-opción: no se repite en el grupo. */}
+        {!abierto && <Contador valor={item.contador} className="ml-auto" />}
         <ChevronDown
           aria-hidden="true"
-          className={cn("ml-auto transition-transform duration-200 motion-reduce:transition-none", abierto && "rotate-180")}
+          className={cn("transition-transform duration-200 motion-reduce:transition-none", abierto && "rotate-180", (abierto || !item.contador) && "ml-auto")}
         />
       </SidebarMenuButton>
       {/* Altura animada con grid-rows 0fr→1fr; `inert` cerrado saca a las hijas del tab. */}
@@ -169,6 +194,7 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
               >
                 <Link to={hijo.to} onClick={alNavegar} aria-current={hijo.esActivo ? "page" : undefined}>
                   <span>{hijo.etiqueta}</span>
+                  <Contador valor={hijo.contador} className="ml-auto" />
                 </Link>
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
@@ -349,7 +375,7 @@ interface OwnerLayoutProps {
 
 export function OwnerLayout({ children }: OwnerLayoutProps) {
   const { pathname } = useLocation();
-  const { items, migas } = useOwnerNavigation();
+  const { items, migas } = useOwnerNavigation(useContadoresMenu());
   // Solo importa en el primer render: el Provider recuerda el estado después.
   const [abiertoInicial] = useState(leerSidebarAbierto);
 

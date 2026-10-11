@@ -1,4 +1,5 @@
 import { db, type HorarioMock, type ProfesoraMock } from "@/mocks/db";
+import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { ROLES } from "@/mocks/data/catalogo-permisos";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
 
@@ -50,5 +51,27 @@ export function horarioConDatos(horario: HorarioMock) {
     actividad,
     profesora,
     cupo_maximo_efectivo: horario.cupo_maximo ?? actividad.cupo_maximo,
+  };
+}
+
+// Inscripcion del back: con alumno, plan, precio, profesora y horarios.
+export function inscripcionConDatos(inscripcion: InscripcionMock) {
+  const { ids_horarios, ...columnas } = inscripcion;
+  const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno)!;
+  const usuario = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario)!;
+  const profesora = profesoraConNombre(db.profesoras.find((p) => p.id_profesora === inscripcion.id_profesora)!);
+  return {
+    ...columnas,
+    alumno: { id_alumno: alumno.id_alumno, estado: alumno.estado, usuario: { nombre: usuario.nombre, apellido: usuario.apellido } },
+    plan: db.planes.find((p) => p.id_plan === inscripcion.id_plan)!,
+    plan_precio: db.planPrecios.find((p) => p.id_plan_precio === inscripcion.id_plan_precio)!,
+    profesora: { id_profesora: profesora.id_profesora, usuario: profesora.usuario },
+    horarios: ids_horarios.map((id_horario) => ({
+      id_inscripcion: inscripcion.id_inscripcion,
+      id_horario,
+      fecha_desde: inscripcion.fecha_inicio,
+      fecha_hasta: null,
+      horario: horarioConDatos(db.horarios.find((h) => h.id_horario === id_horario)!),
+    })),
   };
 }
