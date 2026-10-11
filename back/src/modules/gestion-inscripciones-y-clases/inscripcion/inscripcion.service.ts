@@ -12,6 +12,7 @@ import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/
 import type { IInfoProgreso } from "../../gestion-rutinas-y-progreso/registro-progreso/interface/i-info-progreso.js";
 import type { HorarioRespuesta } from "../../gestion-servicio-entrenamiento/horario/horario.types.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
+import type { IInfoParametros } from "../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { Plan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
 import type {
@@ -30,10 +31,12 @@ import type {
   FiltroInscripciones,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscripcionGuardada,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 
 const ESTADOS_VIGENTES: EstadoInscripcion[] = ["PREINSCRIPTA", "ACTIVA"];
+const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
 
 type ReglasDelPlan = Pick<Plan, "tipo" | "clases_por_semana" | "profesora_unica" | "id_actividad_exclusiva">;
 
@@ -68,6 +71,27 @@ function verificarMedidas(horarios: HorarioRespuesta[], medidas: CrearInscripcio
   }
 }
 
+// hoy y los días de DIAS_RESERVA_PREINSCRIPCION, leídos una vez por operación.
+interface PlazoDeReserva {
+  hoy: Date;
+  dias: number;
+}
+
+function sumarDias(fecha: Date, dias: number): Date {
+  return new Date(fecha.getTime() + dias * UN_DIA_EN_MS);
+}
+
+// La pre-inscripción más vieja que todavía guarda su lugar es la que empezó hace DIAS_RESERVA_PREINSCRIPCION días.
+function inicioDeReservasVigentes({ hoy, dias }: PlazoDeReserva): Date {
+  return sumarDias(hoy, -dias);
+}
+
+function conReserva(inscripcion: InscripcionGuardada, { hoy, dias }: PlazoDeReserva): InscripcionConDatos {
+  if (inscripcion.estado !== "PREINSCRIPTA") return { ...inscripcion, reserva: null };
+  const vence = sumarDias(inscripcion.fecha_inicio, dias);
+  return { ...inscripcion, reserva: { vence, vencida: vence < hoy } };
+}
+
 export class InscripcionService implements IInfoInscripciones {
   constructor(
     private readonly repositorio: InscripcionRepository,
@@ -76,6 +100,7 @@ export class InscripcionService implements IInfoInscripciones {
     private readonly horarios: IInfoHorarios,
     private readonly profesoras: IInfoProfesores,
     private readonly progreso: IInfoProgreso,
+    private readonly parametros: IInfoParametros,
     private readonly unidadDeTrabajo: IUnidadDeTrabajo,
   ) {}
 
@@ -88,10 +113,16 @@ export class InscripcionService implements IInfoInscripciones {
       estado: "PREINSCRIPTA",
     });
     verificarMedidas(horarios, medidas);
+    const plazo = await this.plazoDeReserva();
 
     return this.unidadDeTrabajo.ejecutar(async () => {
-      const resultado = await this.repositorio.crear(datos, input.ids_horarios, fechaActualArgentina());
-      const inscripcion = this.resolverResultado(resultado);
+      const resultado = await this.repositorio.crear(
+        datos,
+        input.ids_horarios,
+        plazo.hoy,
+        inicioDeReservasVigentes(plazo),
+      );
+      const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
       if (medidas) {
         await this.progreso.registrarMedicionInicial({
           idAlumno: datos.id_alumno,
@@ -125,26 +156,28 @@ export class InscripcionService implements IInfoInscripciones {
 
   // US-10: la profesora solo ve las inscripciones que tiene a cargo; la propietaria, todas.
   async listar(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {
-    if (solicitante.esPropietaria) return this.repositorio.listar(filtro);
+    if (solicitante.esPropietaria) return this.conReservas(await this.repositorio.listar(filtro));
 
     const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
     if (!profesora) return [];
     if (filtro.id_profesora !== undefined && filtro.id_profesora !== profesora.id_profesora) return [];
-    return this.repositorio.listar({ ...filtro, id_profesora: profesora.id_profesora });
+    return this.conReservas(
+      await this.repositorio.listar({ ...filtro, id_profesora: profesora.id_profesora }),
+    );
   }
 
   async obtenerPara(id: number, solicitante: Solicitante): Promise<InscripcionConDatos> {
     const inscripcion = await this.obtenerPorId(id);
-    if (solicitante.esPropietaria) return inscripcion;
-
-    const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
-    if (profesora?.id_profesora !== inscripcion.id_profesora) {
-      throw new ForbiddenError("Solo puede ver las inscripciones que tiene a cargo");
+    if (!solicitante.esPropietaria) {
+      const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
+      if (profesora?.id_profesora !== inscripcion.id_profesora) {
+        throw new ForbiddenError("Solo puede ver las inscripciones que tiene a cargo");
+      }
     }
-    return inscripcion;
+    return conReserva(inscripcion, await this.plazoDeReserva());
   }
 
-  async obtenerPorId(id: number): Promise<InscripcionConDatos> {
+  async obtenerPorId(id: number): Promise<InscripcionGuardada> {
     const inscripcion = await this.repositorio.buscarPorId(id);
     if (!inscripcion) throw new NotFoundError("Inscripción no encontrada");
     return inscripcion;
@@ -154,8 +187,8 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.buscarParaCobro(id);
   }
 
-  listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
-    return this.repositorio.listarVigentesPorAlumno(idAlumno);
+  async listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.conReservas(await this.repositorio.listarVigentesPorAlumno(idAlumno));
   }
 
   async activar(id: number): Promise<InscripcionConDatos> {
@@ -163,10 +196,12 @@ export class InscripcionService implements IInfoInscripciones {
     if (actual.estado === "BAJA") throw new ConflictError("No se puede activar una inscripción dada de baja");
     // El alta es la del primer pago (US-07): con la inscripción ya activa no se vuelve a tocar al alumno ni a
     // su tutor, para no reactivar una cuenta que la propietaria haya desactivado después.
-    if (actual.estado === "ACTIVA") return actual;
+    if (actual.estado === "ACTIVA") return { ...actual, reserva: null };
 
-    const resultado = await this.repositorio.activar(id);
-    const inscripcion = this.resolverResultado(resultado);
+    // Con la reserva vencida el lugar pudo quedar para otro: el alta vuelve a pedir cupo (US-07).
+    const plazo = await this.plazoDeReserva();
+    const resultado = await this.repositorio.activar(id, inicioDeReservasVigentes(plazo));
+    const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
     await this.alumnos.activar(inscripcion.id_alumno);
     return inscripcion;
   }
@@ -188,7 +223,7 @@ export class InscripcionService implements IInfoInscripciones {
     const existente = await this.repositorio.buscarVigentePorAlumno(idAlumno);
     if (existente?.estado === "ACTIVA") {
       await this.alumnos.reactivar(idAlumno);
-      return existente;
+      return { ...existente, reserva: null };
     }
     if (existente) {
       throw new ConflictError("El alumno dado de baja ya tiene una pre-inscripción vigente");
@@ -202,8 +237,14 @@ export class InscripcionService implements IInfoInscripciones {
       },
       true,
     );
-    const resultado = await this.repositorio.reactivar(datos, input.ids_horarios, fechaActualArgentina());
-    const inscripcion = this.resolverResultado(resultado);
+    const plazo = await this.plazoDeReserva();
+    const resultado = await this.repositorio.reactivar(
+      datos,
+      input.ids_horarios,
+      plazo.hoy,
+      inicioDeReservasVigentes(plazo),
+    );
+    const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
     const alumnoActual = await this.alumnos.buscarPorId(idAlumno);
     if (alumnoActual?.estado === "BAJA") await this.alumnos.reactivar(idAlumno);
     return inscripcion;
@@ -219,20 +260,28 @@ export class InscripcionService implements IInfoInscripciones {
       id_alumno: actual.id_alumno,
       estado: actual.estado === "ACTIVA" ? "ACTIVA" : "PREINSCRIPTA",
     });
+    const plazo = await this.plazoDeReserva();
     const resultado = await this.repositorio.cambiarPlan(
       actual,
       input,
       nuevoPlan.id_plan_precio,
       this.fechasDeBaja(),
+      inicioDeReservasVigentes(plazo),
     );
-    return this.resolverResultado(resultado);
+    return conReserva(this.resolverResultado(resultado), plazo);
   }
 
   async actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos> {
     const actual = await this.obtenerInscripcionVigente(id);
     await this.validarHorarios(actual.plan, actual.id_profesora, input.ids_horarios);
-    const resultado = await this.repositorio.actualizarHorarios(actual, input, fechaActualArgentina());
-    return this.resolverResultado(resultado);
+    const plazo = await this.plazoDeReserva();
+    const resultado = await this.repositorio.actualizarHorarios(
+      actual,
+      input,
+      plazo.hoy,
+      inicioDeReservasVigentes(plazo),
+    );
+    return conReserva(this.resolverResultado(resultado), plazo);
   }
 
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]> {
@@ -247,7 +296,24 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.contarInscriptosVigentes(idsHorarios);
   }
 
-  private async obtenerInscripcionVigente(id: number): Promise<InscripcionConDatos> {
+  async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {
+    const plazo = await this.plazoDeReserva();
+    return this.repositorio.contarLugaresOcupados(idsHorarios, inicioDeReservasVigentes(plazo));
+  }
+
+  private async plazoDeReserva(): Promise<PlazoDeReserva> {
+    return {
+      hoy: fechaActualArgentina(),
+      dias: await this.parametros.obtener("DIAS_RESERVA_PREINSCRIPCION"),
+    };
+  }
+
+  private async conReservas(inscripciones: InscripcionGuardada[]): Promise<InscripcionConDatos[]> {
+    const plazo = await this.plazoDeReserva();
+    return inscripciones.map((inscripcion) => conReserva(inscripcion, plazo));
+  }
+
+  private async obtenerInscripcionVigente(id: number): Promise<InscripcionGuardada> {
     const inscripcion = await this.obtenerPorId(id);
     if (!ESTADOS_VIGENTES.includes(inscripcion.estado)) {
       throw new ConflictError("La inscripción ya está dada de baja");
@@ -325,7 +391,7 @@ export class InscripcionService implements IInfoInscripciones {
 
   private resolverResultado(
     resultado: Awaited<ReturnType<InscripcionRepository["activar"]>>,
-  ): InscripcionConDatos {
+  ): InscripcionGuardada {
     if (resultado.resultado === "ok") return resultado.inscripcion;
     if (resultado.resultado === "sin-cupo") {
       throw new ConflictError("No hay cupo disponible en uno o más horarios");

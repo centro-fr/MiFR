@@ -13,7 +13,7 @@ import {
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
-  type InscripcionConDatos,
+  type InscripcionGuardada,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
@@ -32,7 +32,7 @@ type DatosNuevaInscripcion = Pick<
   | "observaciones"
 > & { fecha_inicio: Date; id_plan_precio: number; estado: "PREINSCRIPTA" | "ACTIVA" };
 type ResultadoOperacion =
-  | { resultado: "ok"; inscripcion: InscripcionConDatos }
+  | { resultado: "ok"; inscripcion: InscripcionGuardada }
   | { resultado: "plan-duplicado" }
   | { resultado: "sin-cupo" }
   | { resultado: "no-vigente" };
@@ -74,27 +74,49 @@ async function obtenerCupos(
   );
 }
 
-async function hayCupo(
-  transaccion: Transaccion,
+// Una pre-inscripción guarda su lugar hasta DIAS_RESERVA_PREINSCRIPCION días después de su inicio. Pasado
+// ese plazo sin el primer pago, sigue vigente pero deja de ocupar cupo: el lugar queda para otro alumno y,
+// si paga después, el alta vuelve a pedir cupo. inicioReservas es el inicio más viejo que todavía reserva.
+function ocupanLugar(inicioReservas: Date): Prisma.inscripcionesWhereInput {
+  return {
+    OR: [{ estado: "ACTIVA" }, { estado: "PREINSCRIPTA", fecha_inicio: { gte: inicioReservas } }],
+  };
+}
+
+async function contarLugaresOcupados(
+  cliente: Transaccion,
   idsHorarios: number[],
+  inicioReservas: Date,
   excluirInscripcion?: number,
-): Promise<boolean> {
-  const cupos = await obtenerCupos(transaccion, idsHorarios);
-  if (!cupos) return false;
-  const ocupacion = await transaccion.inscripcion_horarios.groupBy({
+): Promise<Map<number, number>> {
+  const ocupacion = await cliente.inscripcion_horarios.groupBy({
     by: ["id_horario"],
     where: {
       id_horario: { in: idsHorarios },
       fecha_hasta: null,
       inscripcion: {
-        estado: { in: [...ESTADOS_VIGENTES] },
+        ...ocupanLugar(inicioReservas),
         ...(excluirInscripcion === undefined ? {} : { id_inscripcion: { not: excluirInscripcion } }),
       },
     },
     _count: { id_horario: true },
   });
-  const cantidadPorHorario = new Map(
-    ocupacion.map(({ id_horario, _count }) => [id_horario, _count.id_horario]),
+  return new Map(ocupacion.map(({ id_horario, _count }) => [id_horario, _count.id_horario]));
+}
+
+async function hayCupo(
+  transaccion: Transaccion,
+  idsHorarios: number[],
+  inicioReservas: Date,
+  excluirInscripcion?: number,
+): Promise<boolean> {
+  const cupos = await obtenerCupos(transaccion, idsHorarios);
+  if (!cupos) return false;
+  const cantidadPorHorario = await contarLugaresOcupados(
+    transaccion,
+    idsHorarios,
+    inicioReservas,
+    excluirInscripcion,
   );
 
   return idsHorarios.every((idHorario) => {
@@ -123,7 +145,7 @@ function mapearDatosDeCreacion(
 export class InscripcionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  buscarPorId(id: number): Promise<InscripcionConDatos | null> {
+  buscarPorId(id: number): Promise<InscripcionGuardada | null> {
     return this.prisma.inscripciones.findUnique({
       where: { id_inscripcion: id },
       include: INCLUIR_DATOS_INSCRIPCION,
@@ -137,7 +159,7 @@ export class InscripcionRepository {
     });
   }
 
-  listar(filtro: FiltroInscripciones): Promise<InscripcionConDatos[]> {
+  listar(filtro: FiltroInscripciones): Promise<InscripcionGuardada[]> {
     return this.prisma.inscripciones.findMany({
       where: {
         ...(filtro.id_alumno === undefined ? {} : { id_alumno: filtro.id_alumno }),
@@ -159,7 +181,12 @@ export class InscripcionRepository {
     });
   }
 
-  async crear(input: DatosNuevaInscripcion, idsHorarios: number[], fecha: Date): Promise<ResultadoOperacion> {
+  async crear(
+    input: DatosNuevaInscripcion,
+    idsHorarios: number[],
+    fecha: Date,
+    inicioReservas: Date,
+  ): Promise<ResultadoOperacion> {
     return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
       const duplicada = await transaccion.inscripciones.findFirst({
@@ -171,7 +198,7 @@ export class InscripcionRepository {
         select: { id_inscripcion: true },
       });
       if (duplicada) return { resultado: "plan-duplicado" };
-      if (!(await hayCupo(transaccion, idsHorarios))) return { resultado: "sin-cupo" };
+      if (!(await hayCupo(transaccion, idsHorarios, inicioReservas))) return { resultado: "sin-cupo" };
 
       const inscripcion = await transaccion.inscripciones.create({
         data: {
@@ -187,7 +214,7 @@ export class InscripcionRepository {
     });
   }
 
-  listarVigentesPorAlumno(idAlumno: number): Promise<InscripcionConDatos[]> {
+  listarVigentesPorAlumno(idAlumno: number): Promise<InscripcionGuardada[]> {
     return this.prisma.inscripciones.findMany({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
       include: INCLUIR_DATOS_INSCRIPCION,
@@ -195,7 +222,7 @@ export class InscripcionRepository {
     });
   }
 
-  async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionConDatos | null> {
+  async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionGuardada | null> {
     return this.prisma.inscripciones.findFirst({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
       include: INCLUIR_DATOS_INSCRIPCION,
@@ -203,7 +230,7 @@ export class InscripcionRepository {
     });
   }
 
-  async activar(id: number): Promise<ResultadoOperacion> {
+  async activar(id: number, inicioReservas: Date): Promise<ResultadoOperacion> {
     const actual = await this.buscarPorId(id);
     if (!actual) return { resultado: "no-vigente" };
 
@@ -217,7 +244,7 @@ export class InscripcionRepository {
         select: { estado: true },
       });
       if (!vigente || vigente.estado === "BAJA") return { resultado: "no-vigente" };
-      if (!(await hayCupo(transaccion, idsHorarios, id))) return { resultado: "sin-cupo" };
+      if (!(await hayCupo(transaccion, idsHorarios, inicioReservas, id))) return { resultado: "sin-cupo" };
 
       const inscripcion = await transaccion.inscripciones.update({
         where: { id_inscripcion: id },
@@ -267,6 +294,7 @@ export class InscripcionRepository {
     input: DatosNuevaInscripcion,
     idsHorarios: number[],
     fecha: Date,
+    inicioReservas: Date,
   ): Promise<ResultadoOperacion> {
     return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
@@ -279,7 +307,7 @@ export class InscripcionRepository {
         include: INCLUIR_DATOS_INSCRIPCION,
       });
       if (existente) return { resultado: "ok", inscripcion: existente };
-      if (!(await hayCupo(transaccion, idsHorarios))) return { resultado: "sin-cupo" };
+      if (!(await hayCupo(transaccion, idsHorarios, inicioReservas))) return { resultado: "sin-cupo" };
       const inscripcion = await transaccion.inscripciones.create({
         data: {
           ...mapearDatosDeCreacion(input, "ACTIVA"),
@@ -295,10 +323,11 @@ export class InscripcionRepository {
   }
 
   async cambiarPlan(
-    actual: InscripcionConDatos,
+    actual: InscripcionGuardada,
     nuevoPlan: Omit<CambiarPlanInput, "fecha_inicio">,
     idPlanPrecio: number,
     fechas: FechasDeBaja,
+    inicioReservas: Date,
   ): Promise<ResultadoOperacion> {
     const { dia } = fechas;
     const idsHorarios = nuevoPlan.ids_horarios;
@@ -327,7 +356,7 @@ export class InscripcionRepository {
         select: { id_inscripcion: true },
       });
       if (duplicada) return { resultado: "plan-duplicado" };
-      if (!(await hayCupo(transaccion, idsHorarios, actual.id_inscripcion))) {
+      if (!(await hayCupo(transaccion, idsHorarios, inicioReservas, actual.id_inscripcion))) {
         return { resultado: "sin-cupo" };
       }
 
@@ -359,9 +388,10 @@ export class InscripcionRepository {
   }
 
   async actualizarHorarios(
-    actual: InscripcionConDatos,
+    actual: InscripcionGuardada,
     input: ActualizarHorariosInput,
     fecha: Date,
+    inicioReservas: Date,
   ): Promise<ResultadoOperacion> {
     const horariosAnteriores = actual.horarios
       .filter(({ fecha_hasta }) => fecha_hasta === null)
@@ -376,7 +406,7 @@ export class InscripcionRepository {
         select: { estado: true },
       });
       if (!vigente || vigente.estado === "BAJA") return { resultado: "no-vigente" };
-      if (!(await hayCupo(transaccion, input.ids_horarios, actual.id_inscripcion))) {
+      if (!(await hayCupo(transaccion, input.ids_horarios, inicioReservas, actual.id_inscripcion))) {
         return { resultado: "sin-cupo" };
       }
 
@@ -467,6 +497,12 @@ export class InscripcionRepository {
       _count: { id_horario: true },
     });
     return new Map(filas.map(({ id_horario, _count }) => [id_horario, _count.id_horario]));
+  }
+
+  // Lugares ocupados por horario con la misma regla que el alta: es lo que muestra la ocupación (US-04).
+  async contarLugaresOcupados(idsHorarios: number[], inicioReservas: Date): Promise<Map<number, number>> {
+    if (idsHorarios.length === 0) return new Map();
+    return contarLugaresOcupados(this.prisma, idsHorarios, inicioReservas);
   }
 
   private async agregarHorarios(

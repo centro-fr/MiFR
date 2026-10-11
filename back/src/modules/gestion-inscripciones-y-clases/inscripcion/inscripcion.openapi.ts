@@ -96,6 +96,20 @@ export const inscripcionSchema = z
         horario: horarioSchema,
       }),
     ),
+    reserva: z
+      .object({
+        vence: fechaSchema.openapi({
+          description: "Último día en que la pre-inscripción guarda su lugar sin el primer pago",
+        }),
+        vencida: z.boolean().openapi({
+          description: "true si ese día ya pasó: el lugar queda libre hasta que se confirme el primer pago",
+        }),
+      })
+      .nullable()
+      .openapi({
+        description:
+          "Solo en las PREINSCRIPTA (null en las demás). Vence DIAS_RESERVA_PREINSCRIPCION días después del inicio, un parámetro del sistema",
+      }),
   })
   .openapi("Inscripcion");
 
@@ -116,7 +130,8 @@ const respuestas = respuestaJson("Inscripcion", inscripcionSchema);
 const propietariaEditar = "Requiere sesión, rol PROPIETARIA y permiso `ALUMNOS_EDITAR`.";
 const reglasDeAlta =
   "El plan debe estar vigente y tener precio vigente; los horarios deben estar activos, ser de la misma profesora, " +
-  "respetar la actividad exclusiva y no superar el cupo disponible.";
+  "respetar la actividad exclusiva y no superar el cupo disponible. Las pre-inscripciones con la reserva vencida " +
+  "no ocupan cupo.";
 
 export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): void {
   const tags = ["Inscripciones"];

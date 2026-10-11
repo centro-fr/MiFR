@@ -19,6 +19,8 @@ import { AlumnoService } from "./modules/gestion-personas/alumno/alumno.service.
 import { HorarioRepository } from "./modules/gestion-servicio-entrenamiento/horario/horario.repository.js";
 import { HorarioService } from "./modules/gestion-servicio-entrenamiento/horario/horario.service.js";
 import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
+import { ParametrosSistemaRepository } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.repository.js";
+import { ParametrosSistemaService } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.service.js";
 import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
 import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
 import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
@@ -58,6 +60,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
   const planService = new PlanService(new PlanRepository(prisma), actividadService);
+  const parametrosService = new ParametrosSistemaService(new ParametrosSistemaRepository(prisma));
   const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
   const inscripcionService = new InscripcionService(
     new InscripcionRepository(prisma),
@@ -66,6 +69,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     horarioService,
     profesorService,
     new RegistroProgresoService(new RegistroProgresoRepository(prisma)),
+    parametrosService,
     new UnidadDeTrabajoPrisma(prisma),
   );
   const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
