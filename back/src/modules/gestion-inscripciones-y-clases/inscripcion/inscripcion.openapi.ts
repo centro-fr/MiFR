@@ -56,6 +56,7 @@ export const inscripcionSchema = z
     fecha_fin_estimado: fechaSchema.nullable(),
     estado: estadoInscripcionSchema,
     motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]).nullable(),
+    detalle_baja: z.string().nullable(),
     observaciones: z.string().nullable(),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
@@ -96,6 +97,20 @@ export const inscripcionSchema = z
         horario: horarioSchema,
       }),
     ),
+    reserva: z
+      .object({
+        vence: fechaSchema.openapi({
+          description: "Último día en que la pre-inscripción guarda su lugar sin el primer pago",
+        }),
+        vencida: z.boolean().openapi({
+          description: "true si ese día ya pasó: el lugar queda libre hasta que se confirme el primer pago",
+        }),
+      })
+      .nullable()
+      .openapi({
+        description:
+          "Solo en las PREINSCRIPTA (null en las demás). Vence DIAS_RESERVA_PREINSCRIPCION días después del inicio, un parámetro del sistema",
+      }),
   })
   .openapi("Inscripcion");
 
@@ -116,7 +131,8 @@ const respuestas = respuestaJson("Inscripcion", inscripcionSchema);
 const propietariaEditar = "Requiere sesión, rol PROPIETARIA y permiso `ALUMNOS_EDITAR`.";
 const reglasDeAlta =
   "El plan debe estar vigente y tener precio vigente; los horarios deben estar activos, ser de la misma profesora, " +
-  "respetar la actividad exclusiva y no superar el cupo disponible.";
+  "respetar la actividad exclusiva y no superar el cupo disponible. Las pre-inscripciones con la reserva vencida " +
+  "no ocupan cupo.";
 
 export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): void {
   const tags = ["Inscripciones"];
@@ -148,7 +164,9 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     description:
       `Requiere el permiso \`ALUMNOS_EDITAR\`. Una profesora solo pre-inscribe a su propio nombre ` +
       "(`id_profesora` es su perfil), sin cargo no, y alumnos que no tienen una inscripción vigente con otra " +
-      `profesora; si no, 403. ${reglasDeAlta}`,
+      `profesora; si no, 403. ${reglasDeAlta} ` +
+      "Si alguna actividad de los horarios tiene `requiere_medidas`, `medidas` (peso en kg y talla en cm) es " +
+      "obligatorio (400 si falta); se guarda como la primera medición del alumno, a nombre de la profesora a cargo.",
     request: {
       body: cuerpoJson(
         crearInscripcionSchema.openapi("CrearInscripcion", {
@@ -157,6 +175,7 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
             id_plan: 1,
             id_profesora: 1,
             ids_horarios: [1, 2],
+            medidas: { peso_kg: 62.5, talla_cm: 168 },
           },
         }),
       ),
@@ -182,7 +201,9 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Dar de baja al alumno",
-    description: `${propietariaEditar} La baja es lógica: conserva la inscripción y cierra sus horarios vigentes.`,
+    description:
+      `${propietariaEditar} La baja es lógica: conserva la inscripción y cierra sus horarios vigentes. ` +
+      "`detalle_baja` (opcional, hasta 200 caracteres) explica un motivo `OTRO`; con otro motivo responde 400.",
     request: {
       params: inscripcionIdParamSchema,
       body: cuerpoJson(darDeBajaAlumnoSchema),

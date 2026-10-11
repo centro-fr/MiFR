@@ -23,6 +23,8 @@ const nombre = textoSchema(60);
 const descripcion = textoOpcionalSchema(255, { multilinea: true }).optional();
 const modalidad = z.enum(["GRUPAL", "PERSONALIZADA"]);
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
+// US-05: la pre-inscripción en una actividad así exige peso y talla. Sin el campo, no los exige.
+const requiere_medidas = z.boolean().optional();
 
 export const crearActividadSchema = z
   .object({
@@ -31,6 +33,7 @@ export const crearActividadSchema = z
     descripcion,
     modalidad,
     cupo_maximo,
+    requiere_medidas,
   })
   .refine((data) => data.modalidad !== "PERSONALIZADA" || data.cupo_maximo != null, {
     message: "El cupo máximo es obligatorio para la modalidad PERSONALIZADA",
@@ -43,6 +46,7 @@ export const actualizarActividadSchema = z
     descripcion: descripcion.optional(),
     modalidad: modalidad.optional(),
     cupo_maximo: cupo_maximo.optional(),
+    requiere_medidas,
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Debe enviar al menos un campo para actualizar",

@@ -40,10 +40,19 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
   }
 
   // US-03: la baja de la actividad da de baja también sus horarios, salvo que alguno tenga alumnos
-  // inscriptos: a esos hay que reubicarlos antes (US-04). Actividad no conoce a Horario ni a
-  // Inscripcion en la vista arquitectónica, así que el subsistema es quien los cruza.
+  // inscriptos: a esos hay que reubicarlos antes (US-04). Tampoco se da de baja si tiene planes
+  // vigentes exclusivos (US-11): quedarían ofrecidos sin horarios donde inscribir. Actividad no conoce
+  // a Horario, Plan ni Inscripcion en la vista arquitectónica, así que el subsistema es quien los cruza.
   async darDeBajaActividad(id: number): Promise<Actividad> {
     await this.actividades.obtenerPorId(id);
+    const planesExclusivos = await this.planes.listar({ id_actividad_exclusiva: id });
+    if (planesExclusivos.length > 0) {
+      const nombres = planesExclusivos.map(({ nombre }) => nombre).join(", ");
+      throw new ConflictError(
+        `La actividad tiene planes vigentes que son solo de ella (${nombres}): ` +
+          "dalos de baja o pasalos a otra actividad antes de darla de baja",
+      );
+    }
     const horarios = await this.horarios.listar({ id_actividad: id });
     const inscriptos = await this.inscripciones.contarInscriptosVigentes(
       horarios.map(({ id_horario }) => id_horario),
@@ -91,9 +100,10 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     };
   }
 
-  // Horario no conoce a Inscripcion: los inscriptos los cuenta el subsistema, en una consulta.
+  // Horario no conoce a Inscripcion: los lugares ocupados los cuenta el subsistema, en una consulta, con
+  // la misma regla del cupo que usa el alta (las reservas vencidas no ocupan lugar).
   private async conOcupacion(horarios: HorarioRespuesta[]): Promise<HorarioConOcupacion[]> {
-    const inscriptosPorHorario = await this.inscripciones.contarInscriptosVigentes(
+    const inscriptosPorHorario = await this.inscripciones.contarLugaresOcupados(
       horarios.map(({ id_horario }) => id_horario),
     );
     return horarios.map((horario) => {

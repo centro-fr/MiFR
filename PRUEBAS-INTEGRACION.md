@@ -89,6 +89,7 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Dato                             | Cómo se carga                                                                                                                                                                                                                                                                                                          |
 | :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Roles, permisos y matriz inicial | Los mismos del seed de producción (`cargarCatalogoSeguridad`), antes de cada test                                                                                                                                                                                                                                      |
+| Parámetros del sistema | Los mismos del seed de producción (`cargarParametrosIniciales`), con su valor inicial, antes de cada test. Un test que necesita otro valor lo cambia en la base |
 | Usuarios                         | Fábrica `crearUsuario` (`back/src/__tests__/integracion/fabricas.ts`) con los roles y el estado que necesite cada test. Correos ficticios: `usuario1@example.com`…                                                                                                                                                     |
 | Sesión                           | `entorno.iniciarSesion(correo)`, que pasa por el login real con Google simulado                                                                                                                                                                                                                                        |
 | Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones           |
@@ -113,10 +114,10 @@ Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscrip
 
 **Actividades:**
 
-| Actividad                   | Código               | Modalidad     | Cupo     |
-| :-------------------------- | :------------------- | :------------ | :------- |
-| Funcional Grupal            | `FUNCIONAL`          | Grupal        | Sin cupo |
-| Entrenamiento Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4        |
+| Actividad                   | Código               | Modalidad     | Cupo     | Pide peso y talla |
+| :-------------------------- | :------------------- | :------------ | :------- | :---------------- |
+| Funcional Grupal            | `FUNCIONAL`          | Grupal        | Sin cupo | No                |
+| Entrenamiento Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4        | Sí                |
 
 **Horarios:**
 
@@ -163,25 +164,25 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | :---- | :-------------------------------------------------------- | :----: | :------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
 | US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10, PI-28, PI-29        | Sí, salvo PI-10 (Manual)                                                               |
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
-| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                           | Sí                                                                                     |
-| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27                      | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31                      | Sí, alumno, inscripción, horarios y cupos                                               |
+| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
+| US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38               | Sí                                                                                     |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39       | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35                                    | Sí                                                                                     |
-| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38                             | Sí                                                                                     |
+| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41                                    | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36               | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
-| US-11 | Alta y edición de planes vigentes                         |   2    | PI-11, PI-12, PI-14                                           | Sí                                                                                     |
-| US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13                                                  | Parcial: el precio aplicado al cobrar se prueba con el cobro (Sprint 3)                |
+| US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
+| US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
-| US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36                                                 | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
+| US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40                                          | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39                                                  | Parcial: restricciones de la base y datos bancarios iniciales; el flujo, cuando se monte el subsistema |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
-| US-18 | Cálculo del estado de habilitación del alumno             |   3    |                                                               |                                                                                        |
+| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39                                                         | Parcial: el parámetro `VENCIDOS_PUEDEN_ASISTIR`; el cálculo, con los calculadores       |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                                        |
-| US-21 | Registro automático de inasistencias                      |   3    |                                                               |                                                                                        |
+| US-21 | Registro automático de inasistencias                      |   3    | PI-39                                                         | Parcial: el parámetro `MINUTOS_CIERRE_ASISTENCIA`; el cierre, cuando exista            |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                               |                                                                                        |
 | US-23 | Informe mensual automático de honorarios                  |   4    |                                                               |                                                                                        |
 | US-24 | Registro de suplencias entre profesoras                   |   4    |                                                               |                                                                                        |
@@ -212,14 +213,14 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-03         | Permisos sobre actividades y horarios                              | US-01 a US-04       | Servicios          | Comunes + demostración (paso 4)                            | Sí           |
 | PI-04         | Actividad personalizada → horario con cupo heredado                | US-03, US-04        | Servicios          | Demostración                                               | Sí           |
 | PI-05         | Validaciones al asignar profesora y horario                        | US-02, US-04        | Servicios          | Demostración                                               | Sí           |
-| PI-06         | Modificación y baja de actividades con horarios                    | US-03, US-04        | Servicios          | Demostración                                               | Sí           |
+| PI-06         | Modificación y baja de actividades con horarios y planes           | US-03, US-04, US-11 | Servicios          | Demostración                                               | Sí           |
 | PI-07         | Acceso a los datos propios                                         | US-01, US-02        | Servicios          | Comunes                                                    | Sí           |
 | PI-08         | Los cambios de permisos rigen desde el pedido siguiente            | US-01, US-02        | Servicios          | Comunes                                                    | Sí           |
 | PI-09         | Carga del catálogo de seguridad                                    | US-02               | Servicios          | Comunes                                                    | Sí           |
 | PI-10         | Sesión en la interfaz: menú por rol, login cancelado y redirección | US-01, US-02        | Sistema–API        | Demostración                                               | Manual       |
 | PI-11         | Alta de plan con su precio inicial                                 | US-11, US-12        | Servicios          | Demostración                                               | Sí           |
 | PI-12         | Modificación y baja de planes                                      | US-11               | Servicios          | Demostración                                               | Sí           |
-| PI-13         | Actualización de precio con fecha de vigencia                      | US-12               | Servicios          | Demostración                                               | Parcial      |
+| PI-13         | Actualización de precio con fecha de vigencia                      | US-12               | Servicios          | Demostración                                               | Sí           |
 | PI-14         | Permisos sobre planes                                              | US-02, US-11        | Servicios          | Demostración                                               | Sí           |
 | PI-15         | Pre-inscripción de un alumno mayor                                 | US-05               | Servicios          | Demostración                                               | Sí           |
 | PI-16         | Alumno menor con tutor                                             | US-05, US-06        | Servicios          | Demostración                                               | Sí           |
@@ -243,6 +244,11 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-34         | El pago del alumno activo de la demostración                        | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
 | PI-35         | El primer pago y el alta definitiva se guardan juntos               | US-07, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
 | PI-36         | El pago adelantado y el historial de cuotas de la ficha             | US-10, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
+| PI-37         | Peso y talla al pre-inscribir en una actividad que los pide         | US-03, US-05        | Servicios          | Demostración                                               | Sí           |
+| PI-38         | La reserva de cupo de una pre-inscripción sin pagar vence           | US-04, US-05, US-07 | Servicios          | Demostración                                               | Sí           |
+| PI-39         | Carga de los parámetros del sistema                                 | US-05, US-16, US-18, US-21 | Servicios   | Comunes                                                    | Sí           |
+| PI-40         | El cobro aplica el precio vigente el día del cobro                  | US-12, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
+| PI-41         | El detalle de la baja con el motivo OTRO                            | US-08               | Servicios          | Demostración                                               | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -319,19 +325,21 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (B-05 a B-09, B-14, B-15).
 
-#### PI-06 — Modificación y baja de actividades con horarios
+#### PI-06 — Modificación y baja de actividades con horarios y planes
 
-**US:** US-03, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
+**US:** US-03, US-04, US-11 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
 
 1. Marina cambia la descripción de Funcional Grupal.
 2. Marina intenta dar de baja Funcional Grupal.
 3. Marina crea una actividad nueva, sin horarios, y la da de baja.
 4. Marina intenta cambiar Funcional Grupal de grupal a personalizada sin indicar cupo.
 5. Marina crea la actividad Yoga con dos horarios sin alumnos y la da de baja.
+6. Marina crea la actividad Yoga con un horario sin alumnos y el plan "Yoga 2 días", exclusivo de Yoga, e intenta dar de baja Yoga.
+7. Marina da de baja el plan "Yoga 2 días" y después da de baja Yoga. En el escenario siguen vigentes los planes que sirven para cualquier actividad.
 
-**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran).
+**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran). El paso 6 se rechaza con 409 ("La actividad tiene planes vigentes que son solo de ella (Yoga 2 días): dalos de baja o pasalos a otra actividad antes de darla de baja"); la actividad, su horario y el plan siguen activos. En el paso 7 la baja responde 200 y el horario queda dado de baja: un plan exclusivo dado de baja y los planes para cualquier actividad no la frenan.
 
-**Automatizado:** Sí (B-10 a B-13 y B-16).
+**Automatizado:** Sí (B-10 a B-13 y B-16 a B-18).
 
 #### PI-07 — Acceso a los datos propios
 
@@ -420,7 +428,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Resultado esperado:** el paso 1 responde 201; en la base el precio de $25.000 queda cerrado el día anterior al aumento y el de $28.000 queda abierto. El plan informa $25.000 como precio vigente y $28.000 como programado, y el historial devuelve los dos, del más nuevo al más viejo. En el paso 2 el aumento de $28.000, que nunca rigió, se reemplaza: quedan el de $25.000, cerrado el día anterior al nuevo, y el de $27.000 abierto. El paso 3 responde 400, el paso 4 responde 409 ("El plan ya tiene un precio que empezó a regir hoy") y el paso 5 responde 409; en los tres la base no cambia.
 
-**Automatizado:** Parcial (D-08 a D-12). El criterio de aceptación "un cobro anterior a la fecha de vigencia aplica el precio anterior y uno posterior aplica el nuevo" depende del cobro de cuotas (US-15 a US-17, Sprint 3). La consulta del precio que rige a una fecha (`IInfoPlanes.precioVigente`) ya está y tiene tests unitarios; el test de integración se suma con el cobro.
+**Automatizado:** Sí (D-08 a D-12). El criterio de aceptación "un cobro anterior a la fecha de vigencia aplica el precio anterior y uno posterior aplica el nuevo" se prueba con el cobro en PI-40.
 
 #### PI-14 — Permisos sobre planes
 
@@ -693,20 +701,87 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (H-06).
 
+#### PI-37 — Peso y talla al pre-inscribir en una actividad que los pide
+
+**US:** US-03, US-05 · **Precondición:** escenario de demostración cargado (Entrenamiento Personalizado tiene `requiere_medidas`; Funcional Grupal no); sesión de Marina; alumnos nuevos sin inscripción.
+
+1. Marina pre-inscribe un alumno en el plan Personalizado 2 días, con un horario de Carla, sin peso ni talla.
+2. Repite el pedido con peso 62,5 kg y talla 168 cm.
+3. Pre-inscribe otro alumno en Funcional Grupal sin medidas; después marca Funcional Grupal con `requiere_medidas` y vuelve a pre-inscribir sin medidas.
+4. Con Funcional Grupal marcada y un horario con cupo 1, pre-inscribe dos alumnos con medidas.
+
+**Resultado esperado:** el paso 1 responde 400 ("Entrenamiento Personalizado pide el peso y la talla para pre-inscribir") y no se guarda ni la inscripción ni la medición. El paso 2 responde 201: la inscripción queda PREINSCRIPTA y hay un registro de progreso a nombre de Carla con PESO 62,5 kg y TALLA 168 cm. En el paso 3, la primera pre-inscripción responde 201 sin registro de progreso; con la actividad marcada, la segunda responde 400. En el paso 4, el segundo alumno recibe 409 por cupo y su medición tampoco queda.
+
+**Automatizado:** Sí (G-18 a G-21).
+
+#### PI-38 — La reserva de cupo de una pre-inscripción sin pagar vence
+
+**US:** US-04, US-05, US-07 · **Precondición:** escenario de demostración cargado; sesión de Marina; un horario de Funcional con cupo 1; `DIAS_RESERVA_PREINSCRIPCION` en 3 (valor inicial). Como la API no acepta una fecha de inicio pasada, el paso del tiempo se simula corriendo `fecha_inicio` en la base.
+
+1. Una pre-inscripción sin pagar empezó hace 3 días. Marina pre-inscribe a otro alumno en el mismo horario y consulta la inscripción y el horario.
+2. Otra pre-inscripción empezó hace 4 días. Marina consulta el horario y el listado de pre-inscriptas, y pre-inscribe a otro alumno en el horario.
+3. Con una reserva vencida en un horario libre y otra en un horario que ya ocupó otro alumno, se confirma el primer pago de las dos (`IInfoInscripciones.activar`).
+4. Se cambia `DIAS_RESERVA_PREINSCRIPCION` a 7 y se repite el paso 2.
+5. Marina intenta dar de baja un horario que solo tiene una pre-inscripción con la reserva vencida.
+6. Marina le cambia el plan a una pre-inscripción con la reserva vencida, en un horario con cupo 2.
+
+**Resultado esperado:** en el paso 1 el otro alumno recibe 409 por cupo; la inscripción trae `reserva: { vence: hoy, vencida: false }` y el horario, 1 inscripto y 0 lugares. En el paso 2 el horario figura con 0 inscriptos y 1 lugar, el listado trae la reserva vencida (`vence` ayer) y la pre-inscripción nueva responde 201 con su reserva hasta dentro de 3 días; la vencida sigue PREINSCRIPTA. En el paso 3 la del horario libre queda ACTIVA y la otra recibe "No hay cupo disponible" y sigue PREINSCRIPTA. En el paso 4 la misma pre-inscripción vuelve a ocupar el lugar (409) y vence dentro de 3 días. En el paso 5 la baja responde 409 y el horario sigue activo. En el paso 6 el cambio responde 200: la pre-inscripción nueva conserva la fecha de inicio de la anterior, su reserva sigue vencida con el mismo vencimiento y el horario figura con 0 inscriptos y 2 lugares.
+
+**Automatizado:** Sí (G-22 a G-27).
+
+#### PI-39 — Carga de los parámetros del sistema
+
+**US:** US-05, US-16, US-18, US-21 · **Precondición:** base de prueba recién reiniciada.
+
+1. Se leen los parámetros cargados.
+2. La propietaria cambia `DIAS_RESERVA_PREINSCRIPCION` a 7 y se vuelve a correr la carga.
+3. Se borra un parámetro y se vuelve a correr la carga.
+4. Se intenta guardar un tipo de dato que no está en el DER.
+
+**Resultado esperado:** están todos los parámetros del catálogo con su tipo y su valor inicial (datos bancarios vacíos, `VENCIDOS_PUEDEN_ASISTIR` en true, `MINUTOS_CIERRE_ASISTENCIA` en 0, `DIAS_RESERVA_PREINSCRIPCION` en 3) y su fecha de actualización. Volver a correr la carga no pisa el 7 y repone el que falta. La base rechaza el tipo desconocido.
+
+**Automatizado:** Sí (I-01 a I-04).
+
+#### PI-40 — El cobro aplica el precio vigente el día del cobro
+
+**US:** US-12, US-15 · **Precondición:** escenario de demostración cargado (Sofía Medina pre-inscripta en el Básico, a $25.000 desde el 01/01/2026, sin cuotas; Valentina Herrera en el Intermedio, a $30.000, con su primera cuota pagada); sesión de Marina; cuotas y pagos armado con `armarCuotasYPagos`. Los precios se cargan por la API (`POST /planes/:id/precios`) y los cobros, sin confirmar un monto distinto, así que solo pasan si el monto es el precio que rige hoy.
+
+1. Marina programa el Básico a $28.000 desde mañana y le cobra $25.000 a Sofía.
+2. Con la base reiniciada, Marina carga el Básico a $28.000 desde hoy y le cobra $25.000 a Sofía; después, $28.000.
+3. Con la base reiniciada, Marina carga el Intermedio a $35.000 desde hoy y le cobra $35.000 a Valentina.
+
+**Resultado esperado:** en el paso 1 el cobro se acepta y la cuota 1 queda en $25.000, con un pago de $25.000: el aumento todavía no rige. En el paso 2 el primer cobro se rechaza con 409 `MONTO_DISTINTO` ("El monto no coincide con el esperado (28000)") y no queda ni la cuota, ni el pago, ni el alta; el segundo se acepta y la cuota 1 queda en $28.000: el día de la vigencia ya rige el precio nuevo. En el paso 3 la cuota 1 de Valentina y su pago quedan iguales que antes del aumento, y la cuota 2 queda en $35.000.
+
+**Automatizado:** Sí (H-07 a H-09).
+
+#### PI-41 — El detalle de la baja con el motivo OTRO
+
+**US:** US-08 · **Precondición:** escenario de demostración cargado; sesión de Marina; alumnos nuevos pre-inscriptos en horarios de Funcional (uno de ellos en los planes Básico e Intermedio a la vez).
+
+1. Marina da de baja al alumno con dos inscripciones, con el motivo `OTRO` y el detalle "Se pasó a un gimnasio más cerca de su casa", y consulta sus inscripciones dadas de baja (`GET /inscripciones?id_alumno=X&estado=BAJA`).
+2. Marina da de baja a otro alumno con el motivo `OTRO` sin detalle, y a otro con el detalle en blanco.
+3. Marina intenta dar de baja con el motivo `MUDANZA` y un detalle, y con el motivo `OTRO` y un detalle de 201 caracteres.
+4. Se guarda directo en la base un detalle con el motivo `CAMBIO_PLAN`.
+
+**Resultado esperado:** el paso 1 responde 200; las dos inscripciones quedan en BAJA con el motivo `OTRO` y el detalle, y el listado devuelve `detalle_baja` en las dos. En el paso 2 las dos bajas responden 200 y `detalle_baja` queda en null. En el paso 3 los dos pedidos responden 400 `VALIDATION_ERROR` y la base no cambia: las inscripciones siguen PREINSCRIPTAS y el alumno, INACTIVO. En el paso 4 la base lo rechaza (`ck_inscripciones_x2`).
+
+**Automatizado:** Sí (G-28 a G-31).
+
 ## 7. Tests automatizados
 
-130 tests en ocho archivos:
+153 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 48 (A-01 a A-48) | PI-01 a PI-03, PI-07, PI-08, PI-28, PI-29 |
-|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 16 (B-01 a B-16) | PI-04, PI-05, PI-06               |
+|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 18 (B-01 a B-18) | PI-04, PI-05, PI-06               |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 17 (G-01 a G-17) | PI-20 a PI-24, PI-27, PI-30, PI-32 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 6 (H-01 a H-06)  | PI-33 a PI-36                     |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 31 (G-01 a G-31) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 9 (H-01 a H-09)  | PI-33 a PI-36, PI-40              |
+|    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -729,6 +804,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con alumnos inscriptos; baja sin horarios; no pasar a personalizada sin cupo                                          | PI-06 |
 | B-14, B-15  | No se asigna un horario en domingo ni se mueve uno existente a ese día; la base queda igual                                                                                     | PI-05 |
 | B-16        | La baja de una actividad sin alumnos da de baja también sus horarios, que no se borran                                                                                        | PI-06 |
+| B-17        | Una actividad con un plan vigente exclusivo no se da de baja (409 con el nombre del plan); la actividad, su horario y el plan quedan igual                                   | PI-06 |
+| B-18        | Con su plan exclusivo dado de baja, la actividad se da de baja aunque haya planes vigentes para cualquier actividad                                                         | PI-06 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
 | D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
 | D-05 a D-07 | Cambio de frecuencia; baja lógica que saca el plan del listado; no hay segunda baja ni edición de un plan dado de baja                                                          | PI-12 |
@@ -750,10 +827,26 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-13        | Inscriptos y lugares que quedan en el detalle y el listado de horarios; los dados de baja no cuentan; sin cupo, `cupo_disponible: null`                                     | PI-27 |
 | G-14 a G-16 | La profesora pre-inscribe a su nombre a un alumno libre; no a nombre de otra, sin cargo ni a un alumno de otra profesora (403, sin inscripciones nuevas); la propietaria sí      | PI-30 |
 | G-17        | `limit` y `offset` devuelven la página pedida; `limit=101` responde 400                                                                                                       | PI-32 |
+| G-18 a G-21 | Sin peso ni talla en una actividad que los pide, 400 sin guardar nada; con ellos, medición inicial a nombre de la profesora; marcar la actividad los vuelve obligatorios; sin cupo, la medición no queda | PI-37 |
+| G-22, G-23  | Una pre-inscripción sin pagar ocupa el lugar hasta 3 días después de su inicio, ese día incluido; después lo libera (para el alta y para la ocupación) y figura con la reserva vencida, sin dejar de estar PREINSCRIPTA | PI-38 |
+| G-24        | El pago tardío activa si el lugar sigue libre y responde sin cupo si otro lo ocupó                                                                                            | PI-38 |
+| G-25        | Con `DIAS_RESERVA_PREINSCRIPCION` en 7, la misma pre-inscripción vuelve a ocupar el lugar                                                                                    | PI-38 |
+| G-26        | Una pre-inscripción con la reserva vencida sigue en el horario y no deja darlo de baja                                                                                       | PI-38 |
+| G-27        | Cambiar de plan conserva la fecha de inicio de la pre-inscripción: la reserva no se renueva y sigue sin ocupar lugar                                                         | PI-38 |
+| G-28        | La baja con el motivo `OTRO` guarda el detalle en todas las inscripciones vigentes y el listado de bajas lo devuelve                                                          | PI-41 |
+| G-29        | El motivo `OTRO` sin detalle, o con el detalle en blanco, deja `detalle_baja` en null                                                                                        | PI-41 |
+| G-30        | El detalle con otro motivo o de más de 200 caracteres responde 400 `VALIDATION_ERROR` y no da de baja nada                                                                   | PI-41 |
+| G-31        | La base rechaza un detalle sin el motivo `OTRO` aunque se saltee la API (`ck_inscripciones_x2`)                                                                              | PI-41 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
 | H-06        | El pago adelantado cubre desde el día siguiente al vencimiento vigente; el historial trae las cuotas con su plan y sus pagos, de la más nueva a la más vieja        | PI-36 |
+| H-07        | Con un aumento programado para mañana, el cobro de hoy aplica el precio anterior                                                                                  | PI-40 |
+| H-08        | Con un aumento que rige desde hoy, el cobro aplica el precio nuevo; el precio anterior responde `MONTO_DISTINTO` y no guarda cuota, pago ni alta                  | PI-40 |
+| H-09        | Un aumento no modifica la cuota ya cobrada ni su pago, y la cuota siguiente se cobra al precio nuevo                                                              | PI-40 |
+| I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
+| I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
+| I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -808,6 +901,22 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Cada repositorio abre su propia transacción aunque haya una en curso                  | H-04                                                                                                       |
 | El rol del alumno se asigna fuera de la transacción del cobro                         | H-04                                                                                                       |
 | El pago adelantado vuelve a empezar el mismo día en que vence la cuota vigente        | H-06                                                                                                       |
+| La pre-inscripción no verifica si la actividad pide peso y talla                      | G-18, G-20                                                                                                 |
+| La medición inicial se guarda aunque la pre-inscripción falle                         | G-21                                                                                                       |
+| Modificar una actividad no acepta `requiere_medidas`                                  | G-20                                                                                                       |
+| Las pre-inscripciones ocupan lugar aunque la reserva venció                           | G-23, G-24                                                                                                 |
+| El plazo de la reserva queda fijo en 3 días y no sale del parámetro                    | G-25                                                                                                       |
+| La reserva figura vencida el último día en que todavía guarda el lugar                | G-22                                                                                                       |
+| La ocupación de los horarios cuenta las reservas vencidas                             | G-23                                                                                                       |
+| Volver a correr la carga de parámetros pisa los valores configurados                  | I-02                                                                                                       |
+| Cambiar de plan hace empezar hoy a la pre-inscripción y le renueva la reserva           | G-27                                                                                                       |
+| El precio vigente ignora la fecha y toma el último precio cargado del plan             | H-07                                                                                                       |
+| El precio vigente no tiene en cuenta el cierre de la vigencia (`fecha_vigencia_hasta`)  | H-08, H-09                                                                                                 |
+| La baja no guarda el detalle del motivo `OTRO`                                         | G-28                                                                                                       |
+| El schema acepta el detalle con cualquier motivo                                       | G-30 (el pedido llega a la base, que lo rechaza con el check, y no responde 400)                          |
+| La base de prueba sin el check `ck_inscripciones_x2`                                   | G-31                                                                                                       |
+| La baja de una actividad no revisa sus planes exclusivos vigentes                      | B-17                                                                                                       |
+| Los planes dados de baja también frenan la baja de la actividad                        | B-18                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -832,6 +941,12 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 10/10/2026 | Correcciones de la auditoría de seguridad (PI-28 a PI-32)             | 127 | 127 aprobados | 103,6 s | Antes de sumar los casos nuevos pasaron los 113 existentes. Pasaron también los 1182 tests unitarios, con cobertura del 100 %; build correcto. Las 10 fallas provocadas fueron detectadas (una, con las dos defensas rotas) |
 | 10/10/2026 | El primer pago y el alta en una sola transacción (PI-33 a PI-35)      | 129 | 129 aprobados | 218,1 s | Pasaron también los 1188 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 | 10/10/2026 | Pago adelantado desde el día siguiente e historial de cuotas (PI-36) | 130 | 130 aprobados | 201,8 s | Pasaron también los 1191 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
+| 11/10/2026 | Peso y talla al pre-inscribir (PI-37)                                 | 134 | 134 aprobados | 128,0 s | Pasaron también los 1212 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
+| 11/10/2026 | Reserva de la pre-inscripción que vence y parámetros del sistema (PI-38, PI-39) | 143 | 143 aprobados | 94,9 s | Antes de sumar los casos nuevos pasaron los 134 existentes. Pasaron también los 1233 tests unitarios, con cobertura del 100 %; build correcto. Las 5 fallas provocadas fueron detectadas |
+| 11/10/2026 | Cambiar de plan no renueva la reserva de la pre-inscripción (PI-38)   | 144 | 144 aprobados | 92,3 s | Pasaron también los 1234 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
+| 11/10/2026 | El cobro aplica el precio vigente el día del cobro (PI-40)            | 147 | 147 aprobados | 115,5 s | Solo se sumaron tests. Pasaron también los 1234 tests unitarios y el chequeo de tipos. Las 2 fallas provocadas fueron detectadas; antes de PI-40, ningún test de integración las detectaba |
+| 11/10/2026 | El detalle de la baja con el motivo OTRO (PI-41)                      | 151 | 151 aprobados | 130,1 s | Con la base de prueba recreada desde cero, así que la migración nueva se aplicó completa. Pasaron también los 1241 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
+| 11/10/2026 | Los planes exclusivos vigentes frenan la baja de la actividad (PI-06) | 153 | 153 aprobados | 133,5 s | Pasaron también los 1242 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -840,12 +955,17 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-01 a PI-09 | 07/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                                            |
 | PI-10         | —          | —                 | Pendiente          | Verificación manual en el navegador                                              |
 | PI-11 a PI-12 | 08/10/2026 | Francisco Andrade | Aprobado           | Todos sus tests pasan (ver sección 7)                                            |
-| PI-13         | 08/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan D-08 a D-12; falta el precio aplicado al cobrar (Sprint 3)                 |
+| PI-13         | 08/10/2026 | Francisco Andrade | Aprobado           | Pasan D-08 a D-12; el precio aplicado al cobrar se prueba en PI-40               |
 | PI-14 a PI-19 | 08/10/2026 | Francisco Andrade | Aprobado           | PI-19 se complementa con las operaciones HTTP cubiertas en PI-21 y PI-22         |
 | PI-20 a PI-23 | 09/10/2026 | Nicolas           | Aprobado           | Pasan G-01 a G-11; la reactivación crea una nueva inscripción y valida el cupo   |
 | PI-21, PI-24 a PI-27 | 09/10/2026 | Francisco Andrade | Aprobado     | PI-21 pasa a activar por `IInfoInscripciones` (D-02); pasan G-12, G-13 y E-15 a E-20 |
 | PI-28 a PI-32 | 10/10/2026 | Francisco Andrade | Aprobado           | Pasan A-42 a A-48, E-21 a E-23 y G-14 a G-17 (defectos D-07 a D-14)              |
 | PI-33 a PI-36 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-06 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
+| PI-37         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-18 a G-21 (defecto D-16)                                                  |
+| PI-38, PI-39  | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-22 a G-27 e I-01 a I-04 (defectos D-17 y D-18)                                   |
+| PI-40         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan H-07 a H-09 sobre los componentes; sin defectos                            |
+| PI-41         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-28 a G-31 (punto a confirmar de PI-41 cerrado)                           |
+| PI-06         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan B-10 a B-13 y B-16 a B-18 (defecto D-19)                                   |
 
 ### 8.3 Defectos
 
@@ -866,6 +986,10 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-13 | PI-31 | Un tutor se reusaba por DNI aunque el email cargado fuera de otra cuenta. Corregido: responde 409 | Alta | Francisco Andrade | `AlumnoService` |
 | D-14 | PI-32 | Los listados de inscripciones y transferencias devolvían la tabla entera. Corregido: `limit` y `offset`, hasta 100 por pedido | Baja | Francisco Andrade | `inscripcion.repository.ts`, `pago.repository.ts` |
 | D-15 | PI-35 | El alta definitiva, la activación del alumno, su rol y el pago se guardaban en transacciones separadas: si fallaba un paso, el alumno podía quedar con la inscripción activa sin pago, o pre-inscripto con la inscripción activa y sin forma de destrabarlo. Corregido: van en una sola transacción (`IUnidadDeTrabajo`) | Alta | Francisco Andrade | `GestionCuotasYPagosService`, `shared/db/transaccion.ts` |
+| D-16 | PI-37 | La pre-inscripción no recibía peso ni talla y ninguna actividad podía marcarse como que los pide, así que el criterio de US-05 "en clase que requiere peso/talla sin cargarlos, falla" no se cumplía. Corregido: `actividades.requiere_medidas` y `medidas` en `POST /inscripciones`, guardadas en `registros_progreso` | Media | Francisco Andrade | `InscripcionService`, `RegistroProgresoService` |
+| D-17 | PI-38 | Una pre-inscripción que nunca se pagaba ocupaba el cupo para siempre; en las clases personalizadas, con 4 lugares, trababa el horario. Corregido: deja de ocupar lugar `DIAS_RESERVA_PREINSCRIPCION` días después de su inicio (parámetro, 3 por defecto) y las respuestas marcan la reserva vencida | Media | Francisco Andrade | `InscripcionService`, `inscripcion.repository.ts`, `ParametrosSistemaService` |
+| D-18 | PI-38 | Cambiar de plan creaba la pre-inscripción nueva con inicio hoy, así que le renovaba la reserva de cupo: cambiando de plan se podía guardar el lugar sin pagar indefinidamente. Corregido: una pre-inscripción conserva su fecha de inicio al cambiar de plan | Media | Francisco Andrade | `inscripcion.repository.ts` |
+| D-19 | PI-06 | La baja de una actividad no revisaba sus planes exclusivos: la actividad quedaba dada de baja y esos planes seguían vigentes y ofrecidos, pero inscribir en ellos fallaba porque ya no tenían horarios. Corregido: la baja responde 409 y nombra los planes vigentes exclusivos, que hay que dar de baja o pasar a otra actividad | Media | Francisco Andrade | `GestionServicioEntrenamientoService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -873,13 +997,16 @@ Los defectos se numeran D-01, D-02…
 
 | Caso  | Punto                                                                                                                                                                                                                                                                                                                                                 | Estado  |
 | :---- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
-| PI-06 | Baja de una actividad con horarios activos. Resuelto: se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, la baja de la actividad da de baja también sus horarios en el mismo paso | Cerrado |
-| PI-14 | La profesora carga pre-inscripciones (US-05) y necesita ver los planes. Resuelto: la matriz inicial le da `PLANES_VER` y `ALUMNOS_EDITAR`. En una base ya cargada (producción) la carga del catálogo no agrega permisos a permisos que ya existían: la propietaria se los otorga desde la matriz                                                      | Cerrado |
+| PI-06 | Baja de una actividad con horarios activos. Resuelto: se bloquea solo si algún horario tiene alumnos inscriptos (US-03); si no, la baja de la actividad da de baja también sus horarios en el mismo paso. También se bloquea si tiene planes vigentes exclusivos (US-11, decidido el 11/10/2026) | Cerrado |
+| PI-14 | La profesora carga pre-inscripciones (US-05) y necesita ver los planes. Resuelto: la matriz inicial le da `PLANES_VER` y `ALUMNOS_EDITAR`. En una base ya cargada la carga del catálogo no se los agrega, porque los permisos ya existían: mientras estemos en desarrollo se regenera la base (`DESPLIEGUE.md`), y cuando Neon tenga datos reales irá una migración de datos (`seguridad.md`, regla 10)                                                      | Cerrado |
 | PI-18 | La profesora todavía no consulta ni edita alumnos: US-10 le permite ver solo a los que tiene a cargo, y eso sale de las inscripciones. Resuelto en PI-25: ve y edita solo a los alumnos con una inscripción vigente a su cargo                                                                                                                         | Cerrado |
 | PI-19 | La activación, la baja y la reactivación se probaron sobre el componente; PI-21 y PI-22 ahora las cubren también por HTTP                                                                                                                                                                                                                           | Cerrado |
 | PI-30 | ¿Una profesora pre-inscribe a un alumno que ya está a cargo de otra, o a nombre de otra? Resuelto: no; solo a su nombre, sin cargo no, y alumnos sin una inscripción vigente con otra profesora. Lo demás lo hace la propietaria | Cerrado |
 | PI-31 | ¿Cuánto ve una profesora de un tutor que ya existía? Resuelto: id, nombre y apellido; reusar una cuenta exige que el DNI y el email sean de esa cuenta, y elegirla por id es de la propietaria | Cerrado |
 | PI-29 | ¿El DNI se autoedita? Resuelto: no; el DNI y la fecha de nacimiento los cambia quien tiene `USUARIOS_EDITAR` | Cerrado |
+| PI-37 | ¿Dónde se guardan el peso y la talla de la pre-inscripción y cómo se sabe qué actividad los pide? Resuelto: en un `registros_progreso` inicial a nombre de la profesora a cargo, y con la columna nueva `actividades.requiere_medidas` (cambio del DER decidido el 11/10/2026) | Cerrado |
+| PI-38 | ¿La reserva de cupo de una pre-inscripción vence (el diseño del front decía 72 hs y lista de espera)? Resuelto: vence sola, contada desde el inicio de clases y no desde el alta, con un plazo en días que configura la propietaria (`DIAS_RESERVA_PREINSCRIPCION`, 3 por defecto). Se calcula al consultar, sin proceso programado. Sin lista de espera: el lugar vuelve a figurar disponible | Cerrado |
+| PI-41 | ¿Dónde se guarda el texto libre de una baja con el motivo "Otro" (US-08)? `observaciones` es de la inscripción y se pisaría. Resuelto: columna nueva `inscripciones.detalle_baja` (VARCHAR(200), opcional), solo con el motivo `OTRO` (`ck_inscripciones_x2`); cambio del DER decidido el 11/10/2026 | Cerrado |
 
 ## 10. Cómo sumar casos
 
@@ -919,3 +1046,9 @@ Los defectos se numeran D-01, D-02…
 |   1.8   | 10/10/2026 | Casos PI-28 a PI-32 (correcciones de la auditoría de seguridad) y tests A-42 a A-48, E-21 a E-23 y G-14 a G-17; defectos D-07 a D-14; puntos a confirmar de PI-29 a PI-31 cerrados | Francisco Andrade |
 |   1.9   | 10/10/2026 | Casos PI-33 a PI-35 (cuotas y pagos) y archivo H con los tests H-01 a H-05; los tests de cuotas y pagos pasan de PI-28 a PI-33 y PI-34; fábrica `armarCuotasYPagos`; defecto D-15 | Francisco Andrade |
 |   2.0   | 10/10/2026 | Caso PI-36 y test H-06: el pago adelantado empieza el día después del vencimiento vigente e historial de cuotas y pagos para la ficha | Francisco Andrade |
+|   2.1   | 11/10/2026 | Caso PI-37 y tests G-18 a G-21: peso y talla al pre-inscribir en una actividad con `requiere_medidas`; defecto D-16 y punto a confirmar de PI-37 cerrado | Francisco Andrade |
+|   2.2   | 11/10/2026 | Casos PI-38 (la reserva de cupo de una pre-inscripción vence) y PI-39 (carga de los parámetros del sistema), tests G-22 a G-26 y archivo I con I-01 a I-04; parámetros del sistema en los datos comunes; defecto D-17 y punto a confirmar de PI-38 cerrado | Francisco Andrade |
+|   2.3   | 11/10/2026 | PI-38: paso 6 (cambiar de plan no renueva la reserva) y test G-27; defecto D-18 | Francisco Andrade |
+|   2.4   | 11/10/2026 | Caso PI-40 y tests H-07 a H-09: el cobro aplica el precio vigente el día del cobro. PI-13 y la US-12 pasan a automatizadas por completo | Francisco Andrade |
+|   2.5   | 11/10/2026 | Caso PI-41 y tests G-28 a G-31: el detalle de la baja con el motivo OTRO; punto a confirmar de PI-41 cerrado | Francisco Andrade |
+|   2.6   | 11/10/2026 | PI-06: pasos 6 y 7 (los planes exclusivos vigentes frenan la baja de la actividad) y tests B-17 y B-18; PI-06 pasa a cubrir US-11; defecto D-19 | Francisco Andrade |

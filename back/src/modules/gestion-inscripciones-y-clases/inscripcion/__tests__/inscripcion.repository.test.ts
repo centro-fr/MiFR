@@ -4,7 +4,7 @@ import { InscripcionRepository } from "../inscripcion.repository.js";
 import {
   INCLUIR_DATOS_COBRO,
   INCLUIR_DATOS_INSCRIPCION,
-  type InscripcionConDatos,
+  type InscripcionGuardada,
 } from "../inscripcion.types.js";
 
 const transaccion = {
@@ -35,6 +35,11 @@ const prisma = {
 
 const DIA = new Date("2026-10-09T00:00:00Z");
 const INSTANTE = new Date("2026-10-09T15:00:00Z");
+// Con 3 días de reserva, el 9 todavía reservan las pre-inscripciones que empezaron desde el 6.
+const RESERVAS = new Date("2026-10-06T00:00:00Z");
+const OCUPAN_LUGAR = {
+  OR: [{ estado: "ACTIVA" }, { estado: "PREINSCRIPTA", fecha_inicio: { gte: RESERVAS } }],
+};
 const nueva = {
   id_alumno: 5,
   id_plan: 1,
@@ -52,7 +57,7 @@ const actual = {
     { id_horario: 8, fecha_hasta: null },
     { id_horario: 6, fecha_hasta: DIA },
   ],
-} as unknown as InscripcionConDatos;
+} as unknown as InscripcionGuardada;
 
 // Cupo de la actividad 2 y ningún inscripto: hay lugar en cualquier horario pedido.
 function conCupoLibre(idsHorarios: number[] = [8]) {
@@ -209,13 +214,29 @@ describe("InscripcionRepository", () => {
         fecha_hasta: null,
       });
     });
+
+    it("contarLugaresOcupados cuenta por horario las activas y las pre-inscripciones con la reserva vigente", async () => {
+      await expect(repositorio.contarLugaresOcupados([], RESERVAS)).resolves.toEqual(new Map());
+      expect(prisma.inscripcion_horarios.groupBy).not.toHaveBeenCalled();
+
+      prisma.inscripcion_horarios.groupBy.mockResolvedValue([{ id_horario: 8, _count: { id_horario: 2 } }]);
+
+      await expect(repositorio.contarLugaresOcupados([8, 9], RESERVAS)).resolves.toEqual(new Map([[8, 2]]));
+      expect(prisma.inscripcion_horarios.groupBy).toHaveBeenCalledWith({
+        by: ["id_horario"],
+        where: { id_horario: { in: [8, 9] }, fecha_hasta: null, inscripcion: OCUPAN_LUGAR },
+        _count: { id_horario: true },
+      });
+    });
   });
 
   describe("crear", () => {
     it("bloquea alumno-plan y cada horario en orden antes de revisar duplicados y cupo", async () => {
       conCupoLibre([9, 8]);
 
-      await expect(repositorio.crear(nueva, [9, 8], DIA)).resolves.toMatchObject({ resultado: "ok" });
+      await expect(repositorio.crear(nueva, [9, 8], DIA, RESERVAS)).resolves.toMatchObject({
+        resultado: "ok",
+      });
 
       expect(clavesBloqueadas()).toEqual([
         "inscripcion-horario:8",
@@ -240,8 +261,20 @@ describe("InscripcionRepository", () => {
     it("no crea si el alumno ya tiene ese plan vigente", async () => {
       transaccion.inscripciones.findFirst.mockResolvedValue({ id_inscripcion: 3 });
 
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toEqual({ resultado: "plan-duplicado" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toEqual({
+        resultado: "plan-duplicado",
+      });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();
+    });
+
+    it("para el cupo cuenta las activas y las pre-inscripciones con la reserva vigente", async () => {
+      conCupoLibre();
+
+      await repositorio.crear(nueva, [8], DIA, RESERVAS);
+
+      expect(transaccion.inscripcion_horarios.groupBy.mock.calls[0][0].where.inscripcion).toEqual(
+        OCUPAN_LUGAR,
+      );
     });
 
     it("no crea si un horario está completo", async () => {
@@ -249,7 +282,7 @@ describe("InscripcionRepository", () => {
         { id_horario: 8, _count: { id_horario: 2 } },
       ]);
 
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toEqual({ resultado: "sin-cupo" });
     });
 
     it("el cupo propio del horario manda sobre el de la actividad, y sin cupo no hay límite", async () => {
@@ -259,22 +292,22 @@ describe("InscripcionRepository", () => {
       transaccion.inscripcion_horarios.groupBy.mockResolvedValue([
         { id_horario: 8, _count: { id_horario: 1 } },
       ]);
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toEqual({ resultado: "sin-cupo" });
 
       transaccion.horarios.findMany.mockResolvedValue([
         { id_horario: 8, cupo_maximo: null, actividad: { cupo_maximo: null, activo: true } },
       ]);
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toMatchObject({ resultado: "ok" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toMatchObject({ resultado: "ok" });
     });
 
     it("sin cupo si un horario no existe, está de baja o su actividad está inactiva", async () => {
       transaccion.horarios.findMany.mockResolvedValue([]);
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toEqual({ resultado: "sin-cupo" });
 
       transaccion.horarios.findMany.mockResolvedValue([
         { id_horario: 8, cupo_maximo: null, actividad: { cupo_maximo: 2, activo: false } },
       ]);
-      await expect(repositorio.crear(nueva, [8], DIA)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.crear(nueva, [8], DIA, RESERVAS)).resolves.toEqual({ resultado: "sin-cupo" });
     });
   });
 
@@ -284,7 +317,7 @@ describe("InscripcionRepository", () => {
     });
 
     it("pasa a ACTIVA revalidando el cupo sin contarse a sí misma", async () => {
-      await expect(repositorio.activar(12)).resolves.toMatchObject({ resultado: "ok" });
+      await expect(repositorio.activar(12, RESERVAS)).resolves.toMatchObject({ resultado: "ok" });
 
       expect(clavesBloqueadas()).toEqual(["inscripcion-horario:8", "inscripcion-plan:5:1"]);
       expect(transaccion.inscripcion_horarios.groupBy.mock.calls[0][0].where.inscripcion).toMatchObject({
@@ -297,18 +330,18 @@ describe("InscripcionRepository", () => {
 
     it("no activa si no existe, si se dio de baja mientras tanto o si no hay cupo", async () => {
       prisma.inscripciones.findUnique.mockResolvedValueOnce(null);
-      await expect(repositorio.activar(12)).resolves.toEqual({ resultado: "no-vigente" });
+      await expect(repositorio.activar(12, RESERVAS)).resolves.toEqual({ resultado: "no-vigente" });
 
       transaccion.inscripciones.findUnique.mockResolvedValueOnce({ estado: "BAJA" });
-      await expect(repositorio.activar(12)).resolves.toEqual({ resultado: "no-vigente" });
+      await expect(repositorio.activar(12, RESERVAS)).resolves.toEqual({ resultado: "no-vigente" });
 
       transaccion.inscripciones.findUnique.mockResolvedValueOnce(null);
-      await expect(repositorio.activar(12)).resolves.toEqual({ resultado: "no-vigente" });
+      await expect(repositorio.activar(12, RESERVAS)).resolves.toEqual({ resultado: "no-vigente" });
 
       transaccion.inscripcion_horarios.groupBy.mockResolvedValue([
         { id_horario: 8, _count: { id_horario: 2 } },
       ]);
-      await expect(repositorio.activar(12)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.activar(12, RESERVAS)).resolves.toEqual({ resultado: "sin-cupo" });
       expect(transaccion.inscripciones.update).not.toHaveBeenCalled();
     });
   });
@@ -327,11 +360,34 @@ describe("InscripcionRepository", () => {
       expect(clavesBloqueadas()).toEqual(["inscripcion-horario:8", "inscripcion-horario:9"]);
       expect(transaccion.inscripciones.updateMany).toHaveBeenCalledWith({
         where: { id_inscripcion: { in: [12, 13] } },
-        data: { estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: INSTANTE },
+        data: { estado: "BAJA", motivo_baja: "MUDANZA", detalle_baja: null, fecha_baja: INSTANTE },
       });
       expect(transaccion.inscripcion_horarios.updateMany).toHaveBeenCalledWith({
         where: { id_inscripcion: { in: [12, 13] }, fecha_hasta: null },
         data: { fecha_hasta: DIA },
+      });
+    });
+
+    it("guarda el detalle del motivo OTRO en todas las vigentes", async () => {
+      transaccion.inscripciones.findMany.mockResolvedValue([
+        { id_inscripcion: 12, horarios: [] },
+        { id_inscripcion: 13, horarios: [] },
+      ]);
+
+      await repositorio.darDeBajaAlumno(
+        5,
+        { motivo_baja: "OTRO", detalle_baja: "Se pasó a un gimnasio más cerca" },
+        { instante: INSTANTE, dia: DIA },
+      );
+
+      expect(transaccion.inscripciones.updateMany).toHaveBeenCalledWith({
+        where: { id_inscripcion: { in: [12, 13] } },
+        data: {
+          estado: "BAJA",
+          motivo_baja: "OTRO",
+          detalle_baja: "Se pasó a un gimnasio más cerca",
+          fecha_baja: INSTANTE,
+        },
       });
     });
 
@@ -349,7 +405,9 @@ describe("InscripcionRepository", () => {
     const reactivacion = { ...nueva, estado: "ACTIVA" as const };
 
     it("crea una inscripción nueva ACTIVA si hay cupo", async () => {
-      await expect(repositorio.reactivar(reactivacion, [8], DIA)).resolves.toMatchObject({ resultado: "ok" });
+      await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toMatchObject({
+        resultado: "ok",
+      });
 
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({ estado: "ACTIVA" });
     });
@@ -357,7 +415,7 @@ describe("InscripcionRepository", () => {
     it("devuelve la activa que ya existía en lugar de crear otra", async () => {
       transaccion.inscripciones.findFirst.mockResolvedValue({ id_inscripcion: 12 });
 
-      await expect(repositorio.reactivar(reactivacion, [8], DIA)).resolves.toEqual({
+      await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toEqual({
         resultado: "ok",
         inscripcion: { id_inscripcion: 12 },
       });
@@ -369,7 +427,9 @@ describe("InscripcionRepository", () => {
         { id_horario: 8, _count: { id_horario: 2 } },
       ]);
 
-      await expect(repositorio.reactivar(reactivacion, [8], DIA)).resolves.toEqual({ resultado: "sin-cupo" });
+      await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toEqual({
+        resultado: "sin-cupo",
+      });
     });
   });
 
@@ -381,7 +441,7 @@ describe("InscripcionRepository", () => {
       conCupoLibre([9]);
       transaccion.inscripciones.findUnique.mockResolvedValue({ estado: "ACTIVA" });
 
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas)).resolves.toMatchObject({
+      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toMatchObject({
         resultado: "ok",
       });
 
@@ -404,19 +464,32 @@ describe("InscripcionRepository", () => {
       });
     });
 
+    it("una pre-inscripción conserva su fecha de inicio para no renovar la reserva de cupo", async () => {
+      conCupoLibre([9]);
+      const empezoAntes = new Date("2026-10-02T00:00:00Z");
+
+      await repositorio.cambiarPlan({ ...actual, fecha_inicio: empezoAntes }, cambio, 16, fechas, RESERVAS);
+
+      expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
+        estado: "PREINSCRIPTA",
+        fecha_inicio: empezoAntes,
+        horarios: { create: [{ id_horario: 9, fecha_desde: DIA }] },
+      });
+    });
+
     it("no cambia si dejó de estar vigente, si el plan nuevo ya está vigente o si no hay cupo", async () => {
       transaccion.inscripciones.findUnique.mockResolvedValueOnce({ estado: "BAJA" });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
         resultado: "no-vigente",
       });
 
       transaccion.inscripciones.findFirst.mockResolvedValueOnce({ id_inscripcion: 30 });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
         resultado: "plan-duplicado",
       });
 
       transaccion.horarios.findMany.mockResolvedValue([]);
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();
@@ -431,7 +504,7 @@ describe("InscripcionRepository", () => {
         .mockResolvedValueOnce(null);
 
       await expect(
-        repositorio.actualizarHorarios(actual, { ids_horarios: [6, 9] }, DIA),
+        repositorio.actualizarHorarios(actual, { ids_horarios: [6, 9] }, DIA, RESERVAS),
       ).resolves.toMatchObject({
         resultado: "ok",
       });
@@ -451,12 +524,16 @@ describe("InscripcionRepository", () => {
 
     it("no cambia si dejó de estar vigente o si no hay cupo", async () => {
       transaccion.inscripciones.findUnique.mockResolvedValueOnce(null);
-      await expect(repositorio.actualizarHorarios(actual, { ids_horarios: [9] }, DIA)).resolves.toEqual({
+      await expect(
+        repositorio.actualizarHorarios(actual, { ids_horarios: [9] }, DIA, RESERVAS),
+      ).resolves.toEqual({
         resultado: "no-vigente",
       });
 
       transaccion.horarios.findMany.mockResolvedValue([]);
-      await expect(repositorio.actualizarHorarios(actual, { ids_horarios: [9] }, DIA)).resolves.toEqual({
+      await expect(
+        repositorio.actualizarHorarios(actual, { ids_horarios: [9] }, DIA, RESERVAS),
+      ).resolves.toEqual({
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripcion_horarios.updateMany).not.toHaveBeenCalled();

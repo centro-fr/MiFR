@@ -5,7 +5,7 @@ Sprint 2: **Gestión Comercial y Ciclo de Vida del Alumno** (según `docs/v.1.1 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
 | US-11 | Alta y edición de planes vigentes | Completa | Francisco |
-| US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro, Sprint 3) | Francisco |
+| US-12 | Actualización de precios con fecha de vigencia | Completa (el precio aplicado al cobrar se prueba con el cobro del Sprint 3, PI-40) | Francisco |
 | US-05 | Pre-inscripción de alumno nuevo | Completa | Francisco (alumno) + Nicolas (inscripción) |
 | US-06 | Asociación de tutor a alumno menor | Completa | Francisco |
 | US-07 | Alta definitiva al confirmarse el primer pago | Completa | Nicolas |
@@ -70,6 +70,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] `clases_por_semana` entre 1 y 7 en los mensuales.
   - [x] Precio inicial mayor a 0.
   - [x] Si tiene actividad exclusiva, la actividad tiene que existir y estar activa.
+  - [x] Una actividad con planes vigentes exclusivos no se da de baja (409 con los nombres de los planes): primero hay que dar de baja esos planes o pasarlos a otra actividad. Lo resuelve la fachada `GestionServicioEntrenamientoService` (PI-06, tests B-17 y B-18).
   - [x] Un plan nunca se borra: se le pone `fecha_baja`. Un plan dado de baja no admite inscripciones nuevas (lo controla `Inscripcion` con `IInfoPlanes`); las que ya tiene siguen.
   - [x] Nombre de plan duplicado entre los vigentes → 409.
 - [x] Protegido con `PLANES_VER` / `PLANES_EDITAR`.
@@ -83,15 +84,16 @@ Cómo trabajar en paralelo sin bloquearse:
 
 - [x] `POST /api/v1/planes/:id/precios`: cierra el precio vigente (`fecha_vigencia_hasta = fecha_nueva - 1 día`) e inserta el nuevo, en una transacción.
 - [x] `GET /api/v1/planes/:id/precios`: historial del plan.
-- [x] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usa `Inscripcion` para guardar `id_plan_precio` y lo va a usar el cobro del Sprint 3.
+- [x] `IInfoPlanes.precioVigente(idPlan, fecha)`: el precio cuya vigencia contiene la fecha. Lo usan `Inscripcion`, para guardar `id_plan_precio`, y el cobro del Sprint 3, para el monto de la cuota.
 - [x] **Reglas**:
   - [x] Precio mayor a 0.
   - [x] Fecha de vigencia hoy o futura; en el pasado → 400.
   - [x] Si ya hay un precio programado a futuro, el nuevo lo reemplaza (se resuelve por el más reciente) en lugar de dejar dos vigencias superpuestas.
   - [x] Plan dado de baja → 409.
   - [x] Las inscripciones guardan `id_plan_precio`, así que un cambio de precio nunca altera lo ya cobrado.
+  - [x] El cobro aplica el precio que rige el día del cobro: antes de la fecha de vigencia, el anterior; desde esa fecha (incluida), el nuevo. La cuota guarda ese monto.
 - [x] Auditoría del cambio (evento `PRECIO_PLAN_REGISTRADO` con el precio nuevo, su fecha y el usuario) con `shared/utils/auditoria.ts`: el DER no tiene columna para el usuario que lo hizo. El valor anterior queda en el historial de `plan_precios`.
-- [x] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia: PI-13 (tests D-08 a D-12).
+- [x] Tests del cálculo de vigencias (antes, el mismo día y después de la fecha) y de integración del cierre de vigencia: PI-13 (tests D-08 a D-12). El precio que aplica el cobro antes y después de la vigencia, y que la cuota ya cobrada no cambia: PI-40 (tests H-07 a H-09).
 
 ---
 
@@ -113,7 +115,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] Mayor de edad → email obligatorio (decidido); el tutor también lo lleva, porque es quien entra.
 - [x] `IInfoAlumnos.activar(id)`: pasa alumno y usuario a `ACTIVO` y asigna el rol `ALUMNO`, o `TUTOR` al responsable si es menor. Tiene que ser idempotente: la va a llamar `Inscripcion` y un pago confirmado dos veces no puede duplicar nada.
 - [x] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id)` para US-08 (la baja deja al usuario `INACTIVO`; el tutor no se toca porque puede tener otros alumnos).
-- [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada (producción) la carga del catálogo no los agrega: la propietaria se los otorga desde la matriz.
+- [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada la carga del catálogo no los agrega, porque ya existían: mientras estemos en desarrollo, se regenera la base (ver `DESPLIEGUE.md`).
 - [x] Tests del service (menor sin tutor, reutilización del tutor, activación idempotente) y de integración: PI-15, PI-16 y PI-19 (tests E-01 a E-08 y F-01 a F-03).
 
 ## US-05, US-07 y US-08 – Inscripción, alta definitiva y baja
@@ -123,7 +125,7 @@ Cómo trabajar en paralelo sin bloquearse:
 ### Hecho (inscripción)
 
 - [x] Diagramar la máquina de estados `PREINSCRIPTA → ACTIVA → BAJA` en [estados_inscripcion.puml](../docs/diagrams/puml/estados_inscripcion.puml) antes de implementarla. El flujo no requiere una jerarquía State: las transiciones y sus reglas quedan en el service.
-- [x] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migraciones y restricciones (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, PK compuesta de `inscripcion_horarios`).
+- [x] Modelos `inscripciones` e `inscripcion_horarios` en Prisma + migraciones y restricciones (`ck_inscripciones_estado`, `ck_inscripciones_motivo_baja`, `ck_inscripciones_x1`, `ck_inscripciones_x2`, PK compuesta de `inscripcion_horarios`).
 - [x] Subsistema `gestion-inscripciones-y-clases/` con `ILogicaInscripcionesYClases`, su fachada y `IInfoInscripciones`; rutas montadas en `app.ts` y composición en `composicion.ts`.
 - [x] `POST /api/v1/inscripciones` crea una inscripción `PREINSCRIPTA` con horarios, profesora a cargo y el `id_plan_precio` vigente hoy.
 - [x] `GET /api/v1/inscripciones` (filtros por alumno, plan, profesora, actividad y estado) y `GET /api/v1/inscripciones/:id`.
@@ -134,7 +136,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] El cupo efectivo del horario (propio o heredado de la actividad) cuenta inscripciones `PREINSCRIPTA` o `ACTIVA` con horario vigente (`fecha_hasta` nula). Sin cupo → 409; las operaciones que compiten por el cupo se serializan en transacción.
   - [x] Un alumno no puede tener dos inscripciones activas o pre-inscriptas al mismo plan.
 - [x] `IInfoInscripciones.activar(id)` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. No está en la API: US-07 dice que el alta definitiva la dispara el pago confirmado, así que la va a llamar el cobro del Sprint 3.
-- [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409.
+- [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409. Con el motivo `OTRO` acepta `detalle_baja` (opcional, hasta 200 caracteres), que se guarda en cada inscripción dada de baja; con otro motivo el detalle responde 400. La columna se sumó al DER el 11/10/2026 (PI-41).
 - [x] `POST /api/v1/alumnos/:id/reactivar` crea una inscripción nueva, conserva la anterior como historial, valida cupos y reactiva al alumno. Sin cupo responde 409 sin cambiar su estado.
 - [x] Baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`. Una profesora solo ve las inscripciones que tiene a cargo.
 - [x] `IInfoInscripciones` expone ids de alumnos por plan/profesora/actividad y el resumen vigente por lote (sin N+1), además del conteo de cupo para horarios.

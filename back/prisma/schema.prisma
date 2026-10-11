@@ -104,13 +104,15 @@ enum modalidad_actividad {
 }
 
 model actividades {
-  id_actividad Int                 @id(map: "PK_actividades") @default(autoincrement())
-  codigo       String              @unique @db.VarChar(20)
-  nombre       String              @db.VarChar(60)
-  descripcion  String?             @db.VarChar(255)
-  modalidad    modalidad_actividad
-  cupo_maximo  Int?                @db.SmallInt
-  activo       Boolean
+  id_actividad     Int                 @id(map: "PK_actividades") @default(autoincrement())
+  codigo           String              @unique @db.VarChar(20)
+  nombre           String              @db.VarChar(60)
+  descripcion      String?             @db.VarChar(255)
+  modalidad        modalidad_actividad
+  cupo_maximo      Int?                @db.SmallInt
+  // US-05: la pre-inscripción en una actividad así exige peso y talla.
+  requiere_medidas Boolean             @default(false)
+  activo           Boolean
 
   horarios          horarios[]
   planes_exclusivos planes[]
@@ -123,10 +125,11 @@ model profesoras {
   fecha_alta   DateTime  @default(now()) @db.Date
   fecha_baja   DateTime? @db.Date
 
-  usuario        usuarios        @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
-  horarios       horarios[]
-  inscripciones  inscripciones[]
-  pagos_cobrados pagos[]
+  usuario            usuarios             @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  horarios           horarios[]
+  inscripciones      inscripciones[]
+  pagos_cobrados     pagos[]
+  registros_progreso registros_progreso[]
 }
 
 model horarios {
@@ -187,6 +190,23 @@ model plan_precios {
   @@index([id_plan], map: "IXFK_plan_precios_planes")
 }
 
+enum tipo_dato_parametro {
+  ENTERO
+  DECIMAL
+  TEXTO
+  BOOLEANO
+}
+
+// Configuración del centro que cambia la propietaria. El valor se guarda como texto y se convierte
+// según tipo_dato al leerlo (IInfoParametros).
+model parametros_sistema {
+  clave               String              @id(map: "PK_parametros_sistema") @db.VarChar(50)
+  valor               String              @db.VarChar(100)
+  tipo_dato           tipo_dato_parametro
+  descripcion         String?             @db.VarChar(150)
+  fecha_actualizacion DateTime            @updatedAt @db.Timestamp(6)
+}
+
 // ============================================================
 // PERSONAS DEL NEGOCIO
 // ============================================================
@@ -211,9 +231,10 @@ model alumnos {
   fecha_alta             DateTime      @default(now()) @db.Timestamp(6)
   fecha_baja             DateTime?     @db.Timestamp(6)
 
-  usuario       usuarios        @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
-  responsable   usuarios?       @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
-  inscripciones inscripciones[]
+  usuario            usuarios             @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
+  responsable        usuarios?            @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
+  inscripciones      inscripciones[]
+  registros_progreso registros_progreso[]
 }
 
 enum estado_inscripcion {
@@ -243,6 +264,7 @@ model inscripciones {
   fecha_fin_estimado DateTime?          @db.Date
   estado             estado_inscripcion
   motivo_baja        motivo_baja?
+  detalle_baja       String?            @db.VarChar(200)
   observaciones      String?            @db.VarChar(500)
   fecha_alta         DateTime           @default(now()) @db.Timestamp(6)
   fecha_baja         DateTime?          @db.Timestamp(6)
@@ -333,4 +355,44 @@ model pagos {
   profesora_cobra  profesoras? @relation(fields: [id_profesora_cobra], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_pagos_profesora_cobra")
 
   @@index([id_cuota], map: "IXFK_pagos_cuotas")
+}
+
+// Rutinas y progreso (US-27). Por ahora solo la medición inicial que se carga al pre-inscribir (US-05).
+model registros_progreso {
+  id_registro   Int      @id(map: "PK_registros_progreso") @default(autoincrement())
+  id_alumno     Int
+  id_profesora  Int
+  fecha         DateTime @db.Date
+  observaciones String?  @db.VarChar(500)
+
+  alumno    alumnos              @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_alumnos")
+  profesora profesoras           @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_profesoras")
+  medidas   medidas_corporales[]
+
+  @@index([id_alumno], map: "IXFK_registros_progreso_alumnos")
+  @@index([id_profesora], map: "IXFK_registros_progreso_profesoras")
+}
+
+model tipos_medida {
+  id_tipo_medida Int    @id(map: "PK_tipos_medida") @default(autoincrement())
+  // ej. PESO, CINTURA
+  codigo         String @unique(map: "UK_tipos_medida_codigo") @db.VarChar(20)
+  // ej. kg, cm
+  unidad         String @db.VarChar(10)
+
+  medidas medidas_corporales[]
+}
+
+model medidas_corporales {
+  id_registro    Int
+  id_tipo_medida Int
+  // > 0
+  valor          Decimal @db.Decimal(6, 2)
+
+  registro    registros_progreso @relation(fields: [id_registro], references: [id_registro], onDelete: NoAction, onUpdate: NoAction, map: "FK_medidas_corporales_registros_progreso")
+  tipo_medida tipos_medida       @relation(fields: [id_tipo_medida], references: [id_tipo_medida], onDelete: NoAction, onUpdate: NoAction, map: "FK_medidas_corporales_tipos_medida")
+
+  @@id([id_registro, id_tipo_medida], map: "PK_medidas_corporales")
+  @@index([id_registro], map: "IXFK_medidas_corporales_registros_progreso")
+  @@index([id_tipo_medida], map: "IXFK_medidas_corporales_tipos_medida")
 }

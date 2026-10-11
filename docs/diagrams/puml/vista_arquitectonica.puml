@@ -184,6 +184,8 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   package "GestionRutinasYProgreso" as GestionRutinasYProgreso <<subsystem>> {
     component "RegistroProgreso" as RegistroProgreso
     component "Rutina"           as Rutina
+    interface "IInfoProgreso"    as I_InfoProgreso
+    RegistroProgreso -right- I_InfoProgreso
     RegistroProgreso -[hidden]down-> Rutina
   }
   interface "IInfoProfesores" as R_GRP_InfoProfesores
@@ -244,11 +246,15 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresClase
     interface "IInfoAsistencia"    as I_InfoAsistencia
     interface "IInfoParametros"    as R_GIC_InfoParametros
+    interface "IInfoProgreso"      as R_GIC_InfoProgreso
+    interface "IInfoParametros"    as R_GIC_InfoParametrosInsc
 
     Inscripcion -left-( R_GIC_InfoHorarios
     Inscripcion -left-( R_GIC_InfoProfesoresInsc
     Inscripcion -left-( R_GIC_InfoAlumnos
     Inscripcion -left-( R_GIC_InfoPlanes
+    Inscripcion -left-( R_GIC_InfoProgreso
+    Inscripcion -left-( R_GIC_InfoParametrosInsc
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
     Clase       -right-( R_GIC_InfoProfesoresClase

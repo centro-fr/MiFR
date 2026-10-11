@@ -64,6 +64,18 @@ describe("crearActividadSchema", () => {
   });
 });
 
+describe("requiere_medidas", () => {
+  it("es opcional y solo acepta booleanos", () => {
+    expect(crearActividadSchema.parse(minimo)).not.toHaveProperty("requiere_medidas");
+    expect(crearActividadSchema.parse({ ...minimo, requiere_medidas: true })).toMatchObject({
+      requiere_medidas: true,
+    });
+    expect(crearActividadSchema.safeParse({ ...minimo, requiere_medidas: "true" }).success).toBe(false);
+    expect(actualizarActividadSchema.parse({ requiere_medidas: false })).toEqual({ requiere_medidas: false });
+    expect(actualizarActividadSchema.safeParse({ requiere_medidas: 1 }).success).toBe(false);
+  });
+});
+
 describe("actualizarActividadSchema", () => {
   it("permite borrar la descripción mandando un texto vacío", () => {
     expect(actualizarActividadSchema.parse({ descripcion: "" })).toEqual({ descripcion: null });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enteroNoNegativoSchema, montoSchema } from "../esquemas-numero.js";
+import { enteroNoNegativoSchema, montoSchema, medidaCorporalSchema } from "../esquemas-numero.js";
 
 describe("enteroNoNegativoSchema", () => {
   const schema = enteroNoNegativoSchema(365);
@@ -26,5 +26,21 @@ describe("montoSchema", () => {
 
   it("nombra el campo en el mensaje", () => {
     expect(schema.safeParse(0).error?.issues[0].message).toBe("El monto tiene que ser mayor a 0");
+  });
+});
+
+describe("medidaCorporalSchema", () => {
+  const peso = medidaCorporalSchema("El peso", "kg", 2, 400);
+
+  it.each([2, 62.5, 400, 70.25])("acepta %j", (valor) => {
+    expect(peso.safeParse(valor).success).toBe(true);
+  });
+
+  it.each([1.99, 400.01, 0, -0, -5, 62.555, "62", null])("rechaza %j", (valor) => {
+    expect(peso.safeParse(valor).success).toBe(false);
+  });
+
+  it("dice el rango y la unidad en el mensaje", () => {
+    expect(peso.safeParse(1).error?.issues[0].message).toBe("El peso tiene que estar entre 2 y 400 kg");
   });
 });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
+import { medidaCorporalSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
@@ -27,10 +28,17 @@ const datosDePlanYHorarios = {
   observaciones: textoOpcionalSchema(500, { multilinea: true }).optional(),
 };
 
+// US-05: obligatorias si alguna actividad de los horarios tiene requiere_medidas (lo decide el service).
+const medidas = z.object({
+  peso_kg: medidaCorporalSchema("El peso", "kg", 2, 400),
+  talla_cm: medidaCorporalSchema("La talla", "cm", 40, 250),
+});
+
 export const crearInscripcionSchema = z.object({
   id_alumno: idSchema,
   ...datosDePlanYHorarios,
   fecha_inicio: fecha.optional(),
+  medidas: medidas.optional(),
 });
 
 export const reactivarAlumnoSchema = z.object(datosDePlanYHorarios);
@@ -40,9 +48,16 @@ export const cambiarPlanSchema = z.object(datosDePlanYHorarios);
 export const actualizarHorariosSchema = z.object({ ids_horarios });
 
 // CAMBIO_PLAN no se acepta: lo pone el cambio de plan, y un alumno que se va no cambia de plan.
-export const darDeBajaAlumnoSchema = z.object({
-  motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
-});
+// El detalle explica un motivo OTRO (ck_inscripciones_x2); un texto vacío llega como null y no cuenta.
+export const darDeBajaAlumnoSchema = z
+  .object({
+    motivo_baja: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"]),
+    detalle_baja: textoOpcionalSchema(200, { multilinea: true }).optional(),
+  })
+  .refine((baja) => baja.detalle_baja == null || baja.motivo_baja === "OTRO", {
+    message: "El detalle solo se carga con el motivo OTRO",
+    path: ["detalle_baja"],
+  });
 
 export const listarInscripcionesQuerySchema = z.object({
   id_alumno: idDesdeTextoSchema.optional(),

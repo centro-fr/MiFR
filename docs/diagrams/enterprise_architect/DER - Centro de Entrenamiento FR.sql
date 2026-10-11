@@ -174,6 +174,7 @@ CREATE TABLE actividades
 	descripcion varchar(255) NULL,
 	modalidad varchar(13) NOT NULL,
 	cupo_maximo smallint NULL,	-- > 0; obligatorio si PERSONALIZADA
+	requiere_medidas boolean NOT NULL,	-- default false; peso y talla al pre-inscribir
 	activo boolean NOT NULL
 )
 ;
@@ -273,6 +274,7 @@ CREATE TABLE inscripciones
 	fecha_fin_estimado date NULL,
 	estado varchar(12) NOT NULL,
 	motivo_baja varchar(11) NULL,	-- obligatorio si BAJA
+	detalle_baja varchar(200) NULL,	-- solo con motivo_baja OTRO
 	observaciones varchar(500) NULL,
 	fecha_alta timestamp without time zone NOT NULL,
 	fecha_baja timestamp without time zone NULL
@@ -985,6 +987,10 @@ COMMENT ON COLUMN actividades.cupo_maximo
 	IS '> 0; obligatorio si PERSONALIZADA'
 ;
 
+COMMENT ON COLUMN actividades.requiere_medidas
+	IS 'default false; peso y talla al pre-inscribir'
+;
+
  
 
 COMMENT ON TABLE alumno_insignias
@@ -1060,7 +1066,7 @@ COMMENT ON TABLE inscripcion_horarios
 ;
 
 COMMENT ON TABLE inscripciones
-	IS 'Area de negocio: INSCRIPCIONES Y CLASES Reglas: estado <> ''BAJA'' OR motivo_baja IS NOT NULL | estado IN (PREINSCRIPTA,ACTIVA,BAJA) | motivo_baja IN (ABANDONO,MUDANZA,SALUD,ECONOMICO,CAMBIO_PLAN,OTRO)'
+	IS 'Area de negocio: INSCRIPCIONES Y CLASES Reglas: estado <> ''BAJA'' OR motivo_baja IS NOT NULL | detalle_baja IS NULL OR motivo_baja = ''OTRO'' | estado IN (PREINSCRIPTA,ACTIVA,BAJA) | motivo_baja IN (ABANDONO,MUDANZA,SALUD,ECONOMICO,CAMBIO_PLAN,OTRO)'
 ;
 
 COMMENT ON COLUMN inscripciones.id_profesora
@@ -1073,6 +1079,10 @@ COMMENT ON COLUMN inscripciones.sin_cargo
 
 COMMENT ON COLUMN inscripciones.motivo_baja
 	IS 'obligatorio si BAJA'
+;
+
+COMMENT ON COLUMN inscripciones.detalle_baja
+	IS 'solo con motivo_baja OTRO'
 ;
 
  
@@ -1444,6 +1454,7 @@ ALTER TABLE liquidacion_detalles ADD CONSTRAINT "ck_liquidacion_detalles_x3" CHE
 ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_estado" CHECK (estado IN ('PREINSCRIPTA', 'ACTIVA', 'BAJA'));
 ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_motivo_baja" CHECK (motivo_baja IN ('ABANDONO', 'MUDANZA', 'SALUD', 'ECONOMICO', 'CAMBIO_PLAN', 'OTRO'));
 ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_x1" CHECK (estado <> 'BAJA' OR motivo_baja IS NOT NULL);
+ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_x2" CHECK (detalle_baja IS NULL OR motivo_baja = 'OTRO');
 ALTER TABLE clases ADD CONSTRAINT "ck_clases_estado" CHECK (estado IN ('PROGRAMADA', 'DICTADA', 'CANCELADA'));
 ALTER TABLE cuotas ADD CONSTRAINT "ck_cuotas_x1" CHECK (numero_cuota >= 1);
 ALTER TABLE cuotas ADD CONSTRAINT "ck_cuotas_x2" CHECK (monto >= 0);

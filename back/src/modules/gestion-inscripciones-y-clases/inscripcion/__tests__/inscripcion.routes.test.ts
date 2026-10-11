@@ -137,6 +137,25 @@ describe("rutas de inscripciones", () => {
     expect(logica.darDeBajaAlumno).toHaveBeenCalledWith(5, { motivo_baja: "MUDANZA" });
   });
 
+  it("da de baja con el detalle del motivo OTRO", async () => {
+    const cuerpo = { motivo_baja: "OTRO", detalle_baja: "Se pasó a un gimnasio más cerca" };
+    const respuesta = await como("propietaria", "post", "/alumnos/5/baja").send(cuerpo);
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.darDeBajaAlumno).toHaveBeenCalledWith(5, cuerpo);
+  });
+
+  it("responde 400 si el detalle acompaña a un motivo que no es OTRO", async () => {
+    const respuesta = await como("propietaria", "post", "/alumnos/5/baja").send({
+      motivo_baja: "ECONOMICO",
+      detalle_baja: "No le alcanza",
+    });
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.code).toBe("VALIDATION_ERROR");
+    expect(logica.darDeBajaAlumno).not.toHaveBeenCalled();
+  });
+
   it("no acepta CAMBIO_PLAN como motivo de baja de un alumno", async () => {
     const respuesta = await como("propietaria", "post", "/alumnos/5/baja").send({
       motivo_baja: "CAMBIO_PLAN",
