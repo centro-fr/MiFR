@@ -113,10 +113,10 @@ Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscrip
 
 **Actividades:**
 
-| Actividad                   | Código               | Modalidad     | Cupo     |
-| :-------------------------- | :------------------- | :------------ | :------- |
-| Funcional Grupal            | `FUNCIONAL`          | Grupal        | Sin cupo |
-| Entrenamiento Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4        |
+| Actividad                   | Código               | Modalidad     | Cupo     | Pide peso y talla |
+| :-------------------------- | :------------------- | :------------ | :------- | :---------------- |
+| Funcional Grupal            | `FUNCIONAL`          | Grupal        | Sin cupo | No                |
+| Entrenamiento Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4        | Sí                |
 
 **Horarios:**
 
@@ -163,9 +163,9 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | :---- | :-------------------------------------------------------- | :----: | :------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
 | US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10, PI-28, PI-29        | Sí, salvo PI-10 (Manual)                                                               |
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
-| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06                                           | Sí                                                                                     |
+| US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27                      | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31                      | Sí, alumno, inscripción, horarios y cupos                                               |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37               | Sí, alumno, inscripción, horarios, cupos y peso y talla                                 |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35                                    | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22                                           | Sí                                                                                     |
@@ -243,6 +243,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-34         | El pago del alumno activo de la demostración                        | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
 | PI-35         | El primer pago y el alta definitiva se guardan juntos               | US-07, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
 | PI-36         | El pago adelantado y el historial de cuotas de la ficha             | US-10, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
+| PI-37         | Peso y talla al pre-inscribir en una actividad que los pide         | US-03, US-05        | Servicios          | Demostración                                               | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -693,9 +694,22 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (H-06).
 
+#### PI-37 — Peso y talla al pre-inscribir en una actividad que los pide
+
+**US:** US-03, US-05 · **Precondición:** escenario de demostración cargado (Entrenamiento Personalizado tiene `requiere_medidas`; Funcional Grupal no); sesión de Marina; alumnos nuevos sin inscripción.
+
+1. Marina pre-inscribe un alumno en el plan Personalizado 2 días, con un horario de Carla, sin peso ni talla.
+2. Repite el pedido con peso 62,5 kg y talla 168 cm.
+3. Pre-inscribe otro alumno en Funcional Grupal sin medidas; después marca Funcional Grupal con `requiere_medidas` y vuelve a pre-inscribir sin medidas.
+4. Con Funcional Grupal marcada y un horario con cupo 1, pre-inscribe dos alumnos con medidas.
+
+**Resultado esperado:** el paso 1 responde 400 ("Entrenamiento Personalizado pide el peso y la talla para pre-inscribir") y no se guarda ni la inscripción ni la medición. El paso 2 responde 201: la inscripción queda PREINSCRIPTA y hay un registro de progreso a nombre de Carla con PESO 62,5 kg y TALLA 168 cm. En el paso 3, la primera pre-inscripción responde 201 sin registro de progreso; con la actividad marcada, la segunda responde 400. En el paso 4, el segundo alumno recibe 409 por cupo y su medición tampoco queda.
+
+**Automatizado:** Sí (G-18 a G-21).
+
 ## 7. Tests automatizados
 
-130 tests en ocho archivos:
+134 tests en ocho archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -705,7 +719,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 17 (G-01 a G-17) | PI-20 a PI-24, PI-27, PI-30, PI-32 |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 21 (G-01 a G-21) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 6 (H-01 a H-06)  | PI-33 a PI-36                     |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
@@ -750,6 +764,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-13        | Inscriptos y lugares que quedan en el detalle y el listado de horarios; los dados de baja no cuentan; sin cupo, `cupo_disponible: null`                                     | PI-27 |
 | G-14 a G-16 | La profesora pre-inscribe a su nombre a un alumno libre; no a nombre de otra, sin cargo ni a un alumno de otra profesora (403, sin inscripciones nuevas); la propietaria sí      | PI-30 |
 | G-17        | `limit` y `offset` devuelven la página pedida; `limit=101` responde 400                                                                                                       | PI-32 |
+| G-18 a G-21 | Sin peso ni talla en una actividad que los pide, 400 sin guardar nada; con ellos, medición inicial a nombre de la profesora; marcar la actividad los vuelve obligatorios; sin cupo, la medición no queda | PI-37 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
@@ -808,6 +823,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Cada repositorio abre su propia transacción aunque haya una en curso                  | H-04                                                                                                       |
 | El rol del alumno se asigna fuera de la transacción del cobro                         | H-04                                                                                                       |
 | El pago adelantado vuelve a empezar el mismo día en que vence la cuota vigente        | H-06                                                                                                       |
+| La pre-inscripción no verifica si la actividad pide peso y talla                      | G-18, G-20                                                                                                 |
+| La medición inicial se guarda aunque la pre-inscripción falle                         | G-21                                                                                                       |
+| Modificar una actividad no acepta `requiere_medidas`                                  | G-20                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -832,6 +850,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 10/10/2026 | Correcciones de la auditoría de seguridad (PI-28 a PI-32)             | 127 | 127 aprobados | 103,6 s | Antes de sumar los casos nuevos pasaron los 113 existentes. Pasaron también los 1182 tests unitarios, con cobertura del 100 %; build correcto. Las 10 fallas provocadas fueron detectadas (una, con las dos defensas rotas) |
 | 10/10/2026 | El primer pago y el alta en una sola transacción (PI-33 a PI-35)      | 129 | 129 aprobados | 218,1 s | Pasaron también los 1188 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 | 10/10/2026 | Pago adelantado desde el día siguiente e historial de cuotas (PI-36) | 130 | 130 aprobados | 201,8 s | Pasaron también los 1191 tests unitarios, con cobertura del 100 %; build correcto. La falla provocada fue detectada |
+| 11/10/2026 | Peso y talla al pre-inscribir (PI-37)                                 | 134 | 134 aprobados | 128,0 s | Pasaron también los 1212 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -846,6 +865,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-21, PI-24 a PI-27 | 09/10/2026 | Francisco Andrade | Aprobado     | PI-21 pasa a activar por `IInfoInscripciones` (D-02); pasan G-12, G-13 y E-15 a E-20 |
 | PI-28 a PI-32 | 10/10/2026 | Francisco Andrade | Aprobado           | Pasan A-42 a A-48, E-21 a E-23 y G-14 a G-17 (defectos D-07 a D-14)              |
 | PI-33 a PI-36 | 10/10/2026 | Francisco Andrade | Aprobado (parcial) | Pasan H-01 a H-06 sobre los componentes; falta recorrerlos por HTTP cuando se monte el subsistema |
+| PI-37         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-18 a G-21 (defecto D-16)                                                  |
 
 ### 8.3 Defectos
 
@@ -866,6 +886,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-13 | PI-31 | Un tutor se reusaba por DNI aunque el email cargado fuera de otra cuenta. Corregido: responde 409 | Alta | Francisco Andrade | `AlumnoService` |
 | D-14 | PI-32 | Los listados de inscripciones y transferencias devolvían la tabla entera. Corregido: `limit` y `offset`, hasta 100 por pedido | Baja | Francisco Andrade | `inscripcion.repository.ts`, `pago.repository.ts` |
 | D-15 | PI-35 | El alta definitiva, la activación del alumno, su rol y el pago se guardaban en transacciones separadas: si fallaba un paso, el alumno podía quedar con la inscripción activa sin pago, o pre-inscripto con la inscripción activa y sin forma de destrabarlo. Corregido: van en una sola transacción (`IUnidadDeTrabajo`) | Alta | Francisco Andrade | `GestionCuotasYPagosService`, `shared/db/transaccion.ts` |
+| D-16 | PI-37 | La pre-inscripción no recibía peso ni talla y ninguna actividad podía marcarse como que los pide, así que el criterio de US-05 "en clase que requiere peso/talla sin cargarlos, falla" no se cumplía. Corregido: `actividades.requiere_medidas` y `medidas` en `POST /inscripciones`, guardadas en `registros_progreso` | Media | Francisco Andrade | `InscripcionService`, `RegistroProgresoService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -880,6 +901,7 @@ Los defectos se numeran D-01, D-02…
 | PI-30 | ¿Una profesora pre-inscribe a un alumno que ya está a cargo de otra, o a nombre de otra? Resuelto: no; solo a su nombre, sin cargo no, y alumnos sin una inscripción vigente con otra profesora. Lo demás lo hace la propietaria | Cerrado |
 | PI-31 | ¿Cuánto ve una profesora de un tutor que ya existía? Resuelto: id, nombre y apellido; reusar una cuenta exige que el DNI y el email sean de esa cuenta, y elegirla por id es de la propietaria | Cerrado |
 | PI-29 | ¿El DNI se autoedita? Resuelto: no; el DNI y la fecha de nacimiento los cambia quien tiene `USUARIOS_EDITAR` | Cerrado |
+| PI-37 | ¿Dónde se guardan el peso y la talla de la pre-inscripción y cómo se sabe qué actividad los pide? Resuelto: en un `registros_progreso` inicial a nombre de la profesora a cargo, y con la columna nueva `actividades.requiere_medidas` (cambio del DER decidido el 11/10/2026) | Cerrado |
 
 ## 10. Cómo sumar casos
 
@@ -919,3 +941,4 @@ Los defectos se numeran D-01, D-02…
 |   1.8   | 10/10/2026 | Casos PI-28 a PI-32 (correcciones de la auditoría de seguridad) y tests A-42 a A-48, E-21 a E-23 y G-14 a G-17; defectos D-07 a D-14; puntos a confirmar de PI-29 a PI-31 cerrados | Francisco Andrade |
 |   1.9   | 10/10/2026 | Casos PI-33 a PI-35 (cuotas y pagos) y archivo H con los tests H-01 a H-05; los tests de cuotas y pagos pasan de PI-28 a PI-33 y PI-34; fábrica `armarCuotasYPagos`; defecto D-15 | Francisco Andrade |
 |   2.0   | 10/10/2026 | Caso PI-36 y test H-06: el pago adelantado empieza el día después del vencimiento vigente e historial de cuotas y pagos para la ficha | Francisco Andrade |
+|   2.1   | 11/10/2026 | Caso PI-37 y tests G-18 a G-21: peso y talla al pre-inscribir en una actividad con `requiere_medidas`; defecto D-16 y punto a confirmar de PI-37 cerrado | Francisco Andrade |
