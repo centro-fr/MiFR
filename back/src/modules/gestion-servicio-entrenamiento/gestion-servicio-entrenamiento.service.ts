@@ -91,9 +91,10 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     };
   }
 
-  // Horario no conoce a Inscripcion: los inscriptos los cuenta el subsistema, en una consulta.
+  // Horario no conoce a Inscripcion: los lugares ocupados los cuenta el subsistema, en una consulta, con
+  // la misma regla del cupo que usa el alta (las reservas vencidas no ocupan lugar).
   private async conOcupacion(horarios: HorarioRespuesta[]): Promise<HorarioConOcupacion[]> {
-    const inscriptosPorHorario = await this.inscripciones.contarInscriptosVigentes(
+    const inscriptosPorHorario = await this.inscripciones.contarLugaresOcupados(
       horarios.map(({ id_horario }) => id_horario),
     );
     return horarios.map((horario) => {

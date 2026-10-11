@@ -44,10 +44,10 @@ const horarioSchema = z
 
 const horarioConOcupacionSchema = horarioSchema
   .extend({
-    inscriptos: z
-      .number()
-      .int()
-      .openapi({ description: "Alumnos con una inscripción vigente en el horario" }),
+    inscriptos: z.number().int().openapi({
+      description:
+        "Lugares ocupados en el horario: inscripciones activas y pre-inscripciones con la reserva vigente",
+    }),
     cupo_disponible: z
       .number()
       .int()

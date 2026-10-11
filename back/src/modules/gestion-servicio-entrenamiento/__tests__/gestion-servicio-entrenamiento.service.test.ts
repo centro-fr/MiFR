@@ -21,7 +21,7 @@ const actividadDadaDeBaja: Actividad = {
 describe("GestionServicioEntrenamientoService", () => {
   let actividades: Pick<ActividadService, "darDeBaja" | "obtenerPorId">;
   let horarios: Pick<HorarioService, "darDeBajaDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
-  let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes">;
+  let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes" | "contarLugaresOcupados">;
   let servicio: GestionServicioEntrenamientoService;
 
   beforeEach(() => {
@@ -36,7 +36,10 @@ describe("GestionServicioEntrenamientoService", () => {
       ]),
       obtenerPorId: vi.fn().mockResolvedValue({ id_horario: 3, cupo_maximo_efectivo: 4 }),
     };
-    inscripciones = { contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()) };
+    inscripciones = {
+      contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
+      contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
+    };
     servicio = new GestionServicioEntrenamientoService(
       actividades as unknown as ActividadService,
       horarios as unknown as HorarioService,
@@ -77,8 +80,8 @@ describe("GestionServicioEntrenamientoService", () => {
     expect(horarios.darDeBaja).not.toHaveBeenCalled();
   });
 
-  it("listarHorarios suma a cada horario sus inscriptos y los lugares que le quedan, en una consulta", async () => {
-    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(
+  it("listarHorarios suma a cada horario sus lugares ocupados y los que le quedan, en una consulta", async () => {
+    vi.mocked(inscripciones.contarLugaresOcupados).mockResolvedValue(
       new Map([
         [3, 1],
         [4, 3],
@@ -88,8 +91,10 @@ describe("GestionServicioEntrenamientoService", () => {
 
     const horariosConOcupacion = await servicio.listarHorarios({});
 
-    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledOnce();
-    expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledWith([3, 4, 5]);
+    expect(inscripciones.contarLugaresOcupados).toHaveBeenCalledOnce();
+    expect(inscripciones.contarLugaresOcupados).toHaveBeenCalledWith([3, 4, 5]);
+    // Las pre-inscripciones con la reserva vencida no ocupan lugar, pero siguen impidiendo la baja.
+    expect(inscripciones.contarInscriptosVigentes).not.toHaveBeenCalled();
     expect(
       horariosConOcupacion.map(({ inscriptos, cupo_disponible }) => [inscriptos, cupo_disponible]),
     ).toEqual([
@@ -144,6 +149,7 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
   };
   const inscripciones = {
     contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
+    contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
   };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
