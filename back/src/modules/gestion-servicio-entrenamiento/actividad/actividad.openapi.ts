@@ -110,8 +110,9 @@ export function registrarDocumentacionActividades(registro: OpenAPIRegistry): vo
     summary: "Dar de baja una actividad",
     description:
       "Requiere el rol PROPIETARIA y el permiso `ACTIVIDADES_EDITAR`. " +
-      "Baja lógica. Responde 409 si la actividad ya está dada de baja o si todavía tiene horarios " +
-      "activos, que hay que dar de baja antes.",
+      "Baja lógica. Responde 409 si la actividad ya está dada de baja, si tiene horarios con alumnos " +
+      "inscriptos (hay que reubicarlos antes) o si tiene planes vigentes exclusivos (hay que darlos de " +
+      "baja o pasarlos a otra actividad). Los horarios sin alumnos se dan de baja junto con la actividad.",
     request: { params: actividadIdParamSchema },
     responses: {
       200: respuestaJson("Actividad dada de baja", actividadSchema),

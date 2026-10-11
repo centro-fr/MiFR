@@ -22,6 +22,7 @@ describe("GestionServicioEntrenamientoService", () => {
   let actividades: Pick<ActividadService, "darDeBaja" | "obtenerPorId">;
   let horarios: Pick<HorarioService, "darDeBajaDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
   let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes" | "contarLugaresOcupados">;
+  let planes: Pick<PlanService, "listar">;
   let servicio: GestionServicioEntrenamientoService;
 
   beforeEach(() => {
@@ -40,10 +41,11 @@ describe("GestionServicioEntrenamientoService", () => {
       contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
     };
+    planes = { listar: vi.fn().mockResolvedValue([]) };
     servicio = new GestionServicioEntrenamientoService(
       actividades as unknown as ActividadService,
       horarios as unknown as HorarioService,
-      {} as PlanService,
+      planes as unknown as PlanService,
       inscripciones as unknown as IInfoInscripciones,
     );
   });
@@ -52,6 +54,7 @@ describe("GestionServicioEntrenamientoService", () => {
     vi.mocked(actividades.darDeBaja).mockResolvedValue(actividadDadaDeBaja);
 
     await expect(servicio.darDeBajaActividad(1)).resolves.toEqual(actividadDadaDeBaja);
+    expect(planes.listar).toHaveBeenCalledWith({ id_actividad_exclusiva: 1 });
     expect(horarios.listar).toHaveBeenCalledWith({ id_actividad: 1 });
     expect(inscripciones.contarInscriptosVigentes).toHaveBeenCalledWith([3, 4, 5]);
     expect(horarios.darDeBajaDeActividad).toHaveBeenCalledWith(1);
@@ -62,6 +65,24 @@ describe("GestionServicioEntrenamientoService", () => {
     vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[4, 1]]));
 
     await expect(servicio.darDeBajaActividad(1)).rejects.toThrow("1 horario(s) con alumnos inscriptos");
+    expect(horarios.darDeBajaDeActividad).not.toHaveBeenCalled();
+    expect(actividades.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("darDeBajaActividad bloquea la baja si tiene planes vigentes exclusivos y los nombra", async () => {
+    vi.mocked(planes.listar).mockResolvedValue([
+      { nombre: "Personalizado 2 días" },
+      { nombre: "Personalizado 3 días" },
+    ] as Awaited<ReturnType<PlanService["listar"]>>);
+
+    const baja = servicio.darDeBajaActividad(1);
+
+    await expect(baja).rejects.toThrow(ConflictError);
+    await expect(baja).rejects.toThrow(
+      "La actividad tiene planes vigentes que son solo de ella (Personalizado 2 días, Personalizado 3 días): " +
+        "dalos de baja o pasalos a otra actividad antes de darla de baja",
+    );
+    expect(horarios.listar).not.toHaveBeenCalled();
     expect(horarios.darDeBajaDeActividad).not.toHaveBeenCalled();
     expect(actividades.darDeBaja).not.toHaveBeenCalled();
   });
