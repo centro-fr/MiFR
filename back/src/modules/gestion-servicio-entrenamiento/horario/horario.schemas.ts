@@ -3,7 +3,7 @@ import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.
 
 // Horario de atención del centro (US-04): ninguna clase empieza antes ni termina después.
 const HORA_APERTURA = "07:00";
-const HORA_CIERRE = "20:00";
+const HORA_CIERRE = "23:00";
 
 // Con formato HH:mm de dos dígitos, comparar los textos equivale a comparar las horas.
 const hora = z

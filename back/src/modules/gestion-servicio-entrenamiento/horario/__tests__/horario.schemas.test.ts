@@ -32,7 +32,7 @@ describe("crearHorarioSchema", () => {
     expect(crearHorarioSchema.safeParse({ ...minimo, cupo_maximo }).success).toBe(false);
   });
 
-  it.each(["8:00", "08:0", "24:00", "08:60", "-0:00", "06:59", "20:01", "08:00:00", ""])(
+  it.each(["8:00", "08:0", "24:00", "08:60", "-0:00", "06:59", "23:01", "08:00:00", ""])(
     "rechaza la hora %j",
     (hora_inicio) => {
       expect(crearHorarioSchema.safeParse({ ...minimo, hora_inicio }).success).toBe(false);
