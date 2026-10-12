@@ -27,8 +27,9 @@ const inscripcion = {
 function situacion(
   cuotas: SituacionDeCuotas["cuotas"] = [],
   tipo_plan: "MENSUAL" | "CLASE_SUELTA" = "MENSUAL",
+  fecha_baja: Date | null = null,
 ): SituacionDeCuotas {
-  return { id_inscripcion: 12, tipo_plan, dias_gracia: 5, cuotas };
+  return { id_inscripcion: 12, tipo_plan, dias_gracia: 5, fecha_baja, cuotas };
 }
 
 function cuota(
@@ -218,7 +219,11 @@ describe("CuotaService", () => {
 
       const habilitaciones = await servicio.habilitacionDeInscripciones([12]);
 
-      expect(habilitaciones.get(12)).toEqual({ estado: "AL_DIA", puedeAsistir: true });
+      expect(habilitaciones.get(12)).toEqual({
+        estado: "AL_DIA",
+        puedeAsistir: true,
+        tienePagoPendiente: true,
+      });
       expect(mocks.parametros.obtener).toHaveBeenCalledWith("VENCIDOS_PUEDEN_ASISTIR");
       expect(mocks.habilitaciones.calcular).toHaveBeenCalledWith({
         tipoPlan: "MENSUAL",
@@ -228,6 +233,20 @@ describe("CuotaService", () => {
         vencidosPuedenAsistir: true,
         hoy: HOY,
       });
+    });
+
+    it("una inscripción dada de baja se calcula al día de su baja en Argentina (US-08)", async () => {
+      // 02:00 UTC del 5 de octubre: en Argentina todavía es el 4.
+      const baja = new Date("2026-10-05T02:00:00Z");
+      mocks.repositorio.situacionDeInscripciones.mockResolvedValue([
+        situacion([cuota(1, ["CONFIRMADO"], HOY)], "MENSUAL", baja),
+      ]);
+
+      await servicio.habilitacionDeInscripciones([12]);
+
+      expect(mocks.habilitaciones.calcular).toHaveBeenCalledWith(
+        expect.objectContaining({ vencimiento: HOY, hoy: new Date("2026-10-04T00:00:00Z") }),
+      );
     });
 
     it("sin cuotas confirmadas el vencimiento es null", async () => {
