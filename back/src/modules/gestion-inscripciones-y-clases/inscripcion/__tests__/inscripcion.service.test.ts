@@ -81,6 +81,7 @@ function crearMocks() {
       crear: vi.fn().mockResolvedValue(ok),
       listar: vi.fn().mockResolvedValue([]),
       listarVigentesPorAlumno: vi.fn(),
+      listarDeLaUltimaBaja: vi.fn(),
       buscarPorId: vi.fn().mockResolvedValue(inscripcion),
       buscarParaCobro: vi.fn(),
       buscarVigentePorAlumno: vi.fn().mockResolvedValue(null),
@@ -584,6 +585,9 @@ describe("InscripcionService", () => {
       await expect(servicio.contarInscriptosVigentes([8])).resolves.toEqual(new Map([[8, 2]]));
       mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcion]);
       await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([respuesta]);
+      mocks.repositorio.listarDeLaUltimaBaja.mockResolvedValue([inscripcion]);
+      await expect(servicio.listarDeLaUltimaBaja(5)).resolves.toEqual([respuesta]);
+      expect(mocks.repositorio.listarDeLaUltimaBaja).toHaveBeenCalledWith(5);
     });
 
     it("contarLugaresOcupados no cuenta las pre-inscripciones con la reserva vencida", async () => {

@@ -112,6 +112,33 @@ describe("InscripcionRepository", () => {
       );
     });
 
+    it("listarDeLaUltimaBaja trae las inscripciones que cerró la última baja del alumno, sin los cambios de plan", async () => {
+      const instante = new Date("2026-10-05T14:00:00Z");
+      prisma.inscripciones.findFirst.mockResolvedValue({ fecha_baja: instante });
+      prisma.inscripciones.findMany.mockResolvedValue([{ id_inscripcion: 12 }]);
+
+      await expect(repositorio.listarDeLaUltimaBaja(5)).resolves.toEqual([{ id_inscripcion: 12 }]);
+
+      const deBaja = { id_alumno: 5, estado: "BAJA", motivo_baja: { not: "CAMBIO_PLAN" } };
+      expect(prisma.inscripciones.findFirst).toHaveBeenCalledWith({
+        where: deBaja,
+        orderBy: { fecha_baja: "desc" },
+        select: { fecha_baja: true },
+      });
+      expect(prisma.inscripciones.findMany).toHaveBeenCalledWith({
+        where: { ...deBaja, fecha_baja: instante },
+        include: INCLUIR_DATOS_INSCRIPCION,
+        orderBy: { id_inscripcion: "asc" },
+      });
+    });
+
+    it("listarDeLaUltimaBaja no devuelve nada si el alumno nunca se dio de baja", async () => {
+      prisma.inscripciones.findFirst.mockResolvedValue(null);
+
+      await expect(repositorio.listarDeLaUltimaBaja(5)).resolves.toEqual([]);
+      expect(prisma.inscripciones.findMany).not.toHaveBeenCalled();
+    });
+
     it("listar combina los filtros; la actividad se busca en los horarios vigentes", async () => {
       await repositorio.listar({
         id_alumno: 5,

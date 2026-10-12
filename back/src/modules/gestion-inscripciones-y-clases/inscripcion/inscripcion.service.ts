@@ -191,6 +191,10 @@ export class InscripcionService implements IInfoInscripciones {
     return this.conReservas(await this.repositorio.listarVigentesPorAlumno(idAlumno));
   }
 
+  async listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.conReservas(await this.repositorio.listarDeLaUltimaBaja(idAlumno));
+  }
+
   async activar(id: number): Promise<InscripcionConDatos> {
     const actual = await this.obtenerPorId(id);
     if (actual.estado === "BAJA") throw new ConflictError("No se puede activar una inscripción dada de baja");
