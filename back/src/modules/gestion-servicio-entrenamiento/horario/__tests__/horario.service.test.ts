@@ -12,6 +12,7 @@ function crearRepositorioMock() {
     listar: vi.fn(),
     buscarPorId: vi.fn(),
     buscarPorIds: vi.fn(),
+    listarActivosDelDia: vi.fn(),
     actualizar: vi.fn(),
     darDeBaja: vi.fn(),
     darDeBajaDeActividad: vi.fn(),
@@ -222,6 +223,24 @@ describe("HorarioService", () => {
 
     expect(repositorio.listar).toHaveBeenCalledWith({ id_actividad: 1 });
     expect(horarios.map((h) => h.cupo_maximo_efectivo)).toEqual([20, 8]);
+  });
+
+  it("listarActivosDelDia calcula el día semanal y agrega el cupo efectivo", async () => {
+    const fecha = new Date("2026-10-12T00:00:00Z");
+    repositorio.listarActivosDelDia.mockResolvedValue([horarioBase]);
+
+    await expect(servicio.listarActivosDelDia(fecha)).resolves.toMatchObject([
+      { id_horario: 1, cupo_maximo_efectivo: 20 },
+    ]);
+    expect(repositorio.listarActivosDelDia).toHaveBeenCalledWith(1, fecha);
+  });
+
+  it("listarActivosDelDia representa el domingo como el día 7 del DER", async () => {
+    const domingo = new Date("2026-10-18T00:00:00Z");
+    repositorio.listarActivosDelDia.mockResolvedValue([]);
+
+    await expect(servicio.listarActivosDelDia(domingo)).resolves.toEqual([]);
+    expect(repositorio.listarActivosDelDia).toHaveBeenCalledWith(7, domingo);
   });
 
   it("obtenerPorId devuelve también un horario dado de baja, para consultar el historial", async () => {

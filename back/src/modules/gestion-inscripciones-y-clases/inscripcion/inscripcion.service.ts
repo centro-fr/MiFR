@@ -32,6 +32,7 @@ import type {
   InscripcionACobrar,
   InscripcionConDatos,
   InscripcionGuardada,
+  InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 
@@ -304,8 +305,20 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.resumirInscripcionesVigentes(idsAlumnos);
   }
 
+  listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]> {
+    return this.repositorio.listarParaAsistencia(idHorario, fecha);
+  }
+
+  buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null> {
+    return this.repositorio.buscarParaAsistencia(idHorario, idAlumno, fecha);
+  }
+
   contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
     return this.repositorio.contarInscriptosVigentes(idsHorarios);
+  }
+
+  contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>> {
+    return this.repositorio.contarInscriptosParaAsistencia(idsHorarios, fecha);
   }
 
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {

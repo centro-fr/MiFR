@@ -12,4 +12,9 @@ export const logicaInscripcionesNoConfigurada = {
   reactivarAlumno: operacionNoConfigurada,
   cambiarPlan: operacionNoConfigurada,
   actualizarHorarios: operacionNoConfigurada,
+  listarClasesDeHoy: operacionNoConfigurada,
+  obtenerAsistenciaDeClase: operacionNoConfigurada,
+  marcarAsistencia: operacionNoConfigurada,
+  marcarTodosPresentes: operacionNoConfigurada,
+  cerrarAsistencia: operacionNoConfigurada,
 } satisfies ILogicaInscripcionesYClases;

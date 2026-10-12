@@ -105,6 +105,14 @@ export class HorarioRepository {
     });
   }
 
+  listarActivosDelDia(diaSemana: number, fecha: Date): Promise<HorarioConDatos[]> {
+    return this.prisma.horarios.findMany({
+      where: { dia_semana: diaSemana, fecha_alta: { lte: fecha }, fecha_baja: null },
+      include: CON_DATOS,
+      orderBy: [{ hora_inicio: "asc" }, { id_horario: "asc" }],
+    });
+  }
+
   buscarPorId(id: number): Promise<HorarioConDatos | null> {
     return this.prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }
