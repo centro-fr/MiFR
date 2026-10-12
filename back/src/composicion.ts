@@ -35,6 +35,8 @@ import { CuotaService } from "./modules/gestion-cuotas-y-pagos/cuota/cuota.servi
 import { GestionCuotasYPagosService } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.service.js";
 import { PagoRepository } from "./modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
 import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.js";
+import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
+import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 export interface PiezasDeInfraestructura {
@@ -118,6 +120,9 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionServicioEntrenamiento,
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
+      difusionPublica: new DifusionPublicaService(
+        new PanelDisponibilidadService(horarioService, inscripcionService),
+      ),
       autenticacion,
       autorizacion: rolService,
     },

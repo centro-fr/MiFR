@@ -63,6 +63,7 @@ const OPERACIONES_ESPERADAS = [
   "post /pagos/{id}/aprobar",
   "post /pagos/{id}/rechazar",
   "get /pagos/{id}/comprobante",
+  "get /publico/disponibilidad",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {
@@ -91,7 +92,7 @@ describe("documentación OpenAPI", () => {
     expect(listarOperaciones(generarDocumentoOpenApi())).not.toContain("post /auth/desarrollo");
   });
 
-  it("registrarDocumentacionApi exige el token Bearer en todo menos el login", () => {
+  it("registrarDocumentacionApi exige el token Bearer en todo menos el login y el panel público", () => {
     const documento = generarDocumentoOpenApi();
     const sinSeguridad = Object.entries(documento.paths).flatMap(([ruta, operaciones]) =>
       Object.entries(operaciones as Record<string, { security?: unknown[] }>)
@@ -99,7 +100,7 @@ describe("documentación OpenAPI", () => {
         .map(([metodo]) => `${metodo} ${ruta}`),
     );
 
-    expect(sinSeguridad).toEqual(["post /auth/google"]);
+    expect(sinSeguridad.sort()).toEqual(["get /publico/disponibilidad", "post /auth/google"]);
   });
 
   it("createApp publica el documento y Swagger UI cuando recibe la documentación", async () => {

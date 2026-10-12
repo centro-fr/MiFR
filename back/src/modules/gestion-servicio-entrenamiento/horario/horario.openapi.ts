@@ -16,7 +16,7 @@ import {
   listarHorarioQuerySchema,
 } from "./horario.schemas.js";
 
-const horaSchema = z.string().datetime().openapi({
+export const horaSchema = z.string().datetime().openapi({
   description: "Hora en UTC sobre la fecha 1970-01-01",
   example: "1970-01-01T09:00:00.000Z",
 });

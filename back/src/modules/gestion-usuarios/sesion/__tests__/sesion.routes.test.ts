@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp as crearAppBase } from "../../../../app.js";
 import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import {
   ForbiddenError,
@@ -18,7 +19,11 @@ import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logi
 function createApp(
   dependencias: Omit<
     Parameters<typeof crearAppBase>[0],
-    "gestionServicioEntrenamiento" | "gestionPersonas" | "gestionInscripcionesYClases" | "gestionCuotasYPagos"
+    | "gestionServicioEntrenamiento"
+    | "gestionPersonas"
+    | "gestionInscripcionesYClases"
+    | "gestionCuotasYPagos"
+    | "difusionPublica"
   >,
   opciones?: Parameters<typeof crearAppBase>[1],
 ) {
@@ -29,6 +34,7 @@ function createApp(
       gestionPersonas: {} as unknown as ILogicaPersonas,
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+      difusionPublica: logicaDifusionPublicaNoConfigurada,
     },
     opciones,
   );
