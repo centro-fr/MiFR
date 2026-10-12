@@ -19,7 +19,7 @@ const googleSimulado: IAutenticacionGoogleAuth = {
 export interface EntornoDeIntegracion {
   app: Express;
   prisma: PrismaClient;
-  // Hasta que exista el cobro (Sprint 3), el alta definitiva solo se alcanza por esta interfaz.
+  // El alta definitiva sin pasar por un cobro, para los tests que solo necesitan una inscripción activa.
   infoInscripciones: IInfoInscripciones;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
