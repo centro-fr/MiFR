@@ -222,6 +222,27 @@ export class InscripcionRepository {
     });
   }
 
+  // La baja del alumno cierra todas sus inscripciones vigentes en el mismo instante: las de la última
+  // baja son las que comparten su fecha_baja.
+  async listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionGuardada[]> {
+    const deBaja = {
+      id_alumno: idAlumno,
+      estado: "BAJA" as const,
+      motivo_baja: { not: "CAMBIO_PLAN" as const },
+    };
+    const ultima = await this.prisma.inscripciones.findFirst({
+      where: deBaja,
+      orderBy: { fecha_baja: "desc" },
+      select: { fecha_baja: true },
+    });
+    if (!ultima?.fecha_baja) return [];
+    return this.prisma.inscripciones.findMany({
+      where: { ...deBaja, fecha_baja: ultima.fecha_baja },
+      include: INCLUIR_DATOS_INSCRIPCION,
+      orderBy: { id_inscripcion: "asc" },
+    });
+  }
+
   async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionGuardada | null> {
     return this.prisma.inscripciones.findFirst({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },

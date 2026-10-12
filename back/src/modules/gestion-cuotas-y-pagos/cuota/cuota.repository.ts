@@ -12,6 +12,7 @@ export class CuotaRepository {
       where: { id_inscripcion: { in: idsInscripciones } },
       select: {
         id_inscripcion: true,
+        fecha_baja: true,
         plan: { select: { tipo: true, dias_gracia: true } },
         cuotas: {
           select: {
@@ -24,10 +25,11 @@ export class CuotaRepository {
         },
       },
     });
-    return filas.map(({ id_inscripcion, plan, cuotas }) => ({
+    return filas.map(({ id_inscripcion, fecha_baja, plan, cuotas }) => ({
       id_inscripcion,
       tipo_plan: plan.tipo,
       dias_gracia: plan.dias_gracia,
+      fecha_baja,
       cuotas: cuotas.map(({ pagos, ...cuota }) => ({
         ...cuota,
         estados_pagos: pagos.map(({ estado }) => estado),

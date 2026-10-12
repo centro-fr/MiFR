@@ -21,6 +21,7 @@ describe("CuotaRepository", () => {
     prisma.inscripciones.findMany.mockResolvedValue([
       {
         id_inscripcion: 12,
+        fecha_baja: null,
         plan: { tipo: "MENSUAL", dias_gracia: 5 },
         cuotas: [
           {
@@ -38,6 +39,7 @@ describe("CuotaRepository", () => {
         id_inscripcion: 12,
         tipo_plan: "MENSUAL",
         dias_gracia: 5,
+        fecha_baja: null,
         cuotas: [
           {
             id_cuota: 3,

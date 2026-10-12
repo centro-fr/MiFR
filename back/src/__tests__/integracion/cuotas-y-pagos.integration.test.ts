@@ -418,3 +418,106 @@ describe("PI-43: la transferencia informada y su revisión por la API", () => {
     });
   });
 });
+
+describe("PI-45: la situación de cuota en la ficha y el listado de alumnos", () => {
+  let idAlumnoValentina: number;
+  let idInscripcionValentina: number;
+
+  beforeEach(() => {
+    idAlumnoValentina = datos.idAlumno.get(DNI_VALENTINA)!;
+    idInscripcionValentina = datos.idInscripcion.get(DNI_VALENTINA)!;
+  });
+
+  function aDiasDeHoy(dias: number) {
+    return new Date(fechaActualArgentina().getTime() + dias * UN_DIA_EN_MS);
+  }
+
+  function ficha(idAlumno: number, email = EMAIL_MULTIROL_DEMO) {
+    return pedir("get", `/alumnos/${idAlumno}`, email);
+  }
+
+  it("la ficha y el listado muestran al día a Valentina y pendiente de pago a Sofía; la profesora ve la transferencia sin revisar", async () => {
+    const [cuota] = await prisma.cuotas.findMany({ where: { id_inscripcion: idInscripcionValentina } });
+    const diasRestantes = Math.round(
+      (cuota.fecha_vencimiento.getTime() - fechaActualArgentina().getTime()) / UN_DIA_EN_MS,
+    );
+
+    const deValentina = await ficha(idAlumnoValentina);
+
+    expect(deValentina.status).toBe(200);
+    expect(deValentina.body.inscripciones).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idInscripcionValentina,
+        situacion_cuota: {
+          estado: "AL_DIA",
+          fecha_vencimiento: cuota.fecha_vencimiento.toISOString(),
+          dias_restantes: diasRestantes,
+          puede_asistir: true,
+          tiene_pago_pendiente: false,
+        },
+      }),
+    ]);
+    expect(deValentina.body.inscripciones_de_la_baja).toEqual([]);
+    const listado = await pedir("get", "/alumnos", EMAIL_MULTIROL_DEMO);
+    const situacionEnListado = (idAlumno: number) =>
+      listado.body.datos.find(({ id_alumno }: { id_alumno: number }) => id_alumno === idAlumno)
+        .situacion_cuota;
+    expect(situacionEnListado(idAlumnoValentina)).toMatchObject({
+      estado: "AL_DIA",
+      dias_restantes: diasRestantes,
+    });
+    expect(situacionEnListado(datos.idAlumno.get(DNI_SOFIA)!)).toEqual({
+      estado: "PENDIENTE_DE_PAGO",
+      fecha_vencimiento: null,
+      dias_restantes: null,
+      puede_asistir: false,
+      tiene_pago_pendiente: false,
+    });
+
+    await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+      id_inscripcion: idInscripcionValentina,
+      monto: 30000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+    const deCarla = await ficha(idAlumnoValentina, "carla.ruiz@example.com");
+    expect(deCarla.status).toBe(200);
+    expect(deCarla.body.inscripciones[0].situacion_cuota).toMatchObject({
+      estado: "AL_DIA",
+      tiene_pago_pendiente: true,
+    });
+  });
+
+  it("una cuota vencida muestra los días de atraso, y la ficha del alumno de baja muestra lo que debía al irse", async () => {
+    await prisma.cuotas.updateMany({
+      where: { id_inscripcion: idInscripcionValentina },
+      data: { fecha_vencimiento: aDiasDeHoy(-12) },
+    });
+
+    const vencida = await ficha(idAlumnoValentina);
+    expect(vencida.body.inscripciones[0].situacion_cuota).toMatchObject({
+      estado: "VENCIDA",
+      dias_restantes: -12,
+    });
+
+    const baja = await pedir("post", `/alumnos/${idAlumnoValentina}/baja`, EMAIL_MULTIROL_DEMO, {
+      motivo_baja: "ECONOMICO",
+    });
+    expect(baja.status).toBe(200);
+    // La baja se corre cuatro días atrás: lo que debía se calcula a ese día, no a hoy.
+    await prisma.inscripciones.update({
+      where: { id_inscripcion: idInscripcionValentina },
+      data: { fecha_baja: new Date(Date.now() - 4 * UN_DIA_EN_MS) },
+    });
+
+    const deBaja = await ficha(idAlumnoValentina);
+    expect(deBaja.body.inscripciones).toEqual([]);
+    expect(deBaja.body.inscripciones_de_la_baja).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idInscripcionValentina,
+        estado: "BAJA",
+        motivo_baja: "ECONOMICO",
+        situacion_cuota: expect.objectContaining({ estado: "VENCIDA", dias_restantes: -8 }),
+      }),
+    ]);
+  });
+});
