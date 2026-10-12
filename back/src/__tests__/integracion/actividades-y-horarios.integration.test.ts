@@ -1,8 +1,15 @@
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "../../shared/db/datos-demo.js";
+import {
+  ALUMNOS_DEMO,
+  cargarDatosDemo,
+  EMAIL_MULTIROL_DEMO,
+  type DatosDemoCargados,
+} from "../../shared/db/datos-demo.js";
+import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
+import { crearAlumno } from "./fabricas.js";
 
 // Casos PI-04 a PI-06 del plan de pruebas de integración, sobre los mismos datos que carga db:seed:demo:
 // Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Entrenamiento Personalizado.
@@ -386,5 +393,97 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
       where: { id_actividad: idActividad("FUNCIONAL") },
     });
     expect(funcional?.modalidad).toBe("GRUPAL");
+  });
+});
+
+describe("PI-46: el panel público de disponibilidad", () => {
+  const MARTES = 2;
+  const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
+
+  function consultarPanel() {
+    return request(app).get("/api/v1/publico/disponibilidad");
+  }
+
+  function horarioDelPanel(panel: request.Response, dia: number, actividad: string) {
+    return panel.body.horarios.find(
+      (h: { dia_semana: number; actividad: { nombre: string } }) =>
+        h.dia_semana === dia && h.actividad.nombre === actividad,
+    );
+  }
+
+  it("un visitante sin sesión ve el cronograma con los lugares libres y ningún dato de alumnos", async () => {
+    const panel = await consultarPanel();
+
+    expect(panel.status).toBe(200);
+    expect(panel.headers["cache-control"]).toBe("public, max-age=60");
+    expect(panel.body.horarios.map((h: { dia_semana: number }) => h.dia_semana)).toEqual([1, 2, 3, 4, 5]);
+    // Martes de Carla: Mateo pre-inscripto con la reserva vigente y Valentina activa ocupan 2 de 4.
+    expect(horarioDelPanel(panel, MARTES, "Entrenamiento Personalizado")).toEqual({
+      id_horario: expect.any(Number),
+      dia_semana: MARTES,
+      hora_inicio: "1970-01-01T09:00:00.000Z",
+      hora_fin: "1970-01-01T10:00:00.000Z",
+      actividad: {
+        id_actividad: idActividad("ENTRENAMIENTO_PERS"),
+        nombre: "Entrenamiento Personalizado",
+        descripcion: "Preparación física general con rutina individual",
+        modalidad: "PERSONALIZADA",
+      },
+      profesora: { nombre: "Carla", apellido: "Ruiz" },
+      cupo_maximo: 4,
+      cupo_disponible: 2,
+      disponibilidad: "LIBRE",
+    });
+    expect(horarioDelPanel(panel, LUNES, "Funcional Grupal")).toMatchObject({
+      cupo_maximo: null,
+      cupo_disponible: null,
+      disponibilidad: "SIN_LIMITE",
+    });
+    expect(horarioDelPanel(panel, VIERNES, "Funcional Grupal")).toMatchObject({
+      cupo_maximo: 12,
+      cupo_disponible: 12,
+    });
+    const texto = JSON.stringify(panel.body);
+    expect(texto).not.toContain("@");
+    for (const alumno of ALUMNOS_DEMO) {
+      expect(texto).not.toContain(alumno.dni);
+      expect(texto).not.toContain(alumno.apellido);
+    }
+  });
+
+  it("la disponibilidad sigue a las inscripciones, a las reservas vencidas y a las bajas de horarios", async () => {
+    const otro = await crearAlumno(prisma);
+    const horariosDeCarla = await prisma.horarios.findMany({
+      where: { id_actividad: idActividad("ENTRENAMIENTO_PERS") },
+      select: { id_horario: true },
+    });
+    const inscripcion = await comoMarina("post", "/inscripciones").send({
+      id_alumno: otro.id_alumno,
+      id_plan: datos.idPlan.get("Personalizado 2 días"),
+      id_profesora: idProfesora(CARLA),
+      ids_horarios: horariosDeCarla.map(({ id_horario }) => id_horario),
+      medidas: { peso_kg: 62.5, talla_cm: 168 },
+    });
+    expect(inscripcion.status).toBe(201);
+
+    const conTres = await consultarPanel();
+    // La reserva de Mateo vence a los 3 días del inicio: con 4 días se libera su lugar.
+    await prisma.inscripciones.update({
+      where: { id_inscripcion: datos.idInscripcion.get("52111222") },
+      data: { fecha_inicio: new Date(fechaActualArgentina().getTime() - 4 * UN_DIA_EN_MS) },
+    });
+    const viernes = horarioDelPanel(conTres, VIERNES, "Funcional Grupal");
+    expect((await comoMarina("delete", `/horarios/${viernes.id_horario}`)).status).toBe(200);
+    const despues = await consultarPanel();
+
+    expect(horarioDelPanel(conTres, MARTES, "Entrenamiento Personalizado")).toMatchObject({
+      cupo_disponible: 1,
+      disponibilidad: "CASI_LLENO",
+    });
+    expect(horarioDelPanel(despues, MARTES, "Entrenamiento Personalizado")).toMatchObject({
+      cupo_disponible: 2,
+      disponibilidad: "LIBRE",
+    });
+    expect(horarioDelPanel(despues, VIERNES, "Funcional Grupal")).toBeUndefined();
   });
 });
