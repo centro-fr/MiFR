@@ -193,6 +193,15 @@ describe("HorarioService", () => {
     await expect(servicio.darDeBaja(1)).rejects.toThrow("alumnos inscriptos");
   });
 
+  it("listarVigentes lista los horarios sin filtro, con el cupo efectivo", async () => {
+    repositorio.listar.mockResolvedValue([horarioBase]);
+
+    await expect(servicio.listarVigentes()).resolves.toMatchObject([
+      { id_horario: 1, cupo_maximo_efectivo: 20 },
+    ]);
+    expect(repositorio.listar).toHaveBeenCalledWith({});
+  });
+
   it("buscarPorIds no consulta la base si no recibe ids", async () => {
     await expect(servicio.buscarPorIds([])).resolves.toEqual([]);
     expect(repositorio.buscarPorIds).not.toHaveBeenCalled();
