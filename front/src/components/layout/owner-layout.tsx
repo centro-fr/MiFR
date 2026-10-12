@@ -69,8 +69,13 @@ function LogoMarca() {
 /** Props de entrada en cascada del drawer mobile (el delay crece con el índice del ítem). */
 type EntradaEscalonada = Pick<ComponentProps<"li">, "className" | "style">;
 
+// Hasta el 6º ítem, 15 ms entre uno y otro: con la animación de 200 ms, el último termina a los
+// ~290 ms, casi junto con el panel (250 ms). Antes llegaba a ~520 ms y el menú se sentía pesado.
+const PASO_CASCADA_MS = 15;
+const ITEMS_EN_CASCADA = 6;
+
 function entradaEscalonada(indice: number): EntradaEscalonada {
-  return { className: "animate-drawer-item", style: { animationDelay: `${Math.min(indice, 10) * 22}ms` } };
+  return { className: "animate-drawer-item", style: { animationDelay: `${Math.min(indice, ITEMS_EN_CASCADA) * PASO_CASCADA_MS}ms` } };
 }
 
 /**

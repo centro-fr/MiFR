@@ -39,7 +39,7 @@ describe("theme-store", () => {
     const startViewTransition = vi.fn((actualizar: () => void) => {
       expect(document.documentElement).not.toHaveClass("dark"); // la captura vieja se toma antes del cambio
       actualizar();
-      return { ready: Promise.resolve() };
+      return { ready: Promise.resolve(), finished: Promise.resolve() };
     });
     const animate = vi.fn();
     Object.assign(document, { startViewTransition });

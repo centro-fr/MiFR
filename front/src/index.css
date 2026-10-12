@@ -86,11 +86,11 @@
   --animate-drawer-in: drawer-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
   --animate-drawer-out: drawer-out 0.22s ease-in both;
   --animate-overlay-out: overlay-out 0.22s ease-in both;
-  --animate-drawer-item: drawer-item 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-drawer-item: drawer-item 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   /* Transición de página del layout (solo entrada: fade + leve elevación).
      Fill "backwards" (no "both"): al terminar no queda transform residual,
      que rompería los position:fixed de modales/docks/toasts del contenido. */
-  --animate-page-enter: page-enter 0.28s ease-out backwards;
+  --animate-page-enter: page-enter 0.2s ease-out backwards;
   /* Nav del sidebar desktop: fade-in al expandir (el fade-out lo maneja el
      layout con transition-opacity + desmontaje diferido). */
   --animate-nav-in: fade-in 0.18s ease-out both;
@@ -270,17 +270,21 @@
   }
 }
 
+/* Movimiento reducido: ninguna animación ni transición se ve, venga de donde venga (keyframes
+   propios, tw-animate-css del menú y los modales, transiciones como el ancho del sidebar).
+   0.01ms y no `none`: así igual se disparan animationend/transitionend, de los que dependen
+   componentes como los de Radix para desmontarse al cerrar. Los spinners siguen girando: avisan
+   que algo está cargando y no desplazan nada. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-hero-enter,
-  .animate-overlay-in,
-  .animate-panel-in,
-  .animate-drawer-in,
-  .animate-drawer-out,
-  .animate-overlay-out,
-  .animate-drawer-item,
-  .animate-page-enter,
-  .animate-modal-in {
-    animation: none;
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -298,6 +302,14 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Mientras cambia el tema (theme-store) no corre ninguna transición: los colores pasan de golpe
+   y el círculo de la View Transition es lo único que se anima. */
+.cambiando-tema *,
+.cambiando-tema *::before,
+.cambiando-tema *::after {
+  transition: none !important;
 }
 
 /* Cambio de tema claro/oscuro: theme-store revela la captura nueva con un círculo
