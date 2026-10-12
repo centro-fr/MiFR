@@ -4,7 +4,7 @@ import {
   registrarPrimerPagoEnEfectivo,
   registrarTransferenciaRecibida,
 } from "@/features/alumnos/api/alta-definitiva-api";
-import { ALUMNOS_QUERY_KEY } from "@/features/alumnos/hooks/use-ficha-alumno";
+import { ALUMNOS_QUERY_KEY } from "@/features/alumnos/hooks/use-alumnos";
 import type { CuerpoPrimerPago } from "@/features/alumnos/schemas/primer-pago";
 
 // Cuelga de "alumnos": una baja o un alta desde la ficha también refresca esta lista.

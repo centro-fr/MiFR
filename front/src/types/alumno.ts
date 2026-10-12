@@ -1,44 +1,38 @@
 import type { DiaSemana } from "@/types/horarios";
 
-// Ficha del alumno como la usa la interfaz. Sale de FichaAlumnoApi (features/alumnos/schemas).
-// Cada campo corresponde a una columna del DER: los que admiten NULL llegan como null.
-
-export type EstadoAlumno = "ACTIVO" | "INACTIVO" | "BAJA";
+// Tipos de alumnos que comparten varias pantallas. El listado y la ficha usan los modelos de
+// features/alumnos/schemas/alumno.ts, que salen del contrato del back.
 
 export type MotivoBaja = "ABANDONO" | "MUDANZA" | "SALUD" | "ECONOMICO" | "OTRO";
 
-export interface ResponsableAlumno {
+// ---------- Alta (US-05): cuerpo de POST /alumnos (crearAlumnoSchema del back) ----------
+
+export interface TutorNuevoInput {
   nombre: string;
   apellido: string;
-  telefono: string | null;
-  email: string | null;
+  dni?: string;
+  telefono: string;
+  email: string;
+  fecha_nacimiento: string;
 }
 
-export interface FichaAlumno {
-  id: string;
+export interface CrearAlumnoPayload {
   nombre: string;
   apellido: string;
-  dni: string | null;
-  email: string | null;
-  telefono: string | null;
-  /** Fecha calendario "AAAA-MM-DD". */
-  fechaNacimiento: string;
-  direccion: string | null;
-  estado: EstadoAlumno;
-  /** Timestamp ISO del alta del alumno. */
-  fechaAlta: string;
-  /** Timestamp ISO de la baja; null si no está de baja. */
-  fechaBaja: string | null;
-  contactoEmergencia: { nombre: string | null; telefono: string | null };
-  aptoMedico: boolean;
-  /** Fecha calendario "AAAA-MM-DD". */
-  fechaAptoMedico: string | null;
-  observaciones: string | null;
-  /** Tutor a cargo; solo los menores tienen uno. */
-  responsable: ResponsableAlumno | null;
+  email?: string;
+  fecha_nacimiento: string;
+  dni?: string;
+  telefono?: string | null;
+  direccion?: string | null;
+  cont_emerg_nombre?: string | null;
+  cont_emerg_telefono?: string | null;
+  apto_medico: boolean;
+  fecha_apto_medico?: string | null;
+  observaciones?: string | null;
+  tutor?: { id_usuario: number } | TutorNuevoInput;
 }
 
-// Reactivación (US-08): lo que se elige para volver a inscribir a un alumno dado de baja.
+// ---------- Reactivación y cambio de plan (US-08): lo que se elige para inscribir ----------
 
 export interface PlanReactivacion {
   id: string;
@@ -61,7 +55,7 @@ export interface HorarioElegible {
   actividad: string;
 }
 
-/** Plan, profesora y horarios de la última inscripción dada de baja. */
+/** Plan, profesora y horarios de una inscripción: la anterior a la baja o la actual. */
 export interface InscripcionAnterior {
   idPlan: string;
   idProfesora: string;

@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { SinDato } from "@/features/alumnos/components/seccion-ficha";
 import {
   calcularEdad,
   formatearDiaDeTimestamp,
@@ -30,8 +29,7 @@ function Acciones({ pendiente, puedeConfirmar, onConfirmar }: AccionesProps) {
   const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
   return (
     <>
-      {/* La ficha es la de US-08: tiene el mismo "Volver al listado". */}
-      <Link to={`/app/alumnos/baja/${pendiente.idAlumno}`} aria-label={`Ver ficha de ${nombre}`} className={CLASE_VER_FICHA}>
+      <Link to={`/app/alumnos/${pendiente.idAlumno}`} aria-label={`Ver ficha de ${nombre}`} className={CLASE_VER_FICHA}>
         Ver ficha
       </Link>
       {puedeConfirmar && (
@@ -96,7 +94,7 @@ function Contacto({ pendiente }: { pendiente: PreInscripcionPendiente }) {
       </span>
     );
   }
-  return <SinDato texto="Sin teléfono" />;
+  return <span className="font-medium italic text-muted-foreground">Sin teléfono</span>;
 }
 
 function FilaPendiente(props: AccionesProps) {

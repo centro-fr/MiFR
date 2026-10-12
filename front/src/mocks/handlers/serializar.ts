@@ -15,11 +15,11 @@ export function usuarioConRoles(usuario: UsuarioSemilla) {
     email: usuario.email,
     nombre: usuario.nombre,
     apellido: usuario.apellido,
-    dni: null,
-    telefono: null,
-    fecha_nacimiento: "1990-01-01T00:00:00.000Z",
-    direccion: null,
-    estado: "ACTIVO",
+    dni: usuario.dni ?? null,
+    telefono: usuario.telefono ?? null,
+    fecha_nacimiento: usuario.fecha_nacimiento ?? "1990-01-01T00:00:00.000Z",
+    direccion: usuario.direccion ?? null,
+    estado: usuario.estado ?? "ACTIVO",
     fecha_alta: FECHA,
     fecha_actualizacion: FECHA,
     roles: usuario.roles.map((codigo) => {
@@ -59,7 +59,7 @@ const DIAS_RESERVA_PREINSCRIPCION = 3;
 const UN_DIA_EN_MS = 86_400_000;
 
 // conReserva de inscripcion.service.ts: solo las PREINSCRIPTA guardan su lugar unos días.
-function reservaDe({ estado, fecha_inicio }: InscripcionMock) {
+export function reservaDe({ estado, fecha_inicio }: InscripcionMock) {
   if (estado !== "PREINSCRIPTA") return null;
   const vence = new Date(new Date(fecha_inicio).getTime() + DIAS_RESERVA_PREINSCRIPCION * UN_DIA_EN_MS);
   const hoy = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);

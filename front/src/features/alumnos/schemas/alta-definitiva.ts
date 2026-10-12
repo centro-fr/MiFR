@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fichaAlumnoApiSchema } from "@/features/alumnos/schemas/alumno";
+import { alumnoApiSchema } from "@/features/alumnos/schemas/alumno";
 
 // Contrato de US-07 (back: inscripcion.openapi.ts, alumno.openapi.ts y pago.openapi.ts).
 
@@ -38,11 +38,11 @@ export type InscripcionPendienteApi = z.infer<typeof inscripcionPendienteApiSche
 
 // PaginaAlumnos del back. Cada alumno trae además un resumen de su inscripción, que acá no se usa.
 export const paginaAlumnosApiSchema = z.object({
-  datos: z.array(fichaAlumnoApiSchema),
+  datos: z.array(alumnoApiSchema),
   total: z.number().int(),
 });
 
-export type AlumnoEnListadoApi = z.infer<typeof fichaAlumnoApiSchema>;
+export type AlumnoEnListadoApi = z.infer<typeof alumnoApiSchema>;
 
 // Cuerpo de POST /pagos/efectivo (registrarEfectivoSchema).
 export interface RegistrarEfectivoBody {

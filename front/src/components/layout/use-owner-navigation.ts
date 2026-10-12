@@ -48,7 +48,7 @@ function marcarActivo(item: ItemMenu, ruta: string, contadores: ContadoresMenu):
   return { ...item, hijos: undefined, esActivo: item.activo ?? (item.to !== undefined && esRutaDe(ruta, item.to)) };
 }
 
-// Las subrutas (ej: la baja /app/alumnos/baja/12) mantienen marcada la sección en el menú.
+// Las subrutas (ej: la ficha /app/alumnos/12) mantienen marcada la sección en el menú.
 function esRutaDe(ruta: string, destino: string): boolean {
   return ruta === destino || ruta.startsWith(`${destino}/`);
 }

@@ -24,7 +24,6 @@ const carga = { hydrateFallbackElement: <SessionSplash /> };
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "alumnos", seccion: "Alumnos" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
@@ -67,6 +66,20 @@ export const router = createBrowserRouter([
       },
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
       {
+        // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
+        path: "alumnos",
+        element: (
+          <PermissionGuard permission="ALUMNOS_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
+          // Ficha del alumno: datos y edición (US-09), plan y horarios, baja y reactivación (US-08).
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage") },
+        ],
+      },
+      {
         // Alta definitiva (US-07): pre-inscripciones que esperan su primer pago. Actor: la propietaria.
         path: "alumnos/pendientes",
         element: (
@@ -78,22 +91,6 @@ export const router = createBrowserRouter([
           {
             index: true,
             lazy: paginaPerezosa(() => import("@/features/alumnos/pages/pendientes-de-alta-page"), "PendientesDeAltaPage"),
-          },
-        ],
-      },
-      {
-        // Baja de alumno (US-08): ficha del alumno con la acción de baja. Se entra desde el
-        // listado (US-10, lo implementa otro equipo).
-        path: "alumnos/baja/:idAlumno",
-        element: (
-          <PermissionGuard permission="ALUMNOS_VER">
-            <Outlet />
-          </PermissionGuard>
-        ),
-        children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(() => import("@/features/alumnos/pages/ficha-alumno-page"), "FichaAlumnoPage"),
           },
         ],
       },

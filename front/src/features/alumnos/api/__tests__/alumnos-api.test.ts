@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/api/client";
-import { aFichaAlumno, darDeBajaAlumno, obtenerFichaAlumno } from "@/features/alumnos/api/alumnos-api";
+import { aAlumnoDetalle, darDeBajaAlumno, obtenerAlumno } from "@/features/alumnos/api/alumnos-api";
 import { fichaAlumnoApiSchema, type FichaAlumnoApi } from "@/features/alumnos/schemas/alumno";
 
 vi.mock("@/api/client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
@@ -42,24 +42,25 @@ function respuestaApi(cambios: Partial<FichaAlumnoApi> = {}) {
 }
 
 function parsear(respuesta: unknown) {
-  return aFichaAlumno(fichaAlumnoApiSchema.parse(respuesta));
+  return aAlumnoDetalle(fichaAlumnoApiSchema.parse(respuesta));
 }
 
-describe("aFichaAlumno", () => {
+describe("aAlumnoDetalle", () => {
   it("deja las columnas DATE como fecha calendario AAAA-MM-DD", () => {
     const ficha = parsear(respuestaApi());
 
-    expect(ficha.fechaNacimiento).toBe("2015-11-03");
-    expect(ficha.fechaAptoMedico).toBe("2026-03-10");
+    expect(ficha.usuario.fecha_nacimiento).toBe("2015-11-03");
+    expect(ficha.fecha_apto_medico).toBe("2026-03-10");
   });
 
   it("aplana los datos del usuario y del tutor a cargo", () => {
     const ficha = parsear(respuestaApi());
 
-    expect(ficha).toMatchObject({ id: "2", nombre: "Mateo", apellido: "Romero", dni: "52111222" });
-    expect(ficha.responsable).toEqual({
+    expect(ficha).toMatchObject({ id_alumno: 2, usuario: { nombre: "Mateo", apellido: "Romero", dni: "52111222" } });
+    expect(ficha.tutor).toEqual({
       nombre: "Paula",
       apellido: "Romero",
+      dni: "31222333",
       telefono: null,
       email: "paula.romero@example.com",
     });
@@ -68,9 +69,9 @@ describe("aFichaAlumno", () => {
   it("respeta los NULL del DER sin inventar valores", () => {
     const ficha = parsear(respuestaApi({ responsable: null, fecha_apto_medico: null }));
 
-    expect(ficha.email).toBeNull();
-    expect(ficha.responsable).toBeNull();
-    expect(ficha.fechaAptoMedico).toBeNull();
+    expect(ficha.usuario.email).toBeNull();
+    expect(ficha.tutor).toBeNull();
+    expect(ficha.fecha_apto_medico).toBeNull();
   });
 });
 
@@ -89,17 +90,17 @@ describe("llamadas a la API", () => {
   it("pide la ficha a /alumnos/:id", async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: respuestaApi() });
 
-    const ficha = await obtenerFichaAlumno("2");
+    const ficha = await obtenerAlumno(2);
 
     expect(apiClient.get).toHaveBeenCalledWith("/alumnos/2");
-    expect(ficha.nombre).toBe("Mateo");
+    expect(ficha.usuario.nombre).toBe("Mateo");
   });
 
   // darDeBajaAlumnoSchema del back espera el motivo en `motivo_baja`.
   it("manda la baja con el motivo en motivo_baja", async () => {
     vi.mocked(apiClient.post).mockResolvedValue({ data: { mensaje: "Alumno dado de baja" } });
 
-    await darDeBajaAlumno("2", "MUDANZA");
+    await darDeBajaAlumno(2, "MUDANZA");
 
     expect(apiClient.post).toHaveBeenCalledWith("/alumnos/2/baja", { motivo_baja: "MUDANZA" });
   });

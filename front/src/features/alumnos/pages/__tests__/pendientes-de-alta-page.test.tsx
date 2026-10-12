@@ -132,7 +132,7 @@ describe("PendientesDeAltaPage", () => {
     simularLista({ data: [crearPendiente()] });
     renderizar();
 
-    expect(tabla().getByRole("link", { name: "Ver ficha de Sofía Medina" })).toHaveAttribute("href", "/app/alumnos/baja/1");
+    expect(tabla().getByRole("link", { name: "Ver ficha de Sofía Medina" })).toHaveAttribute("href", "/app/alumnos/1");
   });
 
   it("sin permisos de cobro no ofrece confirmar el alta", () => {

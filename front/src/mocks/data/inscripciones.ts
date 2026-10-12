@@ -70,15 +70,17 @@ function plan(id_plan: number, datos: Pick<PlanMock, "tipo" | "nombre" | "clases
   return { id_plan, descripcion: null, fecha_alta: VIGENCIA_PRECIOS, fecha_baja: null, ...datos };
 }
 
-// "Personalizado 2 días" es exclusivo de la actividad personalizada (la 2 en semilla.ts).
+// El catálogo del centro: "Plan Kids" es exclusivo de la clase infantil (la 7 en semilla.ts).
 export const PLANES_SEMILLA: PlanMock[] = [
-  plan(1, { tipo: "MENSUAL", nombre: "Básico", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
-  plan(2, { tipo: "MENSUAL", nombre: "Intermedio", clases_por_semana: 3, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
-  plan(3, { tipo: "MENSUAL", nombre: "Personalizado 2 días", clases_por_semana: 2, dias_gracia: 5, profesora_unica: true, id_actividad_exclusiva: 2 }),
-  plan(4, { tipo: "CLASE_SUELTA", nombre: "Clase suelta", clases_por_semana: null, dias_gracia: 0, profesora_unica: false, id_actividad_exclusiva: null }),
+  plan(1, { tipo: "MENSUAL", nombre: "Plan Básico", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
+  plan(2, { tipo: "MENSUAL", nombre: "Plan Intermedio", clases_por_semana: 3, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
+  plan(3, { tipo: "MENSUAL", nombre: "Plan 5 días", clases_por_semana: 5, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
+  plan(4, { tipo: "MENSUAL", nombre: "Plan Premium", clases_por_semana: 5, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
+  plan(5, { tipo: "MENSUAL", nombre: "Plan Kids", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: 7 }),
+  plan(6, { tipo: "CLASE_SUELTA", nombre: "Clase particular", clases_por_semana: null, dias_gracia: 0, profesora_unica: false, id_actividad_exclusiva: null }),
 ];
 
-const PRECIOS = [25000, 30000, 45000, 6000];
+const PRECIOS = [25000, 30000, 42000, 52000, 22000, 6000];
 
 export const PLAN_PRECIOS_SEMILLA: PlanPrecioMock[] = PRECIOS.map((precio, indice) => ({
   id_plan_precio: indice + 1,
@@ -94,7 +96,8 @@ const UN_DIA_EN_MS = 86_400_000;
 // piden empezar unos días antes (para ver una reserva vencida, US-07).
 function inscripcion(
   id_inscripcion: number,
-  datos: Pick<InscripcionMock, "id_alumno" | "id_plan" | "id_profesora" | "ids_horarios" | "estado">,
+  datos: Pick<InscripcionMock, "id_alumno" | "id_plan" | "id_profesora" | "ids_horarios" | "estado"> &
+    Partial<Pick<InscripcionMock, "motivo_baja" | "fecha_baja">>,
   diasAtras = 0,
 ): InscripcionMock {
   const alta = new Date(Date.now() - diasAtras * UN_DIA_EN_MS).toISOString();
@@ -114,13 +117,18 @@ function inscripcion(
   };
 }
 
-// Alumnos de data/alumnos.ts y horarios de semilla.ts: Sofía con Lucía (lun y mié), Mateo y
-// Valentina con Carla (mar y jue). Las PREINSCRIPTA esperan el primer pago (US-07); la de Mateo
-// empezó hace 5 días y ya tiene la reserva vencida.
+// Alumnos de data/alumnos.ts y horarios de semilla.ts. Las PREINSCRIPTA esperan el primer pago
+// (US-07): la de Mateo empezó hace 5 días y ya tiene la reserva vencida. Micaela está de baja (US-08).
 export function inscripcionesSemilla(): InscripcionMock[] {
   return [
     inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "PREINSCRIPTA" }),
-    inscripcion(2, { id_alumno: 2, id_plan: 3, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }, 5),
-    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 2, ids_horarios: [3, 4], estado: "ACTIVA" }),
+    inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }, 5),
+    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 40),
+    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 90),
+    inscripcion(
+      5,
+      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [5], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
+      200,
+    ),
   ];
 }

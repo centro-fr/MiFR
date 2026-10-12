@@ -33,7 +33,7 @@ function validarHorario(datos: DatosHorario, excluirId?: number) {
     return errorApi(404, "NOT_FOUND", "Profesora no encontrada, inactiva o sin el rol PROFESORA");
   }
   // En el back lo rechaza el esquema Zod, que responde el 400 genérico de validación.
-  if ([datos.hora_inicio, datos.hora_fin].some((hora) => hora < "07:00" || hora > "20:00")) {
+  if ([datos.hora_inicio, datos.hora_fin].some((hora) => hora < "07:00" || hora > "23:00")) {
     return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
   }
   if (datos.hora_fin <= datos.hora_inicio) {

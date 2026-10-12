@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { LARGO_MAXIMO_DETALLE_BAJA, bajaAlumnoFormSchema } from "@/features/alumnos/schemas/alumno";
-import type { FichaAlumno, MotivoBaja } from "@/types/alumno";
+import type { MotivoBaja } from "@/types/alumno";
 
 const ETIQUETAS_MOTIVO: Record<MotivoBaja, string> = {
   ABANDONO: "Dejó de asistir",
@@ -28,7 +28,8 @@ const ETIQUETAS_MOTIVO: Record<MotivoBaja, string> = {
 const MOTIVOS = Object.keys(ETIQUETAS_MOTIVO) as MotivoBaja[];
 
 interface Props {
-  alumno: FichaAlumno;
+  /** Nombre y apellido del alumno. */
+  nombre: string;
   dandoDeBaja: boolean;
   errorBaja: string | null;
   onClose: () => void;
@@ -37,7 +38,7 @@ interface Props {
 }
 
 // US-08: la baja es lógica y conserva el historial. El motivo se guarda en inscripciones.motivo_baja.
-export function ModalBajaAlumno({ alumno, dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
+export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
   const [motivo, setMotivo] = useState<string>("");
   const [detalle, setDetalle] = useState("");
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
@@ -81,7 +82,7 @@ export function ModalBajaAlumno({ alumno, dandoDeBaja, errorBaja, onClose, onCon
             </div>
             <div>
               <AlertDialogTitle className="text-base font-extrabold text-dark dark:text-white">
-                ¿Dar de baja a {alumno.nombre} {alumno.apellido}?
+                ¿Dar de baja a {nombre}?
               </AlertDialogTitle>
               <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a

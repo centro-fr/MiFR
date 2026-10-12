@@ -46,7 +46,7 @@ export async function listarHorariosElegibles(): Promise<HorarioElegible[]> {
 }
 
 /** La más reciente primero (el back ordena por fecha de alta): con limit=1 alcanza. */
-export async function obtenerInscripcionAnterior(idAlumno: string): Promise<InscripcionAnterior | null> {
+export async function obtenerInscripcionAnterior(idAlumno: number): Promise<InscripcionAnterior | null> {
   const { data } = await apiClient.get("/inscripciones", {
     params: { id_alumno: idAlumno, estado: "BAJA", limit: 1 },
   });
@@ -60,6 +60,6 @@ export async function obtenerInscripcionAnterior(idAlumno: string): Promise<Insc
 }
 
 // El back crea una inscripción activa y vuelve a validar el cupo: sin lugar responde 409.
-export async function reactivarAlumno(idAlumno: string, cuerpo: ReactivarAlumnoBody): Promise<void> {
-  await apiClient.post(`/alumnos/${encodeURIComponent(idAlumno)}/reactivar`, cuerpo);
+export async function reactivarAlumno(idAlumno: number, cuerpo: ReactivarAlumnoBody): Promise<void> {
+  await apiClient.post(`/alumnos/${idAlumno}/reactivar`, cuerpo);
 }

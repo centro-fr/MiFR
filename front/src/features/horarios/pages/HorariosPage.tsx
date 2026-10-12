@@ -196,28 +196,29 @@ export const HorariosPage: React.FC = () => {
   return (
     <OwnerLayout>
       {/* CONTENIDO PRINCIPAL */}
-      <div className="flex flex-col bg-slate-50/50 dark:bg-white/5 min-w-0">
+      <div className="space-y-6 min-w-0">
         {/* ENCABEZADO */}
-        <header className="bg-card border-b border-border px-4 py-4 md:px-7 md:py-5">
-          <div className="flex items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3.5 flex-wrap">
-                <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
-                  Horarios
-                </h1>
-                <Badge variant="outline" className="rounded-full border-pink-100 dark:border-primary/30 bg-pink-50 dark:bg-primary/15 px-3 py-1 text-sm font-bold text-primary shadow-2xs">
-                  {totalHorarios} clases asignadas
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-                Armá y gestioná el cronograma semanal del salón.
-              </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
+                Horarios
+              </h1>
+              <Badge
+                variant="outline"
+                className="rounded-full border-pink-200 bg-pink-100 px-3 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300 shadow-2xs"
+              >
+                {totalHorarios} clases asignadas
+              </Badge>
             </div>
+            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+              Armá y gestioná el cronograma semanal del salón.
+            </p>
           </div>
-        </header>
+        </div>
 
         {/* BARRA DE FILTROS RESPONSIVE */}
-        <div className="bg-card border-b border-border px-4 md:px-7 py-3">
+        <div className="bg-transparent border-0 px-0 py-2">
           {/* Fila compacta de móvil */}
           <div className="flex items-center justify-between md:hidden">
             <Button
@@ -326,15 +327,27 @@ export const HorariosPage: React.FC = () => {
             )}
 
             {isFilterActive && (
-              <Badge variant="outline" className="ml-auto hidden rounded-xl border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-sm font-bold text-amber-700 dark:text-amber-300 md:inline-flex">
+              <Badge variant="outline" className="hidden rounded-xl border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 text-sm font-bold text-amber-700 dark:text-amber-300 md:inline-flex">
                 Modo consulta activo
               </Badge>
             )}
+
+            {/* Botón Nuevo Horario a la altura de los filtros a la derecha (solo en desktop con grilla semanal) */}
+            <div className="hidden xl:flex ml-auto items-center">
+              <Button
+                type="button"
+                onClick={() => handleOpenCreate('LUNES', '08:00')}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:from-primary-dark hover:to-[#900e4e] hover:shadow-md"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Nuevo Horario</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* REFERENCIA DE COLORES: salen de la modalidad de la actividad */}
-        <div className="px-4 md:px-7 py-2.5 bg-white/80 dark:bg-black/30 border-b border-border flex items-center gap-4 text-sm font-bold text-slate-600 dark:text-slate-300">
+        <div className="bg-transparent border-0 px-0 py-1.5 flex items-center gap-4 text-sm font-bold text-slate-600 dark:text-slate-300">
           <span className="flex items-center gap-1.5">
             <span aria-hidden="true" className="w-3 h-3 rounded-full bg-[#3B82F6]" />
             Grupal
@@ -346,19 +359,8 @@ export const HorariosPage: React.FC = () => {
         </div>
 
         {/* ÁREA DE CONTENIDO / CRONOGRAMA */}
-        <main className={`p-3 sm:p-5 md:p-6 overflow-y-auto flex-1 ${hayCambiosPendientes ? 'pb-28' : ''}`}>
-          <div className="max-w-[1380px] mx-auto w-full">
-            {/* ACCIÓN PRINCIPAL: la confirmación vive en el dock flotante inferior */}
-            <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-5">
-              <Button
-                type="button"
-                onClick={() => handleOpenCreate('LUNES', '08:00')}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:from-primary-dark hover:to-[#900e4e] hover:shadow-md"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Nuevo Horario</span>
-              </Button>
-            </div>
+        <div className={`w-full py-2 overflow-y-auto flex-1 ${hayCambiosPendientes ? 'pb-28' : ''}`}>
+          <div className="w-full">
 
             {/* MENSAJE CUANDO EL CRONOGRAMA ESTÁ VACÍO */}
             {totalHorarios === 0 ? (
@@ -423,7 +425,7 @@ export const HorariosPage: React.FC = () => {
             </div>
 
             {/* VISTA MOBILE (LISTA TOUCH DIARIA, SIN ARRASTRE) */}
-            <div className="block xl:hidden bg-card rounded-2xl border border-border shadow-xs overflow-hidden">
+            <div className="block xl:hidden bg-transparent border-none shadow-none">
               <CronogramaListMobile
                 horarios={horariosMostrados}
                 onEdit={handleEdit}
@@ -435,7 +437,7 @@ export const HorariosPage: React.FC = () => {
               />
             </div>
           </div>
-        </main>
+        </div>
       </div>
 
       {/* MODAL: ALTA / EDICIÓN (se desmonta al cerrar: cada apertura parte de valores frescos) */}
