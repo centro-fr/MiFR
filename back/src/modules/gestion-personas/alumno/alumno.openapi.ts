@@ -52,18 +52,67 @@ export const alumnoSchema = z
   })
   .openapi("Alumno");
 
+const situacionCuotaSchema = z
+  .object({
+    estado: z
+      .enum([
+        "AL_DIA",
+        "POR_VENCER",
+        "VENCIDA",
+        "CLASE_SUELTA_VIGENTE",
+        "CLASE_SUELTA_VENCIDA",
+        "PENDIENTE_DE_PAGO",
+      ])
+      .openapi({
+        description:
+          "POR_VENCER: dentro de los días de gracia del plan. PENDIENTE_DE_PAGO: sin ninguna cuota paga " +
+          "(pre-inscripto, o con la única transferencia rechazada)",
+      }),
+    fecha_vencimiento: fechaSchema.nullable().openapi({
+      description: "Vencimiento de la última cuota paga; null sin cuotas pagas",
+    }),
+    dias_restantes: z.number().int().nullable().openapi({
+      description: "Días hasta el vencimiento: 0 el mismo día, negativo si ya venció (días de atraso)",
+    }),
+    puede_asistir: z.boolean().openapi({
+      description:
+        "Según el estado y el parámetro VENCIDOS_PUEDEN_ASISTIR; una transferencia pendiente nunca bloquea",
+    }),
+    tiene_pago_pendiente: z.boolean().openapi({
+      description: "Hay una transferencia informada que la propietaria todavía no revisó",
+    }),
+  })
+  .openapi("SituacionCuota", {
+    description:
+      "Se calcula en cada consulta. En una inscripción dada de baja se calcula al día de la baja: muestra lo " +
+      "que debía el alumno al irse",
+  });
+
+const inscripcionConSituacionSchema = inscripcionSchema.extend({
+  situacion_cuota: situacionCuotaSchema.nullable(),
+});
+
 const alumnoEnListadoSchema = alumnoSchema
   .extend({
     inscripcion: resumenInscripcionSchema.nullable().openapi({
       description: "Plan y profesora de la inscripción vigente más reciente; null si no tiene",
+    }),
+    situacion_cuota: situacionCuotaSchema.nullable().openapi({
+      description: "La de la inscripción de `inscripcion`; null si no tiene una vigente",
     }),
   })
   .openapi("AlumnoEnListado");
 
 const fichaAlumnoSchema = alumnoSchema
   .extend({
-    inscripciones: z.array(inscripcionSchema).openapi({
-      description: "Inscripciones vigentes (pre-inscriptas o activas) con plan, precio y horarios",
+    inscripciones: z.array(inscripcionConSituacionSchema).openapi({
+      description:
+        "Inscripciones vigentes (pre-inscriptas o activas) con plan, precio, horarios y situación de cuota",
+    }),
+    inscripciones_de_la_baja: z.array(inscripcionConSituacionSchema).openapi({
+      description:
+        "Solo en un alumno dado de baja (vacío en los demás): las inscripciones que cerró su última baja, con " +
+        "la situación de cuota al día de la baja, para advertir una deuda antes de reactivarlo",
     }),
   })
   .openapi("FichaAlumno");
@@ -100,7 +149,7 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
       "parciales en el nombre y el apellido del alumno o de su tutor, sin distinguir acentos ni mayúsculas. " +
       "`dni` busca el DNI exacto. Los dados de baja no salen salvo con `incluirBajas=true` o `estado=BAJA`. " +
       "`id_plan`, `id_profesora` e `id_actividad` filtran por la inscripción vigente. Cada fila trae su plan y " +
-      "profesora. Paginado con `limit` (por defecto 20, máximo 100) y `offset`.",
+      "profesora y la situación de cuota de esa inscripción. Paginado con `limit` (por defecto 20, máximo 100) y `offset`.",
     request: { query: listarAlumnoQuerySchema },
     responses: {
       200: respuestaJson("Página de alumnos", paginaAlumnosSchema),
@@ -154,7 +203,8 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     summary: "Ficha de un alumno",
     description:
       `Requiere el permiso \`ALUMNOS_VER\`. ${aCargo} Con un alumno que no tiene a cargo, la profesora ` +
-      "recibe 403. La ficha trae las inscripciones vigentes con su plan, precio, profesora y horarios.",
+      "recibe 403. La ficha trae las inscripciones vigentes con su plan, precio, profesora, horarios y situación " +
+      "de cuota; la de un alumno dado de baja, también las inscripciones de su última baja.",
     request: { params: alumnoIdParamSchema },
     responses: {
       200: respuestaJson("Ficha del alumno", fichaAlumnoSchema),

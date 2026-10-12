@@ -1,4 +1,5 @@
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
+import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type {
   InscripcionConDatos,
   ResumenInscripcionAlumno,
@@ -17,11 +18,30 @@ export interface ILogicaProfesoras {
   darDeBajaProfesora(id: number): Promise<Profesora>;
 }
 
+// US-10 y US-18: si la inscripción está al día, por vencer o vencida. Sale de Cuota (IInfoCuotas) y
+// no se guarda: se calcula en cada consulta.
+export interface SituacionCuota {
+  estado: EstadoHabilitacion;
+  fecha_vencimiento: Date | null;
+  dias_restantes: number | null;
+  puede_asistir: boolean;
+  tiene_pago_pendiente: boolean;
+}
+export type InscripcionConSituacion = InscripcionConDatos & { situacion_cuota: SituacionCuota | null };
+
 // US-10: cada fila del listado trae su plan y profesora vigentes, y la ficha sus inscripciones
-// vigentes con los horarios. Los dos salen de Inscripcion, en el otro subsistema.
-export type AlumnoEnListado = Alumno & { inscripcion: ResumenInscripcionAlumno | null };
+// vigentes con los horarios. Los dos salen de Inscripcion, en el otro subsistema; la situación de
+// cuota, de Cuota. La ficha de un alumno dado de baja trae además las inscripciones de su última
+// baja, con lo que debía al irse (US-08).
+export type AlumnoEnListado = Alumno & {
+  inscripcion: ResumenInscripcionAlumno | null;
+  situacion_cuota: SituacionCuota | null;
+};
 export type PaginaListadoAlumnos = Omit<PaginaAlumnos, "datos"> & { datos: AlumnoEnListado[] };
-export type FichaAlumno = Alumno & { inscripciones: InscripcionConDatos[] };
+export type FichaAlumno = Alumno & {
+  inscripciones: InscripcionConSituacion[];
+  inscripciones_de_la_baja: InscripcionConSituacion[];
+};
 // A una profesora el alta le devuelve del tutor solo su identificación (ver GestionPersonasService).
 export type AlumnoDadoDeAlta = Omit<Alumno, "responsable"> & {
   responsable:

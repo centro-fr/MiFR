@@ -108,6 +108,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     horarioService,
     alumnoService,
     inscripcionService,
+    cuotaService,
   );
 
   return {
