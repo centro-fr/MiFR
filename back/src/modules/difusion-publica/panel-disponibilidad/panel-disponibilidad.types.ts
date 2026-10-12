@@ -1,26 +1,17 @@
 import type { modalidad_actividad } from "@prisma/client";
 
-// US-32: la escala del indicador de cupo. SIN_LIMITE es un horario sin cupo máximo.
-export type Disponibilidad = "LIBRE" | "CASI_LLENO" | "COMPLETO" | "SIN_LIMITE";
-
-// Lo que ve un visitante sin sesión: ningún dato de alumnos ni de cuentas, solo la oferta del centro.
-export interface HorarioPublico {
-  id_horario: number;
-  dia_semana: number;
-  hora_inicio: Date;
-  hora_fin: Date;
-  actividad: {
-    id_actividad: number;
-    nombre: string;
-    descripcion: string | null;
-    modalidad: modalidad_actividad;
-  };
-  profesora: { nombre: string; apellido: string };
-  cupo_maximo: number | null;
-  cupo_disponible: number | null;
-  disponibilidad: Disponibilidad;
+// Lo que ve un visitante sin sesión: qué actividades da el centro y qué días. Ni horas, ni profesoras,
+// ni cupos, ni ningún dato de alumnos: la grilla con esos datos queda para quien tiene sesión.
+export interface ActividadPublica {
+  id_actividad: number;
+  nombre: string;
+  descripcion: string | null;
+  modalidad: modalidad_actividad;
+  // Días de la semana con alguna clase: 1 = lunes … 6 = sábado.
+  dias: number[];
+  clases_por_semana: number;
 }
 
-export interface PanelDisponibilidad {
-  horarios: HorarioPublico[];
+export interface ActividadesPublicas {
+  actividades: ActividadPublica[];
 }

@@ -5,12 +5,12 @@ import type { IAutenticacion } from "../../../gestion-usuarios/sesion/interface/
 import type { ILogicaDifusionPublica } from "../../interface/i-logica-difusion-publica.js";
 
 describe("rutas del panel público", () => {
-  let logica: { consultarDisponibilidad: ReturnType<typeof vi.fn> };
+  let logica: { consultarActividades: ReturnType<typeof vi.fn> };
   let autenticacion: { validarSesion: ReturnType<typeof vi.fn> };
   let app: ReturnType<typeof createApp>;
 
   beforeEach(() => {
-    logica = { consultarDisponibilidad: vi.fn().mockResolvedValue({ horarios: [] }) };
+    logica = { consultarActividades: vi.fn().mockResolvedValue({ actividades: [] }) };
     autenticacion = { validarSesion: vi.fn() };
     app = createApp({
       difusionPublica: logica as unknown as ILogicaDifusionPublica,
@@ -18,24 +18,24 @@ describe("rutas del panel público", () => {
     } as AppDependencies);
   });
 
-  it("GET /publico/disponibilidad responde sin sesión y no valida ningún token (US-32)", async () => {
-    const respuesta = await request(app).get("/api/v1/publico/disponibilidad");
+  it("GET /publico/actividades responde sin sesión y no valida ningún token (US-32)", async () => {
+    const respuesta = await request(app).get("/api/v1/publico/actividades");
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body).toEqual({ horarios: [] });
+    expect(respuesta.body).toEqual({ actividades: [] });
     expect(autenticacion.validarSesion).not.toHaveBeenCalled();
   });
 
-  it("GET /publico/disponibilidad deja reusar la respuesta un minuto", async () => {
-    const respuesta = await request(app).get("/api/v1/publico/disponibilidad");
+  it("GET /publico/actividades deja reusar la respuesta un minuto", async () => {
+    const respuesta = await request(app).get("/api/v1/publico/actividades");
 
     expect(respuesta.headers["cache-control"]).toBe("public, max-age=60");
   });
 
-  it("GET /publico/disponibilidad no tiene operaciones de escritura", async () => {
-    const respuesta = await request(app).post("/api/v1/publico/disponibilidad").send({});
+  it("GET /publico/actividades no tiene operaciones de escritura", async () => {
+    const respuesta = await request(app).post("/api/v1/publico/actividades").send({});
 
     expect(respuesta.status).toBe(404);
-    expect(logica.consultarDisponibilidad).not.toHaveBeenCalled();
+    expect(logica.consultarActividades).not.toHaveBeenCalled();
   });
 });

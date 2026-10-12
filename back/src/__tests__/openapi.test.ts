@@ -63,7 +63,7 @@ const OPERACIONES_ESPERADAS = [
   "post /pagos/{id}/aprobar",
   "post /pagos/{id}/rechazar",
   "get /pagos/{id}/comprobante",
-  "get /publico/disponibilidad",
+  "get /publico/actividades",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {
@@ -100,7 +100,7 @@ describe("documentación OpenAPI", () => {
         .map(([metodo]) => `${metodo} ${ruta}`),
     );
 
-    expect(sinSeguridad.sort()).toEqual(["get /publico/disponibilidad", "post /auth/google"]);
+    expect(sinSeguridad.sort()).toEqual(["get /publico/actividades", "post /auth/google"]);
   });
 
   it("createApp publica el documento y Swagger UI cuando recibe la documentación", async () => {

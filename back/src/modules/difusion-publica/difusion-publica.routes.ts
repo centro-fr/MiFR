@@ -6,7 +6,7 @@ import { createPanelDisponibilidadRoutes } from "./panel-disponibilidad/panel-di
 export function createDifusionPublicaRoutes(logica: ILogicaDifusionPublica): Router {
   const router = Router();
 
-  router.use("/publico/disponibilidad", createPanelDisponibilidadRoutes(logica));
+  router.use("/publico/actividades", createPanelDisponibilidadRoutes(logica));
 
   return router;
 }

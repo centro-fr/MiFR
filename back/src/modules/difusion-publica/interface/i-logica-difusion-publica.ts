@@ -1,9 +1,9 @@
-import type { PanelDisponibilidad } from "../panel-disponibilidad/panel-disponibilidad.types.js";
+import type { ActividadesPublicas } from "../panel-disponibilidad/panel-disponibilidad.types.js";
 
 // La parte de ILogicaDifusionPublica que usa el controller de PanelDisponibilidad. No es una interfaz
 // nueva del diagrama: la que provee el subsistema es la unión.
 export interface ILogicaPanelDisponibilidad {
-  consultarDisponibilidad(): Promise<PanelDisponibilidad>;
+  consultarActividades(): Promise<ActividadesPublicas>;
 }
 
 // Interfaz del subsistema DifusionPublica en la vista arquitectónica: la consume PanelPublicoPresWeb,

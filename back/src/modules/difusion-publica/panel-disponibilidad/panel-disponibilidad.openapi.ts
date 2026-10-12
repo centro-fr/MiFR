@@ -1,52 +1,41 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { respuestaJson } from "../../../shared/openapi/registro.js";
-import { horaSchema } from "../../gestion-servicio-entrenamiento/horario/horario.openapi.js";
 
-const horarioPublicoSchema = z
+const actividadPublicaSchema = z
   .object({
-    id_horario: z.number().int(),
-    dia_semana: z.number().int().min(1).max(6).openapi({ description: "1 = lunes … 6 = sábado" }),
-    hora_inicio: horaSchema,
-    hora_fin: horaSchema,
-    actividad: z.object({
-      id_actividad: z.number().int(),
-      nombre: z.string(),
-      descripcion: z.string().nullable(),
-      modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]),
-    }),
-    profesora: z.object({ nombre: z.string(), apellido: z.string() }),
-    cupo_maximo: z
+    id_actividad: z.number().int(),
+    nombre: z.string(),
+    descripcion: z.string().nullable(),
+    modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]),
+    dias: z
+      .array(z.number().int().min(1).max(6))
+      .openapi({ description: "Días con alguna clase, en orden: 1 = lunes … 6 = sábado" }),
+    clases_por_semana: z
       .number()
       .int()
-      .nullable()
-      .openapi({ description: "Cupo del horario o, si no tiene, el de la actividad; null sin cupo" }),
-    cupo_disponible: z.number().int().nullable().openapi({ description: "Lugares libres; null sin cupo" }),
-    disponibilidad: z.enum(["LIBRE", "CASI_LLENO", "COMPLETO", "SIN_LIMITE"]).openapi({
-      description:
-        "LIBRE: menos del 60 % ocupado. CASI_LLENO: desde el 60 %. COMPLETO: sin lugares. SIN_LIMITE: sin cupo",
-    }),
+      .openapi({ description: "Cantidad de horarios vigentes de la actividad" }),
   })
-  .openapi("HorarioPublico");
+  .openapi("ActividadPublica");
 
-const panelDisponibilidadSchema = z
-  .object({ horarios: z.array(horarioPublicoSchema) })
-  .openapi("PanelDisponibilidad");
+const actividadesPublicasSchema = z
+  .object({ actividades: z.array(actividadPublicaSchema) })
+  .openapi("ActividadesPublicas");
 
 export function registrarDocumentacionPanelDisponibilidad(registro: OpenAPIRegistry): void {
   registro.registerPath({
     method: "get",
-    path: "/publico/disponibilidad",
+    path: "/publico/actividades",
     tags: ["Público"],
     security: [],
-    summary: "Panel público de disponibilidad",
+    summary: "Actividades del centro",
     description:
-      "No requiere sesión (US-32). Devuelve los horarios vigentes, ordenados por día y hora, con la actividad, " +
-      "el nombre de la profesora y los lugares libres. Los lugares ocupados son los de las inscripciones " +
-      "activas y las pre-inscripciones con la reserva vigente. No trae ningún dato de alumnos. La respuesta se " +
-      "puede reusar durante un minuto (`Cache-Control: public, max-age=60`).",
+      "No requiere sesión (US-32). Devuelve las actividades que tienen algún horario vigente, con los días en " +
+      "que se dan y cuántas clases tienen por semana. No trae horas, profesoras, cupos ni datos de alumnos: la " +
+      "grilla de horarios exige sesión (`GET /horarios`). La respuesta se puede reusar durante un minuto " +
+      "(`Cache-Control: public, max-age=60`).",
     responses: {
-      200: respuestaJson("Cronograma con la disponibilidad de cada horario", panelDisponibilidadSchema),
+      200: respuestaJson("Actividades con clases vigentes", actividadesPublicasSchema),
     },
   });
 }

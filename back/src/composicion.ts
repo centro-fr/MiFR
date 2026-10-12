@@ -120,9 +120,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionServicioEntrenamiento,
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
-      difusionPublica: new DifusionPublicaService(
-        new PanelDisponibilidadService(horarioService, inscripcionService),
-      ),
+      difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,
     },

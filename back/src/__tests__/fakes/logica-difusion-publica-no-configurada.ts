@@ -5,5 +5,5 @@ async function operacionNoConfigurada(): Promise<never> {
 }
 
 export const logicaDifusionPublicaNoConfigurada = {
-  consultarDisponibilidad: operacionNoConfigurada,
+  consultarActividades: operacionNoConfigurada,
 } satisfies ILogicaDifusionPublica;
