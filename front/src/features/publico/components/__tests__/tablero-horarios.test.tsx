@@ -13,9 +13,9 @@ function horario(cambios: Partial<HorarioPublico> = {}): HorarioPublico {
   return {
     id_horario: 1,
     dia_semana: 2,
-    hora_inicio: "1970-01-01T09:00:00.000Z",
-    hora_fin: "1970-01-01T10:00:00.000Z",
-    actividad: { id_actividad: 2, nombre: "Entrenamiento Personalizado", descripcion: null, modalidad: "PERSONALIZADA" },
+    hora_inicio: "1970-01-01T18:00:00.000Z",
+    hora_fin: "1970-01-01T19:00:00.000Z",
+    actividad: { id_actividad: 2, nombre: "Personalizado", descripcion: null, modalidad: "PERSONALIZADA" },
     profesora: { nombre: "Carla", apellido: "Ruiz" },
     cupo_maximo: 4,
     cupo_disponible: 2,
@@ -33,10 +33,9 @@ function renderTablero() {
   );
 }
 
-// jsdom no aplica el CSS: la grilla de escritorio y la lista del celular están las dos en el DOM.
-// En la grilla cada día es una sección con su nombre; en la lista, los días son botones.
-function columnaDe(dia: string) {
-  return screen.getByRole("region", { name: dia });
+// jsdom no aplica el CSS: la cartelera de escritorio (una tabla) y la lista del celular están las dos.
+function cartelera() {
+  return screen.getByRole("table", { name: "Clases de la semana por día y hora" });
 }
 
 describe("TableroHorarios", () => {
@@ -59,7 +58,29 @@ describe("TableroHorarios", () => {
     expect(screen.getByRole("status", { name: "Cargando los horarios" })).toBeInTheDocument();
   });
 
-  it("la grilla ubica cada clase en su día con el horario, la profesora y los lugares libres", async () => {
+  it("la cartelera tiene solo los días y las horas con clases, agrupadas por turno", async () => {
+    consultar.mockResolvedValue({
+      horarios: [
+        horario({ id_horario: 1, dia_semana: 1, hora_inicio: "1970-01-01T08:00:00.000Z" }),
+        horario(),
+        horario({ id_horario: 3, dia_semana: 4, hora_inicio: "1970-01-01T21:00:00.000Z" }),
+      ],
+    });
+
+    renderTablero();
+
+    await screen.findByRole("table");
+    const encabezados = within(cartelera())
+      .getAllByRole("columnheader")
+      .map((celda) => celda.textContent);
+    expect(encabezados).toEqual(["Hora", "Lunes", "Martes", "Jueves", "Mañana", "Tarde", "Noche"]);
+    const horas = within(cartelera())
+      .getAllByRole("rowheader")
+      .map((celda) => celda.textContent);
+    expect(horas).toEqual(["08:00", "18:00", "21:00"]);
+  });
+
+  it("cada clase muestra la actividad, la profesora y los lugares libres en su día y su hora", async () => {
     consultar.mockResolvedValue({
       horarios: [
         horario(),
@@ -70,45 +91,34 @@ describe("TableroHorarios", () => {
 
     renderTablero();
 
-    const martes = await screen.findByRole("region", { name: "Martes" });
-    const clase = within(martes).getByRole("article", { name: "Entrenamiento Personalizado, de 09:00 a 10:00" });
-    expect(clase).toHaveTextContent("09:00 - 10:00 hs");
-    expect(clase).toHaveTextContent("Carla");
-    expect(clase).toHaveTextContent("2 libres");
-    expect(columnaDe("Jueves")).toHaveTextContent("Último lugar");
-    expect(columnaDe("Viernes")).toHaveTextContent("Completo");
-    expect(columnaDe("Lunes")).toBeEmptyDOMElement();
+    await screen.findByRole("table");
+    const fila = within(cartelera()).getByRole("row", { name: /^18:00/ });
+    const [martes, jueves, viernes] = within(fila).getAllByRole("cell");
+    expect(within(martes).getByRole("article", { name: "Personalizado, de 18:00 a 19:00" })).toHaveTextContent(
+      "PersonalizadoCarla2 libres",
+    );
+    expect(jueves).toHaveTextContent("Último lugar");
+    expect(viernes).toHaveTextContent("Completo");
   });
 
-  it("la grilla ubica cada clase según su hora y la estira según su duración", async () => {
+  it("en el celular empieza en el próximo día con clases, cambia de día y agrupa por turno", async () => {
     consultar.mockResolvedValue({
       horarios: [
         horario(),
-        horario({ id_horario: 2, hora_inicio: "1970-01-01T10:30:00.000Z", hora_fin: "1970-01-01T12:00:00.000Z" }),
+        horario({ id_horario: 2, dia_semana: 6, hora_inicio: "1970-01-01T09:00:00.000Z" }),
       ],
     });
-
     renderTablero();
 
-    const martes = await screen.findByRole("region", { name: "Martes" });
-    const [primera, segunda] = within(martes).getAllByRole("article");
-    // 104 px por hora: la de 10:30 a 12:00 empieza 1,5 horas después del inicio de la grilla.
-    expect(primera).toHaveStyle({ top: "2px", height: "100px" });
-    expect(segunda).toHaveStyle({ top: "158px", height: "152px" });
-  });
-
-  it("en el celular empieza en el próximo día con clases y cambia de día con los botones", async () => {
-    consultar.mockResolvedValue({ horarios: [horario(), horario({ id_horario: 2, dia_semana: 6 })] });
-    renderTablero();
-
-    expect(await screen.findByRole("button", { name: "Martes, 1 clase" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Lunes, 0 clases" })).toHaveAttribute("aria-pressed", "false");
+    expect(await screen.findByRole("button", { name: "Martes" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "Lunes" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "Martes" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tarde" })).toHaveTextContent("Carla Ruiz");
 
-    fireEvent.click(screen.getByRole("button", { name: "Lunes, 0 clases" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sábado" }));
 
-    expect(screen.getByRole("heading", { level: 3, name: "Lunes" })).toBeInTheDocument();
-    expect(screen.getByText("No hay clases este día")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Sábado" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Mañana" })).toHaveTextContent("09:00");
   });
 
   it("avisa cuando no hay clases publicadas", async () => {
@@ -125,7 +135,7 @@ describe("TableroHorarios", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
 
-    expect(await screen.findByRole("region", { name: "Martes" })).toHaveTextContent("Carla");
+    expect(await screen.findByRole("table")).toHaveTextContent("Carla");
     expect(consultar).toHaveBeenCalledTimes(2);
   });
 });

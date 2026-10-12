@@ -10,9 +10,13 @@ export const DIAS_DEL_CENTRO = [
   { numero: 6, nombre: "Sábado", corto: "Sáb" },
 ] as const;
 
-export interface FranjaHoraria {
-  inicio: string;
-  fin: string;
+export type DiaDelCentro = (typeof DIAS_DEL_CENTRO)[number];
+
+export type Turno = "Mañana" | "Tarde" | "Noche";
+
+export interface HorasDelTurno {
+  turno: Turno;
+  horas: string[];
 }
 
 // El back serializa las horas sobre el 1970-01-01 en UTC: "1970-01-01T09:00:00.000Z" → "09:00".
@@ -20,43 +24,46 @@ export function horaDesdeApi(valor: string): string {
   return valor.slice(11, 16);
 }
 
-// "18:30" → 1110.
-export function minutosDeHora(hora: string): number {
-  const [horas, minutos] = hora.split(":").map(Number);
-  return horas * 60 + minutos;
+// Los turnos de la cartelera del centro: hasta el mediodía, la tarde y desde las 19.
+export function turnoDe(hora: string): Turno {
+  if (hora < "13:00") return "Mañana";
+  if (hora < "19:00") return "Tarde";
+  return "Noche";
 }
 
-export function minutosDesdeApi(valor: string): number {
-  return minutosDeHora(horaDesdeApi(valor));
+// Las filas de la cartelera: cada hora en la que empieza alguna clase, agrupadas por turno. Las horas
+// sin clases no ocupan lugar, así un mediodía libre no deja un hueco en la página.
+export function horasPorTurno(horarios: HorarioPublico[]): HorasDelTurno[] {
+  const horas = [...new Set(horarios.map(({ hora_inicio }) => horaDesdeApi(hora_inicio)))].sort();
+  const turnos: HorasDelTurno[] = [];
+  for (const hora of horas) {
+    const turno = turnoDe(hora);
+    const ultimo = turnos.at(-1);
+    if (ultimo?.turno === turno) ultimo.horas.push(hora);
+    else turnos.push({ turno, horas: [hora] });
+  }
+  return turnos;
 }
 
-function horaEnPunto(hora: number): string {
-  return `${String(hora).padStart(2, "0")}:00`;
-}
-
-// Las filas de la grilla, de una hora cada una, desde la primera clase hasta el fin de la última:
-// el mismo criterio que el cronograma de la propietaria (CronogramaGridDesktop).
-export function franjasHorarias(horarios: HorarioPublico[]): FranjaHoraria[] {
-  if (horarios.length === 0) return [];
-  const desde = Math.min(...horarios.map(({ hora_inicio }) => Math.floor(minutosDesdeApi(hora_inicio) / 60)));
-  const hasta = Math.max(...horarios.map(({ hora_fin }) => Math.ceil(minutosDesdeApi(hora_fin) / 60)));
-  return Array.from({ length: Math.max(hasta - desde, 1) }, (_, indice) => ({
-    inicio: horaEnPunto(desde + indice),
-    fin: horaEnPunto(desde + indice + 1),
-  }));
+// Solo los días con alguna clase: una columna vacía no le dice nada a quien visita.
+export function diasConClases(horarios: HorarioPublico[]): DiaDelCentro[] {
+  const dias = new Set(horarios.map(({ dia_semana }) => dia_semana));
+  return DIAS_DEL_CENTRO.filter(({ numero }) => dias.has(numero));
 }
 
 // Ya vienen ordenados por día y hora; se filtran sin reordenar.
-export function clasesDelDia(horarios: HorarioPublico[], dia: number): HorarioPublico[] {
-  return horarios.filter(({ dia_semana }) => dia_semana === dia);
+export function clasesDe(horarios: HorarioPublico[], dia: number, hora?: string): HorarioPublico[] {
+  return horarios.filter(
+    (horario) =>
+      horario.dia_semana === dia && (hora === undefined || horaDesdeApi(horario.hora_inicio) === hora),
+  );
 }
 
 // El día que se muestra primero en el celular: hoy si tiene clases, si no el próximo que tenga.
 // Date.getDay() cuenta el domingo como 0, y el domingo el centro está cerrado.
-export function diaInicial(hoy: Date, horarios: HorarioPublico[]): number {
-  const conClases = DIAS_DEL_CENTRO.filter(({ numero }) => clasesDelDia(horarios, numero).length > 0);
+export function diaInicial(hoy: Date, dias: DiaDelCentro[]): number | undefined {
   const deHoy = hoy.getDay();
-  return (conClases.find(({ numero }) => numero >= deHoy) ?? conClases[0] ?? DIAS_DEL_CENTRO[0]).numero;
+  return (dias.find(({ numero }) => numero >= deHoy) ?? dias[0])?.numero;
 }
 
 export function textoDisponibilidad(disponibilidad: Disponibilidad, lugares: number | null): string {

@@ -1,33 +1,10 @@
 import { CalendarX2, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { temaDeModalidad } from "@/features/horarios/utils/tema-horario";
 import { useDisponibilidad } from "@/features/publico/hooks/use-disponibilidad";
 import { cn } from "@/utils/cn";
 import { CronogramaPublicoDesktop } from "./cronograma-publico-desktop";
 import { CronogramaPublicoMobile } from "./cronograma-publico-mobile";
-
-const MODALIDADES = [
-  { modalidad: "GRUPAL", texto: "Grupal" },
-  { modalidad: "PERSONALIZADA", texto: "Personalizada" },
-] as const;
-
-function Leyenda() {
-  return (
-    <ul aria-label="Referencias" className="flex flex-wrap items-center gap-4 text-sm font-semibold text-foreground">
-      {MODALIDADES.map(({ modalidad, texto }) => (
-        <li key={modalidad} className="flex items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            className="size-3 rounded-full"
-            style={{ backgroundColor: temaDeModalidad(modalidad).badgeBg }}
-          />
-          {texto}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 function Cargando() {
   return (
@@ -96,9 +73,6 @@ export function TableroHorarios() {
             Las clases de la semana y los lugares que quedan, al día. Para anotarte, acercate al centro o consultá
             con tu profesora.
           </p>
-        </div>
-        <div className="mb-6">
-          <Leyenda />
         </div>
         <Contenido />
       </div>
