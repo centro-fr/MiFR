@@ -15,6 +15,7 @@ Correr desde `back/`. Si alguno falla, se reporta como BLOQUEANTE:
 
 ```bash
 pnpm build
+pnpm typecheck              # también los tests, que el build excluye
 pnpm format:check
 pnpm test:coverage          # 100 % de sentencias, ramas y funciones
 pnpm audit --prod           # vulnerabilidades en dependencias de producción

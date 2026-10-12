@@ -11,6 +11,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 ```bash
 pnpm dev              # tsx watch src/index.ts
 pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
+pnpm typecheck        # tsc --noEmit, con los tests incluidos
 pnpm test             # vitest run
 pnpm test:coverage    # vitest run --coverage (reporte en consola)
 pnpm test:integration # tests contra Postgres real; antes: docker compose --profile test up -d db-test
