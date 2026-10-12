@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { consultarDisponibilidad } from "@/features/publico/api/disponibilidad-api";
 import type { HorarioPublico } from "@/features/publico/schemas/disponibilidad";
 import { TableroHorarios } from "../tablero-horarios";
@@ -33,9 +33,22 @@ function renderTablero() {
   );
 }
 
+// jsdom no aplica el CSS: la grilla de escritorio y la lista del celular están las dos en el DOM.
+// En la grilla cada día es una sección con su nombre; en la lista, los días son botones.
+function columnaDe(dia: string) {
+  return screen.getByRole("region", { name: dia });
+}
+
 describe("TableroHorarios", () => {
   beforeEach(() => {
     consultar.mockReset();
+    // Lunes 12/10/2026.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 12, 10));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("muestra la carga mientras llegan los horarios", () => {
@@ -46,43 +59,56 @@ describe("TableroHorarios", () => {
     expect(screen.getByRole("status", { name: "Cargando los horarios" })).toBeInTheDocument();
   });
 
-  it("muestra cada clase con su horario, su profesora y los lugares libres", async () => {
+  it("la grilla ubica cada clase en su día con el horario, la profesora y los lugares libres", async () => {
     consultar.mockResolvedValue({
       horarios: [
         horario(),
-        horario({ id_horario: 2, cupo_disponible: 1, disponibilidad: "CASI_LLENO" }),
-        horario({ id_horario: 3, cupo_disponible: 0, disponibilidad: "COMPLETO" }),
+        horario({ id_horario: 2, dia_semana: 4, cupo_disponible: 1, disponibilidad: "CASI_LLENO" }),
+        horario({ id_horario: 3, dia_semana: 5, cupo_disponible: 0, disponibilidad: "COMPLETO" }),
       ],
     });
 
     renderTablero();
 
     const martes = await screen.findByRole("region", { name: "Martes" });
-    expect(martes).toHaveTextContent("09:00 – 10:00");
-    expect(martes).toHaveTextContent("Carla Ruiz");
-    expect(martes).toHaveTextContent("2 lugares libres");
-    expect(martes).toHaveTextContent("Último lugar");
-    expect(martes).toHaveTextContent("Completo");
+    const clase = within(martes).getByRole("article", { name: "Entrenamiento Personalizado, de 09:00 a 10:00" });
+    expect(clase).toHaveTextContent("09:00 - 10:00 hs");
+    expect(clase).toHaveTextContent("Carla");
+    expect(clase).toHaveTextContent("2 libres");
+    expect(columnaDe("Jueves")).toHaveTextContent("Último lugar");
+    expect(columnaDe("Viernes")).toHaveTextContent("Completo");
+    expect(columnaDe("Lunes")).toBeEmptyDOMElement();
   });
 
-  it("en el celular empieza en el día de hoy y cambia de día con los botones", async () => {
-    // Lunes 12/10/2026. jsdom no aplica el CSS: la vista del celular y la de escritorio están las dos,
-    // así que el día elegido tiene un título más que los otros.
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 9, 12, 10));
-    consultar.mockResolvedValue({ horarios: [horario({ dia_semana: 6 })] });
+  it("la grilla ubica cada clase según su hora y la estira según su duración", async () => {
+    consultar.mockResolvedValue({
+      horarios: [
+        horario(),
+        horario({ id_horario: 2, hora_inicio: "1970-01-01T10:30:00.000Z", hora_fin: "1970-01-01T12:00:00.000Z" }),
+      ],
+    });
+
     renderTablero();
-    const titulos = (dia: string) => screen.queryAllByRole("heading", { level: 3, name: dia });
 
-    expect(await screen.findByRole("button", { name: "Lunes" })).toHaveAttribute("aria-pressed", "true");
-    expect(titulos("Lunes")).toHaveLength(2);
+    const martes = await screen.findByRole("region", { name: "Martes" });
+    const [primera, segunda] = within(martes).getAllByRole("article");
+    // 104 px por hora: la de 10:30 a 12:00 empieza 1,5 horas después del inicio de la grilla.
+    expect(primera).toHaveStyle({ top: "2px", height: "100px" });
+    expect(segunda).toHaveStyle({ top: "158px", height: "152px" });
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Sábado" }));
+  it("en el celular empieza en el próximo día con clases y cambia de día con los botones", async () => {
+    consultar.mockResolvedValue({ horarios: [horario(), horario({ id_horario: 2, dia_semana: 6 })] });
+    renderTablero();
 
-    expect(screen.getByRole("button", { name: "Sábado" })).toHaveAttribute("aria-pressed", "true");
-    expect(titulos("Sábado")).toHaveLength(2);
-    expect(titulos("Lunes")).toHaveLength(1);
-    vi.useRealTimers();
+    expect(await screen.findByRole("button", { name: "Martes, 1 clase" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Lunes, 0 clases" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("heading", { level: 3, name: "Martes" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Lunes, 0 clases" }));
+
+    expect(screen.getByRole("heading", { level: 3, name: "Lunes" })).toBeInTheDocument();
+    expect(screen.getByText("No hay clases este día")).toBeInTheDocument();
   });
 
   it("avisa cuando no hay clases publicadas", async () => {
@@ -99,7 +125,7 @@ describe("TableroHorarios", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
 
-    expect(await screen.findByRole("region", { name: "Martes" })).toHaveTextContent("Carla Ruiz");
+    expect(await screen.findByRole("region", { name: "Martes" })).toHaveTextContent("Carla");
     expect(consultar).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,82 +1,40 @@
-import { useState } from "react";
 import { CalendarX2, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { temaDeModalidad } from "@/features/horarios/utils/tema-horario";
 import { useDisponibilidad } from "@/features/publico/hooks/use-disponibilidad";
-import type { HorarioPublico } from "@/features/publico/schemas/disponibilidad";
-import { agruparPorDia, DIAS_DEL_CENTRO, diaInicial } from "@/features/publico/utils/tablero";
 import { cn } from "@/utils/cn";
-import { TarjetaHorarioPublico } from "./tarjeta-horario-publico";
+import { CronogramaPublicoDesktop } from "./cronograma-publico-desktop";
+import { CronogramaPublicoMobile } from "./cronograma-publico-mobile";
 
-function ClasesDelDia({ horarios }: { horarios: HorarioPublico[] }) {
-  if (horarios.length === 0) {
-    return <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">Sin clases.</p>;
-  }
+const MODALIDADES = [
+  { modalidad: "GRUPAL", texto: "Grupal" },
+  { modalidad: "PERSONALIZADA", texto: "Personalizada" },
+] as const;
+
+function Leyenda() {
   return (
-    <ul className="flex flex-col gap-3">
-      {horarios.map((horario) => (
-        <li key={horario.id_horario}>
-          <TarjetaHorarioPublico horario={horario} />
+    <ul aria-label="Referencias" className="flex flex-wrap items-center gap-4 text-sm font-semibold text-foreground">
+      {MODALIDADES.map(({ modalidad, texto }) => (
+        <li key={modalidad} className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="size-3 rounded-full"
+            style={{ backgroundColor: temaDeModalidad(modalidad).badgeBg }}
+          />
+          {texto}
         </li>
       ))}
     </ul>
   );
 }
 
-// En el celular se ve un día por vez (empieza en el de hoy); desde lg, la semana entera.
-function Semana({ horarios }: { horarios: HorarioPublico[] }) {
-  const [diaElegido, setDiaElegido] = useState(() => diaInicial(new Date()));
-  const porDia = agruparPorDia(horarios);
-  const elegido = DIAS_DEL_CENTRO.find(({ numero }) => numero === diaElegido) ?? DIAS_DEL_CENTRO[0];
-
-  return (
-    <>
-      <div className="lg:hidden">
-        <div role="group" aria-label="Elegí el día" className="grid grid-cols-6 gap-1.5">
-          {DIAS_DEL_CENTRO.map(({ numero, nombre, corto }) => (
-            <button
-              key={numero}
-              type="button"
-              aria-pressed={numero === diaElegido}
-              aria-label={nombre}
-              onClick={() => setDiaElegido(numero)}
-              className={cn(
-                "min-h-[44px] rounded-xl text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-                numero === diaElegido
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/70",
-              )}
-            >
-              {corto}
-            </button>
-          ))}
-        </div>
-        <h3 className="mb-3 mt-5 text-lg font-extrabold text-foreground">{elegido.nombre}</h3>
-        <ClasesDelDia horarios={porDia.get(elegido.numero) ?? []} />
-      </div>
-
-      <div className="hidden gap-4 lg:grid lg:grid-cols-6">
-        {DIAS_DEL_CENTRO.map(({ numero, nombre }) => (
-          <section key={numero} aria-label={nombre} className="flex min-w-0 flex-col gap-3">
-            <h3 className="border-b-2 border-primary pb-2 text-base font-extrabold text-foreground">{nombre}</h3>
-            <ClasesDelDia horarios={porDia.get(numero) ?? []} />
-          </section>
-        ))}
-      </div>
-    </>
-  );
-}
-
 function Cargando() {
   return (
-    <div role="status" aria-label="Cargando los horarios" className="grid gap-4 lg:grid-cols-6">
-      {DIAS_DEL_CENTRO.map(({ numero }) => (
-        <div key={numero} className={cn("flex flex-col gap-3", numero > 1 && "hidden lg:flex")}>
-          <Skeleton className="h-7 w-24" />
-          <Skeleton className="h-36 w-full rounded-xl" />
-          <Skeleton className="h-36 w-full rounded-xl" />
-        </div>
-      ))}
+    <div role="status" aria-label="Cargando los horarios" className="flex flex-col gap-3">
+      <Skeleton className="h-12 w-full rounded-xl" />
+      <Skeleton className="h-28 w-full rounded-2xl" />
+      <Skeleton className="h-28 w-full rounded-2xl" />
     </div>
   );
 }
@@ -114,20 +72,33 @@ function Contenido() {
       </Aviso>
     );
   }
-  return <Semana horarios={data.horarios} />;
+  return (
+    <>
+      <div className="lg:hidden">
+        <CronogramaPublicoMobile horarios={data.horarios} />
+      </div>
+      <div className="hidden lg:block">
+        <CronogramaPublicoDesktop horarios={data.horarios} />
+      </div>
+    </>
+  );
 }
 
 export function TableroHorarios() {
   return (
-    <section id="horarios" aria-labelledby="titulo-horarios" className="scroll-mt-20 bg-secondary/40 py-12">
+    <section id="horarios" aria-labelledby="titulo-horarios" className="scroll-mt-20 py-12 lg:py-16">
       <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6">
         <div className="mb-6 flex flex-col gap-2">
           <h2 id="titulo-horarios" className="text-3xl font-extrabold tracking-tight text-foreground">
-            Horarios de la semana
+            Horarios
           </h2>
           <p className="max-w-prose text-base text-muted-foreground">
-            Los lugares libres se actualizan solos. Para anotarte, acercate al centro o consultá con tu profesora.
+            Las clases de la semana y los lugares que quedan, al día. Para anotarte, acercate al centro o consultá
+            con tu profesora.
           </p>
+        </div>
+        <div className="mb-6">
+          <Leyenda />
         </div>
         <Contenido />
       </div>

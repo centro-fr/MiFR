@@ -1,55 +1,52 @@
-import { Clock, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { temaDeModalidad } from "@/features/horarios/utils/tema-horario";
 import type { Disponibilidad, HorarioPublico } from "@/features/publico/schemas/disponibilidad";
-import { horaDesdeApi, textoDisponibilidad } from "@/features/publico/utils/tablero";
+import { textoDisponibilidad } from "@/features/publico/utils/tablero";
 import { cn } from "@/utils/cn";
 
-// Colores de front/AGENTS.md: libre verde, casi lleno amarillo, completo rojo; grupal azul y
-// personalizada violeta. Los tonos de texto oscuros mantienen el contraste sobre el fondo claro.
-const ESTILO_DISPONIBILIDAD: Record<Disponibilidad, string> = {
-  LIBRE: "bg-emerald-50 text-emerald-800 ring-emerald-600/30 dark:bg-emerald-500/15 dark:text-emerald-300",
-  CASI_LLENO: "bg-amber-50 text-amber-800 ring-amber-600/30 dark:bg-amber-500/15 dark:text-amber-300",
-  COMPLETO: "bg-red-50 text-red-800 ring-red-600/30 dark:bg-red-500/15 dark:text-red-300",
-  SIN_LIMITE: "bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-white/10 dark:text-slate-300",
+// Piezas de la tarjeta de una clase, con el diseño del cronograma de la propietaria
+// (features/horarios): el color sale de la modalidad, la profesora va en un badge y el cupo en una
+// píldora. Acá la píldora dice cuántos lugares quedan, con el color de US-32.
+
+const PUNTO_DISPONIBILIDAD: Record<Disponibilidad, string> = {
+  LIBRE: "bg-[#10B981]",
+  CASI_LLENO: "bg-[#F59E0B]",
+  COMPLETO: "bg-[#EF4444]",
+  SIN_LIMITE: "bg-slate-400",
 };
 
-const MODALIDAD = {
-  GRUPAL: { texto: "Grupal", borde: "border-l-[#3B82F6]" },
-  PERSONALIZADA: { texto: "Personalizada", borde: "border-l-[#8B5CF6]" },
-} as const;
+interface BadgeProfesoraProps {
+  horario: HorarioPublico;
+  // En la grilla de escritorio la tarjeta es angosta: va solo el nombre, como en el cronograma interno.
+  soloNombre?: boolean;
+  className?: string;
+}
 
-export function TarjetaHorarioPublico({ horario }: { horario: HorarioPublico }) {
-  const modalidad = MODALIDAD[horario.actividad.modalidad];
-  const inicio = horaDesdeApi(horario.hora_inicio);
-  const fin = horaDesdeApi(horario.hora_fin);
-
+export function BadgeProfesora({ horario, soloNombre = false, className }: BadgeProfesoraProps) {
+  const tema = temaDeModalidad(horario.actividad.modalidad);
+  const { nombre, apellido } = horario.profesora;
   return (
-    <article
-      aria-label={`${horario.actividad.nombre}, de ${inicio} a ${fin}`}
+    <Badge
+      variant="outline"
+      title={`${nombre} ${apellido}`}
+      className={cn("truncate rounded-md border-0 font-extrabold shadow-2xs", className)}
+      style={{ backgroundColor: tema.badgeBg, color: tema.badgeText }}
+    >
+      {soloNombre ? nombre : `${nombre} ${apellido}`}
+    </Badge>
+  );
+}
+
+export function PildoraLugares({ horario, className }: { horario: HorarioPublico; className?: string }) {
+  return (
+    <span
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-l-4 border-border bg-card p-3 shadow-sm",
-        modalidad.borde,
+        "inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-black/5 bg-white/80 px-2 py-0.5 text-xs font-bold text-foreground/80 shadow-2xs dark:border-white/10 dark:bg-black/30",
+        className,
       )}
     >
-      <p className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-        <Clock aria-hidden="true" className="size-4 text-primary" />
-        {inicio} – {fin}
-      </p>
-      <div>
-        <h4 className="text-base font-extrabold leading-snug text-foreground">{horario.actividad.nombre}</h4>
-        <p className="text-sm text-muted-foreground">{modalidad.texto}</p>
-      </div>
-      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <User aria-hidden="true" className="size-4 shrink-0" />
-        {horario.profesora.nombre} {horario.profesora.apellido}
-      </p>
-      <p
-        className={cn(
-          "self-start rounded-full px-2.5 py-1 text-sm font-bold ring-1 ring-inset",
-          ESTILO_DISPONIBILIDAD[horario.disponibilidad],
-        )}
-      >
-        {textoDisponibilidad(horario.disponibilidad, horario.cupo_disponible)}
-      </p>
-    </article>
+      <span aria-hidden="true" className={cn("size-2 rounded-full", PUNTO_DISPONIBILIDAD[horario.disponibilidad])} />
+      <strong className="text-foreground">{textoDisponibilidad(horario.disponibilidad, horario.cupo_disponible)}</strong>
+    </span>
   );
 }
