@@ -8,8 +8,8 @@ Sprint 3: **Núcleo Transaccional y Operación Diaria** (según `docs/v.1.1 Spri
 | US-16 | Registro de pago por transferencia | Pendiente | Francisco |
 | US-17 | Aprobación o rechazo de transferencias | Pendiente | Francisco |
 | US-18 | Cálculo del estado de habilitación del alumno | Hecho | Rosario |
-| US-20 | Registro de asistencia por clase | Pendiente | Nicolas |
-| US-21 | Registro automático de inasistencias | Pendiente | Nicolas |
+| US-20 | Registro de asistencia por clase | Hecho (falta EA) | Nicolas |
+| US-21 | Registro automático de inasistencias | Hecho | Nicolas |
 
 Fuentes: `docs/specs/05-*` y `docs/specs/06-*`, `docs/sdd/05-*` y `docs/sdd/06-*`, y el DER. Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
 
@@ -217,36 +217,47 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 
 `clases.estado` (`PROGRAMADA → DICTADA | CANCELADA`) es un ciclo chico: `patrones.md` recomienda un `switch` en el service antes que State.
 
-### Pendiente (US-20)
+### Hecho (US-20)
 
 - [x] Agregar al `.puml` y a EA que `GestionInscripcionesYClases` requiere `IInfoCuotas` (regla dura 2).
-- [ ] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
-- [ ] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
-- [ ] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
-- [ ] `GET /api/v1/clases/:id/asistencia`: inscriptos del horario con su estado de cuota (`IInfoCuotas`) y su asistencia (`presente`, `ausente` o sin marcar).
-- [ ] `PUT /api/v1/clases/:id/asistencia/:idAlumno`: marca presente o ausente; se guarda al momento y el último marcado vale. `POST /api/v1/clases/:id/asistencia/todos-presentes`.
-- [ ] **Reglas**:
-  - [ ] Solo clases del día; las de otros días, solo la propietaria (corrección).
-  - [ ] Solo aparecen los inscriptos en ese horario con la inscripción vigente; un dado de baja no aparece.
-  - [ ] Un vencido aparece con advertencia; si puede asistir lo decide `VENCIDOS_PUEDEN_ASISTIR`. Uno con transferencia pendiente aparece sin restricción.
-  - [ ] Con la asistencia cerrada no se marca más, salvo la propietaria. Cada marcado guarda quién y cuándo (`id_usuario_registra`, `fecha_registro`).
-  - [ ] Toma asistencia la profesora dictante o la propietaria (`ASISTENCIAS_MARCAR`).
-- [ ] Tests del service y de integración.
+- [x] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
+- [x] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
+- [x] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
+- [x] `GET /api/v1/clases/:id/asistencia`: inscriptos del horario con su estado de cuota (`IInfoCuotas`) y su asistencia (`presente`, `ausente` o sin marcar).
+- [x] `PUT /api/v1/clases/:id/asistencia/:idAlumno`: marca presente o ausente; se guarda al momento y el último marcado vale. `POST /api/v1/clases/:id/asistencia/todos-presentes`.
+- [x] **Reglas**:
+  - [x] Solo clases del día; las de otros días, solo la propietaria (corrección).
+  - [x] Solo aparecen los inscriptos en ese horario con la inscripción vigente; un dado de baja no aparece.
+  - [x] Un vencido aparece con advertencia; si puede asistir lo decide `VENCIDOS_PUEDEN_ASISTIR`. Uno con transferencia pendiente aparece sin restricción.
+  - [x] Con la asistencia cerrada no se marca más, salvo la propietaria. Cada marcado guarda quién y cuándo (`id_usuario_registra`, `fecha_registro`).
+  - [x] Toma asistencia la profesora dictante o la propietaria (`ASISTENCIAS_MARCAR`).
+- [x] Tests del service y de integración: PI-47 a PI-49 (J-01 a J-09).
+- [x] Agregar al `.puml` que `Clase` requiere `IInfoHorarios` (materializa las clases del día) y que `CierreAsistencia` usa `Clase` (la pasa a `DICTADA`). Ciclo de la clase en `estados_clase.puml`.
+
+### Pendiente (US-20)
+
+- [ ] Reflejar en el `.eap` de Enterprise Architect las dos dependencias nuevas y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [ ] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`: consultar o crear clases de días anteriores para la corrección, si los pre-inscriptos aparecen en la lista y cómo se cargan las observaciones.
 
 ## US-21 – Inasistencias automáticas
 
 **Responsable:** Nicolas
 
+### Hecho (US-21)
+
+- [x] `POST /api/v1/clases/:id/cerrar`: la profesora cierra la asistencia; guarda `fecha_cierre_asist` y la clase pasa a `DICTADA`.
+- [x] `CierreAsistencia`: los inscriptos sin marcar quedan `asistio = false` con `id_usuario_registra = NULL` (lo registró el cierre). No toca a los ya marcados.
+- [x] Cierre automático de las clases que terminaron (más `MINUTOS_CIERRE_ASISTENCIA`) y siguen abiertas (ver decisiones).
+- [x] **Reglas**:
+  - [x] El cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano: si no se tomó asistencia, no inventa faltas. El cierre con el botón siempre los genera (ver decisiones).
+  - [x] Los dados de baja no generan inasistencias.
+  - [x] Cerrar dos veces no duplica nada.
+- [x] Tests del service y de integración (5 inscriptos, 3 presentes, cierre → 2 ausentes): PI-49 y PI-50 (J-08 a J-12).
+- [x] El cierre automático corre cada minuto dentro del proceso (`index.ts`) y además antes de cada lectura o marcado de `/clases`.
+
 ### Pendiente (US-21)
 
-- [ ] `POST /api/v1/clases/:id/cerrar`: la profesora cierra la asistencia; guarda `fecha_cierre_asist` y la clase pasa a `DICTADA`.
-- [ ] `CierreAsistencia`: los inscriptos sin marcar quedan `asistio = false` con `id_usuario_registra = NULL` (lo registró el cierre). No toca a los ya marcados.
-- [ ] Cierre automático de las clases que terminaron (más `MINUTOS_CIERRE_ASISTENCIA`) y siguen abiertas (ver decisiones).
-- [ ] **Reglas**:
-  - [ ] El cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano: si no se tomó asistencia, no inventa faltas. El cierre con el botón siempre los genera (ver decisiones).
-  - [ ] Los dados de baja no generan inasistencias.
-  - [ ] Cerrar dos veces no duplica nada.
-- [ ] Tests del service y de integración (5 inscriptos, 3 presentes, cierre → 2 ausentes).
+- [ ] Cancelar una clase (`CANCELADA`, sin inasistencias): fuera del MVP según la spec; el aviso `CLASE_CANCELADA` es de US-25.
 
 ### Pendientes del Sprint 1 que siguen esperando
 

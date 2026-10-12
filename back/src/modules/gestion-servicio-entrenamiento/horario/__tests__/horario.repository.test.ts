@@ -146,6 +146,16 @@ describe("HorarioRepository", () => {
     });
   });
 
+  it("listarActivosDelDia filtra por día, fecha de alta y horarios no dados de baja", async () => {
+    await repositorio.listarActivosDelDia(1, HOY_EN_ARGENTINA);
+
+    expect(prisma.horarios.findMany).toHaveBeenCalledWith({
+      where: { dia_semana: 1, fecha_alta: { lte: HOY_EN_ARGENTINA }, fecha_baja: null },
+      include: CON_DATOS,
+      orderBy: [{ hora_inicio: "asc" }, { id_horario: "asc" }],
+    });
+  });
+
   it("tieneActivosDeProfesora cuenta solo los horarios sin fecha de baja", async () => {
     prisma.horarios.count.mockResolvedValueOnce(0).mockResolvedValueOnce(2);
 

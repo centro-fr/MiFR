@@ -38,6 +38,11 @@ import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.
 import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
 import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
+import { ClaseRepository } from "./modules/gestion-inscripciones-y-clases/clase/clase.repository.js";
+import { ClaseService } from "./modules/gestion-inscripciones-y-clases/clase/clase.service.js";
+import { AsistenciaRepository } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.repository.js";
+import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.service.js";
+import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -45,11 +50,13 @@ export interface PiezasDeInfraestructura {
   jwtService: JwtService;
 }
 
-// Lo que arma el composition root: las dependencias de la API y, para los tests de integración,
-// IInfoInscripciones, con la que dan el alta definitiva sin pasar por un cobro.
+// Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
+// tests de integración dan el alta definitiva sin pasar por un cobro; y el cierre automático de la
+// asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
+  cierreAsistencia: CierreAsistenciaService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -101,9 +108,25 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new PagoService(new PagoRepository(prisma), profesorService),
     unidadDeTrabajo,
   );
+  const claseService = new ClaseService(new ClaseRepository(prisma), horarioService, profesorService);
+  const asistenciaService = new AsistenciaService(
+    new AsistenciaRepository(prisma),
+    claseService,
+    inscripcionService,
+    unidadDeTrabajo,
+  );
+  const cierreAsistencia = new CierreAsistenciaService(
+    claseService,
+    asistenciaService,
+    parametrosService,
+    unidadDeTrabajo,
+  );
   const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(
     inscripcionService,
     cuotaService,
+    claseService,
+    asistenciaService,
+    cierreAsistencia,
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
@@ -125,5 +148,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       autorizacion: rolService,
     },
     infoInscripciones: inscripcionService,
+    cierreAsistencia,
   };
 }

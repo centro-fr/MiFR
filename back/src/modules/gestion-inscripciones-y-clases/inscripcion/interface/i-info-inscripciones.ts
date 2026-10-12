@@ -2,6 +2,7 @@ import type {
   FiltroAlumnosPorInscripcion,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "../inscripcion.types.js";
 
@@ -18,11 +19,19 @@ export interface IInfoInscripciones {
   // Las que cerró la última baja del alumno (US-08), sin las que cerró un cambio de plan: la ficha de
   // un alumno dado de baja muestra con ellas lo que debía al irse.
   listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionConDatos[]>;
+  // Inscriptos de un horario el día de una clase (US-20, US-21): inscripción vigente, horario
+  // vigente ese día y alumno no dado de baja. Toman el bloqueo del horario en la transacción en
+  // curso, así una baja no se cruza con el marcado o el cierre.
+  listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]>;
+  buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null>;
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]>;
   resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]>;
   // Inscriptos vigentes por horario, de una sola consulta; un horario sin inscriptos no figura. Cuenta
   // también las pre-inscripciones con la reserva vencida: siguen en el horario y no dejan darlo de baja.
   contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>>;
+  // Con la misma regla que listarParaAsistencia, de una sola consulta: la cantidad que muestra la
+  // lista de clases del día.
+  contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>>;
   // Lugares ocupados por horario con la regla del cupo: las activas y las pre-inscripciones con la
   // reserva vigente. Es la ocupación que se muestra.
   contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>>;
