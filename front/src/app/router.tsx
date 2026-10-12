@@ -32,7 +32,13 @@ const SECCIONES_EN_CONSTRUCCION = [
 ];
 
 export const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  // Página pública: la ve cualquiera, con sesión o sin ella. Desde ahí se llega al login.
+  {
+    path: "/",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
   { path: "/seguridad/permisos", element: <Navigate to="/app/seguridad/permisos" replace /> },
   {
     path: "/login",

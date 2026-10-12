@@ -31,7 +31,7 @@ function ocupaLugar(inscripcion: InscripcionMock): boolean {
   return inscripcion.estado === "PREINSCRIPTA" && reservaDe(inscripcion)?.vencida === false;
 }
 
-function ocupados(idHorario: number, idInscripcionPropia?: number): number {
+export function ocupados(idHorario: number, idInscripcionPropia?: number): number {
   return db.inscripciones.filter(
     (i) => i.id_inscripcion !== idInscripcionPropia && ocupaLugar(i) && i.ids_horarios.includes(idHorario),
   ).length;
