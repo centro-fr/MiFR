@@ -74,7 +74,7 @@ describe("GestionPersonasService", () => {
     mocks = crearMocks();
     servicio = new GestionPersonasService(
       mocks.profesoras as unknown as ProfesorService,
-      mocks.horarios as IInfoHorarios,
+      mocks.horarios as unknown as IInfoHorarios,
       mocks.alumnos as unknown as AlumnoService,
       mocks.inscripciones as unknown as IInfoInscripciones,
       mocks.cuotas as unknown as IInfoCuotas,

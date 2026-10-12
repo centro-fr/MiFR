@@ -16,7 +16,7 @@ import {
   listarHorarioQuerySchema,
 } from "./horario.schemas.js";
 
-const horaSchema = z.string().datetime().openapi({
+export const horaSchema = z.string().datetime().openapi({
   description: "Hora en UTC sobre la fecha 1970-01-01",
   example: "1970-01-01T09:00:00.000Z",
 });
@@ -67,7 +67,7 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
   const reglas =
     "La actividad y la profesora tienen que estar activas, y la profesora no puede tener otro " +
     "horario superpuesto ese día (409). `cupo_maximo` es obligatorio si la actividad es PERSONALIZADA " +
-    "y no tiene cupo propio. El día va de lunes a sábado y las horas entre las 07:00 y las 20:00, el " +
+    "y no tiene cupo propio. El día va de lunes a sábado y las horas entre las 07:00 y las 23:00, el " +
     "horario del centro (400).";
 
   registro.registerPath({

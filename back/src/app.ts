@@ -1,6 +1,8 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
 import helmet from "helmet";
+import type { ILogicaDifusionPublica } from "./modules/difusion-publica/interface/i-logica-difusion-publica.js";
+import { createDifusionPublicaRoutes } from "./modules/difusion-publica/difusion-publica.routes.js";
 import type { ILogicaCuotasPagos } from "./modules/gestion-cuotas-y-pagos/interface/i-logica-cuotas-pagos.js";
 import { createGestionCuotasYPagosRoutes } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
@@ -25,6 +27,7 @@ export interface AppDependencies {
   gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
   gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   gestionCuotasYPagos: ILogicaCuotasPagos;
+  difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -54,6 +57,8 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
+  // Va primero: es lo único sin sesión, y así ningún guardia de otro subsistema lo alcanza.
+  api.use(createDifusionPublicaRoutes(deps.difusionPublica));
   const acceso = crearControlDeAcceso(deps.autenticacion, deps.autorizacion);
   api.use(
     createGestionUsuariosRoutes(deps.gestionUsuarios, acceso, { loginDesarrollo: opciones.loginDesarrollo }),

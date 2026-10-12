@@ -2,6 +2,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
 import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import { ConflictError } from "../../../../shared/errors/app-error.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
@@ -53,6 +54,7 @@ describe("rutas de planes", () => {
       gestionServicioEntrenamiento: logica as unknown as ILogicaServicioEntrenamiento,
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+      difusionPublica: logicaDifusionPublicaNoConfigurada,
       autenticacion,
       autorizacion,
     });
