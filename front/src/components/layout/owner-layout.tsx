@@ -2,6 +2,7 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { LogoFr } from "@/components/marca/logo-fr";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   DropdownMenu,
@@ -56,14 +57,7 @@ function leerSidebarAbierto(): boolean {
 }
 
 function LogoMarca() {
-  return (
-    <div
-      aria-hidden="true"
-      className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-black text-sidebar-primary-foreground"
-    >
-      FR
-    </div>
-  );
+  return <LogoFr className="size-8" />;
 }
 
 /** Props de entrada en cascada del drawer mobile (el delay crece con el índice del ítem). */

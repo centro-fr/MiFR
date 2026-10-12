@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { CalendarDays } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogoCentro, NOMBRE_DEL_CENTRO } from "./marca-centro";
+import { LogoFr } from "@/components/marca/logo-fr";
+import { NOMBRE_DEL_CENTRO } from "./marca-centro";
 
 // La foto se publica dejando el archivo en front/public/centro.webp. Mientras no exista, el espacio
 // muestra la marca: el 404 (o el index.html que devuelve el hosting) dispara onError.
@@ -15,7 +15,7 @@ function FotoDelCentro() {
     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl bg-dark shadow-xl ring-1 ring-border">
       {sinFoto ? (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-dark via-[#2a1630] to-primary-dark">
-          <LogoCentro className="size-28 rounded-3xl shadow-brand-glow sm:size-36" />
+          <LogoFr className="size-28 drop-shadow-xl sm:size-36" />
         </div>
       ) : (
         <img
@@ -57,9 +57,6 @@ export function Portada() {
                 <CalendarDays aria-hidden="true" />
                 Ver horarios
               </a>
-            </Button>
-            <Button asChild variant="outline" className="h-12 rounded-xl px-6 text-base font-bold">
-              <Link to="/login">Iniciar sesión</Link>
             </Button>
           </div>
         </div>

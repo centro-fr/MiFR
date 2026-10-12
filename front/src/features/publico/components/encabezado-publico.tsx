@@ -4,7 +4,8 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { homePathForRoles } from "@/types/auth";
-import { LogoCentro, NOMBRE_DEL_CENTRO } from "./marca-centro";
+import { LogoFr } from "@/components/marca/logo-fr";
+import { NOMBRE_DEL_CENTRO } from "./marca-centro";
 
 // Con sesión iniciada, el mismo botón lleva al panel en lugar de volver a pedir el login.
 function AccesoAlSistema() {
@@ -33,18 +34,12 @@ export function EncabezadoPublico() {
           href="#inicio"
           className="flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-primary"
         >
-          <LogoCentro />
+          <LogoFr />
           <span className="hidden truncate text-base font-extrabold text-foreground sm:block">
             {NOMBRE_DEL_CENTRO}
           </span>
         </a>
         <nav aria-label="Principal" className="flex items-center gap-1 sm:gap-2">
-          <a
-            href="#horarios"
-            className="hidden min-h-[44px] content-center rounded-xl px-3 text-sm font-semibold text-muted-foreground hover:text-foreground md:block"
-          >
-            Horarios
-          </a>
           <ThemeToggle compacto />
           <AccesoAlSistema />
         </nav>
