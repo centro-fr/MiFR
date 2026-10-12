@@ -3,12 +3,37 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-form";
-import { ALUMNOS_SEMILLA } from "@/mocks/data/alumnos";
+import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 
-function crearAlumno() {
-  const alumno = ALUMNOS_SEMILLA.find((item) => item.id_alumno === 1);
-  if (!alumno) throw new Error("Falta el alumno de prueba");
-  return structuredClone(alumno);
+vi.mock("@/features/alumnos/hooks/use-alumnos", () => ({
+  useActualizarAlumno: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+function crearAlumno(): AlumnoDetalle {
+  return {
+    id_alumno: 1,
+    id_usuario_responsable: null,
+    usuario: {
+      id_usuario: 101,
+      nombre: "Camila",
+      apellido: "Pérez",
+      dni: "35123456",
+      fecha_nacimiento: "1992-04-18",
+      telefono: "11 5555-0101",
+      email: "camila.perez@example.com",
+      direccion: "Av. San Martín 123",
+    },
+    tutor: null,
+    cont_emerg_nombre: "Sofía Pérez",
+    cont_emerg_telefono: "11 5555-0102",
+    apto_medico: true,
+    fecha_apto_medico: "2026-05-12",
+    observaciones: "Prefiere clases por la tarde.",
+    estado: "ACTIVO",
+    fecha_alta: "2025-02-10T12:00:00.000Z",
+    fecha_baja: null,
+    inscripcion: null,
+  };
 }
 
 function renderFormulario(children: ReactNode) {
@@ -18,17 +43,20 @@ function renderFormulario(children: ReactNode) {
   return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
 }
 
+function formulario(esPropietaria = true) {
+  return (
+    <AlumnoEdicionForm
+      alumno={crearAlumno()}
+      esPropietaria={esPropietaria}
+      onCancelar={vi.fn()}
+      onGuardado={vi.fn()}
+    />
+  );
+}
+
 describe("AlumnoEdicionForm", () => {
   it("expone límites de nacimiento y valida nombres sin permitir dígitos", async () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
+    renderFormulario(formulario());
 
     const nombre = screen.getByLabelText("Nombre *");
     const nacimiento = screen.getByLabelText("Fecha de nacimiento *");
@@ -45,37 +73,21 @@ describe("AlumnoEdicionForm", () => {
     );
   });
 
-  it("muestra y exige los datos del tutor si la fecha pasa a ser menor de edad", async () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
+  it("exige un tutor asociado si la fecha de nacimiento pasa a ser menor de edad", async () => {
+    renderFormulario(formulario());
 
     fireEvent.change(screen.getByLabelText("Fecha de nacimiento *"), {
       target: { value: "2012-08-22" },
     });
-    expect(screen.getByText("Tutor responsable")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Ingresá el nombre");
-    expect(screen.getByText("Ingresá el apellido")).toBeVisible();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Un alumno menor de 18 años necesita un tutor responsable",
+    );
   });
 
   it("marca como inválido un nombre de contacto de emergencia que contiene números", async () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
+    renderFormulario(formulario());
 
     const contactoEmergencia = screen.getByLabelText("Contacto de emergencia");
     fireEvent.change(contactoEmergencia, { target: { value: "Sofía 2" } });
@@ -88,15 +100,7 @@ describe("AlumnoEdicionForm", () => {
   });
 
   it("valida teléfonos y evita seleccionar una fecha futura para el apto médico", async () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
+    renderFormulario(formulario());
 
     const fechaApto = screen.getByLabelText("Fecha del apto médico");
     const limiteFecha = new Date();
@@ -106,12 +110,10 @@ describe("AlumnoEdicionForm", () => {
       limiteFecha.getDate().toString().padStart(2, "0"),
     ].join("-");
     expect(fechaApto).toHaveAttribute("max", fechaMaxima);
-    expect(fechaApto).toHaveAttribute("min", alumno.usuario.fecha_nacimiento);
+    expect(fechaApto).toHaveAttribute("min", crearAlumno().usuario.fecha_nacimiento);
 
     const telefonoEmergencia = screen.getByLabelText("Teléfono de emergencia");
-    fireEvent.change(telefonoEmergencia, {
-      target: { value: "llamar al 5555" },
-    });
+    fireEvent.change(telefonoEmergencia, { target: { value: "llamar al 5555" } });
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -135,34 +137,17 @@ describe("AlumnoEdicionForm", () => {
   });
 
   it("elimina la fecha del apto médico al desmarcar su presentación", () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
-
+    renderFormulario(formulario());
     fireEvent.click(screen.getByLabelText("Apto médico presentado"));
 
     expect(screen.queryByLabelText("Fecha del apto médico")).not.toBeInTheDocument();
   });
 
   it("no permite editar datos personales ni ver cuotas a una profesora", () => {
-    const alumno = crearAlumno();
-    renderFormulario(
-      <AlumnoEdicionForm
-        alumno={alumno}
-        esPropietaria={false}
-        onCancelar={vi.fn()}
-        onGuardado={vi.fn()}
-      />,
-    );
+    renderFormulario(formulario(false));
 
     expect(screen.queryByLabelText("Nombre *")).not.toBeInTheDocument();
     expect(screen.queryByText("Plan y horarios")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Notas de contacto")).toBeInTheDocument();
+    expect(screen.getByLabelText("Observaciones")).toBeInTheDocument();
   });
 });

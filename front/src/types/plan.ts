@@ -25,6 +25,8 @@ export interface Plan {
   profesoraUnica: boolean;
   /** null solo si el plan todavía no tiene un precio que rija hoy. */
   precioVigente: number | null;
+  /** Fecha desde la que rige el precio vigente. */
+  precioVigenteDesde: string | null;
   /** Aumento ya cargado que todavía no rige (US-12). */
   precioProgramado: { precio: number; desde: string } | null;
   /** Timestamp ISO de la baja; null si está vigente. */
@@ -36,6 +38,14 @@ export interface Plan {
 
 export interface PrecioPlan {
   id_precio: number;
+  precio: number;
+  fecha_vigencia_desde: string;
+  fecha_vigencia_hasta: string | null;
+}
+
+export interface PrecioPlanHistorial {
+  id_plan_precio: number;
+  id_plan: number;
   precio: number;
   fecha_vigencia_desde: string;
   fecha_vigencia_hasta: string | null;

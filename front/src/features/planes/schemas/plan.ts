@@ -14,6 +14,14 @@ const precioPlanApiSchema = z.object({
   fecha_vigencia_desde: z.string(),
 });
 
+export const precioHistorialApiSchema = z.object({
+  id_plan_precio: z.number().int().positive(),
+  id_plan: z.number().int().positive(),
+  precio: precioApiSchema,
+  fecha_vigencia_desde: z.string(),
+  fecha_vigencia_hasta: z.string().nullable(),
+});
+
 export const tipoPlanSchema = z.enum(["MENSUAL", "CLASE_SUELTA"]);
 
 export const planApiSchema = z.object({
@@ -125,6 +133,27 @@ function validarPrecio(texto: string, ctx: z.RefinementCtx) {
   const problema = problemaDePrecio(texto);
   if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["precio"], message: problema });
 }
+
+export function crearActualizacionPrecioSchema({ hoy }: { hoy: string }) {
+  return z
+    .object({
+      precio: z.string().trim().superRefine((texto, ctx) => {
+        const problema = problemaDePrecio(texto);
+        if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
+      }),
+      fecha_vigencia_desde: z
+        .string()
+        .min(1, "Elegí una fecha de vigencia.")
+        .date("Ingresá una fecha válida.")
+        .refine((fecha) => fecha >= hoy, "La fecha de vigencia no puede ser anterior a hoy."),
+    })
+    .transform(({ precio, fecha_vigencia_desde }) => ({
+      precio: precioDesdeTexto(precio),
+      fecha_vigencia_desde,
+    }));
+}
+
+export type RegistrarPrecioBody = z.infer<ReturnType<typeof crearActualizacionPrecioSchema>>;
 
 function validarFrecuenciaYGracia({ frecuencia, diasGracia }: { frecuencia: string; diasGracia: string }, ctx: z.RefinementCtx) {
   if (!/^(LIBRE|[1-7])$/.test(frecuencia)) {

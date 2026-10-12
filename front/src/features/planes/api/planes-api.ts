@@ -2,11 +2,13 @@ import { z } from "zod";
 import { apiClient } from "@/api/client";
 import {
   planApiSchema,
+  precioHistorialApiSchema,
   type ActualizarPlanBody,
   type CrearPlanBody,
   type PlanApi,
+  type RegistrarPrecioBody,
 } from "@/features/planes/schemas/plan";
-import type { Plan } from "@/types/plan";
+import type { Plan, PrecioPlanHistorial } from "@/types/plan";
 
 export function aPlan(api: PlanApi): Plan {
   const actividad = api.actividad_exclusiva;
@@ -20,6 +22,7 @@ export function aPlan(api: PlanApi): Plan {
     actividad: actividad && { id: String(actividad.id_actividad), nombre: actividad.nombre, modalidad: actividad.modalidad },
     profesoraUnica: api.profesora_unica,
     precioVigente: api.precio_vigente?.precio ?? null,
+    precioVigenteDesde: api.precio_vigente?.fecha_vigencia_desde ?? null,
     precioProgramado: api.precio_programado && {
       precio: api.precio_programado.precio,
       desde: api.precio_programado.fecha_vigencia_desde,
@@ -54,4 +57,14 @@ export async function actualizarPlan(id: string, cambios: ActualizarPlanBody): P
 // Baja lógica: el plan deja de ofrecerse, pero las inscripciones que ya lo usan lo conservan.
 export async function darDeBajaPlan(id: string): Promise<void> {
   await apiClient.delete(`/planes/${encodeURIComponent(id)}`);
+}
+
+export async function listarPreciosPlan(id: string): Promise<PrecioPlanHistorial[]> {
+  const { data } = await apiClient.get(`/planes/${encodeURIComponent(id)}/precios`);
+  return z.array(precioHistorialApiSchema).parse(data);
+}
+
+export async function registrarPrecioPlan(id: string, cuerpo: RegistrarPrecioBody): Promise<PrecioPlanHistorial> {
+  const { data } = await apiClient.post(`/planes/${encodeURIComponent(id)}/precios`, cuerpo);
+  return precioHistorialApiSchema.parse(data);
 }

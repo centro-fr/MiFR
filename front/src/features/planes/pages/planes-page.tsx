@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FiltrosPlanesBar } from "@/features/planes/components/filtros-planes";
 import { ListaPlanes } from "@/features/planes/components/lista-planes";
+import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import {
   FILTROS_INICIALES,
@@ -18,6 +19,7 @@ import {
   hayFiltrosActivos,
   type FiltrosPlanes,
 } from "@/features/planes/utils/planes";
+import type { Plan } from "@/types/plan";
 
 function Encabezado({ vigentes }: { vigentes?: number }) {
   return (
@@ -70,6 +72,8 @@ function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: str
 function ContenidoPlanes() {
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
   const [filtros, setFiltros] = useState<FiltrosPlanes>(FILTROS_INICIALES);
+  const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
+  const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
   const visibles = useMemo(() => filtrarPlanes(planes ?? [], filtros), [planes, filtros]);
   const actividades = useMemo(() => actividadesDeLosPlanes(planes ?? []), [planes]);
 
@@ -140,8 +144,15 @@ function ContenidoPlanes() {
           }
         />
       ) : (
-        <ListaPlanes planes={visibles} total={planes.length} />
+        <ListaPlanes
+          planes={visibles}
+          total={planes.length}
+          onActualizarPrecio={setPlanPrecio}
+          onVerHistorial={setPlanHistorial}
+        />
       )}
+      <ActualizarPrecioDialog key={planPrecio?.id ?? "precio-cerrado"} plan={planPrecio} onClose={() => setPlanPrecio(null)} />
+      <HistorialPreciosDialog key={planHistorial?.id ?? "historial-cerrado"} plan={planHistorial} onClose={() => setPlanHistorial(null)} />
     </>
   );
 }

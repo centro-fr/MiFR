@@ -2,198 +2,137 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { setupServer } from "msw/node";
 import { listarAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { clearSessionToken, setSessionToken } from "@/features/auth/api/session-token";
-import { actualizarAlumnoSchema, type ActualizarAlumnoInput } from "@/features/alumnos/schemas/alumno";
-import { ALUMNOS_SEMILLA } from "@/mocks/data/alumnos";
+import { ALUMNOS_SEMILLA, USUARIOS_PERSONAS_SEMILLA } from "@/mocks/data/alumnos";
+import { inscripcionesSemilla } from "@/mocks/data/inscripciones";
 import { db } from "@/mocks/db";
 import { alumnosHandlers } from "@/mocks/handlers/alumnos";
 import { MOCK_JWT } from "@/mocks/handlers/respuestas";
 
 const server = setupServer(...alumnosHandlers);
+const authHeaders = { Authorization: `Bearer ${MOCK_JWT}` };
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
 afterEach(() => {
   server.resetHandlers();
+  clearSessionToken();
   db.idUsuarioSesion = 3;
   db.alumnos = structuredClone(ALUMNOS_SEMILLA);
+  db.usuariosPersonas = structuredClone(USUARIOS_PERSONAS_SEMILLA);
+  db.inscripciones = inscripcionesSemilla();
 });
 
 async function solicitarAlumnos(parametros = ""): Promise<Response> {
-  return fetch(`http://localhost/api/v1/alumnos${parametros}`, {
-    headers: { Authorization: `Bearer ${MOCK_JWT}` },
-  });
+  return fetch(`http://localhost/api/v1/alumnos${parametros}`, { headers: authHeaders });
 }
 
-function cuerpoActualizacion(idAlumno = 1): ActualizarAlumnoInput {
-  const alumno = structuredClone(db.alumnos.find((item) => item.id_alumno === idAlumno));
-  if (!alumno) throw new Error("Falta el alumno de prueba");
-  return actualizarAlumnoSchema.parse({
-    usuario: {
-      ...alumno.usuario,
-      dni: alumno.usuario.dni ?? "",
-      telefono: alumno.usuario.telefono ?? "",
-      email: alumno.usuario.email ?? "",
-    },
-    tutor: alumno.tutor,
-    cont_emerg_nombre: alumno.cont_emerg_nombre,
-    cont_emerg_telefono: alumno.cont_emerg_telefono,
-    apto_medico: alumno.apto_medico,
-    fecha_apto_medico: alumno.fecha_apto_medico,
-    observaciones: alumno.observaciones,
-    id_plan: alumno.inscripcion?.plan?.id_plan ?? null,
-    id_horarios: alumno.inscripcion?.horarios.map((horario) => horario.id_horario) ?? [],
+async function actualizarAlumno(id: number, cambios: Record<string, unknown>): Promise<Response> {
+  return fetch(`http://localhost/api/v1/alumnos/${id}`, {
+    method: "PATCH",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify(cambios),
   });
 }
 
 describe("alumnosHandlers", () => {
-  it("lista correctamente con filtros opcionales vacíos desde la interfaz", async () => {
+  it("lista con filtros opcionales vacíos usando el contrato actual de la API", async () => {
     setSessionToken(MOCK_JWT);
     try {
       const respuesta = await listarAlumnos({
-        q: "",
+        busqueda: "",
         estado: "TODOS",
         id_plan: "",
         id_profesora: "",
         id_actividad: "",
-        estado_cuota: "",
         incluir_bajas: false,
         limit: 25,
         offset: 0,
       });
 
-      expect(respuesta.total).toBe(3);
-      expect(respuesta.items).toHaveLength(3);
+      expect(respuesta.total).toBe(4);
+      expect(respuesta.items).toHaveLength(4);
+      expect(respuesta.items.some((alumno) => alumno.estado === "BAJA")).toBe(false);
     } finally {
       clearSessionToken();
     }
   });
 
   it("busca nombres sin distinguir mayúsculas ni acentos", async () => {
-    const respuesta = await solicitarAlumnos("?q=perez");
-    const cuerpo = await respuesta.json();
+    const respuesta = await solicitarAlumnos("?busqueda=perez");
+    const cuerpo = (await respuesta.json()) as {
+      datos: { usuario: { nombre: string; apellido: string } }[];
+    };
 
     expect(respuesta.status).toBe(200);
-    expect(cuerpo.items.map((alumno: { nombre_completo: string }) => alumno.nombre_completo)).toContain(
-      "Camila Pérez",
-    );
+    expect(cuerpo.datos.map(({ usuario }) => `${usuario.nombre} ${usuario.apellido}`)).toContain("Camila Pérez");
   });
 
-  it("prioriza la coincidencia exacta de DNI e identificador", async () => {
-    const porDni = await (await solicitarAlumnos("?q=35123456")).json();
-    const porIdentificador = await (await solicitarAlumnos("?q=3")).json();
+  it("busca por coincidencia exacta de DNI", async () => {
+    const respuesta = await solicitarAlumnos("?dni=35123456");
+    const cuerpo = (await respuesta.json()) as {
+      datos: { usuario: { nombre: string; apellido: string } }[];
+    };
 
-    expect(porDni.items.map((alumno: { nombre_completo: string }) => alumno.nombre_completo)).toEqual([
-      "Camila Pérez",
-    ]);
-    expect(
-      porIdentificador.items.map((alumno: { nombre_completo: string }) => alumno.nombre_completo),
-    ).toEqual(["Julián Fernández"]);
+    expect(cuerpo.datos.map(({ usuario }) => `${usuario.nombre} ${usuario.apellido}`)).toEqual(["Camila Pérez"]);
   });
 
-  it("excluye las bajas por defecto y las devuelve al filtrar ese estado", async () => {
+  it("excluye bajas por defecto y las devuelve al filtrar el estado BAJA", async () => {
     const respuestaPredeterminada = await solicitarAlumnos();
     const respuestaBajas = await solicitarAlumnos("?estado=BAJA");
-    const predeterminados = await respuestaPredeterminada.json();
-    const bajas = await respuestaBajas.json();
+    const predeterminados = (await respuestaPredeterminada.json()) as {
+      datos: { estado: string }[];
+    };
+    const bajas = (await respuestaBajas.json()) as {
+      datos: { usuario: { nombre: string; apellido: string } }[];
+    };
 
-    expect(predeterminados.items.some((alumno: { estado: string }) => alumno.estado === "BAJA")).toBe(false);
-    expect(bajas.items.map((alumno: { nombre_completo: string }) => alumno.nombre_completo)).toEqual([
-      "Micaela García",
-    ]);
+    expect(predeterminados.datos.some((alumno) => alumno.estado === "BAJA")).toBe(false);
+    expect(bajas.datos.map(({ usuario }) => `${usuario.nombre} ${usuario.apellido}`)).toEqual(["Micaela García"]);
   });
 
-  it("incluye bajas junto con alumnos activos cuando se activa el filtro", async () => {
-    const respuesta = await solicitarAlumnos("?incluir_bajas=true");
-    const cuerpo = await respuesta.json();
+  it("incluye bajas junto con alumnos activos cuando se solicita", async () => {
+    const respuesta = await solicitarAlumnos("?incluirBajas=true");
+    const cuerpo = (await respuesta.json()) as { datos: { estado: string }[]; total: number };
 
-    expect(cuerpo.items.map((alumno: { estado: string }) => alumno.estado)).toContain("BAJA");
-    expect(cuerpo.items).toHaveLength(4);
+    expect(cuerpo.datos.some((alumno) => alumno.estado === "BAJA")).toBe(true);
+    expect(cuerpo.total).toBe(5);
   });
 
-  it("limita a la profesora a los alumnos que tiene a cargo", async () => {
+  it("devuelve la ficha con tutor e inscripciones, sin el antiguo historial de cobros", async () => {
+    const respuesta = await fetch("http://localhost/api/v1/alumnos/2", { headers: authHeaders });
+    const alumno = (await respuesta.json()) as {
+      responsable: { nombre: string } | null;
+      inscripciones: unknown[];
+      historial_cobros?: unknown[];
+    };
+
+    expect(respuesta.status).toBe(200);
+    expect(alumno.responsable?.nombre).toBe("Paula");
+    expect(alumno.inscripciones).toBeInstanceOf(Array);
+    expect(alumno).not.toHaveProperty("historial_cobros");
+  });
+
+  it("permite a una profesora actualizar el contacto, pero no los datos personales", async () => {
     db.idUsuarioSesion = 1;
-    const respuesta = await solicitarAlumnos();
-    const cuerpo = await respuesta.json();
-
-    expect(cuerpo.items.map((alumno: { nombre_completo: string }) => alumno.nombre_completo)).toEqual([
-      "Camila Pérez",
-      "Valentina López",
-    ]);
-  });
-
-  it("no devuelve el historial de cobros a una profesora", async () => {
-    db.idUsuarioSesion = 1;
-    const respuesta = await fetch("http://localhost/api/v1/alumnos/1", {
-      headers: { Authorization: `Bearer ${MOCK_JWT}` },
-    });
-    const alumno = await respuesta.json();
-
-    expect(alumno.historial_cobros).toEqual([]);
-  });
-
-  it("permite a la profesora actualizar el contacto sin permitir cambios personales", async () => {
-    db.idUsuarioSesion = 1;
-    const contacto = cuerpoActualizacion();
-    contacto.usuario.telefono = "11 5555-9999";
-    const actualizacionContacto = await fetch("http://localhost/api/v1/alumnos/1", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${MOCK_JWT}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(contacto),
-    });
-    const cuerpoCompleto = cuerpoActualizacion();
-    cuerpoCompleto.usuario.nombre = "Nombre no permitido";
-    const actualizacionPersonal = await fetch("http://localhost/api/v1/alumnos/1", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${MOCK_JWT}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(cuerpoCompleto),
-    });
+    const actualizacionContacto = await actualizarAlumno(1, { telefono: "11 5555-9999" });
+    const actualizacionPersonal = await actualizarAlumno(1, { nombre: "Nombre no permitido" });
 
     expect(actualizacionContacto.status).toBe(200);
     expect(actualizacionPersonal.status).toBe(403);
   });
 
-  it("conserva el historial de cobros cuando la propietaria cambia el plan", async () => {
-    const historicoAnterior = structuredClone(db.alumnos[0].historial_cobros);
-    const cambios = cuerpoActualizacion();
-    cambios.id_plan = 2;
-    cambios.id_horarios = [3, 4];
-    const respuesta = await fetch("http://localhost/api/v1/alumnos/1", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${MOCK_JWT}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(cambios),
+  it("desvincula al tutor cuando una persona menor pasa a ser mayor de edad", async () => {
+    const respuesta = await actualizarAlumno(2, {
+      fecha_nacimiento: "2000-08-22",
+      email: "mateo.adulto@example.com",
     });
-    const alumnoActualizado = await respuesta.json();
+    const alumno = (await respuesta.json()) as {
+      responsable: unknown;
+      id_usuario_responsable: number | null;
+    };
 
     expect(respuesta.status).toBe(200);
-    expect(alumnoActualizado.inscripcion.plan.id_plan).toBe(2);
-    expect(alumnoActualizado.historial_cobros).toEqual(historicoAnterior);
-  });
-
-  it("desvincula al tutor cuando el alumno pasa a ser mayor de edad", async () => {
-    const cambios = cuerpoActualizacion(2);
-    cambios.usuario.fecha_nacimiento = "2007-08-22";
-    cambios.tutor = null;
-    const respuesta = await fetch("http://localhost/api/v1/alumnos/2", {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${MOCK_JWT}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(cambios),
-    });
-    const alumnoActualizado = await respuesta.json();
-
-    expect(respuesta.status).toBe(200);
-    expect(alumnoActualizado.tutor).toBeNull();
-    expect(alumnoActualizado.id_usuario_responsable).toBeNull();
+    expect(alumno.responsable).toBeNull();
+    expect(alumno.id_usuario_responsable).toBeNull();
   });
 });

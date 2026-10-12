@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { QueryObserverSuccessResult } from "@tanstack/react-query";
@@ -15,6 +16,18 @@ vi.mock("@/features/alumnos/hooks/use-alumnos", () => ({
   useAlumnos: vi.fn(),
 }));
 
+vi.mock("@/features/actividades/hooks/use-actividades", () => ({
+  useActividades: () => ({ data: [] }),
+}));
+
+vi.mock("@/features/planes/hooks/use-planes", () => ({
+  usePlanes: () => ({ data: [] }),
+}));
+
+vi.mock("@/features/horarios/api/horarios-api", () => ({
+  listarProfesoras: vi.fn().mockResolvedValue([]),
+}));
+
 const consultaMock = vi.mocked(useAlumnos);
 const items = [
   {
@@ -24,13 +37,7 @@ const items = [
     telefono: "11 5555-0101",
     estado: "ACTIVO" as const,
     plan: "Funcional mensual",
-    id_plan: 1,
-    estado_cuota: "AL_DIA" as const,
-    fecha_vencimiento: "2026-10-20",
     profesora: "Lucía Gómez",
-    id_profesora: 1,
-    actividad: "Funcional grupal",
-    id_actividad: 1,
   },
 ];
 
@@ -69,10 +76,16 @@ function establecerConsulta(data: RespuestaAlumnos = { items, total: 30, limit: 
 }
 
 function renderListado() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  queryClient.setQueryData(["profesoras"], []);
   return render(
-    <MemoryRouter>
-      <AlumnosPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <AlumnosPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -84,52 +97,49 @@ describe("AlumnosPage", () => {
     establecerConsulta();
   });
 
-  it("presenta resultados mobile/desktop y conecta los filtros y la paginación con la consulta", () => {
+  it("presenta resultados para mobile y desktop y conecta filtros y paginación", () => {
     renderListado();
 
     expect(screen.getByRole("heading", { name: "Alumnos" })).toBeInTheDocument();
     expect(screen.getAllByText("Camila Pérez")).toHaveLength(2);
-    expect(screen.getAllByText("Al día").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Activo").length).toBeGreaterThanOrEqual(2);
     expect(
       screen.getAllByText("Camila Pérez").find((element) => element.tagName === "H2")?.closest(".shadow-sm"),
     ).toHaveClass("dark:bg-slate-800");
     expect(
-      screen
-        .getAllByText("Al día")
-        .find((element) => element.className.includes("dark:bg-emerald-950/70")),
+      screen.getAllByText("Activo").find((element) => element.className.includes("dark:bg-emerald-950/70")),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: /Ver ficha/ }).every((link) => link.getAttribute("href") === "/app/alumnos/1"),
     ).toBe(true);
 
-    fireEvent.click(screen.getByRole("button", { name: "Vencida" }));
+    fireEvent.change(screen.getAllByLabelText("Estado")[0], { target: { value: "ACTIVO" } });
     expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ estado_cuota: "VENCIDA", offset: 0, limit: 25 }),
+      expect.objectContaining({ estado: "ACTIVO", offset: 0, limit: 25 }),
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
     expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ estado_cuota: "VENCIDA", offset: 25 }),
+      expect.objectContaining({ estado: "ACTIVO", offset: 25 }),
     );
   });
 
-  it("debouncea la búsqueda y muestra el estado vacío con opción de limpiar", async () => {
+  it("debouncea la búsqueda y permite limpiar filtros cuando no hay resultados", async () => {
     vi.useFakeTimers();
     establecerConsulta({ items: [], total: 0, limit: 25, offset: 0 });
     renderListado();
 
-    fireEvent.change(screen.getByLabelText("Buscar por nombre, DNI, teléfono o email"), {
-      target: { value: "  Pérez  " },
-    });
-    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ q: "" }));
+    const busqueda = screen.getByLabelText("Buscar por nombre, apellido o DNI del alumno o de su tutor");
+    fireEvent.change(busqueda, { target: { value: "  Pérez  " } });
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "" }));
 
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
-    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ q: "Pérez" }));
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "Pérez" }));
     expect(screen.getByRole("heading", { name: "No encontramos alumnos" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Limpiar búsqueda y filtros" }));
-    expect(screen.getByLabelText("Buscar por nombre, DNI, teléfono o email")).toHaveValue("");
+    expect(busqueda).toHaveValue("");
   });
 });

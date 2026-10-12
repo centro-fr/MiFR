@@ -1,6 +1,7 @@
 import { http, HttpResponse, delay } from "msw";
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
+import { precioVigenteDePlan } from "@/mocks/precios";
 import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
 import { errorApi, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
@@ -30,7 +31,7 @@ const transferenciaRecibidaSchema = efectivoSchema.extend({
 });
 
 function precioVigente(idPlan: number): number | undefined {
-  return db.planPrecios.find((p) => p.id_plan === idPlan && p.fecha_vigencia_hasta === null)?.precio;
+  return precioVigenteDePlan(idPlan)?.precio;
 }
 
 // Lo que el back rechaza antes de cobrar: inscripción inexistente, alumno de baja, plan sin precio

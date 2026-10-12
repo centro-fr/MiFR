@@ -4,10 +4,12 @@ import {
   actualizarPlan,
   crearPlan,
   darDeBajaPlan,
+  listarPreciosPlan,
   listarPlanes,
   obtenerPlan,
+  registrarPrecioPlan,
 } from "@/features/planes/api/planes-api";
-import type { ActualizarPlanBody, CrearPlanBody } from "@/features/planes/schemas/plan";
+import type { ActualizarPlanBody, CrearPlanBody, RegistrarPrecioBody } from "@/features/planes/schemas/plan";
 
 // La misma clave que usa la reactivación de alumnos (US-08) para ofrecer planes: al cambiar un
 // plan, ese listado también se refresca.
@@ -55,4 +57,27 @@ export function useActualizarPlan() {
 export function useDarDeBajaPlan() {
   const invalidar = useInvalidarPlanes();
   return useMutation({ mutationFn: (id: string) => darDeBajaPlan(id), onSuccess: invalidar });
+}
+
+export function usePreciosPlan(id: string, habilitado: boolean) {
+  return useQuery({
+    queryKey: [...PLANES_QUERY_KEY, id, "precios"],
+    queryFn: () => listarPreciosPlan(id),
+    enabled: habilitado,
+    staleTime: CINCO_MINUTOS,
+  });
+}
+
+export function useRegistrarPrecioPlan() {
+  const invalidar = useInvalidarPlanes();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, cuerpo }: { id: string; cuerpo: RegistrarPrecioBody }) => registrarPrecioPlan(id, cuerpo),
+    onSuccess: async (_resultado, { id }) => {
+      await Promise.all([
+        invalidar(),
+        queryClient.invalidateQueries({ queryKey: [...PLANES_QUERY_KEY, id, "precios"] }),
+      ]);
+    },
+  });
 }

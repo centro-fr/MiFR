@@ -1,25 +1,25 @@
 import { http, HttpResponse, delay } from "msw";
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
-import type { PlanMock } from "@/mocks/data/inscripciones";
+import type { PlanMock, PlanPrecioMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
+import { hoyEnArgentina, precioProgramadoDePlan, precioVigenteDePlan } from "@/mocks/precios";
 import { normalizarParaBuscar } from "@/utils/texto";
 
-// Mock de /planes (plan.routes.ts): listado, detalle, alta, edición y baja lógica. Replica las
-// reglas de plan.schemas.ts y plan.service.ts; el historial de precios (US-12) no.
+// Mock de /planes (plan.routes.ts): listado, detalle, precios, alta, edición y baja lógica.
 
 const PROPIETARIA_EDITA = { rol: "PROPIETARIA", permiso: "PLANES_EDITAR" } as const;
 
 function planConPrecio(plan: PlanMock) {
   const actividad = db.actividades.find((a) => a.id_actividad === plan.id_actividad_exclusiva);
-  const precio = db.planPrecios.find((p) => p.id_plan === plan.id_plan && p.fecha_vigencia_hasta === null);
+  const hoy = hoyEnArgentina();
   return {
     ...plan,
     actividad_exclusiva: actividad
       ? { id_actividad: actividad.id_actividad, nombre: actividad.nombre, modalidad: actividad.modalidad }
       : null,
-    precio_vigente: precio ?? null,
-    precio_programado: null,
+    precio_vigente: precioVigenteDePlan(plan.id_plan, hoy) ?? null,
+    precio_programado: precioProgramadoDePlan(plan.id_plan, hoy) ?? null,
   };
 }
 
@@ -39,6 +39,25 @@ const crearSchema = editablesSchema.extend({
 });
 
 const actualizarSchema = editablesSchema.partial().refine((cambios) => Object.keys(cambios).length > 0);
+
+const registrarPrecioSchema = z.object({
+  precio: z.number().positive().max(99_999_999.99).refine((valor) => Math.abs(Math.round(valor * 100) - valor * 100) < 1e-6),
+  fecha_vigencia_desde: z.string().date(),
+});
+
+function diaAnterior(fecha: string): string {
+  return new Date(new Date(`${fecha}T00:00:00.000Z`).getTime() - 86_400_000).toISOString().slice(0, 10);
+}
+
+function aPrecioMock(idPlan: number, precio: number, desde: string): PlanPrecioMock {
+  return {
+    id_plan_precio: siguienteId(db.planPrecios.map((item) => item.id_plan_precio)),
+    id_plan: idPlan,
+    precio,
+    fecha_vigencia_desde: `${desde}T00:00:00.000Z`,
+    fecha_vigencia_hasta: null,
+  };
+}
 
 function nombreOcupado(nombre: string, excluirId?: number): boolean {
   const buscado = normalizarParaBuscar(nombre);
@@ -82,6 +101,61 @@ export const planesHandlers = [
     if (id === null) return idInvalido();
     if (!plan) return errorApi(404, "NOT_FOUND", "Plan no encontrado");
     return HttpResponse.json(planConPrecio(plan));
+  }),
+
+  http.get("*/api/v1/planes/:id/precios", async ({ request, params }) => {
+    await delay(250);
+    const denegado = verificarAcceso(request, { permiso: "PLANES_VER" });
+    if (denegado) return denegado;
+
+    const { id, plan } = buscarPlan(params);
+    if (id === null) return idInvalido();
+    if (!plan) return errorApi(404, "NOT_FOUND", "Plan no encontrado");
+    const precios = db.planPrecios
+      .filter((precio) => precio.id_plan === id)
+      .sort((a, b) => b.fecha_vigencia_desde.localeCompare(a.fecha_vigencia_desde));
+    return HttpResponse.json(precios);
+  }),
+
+  http.post("*/api/v1/planes/:id/precios", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, PROPIETARIA_EDITA);
+    if (denegado) return denegado;
+
+    const { id, plan } = buscarPlan(params);
+    if (id === null) return idInvalido();
+    if (!plan) return errorApi(404, "NOT_FOUND", "Plan no encontrado");
+    if (plan.fecha_baja !== null) return errorApi(409, "CONFLICT", "El plan está dado de baja");
+
+    const cuerpo = registrarPrecioSchema.safeParse(await request.json().catch(() => null));
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    const { precio, fecha_vigencia_desde: desde } = cuerpo.data;
+    const hoy = hoyEnArgentina();
+    if (desde < hoy) return errorApi(400, "VALIDATION_ERROR", "La fecha de vigencia no puede ser anterior a hoy");
+
+    db.planPrecios.splice(
+      0,
+      db.planPrecios.length,
+      ...db.planPrecios.filter(
+        (item) =>
+          !(
+            item.id_plan === id &&
+            item.fecha_vigencia_desde.slice(0, 10) >= desde &&
+            item.fecha_vigencia_desde.slice(0, 10) > hoy
+          ),
+      ),
+    );
+    const ultimo = db.planPrecios
+      .filter((item) => item.id_plan === id)
+      .sort((a, b) => b.fecha_vigencia_desde.localeCompare(a.fecha_vigencia_desde))[0];
+    if (ultimo && ultimo.fecha_vigencia_desde.slice(0, 10) >= desde) {
+      return errorApi(409, "CONFLICT", "El plan ya tiene un precio que empezó a regir hoy");
+    }
+    if (ultimo) ultimo.fecha_vigencia_hasta = `${diaAnterior(desde)}T00:00:00.000Z`;
+
+    const nuevoPrecio = aPrecioMock(id, precio, desde);
+    db.planPrecios.push(nuevoPrecio);
+    return HttpResponse.json(nuevoPrecio, { status: 201 });
   }),
 
   http.post("*/api/v1/planes", async ({ request }) => {
