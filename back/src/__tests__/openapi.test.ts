@@ -55,6 +55,14 @@ const OPERACIONES_ESPERADAS = [
   "post /alumnos/{id}/reactivar",
   "post /inscripciones/{id}/cambio-plan",
   "patch /inscripciones/{id}/horarios",
+  "post /pagos/efectivo",
+  "post /pagos/transferencia",
+  "post /pagos/transferencia-recibida",
+  "get /pagos/mis-transferencias",
+  "get /pagos/transferencias",
+  "post /pagos/{id}/aprobar",
+  "post /pagos/{id}/rechazar",
+  "get /pagos/{id}/comprobante",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {
