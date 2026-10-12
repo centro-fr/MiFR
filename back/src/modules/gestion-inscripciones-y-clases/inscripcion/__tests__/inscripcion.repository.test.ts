@@ -404,20 +404,28 @@ describe("InscripcionRepository", () => {
   describe("reactivar", () => {
     const reactivacion = { ...nueva, estado: "ACTIVA" as const };
 
-    it("crea una inscripción nueva ACTIVA si hay cupo", async () => {
+    it("crea una inscripción nueva en el estado pedido si hay cupo", async () => {
       await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toMatchObject({
         resultado: "ok",
       });
+      await repositorio.reactivar({ ...reactivacion, estado: "PREINSCRIPTA" }, [8], DIA, RESERVAS);
 
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({ estado: "ACTIVA" });
+      expect(transaccion.inscripciones.create.mock.calls[1][0].data).toMatchObject({
+        estado: "PREINSCRIPTA",
+      });
     });
 
-    it("devuelve la activa que ya existía en lugar de crear otra", async () => {
+    it("devuelve la vigente que ya existía en lugar de crear otra", async () => {
       transaccion.inscripciones.findFirst.mockResolvedValue({ id_inscripcion: 12 });
 
       await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toEqual({
         resultado: "ok",
         inscripcion: { id_inscripcion: 12 },
+      });
+      expect(transaccion.inscripciones.findFirst.mock.calls[0][0].where).toEqual({
+        id_alumno: 5,
+        estado: { in: ["PREINSCRIPTA", "ACTIVA"] },
       });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();
     });

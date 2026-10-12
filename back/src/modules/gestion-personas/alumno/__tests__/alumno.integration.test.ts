@@ -76,7 +76,7 @@ describe("PI-19: cambios de estado del alumno contra la base", () => {
     await alumnos.darDeBaja(id_alumno);
     const dadoDeBaja = await prisma.alumnos.findUnique({ where: { id_alumno } });
     const loginDeBaja = await estadoDelLogin("ana@example.com");
-    await alumnos.reactivar(id_alumno);
+    await alumnos.reactivar(id_alumno, "ACTIVO");
 
     expect(dadoDeBaja?.estado).toBe("BAJA");
     expect(dadoDeBaja?.fecha_baja).not.toBeNull();

@@ -470,7 +470,7 @@ describe("InscripcionService", () => {
     });
 
     it("crea una inscripción nueva activa y reactiva al alumno", async () => {
-      await servicio.reactivarAlumno(5, reactivacion);
+      await servicio.reactivarAlumno(5, reactivacion, "ACTIVA");
 
       expect(mocks.repositorio.reactivar).toHaveBeenCalledWith(
         expect.objectContaining({ id_alumno: 5, id_plan_precio: 15, estado: "ACTIVA" }),
@@ -478,13 +478,28 @@ describe("InscripcionService", () => {
         HOY,
         INICIO_RESERVAS,
       );
-      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
+      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5, "ACTIVO");
+    });
+
+    it("a quien nunca pagó lo vuelve a pre-inscribir, con su reserva, y lo deja INACTIVO (US-07)", async () => {
+      mocks.repositorio.reactivar.mockResolvedValue({ resultado: "ok", inscripcion: preinscripta });
+
+      const reactivada = await servicio.reactivarAlumno(5, reactivacion, "PREINSCRIPTA");
+
+      expect(mocks.repositorio.reactivar).toHaveBeenCalledWith(
+        expect.objectContaining({ id_alumno: 5, estado: "PREINSCRIPTA" }),
+        [8],
+        HOY,
+        INICIO_RESERVAS,
+      );
+      expect(reactivada.reserva).not.toBeNull();
+      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5, "INACTIVO");
     });
 
     it("no cambia al alumno si no hay cupo", async () => {
       mocks.repositorio.reactivar.mockResolvedValue({ resultado: "sin-cupo" });
 
-      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+      await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(ConflictError);
       expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
     });
 
@@ -494,7 +509,7 @@ describe("InscripcionService", () => {
         .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" })
         .mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
 
-      await servicio.reactivarAlumno(5, reactivacion);
+      await servicio.reactivarAlumno(5, reactivacion, "ACTIVA");
 
       expect(mocks.alumnos.reactivar).not.toHaveBeenCalled();
     });
@@ -502,20 +517,20 @@ describe("InscripcionService", () => {
     it("con una inscripción activa que quedó abierta solo reactiva al alumno", async () => {
       mocks.repositorio.buscarVigentePorAlumno.mockResolvedValue(inscripcion);
 
-      await expect(servicio.reactivarAlumno(5, reactivacion)).resolves.toEqual(respuesta);
+      await expect(servicio.reactivarAlumno(5, reactivacion, "PREINSCRIPTA")).resolves.toEqual(respuesta);
       expect(mocks.repositorio.reactivar).not.toHaveBeenCalled();
-      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5);
+      expect(mocks.alumnos.reactivar).toHaveBeenCalledWith(5, "ACTIVO");
     });
 
     it("rechaza si quedó una pre-inscripción vigente, si no existe o si no está de baja", async () => {
       mocks.repositorio.buscarVigentePorAlumno.mockResolvedValueOnce(preinscripta);
-      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+      await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(ConflictError);
 
       mocks.alumnos.buscarPorId.mockResolvedValueOnce(null);
-      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(NotFoundError);
+      await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(NotFoundError);
 
       mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
-      await expect(servicio.reactivarAlumno(5, reactivacion)).rejects.toThrow(ConflictError);
+      await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(ConflictError);
     });
   });
 

@@ -6,12 +6,16 @@ import type {
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
+import type { IInfoCuotas } from "../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { InscripcionService } from "./inscripcion/inscripcion.service.js";
 import type { ILogicaInscripcionesYClases } from "./interface/i-logica-inscripciones-y-clases.js";
 import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";
 
 export class GestionInscripcionesYClasesService implements ILogicaInscripcionesYClases {
-  constructor(private readonly inscripciones: InscripcionService) {}
+  constructor(
+    private readonly inscripciones: InscripcionService,
+    private readonly cuotas: IInfoCuotas,
+  ) {}
 
   crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
     return this.inscripciones.crear(input, solicitante);
@@ -29,8 +33,11 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     return this.inscripciones.darDeBajaAlumno(idAlumno, input);
   }
 
-  reactivarAlumno(idAlumno: number, input: ReactivarAlumnoInput): Promise<InscripcionConDatos> {
-    return this.inscripciones.reactivarAlumno(idAlumno, input);
+  // US-07: quien nunca pagó no vuelve activo, sino pre-inscripto. Inscripcion no conoce los pagos y
+  // Cuota ya depende de IInfoInscripciones, así que el cruce lo hace el subsistema con IInfoCuotas.
+  async reactivarAlumno(idAlumno: number, input: ReactivarAlumnoInput): Promise<InscripcionConDatos> {
+    const yaPago = await this.cuotas.tuvoPagoConfirmado(idAlumno);
+    return this.inscripciones.reactivarAlumno(idAlumno, input, yaPago ? "ACTIVA" : "PREINSCRIPTA");
   }
 
   cambiarPlan(id: number, input: CambiarPlanInput): Promise<InscripcionConDatos> {

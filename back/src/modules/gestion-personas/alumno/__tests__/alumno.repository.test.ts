@@ -242,9 +242,10 @@ describe("AlumnoRepository", () => {
       });
     });
 
-    it("darDeBaja marca la baja e inactiva el usuario; reactivar lo revierte", async () => {
+    it("darDeBaja marca la baja e inactiva el usuario; reactivar deja a los dos en el estado pedido", async () => {
       await repositorio.darDeBaja(alumno);
-      await repositorio.reactivar(alumno);
+      await repositorio.reactivar(alumno, "ACTIVO");
+      await repositorio.reactivar(alumno, "INACTIVO");
 
       expect(prisma.alumnos.update).toHaveBeenNthCalledWith(1, {
         where: { id_alumno: 1 },
@@ -254,6 +255,11 @@ describe("AlumnoRepository", () => {
       expect(prisma.alumnos.update).toHaveBeenNthCalledWith(2, {
         where: { id_alumno: 1 },
         data: { estado: "ACTIVO", fecha_baja: null, usuario: { update: { estado: "ACTIVO" } } },
+        include: CON_DATOS,
+      });
+      expect(prisma.alumnos.update).toHaveBeenNthCalledWith(3, {
+        where: { id_alumno: 1 },
+        data: { estado: "INACTIVO", fecha_baja: null, usuario: { update: { estado: "INACTIVO" } } },
         include: CON_DATOS,
       });
     });

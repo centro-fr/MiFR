@@ -1,14 +1,15 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, MontoDistintoError } from "../../../../shared/errors/app-error.js";
-import { crearControlDeAcceso } from "../../../../shared/middlewares/auth.js";
-import { errorHandler } from "../../../../shared/middlewares/error-handler.js";
+import { createApp } from "../../../../app.js";
+import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
+import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
+import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
+import type { ILogicaUsuarios } from "../../../gestion-usuarios/interface/i-logica-usuarios.js";
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IAutenticacion } from "../../../gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { registrarDocumentacionGestionCuotasYPagos } from "../../gestion-cuotas-y-pagos.openapi.js";
-import { createGestionCuotasYPagosRoutes } from "../../gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaCuotasPagos } from "../../interface/i-logica-cuotas-pagos.js";
 
 const pago = { id_pago: 7, monto: 30000, estado: "CONFIRMADO" };
@@ -34,24 +35,19 @@ function crearLogicaMock() {
   };
 }
 
-// El subsistema se monta en createApp cuando estén los calculadores de Rosario (composicion.ts
-// necesita sus implementaciones). Mientras tanto se prueba su router con el control de acceso y el
-// manejador de errores reales, que es lo que agrega createApp.
 function crearApp(logica: ReturnType<typeof crearLogicaMock>, autorizacion: IAutorizacion) {
   const autenticacion = {
     validarSesion: async (token: string) => ROLES[token],
   } as unknown as IAutenticacion;
-  const app = express();
-  app.use(express.json());
-  app.use(
-    "/api/v1",
-    createGestionCuotasYPagosRoutes(
-      logica as unknown as ILogicaCuotasPagos,
-      crearControlDeAcceso(autenticacion, autorizacion),
-    ),
-  );
-  app.use(errorHandler);
-  return app;
+  return createApp({
+    gestionUsuarios: {} as unknown as ILogicaUsuarios,
+    gestionPersonas: {} as unknown as ILogicaPersonas,
+    gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
+    gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
+    gestionCuotasYPagos: logica as unknown as ILogicaCuotasPagos,
+    autenticacion,
+    autorizacion,
+  });
 }
 
 describe("rutas de pagos", () => {

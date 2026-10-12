@@ -80,7 +80,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     parametrosService,
     unidadDeTrabajo,
   );
-  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
     actividadService,
     horarioService,
@@ -99,6 +98,10 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     cuotaService,
     new PagoService(new PagoRepository(prisma), profesorService),
     unidadDeTrabajo,
+  );
+  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(
+    inscripcionService,
+    cuotaService,
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,

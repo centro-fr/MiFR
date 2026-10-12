@@ -24,6 +24,7 @@ Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un servi
 - `GestionPersonasService.darDeBajaProfesora` consulta `IInfoHorarios`, que en el diagrama requiere el subsistema `GestionPersonas` y no el componente `Profesor`.
 - `GestionServicioEntrenamientoService.darDeBajaHorario` consulta `IInfoInscripciones` y no da de baja un horario con alumnos inscriptos (US-04). `Horario` no conoce a `Inscripcion`, que además depende de `IInfoHorarios`.
 - `GestionPersonasService` resuelve con `IInfoInscripciones` los filtros por plan, profesora y actividad, el plan de cada fila y qué alumnos tiene a cargo una profesora (US-09, US-10). `Alumno` no conoce a `Inscripcion`, que depende de `IInfoAlumnos`. La fachada recibe quién hace el pedido (`Solicitante`) desde el controller.
+- `GestionInscripcionesYClasesService.reactivarAlumno` consulta `IInfoCuotas.tuvoPagoConfirmado`: quien nunca pagó vuelve con la inscripción `PREINSCRIPTA` (US-07, US-08). `Inscripcion` no conoce los pagos, y `Cuota` ya depende de `IInfoInscripciones`.
 
 La regla se limita a coordinar: consulta un componente y, según el resultado, llama al otro o lanza el error. Si empieza a acumular lógica propia, es señal de que falta un componente en el diagrama.
 

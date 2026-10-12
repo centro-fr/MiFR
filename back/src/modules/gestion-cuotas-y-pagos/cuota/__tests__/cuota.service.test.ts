@@ -44,6 +44,7 @@ function crearMocks() {
     repositorio: {
       situacionDeInscripciones: vi.fn().mockResolvedValue([situacion()]),
       historialDeAlumno: vi.fn().mockResolvedValue(["historial"]),
+      tuvoPagoConfirmado: vi.fn().mockResolvedValue(true),
     },
     inscripciones: { buscarParaCobro: vi.fn().mockResolvedValue(inscripcion), activar: vi.fn() },
     planes: { precioVigente: vi.fn().mockResolvedValue({ precio: 30000 }) },
@@ -187,6 +188,11 @@ describe("CuotaService", () => {
   it("historialDeAlumno devuelve las cuotas del alumno con sus pagos", async () => {
     await expect(servicio.historialDeAlumno(5)).resolves.toEqual(["historial"]);
     expect(mocks.repositorio.historialDeAlumno).toHaveBeenCalledWith(5);
+  });
+
+  it("tuvoPagoConfirmado consulta los pagos del alumno", async () => {
+    await expect(servicio.tuvoPagoConfirmado(5)).resolves.toBe(true);
+    expect(mocks.repositorio.tuvoPagoConfirmado).toHaveBeenCalledWith(5);
   });
 
   it("darAltaDefinitiva activa la inscripción (US-07)", async () => {

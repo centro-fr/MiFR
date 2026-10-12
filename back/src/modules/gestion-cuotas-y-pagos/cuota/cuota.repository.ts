@@ -37,6 +37,14 @@ export class CuotaRepository {
 
   // De todas las inscripciones del alumno, de la cuota más nueva a la más vieja, con un tope como
   // todo listado: a una cuota por mes, cien cubren más de ocho años.
+  async tuvoPagoConfirmado(idAlumno: number): Promise<boolean> {
+    const pago = await this.prisma.pagos.findFirst({
+      where: { estado: "CONFIRMADO", cuota: { inscripcion: { id_alumno: idAlumno } } },
+      select: { id_pago: true },
+    });
+    return pago !== null;
+  }
+
   async historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
     const filas = await this.prisma.cuotas.findMany({
       where: { inscripcion: { id_alumno: idAlumno } },

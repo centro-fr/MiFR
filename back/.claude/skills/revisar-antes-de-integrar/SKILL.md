@@ -38,7 +38,7 @@ Correr `git status` y `git diff dev...HEAD` para ver todo lo que trae la rama, n
 - Todo lo que se agregó o cambió tiene sus tests (tabla de `.claude/rules/testing.md`): service, repositorio, schemas, rutas, fachada y `shared/`. Señalar cada archivo nuevo sin su `__tests__/` correspondiente.
 - `pnpm test:coverage` sigue en 100 % de sentencias, ramas y funciones. Si bajó, la rama no se integra.
 - Cada regla nueva se verificó rompiéndola a propósito, y quedó anotada en la sección 7.1 de `PRUEBAS-INTEGRACION.md`.
-- `pnpm build` compila.
+- `pnpm build` compila y `pnpm typecheck` pasa: el build excluye los tests, y un test mal tipado igual corre en Vitest.
 - `pnpm format:check` pasa. Si no, el formateo va en un commit propio con `style(...)`.
 
 ### Los diagramas

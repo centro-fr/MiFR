@@ -168,8 +168,8 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38               | Sí                                                                                     |
 | US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39       | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42, PI-43               | Sí                                                                                     |
-| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41                                    | Sí                                                                                     |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
+| US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44                             | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36               | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
@@ -251,6 +251,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-41         | El detalle de la baja con el motivo OTRO                            | US-08               | Servicios          | Demostración                                               | Sí           |
 | PI-42         | El cobro en efectivo por la API                                     | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
 | PI-43         | La transferencia informada y su revisión por la API                 | US-07, US-16, US-17 | Servicios          | Demostración                                               | Sí           |
+| PI-44         | Reactivar a quien nunca pagó                                        | US-07, US-08        | Servicios          | Demostración                                               | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -537,9 +538,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Marina da de baja al alumno indicando `MUDANZA`.
 2. Otro alumno ocupa el cupo liberado.
 3. Marina intenta dar de baja nuevamente al primero.
-4. Reactiva a un alumno dado de baja con cupo disponible y, en otro escenario, cuando otro alumno ya ocupa el cupo.
+4. Reactiva a un alumno dado de baja que ya había pagado su primera cuota (`POST /pagos/efectivo`), con cupo disponible y, en otro escenario, cuando otro alumno ya ocupa el cupo.
 
-**Resultado esperado:** la baja responde 200; la inscripción queda `BAJA` con motivo y fecha, sus horarios se cierran y el alumno queda dado de baja. El segundo alumno puede ocupar el cupo. Repetir la baja responde 409. La reactivación válida crea otra inscripción `ACTIVA` y conserva la anterior; sin cupo responde 409 y el historial no cambia.
+**Resultado esperado:** la baja responde 200; la inscripción queda `BAJA` con motivo y fecha, sus horarios se cierran y el alumno queda dado de baja. El segundo alumno puede ocupar el cupo. Repetir la baja responde 409. La reactivación de quien ya pagó crea otra inscripción `ACTIVA` y conserva la anterior; sin cupo responde 409 y el historial no cambia. Quien nunca pagó vuelve como pre-inscripto (PI-44).
 
 **Automatizado:** Sí (G-06 a G-08).
 
@@ -794,9 +795,21 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (H-12 a H-14).
 
+#### PI-44 — Reactivar a quien nunca pagó
+
+**US:** US-07, US-08 · **Precondición:** escenario de demostración cargado; sesión de Marina; un alumno nuevo pre-inscripto en el Básico con Lucía, sin ningún pago.
+
+1. Marina da de baja al alumno y lo reactiva en el Básico, con Lucía y el mismo horario.
+2. El alumno intenta iniciar sesión.
+3. Marina le cobra en efectivo la primera cuota (`POST /pagos/efectivo`, $25.000) y el alumno vuelve a iniciar sesión.
+
+**Resultado esperado:** la reactivación responde 201 con una inscripción nueva `PREINSCRIPTA`, con su reserva de cupo vigente; la anterior sigue en `BAJA`. El alumno y su usuario quedan `INACTIVO`, sin roles, y el login responde 403. Después del cobro, la inscripción queda `ACTIVA`, el alumno y su usuario `ACTIVO`, con el rol `ALUMNO`, y el login responde 200.
+
+**Automatizado:** Sí (G-32).
+
 ## 7. Tests automatizados
 
-158 tests en nueve archivos:
+159 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -806,7 +819,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 31 (G-01 a G-31) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 14 (H-01 a H-14) | PI-33 a PI-36, PI-40, PI-42, PI-43 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 
@@ -848,7 +861,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
 | G-01 a G-03 | Inscripción preinscripta, precio vigente, filtros, validación de reglas, duplicados y cupo                                                                                   | PI-20 |
 | G-04, G-05  | Alta definitiva idempotente, rol `ALUMNO`, login, revalidación de cupo y activación ausente de la API (404)                                                                   | PI-21 |
-| G-06 a G-08 | Baja que libera cupo; reactivación con nuevo historial y rechazo cuando no hay cupo                                                                                          | PI-22 |
+| G-06 a G-08 | Baja que libera cupo; reactivación de quien ya pagó con nuevo historial y rechazo cuando no hay cupo                                                                                        | PI-22 |
 | G-09 a G-11 | Cambio transaccional de plan, cambio de horarios, rechazos por cupo y control de acceso                                                                                      | PI-23 |
 | G-12        | No se da de baja un horario con inscriptos (409, la base no cambia); sí cuando el alumno se fue                                                                               | PI-24 |
 | G-13        | Inscriptos y lugares que quedan en el detalle y el listado de horarios; los dados de baja no cuentan; sin cupo, `cupo_disponible: null`                                     | PI-27 |
@@ -864,6 +877,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-29        | El motivo `OTRO` sin detalle, o con el detalle en blanco, deja `detalle_baja` en null                                                                                        | PI-41 |
 | G-30        | El detalle con otro motivo o de más de 200 caracteres responde 400 `VALIDATION_ERROR` y no da de baja nada                                                                   | PI-41 |
 | G-31        | La base rechaza un detalle sin el motivo `OTRO` aunque se saltee la API (`ck_inscripciones_x2`)                                                                              | PI-41 |
+| G-32        | Quien nunca pagó vuelve de la baja pre-inscripto, inactivo y sin rol; el primer pago le da el alta, el rol y el acceso                                                    | PI-44 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
@@ -951,6 +965,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Los planes dados de baja también frenan la baja de la actividad                        | B-18                                                                                                       |
 | El subsistema de cuotas y pagos sin montar en la API                                   | H-10 a H-14                                                                                                |
 | El listado de transferencias en revisión solo con sesión, sin el rol ni el permiso     | H-12                                                                                                       |
+| La reactivación crea siempre la inscripción `ACTIVA`, sin mirar los pagos              | G-32                                                                                                       |
+| La reactivación deja siempre al alumno `ACTIVO`                                        | G-32                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -982,6 +998,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 11/10/2026 | El detalle de la baja con el motivo OTRO (PI-41)                      | 151 | 151 aprobados | 130,1 s | Con la base de prueba recreada desde cero, así que la migración nueva se aplicó completa. Pasaron también los 1241 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 | 11/10/2026 | Los planes exclusivos vigentes frenan la baja de la actividad (PI-06) | 153 | 153 aprobados | 133,5 s | Pasaron también los 1242 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
 | 12/10/2026 | Cuotas y pagos montado en la API (PI-42, PI-43)                       | 158 | 158 aprobados | 115,9 s | PI-35, PI-36 y PI-40 pasan ahora con los calculadores reales. Pasaron también los 1291 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
+| 12/10/2026 | Reactivar a quien nunca pagó (PI-44, PI-22)                          | 159 | 159 aprobados | 111,4 s | Pasaron también los 1295 tests unitarios, con cobertura del 100 %; build y chequeo de tipos (con los tests) correctos. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1003,6 +1020,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-06         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan B-10 a B-13 y B-16 a B-18 (defecto D-19)                                   |
 | PI-42         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-10 y H-11 por la API; sin defectos                                       |
 | PI-43         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-12 a H-14 por la API; sin defectos                                       |
+| PI-22         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan G-06 a G-08; G-07 paga la primera cuota antes de la baja (defecto D-20)     |
+| PI-44         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa G-32 (defecto D-20)                                                         |
 
 ### 8.3 Defectos
 
@@ -1027,6 +1046,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-17 | PI-38 | Una pre-inscripción que nunca se pagaba ocupaba el cupo para siempre; en las clases personalizadas, con 4 lugares, trababa el horario. Corregido: deja de ocupar lugar `DIAS_RESERVA_PREINSCRIPCION` días después de su inicio (parámetro, 3 por defecto) y las respuestas marcan la reserva vencida | Media | Francisco Andrade | `InscripcionService`, `inscripcion.repository.ts`, `ParametrosSistemaService` |
 | D-18 | PI-38 | Cambiar de plan creaba la pre-inscripción nueva con inicio hoy, así que le renovaba la reserva de cupo: cambiando de plan se podía guardar el lugar sin pagar indefinidamente. Corregido: una pre-inscripción conserva su fecha de inicio al cambiar de plan | Media | Francisco Andrade | `inscripcion.repository.ts` |
 | D-19 | PI-06 | La baja de una actividad no revisaba sus planes exclusivos: la actividad quedaba dada de baja y esos planes seguían vigentes y ofrecidos, pero inscribir en ellos fallaba porque ya no tenían horarios. Corregido: la baja responde 409 y nombra los planes vigentes exclusivos, que hay que dar de baja o pasar a otra actividad | Media | Francisco Andrade | `GestionServicioEntrenamientoService` |
+| D-20 | PI-22, PI-44 | Reactivar a un pre-inscripto dado de baja que nunca pagó creaba la inscripción `ACTIVA` y dejaba activos al alumno y a su usuario, sin rol. El primer pago después ya no daba el alta, así que el alumno nunca recibía su rol. G-07 daba por bueno ese comportamiento. Corregido: si el alumno nunca tuvo un pago confirmado, la reactivación crea la inscripción `PREINSCRIPTA` y lo deja `INACTIVO`, y el primer pago le da el alta | Alta | Francisco Andrade | `GestionInscripcionesYClasesService`, `InscripcionService`, `AlumnoService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -1090,3 +1110,4 @@ Los defectos se numeran D-01, D-02…
 |   2.5   | 11/10/2026 | Caso PI-41 y tests G-28 a G-31: el detalle de la baja con el motivo OTRO; punto a confirmar de PI-41 cerrado | Francisco Andrade |
 |   2.6   | 11/10/2026 | PI-06: pasos 6 y 7 (los planes exclusivos vigentes frenan la baja de la actividad) y tests B-17 y B-18; PI-06 pasa a cubrir US-11; defecto D-19 | Francisco Andrade |
 |   2.7   | 12/10/2026 | Cuotas y pagos montado en la API: casos PI-42 y PI-43 y tests H-10 a H-14; US-15, US-16 y US-17 pasan a automatizadas; `armarCuotasYPagos` usa los calculadores reales y PI-36 vence de fecha a fecha | Francisco Andrade |
+|   2.8   | 12/10/2026 | Caso PI-44 y test G-32 (reactivar a quien nunca pagó); PI-22 y G-07 reactivan a un alumno que ya pagó; defecto D-20 | Francisco Andrade |
