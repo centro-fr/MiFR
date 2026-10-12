@@ -112,22 +112,35 @@ Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscrip
 | Lucía Gómez | `lucia.gomez@example.com` | Profesora               | Entrenamiento funcional     |
 | Carla Ruiz  | `carla.ruiz@example.com`  | Profesora               | Entrenamiento personalizado |
 
-**Actividades:**
+**Actividades** (las grupales con cupo 12):
 
-| Actividad                   | Código               | Modalidad     | Cupo     | Pide peso y talla |
-| :-------------------------- | :------------------- | :------------ | :------- | :---------------- |
-| Funcional Grupal            | `FUNCIONAL`          | Grupal        | Sin cupo | No                |
-| Entrenamiento Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4        | Sí                |
+| Actividad     | Código               | Modalidad     | Cupo | Profesora   | Pide peso y talla |
+| :------------ | :------------------- | :------------ | :--- | :---------- | :---------------- |
+| Funcional     | `FUNCIONAL`          | Grupal        | 12   | Lucía Gómez | No                |
+| Funcional +45 | `FUNCIONAL_45`       | Grupal        | 12   | Lucía Gómez | No                |
+| Training      | `TRAINING`           | Grupal        | 12   | Lucía Gómez | No                |
+| Personalizado | `ENTRENAMIENTO_PERS` | Personalizada | 4    | Carla Ruiz  | Sí                |
+| Kid Fit       | `KID_FIT`            | Grupal        | 12   | Carla Ruiz  | No                |
+| GAP           | `GAP`                | Grupal        | 12   | Carla Ruiz  | No                |
+| HIIT          | `HIIT`               | Grupal        | 12   | Marina Sosa | No                |
+| Combat        | `COMBAT`             | Grupal        | 12   | Marina Sosa | No                |
 
-**Horarios:**
+**Horarios:** la grilla semanal del centro, 38 clases de una hora. Cada actividad la da siempre la misma profesora, así ninguna tiene dos clases a la misma hora. El sábado no hay clases.
 
-| Día       | Hora          | Profesora   | Actividad                   | Cupo del horario         |
-| :-------- | :------------ | :---------- | :-------------------------- | :----------------------- |
-| Lunes     | 18:00 – 19:00 | Lucía Gómez | Funcional Grupal            | Sin cupo propio          |
-| Martes    | 09:00 – 10:00 | Carla Ruiz  | Entrenamiento Personalizado | Sin cupo propio (toma 4) |
-| Miércoles | 18:00 – 19:00 | Lucía Gómez | Funcional Grupal            | Sin cupo propio          |
-| Jueves    | 09:00 – 10:00 | Carla Ruiz  | Entrenamiento Personalizado | Sin cupo propio (toma 4) |
-| Viernes   | 19:00 – 20:00 | Marina Sosa | Funcional Grupal            | 12, propio (CA-07)       |
+| Hora  | Lunes, miércoles y viernes | Martes y jueves |
+| :---- | :------------------------- | :-------------- |
+| 08:00 | Funcional                  | —               |
+| 09:00 | Funcional +45              | Kid Fit         |
+| 15:00 | Personalizado              | Funcional       |
+| 16:00 | HIIT                       | GAP             |
+| 17:00 | —                          | Kid Fit         |
+| 18:00 | —                          | Personalizado   |
+| 19:00 | Training                   | HIIT            |
+| 20:00 | HIIT                       | Combat          |
+| 21:00 | Funcional                  | —               |
+| 22:00 | Funcional                  | —               |
+
+Ningún horario tiene cupo propio salvo el Training del viernes, con 15 (CA-07): los demás toman el de su actividad.
 
 **Planes** (precios vigentes desde el 01/01/2026):
 
@@ -135,7 +148,7 @@ Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscrip
 | :------------------- | :----------- | :---------------: | :-------------------------- | :-------------: | ------: |
 | Básico               | Mensual      |         2         | —                           |       No        | $25.000 |
 | Intermedio           | Mensual      |         3         | —                           |       No        | $30.000 |
-| Personalizado 2 días | Mensual      |         2         | Entrenamiento Personalizado |       Sí        | $45.000 |
+| Personalizado 2 días | Mensual      |         2         | Personalizado               |       Sí        | $45.000 |
 | Clase suelta         | Clase suelta |         —         | —                           |       No        |  $6.000 |
 
 **Alumnos** (los pre-inscriptos quedan `INACTIVO` hasta el primer pago; Valentina está activa como si ya hubiera pagado, con el rol `ALUMNO`):
@@ -150,11 +163,11 @@ Incluye planes, dos alumnos pre-inscriptos y uno activo, cada uno con su inscrip
 
 | Alumno            | Plan                 | Profesora a cargo | Estado         | Horarios                                           |
 | :---------------- | :------------------- | :---------------- | :------------- | :------------------------------------------------- |
-| Sofía Medina      | Básico               | Lucía Gómez       | `PREINSCRIPTA` | Funcional, lunes y miércoles 18:00                 |
-| Mateo Romero      | Personalizado 2 días | Carla Ruiz        | `PREINSCRIPTA` | Entrenamiento personalizado, martes y jueves 09:00 |
-| Valentina Herrera | Intermedio           | Carla Ruiz        | `ACTIVA`       | Entrenamiento personalizado, martes y jueves 09:00 |
+| Sofía Medina      | Básico               | Lucía Gómez       | `PREINSCRIPTA` | Funcional, lunes y miércoles 08:00                 |
+| Mateo Romero      | Personalizado 2 días | Carla Ruiz        | `PREINSCRIPTA` | Personalizado, martes y jueves 18:00               |
+| Valentina Herrera | Intermedio           | Carla Ruiz        | `ACTIVA`       | Personalizado, martes y jueves 18:00               |
 
-Los horarios nuevos deben caer dentro del horario de atención, de lunes a sábado de 07:00 a 20:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas. El centro no abre los domingos: la base admite el día 7 (el DER no se cambia), pero la API lo rechaza.
+Los horarios nuevos deben caer dentro del horario de atención, de lunes a sábado de 07:00 a 23:00 (US-04); fuera de esa franja la API responde 400 antes de evaluar otras reglas. El centro no abre los domingos: la base admite el día 7 (el DER no se cambia), pero la API lo rechaza.
 
 ## 5. Matriz de trazabilidad
 
@@ -292,9 +305,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Una profesora, un alumno y un tutor intentan crear una actividad.
 2. La propietaria crea la misma actividad.
 3. Cada rol consulta los listados de usuarios, matriz de permisos, actividades, horarios y profesoras.
-4. Una profesora, un alumno y un tutor intentan modificar y dar de baja Funcional Grupal, y asignarle a Carla un horario.
+4. Una profesora, un alumno y un tutor intentan modificar y dar de baja Funcional, y asignarle a Carla un horario.
 
-**Resultado esperado:** las escrituras de profesora, alumno y tutor responden 403 y la base queda sin cambios: ninguna actividad creada, la descripción de Funcional Grupal intacta, la actividad sigue activa y no aparece ningún horario nuevo. La de la propietaria responde 201 y queda persistida. Actividades, horarios y profesoras responden 200 para todos los roles. Usuarios y matriz de permisos responden 200 solo para la propietaria y 403 para el resto.
+**Resultado esperado:** las escrituras de profesora, alumno y tutor responden 403 y la base queda sin cambios: ninguna actividad creada, la descripción de Funcional intacta, la actividad sigue activa y no aparece ningún horario nuevo. La de la propietaria responde 201 y queda persistida. Actividades, horarios y profesoras responden 200 para todos los roles. Usuarios y matriz de permisos responden 200 solo para la propietaria y 403 para el resto.
 
 **Automatizado:** Sí (A-07 a A-30, A-39 a A-41).
 
@@ -305,44 +318,45 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Marina intenta crear la actividad "Posing" (código `POSING`), personalizada y sin cupo.
 2. La crea con cupo 3.
 3. Le asigna a Carla el horario de Posing del lunes de 09:00 a 10:00, sin cupo propio.
-4. Se consultan los horarios de Entrenamiento Personalizado.
-5. Le asigna a Carla un horario de Entrenamiento Personalizado el lunes de 11:00 a 12:00, con cupo propio 2.
-6. Se consultan los horarios de Marina.
+4. Se consultan los horarios de Personalizado.
+5. Le asigna a Carla un horario de Personalizado el lunes de 11:00 a 12:00, con cupo propio 2.
+6. Se consultan los horarios de Training.
 7. Marina crea "Funcional Sábado", grupal y sin cupo, y se la asigna a Lucía el sábado de 10:00 a 11:00.
 
-**Resultado esperado:** el paso 1 falla con 400 por cupo obligatorio y la actividad no se guarda. El horario del paso 3 informa cupo efectivo 3, y los de Entrenamiento Personalizado de martes y jueves informan 4: si el horario no tiene cupo propio, toma el de la actividad. El horario del paso 5 informa 2 y el de Funcional Grupal del viernes de Marina informa 12, porque el cupo propio del horario manda sobre el de la actividad. La actividad grupal del paso 7 se crea y se asigna sin cupo.
+**Resultado esperado:** el paso 1 falla con 400 por cupo obligatorio y la actividad no se guarda. El horario del paso 3 informa cupo efectivo 3, y los cinco de Personalizado informan 4: si el horario no tiene cupo propio, toma el de la actividad. El horario del paso 5 informa 2, y en el paso 6 los de Training del lunes y el miércoles informan 12 y el del viernes 15, porque el cupo propio del horario manda sobre el de la actividad. La actividad grupal del paso 7 se crea y se asigna sin cupo.
 
 **Automatizado:** Sí (B-01 a B-04).
 
 #### PI-05 — Validaciones al asignar profesora y horario
 
-**US:** US-02, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Lucía dicta Funcional Grupal lunes y miércoles de 18:00 a 19:00, y Marina el viernes de 19:00 a 20:00.
+**US:** US-02, US-04 · **Precondición:** escenario de demostración cargado; sesión de Marina. Lucía da Training los lunes de 19:00 a 20:00, y Marina HIIT los viernes de 20:00 a 21:00.
 
-1. Marina intenta asignarle a Lucía Entrenamiento Personalizado el lunes de 18:30 a 19:30.
-2. Marina se asigna a sí misma Funcional Grupal el lunes de 18:00 a 19:00.
-3. Marina intenta asignarse Funcional Grupal el viernes de 18:30 a 19:30.
+1. Marina intenta asignarle a Lucía Personalizado el lunes de 18:30 a 19:30.
+2. Marina se asigna a sí misma Funcional el lunes de 18:00 a 19:00.
+3. Marina intenta asignarse Funcional el viernes de 20:30 a 21:30.
 4. Marina intenta crear un horario que termina antes de empezar (de 10:00 a 09:00).
-5. Marina le quita a Carla el rol Profesora e intenta asignarle Entrenamiento Personalizado el viernes de 09:00 a 10:00.
-6. Marina intenta asignarle a Lucía Funcional Grupal el domingo de 10:00 a 11:00.
+5. Marina le quita a Carla el rol Profesora e intenta asignarle Personalizado el viernes de 09:00 a 10:00.
+6. Marina intenta asignarle a Lucía Funcional el domingo de 10:00 a 11:00.
 7. Marina intenta pasar al domingo el horario del lunes de Lucía.
+8. Marina le asigna a Lucía Funcional el sábado de 22:00 a 23:00 e intenta asignarle a Carla otro de 22:30 a 23:30.
 
-**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. En el paso 5 el rol se quita (200) y la asignación se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Los pasos 6 y 7 se rechazan con 400 `VALIDATION_ERROR` ("El centro no abre los domingos"): no queda ningún horario en domingo y el de Lucía sigue el lunes. Ninguno de los rechazos deja un horario guardado.
+**Resultado esperado:** los pasos 1 y 3 se rechazan con 409 por superposición ("La profesora ya tiene un horario superpuesto ese día"). El paso 2 se acepta: dos profesoras distintas pueden dictar a la misma hora. El paso 4 se rechaza con 400. En el paso 5 el rol se quita (200) y la asignación se rechaza con 404 ("Profesora no encontrada, inactiva o sin el rol PROFESORA"). Los pasos 6 y 7 se rechazan con 400 `VALIDATION_ERROR` ("El centro no abre los domingos"): no queda ningún horario en domingo y el de Lucía sigue el lunes. En el paso 8 el primero se acepta (201): una clase puede terminar a las 23:00, el cierre del centro. El segundo se rechaza con 400 ("La hora debe estar entre las 07:00 y las 23:00"). Ninguno de los rechazos deja un horario guardado.
 
-**Automatizado:** Sí (B-05 a B-09, B-14, B-15).
+**Automatizado:** Sí (B-05 a B-09, B-14, B-15, B-21).
 
 #### PI-06 — Modificación y baja de actividades con horarios y planes
 
-**US:** US-03, US-04, US-11 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional Grupal tiene horarios activos (Lucía lunes y miércoles, Marina viernes) y Sofía está inscripta los lunes y miércoles.
+**US:** US-03, US-04, US-11 · **Precondición:** escenario de demostración cargado; sesión de Marina. Funcional tiene once horarios activos, todos de Lucía, y Sofía está inscripta los lunes y miércoles a las 8.
 
-1. Marina cambia la descripción de Funcional Grupal.
-2. Marina intenta dar de baja Funcional Grupal.
+1. Marina cambia la descripción de Funcional.
+2. Marina intenta dar de baja Funcional.
 3. Marina crea una actividad nueva, sin horarios, y la da de baja.
-4. Marina intenta cambiar Funcional Grupal de grupal a personalizada sin indicar cupo.
+4. Marina crea Yoga, grupal y sin cupo, e intenta cambiarla a personalizada sin indicar cupo.
 5. Marina crea la actividad Yoga con dos horarios sin alumnos y la da de baja.
 6. Marina crea la actividad Yoga con un horario sin alumnos y el plan "Yoga 2 días", exclusivo de Yoga, e intenta dar de baja Yoga.
 7. Marina da de baja el plan "Yoga 2 días" y después da de baja Yoga. En el escenario siguen vigentes los planes que sirven para cualquier actividad.
 
-**Resultado esperado:** la descripción nueva se ve en los tres horarios de Funcional Grupal. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus tres horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran). El paso 6 se rechaza con 409 ("La actividad tiene planes vigentes que son solo de ella (Yoga 2 días): dalos de baja o pasalos a otra actividad antes de darla de baja"); la actividad, su horario y el plan siguen activos. En el paso 7 la baja responde 200 y el horario queda dado de baja: un plan exclusivo dado de baja y los planes para cualquier actividad no la frenan.
+**Resultado esperado:** la descripción nueva se ve en los once horarios de Funcional. La baja del paso 2 se rechaza con 409 ("La actividad tiene 2 horario(s) con alumnos inscriptos: hay que reubicarlos antes de darla de baja"); la actividad y sus once horarios siguen activos. El paso 3 se acepta y la actividad queda inactiva. El paso 4 se rechaza con 400 por cupo obligatorio y la actividad sigue siendo grupal. En el paso 5 la baja responde 200: Yoga queda inactiva y sus dos horarios, dados de baja (no se borran). El paso 6 se rechaza con 409 ("La actividad tiene planes vigentes que son solo de ella (Yoga 2 días): dalos de baja o pasalos a otra actividad antes de darla de baja"); la actividad, su horario y el plan siguen activos. En el paso 7 la baja responde 200 y el horario queda dado de baja: un plan exclusivo dado de baja y los planes para cualquier actividad no la frenan.
 
 **Automatizado:** Sí (B-10 a B-13 y B-16 a B-18).
 
@@ -401,7 +415,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 **US:** US-11, US-12 · **Precondición:** escenario de demostración cargado; sesión de Marina.
 
 1. Marina crea el plan mensual "Básico 2 días" (2 clases por semana, 5 días de gracia) a $25.000.
-2. Marina intenta crear un plan exclusivo de Funcional Grupal después de que esa actividad quedó dada de baja.
+2. Marina intenta crear un plan exclusivo de Funcional después de que esa actividad quedó dada de baja.
 3. Marina intenta crear otro plan llamado "BÁSICO 2 DÍAS".
 4. Se intenta guardar, directo en la base, una clase suelta con clases por semana y un precio de $0.
 
@@ -585,7 +599,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **US:** US-10 · **Precondición:** escenario de demostración cargado; sesión de Marina; un alumno pre-inscripto sin inscripción.
 
-1. Marina filtra el listado por el plan Básico, por Carla y por la actividad Entrenamiento Personalizado, y lista sin filtros.
+1. Marina filtra el listado por el plan Básico, por Carla y por la actividad Personalizado, y lista sin filtros.
 2. Marina abre la ficha de Mateo.
 
 3. Marina abre la ficha de Valentina, que inicia sesión con su correo.
@@ -708,14 +722,14 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-37 — Peso y talla al pre-inscribir en una actividad que los pide
 
-**US:** US-03, US-05 · **Precondición:** escenario de demostración cargado (Entrenamiento Personalizado tiene `requiere_medidas`; Funcional Grupal no); sesión de Marina; alumnos nuevos sin inscripción.
+**US:** US-03, US-05 · **Precondición:** escenario de demostración cargado (Personalizado tiene `requiere_medidas`; Funcional no); sesión de Marina; alumnos nuevos sin inscripción.
 
 1. Marina pre-inscribe un alumno en el plan Personalizado 2 días, con un horario de Carla, sin peso ni talla.
 2. Repite el pedido con peso 62,5 kg y talla 168 cm.
-3. Pre-inscribe otro alumno en Funcional Grupal sin medidas; después marca Funcional Grupal con `requiere_medidas` y vuelve a pre-inscribir sin medidas.
-4. Con Funcional Grupal marcada y un horario con cupo 1, pre-inscribe dos alumnos con medidas.
+3. Pre-inscribe otro alumno en Funcional sin medidas; después marca Funcional con `requiere_medidas` y vuelve a pre-inscribir sin medidas.
+4. Con Funcional marcada y un horario con cupo 1, pre-inscribe dos alumnos con medidas.
 
-**Resultado esperado:** el paso 1 responde 400 ("Entrenamiento Personalizado pide el peso y la talla para pre-inscribir") y no se guarda ni la inscripción ni la medición. El paso 2 responde 201: la inscripción queda PREINSCRIPTA y hay un registro de progreso a nombre de Carla con PESO 62,5 kg y TALLA 168 cm. En el paso 3, la primera pre-inscripción responde 201 sin registro de progreso; con la actividad marcada, la segunda responde 400. En el paso 4, el segundo alumno recibe 409 por cupo y su medición tampoco queda.
+**Resultado esperado:** el paso 1 responde 400 ("Personalizado pide el peso y la talla para pre-inscribir") y no se guarda ni la inscripción ni la medición. El paso 2 responde 201: la inscripción queda PREINSCRIPTA y hay un registro de progreso a nombre de Carla con PESO 62,5 kg y TALLA 168 cm. En el paso 3, la primera pre-inscripción responde 201 sin registro de progreso; con la actividad marcada, la segunda responde 400. En el paso 4, el segundo alumno recibe 409 por cupo y su medición tampoco queda.
 
 **Automatizado:** Sí (G-18 a G-21).
 
@@ -824,24 +838,24 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-46 — El panel público de disponibilidad
 
-**US:** US-32, US-04 · **Precondición:** escenario de demostración cargado (cinco horarios vigentes; en el Entrenamiento Personalizado de Carla, con cupo 4, Valentina Herrera activa y Mateo Romero pre-inscripto con la reserva vigente). La fecha de inicio de la pre-inscripción se corre en la base para simular el paso del tiempo.
+**US:** US-32, US-04 · **Precondición:** escenario de demostración cargado (la grilla de 38 horarios; en el Personalizado de Carla de martes y jueves a las 18, con cupo 4, Valentina Herrera activa y Mateo Romero pre-inscripto con la reserva vigente). La fecha de inicio de la pre-inscripción se corre en la base para simular el paso del tiempo.
 
 1. Un visitante, sin sesión, consulta `GET /publico/disponibilidad`.
-2. Marina pre-inscribe a otro alumno en los horarios de Carla y el visitante vuelve a consultar.
-3. La reserva de Mateo pasa a tener 4 días, Marina da de baja el horario del viernes y el visitante vuelve a consultar.
+2. Marina pre-inscribe a otro alumno en esos horarios de Carla y el visitante vuelve a consultar.
+3. La reserva de Mateo pasa a tener 4 días, Marina da de baja el Training del viernes y el visitante vuelve a consultar.
 
-**Resultado esperado:** en el paso 1 la consulta responde 200 con `Cache-Control: public, max-age=60` y los cinco horarios ordenados por día. El martes de Carla trae la actividad, la profesora (solo nombre y apellido), cupo 4, 2 lugares libres y `LIBRE`. El lunes de Funcional, sin cupo, figura `SIN_LIMITE`, y el viernes tiene sus 12 lugares libres. La respuesta no trae emails, DNI ni apellidos de alumnos. En el paso 2 el martes queda con 1 lugar y `CASI_LLENO` (75 %). En el paso 3 la reserva vencida deja de ocupar lugar: vuelve a 2 libres y `LIBRE`. El horario dado de baja ya no figura.
+**Resultado esperado:** en el paso 1 la consulta responde 200 con `Cache-Control: public, max-age=60` y los horarios ordenados por día, de lunes a viernes. El martes a las 18 trae la actividad, la profesora (solo nombre y apellido), cupo 4, 2 lugares libres y `LIBRE`. El Funcional del lunes a las 8 tiene 11 lugares libres de 12 (ocupa uno Sofía), y el Training del viernes sus 15. La respuesta no trae emails, DNI ni apellidos de alumnos. En el paso 2 el martes queda con 1 lugar y `CASI_LLENO` (75 %). En el paso 3 la reserva vencida deja de ocupar lugar: vuelve a 2 libres y `LIBRE`. El horario dado de baja ya no figura.
 
 **Automatizado:** Sí (B-19 y B-20).
 
 ## 7. Tests automatizados
 
-163 tests en nueve archivos:
+164 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
 |    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 48 (A-01 a A-48) | PI-01 a PI-03, PI-07, PI-08, PI-28, PI-29 |
-|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 20 (B-01 a B-20) | PI-04, PI-05, PI-06, PI-46        |
+|    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 21 (B-01 a B-21) | PI-04, PI-05, PI-06, PI-46        |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
@@ -875,6 +889,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | B-18        | Con su plan exclusivo dado de baja, la actividad se da de baja aunque haya planes vigentes para cualquier actividad                                                         | PI-06 |
 | B-19        | Un visitante sin sesión ve el cronograma con los lugares libres y la disponibilidad de cada horario, sin ningún dato de alumnos                                              | PI-46 |
 | B-20        | La disponibilidad sigue a las inscripciones (casi lleno desde el 60 %), a las reservas vencidas y a las bajas de horarios                                                   | PI-46 |
+| B-21        | Una clase puede terminar a las 23:00, el cierre del centro, y no después                                                                                                    | PI-05 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
 | D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
 | D-05 a D-07 | Cambio de frecuencia; baja lógica que saca el plan del listado; no hay segunda baja ni edición de un plan dado de baja                                                          | PI-12 |
@@ -1004,6 +1019,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El panel público no cuenta los lugares ocupados                                        | B-19, B-20                                                                                                 |
 | El panel marca casi lleno desde el 80 % y no desde el 60 %                              | B-20                                                                                                       |
 | El panel devuelve los horarios completos, con los datos de la profesora y su usuario  | B-19, B-20                                                                                                 |
+| El centro vuelve a cerrar a las 20:00                                                  | B-07 (responde 400 en lugar de 409: el horario de 20:30 a 21:30 queda fuera) y B-21                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1038,6 +1054,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Reactivar a quien nunca pagó (PI-44, PI-22)                          | 159 | 159 aprobados | 111,4 s | Pasaron también los 1295 tests unitarios, con cobertura del 100 %; build y chequeo de tipos (con los tests) correctos. Las 2 fallas provocadas fueron detectadas |
 | 12/10/2026 | Situación de cuota en la ficha y el listado (PI-45)                   | 161 | 161 aprobados | 105,7 s | Pasaron también los 1300 tests unitarios, con cobertura del 100 %; build y chequeo de tipos correctos. Las 3 fallas provocadas fueron detectadas |
 | 12/10/2026 | Panel público de disponibilidad (PI-46)                               | 163 | 163 aprobados | 110,9 s | Pasaron también los 1311 tests unitarios, con cobertura del 100 %; chequeo de tipos correcto. Las 3 fallas provocadas fueron detectadas |
+| 12/10/2026 | Grilla real del centro en el escenario y cierre a las 23:00 (PI-05)     | 164 | 164 aprobados | 119,9 s | 16 tests se adaptaron al escenario nuevo. Pasaron también los 1311 tests unitarios, con cobertura del 100 %; build y chequeo de tipos correctos. La falla provocada fue detectada |
 
 ### 8.2 Resultado por caso
 
@@ -1063,6 +1080,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-44         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa G-32 (defecto D-20)                                                         |
 | PI-45         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-15 y H-16; sin defectos                                                  |
 | PI-46         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-19 y B-20; sin defectos                                                  |
+| PI-05         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-05 a B-09, B-14, B-15 y B-21 con la grilla nueva; sin defectos            |
 
 ### 8.3 Defectos
 
@@ -1155,3 +1173,4 @@ Los defectos se numeran D-01, D-02…
 |   2.8   | 12/10/2026 | Caso PI-44 y test G-32 (reactivar a quien nunca pagó); PI-22 y G-07 reactivan a un alumno que ya pagó; defecto D-20 | Francisco Andrade |
 |   2.9   | 12/10/2026 | Caso PI-45 y tests H-15 y H-16 (situación de cuota en la ficha y el listado); US-18 pasa a automatizada | Francisco Andrade |
 |   2.10  | 12/10/2026 | Caso PI-46 y tests B-19 y B-20 (panel público de disponibilidad); US-32 pasa a parcialmente automatizada; punto abierto sobre el límite de pedidos | Francisco Andrade |
+|   2.11  | 12/10/2026 | El escenario de demostración pasa a la grilla real del centro (ocho actividades y 38 horarios); el centro cierra a las 23:00 (PI-05, test B-21); PI-04, PI-05, PI-06 y PI-46 se ajustan a los datos nuevos | Francisco Andrade |
