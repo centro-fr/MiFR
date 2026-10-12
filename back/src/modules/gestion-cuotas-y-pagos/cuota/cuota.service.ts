@@ -129,4 +129,8 @@ export class CuotaService implements IInfoCuotas {
   historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
     return this.repositorio.historialDeAlumno(idAlumno);
   }
+
+  tuvoPagoConfirmado(idAlumno: number): Promise<boolean> {
+    return this.repositorio.tuvoPagoConfirmado(idAlumno);
+  }
 }

@@ -215,14 +215,20 @@ export class InscripcionService implements IInfoInscripciones {
     await this.alumnos.darDeBaja(idAlumno);
   }
 
-  async reactivarAlumno(idAlumno: number, input: ReactivarAlumnoInput): Promise<InscripcionConDatos> {
+  // Quien ya pagó alguna vez vuelve con la inscripción ACTIVA; quien nunca pagó, PREINSCRIPTA, y el
+  // primer pago le da el alta como a cualquier pre-inscripto (US-07). Lo decide la fachada, que ve los pagos.
+  async reactivarAlumno(
+    idAlumno: number,
+    input: ReactivarAlumnoInput,
+    estado: "PREINSCRIPTA" | "ACTIVA",
+  ): Promise<InscripcionConDatos> {
     const alumno = await this.alumnos.buscarPorId(idAlumno);
     if (!alumno) throw new NotFoundError("Alumno no encontrado");
     if (alumno.estado !== "BAJA") throw new ConflictError("Solo se puede reactivar un alumno dado de baja");
 
     const existente = await this.repositorio.buscarVigentePorAlumno(idAlumno);
     if (existente?.estado === "ACTIVA") {
-      await this.alumnos.reactivar(idAlumno);
+      await this.alumnos.reactivar(idAlumno, "ACTIVO");
       return { ...existente, reserva: null };
     }
     if (existente) {
@@ -233,7 +239,7 @@ export class InscripcionService implements IInfoInscripciones {
       {
         ...input,
         id_alumno: idAlumno,
-        estado: "ACTIVA",
+        estado,
       },
       true,
     );
@@ -246,7 +252,9 @@ export class InscripcionService implements IInfoInscripciones {
     );
     const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
     const alumnoActual = await this.alumnos.buscarPorId(idAlumno);
-    if (alumnoActual?.estado === "BAJA") await this.alumnos.reactivar(idAlumno);
+    if (alumnoActual?.estado === "BAJA") {
+      await this.alumnos.reactivar(idAlumno, inscripcion.estado === "ACTIVA" ? "ACTIVO" : "INACTIVO");
+    }
     return inscripcion;
   }
 

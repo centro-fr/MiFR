@@ -12,4 +12,8 @@ export interface IInfoCuotas {
 
   // Solo para la propietaria (US-10): quien lo consume decide quién lo ve.
   historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]>;
+
+  // Si el alumno tuvo alguna vez un pago confirmado, en cualquiera de sus inscripciones: la
+  // reactivación de quien nunca pagó vuelve a la pre-inscripción (US-07, US-08).
+  tuvoPagoConfirmado(idAlumno: number): Promise<boolean>;
 }

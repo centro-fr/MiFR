@@ -2,7 +2,11 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CuotaRepository } from "../cuota.repository.js";
 
-const prisma = { inscripciones: { findMany: vi.fn() }, cuotas: { findMany: vi.fn() } };
+const prisma = {
+  inscripciones: { findMany: vi.fn() },
+  cuotas: { findMany: vi.fn() },
+  pagos: { findFirst: vi.fn() },
+};
 const VENCIMIENTO = new Date("2026-11-09T00:00:00Z");
 
 describe("CuotaRepository", () => {
@@ -48,6 +52,17 @@ describe("CuotaRepository", () => {
     expect(prisma.inscripciones.findMany.mock.calls[0][0]).toMatchObject({
       where: { id_inscripcion: { in: [12, 13] } },
       select: { cuotas: { orderBy: { numero_cuota: "desc" } } },
+    });
+  });
+
+  it("tuvoPagoConfirmado busca un pago confirmado en cualquier inscripción del alumno", async () => {
+    prisma.pagos.findFirst.mockResolvedValueOnce({ id_pago: 7 }).mockResolvedValueOnce(null);
+
+    await expect(repositorio.tuvoPagoConfirmado(5)).resolves.toBe(true);
+    await expect(repositorio.tuvoPagoConfirmado(5)).resolves.toBe(false);
+    expect(prisma.pagos.findFirst).toHaveBeenCalledWith({
+      where: { estado: "CONFIRMADO", cuota: { inscripcion: { id_alumno: 5 } } },
+      select: { id_pago: true },
     });
   });
 

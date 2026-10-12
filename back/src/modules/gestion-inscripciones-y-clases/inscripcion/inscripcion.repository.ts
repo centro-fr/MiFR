@@ -303,10 +303,11 @@ export class InscripcionRepository {
   ): Promise<ResultadoOperacion> {
     return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
+      // Dos reactivaciones a la vez: la segunda devuelve la inscripción que dejó la primera.
       const existente = await transaccion.inscripciones.findFirst({
         where: {
           id_alumno: input.id_alumno,
-          estado: "ACTIVA",
+          estado: { in: [...ESTADOS_VIGENTES] },
         },
         orderBy: [{ fecha_inicio: "desc" }, { id_inscripcion: "desc" }],
         include: INCLUIR_DATOS_INSCRIPCION,
@@ -315,7 +316,7 @@ export class InscripcionRepository {
       if (!(await hayCupo(transaccion, idsHorarios, inicioReservas))) return { resultado: "sin-cupo" };
       const inscripcion = await transaccion.inscripciones.create({
         data: {
-          ...mapearDatosDeCreacion(input, "ACTIVA"),
+          ...mapearDatosDeCreacion(input, input.estado),
           fecha_inicio: input.fecha_inicio,
           horarios: {
             create: idsHorarios.map((id_horario) => ({ id_horario, fecha_desde: fecha })),
