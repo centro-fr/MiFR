@@ -7,6 +7,7 @@ import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno
 import { ModalReactivarAlumno } from "@/features/alumnos/components/modal-reactivar-alumno";
 import { useDarDeBajaAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
+import { deudaAlIrse, type DeudaAlIrse } from "@/features/alumnos/utils/situacion-cuota";
 import type { MotivoBaja } from "@/types/alumno";
 
 interface Props {
@@ -17,7 +18,11 @@ interface Props {
 // es solo de la propietaria: la página decide si se muestra.
 export function AccionesEstadoAlumno({ alumno }: Props) {
   const nombre = `${alumno.usuario.nombre} ${alumno.usuario.apellido}`;
-  return alumno.estado === "BAJA" ? <Reactivar idAlumno={alumno.id_alumno} nombre={nombre} /> : <DarDeBaja idAlumno={alumno.id_alumno} nombre={nombre} />;
+  return alumno.estado === "BAJA" ? (
+    <Reactivar idAlumno={alumno.id_alumno} nombre={nombre} deuda={deudaAlIrse(alumno.inscripciones_de_la_baja)} />
+  ) : (
+    <DarDeBaja idAlumno={alumno.id_alumno} nombre={nombre} />
+  );
 }
 
 const CLASE_BOTON = "min-h-[48px] w-full shrink-0 rounded-xl px-4 font-bold sm:w-auto";
@@ -69,7 +74,7 @@ function DarDeBaja({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
   );
 }
 
-function Reactivar({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
+function Reactivar({ idAlumno, nombre, deuda }: { idAlumno: number; nombre: string; deuda: DeudaAlIrse | null }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
@@ -77,7 +82,7 @@ function Reactivar({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
         <RotateCcw aria-hidden="true" />
         Reactivar
       </Button>
-      {abierto && <ModalReactivarAlumno idAlumno={idAlumno} nombre={nombre} onClose={() => setAbierto(false)} />}
+      {abierto && <ModalReactivarAlumno idAlumno={idAlumno} nombre={nombre} deuda={deuda} onClose={() => setAbierto(false)} />}
     </>
   );
 }

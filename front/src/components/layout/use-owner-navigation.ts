@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { ITEMS_PROPIETARIA, type ContadorMenu, type ItemMenu, type SubItemMenu } from "./owner-navigation";
+import { homePathForRoles, type RoleCode } from "@/types/auth";
+import { itemsDelMenu, type ContadorMenu, type ItemMenu, type SubItemMenu } from "./owner-navigation";
 
 /** Número de cada contador; sin dato (cargando o sin permiso) no se muestra. */
 export type ContadoresMenu = Partial<Record<ContadorMenu, number>>;
@@ -53,8 +54,8 @@ function esRutaDe(ruta: string, destino: string): boolean {
   return ruta === destino || ruta.startsWith(`${destino}/`);
 }
 
-function construirMigas(items: ItemConEstado[]): Miga[] {
-  const migas: Miga[] = [{ etiqueta: "Inicio", to: "/app/dashboard" }];
+function construirMigas(items: ItemConEstado[], inicio: string): Miga[] {
+  const migas: Miga[] = [{ etiqueta: "Inicio", to: inicio }];
   for (const item of items) {
     if (item.hijos) {
       const hijo = item.hijos.find((h) => h.esActivo);
@@ -63,19 +64,24 @@ function construirMigas(items: ItemConEstado[]): Miga[] {
       break;
     }
     if (item.esActivo) {
-      migas.push({ etiqueta: item.etiqueta });
+      // En la pantalla de inicio del rol, "Inicio / Inicio" no aporta: queda una sola miga.
+      if (item.to !== inicio) migas.push({ etiqueta: item.etiqueta });
       break;
     }
   }
   return migas;
 }
 
-/** Ítems del menú de la propietaria con su estado activo y las migas de pan, derivados de la ruta. */
-export function useOwnerNavigation(contadores: ContadoresMenu = {}) {
+// Sin roles explícitos se arma el menú de la propietaria, el único que existía antes del menú por rol.
+const ROLES_POR_DEFECTO: RoleCode[] = ["PROPIETARIA"];
+
+/** Ítems del menú de los roles de la sesión con su estado activo y las migas de pan, derivados de la ruta. */
+export function useOwnerNavigation(contadores: ContadoresMenu = {}, roles: readonly RoleCode[] = ROLES_POR_DEFECTO) {
   const { pathname } = useLocation();
   const pendientesDeAlta = contadores.PENDIENTES_DE_ALTA;
+  const menu = useMemo(() => itemsDelMenu(roles), [roles]);
   return useMemo(() => {
-    const items = ITEMS_PROPIETARIA.map((item) => marcarActivo(item, pathname, { PENDIENTES_DE_ALTA: pendientesDeAlta }));
-    return { items, migas: construirMigas(items) };
-  }, [pathname, pendientesDeAlta]);
+    const items = menu.map((item) => marcarActivo(item, pathname, { PENDIENTES_DE_ALTA: pendientesDeAlta }));
+    return { items, migas: construirMigas(items, homePathForRoles(roles)) };
+  }, [menu, pathname, pendientesDeAlta, roles]);
 }

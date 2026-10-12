@@ -3,9 +3,11 @@ import { z } from "zod";
 import { bajaAlumnoBodySchema, type AlumnoApi } from "@/features/alumnos/schemas/alumno";
 import { db, siguienteId } from "@/mocks/db";
 import type { AlumnoMock, UsuarioPersonaMock } from "@/mocks/data/alumnos";
+import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
 import { inscripcionConDatos } from "@/mocks/handlers/serializar";
+import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
 import { normalizarParaBuscar } from "@/utils/texto";
 
 // Mock de /alumnos (alumno.routes.ts) y de POST /alumnos/:id/baja y /reactivar (inscripcion.routes.ts),
@@ -31,7 +33,8 @@ function alumnoDe(alumno: AlumnoMock): AlumnoApi {
   };
 }
 
-// AlumnoEnListado del back: el resumen de su inscripción vigente más reciente, o null.
+// AlumnoEnListado del back: el resumen de su inscripción vigente más reciente y su situación de
+// cuota, o null.
 function alumnoEnListado(alumno: AlumnoMock) {
   const [vigente] = vigentesDe(alumno.id_alumno);
   const resumen = vigente && inscripcionConDatos(vigente);
@@ -49,12 +52,27 @@ function alumnoEnListado(alumno: AlumnoMock) {
           ids_horarios: resumen.horarios.map((h) => h.id_horario),
         }
       : null,
+    situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
   };
 }
 
-// FichaAlumno del back: el alumno con sus inscripciones vigentes.
+function conSituacion(inscripcion: InscripcionMock) {
+  return { ...inscripcionConDatos(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) };
+}
+
+// Las que cerró la última baja: el back da de baja al alumno y a sus inscripciones en el mismo momento.
+function inscripcionesDeLaBaja(alumno: AlumnoMock): InscripcionMock[] {
+  if (alumno.estado !== "BAJA") return [];
+  return db.inscripciones.filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "BAJA" && i.fecha_baja === alumno.fecha_baja);
+}
+
+// FichaAlumno del back: el alumno con sus inscripciones vigentes y las de su última baja.
 function fichaDe(alumno: AlumnoMock) {
-  return { ...alumnoDe(alumno), inscripciones: vigentesDe(alumno.id_alumno).map(inscripcionConDatos) };
+  return {
+    ...alumnoDe(alumno),
+    inscripciones: vigentesDe(alumno.id_alumno).map(conSituacion),
+    inscripciones_de_la_baja: inscripcionesDeLaBaja(alumno).map(conSituacion),
+  };
 }
 
 function buscarAlumno(id: number) {
@@ -391,7 +409,7 @@ export const alumnosHandlers = [
     return HttpResponse.json({ mensaje: "Alumno dado de baja" });
   }),
 
-  // Reactivación (US-08): solo la propietaria. Crea una inscripción activa nueva (la de la baja
+  // Reactivación (US-08): solo la propietaria. Crea una inscripción nueva, activa si ya pagó alguna vez (la de la baja
   // queda en el historial) y vuelve a validar el cupo.
   http.post("*/api/v1/alumnos/:id/reactivar", async ({ request, params }) => {
     await delay(500);
@@ -409,9 +427,11 @@ export const alumnosHandlers = [
     const error = errorDeHorarios(cuerpo.data);
     if (error) return error;
 
-    const inscripcion = guardarInscripcion(id, cuerpo.data, "ACTIVA");
-    Object.assign(alumno, { estado: "ACTIVO", fecha_baja: null });
-    datosPersonales(alumno.id_usuario).estado = "ACTIVO";
+    // Quien nunca pagó vuelve pre-inscripto y sin acceso hasta su primer pago (US-07).
+    const yaPago = tuvoPagoConfirmado(id);
+    const inscripcion = guardarInscripcion(id, cuerpo.data, yaPago ? "ACTIVA" : "PREINSCRIPTA");
+    Object.assign(alumno, { estado: yaPago ? "ACTIVO" : "INACTIVO", fecha_baja: null });
+    if (yaPago) datosPersonales(alumno.id_usuario).estado = "ACTIVO";
     return HttpResponse.json(inscripcionConDatos(inscripcion), { status: 201 });
   }),
 ];

@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from "msw";
-import { db } from "@/mocks/db";
+import { abrirSesionMock, cerrarSesionMock, db } from "@/mocks/db";
 import { ID_USUARIO_SESION_INICIAL, type UsuarioSemilla } from "@/mocks/data/semilla";
 import { MOCK_JWT, errorApi, permisosDeRoles } from "@/mocks/handlers/respuestas";
 import { usuarioConRoles } from "@/mocks/handlers/serializar";
@@ -33,8 +33,22 @@ export const authHandlers = [
       );
     }
 
-    db.idUsuarioSesion = ID_USUARIO_SESION_INICIAL;
+    abrirSesionMock(ID_USUARIO_SESION_INICIAL);
     return HttpResponse.json({ token: MOCK_JWT, ...perfil(usuarioEnSesion()!) });
+  }),
+
+  // Equivale al login de desarrollo del back: entra con el email de un usuario de la semilla.
+  http.post("*/api/v1/auth/desarrollo", async ({ request }) => {
+    await delay(300);
+    const { email } = (await request.json()) as { email?: string };
+
+    if (!email) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    const usuario = db.usuarios.find((candidato) => candidato.email.toLowerCase() === email.toLowerCase());
+    if (!usuario) return errorApi(403, "USUARIO_NO_REGISTRADO", "No estás registrado en el sistema.");
+    if (usuario.estado === "INACTIVO") return errorApi(403, "FORBIDDEN", "Usuario inactivo");
+
+    abrirSesionMock(usuario.id_usuario);
+    return HttpResponse.json({ token: MOCK_JWT, ...perfil(usuario) });
   }),
 
   http.get("*/api/v1/auth/me", async ({ request }) => {
@@ -51,7 +65,7 @@ export const authHandlers = [
     if (request.headers.get("authorization") !== `Bearer ${MOCK_JWT}`) {
       return errorApi(401, "UNAUTHORIZED", "Token no provisto");
     }
-    db.idUsuarioSesion = null;
+    cerrarSesionMock();
     return HttpResponse.json({ mensaje: "Sesión cerrada correctamente" });
   }),
 ];

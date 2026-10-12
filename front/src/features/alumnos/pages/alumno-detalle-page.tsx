@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AccionesEstadoAlumno } from "@/features/alumnos/components/acciones-estado-alumno";
 import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-form";
+import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { ModalCambiarPlan } from "@/features/alumnos/components/modal-cambiar-plan";
 import { esAlumnoNoEncontrado, useAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
@@ -29,6 +30,7 @@ import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
 import { calcularEdad, type AlumnoDetalle, type InscripcionDeAlumno } from "@/features/alumnos/schemas/alumno";
 import { diaSemana } from "@/features/alumnos/utils/fecha";
+import { detalleVencimiento } from "@/features/alumnos/utils/situacion-cuota";
 
 type SeccionFicha = "datos" | "plan" | "cobros" | "asistencia" | "progreso";
 
@@ -238,6 +240,7 @@ export function AlumnoDetallePage() {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge
+                        variant="outline"
                         className={cn(
                           "min-h-7 border px-2 text-sm",
                           clasesEstado(alumno.estado),
@@ -245,6 +248,9 @@ export function AlumnoDetallePage() {
                       >
                         {textoEstado(alumno.estado)}
                       </Badge>
+                      {alumno.inscripcion?.situacion_cuota && (
+                        <BadgeSituacionCuota situacion={alumno.inscripcion.situacion_cuota} />
+                      )}
                       {esMenor && (
                         <Badge
                           variant="outline"
@@ -513,6 +519,7 @@ function DetalleInscripcion({ inscripcion }: { inscripcion: InscripcionDeAlumno 
         <Dato etiqueta="Estado de inscripción" valor={textoEstado(inscripcion.estado)} />
         <Dato etiqueta="Inicio" valor={fechaLegible(inscripcion.fecha_inicio)} />
       </div>
+      {inscripcion.situacion_cuota && <CuotaDeInscripcion situacion={inscripcion.situacion_cuota} />}
       {inscripcion.reserva && <AvisoReserva reserva={inscripcion.reserva} />}
       <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-600">
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Horarios</h3>
@@ -537,9 +544,34 @@ function DetalleInscripcion({ inscripcion }: { inscripcion: InscripcionDeAlumno 
   );
 }
 
+// US-18: el estado de la cuota con su vencimiento, si puede asistir y si hay una transferencia por revisar.
+function CuotaDeInscripcion({ situacion }: { situacion: NonNullable<InscripcionDeAlumno["situacion_cuota"]> }) {
+  const detalles = [
+    detalleVencimiento(situacion),
+    situacion.puede_asistir ? null : "No puede asistir a clases hasta que pague.",
+    situacion.tiene_pago_pendiente ? "Tiene una transferencia informada sin revisar." : null,
+  ].filter((detalle): detalle is string => detalle !== null);
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 p-3 dark:border-slate-600">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Cuota</h3>
+        <BadgeSituacionCuota situacion={situacion} />
+      </div>
+      {detalles.length > 0 && (
+        <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+          {detalles.map((detalle) => (
+            <li key={detalle}>{detalle}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // US-07: la pre-inscripción guarda el lugar unos días sin el primer pago; el alta se confirma en
-// "Pendientes de alta".
+// "Pendientes de alta". Esa pantalla es solo de la propietaria: al resto no se le ofrece el enlace.
 function AvisoReserva({ reserva }: { reserva: NonNullable<InscripcionDeAlumno["reserva"]> }) {
+  const { hasRole } = usePermissions();
   return (
     <p
       className={cn(
@@ -552,11 +584,17 @@ function AvisoReserva({ reserva }: { reserva: NonNullable<InscripcionDeAlumno["r
       {reserva.vencida
         ? `La reserva venció el ${fechaLegible(reserva.vence)}: el lugar ya no está guardado.`
         : `Lugar guardado hasta el ${fechaLegible(reserva.vence)}.`}{" "}
-      El alta se confirma al registrar el primer pago, desde{" "}
-      <Link to="/app/alumnos/pendientes" className="font-bold underline underline-offset-2">
-        Pendientes de alta
-      </Link>
-      .
+      {hasRole("PROPIETARIA") ? (
+        <>
+          El alta se confirma al registrar el primer pago, desde{" "}
+          <Link to="/app/alumnos/pendientes" className="font-bold underline underline-offset-2">
+            Pendientes de alta
+          </Link>
+          .
+        </>
+      ) : (
+        "La propietaria confirma el alta al registrar el primer pago."
+      )}
     </p>
   );
 }

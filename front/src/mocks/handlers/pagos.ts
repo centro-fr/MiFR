@@ -69,7 +69,9 @@ function activarSiEsPrimerPago(inscripcion: InscripcionMock): void {
   }
 }
 
-function nuevoPago(datos: Pick<PagoMock, "forma_pago" | "monto" | "id_usuario_registra"> & Partial<PagoMock>): PagoMock {
+function nuevoPago(
+  datos: Pick<PagoMock, "id_inscripcion" | "forma_pago" | "monto" | "id_usuario_registra"> & Partial<PagoMock>,
+): PagoMock {
   const ahora = new Date().toISOString();
   const pago: PagoMock = {
     id_pago: siguienteId(db.pagos.map((p) => p.id_pago)),
@@ -95,11 +97,17 @@ function nuevoPago(datos: Pick<PagoMock, "forma_pago" | "monto" | "id_usuario_re
 // queda pendiente de rendición (US-19).
 function cobroEnEfectivo(usuario: UsuarioSemilla, inscripcion: InscripcionMock, montoCobrado: number) {
   if (usuario.roles.includes("PROPIETARIA")) {
-    return nuevoPago({ forma_pago: "EFECTIVO", monto: montoCobrado, id_usuario_registra: usuario.id_usuario });
+    return nuevoPago({
+      id_inscripcion: inscripcion.id_inscripcion,
+      forma_pago: "EFECTIVO",
+      monto: montoCobrado,
+      id_usuario_registra: usuario.id_usuario,
+    });
   }
   const profesora = db.profesoras.find((p) => p.id_usuario === usuario.id_usuario);
   if (profesora?.id_profesora !== inscripcion.id_profesora) return null;
   return nuevoPago({
+    id_inscripcion: inscripcion.id_inscripcion,
     forma_pago: "EFECTIVO",
     monto: montoCobrado,
     id_usuario_registra: usuario.id_usuario,
@@ -143,6 +151,7 @@ export const pagosHandlers = [
     if (rechazo) return rechazo;
 
     const pago = nuevoPago({
+      id_inscripcion: inscripcion!.id_inscripcion,
       forma_pago: "TRANSFERENCIA",
       monto: cuerpo.data.monto,
       id_usuario_registra: usuarioDeLaSesion(request)!.id_usuario,

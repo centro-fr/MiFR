@@ -23,7 +23,7 @@ export type AuthErrorCode =
   | "POPUP_BLOQUEADO"
   | "POPUP_CANCELADO";
 
-export function homePathForRoles(roles: RoleCode[]): string {
+export function homePathForRoles(roles: readonly RoleCode[]): string {
   if (roles.includes("PROPIETARIA")) return "/app/dashboard";
   if (roles.includes("PROFESORA")) return "/app/hoy";
   return "/app/inicio";

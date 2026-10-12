@@ -48,6 +48,8 @@ export interface InscripcionMock {
 export interface PagoMock {
   id_pago: number;
   id_cuota: number;
+  // El mock no guarda cuotas: este id hace de cuotas.id_inscripcion.
+  id_inscripcion: number;
   forma_pago: "EFECTIVO" | "TRANSFERENCIA";
   estado: "PENDIENTE" | "CONFIRMADO" | "RECHAZADO";
   monto: number;
@@ -130,5 +132,37 @@ export function inscripcionesSemilla(): InscripcionMock[] {
       { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [5], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
       200,
     ),
+  ];
+}
+
+function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number): PagoMock {
+  return {
+    id_pago,
+    id_cuota: id_pago,
+    id_inscripcion,
+    forma_pago: "EFECTIVO",
+    estado: "CONFIRMADO",
+    monto,
+    fecha_pago: VIGENCIA_PRECIOS,
+    titular_cuenta_origen: null,
+    fecha_hora_transferencia: null,
+    id_usuario_registra: 1,
+    id_profesora_cobra: null,
+    rendido: true,
+    fecha_rendicion: null,
+    id_usuario_confirma: 1,
+    fecha_confirmacion: VIGENCIA_PRECIOS,
+    motivo_rechazo: null,
+    observaciones: null,
+  };
+}
+
+// Cada pago cubre un mes (mocks/situacion-cuota.ts): la inscripción 3 pagó uno de los dos meses que
+// lleva y está vencida, la 4 pagó los tres y está al día, y Micaela (5) se fue debiendo (US-08).
+export function pagosSemilla(): PagoMock[] {
+  return [
+    pagoConfirmado(1, 3, PRECIOS[1]),
+    ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
+    ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
   ];
 }

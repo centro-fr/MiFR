@@ -13,6 +13,8 @@ import {
   type InscripcionVigenteApi,
   type PaginaAlumnosApi,
   type RespuestaAlumnos,
+  type SituacionCuota,
+  type SituacionCuotaApi,
 } from "@/features/alumnos/schemas/alumno";
 import { horaDesdeApi } from "@/features/horarios/utils/cronograma";
 import type { CrearAlumnoPayload, MotivoBaja } from "@/types/alumno";
@@ -59,7 +61,16 @@ function parametrosDeListado({ busqueda, estado, incluir_bajas, ...resto }: Filt
   return parametros;
 }
 
-function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
+function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | null {
+  return (
+    situacion && {
+      ...situacion,
+      fecha_vencimiento: situacion.fecha_vencimiento === null ? null : aFechaCalendario(situacion.fecha_vencimiento),
+    }
+  );
+}
+
+function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion, situacion_cuota }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
@@ -68,6 +79,7 @@ function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion }: PaginaAlumn
     estado: ESTADO_EN_PANTALLA[estado],
     plan: inscripcion?.nombre_plan ?? null,
     profesora: inscripcion?.nombre_profesora ?? null,
+    situacion_cuota: aSituacionCuota(situacion_cuota),
   };
 }
 
@@ -105,6 +117,7 @@ function aInscripcion(inscripcion: InscripcionVigenteApi): InscripcionDeAlumno {
     })),
     fecha_inicio: aFechaCalendario(inscripcion.fecha_inicio),
     reserva: inscripcion.reserva && { vence: aFechaCalendario(inscripcion.reserva.vence), vencida: inscripcion.reserva.vencida },
+    situacion_cuota: aSituacionCuota(inscripcion.situacion_cuota),
   };
 }
 
@@ -134,6 +147,7 @@ export function aAlumnoDetalle(api: FichaAlumnoApi): AlumnoDetalle {
     fecha_baja: api.fecha_baja,
     // El back las ordena de la más reciente a la más vieja (fecha_inicio desc).
     inscripcion: api.inscripciones[0] ? aInscripcion(api.inscripciones[0]) : null,
+    inscripciones_de_la_baja: api.inscripciones_de_la_baja.map(aInscripcion),
   };
 }
 
