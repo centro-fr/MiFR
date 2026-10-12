@@ -1,8 +1,9 @@
 import { Contacto } from "@/features/publico/components/contacto";
+import { Actividades } from "@/features/publico/components/actividades";
 import { EncabezadoPublico } from "@/features/publico/components/encabezado-publico";
+import { FranjaActividades } from "@/features/publico/components/franja-actividades";
 import { NOMBRE_DEL_CENTRO } from "@/features/publico/components/marca-centro";
 import { Portada } from "@/features/publico/components/portada";
-import { TableroHorarios } from "@/features/publico/components/tablero-horarios";
 
 // Página pública (sin sesión): el punto de entrada del sitio y desde donde se llega al login.
 export function HomePage() {
@@ -11,7 +12,8 @@ export function HomePage() {
       <EncabezadoPublico />
       <main className="flex-1">
         <Portada />
-        <TableroHorarios />
+        <FranjaActividades />
+        <Actividades />
         <Contacto />
       </main>
       <footer className="border-t border-border">
