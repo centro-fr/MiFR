@@ -6,9 +6,9 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
-// Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38 y PI-41: preinscripción (con peso y talla si la actividad
-// los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
-// reactivación y cambios de plan/horarios.
+// Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 y PI-44: preinscripción (con peso y talla si la
+// actividad los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
+// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -64,6 +64,11 @@ async function inscribir(
 
 async function darDeBaja(idAlumno: number, motivo_baja = "ABANDONO") {
   return comoMarina("post", `/alumnos/${idAlumno}/baja`).send({ motivo_baja });
+}
+
+// El primer pago por la API: confirma la inscripción y da el alta definitiva (US-07, US-15).
+function cobrarEnEfectivo(idInscripcion: number, monto: number) {
+  return comoMarina("post", "/pagos/efectivo").send({ id_inscripcion: idInscripcion, monto });
 }
 
 async function obtenerInscripcion(idInscripcion: number) {
@@ -235,10 +240,11 @@ describe("PI-22: baja y reactivación", () => {
     expect((await darDeBaja(primero.id_alumno)).status).toBe(409);
   });
 
-  it("reactiva creando una inscripción nueva y conserva el historial de baja", async () => {
+  it("reactiva a quien ya pagó con una inscripción nueva activa y conserva el historial de baja", async () => {
     const idHorario = await crearHorarioConCupo(1);
     const alumno = await crearAlumno(prisma);
     const anterior = await inscribir(alumno.id_alumno, [idHorario]);
+    expect((await cobrarEnEfectivo(anterior.body.id_inscripcion, 25000)).status).toBe(201);
     await darDeBaja(alumno.id_alumno);
 
     const reactivacion = await comoMarina("post", `/alumnos/${alumno.id_alumno}/reactivar`).send({
@@ -832,5 +838,52 @@ describe("PI-41: el detalle de la baja con el motivo OTRO", () => {
       estado: "PREINSCRIPTA",
       detalle_baja: null,
     });
+  });
+});
+
+describe("PI-44: reactivar a quien nunca pagó", () => {
+  async function estadoDelAlumno(idAlumno: number) {
+    return prisma.alumnos.findUniqueOrThrow({
+      where: { id_alumno: idAlumno },
+      select: {
+        estado: true,
+        usuario: { select: { estado: true, roles: { select: { rol: { select: { codigo: true } } } } } },
+      },
+    });
+  }
+
+  function login(email: string) {
+    return request(app).post("/api/v1/auth/google").send({ id_token: email });
+  }
+
+  it("vuelve como pre-inscripto, sin acceso, y el primer pago le da el alta con su rol", async () => {
+    const alumno = await crearAlumno(prisma, { email: "sin.pago@example.com" });
+    const [horario] = await horariosFuncionales();
+    const anterior = await inscribir(alumno.id_alumno, [horario.id_horario]);
+    await darDeBaja(alumno.id_alumno);
+
+    const reactivacion = await comoMarina("post", `/alumnos/${alumno.id_alumno}/reactivar`).send({
+      id_plan: datosDemo.idPlan.get("Básico"),
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [horario.id_horario],
+    });
+
+    expect(reactivacion.status).toBe(201);
+    expect(reactivacion.body).toMatchObject({ estado: "PREINSCRIPTA", reserva: { vencida: false } });
+    expect((await obtenerInscripcion(anterior.body.id_inscripcion))?.estado).toBe("BAJA");
+    expect(await estadoDelAlumno(alumno.id_alumno)).toEqual({
+      estado: "INACTIVO",
+      usuario: { estado: "INACTIVO", roles: [] },
+    });
+    expect((await login("sin.pago@example.com")).status).toBe(403);
+
+    expect((await cobrarEnEfectivo(reactivacion.body.id_inscripcion, 25000)).status).toBe(201);
+
+    expect((await obtenerInscripcion(reactivacion.body.id_inscripcion))?.estado).toBe("ACTIVA");
+    expect(await estadoDelAlumno(alumno.id_alumno)).toEqual({
+      estado: "ACTIVO",
+      usuario: { estado: "ACTIVO", roles: [{ rol: { codigo: "ALUMNO" } }] },
+    });
+    expect((await login("sin.pago@example.com")).status).toBe(200);
   });
 });
