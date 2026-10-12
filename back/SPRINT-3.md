@@ -190,7 +190,8 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
 - [x] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
 - [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
 - [x] Ficha con la inscripción vigente y sus horarios.
-- [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota. El subsistema ya está montado: falta darle `IInfoCuotas` a `GestionPersonasService` en `composicion.ts`.
+- [x] Estado de cuota en el listado y la ficha (`IInfoCuotas`): `situacion_cuota` con el estado, el vencimiento, los días restantes, si puede asistir y si tiene una transferencia sin revisar. Una inscripción dada de baja se calcula al día de su baja, y la ficha de un alumno de baja trae las inscripciones de su última baja (`inscripciones_de_la_baja`) para advertir una deuda antes de reactivarlo (US-08). Test PI-45.
+- [ ] Filtro por estado de cuota. El estado se calcula, no se guarda, así que no se puede filtrar en la consulta: filtrar después de paginar rompe la paginación, y calcular a todos los alumnos lee la tabla entera. Hay que decidir el enfoque antes de implementarlo.
 - [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
 - [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas`, que ya se arma en `composicion.ts`.
 
