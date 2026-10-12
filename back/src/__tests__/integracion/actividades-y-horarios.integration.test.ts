@@ -12,7 +12,7 @@ import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno } from "./fabricas.js";
 
 // Casos PI-04 a PI-06 del plan de pruebas de integración, sobre los mismos datos que carga db:seed:demo:
-// Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Entrenamiento Personalizado.
+// Marina (propietaria y profesora), Lucía y Carla (profesoras) y la grilla semanal del centro.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;
 
@@ -84,10 +84,10 @@ describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
     expect(actividad.status).toBe(201);
     expect(horario.status).toBe(201);
     expect(horario.body.cupo_maximo_efectivo).toBe(3);
-    expect(entrenamientoPersonalizado.body).toHaveLength(2);
+    // Personalizado se da lunes, miércoles y viernes a las 15 y martes y jueves a las 18.
     expect(
       entrenamientoPersonalizado.body.map((h: { cupo_maximo_efectivo: number }) => h.cupo_maximo_efectivo),
-    ).toEqual([4, 4]);
+    ).toEqual([4, 4, 4, 4, 4]);
   });
 
   it("el cupo propio de un horario manda sobre el de su actividad", async () => {
@@ -99,12 +99,21 @@ describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
       hora_fin: "12:00",
       cupo_maximo: 2,
     });
-    const deMarina = await comoMarina("get", `/horarios?id_profesora=${idProfesora(EMAIL_MULTIROL_DEMO)}`);
+    const training = await comoMarina("get", `/horarios?id_actividad=${idActividad("TRAINING")}`);
 
     expect(conCupoPropio.status).toBe(201);
     expect(conCupoPropio.body.cupo_maximo_efectivo).toBe(2);
-    expect(deMarina.body).toHaveLength(1);
-    expect(deMarina.body[0]).toMatchObject({ dia_semana: VIERNES, cupo_maximo_efectivo: 12 });
+    // Training tiene cupo 12; el del viernes, 15 propio (CA-07).
+    expect(
+      training.body.map((h: { dia_semana: number; cupo_maximo_efectivo: number }) => [
+        h.dia_semana,
+        h.cupo_maximo_efectivo,
+      ]),
+    ).toEqual([
+      [LUNES, 12],
+      [3, 12],
+      [VIERNES, 15],
+    ]);
   });
 
   it("una actividad grupal sin cupo se crea y se asigna sin cupo", async () => {
@@ -174,8 +183,8 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
         id_actividad: idActividad("FUNCIONAL"),
         id_profesora: idProfesora(EMAIL_MULTIROL_DEMO),
         dia_semana: VIERNES,
-        hora_inicio: "18:30",
-        hora_fin: "19:30",
+        hora_inicio: "20:30",
+        hora_fin: "21:30",
       }),
       409,
     );
@@ -229,6 +238,31 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
     expect(await prisma.horarios.count({ where: { dia_semana: DOMINGO } })).toBe(0);
   });
 
+  it("una clase puede terminar a las 23:00, el cierre del centro, y no después", async () => {
+    const hastaElCierre = await crearHorario({
+      id_actividad: idActividad("FUNCIONAL"),
+      id_profesora: idProfesora(LUCIA),
+      dia_semana: SABADO,
+      hora_inicio: "22:00",
+      hora_fin: "23:00",
+    });
+    const despuesDelCierre = await esperarRechazoSinCambios(
+      crearHorario({
+        id_actividad: idActividad("FUNCIONAL"),
+        id_profesora: idProfesora(CARLA),
+        dia_semana: SABADO,
+        hora_inicio: "22:30",
+        hora_fin: "23:30",
+      }),
+      400,
+    );
+
+    expect(hastaElCierre.status).toBe(201);
+    expect(despuesDelCierre.body.error.details.fieldErrors.hora_fin).toEqual([
+      "La hora debe estar entre las 07:00 y las 23:00",
+    ]);
+  });
+
   it("no se puede pasar un horario al domingo", async () => {
     const delLunes = await prisma.horarios.findFirstOrThrow({
       where: { id_profesora: idProfesora(LUCIA), dia_semana: LUNES },
@@ -246,6 +280,9 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
 });
 
 describe("PI-06: modificación y baja de actividades con horarios", () => {
+  // Lunes, miércoles y viernes a las 8, 21 y 22, y martes y jueves a las 15.
+  const HORARIOS_DE_FUNCIONAL = 11;
+
   it("la descripción nueva de una actividad se ve en todos sus horarios", async () => {
     const modificar = await comoMarina("patch", `/actividades/${idActividad("FUNCIONAL")}`).send({
       descripcion: "Circuito funcional de alta intensidad",
@@ -253,14 +290,14 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     const horarios = await comoMarina("get", `/horarios?id_actividad=${idActividad("FUNCIONAL")}`);
 
     expect(modificar.status).toBe(200);
-    expect(horarios.body).toHaveLength(3);
+    expect(horarios.body).toHaveLength(HORARIOS_DE_FUNCIONAL);
     for (const horario of horarios.body) {
       expect(horario.actividad.descripcion).toBe("Circuito funcional de alta intensidad");
     }
   });
 
   it("no se puede dar de baja una actividad con alumnos inscriptos en sus horarios", async () => {
-    // En el escenario, Sofía está inscripta en Funcional los lunes y los miércoles.
+    // En el escenario, Sofía está inscripta en Funcional los lunes y los miércoles a las 8.
     const respuesta = await comoMarina("delete", `/actividades/${idActividad("FUNCIONAL")}`);
 
     expect(respuesta.status).toBe(409);
@@ -273,7 +310,7 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     expect(funcional?.activo).toBe(true);
     expect(
       await prisma.horarios.count({ where: { id_actividad: idActividad("FUNCIONAL"), fecha_baja: null } }),
-    ).toBe(3);
+    ).toBe(HORARIOS_DE_FUNCIONAL);
   });
 
   it("la baja de una actividad sin alumnos da de baja también sus horarios", async () => {
@@ -384,15 +421,21 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
   });
 
   it("una actividad no puede pasar a personalizada sin cupo", async () => {
-    const respuesta = await comoMarina("patch", `/actividades/${idActividad("FUNCIONAL")}`).send({
+    const actividad = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+
+    const respuesta = await comoMarina("patch", `/actividades/${actividad.body.id_actividad}`).send({
       modalidad: "PERSONALIZADA",
     });
 
     expect(respuesta.status).toBe(400);
-    const funcional = await prisma.actividades.findUnique({
-      where: { id_actividad: idActividad("FUNCIONAL") },
+    const yoga = await prisma.actividades.findUnique({
+      where: { id_actividad: actividad.body.id_actividad },
     });
-    expect(funcional?.modalidad).toBe("GRUPAL");
+    expect(yoga?.modalidad).toBe("GRUPAL");
   });
 });
 
@@ -404,10 +447,12 @@ describe("PI-46: el panel público de disponibilidad", () => {
     return request(app).get("/api/v1/publico/disponibilidad");
   }
 
-  function horarioDelPanel(panel: request.Response, dia: number, actividad: string) {
+  function horarioDelPanel(panel: request.Response, dia: number, hora: string, actividad: string) {
     return panel.body.horarios.find(
-      (h: { dia_semana: number; actividad: { nombre: string } }) =>
-        h.dia_semana === dia && h.actividad.nombre === actividad,
+      (h: { dia_semana: number; hora_inicio: string; actividad: { nombre: string } }) =>
+        h.dia_semana === dia &&
+        h.hora_inicio === `1970-01-01T${hora}:00.000Z` &&
+        h.actividad.nombre === actividad,
     );
   }
 
@@ -416,16 +461,18 @@ describe("PI-46: el panel público de disponibilidad", () => {
 
     expect(panel.status).toBe(200);
     expect(panel.headers["cache-control"]).toBe("public, max-age=60");
-    expect(panel.body.horarios.map((h: { dia_semana: number }) => h.dia_semana)).toEqual([1, 2, 3, 4, 5]);
-    // Martes de Carla: Mateo pre-inscripto con la reserva vigente y Valentina activa ocupan 2 de 4.
-    expect(horarioDelPanel(panel, MARTES, "Entrenamiento Personalizado")).toEqual({
+    const dias = panel.body.horarios.map((h: { dia_semana: number }) => h.dia_semana);
+    expect(dias).toEqual([...dias].sort());
+    expect([...new Set(dias)]).toEqual([1, 2, 3, 4, 5]);
+    // Martes a las 18 con Carla: Mateo pre-inscripto con la reserva vigente y Valentina activa ocupan 2 de 4.
+    expect(horarioDelPanel(panel, MARTES, "18:00", "Personalizado")).toEqual({
       id_horario: expect.any(Number),
       dia_semana: MARTES,
-      hora_inicio: "1970-01-01T09:00:00.000Z",
-      hora_fin: "1970-01-01T10:00:00.000Z",
+      hora_inicio: "1970-01-01T18:00:00.000Z",
+      hora_fin: "1970-01-01T19:00:00.000Z",
       actividad: {
         id_actividad: idActividad("ENTRENAMIENTO_PERS"),
-        nombre: "Entrenamiento Personalizado",
+        nombre: "Personalizado",
         descripcion: "Preparación física general con rutina individual",
         modalidad: "PERSONALIZADA",
       },
@@ -434,14 +481,15 @@ describe("PI-46: el panel público de disponibilidad", () => {
       cupo_disponible: 2,
       disponibilidad: "LIBRE",
     });
-    expect(horarioDelPanel(panel, LUNES, "Funcional Grupal")).toMatchObject({
-      cupo_maximo: null,
-      cupo_disponible: null,
-      disponibilidad: "SIN_LIMITE",
-    });
-    expect(horarioDelPanel(panel, VIERNES, "Funcional Grupal")).toMatchObject({
+    // Lunes a las 8: Sofía pre-inscripta ocupa uno de los 12 lugares de Funcional.
+    expect(horarioDelPanel(panel, LUNES, "08:00", "Funcional")).toMatchObject({
       cupo_maximo: 12,
-      cupo_disponible: 12,
+      cupo_disponible: 11,
+      disponibilidad: "LIBRE",
+    });
+    expect(horarioDelPanel(panel, VIERNES, "19:00", "Training")).toMatchObject({
+      cupo_maximo: 15,
+      cupo_disponible: 15,
     });
     const texto = JSON.stringify(panel.body);
     expect(texto).not.toContain("@");
@@ -453,15 +501,15 @@ describe("PI-46: el panel público de disponibilidad", () => {
 
   it("la disponibilidad sigue a las inscripciones, a las reservas vencidas y a las bajas de horarios", async () => {
     const otro = await crearAlumno(prisma);
-    const horariosDeCarla = await prisma.horarios.findMany({
-      where: { id_actividad: idActividad("ENTRENAMIENTO_PERS") },
+    const personalizadoMartesYJueves = await prisma.horarios.findMany({
+      where: { id_actividad: idActividad("ENTRENAMIENTO_PERS"), dia_semana: { in: [2, 4] } },
       select: { id_horario: true },
     });
     const inscripcion = await comoMarina("post", "/inscripciones").send({
       id_alumno: otro.id_alumno,
       id_plan: datos.idPlan.get("Personalizado 2 días"),
       id_profesora: idProfesora(CARLA),
-      ids_horarios: horariosDeCarla.map(({ id_horario }) => id_horario),
+      ids_horarios: personalizadoMartesYJueves.map(({ id_horario }) => id_horario),
       medidas: { peso_kg: 62.5, talla_cm: 168 },
     });
     expect(inscripcion.status).toBe(201);
@@ -472,18 +520,18 @@ describe("PI-46: el panel público de disponibilidad", () => {
       where: { id_inscripcion: datos.idInscripcion.get("52111222") },
       data: { fecha_inicio: new Date(fechaActualArgentina().getTime() - 4 * UN_DIA_EN_MS) },
     });
-    const viernes = horarioDelPanel(conTres, VIERNES, "Funcional Grupal");
-    expect((await comoMarina("delete", `/horarios/${viernes.id_horario}`)).status).toBe(200);
+    const trainingDelViernes = horarioDelPanel(conTres, VIERNES, "19:00", "Training");
+    expect((await comoMarina("delete", `/horarios/${trainingDelViernes.id_horario}`)).status).toBe(200);
     const despues = await consultarPanel();
 
-    expect(horarioDelPanel(conTres, MARTES, "Entrenamiento Personalizado")).toMatchObject({
+    expect(horarioDelPanel(conTres, MARTES, "18:00", "Personalizado")).toMatchObject({
       cupo_disponible: 1,
       disponibilidad: "CASI_LLENO",
     });
-    expect(horarioDelPanel(despues, MARTES, "Entrenamiento Personalizado")).toMatchObject({
+    expect(horarioDelPanel(despues, MARTES, "18:00", "Personalizado")).toMatchObject({
       cupo_disponible: 2,
       disponibilidad: "LIBRE",
     });
-    expect(horarioDelPanel(despues, VIERNES, "Funcional Grupal")).toBeUndefined();
+    expect(horarioDelPanel(despues, VIERNES, "19:00", "Training")).toBeUndefined();
   });
 });

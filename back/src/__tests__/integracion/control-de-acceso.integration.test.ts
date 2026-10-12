@@ -289,7 +289,7 @@ describe("escrituras sobre actividades y horarios cargados", () => {
       expect([modificar.status, darDeBaja.status, asignarHorario.status]).toEqual([403, 403, 403]);
       const funcional = await prisma.actividades.findUnique({ where: { id_actividad: idFuncional } });
       expect(funcional).toMatchObject({
-        descripcion: "Clase grupal de entrenamiento funcional",
+        descripcion: "Entrenamiento funcional en grupo",
         activo: true,
       });
       expect(await prisma.horarios.count()).toBe(horariosAntes);

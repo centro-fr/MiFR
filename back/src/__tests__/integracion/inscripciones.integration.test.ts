@@ -410,6 +410,19 @@ describe("PI-27: ocupación de los horarios", () => {
     await inscribir(primero.id_alumno, [idHorario]);
     await inscribir(segundo.id_alumno, [idHorario]);
     await darDeBaja(segundo.id_alumno);
+    // Todas las actividades del escenario tienen cupo: el horario sin cupo es de una actividad nueva.
+    const yoga = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+    const { id_horario: idHorarioSinCupo } = await crearHorarioDePrueba(prisma, {
+      id_actividad: yoga.body.id_actividad,
+      id_profesora: datosDemo.idProfesora.get(LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "13:00",
+      hora_fin: "14:00",
+    });
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
 
     const detalle = await comoMarina("get", `/horarios/${idHorario}`);
@@ -418,17 +431,21 @@ describe("PI-27: ocupación de los horarios", () => {
     expect(detalle.body).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
     const enListado = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorario);
     expect(enListado).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
-    const funcionalSinCupo = listado.body.find(
-      (h: { cupo_maximo_efectivo: number | null }) => h.cupo_maximo_efectivo === null,
-    );
-    expect(funcionalSinCupo.cupo_disponible).toBeNull();
+    const sinCupo = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorarioSinCupo);
+    expect(sinCupo).toMatchObject({ cupo_maximo_efectivo: null, cupo_disponible: null });
   });
 });
 
 describe("PI-30: la profesora pre-inscribe solo a su cargo", () => {
+  // El Training de los lunes y los miércoles a las 19: dos clases, las que da el plan Básico.
   async function horariosDeLucia(): Promise<number[]> {
     const horarios = await prisma.horarios.findMany({
-      where: { id_profesora: datosDemo.idProfesora.get(LUCIA), fecha_baja: null },
+      where: {
+        id_profesora: datosDemo.idProfesora.get(LUCIA),
+        id_actividad: datosDemo.idActividad.get("TRAINING"),
+        dia_semana: { in: [1, 3] },
+        fecha_baja: null,
+      },
       select: { id_horario: true },
       orderBy: { dia_semana: "asc" },
     });
@@ -545,9 +562,7 @@ describe("PI-37: peso y talla al pre-inscribir en una actividad que los pide", (
     const respuesta = await preinscribirPersonalizado(id_alumno, await horarioPersonalizadoDeCarla());
 
     expect(respuesta.status).toBe(400);
-    expect(respuesta.body.error.message).toBe(
-      "Entrenamiento Personalizado pide el peso y la talla para pre-inscribir",
-    );
+    expect(respuesta.body.error.message).toBe("Personalizado pide el peso y la talla para pre-inscribir");
     expect(await contarFilas()).toEqual(antes);
   });
 
