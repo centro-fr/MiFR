@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Tag } from "lucide-react";
+import { AlertCircle, Loader2, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CLASE_BOTON_PRIMARIO } from "@/features/planes/components/estilos";
+import { Card } from "@/components/ui/card";
 import { FiltrosPlanesBar } from "@/features/planes/components/filtros-planes";
 import { ListaPlanes } from "@/features/planes/components/lista-planes";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
@@ -21,53 +21,49 @@ import {
 
 function Encabezado({ vigentes }: { vigentes?: number }) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex min-w-0 items-start gap-3">
-        <span aria-hidden="true" className="hidden size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white sm:flex">
-          <Tag className="size-5" />
-        </span>
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">Planes y Precios</h1>
-            {vigentes !== undefined && (
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-sm font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
-                {vigentes === 1 ? "1 vigente" : `${vigentes} vigentes`}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">La oferta comercial del centro: frecuencia, actividad y precio de cada plan.</p>
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="min-w-0">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
+            Planes y Precios
+          </h1>
+          {vigentes !== undefined && (
+            <Badge
+              variant="outline"
+              className="rounded-full border-pink-200 bg-pink-100 px-3 py-1 text-sm font-extrabold text-primary-dark dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300 shadow-2xs"
+            >
+              {vigentes} {vigentes === 1 ? "vigente" : "vigentes"}
+            </Badge>
+          )}
         </div>
+        <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+          La oferta comercial del centro: frecuencia, actividad y precio de cada plan.
+        </p>
       </div>
       <Can permission="PLANES_EDITAR">
-        <Link to="/app/planes/nuevo" className={CLASE_BOTON_PRIMARIO}>
-          <Plus aria-hidden="true" className="size-4" />
-          Nuevo plan
-        </Link>
+        <Button
+          asChild
+          className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
+        >
+          <Link to="/app/planes/nuevo">
+            + Nuevo plan
+          </Link>
+        </Button>
       </Can>
     </header>
   );
 }
 
-function ListaSkeleton() {
-  return (
-    <div role="status" aria-live="polite" className="flex flex-col gap-3">
-      <span className="sr-only">Cargando planes…</span>
-      <Skeleton className="h-36 rounded-2xl sm:h-24" />
-      <Skeleton className="h-64 rounded-2xl" />
-    </div>
-  );
-}
-
 function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: string; accion?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 px-4 py-14 text-center dark:border-white/15">
-      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-500/15 dark:text-pink-300">
-        <Tag className="size-7" />
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
+        <Tag aria-hidden="true" className="h-7 w-7" />
       </span>
-      <h2 className="text-base font-extrabold text-slate-900 dark:text-white">{titulo}</h2>
-      <p className="max-w-[340px] text-sm text-muted-foreground">{detalle}</p>
+      <h2 className="text-lg font-extrabold text-[#181C26] dark:text-white">{titulo}</h2>
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{detalle}</p>
       {accion}
-    </div>
+    </Card>
   );
 }
 
@@ -77,19 +73,36 @@ function ContenidoPlanes() {
   const visibles = useMemo(() => filtrarPlanes(planes ?? [], filtros), [planes, filtros]);
   const actividades = useMemo(() => actividadesDeLosPlanes(planes ?? []), [planes]);
 
-  if (isPending) return <ListaSkeleton />;
-  if (isError) {
+  if (isPending) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
-        </p>
-        <Button type="button" onClick={() => void refetch()} className="min-h-[44px] rounded-xl px-5 font-bold">
-          Reintentar
-        </Button>
+      <div
+        role="status"
+        className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+      >
+        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
+        Cargando planes…
       </div>
     );
   }
+
+  if (isError) {
+    return (
+      <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
+        <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
+        <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
+        </p>
+        <Button
+          type="button"
+          onClick={() => void refetch()}
+          className="min-h-[44px] rounded-lg bg-primary text-white hover:bg-primary-dark"
+        >
+          Reintentar
+        </Button>
+      </Card>
+    );
+  }
+
   if (planes.length === 0) {
     return (
       <EstadoVacio
@@ -97,10 +110,14 @@ function ContenidoPlanes() {
         detalle="Creá el primero para empezar a inscribir alumnos."
         accion={
           <Can permission="PLANES_EDITAR">
-            <Link to="/app/planes/nuevo" className={CLASE_BOTON_PRIMARIO}>
-              <Plus aria-hidden="true" className="size-4" />
-              Nuevo plan
-            </Link>
+            <Button
+              asChild
+              className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+            >
+              <Link to="/app/planes/nuevo">
+                + Nuevo plan
+              </Link>
+            </Button>
           </Can>
         }
       />
@@ -134,7 +151,7 @@ export function PlanesPage() {
   const { data: planes } = usePlanes();
   return (
     <OwnerLayout>
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 md:gap-5">
+      <div className="space-y-6">
         <Encabezado vigentes={planes?.filter(estaVigente).length} />
         <ContenidoPlanes />
       </div>

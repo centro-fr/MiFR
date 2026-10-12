@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Plus, SearchX } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { BadgeEstadoPlan } from "@/features/planes/components/badges-plan";
 import { FormularioPlan } from "@/features/planes/components/formulario-plan";
@@ -24,28 +24,24 @@ import type { Plan } from "@/types/plan";
 
 const RUTA_LISTADO = "/app/planes";
 
-function VolverAlListado() {
+function Encabezado({ titulo, detalle, acciones }: { titulo: ReactNode; detalle: string; acciones?: ReactNode }) {
   return (
-    <Link
-      to={RUTA_LISTADO}
-      className="inline-flex min-h-[44px] w-fit items-center gap-1.5 rounded-xl border border-border bg-white px-3 text-sm font-bold text-slate-600 transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-transparent dark:text-slate-300"
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
-      Volver al listado de planes
-    </Link>
-  );
-}
-
-function Encabezado({ icono, titulo, detalle, acciones }: { icono: ReactNode; titulo: ReactNode; detalle: string; acciones?: ReactNode }) {
-  return (
-    <header className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:bg-surface-low">
-      <div className="flex min-w-0 items-center gap-3">
-        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
-          {icono}
-        </span>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <h1 className="flex flex-wrap items-center gap-2 text-lg font-extrabold tracking-tight break-words text-slate-900 sm:text-xl dark:text-white">{titulo}</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{detalle}</p>
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <Button asChild variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl">
+          <Link to={RUTA_LISTADO} aria-label="Volver al listado de planes">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </Button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
+              {titulo}
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+            {detalle}
+          </p>
         </div>
       </div>
       {acciones}
@@ -55,39 +51,46 @@ function Encabezado({ icono, titulo, detalle, acciones }: { icono: ReactNode; ti
 
 function CargandoFormulario() {
   return (
-    <div role="status" aria-live="polite" className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <span className="sr-only">Cargando el formulario…</span>
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-72 rounded-2xl" />
-        <Skeleton className="h-56 rounded-2xl" />
-      </div>
-      <Skeleton className="h-80 rounded-2xl" />
+    <div
+      role="status"
+      className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+    >
+      <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
+      Cargando formulario…
     </div>
   );
 }
 
 function ErrorDeCarga({ error, onReintentar }: { error: unknown; onReintentar: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-16 text-center">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
+      <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensajeDeErrorApi(error, "No se pudieron cargar los datos del plan.")}
       </p>
-      <Button type="button" onClick={onReintentar} className="min-h-[44px] rounded-xl px-5 font-bold">
+      <Button
+        type="button"
+        onClick={onReintentar}
+        className="min-h-[44px] rounded-lg bg-primary text-white hover:bg-primary-dark"
+      >
         Reintentar
       </Button>
-    </div>
+    </Card>
   );
 }
 
 function PlanNoDisponible({ titulo, detalle }: { titulo: string; detalle: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-16 text-center">
-      <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-2xl bg-pink-100 text-primary-dark dark:bg-pink-500/15 dark:text-pink-300">
-        <SearchX className="size-8" />
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
+      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
+        <SearchX className="size-7" />
       </span>
-      <h2 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{titulo}</h2>
-      <p className="max-w-[340px] text-sm text-muted-foreground">{detalle}</p>
-    </div>
+      <h2 className="text-lg font-extrabold text-[#181C26] dark:text-white">{titulo}</h2>
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{detalle}</p>
+      <Button asChild variant="outline" className="min-h-[44px] rounded-xl font-bold">
+        <Link to={RUTA_LISTADO}>Volver al listado de planes</Link>
+      </Button>
+    </Card>
   );
 }
 
@@ -120,9 +123,11 @@ export function NuevoPlanPage() {
 
   return (
     <OwnerLayout>
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 md:gap-5">
-        <VolverAlListado />
-        <Encabezado icono={<Plus className="size-5" />} titulo="Nuevo plan" detalle="Definí el tipo, la frecuencia, la actividad y el precio del plan." />
+      <div className="space-y-6">
+        <Encabezado
+          titulo="Nuevo plan"
+          detalle="Definí el tipo, la frecuencia, la actividad y el precio del plan."
+        />
         {actividades && planes ? (
           <FormularioPlan
             actividades={actividades}
@@ -182,7 +187,6 @@ function EdicionDePlan({ plan }: { plan: Plan }) {
   return (
     <>
       <Encabezado
-        icono={<Pencil className="size-5" />}
         titulo={
           <>
             {plan.nombre} <BadgeEstadoPlan vigente />
@@ -194,7 +198,7 @@ function EdicionDePlan({ plan }: { plan: Plan }) {
             type="button"
             variant="outline"
             onClick={abrirBaja}
-            className="min-h-[44px] rounded-xl border-rose-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-600 hover:bg-rose-600 hover:text-white dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300"
+            className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white pointer-fine:min-h-0 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
           >
             Dar de baja el plan
           </Button>
@@ -253,8 +257,7 @@ export function EditarPlanPage() {
   const { idPlan } = useParams();
   return (
     <OwnerLayout>
-      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 md:gap-5">
-        <VolverAlListado />
+      <div className="space-y-6">
         {esIdValido(idPlan) ? (
           <ContenidoEdicion key={idPlan} idPlan={idPlan} />
         ) : (

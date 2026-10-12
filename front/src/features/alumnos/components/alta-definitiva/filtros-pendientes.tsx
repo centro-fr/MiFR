@@ -14,7 +14,7 @@ const PERIODOS: { valor: PeriodoPendientes; texto: string }[] = [
 ];
 
 const CLASE_SELECT =
-  "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/15 dark:bg-surface-low dark:text-slate-200";
+  "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus-visible:outline-2 focus-visible:outline-primary dark:border-white/15 dark:bg-surface-low dark:text-slate-200";
 
 interface Props {
   filtros: Filtros;
@@ -27,8 +27,12 @@ export function FiltrosPendientes({ filtros, planes, onChange, onLimpiar }: Prop
   const cambiar = (cambios: Partial<Filtros>) => onChange({ ...filtros, ...cambios });
 
   return (
-    <div role="search" aria-label="Filtrar pre-inscripciones" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-      <div className="relative sm:min-w-[260px] sm:flex-1">
+    <div
+      role="search"
+      aria-label="Filtrar pre-inscripciones"
+      className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center dark:bg-surface-low"
+    >
+      <div className="relative min-w-0 sm:min-w-[280px] sm:flex-1">
         <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
         <Input
           type="search"
@@ -37,7 +41,7 @@ export function FiltrosPendientes({ filtros, planes, onChange, onLimpiar }: Prop
           value={filtros.busqueda}
           maxLength={60}
           onChange={(evento) => cambiar({ busqueda: evento.target.value })}
-          className="rounded-xl border-slate-200 bg-white pl-9 dark:border-white/15 dark:bg-surface-low"
+          className="min-h-[44px] rounded-xl border-slate-200 bg-white pl-9 text-slate-900 placeholder:text-slate-500 shadow-none dark:border-white/15 dark:bg-surface-low dark:text-slate-100"
         />
       </div>
       <select
@@ -66,7 +70,12 @@ export function FiltrosPendientes({ filtros, planes, onChange, onLimpiar }: Prop
         ))}
       </select>
       {hayFiltrosActivos(filtros) && (
-        <Button type="button" variant="ghost" onClick={onLimpiar} className="rounded-xl font-bold text-primary">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onLimpiar}
+          className="min-h-[44px] rounded-xl font-bold text-primary hover:text-primary-dark"
+        >
           Limpiar filtros
         </Button>
       )}

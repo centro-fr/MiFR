@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { alumnoFormSchema } from "./alumno.schema";
+import { alumnoFormSchema } from "../alumno.schema";
 
 describe("Esquema Zod alumnoFormSchema (US-05 y US-06)", () => {
   beforeEach(() => {
