@@ -95,7 +95,7 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones           |
 | Alumnos                          | Fábrica `crearAlumno` (`back/src/__tests__/integracion/fabricas.ts`): alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles) y mayor de edad por defecto; se le puede pasar nombre, apellido, DNI, email (o `null` para un menor), fecha de nacimiento, estado y tutor. La van a usar los casos de inscripciones |
 | Horarios                         | Fábrica `crearHorarioDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): horario directo para el test con actividad, profesora, día, horas y cupo propios configurables                                                                                                                                       |
-| Cuotas y pagos                   | `armarCuotasYPagos` (`back/src/__tests__/integracion/cobro.ts`): arma el subsistema con los componentes y repositorios reales sobre la base de prueba. Mientras los calculadores no estén implementados, el subsistema no se monta en la API: el armado reemplaza solo los cálculos puros (vencimiento a 30 días, habilitación y parámetros fijos). Se le puede pasar otro `PagoRepository` para simular una falla al guardar el pago |
+| Cuotas y pagos                   | `armarCuotasYPagos` (`back/src/__tests__/integracion/cobro.ts`): arma el subsistema con los componentes y repositorios reales sobre la base de prueba. Repite el cableado de `composicion.ts`, con los calculadores reales, para poder pasarle otro `PagoRepository` y simular una falla al guardar el pago (PI-35). Los flujos por HTTP (PI-42, PI-43) usan la API montada |
 | Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                                    |
 
 Cuando las pruebas necesiten otro tipo de dato, se agrega una fábrica reutilizable en `fabricas.ts`, igual que `crearUsuario`.
@@ -168,7 +168,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38               | Sí                                                                                     |
 | US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39       | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
-| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38                             | Sí                                                                                     |
+| US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42, PI-43               | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41                                    | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36               | Sí (el estado de cuota y los historiales dependen del Sprint 3)                        |
@@ -176,9 +176,9 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
-| US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40                                          | Parcial: sobre los componentes; por HTTP cuando se monte el subsistema                 |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39                                                  | Parcial: restricciones de la base y datos bancarios iniciales; el flujo, cuando se monte el subsistema |
-| US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33                                                         | Parcial: restricciones de la base; el flujo, cuando se monte el subsistema             |
+| US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43                                           | Sí                                                                                     |
+| US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
 | US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39                                                         | Parcial: el parámetro `VENCIDOS_PUEDEN_ASISTIR`; el cálculo, con los calculadores       |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                                        |
@@ -249,6 +249,8 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-39         | Carga de los parámetros del sistema                                 | US-05, US-16, US-18, US-21 | Servicios   | Comunes                                                    | Sí           |
 | PI-40         | El cobro aplica el precio vigente el día del cobro                  | US-12, US-15        | Servicios          | Demostración, `armarCuotasYPagos`                          | Sí           |
 | PI-41         | El detalle de la baja con el motivo OTRO                            | US-08               | Servicios          | Demostración                                               | Sí           |
+| PI-42         | El cobro en efectivo por la API                                     | US-07, US-15        | Servicios          | Demostración                                               | Sí           |
+| PI-43         | La transferencia informada y su revisión por la API                 | US-07, US-16, US-17 | Servicios          | Demostración                                               | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -697,7 +699,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Marina registra un pago en efectivo de Valentina antes de que venza su cuota.
 2. Se pide el historial de cuotas de Valentina.
 
-**Resultado esperado:** se genera la cuota 2, que cubre desde el día siguiente al vencimiento de la cuota 1. El historial trae las dos cuotas, de la más nueva a la más vieja, cada una con su plan y sus pagos.
+**Resultado esperado:** se genera la cuota 2, que cubre desde el día siguiente al vencimiento de la cuota 1 y vence de fecha a fecha, el mismo día del mes siguiente. El historial trae las dos cuotas, de la más nueva a la más vieja, cada una con su plan y sus pagos.
 
 **Automatizado:** Sí (H-06).
 
@@ -767,9 +769,34 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (G-28 a G-31).
 
+#### PI-42 — El cobro en efectivo por la API
+
+**US:** US-07, US-15 · **Precondición:** escenario de demostración cargado (Sofía Medina pre-inscripta con Lucía en el Básico, a $25.000, sin cuotas). El subsistema de cuotas y pagos está montado en la API con los calculadores reales.
+
+1. Lucía, la profesora a cargo, registra en efectivo la primera cuota de Sofía (`POST /pagos/efectivo`, $25.000).
+2. Sofía, ya activa, pide el comprobante (`GET /pagos/:id/comprobante`).
+3. Con la base reiniciada, Valentina (alumna) y Carla (profesora que no está a cargo de Sofía) intentan registrar el mismo cobro.
+
+**Resultado esperado:** el paso 1 responde 201 con el pago `CONFIRMADO`, a nombre de Lucía y pendiente de rendición; la inscripción queda `ACTIVA`, Sofía y su usuario `ACTIVO`, con el rol `ALUMNO`, y la cuota 1 con ese pago. El paso 2 responde 200 con el número del pago, el monto, el plan, la cuota y quién cobró. En el paso 3 los dos pedidos responden 403 y la base no cambia.
+
+**Automatizado:** Sí (H-10 y H-11).
+
+#### PI-43 — La transferencia informada y su revisión por la API
+
+**US:** US-07, US-16, US-17 · **Precondición:** escenario de demostración cargado (Valentina Herrera al día en el Intermedio, a $30.000, con su primera cuota pagada; Sofía Medina pre-inscripta en el Básico, sin cuotas).
+
+1. Valentina informa una transferencia de $30.000 hecha hace una hora (`POST /pagos/transferencia`) y consulta las suyas (`GET /pagos/mis-transferencias`).
+2. Marina consulta las pendientes (`GET /pagos/transferencias?estado=PENDIENTE`); Lucía intenta lo mismo. Marina intenta cobrarle a Valentina en efectivo.
+3. Con la base reiniciada y la transferencia informada, Marina la rechaza sin motivo y después con el motivo "No figura en el extracto"; intenta aprobarla. Valentina la vuelve a informar.
+4. Con la base reiniciada y la transferencia informada, Marina la aprueba. Después carga como recibida una transferencia de $25.000 de Sofía (`POST /pagos/transferencia-recibida`).
+
+**Resultado esperado:** en el paso 1 la transferencia queda `PENDIENTE` en una cuota 2 nueva y Valentina la ve en su listado. En el paso 2 Marina la ve, sin superar las 24 horas; Lucía recibe 403 y el cobro en efectivo, 409, sin guardar nada. En el paso 3 el rechazo sin motivo responde 400; con motivo, 200 y `RECHAZADO`; la aprobación de una rechazada, 409. La transferencia nueva se carga en la misma cuota 2, sin saltear números. En el paso 4 la aprobación responde 200, con el pago `CONFIRMADO` y Marina como quien la revisó; la transferencia recibida responde 201 `CONFIRMADO` y da el alta de Sofía (inscripción `ACTIVA` y alumna `ACTIVO`).
+
+**Automatizado:** Sí (H-12 a H-14).
+
 ## 7. Tests automatizados
 
-153 tests en nueve archivos:
+158 tests en nueve archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -780,7 +807,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 31 (G-01 a G-31) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 9 (H-01 a H-09)  | PI-33 a PI-36, PI-40              |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 14 (H-01 a H-14) | PI-33 a PI-36, PI-40, PI-42, PI-43 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
@@ -844,6 +871,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-07        | Con un aumento programado para mañana, el cobro de hoy aplica el precio anterior                                                                                  | PI-40 |
 | H-08        | Con un aumento que rige desde hoy, el cobro aplica el precio nuevo; el precio anterior responde `MONTO_DISTINTO` y no guarda cuota, pago ni alta                  | PI-40 |
 | H-09        | Un aumento no modifica la cuota ya cobrada ni su pago, y la cuota siguiente se cobra al precio nuevo                                                              | PI-40 |
+| H-10        | La profesora a cargo cobra la primera cuota por la API: alta definitiva con rol y comprobante que ve el alumno                                                    | PI-42 |
+| H-11        | Un alumno y una profesora que no está a cargo no registran un cobro (403) y la base no cambia                                                                      | PI-42 |
+| H-12        | La transferencia informada queda pendiente, la ven el alumno y la propietaria (no la profesora) y frena otro cobro                                                 | PI-43 |
+| H-13        | El rechazo exige motivo, una rechazada no se aprueba y la transferencia siguiente reusa la cuota                                                                   | PI-43 |
+| H-14        | La aprobación confirma el pago con quién lo revisó; la transferencia que carga la propietaria da el alta                                                           | PI-43 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
@@ -917,6 +949,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La base de prueba sin el check `ck_inscripciones_x2`                                   | G-31                                                                                                       |
 | La baja de una actividad no revisa sus planes exclusivos vigentes                      | B-17                                                                                                       |
 | Los planes dados de baja también frenan la baja de la actividad                        | B-18                                                                                                       |
+| El subsistema de cuotas y pagos sin montar en la API                                   | H-10 a H-14                                                                                                |
+| El listado de transferencias en revisión solo con sesión, sin el rol ni el permiso     | H-12                                                                                                       |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -947,6 +981,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 11/10/2026 | El cobro aplica el precio vigente el día del cobro (PI-40)            | 147 | 147 aprobados | 115,5 s | Solo se sumaron tests. Pasaron también los 1234 tests unitarios y el chequeo de tipos. Las 2 fallas provocadas fueron detectadas; antes de PI-40, ningún test de integración las detectaba |
 | 11/10/2026 | El detalle de la baja con el motivo OTRO (PI-41)                      | 151 | 151 aprobados | 130,1 s | Con la base de prueba recreada desde cero, así que la migración nueva se aplicó completa. Pasaron también los 1241 tests unitarios, con cobertura del 100 %; build correcto. Las 3 fallas provocadas fueron detectadas |
 | 11/10/2026 | Los planes exclusivos vigentes frenan la baja de la actividad (PI-06) | 153 | 153 aprobados | 133,5 s | Pasaron también los 1242 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
+| 12/10/2026 | Cuotas y pagos montado en la API (PI-42, PI-43)                       | 158 | 158 aprobados | 115,9 s | PI-35, PI-36 y PI-40 pasan ahora con los calculadores reales. Pasaron también los 1291 tests unitarios, con cobertura del 100 %; build correcto. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -966,6 +1001,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-40         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan H-07 a H-09 sobre los componentes; sin defectos                            |
 | PI-41         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-28 a G-31 (punto a confirmar de PI-41 cerrado)                           |
 | PI-06         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan B-10 a B-13 y B-16 a B-18 (defecto D-19)                                   |
+| PI-42         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-10 y H-11 por la API; sin defectos                                       |
+| PI-43         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-12 a H-14 por la API; sin defectos                                       |
 
 ### 8.3 Defectos
 
@@ -1052,3 +1089,4 @@ Los defectos se numeran D-01, D-02…
 |   2.4   | 11/10/2026 | Caso PI-40 y tests H-07 a H-09: el cobro aplica el precio vigente el día del cobro. PI-13 y la US-12 pasan a automatizadas por completo | Francisco Andrade |
 |   2.5   | 11/10/2026 | Caso PI-41 y tests G-28 a G-31: el detalle de la baja con el motivo OTRO; punto a confirmar de PI-41 cerrado | Francisco Andrade |
 |   2.6   | 11/10/2026 | PI-06: pasos 6 y 7 (los planes exclusivos vigentes frenan la baja de la actividad) y tests B-17 y B-18; PI-06 pasa a cubrir US-11; defecto D-19 | Francisco Andrade |
+|   2.7   | 12/10/2026 | Cuotas y pagos montado en la API: casos PI-42 y PI-43 y tests H-10 a H-14; US-15, US-16 y US-17 pasan a automatizadas; `armarCuotasYPagos` usa los calculadores reales y PI-36 vence de fecha a fecha | Francisco Andrade |

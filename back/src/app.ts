@@ -1,6 +1,8 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
 import helmet from "helmet";
+import type { ILogicaCuotasPagos } from "./modules/gestion-cuotas-y-pagos/interface/i-logica-cuotas-pagos.js";
+import { createGestionCuotasYPagosRoutes } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
 import { createGestionInscripcionesYClasesRoutes } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
@@ -22,6 +24,7 @@ export interface AppDependencies {
   gestionPersonas: ILogicaPersonas;
   gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
   gestionInscripcionesYClases: ILogicaInscripcionesYClases;
+  gestionCuotasYPagos: ILogicaCuotasPagos;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -60,6 +63,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   // Va después de GestionPersonas: su /alumnos exige rol PROPIETARIA a todo lo que le llega, y
   // montado antes bloquearía las rutas de alumnos que GestionPersonas abre a otros roles.
   api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
+  api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

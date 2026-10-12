@@ -51,7 +51,7 @@ back/
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva hasta que exista el cobro)
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro)
       fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...)
 ```
 
@@ -77,7 +77,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
 | G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora, el peso y la talla y la reserva de cupo que vence), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación, paginación y el detalle de la baja con el motivo OTRO | G-31 |
-| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`) | H-09 |
+| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`); el cobro en efectivo, la transferencia y su revisión por la API | H-14 |
 | I | `src/shared/db/__tests__/parametros-iniciales.integration.test.ts` | Carga de los parámetros del sistema | I-04 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
