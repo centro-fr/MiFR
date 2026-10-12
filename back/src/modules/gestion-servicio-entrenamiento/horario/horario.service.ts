@@ -51,6 +51,10 @@ export class HorarioService implements IInfoHorarios {
     return horarios.map((horario) => this.conCupoEfectivo(horario));
   }
 
+  listarVigentes(): Promise<HorarioRespuesta[]> {
+    return this.listar({});
+  }
+
   async actualizar(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
     const actual = await this.obtenerHorarioActivo(id);
     const idActividad = input.id_actividad ?? actual.id_actividad;

@@ -1,5 +1,5 @@
 // Etiquetas visibles de la matriz. El glosario MiFR prohíbe "pago" en la
-// interfaz: los códigos PAGOS_* del back se muestran como transferencias.
+// interfaz: los códigos PAGOS_* del back se muestran como cobros y transferencias.
 const MODULOS: Record<string, string> = {
   SEGURIDAD: "Seguridad",
   USUARIOS: "Usuarios",
@@ -7,7 +7,8 @@ const MODULOS: Record<string, string> = {
   HORARIOS: "Horarios",
   ALUMNOS: "Alumnos",
   PLANES: "Planes",
-  PAGOS: "Transferencias",
+  // Incluye PAGOS_REGISTRAR, el cobro en efectivo de la profesora (US-15).
+  PAGOS: "Cobros y transferencias",
   HONORARIOS: "Honorarios",
   ASISTENCIAS: "Asistencias",
   RUTINAS: "Rutinas",
@@ -25,7 +26,7 @@ const DESCRIPCIONES: Record<string, string> = {
   HORARIOS: "Cronograma y asignación de profesoras",
   ALUMNOS: "Inscripciones y legajos de alumnos",
   PLANES: "Planes, precios y promociones",
-  PAGOS: "Transferencias y rendición de efectivo",
+  PAGOS: "Cobros en efectivo, transferencias y rendición",
   HONORARIOS: "Liquidaciones de profesoras",
   ASISTENCIAS: "Toma de asistencia en clases",
   RUTINAS: "Rutinas y progreso físico",

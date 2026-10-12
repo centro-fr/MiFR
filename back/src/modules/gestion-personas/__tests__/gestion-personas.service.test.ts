@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, ForbiddenError } from "../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
+import type { IInfoCuotas } from "../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "../alumno/alumno.service.js";
@@ -12,6 +13,21 @@ const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
 const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
 const ID_PROFESORA = 7;
 const consulta: ListarAlumnoQuery = { limit: 20, offset: 0 };
+const VENCIO = new Date("2026-10-03T00:00:00Z");
+const HABILITACION = {
+  estado: "VENCIDA",
+  fechaVencimiento: VENCIO,
+  diasRestantes: -6,
+  puedeAsistir: false,
+  tienePagoPendiente: true,
+};
+const SITUACION = {
+  estado: "VENCIDA",
+  fecha_vencimiento: VENCIO,
+  dias_restantes: -6,
+  puede_asistir: false,
+  tiene_pago_pendiente: true,
+};
 
 function crearMocks() {
   return {
@@ -33,8 +49,19 @@ function crearMocks() {
     },
     inscripciones: {
       obtenerIdsDeAlumnos: vi.fn().mockResolvedValue([4]),
-      resumirInscripcionesVigentes: vi.fn().mockResolvedValue([{ id_alumno: 4, nombre_plan: "Básico" }]),
+      resumirInscripcionesVigentes: vi
+        .fn()
+        .mockResolvedValue([{ id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" }]),
       listarVigentesDeAlumno: vi.fn().mockResolvedValue([{ id_inscripcion: 9, id_profesora: ID_PROFESORA }]),
+      listarDeLaUltimaBaja: vi.fn().mockResolvedValue([{ id_inscripcion: 8, id_profesora: ID_PROFESORA }]),
+    },
+    cuotas: {
+      habilitacionDeInscripciones: vi.fn().mockResolvedValue(
+        new Map([
+          [8, HABILITACION],
+          [9, HABILITACION],
+        ]),
+      ),
     },
   };
 }
@@ -47,9 +74,10 @@ describe("GestionPersonasService", () => {
     mocks = crearMocks();
     servicio = new GestionPersonasService(
       mocks.profesoras as unknown as ProfesorService,
-      mocks.horarios as IInfoHorarios,
+      mocks.horarios as unknown as IInfoHorarios,
       mocks.alumnos as unknown as AlumnoService,
       mocks.inscripciones as unknown as IInfoInscripciones,
+      mocks.cuotas as unknown as IInfoCuotas,
     );
   });
 
@@ -84,7 +112,22 @@ describe("GestionPersonasService", () => {
 
       expect(mocks.inscripciones.obtenerIdsDeAlumnos).not.toHaveBeenCalled();
       expect(mocks.alumnos.listar).toHaveBeenCalledWith({ limit: 20, offset: 0, ids: undefined });
-      expect(pagina.datos).toEqual([{ id_alumno: 4, inscripcion: { id_alumno: 4, nombre_plan: "Básico" } }]);
+      expect(pagina.datos).toEqual([
+        {
+          id_alumno: 4,
+          inscripcion: { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" },
+          situacion_cuota: SITUACION,
+        },
+      ]);
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+    });
+
+    it("una inscripción que Cuota no encuentra sale sin situación de cuota", async () => {
+      mocks.cuotas.habilitacionDeInscripciones.mockResolvedValue(new Map());
+
+      const pagina = await servicio.listarAlumnos(consulta, PROPIETARIA);
+
+      expect(pagina.datos[0].situacion_cuota).toBeNull();
     });
 
     it("filtra por plan, profesora y actividad con los ids que dan las inscripciones", async () => {
@@ -140,17 +183,36 @@ describe("GestionPersonasService", () => {
 
       const pagina = await servicio.listarAlumnos(consulta, PROPIETARIA);
 
-      expect(pagina.datos).toEqual([{ id_alumno: 4, inscripcion: null }]);
+      expect(pagina.datos).toEqual([{ id_alumno: 4, inscripcion: null, situacion_cuota: null }]);
     });
   });
 
   describe("obtenerAlumnoPorId", () => {
-    it("devuelve la ficha con las inscripciones vigentes", async () => {
+    it("devuelve la ficha con las inscripciones vigentes y su situación de cuota", async () => {
       await expect(servicio.obtenerAlumnoPorId(4, PROPIETARIA)).resolves.toEqual({
         id_alumno: 4,
-        inscripciones: [{ id_inscripcion: 9, id_profesora: ID_PROFESORA }],
+        inscripciones: [{ id_inscripcion: 9, id_profesora: ID_PROFESORA, situacion_cuota: SITUACION }],
+        inscripciones_de_la_baja: [],
       });
       expect(mocks.inscripciones.listarVigentesDeAlumno).toHaveBeenCalledWith(4);
+      expect(mocks.inscripciones.listarDeLaUltimaBaja).not.toHaveBeenCalled();
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+    });
+
+    it("la ficha de un alumno dado de baja trae las inscripciones de su última baja con lo que debía (US-08)", async () => {
+      mocks.alumnos.obtenerPorId.mockResolvedValue({ id_alumno: 4, estado: "BAJA" });
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+
+      await expect(servicio.obtenerAlumnoPorId(4, PROPIETARIA)).resolves.toEqual({
+        id_alumno: 4,
+        estado: "BAJA",
+        inscripciones: [],
+        inscripciones_de_la_baja: [
+          { id_inscripcion: 8, id_profesora: ID_PROFESORA, situacion_cuota: SITUACION },
+        ],
+      });
+      expect(mocks.inscripciones.listarDeLaUltimaBaja).toHaveBeenCalledWith(4);
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([8]);
     });
 
     it("la profesora ve la ficha de un alumno a su cargo", async () => {

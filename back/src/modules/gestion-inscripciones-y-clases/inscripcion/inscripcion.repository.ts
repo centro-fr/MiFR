@@ -222,6 +222,27 @@ export class InscripcionRepository {
     });
   }
 
+  // La baja del alumno cierra todas sus inscripciones vigentes en el mismo instante: las de la última
+  // baja son las que comparten su fecha_baja.
+  async listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionGuardada[]> {
+    const deBaja = {
+      id_alumno: idAlumno,
+      estado: "BAJA" as const,
+      motivo_baja: { not: "CAMBIO_PLAN" as const },
+    };
+    const ultima = await this.prisma.inscripciones.findFirst({
+      where: deBaja,
+      orderBy: { fecha_baja: "desc" },
+      select: { fecha_baja: true },
+    });
+    if (!ultima?.fecha_baja) return [];
+    return this.prisma.inscripciones.findMany({
+      where: { ...deBaja, fecha_baja: ultima.fecha_baja },
+      include: INCLUIR_DATOS_INSCRIPCION,
+      orderBy: { id_inscripcion: "asc" },
+    });
+  }
+
   async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionGuardada | null> {
     return this.prisma.inscripciones.findFirst({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
@@ -303,10 +324,11 @@ export class InscripcionRepository {
   ): Promise<ResultadoOperacion> {
     return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
+      // Dos reactivaciones a la vez: la segunda devuelve la inscripción que dejó la primera.
       const existente = await transaccion.inscripciones.findFirst({
         where: {
           id_alumno: input.id_alumno,
-          estado: "ACTIVA",
+          estado: { in: [...ESTADOS_VIGENTES] },
         },
         orderBy: [{ fecha_inicio: "desc" }, { id_inscripcion: "desc" }],
         include: INCLUIR_DATOS_INSCRIPCION,
@@ -315,7 +337,7 @@ export class InscripcionRepository {
       if (!(await hayCupo(transaccion, idsHorarios, inicioReservas))) return { resultado: "sin-cupo" };
       const inscripcion = await transaccion.inscripciones.create({
         data: {
-          ...mapearDatosDeCreacion(input, "ACTIVA"),
+          ...mapearDatosDeCreacion(input, input.estado),
           fecha_inicio: input.fecha_inicio,
           horarios: {
             create: idsHorarios.map((id_horario) => ({ id_horario, fecha_desde: fecha })),

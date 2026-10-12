@@ -1,6 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { enTransaccion } from "../../../shared/db/transaccion.js";
-import type { Alumno, FiltroAlumno, TutorResuelto } from "./alumno.types.js";
+import type { Alumno, EstadoAlReactivar, FiltroAlumno, TutorResuelto } from "./alumno.types.js";
 
 const DATOS_PERSONALES = {
   id_usuario: true,
@@ -172,8 +172,8 @@ export class AlumnoRepository {
     return this.cambiarEstado(alumno, "BAJA", "INACTIVO", new Date());
   }
 
-  reactivar(alumno: Alumno): Promise<Alumno> {
-    return this.cambiarEstado(alumno, "ACTIVO", "ACTIVO", null);
+  reactivar(alumno: Alumno, estado: EstadoAlReactivar): Promise<Alumno> {
+    return this.cambiarEstado(alumno, estado, estado, null);
   }
 
   private cambiarEstado(

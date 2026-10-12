@@ -12,6 +12,7 @@ export class CuotaRepository {
       where: { id_inscripcion: { in: idsInscripciones } },
       select: {
         id_inscripcion: true,
+        fecha_baja: true,
         plan: { select: { tipo: true, dias_gracia: true } },
         cuotas: {
           select: {
@@ -24,10 +25,11 @@ export class CuotaRepository {
         },
       },
     });
-    return filas.map(({ id_inscripcion, plan, cuotas }) => ({
+    return filas.map(({ id_inscripcion, fecha_baja, plan, cuotas }) => ({
       id_inscripcion,
       tipo_plan: plan.tipo,
       dias_gracia: plan.dias_gracia,
+      fecha_baja,
       cuotas: cuotas.map(({ pagos, ...cuota }) => ({
         ...cuota,
         estados_pagos: pagos.map(({ estado }) => estado),
@@ -37,6 +39,14 @@ export class CuotaRepository {
 
   // De todas las inscripciones del alumno, de la cuota más nueva a la más vieja, con un tope como
   // todo listado: a una cuota por mes, cien cubren más de ocho años.
+  async tuvoPagoConfirmado(idAlumno: number): Promise<boolean> {
+    const pago = await this.prisma.pagos.findFirst({
+      where: { estado: "CONFIRMADO", cuota: { inscripcion: { id_alumno: idAlumno } } },
+      select: { id_pago: true },
+    });
+    return pago !== null;
+  }
+
   async historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
     const filas = await this.prisma.cuotas.findMany({
       where: { inscripcion: { id_alumno: idAlumno } },

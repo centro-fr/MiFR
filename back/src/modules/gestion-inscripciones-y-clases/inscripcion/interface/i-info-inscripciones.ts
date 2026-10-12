@@ -15,6 +15,9 @@ export interface IInfoInscripciones {
   buscarParaCobro(idInscripcion: number): Promise<InscripcionACobrar | null>;
   // Las PREINSCRIPTA o ACTIVA del alumno, con plan, precio, profesora, horarios y reserva: la ficha de US-10.
   listarVigentesDeAlumno(idAlumno: number): Promise<InscripcionConDatos[]>;
+  // Las que cerró la última baja del alumno (US-08), sin las que cerró un cambio de plan: la ficha de
+  // un alumno dado de baja muestra con ellas lo que debía al irse.
+  listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionConDatos[]>;
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]>;
   resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]>;
   // Inscriptos vigentes por horario, de una sola consulta; un horario sin inscriptos no figura. Cuenta

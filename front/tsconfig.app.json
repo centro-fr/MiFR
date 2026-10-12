@@ -29,5 +29,11 @@
     }
   },
   "include": ["src"],
-  "exclude": ["google-studio-ai"]
+  "exclude": [
+    "src/**/__tests__/*",
+    "src/**/*.test.*",
+    "src/**/test/*",
+    "src/test/*",
+    "google-studio-ai"
+  ]
 }

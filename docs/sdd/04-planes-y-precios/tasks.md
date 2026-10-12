@@ -42,10 +42,10 @@ Tareas técnicas, secuenciales y verificables para la épica **Planes y Precios*
 
 ## Fase 3: Frontend – Catálogo Comercial y Administración
 
-- [ ] **3.1. Pantalla de Planes y Tarifas (US-11 y US-12)**
-  - Construir vista `/admin/planes` con tarjetas comerciales y badge de precio vigente.
-  - Modal para "Actualizar Precio" indicando nuevo valor y fecha a partir de cuándo rige.
-  - *Criterio de verificación*: Al cargar un nuevo precio futuro, la UI muestra el precio actual y aclara la fecha del próximo aumento.
+- [x] **3.1. Pantalla de Planes y Tarifas (US-11 y US-12)**
+  - Construir vista `/app/planes` con tarjetas mobile y tabla de escritorio, precio vigente y precio programado.
+  - Modal responsive de actualización con validación de importe/fecha y confirmación antes de guardar.
+  - *Criterio de verificación*: Con un precio futuro, la UI conserva el importe vigente y muestra desde cuándo aplicará el próximo.
 
 - [ ] **3.2. Gestión de Promociones (US-13)**
   - Construir vista `/admin/promociones` con listado y estado de vigencia.

@@ -16,7 +16,7 @@ export function permisosDeRoles(roles: RoleCode[]): string[] {
   return [...new Set(roles.flatMap((rol) => db.matriz[rol]))];
 }
 
-function usuarioDeLaSesion(request: Request): UsuarioSemilla | null {
+export function usuarioDeLaSesion(request: Request): UsuarioSemilla | null {
   if (request.headers.get("authorization") !== `Bearer ${MOCK_JWT}`) return null;
   return db.usuarios.find((usuario) => usuario.id_usuario === db.idUsuarioSesion) ?? null;
 }

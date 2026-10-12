@@ -1,5 +1,7 @@
 import { ConflictError, ForbiddenError } from "../../shared/errors/app-error.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
+import type { HabilitacionDeInscripcion } from "../gestion-cuotas-y-pagos/cuota/cuota.types.js";
+import type { IInfoCuotas } from "../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
@@ -10,7 +12,9 @@ import type {
   AlumnoDadoDeAlta,
   FichaAlumno,
   ILogicaPersonas,
+  InscripcionConSituacion,
   PaginaListadoAlumnos,
+  SituacionCuota,
 } from "./interface/i-logica-personas.js";
 import type { ProfesorService } from "./profesor/profesor.service.js";
 import type { CrearProfesoraInput } from "./profesor/profesor.schemas.js";
@@ -25,15 +29,38 @@ const CAMPOS_QUE_EDITA_LA_PROFESORA = new Set([
   "observaciones",
 ]);
 
+function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): SituacionCuota | null {
+  if (!habilitacion) return null;
+  return {
+    estado: habilitacion.estado,
+    fecha_vencimiento: habilitacion.fechaVencimiento,
+    dias_restantes: habilitacion.diasRestantes,
+    puede_asistir: habilitacion.puedeAsistir,
+    tiene_pago_pendiente: habilitacion.tienePagoPendiente,
+  };
+}
+
+function conSituacion(
+  inscripciones: InscripcionConDatos[],
+  habilitaciones: Map<number, HabilitacionDeInscripcion>,
+): InscripcionConSituacion[] {
+  return inscripciones.map((inscripcion) => ({
+    ...inscripcion,
+    situacion_cuota: aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion)),
+  }));
+}
+
 // Los alumnos a cargo de una profesora, los filtros por plan, profesora y actividad, y el plan de
-// cada alumno salen de las inscripciones, que son de otro subsistema (IInfoInscripciones). Por
-// eso las reglas de US-09 y US-10 que los cruzan con Alumno viven acá y no en el componente.
+// cada alumno salen de las inscripciones, que son de otro subsistema (IInfoInscripciones), y la
+// situación de cuota de Cuota (IInfoCuotas). Por eso las reglas de US-09 y US-10 que los cruzan con
+// Alumno viven acá y no en el componente.
 export class GestionPersonasService implements ILogicaPersonas {
   constructor(
     private readonly profesoras: ProfesorService,
     private readonly horarios: IInfoHorarios,
     private readonly alumnos: AlumnoService,
     private readonly inscripciones: IInfoInscripciones,
+    private readonly cuotas: IInfoCuotas,
   ) {}
 
   crearProfesora(input: CrearProfesoraInput): Promise<Profesora> {
@@ -90,12 +117,21 @@ export class GestionPersonasService implements ILogicaPersonas {
       pagina.datos.map(({ id_alumno }) => id_alumno),
     );
     const resumenPorAlumno = new Map(resumenes.map((resumen) => [resumen.id_alumno, resumen]));
+    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
+      resumenes.map(({ id_inscripcion }) => id_inscripcion),
+    );
     return {
       ...pagina,
-      datos: pagina.datos.map((alumno) => ({
-        ...alumno,
-        inscripcion: resumenPorAlumno.get(alumno.id_alumno) ?? null,
-      })),
+      datos: pagina.datos.map((alumno) => {
+        const inscripcion = resumenPorAlumno.get(alumno.id_alumno) ?? null;
+        return {
+          ...alumno,
+          inscripcion,
+          situacion_cuota: inscripcion
+            ? aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion))
+            : null,
+        };
+      }),
     };
   }
 
@@ -103,7 +139,15 @@ export class GestionPersonasService implements ILogicaPersonas {
     const alumno = await this.alumnos.obtenerPorId(id);
     const inscripciones = await this.inscripciones.listarVigentesDeAlumno(id);
     await this.verificarQueLoTieneACargo(inscripciones, solicitante);
-    return { ...alumno, inscripciones };
+    const deLaBaja = alumno.estado === "BAJA" ? await this.inscripciones.listarDeLaUltimaBaja(id) : [];
+    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
+      [...inscripciones, ...deLaBaja].map(({ id_inscripcion }) => id_inscripcion),
+    );
+    return {
+      ...alumno,
+      inscripciones: conSituacion(inscripciones, habilitaciones),
+      inscripciones_de_la_baja: conSituacion(deLaBaja, habilitaciones),
+    };
   }
 
   async actualizarAlumno(

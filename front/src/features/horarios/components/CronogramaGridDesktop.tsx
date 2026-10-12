@@ -3,7 +3,6 @@ import type { DiaSemana, Horario } from '../../../types/horarios';
 import { timeToMinutes } from '../utils/cronograma';
 import { Plus, ArrowLeftRight, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { TarjetaHorario } from './TarjetaHorario';
 
 interface CronogramaGridDesktopProps {
@@ -38,7 +37,7 @@ const DIAS_COLUMNAS: { id: DiaSemana; label: string }[] = [
 
 // Límites permitidos del negocio
 const HORA_MIN_PERMITIDA = 7;
-const HORA_MAX_PERMITIDA = 20;
+const HORA_MAX_PERMITIDA = 23;
 
 export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
   horarios,
@@ -63,7 +62,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
       return [];
     }
 
-    let minHora = 20;
+    let minHora = 23;
     let maxHora = 7;
 
     fuenteHorarios.forEach((h) => {
@@ -98,9 +97,9 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
   if (totalSlots === 0) {
     return (
-      <Card className="w-full overflow-hidden rounded-2xl border-border shadow-xs">
+      <div className="w-full bg-transparent border-none shadow-none">
         {/* Cabecera de días */}
-        <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-border bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
+        <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
           <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
             Horario
           </div>
@@ -128,338 +127,317 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
             No hay clases asignadas actualmente. El rango horario del cronograma se ajustará automáticamente a partir del horario de la primera clase que agregues.
           </p>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-      <Card className="w-full overflow-hidden rounded-2xl border-border shadow-xs">
+    <div className="w-full bg-transparent border-none shadow-none">
       <div className="overflow-x-auto">
         <div className="min-w-[760px]">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] border-b border-border bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
-        <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
-          Horario
-        </div>
-        {DIAS_COLUMNAS.map((dia) => (
-          <div
-            key={dia.id}
-            className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
-          >
-            <span className="text-sm font-bold uppercase tracking-wider text-foreground">
-              {dia.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Grilla: horas y columnas de días */}
-      <div className="grid grid-cols-[112px_repeat(6,minmax(0,1fr))] text-sm">
-        {/* COLUMNA 0: ETIQUETAS DE HORAS */}
-        <div
-          className="border-r border-slate-200/60 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 select-none grid"
-          style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
-        >
-          {franjasHorarias.map((franja) => (
-            <div
-              key={franja.label}
-              className="h-[104px] p-2 text-center font-bold text-dark dark:text-white text-sm border-b border-slate-100 dark:border-white/10 flex items-center justify-center"
-            >
-              {franja.label}
+          <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
+            <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
+              Horario
             </div>
-          ))}
-        </div>
+            {DIAS_COLUMNAS.map((dia) => (
+              <div
+                key={dia.id}
+                className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
+              >
+                <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  {dia.label}
+                </span>
+              </div>
+            ))}
+          </div>
 
-        {/* COLUMNAS 1 A 6: DÍAS (LUNES A SÁBADO) */}
-        {DIAS_COLUMNAS.map((dia) => (
-          <div
-            key={dia.id}
-            className="border-r last:border-r-0 border-slate-200/60 dark:border-white/10 grid relative"
-            style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
-          >
-            {franjasHorarias.map((franja, slotIndex) => {
-              const slotInicio = timeToMinutes(franja.inicio);
-              const slotFin = timeToMinutes(franja.fin);
+          {/* Grilla: horas y columnas de días */}
+          <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] text-sm">
+            {/* COLUMNA 0: ETIQUETAS DE HORAS */}
+            <div
+              className="border-r border-slate-200/60 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 select-none grid"
+              style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
+            >
+              {franjasHorarias.map((franja) => (
+                <div
+                  key={franja.label}
+                  className="h-[104px] px-2 text-center font-bold text-dark dark:text-white text-xs sm:text-sm flex items-center justify-center whitespace-nowrap"
+                >
+                  {franja.label}
+                </div>
+              ))}
+            </div>
 
-              // Buscar horario activo en este día que cubra este slot
-              const horarioEnSlot = horarios.find(
-                (h) =>
-                  h.diaSemana === dia.id &&
-                  timeToMinutes(h.horaInicio) < slotFin &&
-                  timeToMinutes(h.horaFin) > slotInicio
-              );
-
-              if (horarioEnSlot) {
-                // Verificar si es el primer slot visible cubierto por este horario en la grilla
-                const primerSlotIndex = Math.max(
-                  0,
-                  Math.floor((timeToMinutes(horarioEnSlot.horaInicio) - baseMinutos) / 60)
-                );
-                const isFirstSlot = slotIndex === primerSlotIndex;
-
-                // Si no es el primer slot, omitir render (el span de arriba ya ocupa la fila)
-                if (!isFirstSlot) {
-                  return null;
-                }
-
-                // Calcular cuántos slots continuos abarca dentro del rango visible
-                const lastSlotIndex = Math.min(
-                  totalSlots - 1,
-                  Math.floor((timeToMinutes(horarioEnSlot.horaFin) - 1 - baseMinutos) / 60)
-                );
-                const spanCount = Math.max(1, lastSlotIndex - slotIndex + 1);
-                const isSingleSlot = spanCount === 1;
-                const theme = horarioEnSlot.tema;
-
-                return (
-                  <div
-                    key={`hor-${horarioEnSlot.id}`}
-                    style={{ gridRow: `span ${spanCount}` }}
-                    className="p-1.5 h-full w-full"
-                  >
-                    <div
-                      draggable={!isFilterActive}
-                      onDragStart={(e) => {
-                        if (isFilterActive) return;
-
-                        // Calcular si el usuario agarró la primera franja o una inferior (ej: 2da hora)
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const clickY = e.clientY - rect.top;
-                        const slotHeight = rect.height / Math.max(1, spanCount);
-                        const offset = Math.max(0, Math.min(spanCount - 1, Math.floor(clickY / slotHeight)));
-                        const duracionMinutos = timeToMinutes(horarioEnSlot.horaFin) - timeToMinutes(horarioEnSlot.horaInicio);
-
-                        const dragInfo: DragHorarioInfo = {
-                          id: horarioEnSlot.id,
-                          offset,
-                          duracionMinutos,
-                          diaOrigen: horarioEnSlot.diaSemana,
-                          horaInicioOrigen: horarioEnSlot.horaInicio,
-                          horaFinOrigen: horarioEnSlot.horaFin,
-                        };
-
-                        dragInfoRef.current = dragInfo;
-                        e.dataTransfer.setData('text/plain', horarioEnSlot.id);
-                        e.dataTransfer.setData('application/json', JSON.stringify(dragInfo));
-                        e.dataTransfer.effectAllowed = 'move';
-                        setDraggedHorarioId(horarioEnSlot.id);
-                      }}
-                      onDragEnd={() => {
-                        dragInfoRef.current = null;
-                        setDraggedHorarioId(null);
-                        setDragOverCardId(null);
-                        setDragOverCellKey(null);
-                      }}
-                      onDragOver={(e) => {
-                        if (!isFilterActive) {
-                          const currentDraggedId = dragInfoRef.current?.id || draggedHorarioId;
-                          if (currentDraggedId && currentDraggedId !== horarioEnSlot.id) {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = 'move';
-                            if (dragOverCardId !== horarioEnSlot.id) {
-                              setDragOverCardId(horarioEnSlot.id);
-                            }
-                          }
-                        }
-                      }}
-                      onDragLeave={(e) => {
-                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                          if (dragOverCardId === horarioEnSlot.id) {
-                            setDragOverCardId(null);
-                          }
-                        }
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const idA = dragInfoRef.current?.id || e.dataTransfer.getData('text/plain') || draggedHorarioId;
-                        if (idA && idA !== horarioEnSlot.id && onSwapHorarios) {
-                          onSwapHorarios(idA, horarioEnSlot.id);
-                        }
-                        dragInfoRef.current = null;
-                        setDragOverCardId(null);
-                        setDraggedHorarioId(null);
-                      }}
-                      onClick={() => onEdit(horarioEnSlot)}
-                      className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border-0 bg-(--tema-bg) dark:bg-(--tema-bg-oscuro) shadow-xs group relative overflow-hidden select-none ${
-                        isSingleSlot ? 'p-2.5' : 'p-3.5'
-                      } ${
-                        draggedHorarioId === horarioEnSlot.id
-                          ? 'opacity-30 scale-95 border-2 border-dashed border-primary'
-                          : ''
-                      } ${
-                        dragOverCardId === horarioEnSlot.id
-                          ? 'ring-4 ring-primary scale-[1.02] shadow-xl'
-                          : 'hover:-translate-y-0.5'
-                      }`}
-                      style={{
-                        '--tema-bg': theme.bg,
-                        '--tema-bg-oscuro': theme.bgOscuro,
-                      } as React.CSSProperties}
-                    >
-                      {/* Overlay al arrastrar sobre esta tarjeta para Swap (con pointer-events-none para no romper drag) */}
-                      <div
-                        className={`absolute inset-0 bg-primary/95 backdrop-blur-xs z-30 flex flex-col items-center justify-center text-white p-2 text-center pointer-events-none transition-opacity duration-150 ${
-                          dragOverCardId === horarioEnSlot.id ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      >
-                        <ArrowLeftRight className="w-5 h-5 mb-1 animate-bounce" />
-                        <span className="text-sm font-black leading-tight">Soltar para intercambiar</span>
-                        <span className="text-sm font-semibold text-pink-100">Swap de horarios</span>
-                      </div>
-
-                      <TarjetaHorario
-                        horario={horarioEnSlot}
-                        esCompacta={isSingleSlot}
-                        isFilterActive={isFilterActive}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                      />
-                    </div>
-                  </div>
-                );
-              }
-
-              // Celda libre: cuando hay filtro activo (modo consulta), queda limpia
-              if (isFilterActive) {
-                return (
-                  <div
-                    key={`free-${dia.id}-${franja.inicio}`}
-                    style={{ gridRow: 'span 1' }}
-                    className="h-[104px] p-1.5 border-b border-slate-100 dark:border-white/10 bg-slate-50/20 dark:bg-white/[0.02] select-none"
-                  />
-                );
-              }
-
-              // Celda libre editable sin filtros (admite clic para crear o drop para mover)
-              const cellKey = `cell-${dia.id}-${franja.inicio}`;
-              const isOverCell = dragOverCellKey === cellKey;
+            {/* COLUMNAS 1 A 6: DÍAS (LUNES A SÁBADO) */}
+            {DIAS_COLUMNAS.map((dia) => {
+              const horariosDelDia = horarios.filter((h) => h.diaSemana === dia.id);
 
               return (
                 <div
-                  key={`free-${dia.id}-${franja.inicio}`}
-                  style={{ gridRow: 'span 1' }}
-                  onDragOver={(e) => {
-                    if (!isFilterActive) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                      if (dragOverCellKey !== cellKey) {
-                        setDragOverCellKey(cellKey);
-                      }
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      if (dragOverCellKey === cellKey) {
-                        setDragOverCellKey(null);
-                      }
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Recuperar datos síncronos del drag
-                    let dragInfo = dragInfoRef.current;
-                    if (!dragInfo) {
-                      try {
-                        const rawJson = e.dataTransfer.getData('application/json');
-                        if (rawJson) dragInfo = JSON.parse(rawJson);
-                      } catch {
-                        // Fallback silencioso
-                      }
-                    }
-
-                    const draggedId = dragInfo?.id || e.dataTransfer.getData('text/plain') || draggedHorarioId;
-
-                    if (draggedId && onMoveHorario) {
-                      const dropMins = timeToMinutes(franja.inicio);
-                      const dropFinMins = timeToMinutes(franja.fin);
-                      let horaInicioFinal = franja.inicio;
-
-                      if (dragInfo) {
-                        const duracionMins = dragInfo.duracionMinutos;
-                        const esMismoDia = dragInfo.diaOrigen === dia.id;
-                        const finOrigenMins = timeToMinutes(dragInfo.horaFinOrigen);
-                        const inicioOrigenMins = timeToMinutes(dragInfo.horaInicioOrigen);
-
-                        // CASO 1: Movimiento inteligente contiguo hacia abajo en el mismo día
-                        // Si la celda libre soltada es contigua al final de la clase (ej: clase 11-13 y celda 13-14),
-                        // el usuario busca extender/bajar la clase a esa celda libre -> se alinea a (fin - duración = 12:00 a 14:00)
-                        if (esMismoDia && dropMins === finOrigenMins && duracionMins > 60) {
-                          const adjustedMins = dropFinMins - duracionMins;
-                          if (adjustedMins >= timeToMinutes('07:00')) {
-                            horaInicioFinal = `${Math.floor(adjustedMins / 60)
-                              .toString()
-                              .padStart(2, '0')}:${(adjustedMins % 60).toString().padStart(2, '0')}`;
-                          }
-                        }
-                        // CASO 2: Movimiento inteligente contiguo hacia arriba en el mismo día
-                        // Si la celda libre soltada es contigua al inicio de la clase (ej: clase 14-16 y celda 13-14),
-                        // el usuario busca subir la clase a esa celda libre -> hora inicio es franja.inicio (13:00)
-                        else if (esMismoDia && dropFinMins === inicioOrigenMins) {
-                          horaInicioFinal = franja.inicio;
-                        }
-                        // CASO 3: Movimiento general con offset del slot agarrado
-                        else if (dragInfo.offset > 0) {
-                          const adjustedMins = dropMins - (dragInfo.offset * 60);
-                          if (adjustedMins >= timeToMinutes('07:00')) {
-                            horaInicioFinal = `${Math.floor(adjustedMins / 60)
-                              .toString()
-                              .padStart(2, '0')}:${(adjustedMins % 60).toString().padStart(2, '0')}`;
-                          }
-                        }
-                      }
-
-                      onMoveHorario(draggedId, dia.id, horaInicioFinal, franja.fin);
-                    }
-
-                    dragInfoRef.current = null;
-                    setDragOverCellKey(null);
-                    setDraggedHorarioId(null);
-                  }}
-                  onClick={() => onAddForCell(dia.id, franja.inicio, franja.fin)}
-                  className={`h-[104px] p-1.5 border-b border-slate-100 dark:border-white/10 group transition relative flex items-center justify-center cursor-pointer select-none ${
-                    isOverCell
-                      ? 'bg-pink-100/90 dark:bg-[#3b1230] border-2 border-dashed border-primary'
-                      : 'hover:bg-slate-100/60 dark:hover:bg-white/10'
-                  }`}
-                  title={
-                    isOverCell
-                      ? `Soltar para mover clase al ${dia.label} a las ${franja.inicio}`
-                      : `Asignar clase el ${dia.label} (${franja.label})`
-                  }
+                  key={dia.id}
+                  className="border-r last:border-r-0 border-slate-200/60 dark:border-white/10 relative"
+                  style={{ height: `${totalSlots * 104}px` }}
                 >
-                  {/* Indicador visual de soltar */}
-                  <div
-                    className={`absolute inset-1 rounded-xl bg-pink-100/95 dark:bg-[#3b1230] border-2 border-dashed border-primary flex flex-col items-center justify-center text-primary font-black text-sm gap-1 pointer-events-none transition-all duration-150 z-10 ${
-                      isOverCell ? 'opacity-100 scale-100 shadow-inner' : 'opacity-0 scale-95'
-                    }`}
-                  >
-                    <Move className="w-5 h-5 stroke-[2.5]" />
-                    <span>Mover clase aquí</span>
-                  </div>
+                  {/* CAPA 1: CELDAS LIBRES / DROP TARGETS */}
+                  {franjasHorarias.map((franja, slotIndex) => {
+                    const cellKey = `cell-${dia.id}-${franja.inicio}`;
+                    const isOverCell = dragOverCellKey === cellKey;
 
-                  {/* Botón de creación en hover */}
-                  <Button
-                    type="button"
-                    size="icon"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className={`pointer-events-none h-7 w-7 rounded-full bg-primary/15 font-black text-primary shadow-xs transition [&_svg]:size-4 ${
-                      isOverCell ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
-                    }`}
-                  >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                  </Button>
+                    if (isFilterActive) {
+                      return (
+                        <div
+                          key={`free-${dia.id}-${franja.inicio}`}
+                          style={{
+                            position: 'absolute',
+                            top: `${slotIndex * 104}px`,
+                            left: 0,
+                            right: 0,
+                            height: '104px',
+                          }}
+                          className="p-1.5 bg-slate-50/20 dark:bg-white/[0.02] select-none"
+                        />
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={`free-${dia.id}-${franja.inicio}`}
+                        style={{
+                          position: 'absolute',
+                          top: `${slotIndex * 104}px`,
+                          left: 0,
+                          right: 0,
+                          height: '104px',
+                        }}
+                        onDragOver={(e) => {
+                          if (!isFilterActive) {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (dragOverCellKey !== cellKey) {
+                              setDragOverCellKey(cellKey);
+                            }
+                          }
+                        }}
+                        onDragLeave={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                            if (dragOverCellKey === cellKey) {
+                              setDragOverCellKey(null);
+                            }
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+
+                          let dragInfo = dragInfoRef.current;
+                          if (!dragInfo) {
+                            try {
+                              const rawJson = e.dataTransfer.getData('application/json');
+                              if (rawJson) dragInfo = JSON.parse(rawJson);
+                            } catch {
+                              // Fallback silencioso
+                            }
+                          }
+
+                          const draggedId = dragInfo?.id || e.dataTransfer.getData('text/plain') || draggedHorarioId;
+
+                          if (draggedId && onMoveHorario) {
+                            const dropMins = timeToMinutes(franja.inicio);
+                            const dropFinMins = timeToMinutes(franja.fin);
+                            let horaInicioFinal = franja.inicio;
+
+                            if (dragInfo) {
+                              const duracionMins = dragInfo.duracionMinutos;
+                              const esMismoDia = dragInfo.diaOrigen === dia.id;
+                              const finOrigenMins = timeToMinutes(dragInfo.horaFinOrigen);
+                              const inicioOrigenMins = timeToMinutes(dragInfo.horaInicioOrigen);
+
+                              if (esMismoDia && dropMins === finOrigenMins && duracionMins > 60) {
+                                const adjustedMins = dropFinMins - duracionMins;
+                                if (adjustedMins >= timeToMinutes('07:00')) {
+                                  horaInicioFinal = `${Math.floor(adjustedMins / 60)
+                                    .toString()
+                                    .padStart(2, '0')}:${(adjustedMins % 60).toString().padStart(2, '0')}`;
+                                }
+                              } else if (esMismoDia && dropFinMins === inicioOrigenMins) {
+                                horaInicioFinal = franja.inicio;
+                              } else if (dragInfo.offset > 0) {
+                                const adjustedMins = dropMins - (dragInfo.offset * 60);
+                                if (adjustedMins >= timeToMinutes('07:00')) {
+                                  horaInicioFinal = `${Math.floor(adjustedMins / 60)
+                                    .toString()
+                                    .padStart(2, '0')}:${(adjustedMins % 60).toString().padStart(2, '0')}`;
+                                }
+                              }
+                            }
+
+                            onMoveHorario(draggedId, dia.id, horaInicioFinal, franja.fin);
+                          }
+
+                          dragInfoRef.current = null;
+                          setDragOverCellKey(null);
+                          setDraggedHorarioId(null);
+                        }}
+                        onClick={() => onAddForCell(dia.id, franja.inicio, franja.fin)}
+                        className={`group transition flex items-center justify-center cursor-pointer select-none ${isOverCell
+                            ? 'bg-pink-100/90 dark:bg-[#3b1230] border-2 border-dashed border-primary z-20'
+                            : 'hover:bg-slate-100/60 dark:hover:bg-white/10'
+                          }`}
+                        title={
+                          isOverCell
+                            ? `Soltar para mover clase al ${dia.label} a las ${franja.inicio}`
+                            : `Asignar clase el ${dia.label} (${franja.label})`
+                        }
+                      >
+                        <div
+                          className={`absolute inset-1 rounded-xl bg-pink-100/95 dark:bg-[#3b1230] border-2 border-dashed border-primary flex flex-col items-center justify-center text-primary font-black text-sm gap-1 pointer-events-none transition-all duration-150 z-10 ${isOverCell ? 'opacity-100 scale-100 shadow-inner' : 'opacity-0 scale-95'
+                            }`}
+                        >
+                          <Move className="w-5 h-5 stroke-[2.5]" />
+                          <span>Mover clase aquí</span>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          className={`pointer-events-none h-7 w-7 rounded-full bg-primary/15 font-black text-primary shadow-xs transition [&_svg]:size-4 ${isOverCell ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                            }`}
+                        >
+                          <Plus className="w-4 h-4 stroke-[3]" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+
+                  {/* CAPA 2: HORARIOS ASIGNADOS (TARJETAS) */}
+                  {horariosDelDia.map((h) => {
+                    const startMins = timeToMinutes(h.horaInicio);
+                    const endMins = timeToMinutes(h.horaFin);
+                    const duracionMins = endMins - startMins;
+
+                    // 104px por cada 60 minutos de franja horaria
+                    const topPx = (startMins - baseMinutos) * (104 / 60);
+                    const heightPx = duracionMins * (104 / 60);
+                    const isCompact = heightPx <= 110 || duracionMins <= 60;
+                    const theme = h.tema;
+
+                    return (
+                      <div
+                        key={`hor-${h.id}`}
+                        style={{
+                          position: 'absolute',
+                          top: `${topPx + 2}px`,
+                          height: `${heightPx - 4}px`,
+                          left: '3px',
+                          right: '3px',
+                          zIndex: 10,
+                        }}
+                        className="transition-all duration-150"
+                      >
+                        <div
+                          draggable={!isFilterActive}
+                          onDragStart={(e) => {
+                            if (isFilterActive) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const clickY = e.clientY - rect.top;
+                            const slotCount = Math.max(1, Math.round(duracionMins / 60));
+                            const slotHeight = rect.height / slotCount;
+                            const offset = Math.max(0, Math.min(slotCount - 1, Math.floor(clickY / slotHeight)));
+
+                            const dragInfo: DragHorarioInfo = {
+                              id: h.id,
+                              offset,
+                              duracionMinutos: duracionMins,
+                              diaOrigen: h.diaSemana,
+                              horaInicioOrigen: h.horaInicio,
+                              horaFinOrigen: h.horaFin,
+                            };
+
+                            dragInfoRef.current = dragInfo;
+                            e.dataTransfer.setData('text/plain', h.id);
+                            e.dataTransfer.setData('application/json', JSON.stringify(dragInfo));
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDraggedHorarioId(h.id);
+                          }}
+                          onDragEnd={() => {
+                            dragInfoRef.current = null;
+                            setDraggedHorarioId(null);
+                            setDragOverCardId(null);
+                            setDragOverCellKey(null);
+                          }}
+                          onDragOver={(e) => {
+                            if (!isFilterActive) {
+                              const currentDraggedId = dragInfoRef.current?.id || draggedHorarioId;
+                              if (currentDraggedId && currentDraggedId !== h.id) {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                if (dragOverCardId !== h.id) {
+                                  setDragOverCardId(h.id);
+                                }
+                              }
+                            }
+                          }}
+                          onDragLeave={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                              if (dragOverCardId === h.id) {
+                                setDragOverCardId(null);
+                              }
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const idA = dragInfoRef.current?.id || e.dataTransfer.getData('text/plain') || draggedHorarioId;
+                            if (idA && idA !== h.id && onSwapHorarios) {
+                              onSwapHorarios(idA, h.id);
+                            }
+                            dragInfoRef.current = null;
+                            setDragOverCardId(null);
+                            setDraggedHorarioId(null);
+                          }}
+                          onClick={() => onEdit(h)}
+                          className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border-0 bg-(--tema-bg) dark:bg-(--tema-bg-oscuro) shadow-xs group relative overflow-hidden select-none ${isCompact ? 'p-2.5' : 'p-3.5'
+                            } ${draggedHorarioId === h.id
+                              ? 'opacity-30 scale-95 border-2 border-dashed border-primary'
+                              : ''
+                            } ${dragOverCardId === h.id
+                              ? 'ring-4 ring-primary scale-[1.02] shadow-xl'
+                              : 'hover:-translate-y-0.5'
+                            }`}
+                          style={{
+                            '--tema-bg': theme.bg,
+                            '--tema-bg-oscuro': theme.bgOscuro,
+                          } as React.CSSProperties}
+                        >
+                          <div
+                            className={`absolute inset-0 bg-primary/95 backdrop-blur-xs z-30 flex flex-col items-center justify-center text-white p-2 text-center pointer-events-none transition-opacity duration-150 ${dragOverCardId === h.id ? 'opacity-100' : 'opacity-0'
+                              }`}
+                          >
+                            <ArrowLeftRight className="w-5 h-5 mb-1 animate-bounce" />
+                            <span className="text-sm font-black leading-tight">Soltar para intercambiar</span>
+                            <span className="text-sm font-semibold text-pink-100">Swap de horarios</span>
+                          </div>
+
+                          <TarjetaHorario
+                            horario={h}
+                            esCompacta={isCompact}
+                            isFilterActive={isFilterActive}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
           </div>
-        ))}
-          </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

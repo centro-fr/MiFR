@@ -153,12 +153,12 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 - [x] El alta definitiva, la activación del alumno, su rol y el pago se guardan en una sola transacción (`IUnidadDeTrabajo`, ver `persistencia.md`): si falla un paso no queda ninguno. Vale para el efectivo, la transferencia que carga la propietaria y la aprobación. Test de integración PI-35, sobre los componentes.
 - [x] Integrado a `dev` el 10/10/2026, junto con las correcciones de la auditoría (quién paga se verifica antes del estado de la inscripción, el alta solo en el primer pago, comprobante con 404 para quien no corresponde, transferencias paginadas e `IInfoPagos`).
 
-### Espera a los calculadores de Rosario
+### Montaje en la API
 
-`composicion.ts` necesita las implementaciones de `ICalculoVencimiento`, `ICalculoHabilitacion` e `IInfoParametros` para armar `CuotaService`. El código ya está en `dev`, pero hasta entonces el subsistema no está montado en la API. Al montarlo, `composicion.ts` crea también `UnidadDeTrabajoPrisma`.
+Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `CuotaService` con `CalculadorVencimientoCuota`, `CalculadorHabilitacion` y `ParametrosSistemaService`. `UnidadDeTrabajoPrisma` es una sola, compartida con la inscripción.
 
-- [ ] Montar el subsistema en `app.ts`, `openapi.ts` y `composicion.ts`, y sumar las operaciones a `src/__tests__/openapi.test.ts`.
-- [ ] Tests de integración del cobro, la transferencia y su revisión por HTTP (alta definitiva, pendiente que no habilita, rechazo sin motivo) y su registro en `PRUEBAS-INTEGRACION.md`. La transacción del cobro ya está probada sobre los componentes (PI-35, con `armarCuotasYPagos`).
+- [x] Montar el subsistema en `app.ts`, `openapi.ts` y `composicion.ts`, y sumar las operaciones a `src/__tests__/openapi.test.ts`.
+- [x] Tests de integración por HTTP: PI-42 (cobro en efectivo, alta definitiva con rol, comprobante y quién no puede cobrar) y PI-43 (transferencia pendiente que frena otro cobro, rechazo con motivo y cuota reusada, aprobación y transferencia recibida). La transacción del cobro sigue probada sobre los componentes (PI-35, con `armarCuotasYPagos`, ahora con los calculadores reales).
 - [x] Agregar en EA que `Cuota` requiere `IInfoParametros` y regenerar el `.jpg` y el `.pdf`.
 
 ## US-16 y US-17 – Transferencias
@@ -181,7 +181,7 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
   - [x] Monto distinto del esperado → se aprueba solo con confirmación.
   - [x] Misma transferencia informada dos veces (alumno, monto y día de Argentina) → 409.
 - [ ] El aviso a la propietaria y al alumno es de notificaciones (US-25, Sprint 4): por ahora alcanza con el listado.
-- [ ] Tests de integración: ver "Espera a los calculadores de Rosario" en US-15.
+- [x] Tests de integración: PI-43 (ver "Montaje en la API" en US-15).
 
 ## Lo que queda de US-10 (del Sprint 2)
 
@@ -190,9 +190,10 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 - [x] La profesora ve y edita solo a sus alumnos (`IInfoInscripciones`); se quita la restricción temporal a la propietaria.
 - [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
 - [x] Ficha con la inscripción vigente y sus horarios.
-- [ ] Estado de cuota en el listado y la ficha (`IInfoCuotas`), y filtro por estado de cuota. Espera a los calculadores: sin ellos `composicion.ts` no puede darle `IInfoCuotas` a `GestionPersonasService`.
+- [x] Estado de cuota en el listado y la ficha (`IInfoCuotas`): `situacion_cuota` con el estado, el vencimiento, los días restantes, si puede asistir y si tiene una transferencia sin revisar. Una inscripción dada de baja se calcula al día de su baja, y la ficha de un alumno de baja trae las inscripciones de su última baja (`inscripciones_de_la_baja`) para advertir una deuda antes de reactivarlo (US-08). Test PI-45.
+- [ ] Filtro por estado de cuota. El estado se calcula, no se guarda, así que no se puede filtrar en la consulta: filtrar después de paginar rompe la paginación, y calcular a todos los alumnos lee la tabla entera. Hay que decidir el enfoque antes de implementarlo.
 - [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
-- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas` cuando se monte el subsistema (espera a los calculadores).
+- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas`, que ya se arma en `composicion.ts`.
 
 ## Lo que necesita el front para el Sprint 2
 

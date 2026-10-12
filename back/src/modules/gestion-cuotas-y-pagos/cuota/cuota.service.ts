@@ -1,6 +1,5 @@
 import { ConflictError } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
-import type { Habilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { ICalculoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
 import type { ICalculoVencimiento } from "../../calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -8,7 +7,12 @@ import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/in
 import type { IInfoParametros } from "../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { CuotaRepository } from "./cuota.repository.js";
-import type { CuotaACobrar, CuotaDelHistorial, SituacionDeCuotas } from "./cuota.types.js";
+import type {
+  CuotaACobrar,
+  CuotaDelHistorial,
+  HabilitacionDeInscripcion,
+  SituacionDeCuotas,
+} from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
 
 type CuotaDeLaSituacion = SituacionDeCuotas["cuotas"][number];
@@ -94,7 +98,9 @@ export class CuotaService implements IInfoCuotas {
     await this.inscripciones.activar(idInscripcion);
   }
 
-  async habilitacionDeInscripciones(idsInscripciones: number[]): Promise<Map<number, Habilitacion>> {
+  async habilitacionDeInscripciones(
+    idsInscripciones: number[],
+  ): Promise<Map<number, HabilitacionDeInscripcion>> {
     if (idsInscripciones.length === 0) return new Map();
     const [situaciones, vencidosPuedenAsistir] = await Promise.all([
       this.repositorio.situacionDeInscripciones(idsInscripciones),
@@ -102,17 +108,18 @@ export class CuotaService implements IInfoCuotas {
     ]);
     const hoy = fechaActualArgentina();
     return new Map(
-      situaciones.map((situacion) => [
-        situacion.id_inscripcion,
-        this.habilitaciones.calcular({
+      situaciones.map((situacion) => {
+        const pendiente = tienePagoPendiente(situacion);
+        const habilitacion = this.habilitaciones.calcular({
           tipoPlan: situacion.tipo_plan,
           vencimiento: vencimientoConfirmado(situacion),
           diasGracia: situacion.dias_gracia,
-          tienePagoPendiente: tienePagoPendiente(situacion),
+          tienePagoPendiente: pendiente,
           vencidosPuedenAsistir,
-          hoy,
-        }),
-      ]),
+          hoy: situacion.fecha_baja ? fechaActualArgentina(situacion.fecha_baja) : hoy,
+        });
+        return [situacion.id_inscripcion, { ...habilitacion, tienePagoPendiente: pendiente }];
+      }),
     );
   }
 
@@ -128,5 +135,9 @@ export class CuotaService implements IInfoCuotas {
 
   historialDeAlumno(idAlumno: number): Promise<CuotaDelHistorial[]> {
     return this.repositorio.historialDeAlumno(idAlumno);
+  }
+
+  tuvoPagoConfirmado(idAlumno: number): Promise<boolean> {
+    return this.repositorio.tuvoPagoConfirmado(idAlumno);
   }
 }

@@ -6,8 +6,8 @@ import type { DiaSemana, Horario } from "@/types/horarios";
 const DIAS_POR_NUMERO: DiaSemana[] = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
 
 export const HORA_APERTURA = "07:00";
-export const HORA_CIERRE = "20:00";
-export const HORA_MAX_INICIO = "19:00";
+export const HORA_CIERRE = "23:00";
+export const HORA_MAX_INICIO = "22:00";
 
 // El back numera los días de 1 (lunes) a 7 (domingo).
 export function diaDesdeNumero(numero: number): DiaSemana {

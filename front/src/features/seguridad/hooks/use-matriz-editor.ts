@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   cambiosParaNivel,
+  codigosDelNivel,
   derivarNivel,
   motivoBloqueoCelda,
   NIVEL_COMPLETO,
@@ -20,12 +21,10 @@ function parseClave(clave: string): { rol: RoleCode; modulo: string } {
   return { rol: clave.slice(0, sep) as RoleCode, modulo: clave.slice(sep + 2) };
 }
 
-function codigosDe(matriz: MatrizPermisos, modulo: string): string[] {
-  return matriz.modulos.find((m) => m.modulo === modulo)?.permisos.map((p) => p.codigo) ?? [];
-}
-
+// El nivel se calcula sobre lo que el rol puede tener: un exclusivo de la propietaria apagado
+// no hace que la profesora con PAGOS_REGISTRAR se vea como "solo ver".
 function nivelServidor(matriz: MatrizPermisos, rol: RoleCode, modulo: string): NivelAcceso {
-  return derivarNivel(codigosDe(matriz, modulo), new Set(matriz.matriz[rol]));
+  return derivarNivel(codigosDelNivel(matriz, rol, modulo), new Set(matriz.matriz[rol]));
 }
 
 // Estado de edición local: nivel objetivo por celda + traducción a cambios

@@ -1,6 +1,8 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
+import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import { AlumnoExistenteError, ForbiddenError } from "../../../../shared/errors/app-error.js";
 import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
@@ -43,6 +45,8 @@ describe("rutas de alumnos", () => {
       gestionPersonas: logica as unknown as ILogicaPersonas,
       gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
+      gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+      difusionPublica: logicaDifusionPublicaNoConfigurada,
       autenticacion,
       autorizacion,
     });

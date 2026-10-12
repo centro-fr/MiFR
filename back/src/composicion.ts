@@ -28,6 +28,15 @@ import { RegistroProgresoRepository } from "./modules/gestion-rutinas-y-progreso
 import { RegistroProgresoService } from "./modules/gestion-rutinas-y-progreso/registro-progreso/registro-progreso.service.js";
 import { UnidadDeTrabajoPrisma } from "./shared/db/transaccion.js";
 import { GestionInscripcionesYClasesService } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.service.js";
+import { CalculadorHabilitacion } from "./modules/calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.js";
+import { CalculadorVencimientoCuota } from "./modules/calculos-del-negocio/calculador-vencimiento-cuota/calculador-vencimiento-cuota.js";
+import { CuotaRepository } from "./modules/gestion-cuotas-y-pagos/cuota/cuota.repository.js";
+import { CuotaService } from "./modules/gestion-cuotas-y-pagos/cuota/cuota.service.js";
+import { GestionCuotasYPagosService } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.service.js";
+import { PagoRepository } from "./modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
+import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.js";
+import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
+import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 export interface PiezasDeInfraestructura {
@@ -36,8 +45,8 @@ export interface PiezasDeInfraestructura {
   jwtService: JwtService;
 }
 
-// Lo que arma el composition root: las dependencias de la API y las interfaces que todavía no
-// consume ningún componente desde la API, como el alta definitiva que va a disparar el cobro.
+// Lo que arma el composition root: las dependencias de la API y, para los tests de integración,
+// IInfoInscripciones, con la que dan el alta definitiva sin pasar por un cobro.
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
@@ -62,6 +71,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
   const planService = new PlanService(new PlanRepository(prisma), actividadService);
   const parametrosService = new ParametrosSistemaService(new ParametrosSistemaRepository(prisma));
   const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
+  const unidadDeTrabajo = new UnidadDeTrabajoPrisma(prisma);
   const inscripcionService = new InscripcionService(
     new InscripcionRepository(prisma),
     alumnoService,
@@ -70,9 +80,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     profesorService,
     new RegistroProgresoService(new RegistroProgresoRepository(prisma)),
     parametrosService,
-    new UnidadDeTrabajoPrisma(prisma),
+    unidadDeTrabajo,
   );
-  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(inscripcionService);
   const gestionServicioEntrenamiento = new GestionServicioEntrenamientoService(
     actividadService,
     horarioService,
@@ -80,11 +89,29 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     parametrosService,
     inscripcionService,
   );
+  const cuotaService = new CuotaService(
+    new CuotaRepository(prisma),
+    inscripcionService,
+    planService,
+    new CalculadorVencimientoCuota(),
+    new CalculadorHabilitacion(),
+    parametrosService,
+  );
+  const gestionCuotasYPagos = new GestionCuotasYPagosService(
+    cuotaService,
+    new PagoService(new PagoRepository(prisma), profesorService),
+    unidadDeTrabajo,
+  );
+  const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(
+    inscripcionService,
+    cuotaService,
+  );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
     horarioService,
     alumnoService,
     inscripcionService,
+    cuotaService,
   );
 
   return {
@@ -93,6 +120,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionPersonas,
       gestionServicioEntrenamiento,
       gestionInscripcionesYClases,
+      gestionCuotasYPagos,
+      difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,
     },

@@ -1,4 +1,6 @@
 import request from "supertest";
+import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
@@ -44,6 +46,8 @@ describe("rutas de inscripciones", () => {
       gestionPersonas: {} as unknown as ILogicaPersonas,
       gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
       gestionInscripcionesYClases: logica as unknown as ILogicaInscripcionesYClases,
+      gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+      difusionPublica: logicaDifusionPublicaNoConfigurada,
       autenticacion,
       autorizacion,
     });

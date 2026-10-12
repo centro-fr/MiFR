@@ -1,5 +1,6 @@
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { CalculadorVencimientoCuota } from "../../modules/calculos-del-negocio/calculador-vencimiento-cuota/calculador-vencimiento-cuota.js";
 import { PagoRepository } from "../../modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
 import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "../../shared/db/datos-demo.js";
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
@@ -180,9 +181,11 @@ describe("PI-36: el pago adelantado y el historial de cuotas de la ficha", () =>
 
     const historial = await cuotas.historialDeAlumno(idAlumno);
     expect(historial.map(({ numero_cuota }) => numero_cuota)).toEqual([2, 1]);
-    // El cálculo de prueba suma 30 días a "desde": la cuota 2 cubre desde el día siguiente al vencimiento de la 1.
+    // La cuota 2 cubre desde el día siguiente al vencimiento de la 1, de fecha a fecha.
     const desdeLaSegunda = new Date(primera.fecha_vencimiento.getTime() + UN_DIA_EN_MS);
-    expect(historial[0].fecha_vencimiento).toEqual(new Date(desdeLaSegunda.getTime() + 30 * UN_DIA_EN_MS));
+    expect(historial[0].fecha_vencimiento).toEqual(
+      new CalculadorVencimientoCuota().calcularVencimiento({ tipoPlan: "MENSUAL", desde: desdeLaSegunda }),
+    );
     expect(historial[0]).toMatchObject({
       plan: "Intermedio",
       pagos: [{ forma_pago: "EFECTIVO", estado: "CONFIRMADO", monto: 1, motivo_rechazo: null }],
@@ -265,5 +268,256 @@ describe("PI-40: el cobro aplica el precio vigente el día del cobro", () => {
     expect([primera]).toEqual(cobradas);
     expect(segunda.monto.toNumber()).toBe(35000);
     expect(segunda.pagos.map((pago) => pago.monto.toNumber())).toEqual([35000]);
+  });
+});
+
+// Los casos siguientes recorren el subsistema montado en la API: rutas, permisos de la base y la
+// transacción del alta, con los calculadores reales.
+async function pedir(metodo: "get" | "post", ruta: string, email: string, cuerpo?: object) {
+  const token = await entorno.iniciarSesion(email);
+  const pedido = request(entorno.app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
+  return cuerpo ? pedido.send(cuerpo) : pedido;
+}
+
+const EMAIL_LUCIA = "lucia.gomez@example.com";
+const EMAIL_SOFIA = "sofia.medina@example.com";
+const EMAIL_VALENTINA = "valentina.herrera@example.com";
+const HACE_UNA_HORA = () => new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+describe("PI-42: el cobro en efectivo por la API", () => {
+  it("la profesora a cargo cobra la primera cuota: el alumno queda activo con su rol y ve el comprobante", async () => {
+    const idLucia = datos.idProfesora.get(EMAIL_LUCIA)!;
+
+    const cobro = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      id_inscripcion: idInscripcion,
+      monto: 25000,
+    });
+
+    expect(cobro.status).toBe(201);
+    expect(cobro.body).toMatchObject({ estado: "CONFIRMADO", rendido: false, id_profesora_cobra: idLucia });
+    const despues = await estadoDelAlta();
+    expect(despues.inscripcion).toMatchObject({
+      estado: "ACTIVA",
+      alumno: { estado: "ACTIVO", usuario: { estado: "ACTIVO" } },
+    });
+    expect(despues.inscripcion.alumno.usuario.roles).toContainEqual({ rol: { codigo: "ALUMNO" } });
+    expect(despues.cuotas).toEqual([
+      { numero_cuota: 1, pagos: [{ forma_pago: "EFECTIVO", estado: "CONFIRMADO" }] },
+    ]);
+
+    const comprobante = await pedir("get", `/pagos/${cobro.body.id_pago}/comprobante`, EMAIL_SOFIA);
+    expect(comprobante.status).toBe(200);
+    expect(comprobante.body).toMatchObject({
+      numero: cobro.body.id_pago,
+      forma_pago: "EFECTIVO",
+      monto: 25000,
+      plan: "Básico",
+      cuota: { numero: 1 },
+      profesora_cobra: { nombre: "Lucía", apellido: "Gómez" },
+    });
+  });
+
+  it("un alumno y una profesora que no está a cargo no cobran: 403 y no queda nada guardado", async () => {
+    const antes = await estadoDelAlta();
+    const cuerpo = { id_inscripcion: idInscripcion, monto: 25000 };
+
+    expect((await pedir("post", "/pagos/efectivo", EMAIL_VALENTINA, cuerpo)).status).toBe(403);
+    expect((await pedir("post", "/pagos/efectivo", "carla.ruiz@example.com", cuerpo)).status).toBe(403);
+
+    expect(await estadoDelAlta()).toEqual(antes);
+  });
+});
+
+describe("PI-43: la transferencia informada y su revisión por la API", () => {
+  let idInscripcionValentina: number;
+
+  beforeEach(() => {
+    idInscripcionValentina = datos.idInscripcion.get(DNI_VALENTINA)!;
+  });
+
+  function informar(monto = 30000) {
+    return pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+      id_inscripcion: idInscripcionValentina,
+      monto,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+  }
+
+  function pagosDeValentina() {
+    return prisma.cuotas.findMany({
+      where: { id_inscripcion: idInscripcionValentina },
+      orderBy: { numero_cuota: "asc" },
+      select: { numero_cuota: true, pagos: { select: { estado: true }, orderBy: { id_pago: "asc" } } },
+    });
+  }
+
+  it("la transferencia queda pendiente, la ve la propietaria y frena otro cobro hasta que se revise", async () => {
+    const informada = await informar();
+
+    expect(informada.status).toBe(201);
+    expect(informada.body).toMatchObject({ forma_pago: "TRANSFERENCIA", estado: "PENDIENTE" });
+    const mias = await pedir("get", "/pagos/mis-transferencias", EMAIL_VALENTINA);
+    expect(mias.body.map(({ id_pago }: { id_pago: number }) => id_pago)).toEqual([informada.body.id_pago]);
+    const enRevision = await pedir("get", "/pagos/transferencias?estado=PENDIENTE", EMAIL_MULTIROL_DEMO);
+    expect(enRevision.body).toEqual([
+      expect.objectContaining({ id_pago: informada.body.id_pago, supera_24_horas: false }),
+    ]);
+    expect((await pedir("get", "/pagos/transferencias", EMAIL_LUCIA)).status).toBe(403);
+
+    const otroCobro = await pedir("post", "/pagos/efectivo", EMAIL_MULTIROL_DEMO, {
+      id_inscripcion: idInscripcionValentina,
+      monto: 30000,
+    });
+    expect(otroCobro.status).toBe(409);
+    expect(await pagosDeValentina()).toEqual([
+      { numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] },
+      { numero_cuota: 2, pagos: [{ estado: "PENDIENTE" }] },
+    ]);
+  });
+
+  it("el rechazo exige motivo y la cuota se reusa en la próxima transferencia, sin saltear números", async () => {
+    const { body: pago } = await informar();
+
+    const sinMotivo = await pedir("post", `/pagos/${pago.id_pago}/rechazar`, EMAIL_MULTIROL_DEMO, {});
+    expect(sinMotivo.status).toBe(400);
+    const rechazo = await pedir("post", `/pagos/${pago.id_pago}/rechazar`, EMAIL_MULTIROL_DEMO, {
+      motivo_rechazo: "No figura en el extracto",
+    });
+    expect(rechazo.status).toBe(200);
+    expect(rechazo.body).toMatchObject({ estado: "RECHAZADO", motivo_rechazo: "No figura en el extracto" });
+    expect((await pedir("post", `/pagos/${pago.id_pago}/aprobar`, EMAIL_MULTIROL_DEMO)).status).toBe(409);
+
+    expect((await informar()).status).toBe(201);
+    expect(await pagosDeValentina()).toEqual([
+      { numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] },
+      { numero_cuota: 2, pagos: [{ estado: "RECHAZADO" }, { estado: "PENDIENTE" }] },
+    ]);
+  });
+
+  it("la aprobación confirma el pago y registra quién la revisó; la transferencia que carga la propietaria da el alta", async () => {
+    const { body: pago } = await informar();
+
+    const aprobada = await pedir("post", `/pagos/${pago.id_pago}/aprobar`, EMAIL_MULTIROL_DEMO);
+    expect(aprobada.status).toBe(200);
+    expect(aprobada.body).toMatchObject({ estado: "CONFIRMADO", id_usuario_confirma: idMarina });
+    expect(await pagosDeValentina()).toEqual([
+      { numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] },
+      { numero_cuota: 2, pagos: [{ estado: "CONFIRMADO" }] },
+    ]);
+
+    const recibida = await pedir("post", "/pagos/transferencia-recibida", EMAIL_MULTIROL_DEMO, {
+      id_inscripcion: idInscripcion,
+      monto: 25000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+    expect(recibida.status).toBe(201);
+    expect(recibida.body).toMatchObject({ forma_pago: "TRANSFERENCIA", estado: "CONFIRMADO" });
+    expect((await estadoDelAlta()).inscripcion).toMatchObject({
+      estado: "ACTIVA",
+      alumno: { estado: "ACTIVO" },
+    });
+  });
+});
+
+describe("PI-45: la situación de cuota en la ficha y el listado de alumnos", () => {
+  let idAlumnoValentina: number;
+  let idInscripcionValentina: number;
+
+  beforeEach(() => {
+    idAlumnoValentina = datos.idAlumno.get(DNI_VALENTINA)!;
+    idInscripcionValentina = datos.idInscripcion.get(DNI_VALENTINA)!;
+  });
+
+  function aDiasDeHoy(dias: number) {
+    return new Date(fechaActualArgentina().getTime() + dias * UN_DIA_EN_MS);
+  }
+
+  function ficha(idAlumno: number, email = EMAIL_MULTIROL_DEMO) {
+    return pedir("get", `/alumnos/${idAlumno}`, email);
+  }
+
+  it("la ficha y el listado muestran al día a Valentina y pendiente de pago a Sofía; la profesora ve la transferencia sin revisar", async () => {
+    const [cuota] = await prisma.cuotas.findMany({ where: { id_inscripcion: idInscripcionValentina } });
+    const diasRestantes = Math.round(
+      (cuota.fecha_vencimiento.getTime() - fechaActualArgentina().getTime()) / UN_DIA_EN_MS,
+    );
+
+    const deValentina = await ficha(idAlumnoValentina);
+
+    expect(deValentina.status).toBe(200);
+    expect(deValentina.body.inscripciones).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idInscripcionValentina,
+        situacion_cuota: {
+          estado: "AL_DIA",
+          fecha_vencimiento: cuota.fecha_vencimiento.toISOString(),
+          dias_restantes: diasRestantes,
+          puede_asistir: true,
+          tiene_pago_pendiente: false,
+        },
+      }),
+    ]);
+    expect(deValentina.body.inscripciones_de_la_baja).toEqual([]);
+    const listado = await pedir("get", "/alumnos", EMAIL_MULTIROL_DEMO);
+    const situacionEnListado = (idAlumno: number) =>
+      listado.body.datos.find(({ id_alumno }: { id_alumno: number }) => id_alumno === idAlumno)
+        .situacion_cuota;
+    expect(situacionEnListado(idAlumnoValentina)).toMatchObject({
+      estado: "AL_DIA",
+      dias_restantes: diasRestantes,
+    });
+    expect(situacionEnListado(datos.idAlumno.get(DNI_SOFIA)!)).toEqual({
+      estado: "PENDIENTE_DE_PAGO",
+      fecha_vencimiento: null,
+      dias_restantes: null,
+      puede_asistir: false,
+      tiene_pago_pendiente: false,
+    });
+
+    await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+      id_inscripcion: idInscripcionValentina,
+      monto: 30000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+    const deCarla = await ficha(idAlumnoValentina, "carla.ruiz@example.com");
+    expect(deCarla.status).toBe(200);
+    expect(deCarla.body.inscripciones[0].situacion_cuota).toMatchObject({
+      estado: "AL_DIA",
+      tiene_pago_pendiente: true,
+    });
+  });
+
+  it("una cuota vencida muestra los días de atraso, y la ficha del alumno de baja muestra lo que debía al irse", async () => {
+    await prisma.cuotas.updateMany({
+      where: { id_inscripcion: idInscripcionValentina },
+      data: { fecha_vencimiento: aDiasDeHoy(-12) },
+    });
+
+    const vencida = await ficha(idAlumnoValentina);
+    expect(vencida.body.inscripciones[0].situacion_cuota).toMatchObject({
+      estado: "VENCIDA",
+      dias_restantes: -12,
+    });
+
+    const baja = await pedir("post", `/alumnos/${idAlumnoValentina}/baja`, EMAIL_MULTIROL_DEMO, {
+      motivo_baja: "ECONOMICO",
+    });
+    expect(baja.status).toBe(200);
+    // La baja se corre cuatro días atrás: lo que debía se calcula a ese día, no a hoy.
+    await prisma.inscripciones.update({
+      where: { id_inscripcion: idInscripcionValentina },
+      data: { fecha_baja: new Date(Date.now() - 4 * UN_DIA_EN_MS) },
+    });
+
+    const deBaja = await ficha(idAlumnoValentina);
+    expect(deBaja.body.inscripciones).toEqual([]);
+    expect(deBaja.body.inscripciones_de_la_baja).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idInscripcionValentina,
+        estado: "BAJA",
+        motivo_baja: "ECONOMICO",
+        situacion_cuota: expect.objectContaining({ estado: "VENCIDA", dias_restantes: -8 }),
+      }),
+    ]);
   });
 });

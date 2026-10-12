@@ -4,13 +4,14 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan y la lectura de `parametros-sistema`; su edición desde la API todavía no) y `gestion-inscripciones-y-clases` (inscripción). De `gestion-rutinas-y-progreso` existe solo el componente `registro-progreso`, que guarda el peso y la talla de la pre-inscripción (US-05). `gestion-cuotas-y-pagos` (cuota, pago) y `calculos-del-negocio` están escritos pero todavía no se montan en `app.ts`: esperan los calculadores (ver `SPRINT-3.md`). Los demás subsistemas del diagrama todavía no tienen carpeta.
+**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan y la lectura de `parametros-sistema`; su edición desde la API todavía no), `gestion-inscripciones-y-clases` (inscripción) y `gestion-cuotas-y-pagos` (cuota, pago), que usa los cálculos puros de `calculos-del-negocio` (vencimiento de la cuota y habilitación del alumno). De `gestion-rutinas-y-progreso` existe solo el componente `registro-progreso`, que guarda el peso y la talla de la pre-inscripción (US-05). Los demás subsistemas del diagrama todavía no tienen carpeta.
 
 ## Comandos
 
 ```bash
 pnpm dev              # tsx watch src/index.ts
 pnpm build            # tsc -p tsconfig.build.json (sin __tests__)
+pnpm typecheck        # tsc --noEmit, con los tests incluidos
 pnpm test             # vitest run
 pnpm test:coverage    # vitest run --coverage (reporte en consola)
 pnpm test:integration # tests contra Postgres real; antes: docker compose --profile test up -d db-test
