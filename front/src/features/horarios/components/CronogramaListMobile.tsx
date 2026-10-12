@@ -170,24 +170,11 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                   </Badge>
                 </div>
 
-                {/* Actividad y modalidad */}
+                {/* Actividad */}
                 <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-base font-extrabold text-foreground leading-tight">
-                      {horario.actividadNombre}
-                    </h4>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'shrink-0 rounded-md border-0 px-2 py-0.5 text-sm font-bold',
-                        horario.actividadTipo === 'PERSONALIZADA'
-                          ? 'bg-purple-100 dark:bg-violet-500/20 text-purple-800 dark:text-violet-200'
-                          : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-200',
-                      )}
-                    >
-                      {horario.actividadTipo === 'PERSONALIZADA' ? 'Personalizada 1:1' : 'Grupal'}
-                    </Badge>
-                  </div>
+                  <h4 className="text-base font-extrabold text-foreground leading-tight">
+                    {horario.actividadNombre}
+                  </h4>
                 </div>
 
                 {/* Cupo */}

@@ -2,10 +2,12 @@ import type { RoleCode } from "@/types/auth";
 import type { MatrizPermisos, ModuloMatriz } from "@/types/permissions";
 
 // Un módulo de cada forma que distingue la lógica de niveles:
-// lectura + acción, una sola acción y permisos exclusivos de la propietaria.
+// lectura + acción, una sola acción, solo exclusivos de la propietaria y mezcla de una acción
+// común con exclusivos (PAGOS: la profesora cobra, pero confirmar y la rendición son de la propietaria).
 export const CODIGOS_PLANES = ["PLANES_VER", "PLANES_EDITAR"];
 export const CODIGOS_ASISTENCIAS = ["ASISTENCIAS_MARCAR"];
 export const CODIGOS_HONORARIOS = ["HONORARIOS_VER_TODOS", "HONORARIOS_LIQUIDAR"];
+export const CODIGOS_PAGOS = ["PAGOS_REGISTRAR", "PAGOS_CONFIRMAR", "PAGOS_RENDICION_VER"];
 
 function crearModulo(modulo: string, codigos: string[], primerId: number): ModuloMatriz {
   return {
@@ -31,9 +33,10 @@ export function crearMatriz(otorgados: Partial<Record<RoleCode, string[]>> = {})
       crearModulo("PLANES", CODIGOS_PLANES, 1),
       crearModulo("ASISTENCIAS", CODIGOS_ASISTENCIAS, 10),
       crearModulo("HONORARIOS", CODIGOS_HONORARIOS, 20),
+      crearModulo("PAGOS", CODIGOS_PAGOS, 30),
     ],
     matriz: {
-      PROPIETARIA: [...CODIGOS_PLANES, ...CODIGOS_ASISTENCIAS, ...CODIGOS_HONORARIOS],
+      PROPIETARIA: [...CODIGOS_PLANES, ...CODIGOS_ASISTENCIAS, ...CODIGOS_HONORARIOS, ...CODIGOS_PAGOS],
       PROFESORA: [],
       ALUMNO: [],
       TUTOR: [],

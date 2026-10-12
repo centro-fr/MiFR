@@ -57,6 +57,32 @@ export function valorCanonico(
   return esLectura(codigosDelModulo, codigo);
 }
 
+function codigosDelModulo(matriz: MatrizPermisos, modulo: string): string[] {
+  return matriz.modulos.find((m) => m.modulo === modulo)?.permisos.map((p) => p.codigo) ?? [];
+}
+
+/**
+ * Permisos del módulo que la celda puede cambiar para ese rol. Un exclusivo de la propietaria
+ * nunca se le otorga a otro rol (el back lo rechaza), así que queda fuera; salvo que ya lo
+ * tenga por error, y entonces entra para poder revocarlo. El resto del módulo se edita
+ * normalmente: así la profesora puede tener PAGOS_REGISTRAR aunque PAGOS_CONFIRMAR sea exclusivo.
+ */
+export function codigosEditables(matriz: MatrizPermisos, rol: RoleCode, modulo: string): string[] {
+  const otorgados = new Set(matriz.matriz[rol]);
+  return codigosDelModulo(matriz, modulo).filter(
+    (codigo) => !EXCLUSIVOS_PROPIETARIA.has(codigo) || otorgados.has(codigo),
+  );
+}
+
+/**
+ * Permisos con los que se calcula el nivel que muestra la celda: los editables, o todos si
+ * no queda ninguno (celda bloqueada), para que una celda sin acceso no se vea como completa.
+ */
+export function codigosDelNivel(matriz: MatrizPermisos, rol: RoleCode, modulo: string): string[] {
+  const editables = codigosEditables(matriz, rol, modulo);
+  return editables.length > 0 ? editables : codigosDelModulo(matriz, modulo);
+}
+
 /**
  * Motivo de bloqueo de la celda, o null si es editable. Espejo exacto del back,
  * más la regla de producto: la columna PROPIETARIA es de acceso total fijo y
@@ -70,12 +96,10 @@ export function motivoBloqueoCelda(
   if (rol === "PROPIETARIA") {
     return "Acceso total: la propietaria conserva todos los permisos y no se puede modificar";
   }
-  const permisos = matriz.modulos.find((m) => m.modulo === modulo)?.permisos ?? [];
-  const otorgados = new Set(matriz.matriz[rol]);
-  const exclusivoApagado = permisos.some(
-    (p) => EXCLUSIVOS_PROPIETARIA.has(p.codigo) && !otorgados.has(p.codigo),
-  );
-  if (exclusivoApagado) return "Permiso exclusivo de la propietaria";
+  const hayPermisos = codigosDelModulo(matriz, modulo).length > 0;
+  if (hayPermisos && codigosEditables(matriz, rol, modulo).length === 0) {
+    return "Permiso exclusivo de la propietaria";
+  }
   return null;
 }
 
@@ -87,8 +111,7 @@ export function cambiosParaNivel(
   nivel: NivelAcceso,
 ): CambioPermiso[] {
   if (motivoBloqueoCelda(matriz, rol, modulo) !== null) return [];
-  const permisos = matriz.modulos.find((m) => m.modulo === modulo)?.permisos ?? [];
-  const codigos = permisos.map((p) => p.codigo);
+  const codigos = codigosEditables(matriz, rol, modulo);
   const otorgados = new Set(matriz.matriz[rol]);
   const cambios: CambioPermiso[] = [];
   for (const codigo of codigos) {
@@ -107,16 +130,14 @@ export function valoresParaNivel(
   modulo: string,
   nivel: NivelAcceso,
 ): Map<string, boolean> {
-  const permisos = matriz.modulos.find((m) => m.modulo === modulo)?.permisos ?? [];
-  const codigos = permisos.map((p) => p.codigo);
   const otorgados = new Set(matriz.matriz[rol]);
-  const valores = new Map<string, boolean>();
-  for (const codigo of codigos) {
-    valores.set(codigo, valorCanonico(codigos, codigo, nivel));
-  }
-  // Los bloqueados conservan siempre el valor del servidor.
-  if (motivoBloqueoCelda(matriz, rol, modulo) !== null) {
-    for (const codigo of codigos) valores.set(codigo, otorgados.has(codigo));
+  // Los que la celda no puede cambiar conservan siempre el valor del servidor.
+  const valores = new Map(codigosDelModulo(matriz, modulo).map((codigo) => [codigo, otorgados.has(codigo)]));
+  if (motivoBloqueoCelda(matriz, rol, modulo) !== null) return valores;
+
+  const editables = codigosEditables(matriz, rol, modulo);
+  for (const codigo of editables) {
+    valores.set(codigo, valorCanonico(editables, codigo, nivel));
   }
   return valores;
 }
@@ -131,6 +152,5 @@ export function nivelesEquivalentes(
 ): boolean {
   const va = valoresParaNivel(matriz, rol, modulo, a);
   const vb = valoresParaNivel(matriz, rol, modulo, b);
-  const codigos = matriz.modulos.find((m) => m.modulo === modulo)?.permisos.map((p) => p.codigo) ?? [];
-  return codigos.every((codigo) => va.get(codigo) === vb.get(codigo));
+  return codigosDelModulo(matriz, modulo).every((codigo) => va.get(codigo) === vb.get(codigo));
 }

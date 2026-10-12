@@ -24,8 +24,6 @@ const carga = { hydrateFallbackElement: <SessionSplash /> };
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "alumnos", seccion: "Alumnos" },
-  { path: "planes", seccion: "Planes y Precios" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
@@ -34,7 +32,13 @@ const SECCIONES_EN_CONSTRUCCION = [
 ];
 
 export const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  // Página pública: la ve cualquiera, con sesión o sin ella. Desde ahí se llega al login.
+  {
+    path: "/",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
   { path: "/seguridad/permisos", element: <Navigate to="/app/seguridad/permisos" replace /> },
   {
     path: "/login",
@@ -67,6 +71,60 @@ export const router = createBrowserRouter([
         lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage"),
       },
       { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
+      {
+        // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
+        path: "alumnos",
+        element: (
+          <PermissionGuard permission="ALUMNOS_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
+          // Ficha del alumno: datos y edición (US-09), plan y horarios, baja y reactivación (US-08).
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage") },
+        ],
+      },
+      {
+        // Alta definitiva (US-07): pre-inscripciones que esperan su primer pago. Actor: la propietaria.
+        path: "alumnos/pendientes",
+        element: (
+          <PermissionGuard roles={["PROPIETARIA"]} permission="ALUMNOS_VER">
+            <Outlet />
+          </PermissionGuard>
+        ),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/alumnos/pages/pendientes-de-alta-page"), "PendientesDeAltaPage"),
+          },
+        ],
+      },
+      {
+        // US-11: planes vigentes. Los ve quien tiene PLANES_VER; crearlos y editarlos, la propietaria.
+        path: "planes",
+        children: [
+          {
+            element: (
+              <PermissionGuard permission="PLANES_VER">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") }],
+          },
+          {
+            element: (
+              <PermissionGuard roles={["PROPIETARIA"]} permission="PLANES_EDITAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              { path: "nuevo", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "NuevoPlanPage") },
+              { path: ":idPlan/editar", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "EditarPlanPage") },
+            ],
+          },
+        ],
+      },
       {
         path: "seguridad/permisos",
         element: (

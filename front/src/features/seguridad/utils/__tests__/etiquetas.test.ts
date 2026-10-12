@@ -3,8 +3,8 @@ import { descripcionModulo, etiquetaModulo } from "@/features/seguridad/utils/et
 
 describe("etiquetaModulo", () => {
   // Regla del glosario MiFR para textos visibles.
-  it("muestra PAGOS como Transferencias, porque el glosario prohíbe 'pago' en la interfaz", () => {
-    expect(etiquetaModulo("PAGOS")).toBe("Transferencias");
+  it("muestra PAGOS como Cobros y transferencias, porque el glosario prohíbe 'pago' en la interfaz", () => {
+    expect(etiquetaModulo("PAGOS")).toBe("Cobros y transferencias");
   });
 
   // Un módulo nuevo del back se ve aunque el front aún no tenga su etiqueta.

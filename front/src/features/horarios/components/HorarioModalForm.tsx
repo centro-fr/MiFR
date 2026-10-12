@@ -47,7 +47,7 @@ const DIAS_SEMANA: { id: DiaSemana; label: string }[] = [
 
 function horaFinSugerida(horaInicioSugerida: string): string {
   const [h, m] = horaInicioSugerida.split(':').map(Number);
-  const nextH = Math.min(h + 1, 20);
+  const nextH = Math.min(h + 1, 23);
   return `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
@@ -290,13 +290,13 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
             <div>
               <Label htmlFor="horario-inicio" className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200 md:text-base">
-                Hora Inicio <span className="font-normal text-slate-400">(07:00 a 19:00)</span>
+                Hora Inicio <span className="font-normal text-slate-400">(07:00 a 22:00)</span>
               </Label>
               <Input
                 id="horario-inicio" autoComplete="off"
                 type="time"
                 min="07:00"
-                max="19:00"
+                max="22:00"
                 value={horaInicio}
                 onChange={(e) => setHoraInicio(e.target.value)}
                 className={CLASES_CAMPO}
@@ -305,13 +305,13 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
             </div>
             <div>
               <Label htmlFor="horario-fin" className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200 md:text-base">
-                Hora Fin <span className="font-normal text-slate-400">(máx 20:00)</span>
+                Hora Fin <span className="font-normal text-slate-400">(máx 23:00)</span>
               </Label>
               <Input
                 id="horario-fin" autoComplete="off"
                 type="time"
                 min="08:00"
-                max="20:00"
+                max="23:00"
                 value={horaFin}
                 onChange={(e) => setHoraFin(e.target.value)}
                 className={CLASES_CAMPO}

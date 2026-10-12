@@ -21,10 +21,6 @@ interface TarjetaHorarioProps extends AccionesTarjeta {
 const CLASES_BOTON_ACCION =
   'h-5 w-5 rounded bg-white/80 p-1 text-muted-foreground shadow-2xs transition hover:bg-white dark:bg-black/30 dark:hover:bg-black/50 [&_svg]:size-2.5';
 
-function etiquetaTipo(horario: Horario): string {
-  return horario.actividadTipo === 'PERSONALIZADA' ? 'Personalizada 1:1' : 'Clase Grupal';
-}
-
 /** Editar y eliminar: se muestran al pasar el mouse o al enfocar con el teclado (`sr-only` los deja en el orden de tab). */
 function AccionesHorario({ horario, onEdit, onDelete }: AccionesTarjeta & { horario: Horario }) {
   const contexto = `${horario.actividadNombre}, ${horario.diaSemana} ${horario.horaInicio}`;
@@ -99,7 +95,6 @@ function CuerpoCompacto({ horario }: { horario: Horario }) {
     <div className="mt-auto flex items-end justify-between gap-1.5 pt-1">
       <div className="min-w-0 flex-1">
         <h4 className="truncate text-sm font-black leading-tight text-foreground">{horario.actividadNombre}</h4>
-        <p className="truncate text-xs font-semibold text-foreground/80">{etiquetaTipo(horario)}</p>
       </div>
       <div className="shrink-0 rounded-lg border border-black/5 bg-white/80 px-2 py-0.5 text-right shadow-2xs backdrop-blur-2xs dark:border-white/10 dark:bg-black/30">
         <div className="text-xs font-bold leading-tight text-foreground/80">
@@ -112,10 +107,7 @@ function CuerpoCompacto({ horario }: { horario: Horario }) {
 
 function CuerpoExpandido({ horario }: { horario: Horario }) {
   return (
-    <>
-      <h4 className="line-clamp-2 text-sm font-black leading-snug text-foreground">{horario.actividadNombre}</h4>
-      <p className="mt-0.5 truncate text-sm font-semibold text-foreground/80">{etiquetaTipo(horario)}</p>
-    </>
+    <h4 className="line-clamp-2 text-sm font-black leading-snug text-foreground">{horario.actividadNombre}</h4>
   );
 }
 

@@ -1,4 +1,5 @@
 import { db, type HorarioMock, type ProfesoraMock } from "@/mocks/db";
+import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { ROLES } from "@/mocks/data/catalogo-permisos";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
 
@@ -14,11 +15,11 @@ export function usuarioConRoles(usuario: UsuarioSemilla) {
     email: usuario.email,
     nombre: usuario.nombre,
     apellido: usuario.apellido,
-    dni: null,
-    telefono: null,
-    fecha_nacimiento: "1990-01-01T00:00:00.000Z",
-    direccion: null,
-    estado: "ACTIVO",
+    dni: usuario.dni ?? null,
+    telefono: usuario.telefono ?? null,
+    fecha_nacimiento: usuario.fecha_nacimiento ?? "1990-01-01T00:00:00.000Z",
+    direccion: usuario.direccion ?? null,
+    estado: usuario.estado ?? "ACTIVO",
     fecha_alta: FECHA,
     fecha_actualizacion: FECHA,
     roles: usuario.roles.map((codigo) => {
@@ -50,5 +51,40 @@ export function horarioConDatos(horario: HorarioMock) {
     actividad,
     profesora,
     cupo_maximo_efectivo: horario.cupo_maximo ?? actividad.cupo_maximo,
+  };
+}
+
+// Parámetro DIAS_RESERVA_PREINSCRIPCION del back, con su valor inicial.
+const DIAS_RESERVA_PREINSCRIPCION = 3;
+const UN_DIA_EN_MS = 86_400_000;
+
+// conReserva de inscripcion.service.ts: solo las PREINSCRIPTA guardan su lugar unos días.
+export function reservaDe({ estado, fecha_inicio }: InscripcionMock) {
+  if (estado !== "PREINSCRIPTA") return null;
+  const vence = new Date(new Date(fecha_inicio).getTime() + DIAS_RESERVA_PREINSCRIPCION * UN_DIA_EN_MS);
+  const hoy = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+  return { vence: vence.toISOString(), vencida: vence < hoy };
+}
+
+// Inscripcion del back: con alumno, plan, precio, profesora, horarios y reserva.
+export function inscripcionConDatos(inscripcion: InscripcionMock) {
+  const { ids_horarios, ...columnas } = inscripcion;
+  const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno)!;
+  const usuario = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario)!;
+  const profesora = profesoraConNombre(db.profesoras.find((p) => p.id_profesora === inscripcion.id_profesora)!);
+  return {
+    ...columnas,
+    reserva: reservaDe(inscripcion),
+    alumno: { id_alumno: alumno.id_alumno, estado: alumno.estado, usuario: { nombre: usuario.nombre, apellido: usuario.apellido } },
+    plan: db.planes.find((p) => p.id_plan === inscripcion.id_plan)!,
+    plan_precio: db.planPrecios.find((p) => p.id_plan_precio === inscripcion.id_plan_precio)!,
+    profesora: { id_profesora: profesora.id_profesora, usuario: profesora.usuario },
+    horarios: ids_horarios.map((id_horario) => ({
+      id_inscripcion: inscripcion.id_inscripcion,
+      id_horario,
+      fecha_desde: inscripcion.fecha_inicio,
+      fecha_hasta: null,
+      horario: horarioConDatos(db.horarios.find((h) => h.id_horario === id_horario)!),
+    })),
   };
 }
