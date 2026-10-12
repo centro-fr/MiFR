@@ -130,6 +130,7 @@ function inscribirDeNuevo(idAlumno: number, cuerpo: ReactivarBody) {
     fecha_fin_estimado: null,
     estado: "ACTIVA" as const,
     motivo_baja: null,
+    detalle_baja: null,
     observaciones: null,
     fecha_alta: ahora,
     fecha_baja: null,
@@ -192,7 +193,8 @@ export const alumnosHandlers = [
 
     const ahora = new Date().toISOString();
     for (const inscripcion of vigentesDe(id)) {
-      Object.assign(inscripcion, { estado: "BAJA", motivo_baja: cuerpo.data.motivo_baja, fecha_baja: ahora });
+      const { motivo_baja, detalle_baja = null } = cuerpo.data;
+      Object.assign(inscripcion, { estado: "BAJA", motivo_baja, detalle_baja, fecha_baja: ahora });
     }
     Object.assign(alumno, { estado: "BAJA", fecha_baja: ahora });
     datosPersonales(alumno.id_usuario).estado = "INACTIVO";

@@ -63,10 +63,15 @@ const CARACTER_NO_PERMITIDO = /[\p{Cc}\p{Cf}]/u;
 const CARACTER_NO_PERMITIDO_MULTILINEA = /(?![\n\r])[\p{Cc}\p{Cf}]/u;
 const TIENE_LETRA = /\p{L}/u;
 
-/** "28.000,50" → 28000.5. El punto es separador de miles y la coma, de decimales. */
+// "28000", "28.000", "28000,50" o "28.000,50": el punto solo separa miles (de a tres dígitos) y la
+// coma, decimales. Así "25000.50" no se lee como $2.500.050: se rechaza y se pide la coma.
+const FORMATO_PRECIO = /^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d+)?$/;
+
+/** "28.000,50" → 28000.5. NaN si el texto no respeta el formato. */
 export function precioDesdeTexto(texto: string): number {
-  const normalizado = texto.trim().replace(/\./g, "").replace(",", ".");
-  return normalizado === "" ? Number.NaN : Number(normalizado);
+  const limpio = texto.trim();
+  if (!FORMATO_PRECIO.test(limpio)) return Number.NaN;
+  return Number(limpio.replace(/\./g, "").replace(",", "."));
 }
 
 function tieneHastaDosDecimales(valor: number): boolean {
@@ -107,15 +112,17 @@ export function crearPlanFormSchema({ editando }: { editando: boolean }) {
     });
 }
 
-function validarPrecio(texto: string, ctx: z.RefinementCtx) {
+function problemaDePrecio(texto: string): string | null {
+  if (texto.trim() === "") return "Ingresá un precio mayor a $0.";
+  if (!FORMATO_PRECIO.test(texto.trim())) return "Usá la coma para los decimales, por ejemplo 28000 o 28.000,50.";
   const precio = precioDesdeTexto(texto);
-  const problema = !Number.isFinite(precio) || precio <= 0
-    ? "Ingresá un precio mayor a $0."
-    : precio > MONTO_MAXIMO
-      ? "El precio es demasiado alto."
-      : !tieneHastaDosDecimales(precio)
-        ? "Usá como máximo dos decimales."
-        : null;
+  if (precio <= 0) return "Ingresá un precio mayor a $0.";
+  if (precio > MONTO_MAXIMO) return "El precio es demasiado alto.";
+  return tieneHastaDosDecimales(precio) ? null : "Usá como máximo dos decimales.";
+}
+
+function validarPrecio(texto: string, ctx: z.RefinementCtx) {
+  const problema = problemaDePrecio(texto);
   if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["precio"], message: problema });
 }
 

@@ -67,6 +67,24 @@ function Identidad({ pendiente }: { pendiente: PreInscripcionPendiente }) {
   return <span className="text-sm text-muted-foreground">{textoEdad(edad)}</span>;
 }
 
+/** Fecha de la pre-inscripción y hasta cuándo guarda el lugar sin el primer pago. */
+function FechaYReserva({ pendiente }: { pendiente: PreInscripcionPendiente }) {
+  const { reserva } = pendiente;
+  return (
+    <span className="flex flex-col items-end gap-0.5 xl:items-start">
+      <span>{formatearDiaDeTimestamp(pendiente.fechaPreInscripcion)}</span>
+      {reserva &&
+        (reserva.vencida ? (
+          <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
+            Reserva vencida el {formatearFecha(reserva.vence)}
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground">Lugar guardado hasta el {formatearFecha(reserva.vence)}</span>
+        ))}
+    </span>
+  );
+}
+
 /** El teléfono del alumno o, si no tiene, el de su tutor/a. */
 function Contacto({ pendiente }: { pendiente: PreInscripcionPendiente }) {
   if (pendiente.telefono) return <span className="font-semibold">{pendiente.telefono}</span>;
@@ -121,7 +139,9 @@ function FilaPendiente(props: AccionesProps) {
           <span className="text-xs text-muted-foreground">{actividadesDe(pendiente.horarios)}</span>
         </div>
       </TableCell>
-      <TableCell className="text-sm">{formatearDiaDeTimestamp(pendiente.fechaPreInscripcion)}</TableCell>
+      <TableCell className="text-sm">
+        <FechaYReserva pendiente={pendiente} />
+      </TableCell>
       <TableCell>
         <div className="flex justify-end gap-2">
           <Acciones {...props} />
@@ -162,7 +182,9 @@ function TarjetaPendiente(props: AccionesProps) {
         <DatoTarjeta etiqueta="Contacto">
           <Contacto pendiente={pendiente} />
         </DatoTarjeta>
-        <DatoTarjeta etiqueta="Pre-inscripción">{formatearDiaDeTimestamp(pendiente.fechaPreInscripcion)}</DatoTarjeta>
+        <DatoTarjeta etiqueta="Pre-inscripción">
+          <FechaYReserva pendiente={pendiente} />
+        </DatoTarjeta>
       </dl>
       <div className="grid grid-cols-2 gap-2">
         <Acciones {...props} />

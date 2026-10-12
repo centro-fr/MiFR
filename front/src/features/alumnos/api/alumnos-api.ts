@@ -41,7 +41,8 @@ export async function obtenerFichaAlumno(id: string): Promise<FichaAlumno> {
 
 // Baja lógica: el back da de baja las inscripciones vigentes con el motivo y cierra sus
 // horarios (libera el cupo). Responde 409 si ya estaba de baja.
-export async function darDeBajaAlumno(id: string, motivo: MotivoBaja): Promise<void> {
-  const cuerpo: BajaAlumnoBody = { motivo_baja: motivo };
+export async function darDeBajaAlumno(id: string, motivo: MotivoBaja, detalle?: string): Promise<void> {
+  // Sin detalle no viaja: el back lo guarda como NULL.
+  const cuerpo: BajaAlumnoBody = { motivo_baja: motivo, ...(detalle && { detalle_baja: detalle }) };
   await apiClient.post(`/alumnos/${encodeURIComponent(id)}/baja`, cuerpo);
 }

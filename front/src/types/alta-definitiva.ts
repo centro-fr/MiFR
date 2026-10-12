@@ -18,6 +18,16 @@ export interface TutorPreInscripcion {
   telefono: string | null;
 }
 
+/**
+ * Hasta qué día la pre-inscripción guarda su lugar sin el primer pago (parámetro
+ * DIAS_RESERVA_PREINSCRIPCION del back). Vencida, el alta vuelve a pedir cupo.
+ */
+export interface ReservaPreInscripcion {
+  /** Fecha de calendario: "2026-10-14". */
+  vence: string;
+  vencida: boolean;
+}
+
 export interface PreInscripcionPendiente {
   idInscripcion: string;
   idAlumno: string;
@@ -39,4 +49,5 @@ export interface PreInscripcionPendiente {
   horarios: HorarioPreInscripcion[];
   /** Timestamp de la pre-inscripción (inscripciones.fecha_alta). */
   fechaPreInscripcion: string;
+  reserva: ReservaPreInscripcion | null;
 }

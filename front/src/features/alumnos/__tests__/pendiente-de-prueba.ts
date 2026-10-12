@@ -21,6 +21,7 @@ export function crearPendiente(cambios: Partial<PreInscripcionPendiente> = {}): 
       { dia: "MIERCOLES", horaInicio: "18:00", horaFin: "19:00", actividad: "Funcional Grupal" },
     ],
     fechaPreInscripcion: "2026-10-08T15:00:00.000Z",
+    reserva: null,
     ...cambios,
   };
 }

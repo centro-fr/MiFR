@@ -14,15 +14,15 @@ import {
 import type { EstadoAlumno, FichaAlumno } from "@/types/alumno";
 import { cn } from "@/utils/cn";
 
-// Colores de docs/sdd/03-alumnos-e-inscripciones/tasks.md (verde activo, gris baja);
-// INACTIVO va en ámbar: sigue inscripto pero no está asistiendo.
+// Colores de docs/sdd/03-alumnos-e-inscripciones/tasks.md (verde activo, gris baja). En el back,
+// INACTIVO es el pre-inscripto que espera su primer pago (US-07): va en ámbar, como "Pendiente".
 const ESTILO_ESTADO: Record<EstadoAlumno, { texto: string; clases: string }> = {
   ACTIVO: {
     texto: "Activo",
     clases: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
   },
   INACTIVO: {
-    texto: "Inactivo",
+    texto: "Pendiente de alta",
     clases: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
   },
   BAJA: {

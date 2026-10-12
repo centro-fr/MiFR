@@ -17,6 +17,7 @@ import {
   type CuerpoPrimerPago,
   type PrimerPagoFormValues,
 } from "@/features/alumnos/schemas/primer-pago";
+import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
 
@@ -82,6 +83,18 @@ function ResumenPreInscripcion({ pendiente }: { pendiente: PreInscripcionPendien
       <dt className="text-muted-foreground">Horario</dt>
       <dd className="text-right font-bold">{textoHorarios(pendiente.horarios)}</dd>
     </dl>
+  );
+}
+
+// Con la reserva vencida el back vuelve a pedir cupo al dar el alta: se avisa antes de cobrar.
+function AvisoReservaVencida({ vence }: { vence: string }) {
+  return (
+    <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+      <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
+        La reserva venció el {formatearFecha(vence)}: el lugar ya no está guardado. Si algún horario se llenó, no se va a poder
+        registrar el cobro hasta elegir otro.
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -255,6 +268,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
           </div>
 
           <ResumenPreInscripcion pendiente={pendiente} />
+          {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
           <SelectorFormaPago formas={formas} valor={valores.formaPago} onChange={(formaPago) => cambiar({ formaPago })} />
 
           <Campo id="monto-primer-pago" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>

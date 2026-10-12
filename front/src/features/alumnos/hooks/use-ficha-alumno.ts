@@ -33,7 +33,8 @@ export function esAlumnoNoEncontrado(error: unknown): boolean {
 export function useDarDeBajaAlumno() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, motivo }: { id: string; motivo: MotivoBaja }) => darDeBajaAlumno(id, motivo),
+    mutationFn: ({ id, motivo, detalle }: { id: string; motivo: MotivoBaja; detalle?: string }) =>
+      darDeBajaAlumno(id, motivo, detalle),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ALUMNOS_QUERY_KEY }),
   });
 }

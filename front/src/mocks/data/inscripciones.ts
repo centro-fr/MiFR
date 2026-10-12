@@ -37,6 +37,7 @@ export interface InscripcionMock {
   fecha_fin_estimado: string | null;
   estado: EstadoInscripcionMock;
   motivo_baja: string | null;
+  detalle_baja: string | null;
   observaciones: string | null;
   fecha_alta: string;
   fecha_baja: string | null;
@@ -87,33 +88,39 @@ export const PLAN_PRECIOS_SEMILLA: PlanPrecioMock[] = PRECIOS.map((precio, indic
   fecha_vigencia_hasta: null,
 }));
 
-// Como la semilla del back, las inscripciones se cargan "hoy" (al levantar el mock).
+const UN_DIA_EN_MS = 86_400_000;
+
+// Como la semilla del back, las inscripciones se cargan "hoy" (al levantar el mock), salvo las que
+// piden empezar unos días antes (para ver una reserva vencida, US-07).
 function inscripcion(
   id_inscripcion: number,
   datos: Pick<InscripcionMock, "id_alumno" | "id_plan" | "id_profesora" | "ids_horarios" | "estado">,
+  diasAtras = 0,
 ): InscripcionMock {
-  const hoy = new Date().toISOString();
+  const alta = new Date(Date.now() - diasAtras * UN_DIA_EN_MS).toISOString();
   return {
     id_inscripcion,
     id_plan_precio: datos.id_plan,
     id_promocion: null,
     sin_cargo: false,
-    fecha_inicio: `${hoy.slice(0, 10)}T00:00:00.000Z`,
+    fecha_inicio: `${alta.slice(0, 10)}T00:00:00.000Z`,
     fecha_fin_estimado: null,
     motivo_baja: null,
+    detalle_baja: null,
     observaciones: null,
-    fecha_alta: hoy,
+    fecha_alta: alta,
     fecha_baja: null,
     ...datos,
   };
 }
 
 // Alumnos de data/alumnos.ts y horarios de semilla.ts: Sofía con Lucía (lun y mié), Mateo y
-// Valentina con Carla (mar y jue). Las PREINSCRIPTA esperan el primer pago (US-07).
+// Valentina con Carla (mar y jue). Las PREINSCRIPTA esperan el primer pago (US-07); la de Mateo
+// empezó hace 5 días y ya tiene la reserva vencida.
 export function inscripcionesSemilla(): InscripcionMock[] {
   return [
     inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "PREINSCRIPTA" }),
-    inscripcion(2, { id_alumno: 2, id_plan: 3, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }),
+    inscripcion(2, { id_alumno: 2, id_plan: 3, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }, 5),
     inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 2, ids_horarios: [3, 4], estado: "ACTIVA" }),
   ];
 }

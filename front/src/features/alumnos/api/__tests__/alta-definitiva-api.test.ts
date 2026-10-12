@@ -42,6 +42,7 @@ const INSCRIPCION = {
   id_alumno: 2,
   estado: "PREINSCRIPTA",
   fecha_alta: "2026-10-08T15:00:00.000Z",
+  reserva: { vence: "2026-10-11T00:00:00.000Z", vencida: false },
   plan: { id_plan: 3, nombre: "Personalizado 2 días" },
   plan_precio: { precio: "45000" },
   profesora: { usuario: { nombre: "Carla", apellido: "Ruiz" } },

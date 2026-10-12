@@ -17,6 +17,8 @@ export const inscripcionPendienteApiSchema = z.object({
   id_alumno: z.number().int(),
   estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
   fecha_alta: z.string(),
+  // Solo en las PREINSCRIPTA: hasta qué día guarda su lugar sin el primer pago.
+  reserva: z.object({ vence: z.string(), vencida: z.boolean() }).nullable(),
   plan: z.object({ id_plan: z.number().int(), nombre: z.string() }),
   plan_precio: z.object({ precio: precioApiSchema }),
   profesora: z.object({ usuario: nombreApiSchema }),

@@ -44,7 +44,7 @@ export const motivoBajaSchema = z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMI
   invalid_type_error: "Elegí el motivo de la baja.",
 });
 
-// Texto libre que acompaña a "Otro motivo". El back todavía no lo guarda (falta el campo).
+// Texto libre que acompaña a "Otro motivo" (inscripciones.detalle_baja, hasta 200 caracteres).
 export const LARGO_MAXIMO_DETALLE_BAJA = 200;
 
 export const bajaAlumnoFormSchema = z.object({
@@ -56,7 +56,15 @@ export const bajaAlumnoFormSchema = z.object({
     .optional(),
 });
 
-// Cuerpo de POST /alumnos/:id/baja.
-export const bajaAlumnoBodySchema = z.object({ motivo_baja: motivoBajaSchema });
+// Cuerpo de POST /alumnos/:id/baja. Como en el back, el detalle solo acompaña al motivo OTRO.
+export const bajaAlumnoBodySchema = z
+  .object({
+    motivo_baja: motivoBajaSchema,
+    detalle_baja: z.string().trim().min(1).max(LARGO_MAXIMO_DETALLE_BAJA).optional(),
+  })
+  .refine((baja) => baja.detalle_baja === undefined || baja.motivo_baja === "OTRO", {
+    message: "El detalle solo se carga con el motivo OTRO",
+    path: ["detalle_baja"],
+  });
 
 export type BajaAlumnoBody = z.infer<typeof bajaAlumnoBodySchema>;

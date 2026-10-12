@@ -20,6 +20,7 @@ const MATEO = crearPendiente({
   idPlan: "3",
   nombrePlan: "Personalizado 2 días",
   fechaPreInscripcion: "2026-09-20T15:00:00.000Z",
+  reserva: null,
 });
 const PENDIENTES = [SOFIA, MATEO];
 

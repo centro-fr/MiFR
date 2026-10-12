@@ -89,11 +89,9 @@ function useFlujoBaja(alumno: FichaAlumno) {
     setAbierta(true);
   };
 
-  // El modal también entrega el texto de "Otro motivo", pero el back todavía no tiene dónde
-  // guardarlo. Cuando lo agregue, sumarlo acá a la mutación y al cuerpo de darDeBajaAlumno.
-  const confirmar = (motivo: MotivoBaja) => {
+  const confirmar = (motivo: MotivoBaja, detalle?: string) => {
     darDeBaja.mutate(
-      { id: alumno.id, motivo },
+      { id: alumno.id, motivo, detalle },
       {
         onSuccess: () => {
           setAbierta(false);

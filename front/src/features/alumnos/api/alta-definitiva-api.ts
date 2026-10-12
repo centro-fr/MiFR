@@ -40,6 +40,11 @@ function aPendiente(inscripcion: InscripcionPendienteApi, alumno: AlumnoEnListad
       actividad: horario.actividad.nombre,
     })),
     fechaPreInscripcion: inscripcion.fecha_alta,
+    reserva: inscripcion.reserva && {
+      // DATE viaja como medianoche UTC: se queda solo la fecha.
+      vence: inscripcion.reserva.vence.slice(0, 10),
+      vencida: inscripcion.reserva.vencida,
+    },
   };
 }
 
