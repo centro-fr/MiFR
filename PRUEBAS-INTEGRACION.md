@@ -595,11 +595,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **US:** US-09, US-10 · **Precondición:** escenario de demostración cargado (Sofía a cargo de Lucía, Mateo a cargo de Carla); sesión de Lucía.
 
-1. Lucía lista los alumnos, abre la ficha de Sofía y la de Mateo, y filtra por Carla.
+1. Lucía lista los alumnos, abre la ficha de Sofía, la de Mateo y la de un id que no existe, y filtra por Carla.
 2. Lucía modifica el teléfono y las observaciones de Sofía; después intenta cambiarle el nombre y modificar el teléfono de Mateo.
 3. Lucía lista las inscripciones y abre la de Mateo.
 
-**Resultado esperado:** en el paso 1 el listado trae solo a Sofía, con su plan (Básico) y su profesora; la ficha de Sofía trae su inscripción con dos horarios; la de Mateo responde 403, y el filtro por Carla devuelve una página vacía. En el paso 2 el contacto se guarda (200), el nombre y el alumno ajeno responden 403, y en la base Sofía conserva su nombre y Mateo no cambia. En el paso 3 solo aparece la inscripción de Sofía y la de Mateo responde 403.
+**Resultado esperado:** en el paso 1 el listado trae solo a Sofía, con su plan (Básico) y su profesora; la ficha de Sofía trae su inscripción con dos horarios; la de Mateo responde 403, la del id que no existe responde el mismo 403 (no le cuenta qué alumnos existen) y el filtro por Carla devuelve una página vacía. En el paso 2 el contacto se guarda (200), el nombre y el alumno ajeno responden 403, y en la base Sofía conserva su nombre y Mateo no cambia. En el paso 3 solo aparece la inscripción de Sofía y la de Mateo responde 403.
 
 **Automatizado:** Sí (E-15 a E-17).
 
@@ -982,7 +982,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-05 a E-08 | Menor sin tutor; menor con tutora nueva inactiva; hermanos con la misma tutora; menor con email y tutor menor de edad                                                           | PI-16 |
 | E-09 a E-11 | Cambio de teléfono; menor que pasa a mayor (sin email se rechaza, con email pierde el tutor); DNI de otro usuario                                                               | PI-17 |
 | E-12 a E-14 | Búsqueda sin acentos, por tutor y por DNI exacto; dados de baja fuera del listado; paginación por apellido con total                                                           | PI-18 |
-| E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; la base no cambia con los rechazos                          | PI-25 |
+| E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; un alumno que no existe le responde igual que uno ajeno; la base no cambia con los rechazos | PI-25 |
 | E-18 a E-20 | Filtros por plan, profesora y actividad; alumno sin inscripción con `inscripcion: null`; ficha con la inscripción vigente, su plan, profesora y horarios; el alumno activo de la demostración inicia sesión | PI-26 |
 | E-21 a E-23 | La profesora no elige un tutor por id (403); un tutor con DNI y email de la misma cuenta se reusa y la profesora ve solo su nombre; DNI de una cuenta y email de otra (409) | PI-31 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
@@ -1130,6 +1130,7 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El historial llega también a la profesora                                               | H-19 y un unitario de la fachada                                                                           |
 | El tope corta en 500 alumnos en lugar de pasarlo                                        | Unitario de la fachada (con exactamente 500 candidatos)                                                    |
 | Los candidatos se piden sin el uno de más que delata el tope                            | Dos unitarios de la fachada                                                                                |
+| La ficha busca al alumno antes de comprobar si la profesora lo tiene a cargo            | E-15 y un unitario de la fachada                                                                           |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1169,6 +1170,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Clases, asistencia y cierre (PI-47 a PI-50)                           | 176 | 176 aprobados | 34,2 s | Pasaron también los 1400 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 9 fallas provocadas fueron detectadas (dos, después de reforzar los datos). La primera corrida falló en 10 tests de inscripciones y cuotas porque el cliente de Prisma estaba generado con un esquema viejo; se regeneró (`pnpm prisma:generate`) |
 | 12/10/2026 | Corrección de los tests de asistencia que fallaron en CI (D-21)       | 176 | 176 aprobados | 37,7 s | En GitHub Actions fallaron 7 tests de J, reproducidos localmente con `TZ=UTC` después de las 21:00 de Argentina. Corregidos, pasan con `TZ=UTC` y con la hora local. Pasaron también los 1400 tests unitarios; la falla provocada de los horarios ajenos se sigue detectando |
 | 12/10/2026 | Filtro por estado de cuota e historial en la ficha (PI-51, PI-52)     | 179 | 179 aprobados | 143,8 s | Pasaron también los 1418 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas |
+| 12/10/2026 | Correcciones de la auditoría de la ficha (PI-25, D-22)                 | 179 | 179 aprobados | 141,4 s | Pasaron también los 1422 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La falla provocada fue detectada |
 
 ### 8.2 Resultado por caso
 
@@ -1201,6 +1203,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-50         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-10 a J-12; sin defectos                                                  |
 | PI-51         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-17 y H-18; sin defectos                                                  |
 | PI-52         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa H-19; sin defectos                                                          |
+| PI-25         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan E-15 a E-17 con la ficha de un alumno inexistente (defecto D-22)           |
 
 ### 8.3 Defectos
 
@@ -1227,6 +1230,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-19 | PI-06 | La baja de una actividad no revisaba sus planes exclusivos: la actividad quedaba dada de baja y esos planes seguían vigentes y ofrecidos, pero inscribir en ellos fallaba porque ya no tenían horarios. Corregido: la baja responde 409 y nombra los planes vigentes exclusivos, que hay que dar de baja o pasar a otra actividad | Media | Francisco Andrade | `GestionServicioEntrenamientoService` |
 | D-20 | PI-22, PI-44 | Reactivar a un pre-inscripto dado de baja que nunca pagó creaba la inscripción `ACTIVA` y dejaba activos al alumno y a su usuario, sin rol. El primer pago después ya no daba el alta, así que el alumno nunca recibía su rol. G-07 daba por bueno ese comportamiento. Corregido: si el alumno nunca tuvo un pago confirmado, la reactivación crea la inscripción `PREINSCRIPTA` y lo deja `INACTIVO`, y el primer pago le da el alta | Alta | Francisco Andrade | `GestionInscripcionesYClasesService`, `InscripcionService`, `AlumnoService` |
 | D-21 | PI-47 a PI-49 | Los tests J-01, J-02, J-04, J-05, J-07, J-08 y J-09 simulaban el lunes 12/10/2026, pero los horarios del escenario tomaban `fecha_alta` del reloj real de Postgres. Desde las 21:00 de Argentina (00:00 UTC del 13/10), y desde ese día en adelante siempre, el horario nacía después del lunes simulado y su clase no se materializaba. Era un defecto de los tests, no del código. Corregido: los horarios del escenario se crean con `fecha_alta` el 01/01/2026 (`crearHorarioDePrueba` acepta la fecha) | Alta | Nicolas | `clases-y-asistencia.integration.test.ts`, `fabricas.ts` |
+| D-22 | PI-25 | La ficha buscaba al alumno antes de comprobar si la profesora lo tenía a cargo: un id que no existía respondía 404 y uno ajeno 403, así que una profesora podía averiguar qué alumnos existen (`seguridad.md`, regla 3). Lo encontró la auditoría de la rama del filtro por estado de cuota. Corregido: primero se comprueba quién pide, y a la profesora los dos casos le responden el mismo 403 | Media | Francisco Andrade | `GestionPersonasService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -1303,3 +1307,4 @@ Los defectos se numeran D-01, D-02…
 |   2.13  | 12/10/2026 | Casos PI-47 a PI-50 (clases del día, toma de asistencia y cierre con ausentes, US-20 y US-21) y archivo J con los tests J-01 a J-12; fábrica `crearInscripcionDePrueba` y reloj fijo en los datos comunes; US-20 y US-21 pasan a automatizadas; cuatro puntos a confirmar abiertos | Nicolas |
 |   2.14  | 12/10/2026 | Defecto D-21: los tests de asistencia dependían de la fecha real; los horarios del escenario se crean con `fecha_alta` fija y `crearHorarioDePrueba` acepta la fecha | Nicolas |
 |   2.15  | 12/10/2026 | Casos PI-51 (filtro del listado de alumnos por estado de cuota, con tope de 500) y PI-52 (historial de cuotas y pagos en la ficha, solo para la propietaria) y tests H-17 a H-19; US-10 pasa a automatizada | Francisco Andrade |
+|   2.16  | 12/10/2026 | PI-25 suma la ficha de un alumno que no existe, que a la profesora le responde 403 como uno ajeno (defecto D-22); E-15 lo verifica | Francisco Andrade |
