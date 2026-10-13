@@ -3,6 +3,7 @@ import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.
 import { montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 import { textoSchema } from "../../../shared/utils/esquemas-texto.js";
+import { fechaSchema } from "../../../shared/utils/esquemas-fecha.js";
 
 // El código lo carga la propietaria (UK del DER, VARCHAR(20)): letras sin acentos, dígitos, guion y
 // guion bajo, y se guarda en mayúsculas para que "verano26" y "VERANO26" sean el mismo.
@@ -15,11 +16,6 @@ const codigo = z
   )
   .transform((valor) => valor.toUpperCase());
 
-const fecha = z
-  .string({ invalid_type_error: "La fecha debe tener formato AAAA-MM-DD" })
-  .date("La fecha debe tener formato AAAA-MM-DD")
-  .transform((valor) => new Date(`${valor}T00:00:00Z`));
-
 const MAXIMO_PLANES = 50;
 const ids_planes = z
   .array(idSchema)
@@ -31,10 +27,10 @@ const datos = {
   codigo,
   nombre: textoSchema(60),
   tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
-  // ck_promociones_x1: mayor a 0, con dos decimales como máximo.
+  // ck_promociones_x1: mayor a 0, con dos decimales como máximo. El tope del porcentaje lo revisa el refine.
   valor: montoSchema("valor"),
-  fecha_desde: fecha,
-  fecha_hasta: fecha,
+  fecha_desde: fechaSchema,
+  fecha_hasta: fechaSchema,
   ids_planes,
 };
 
@@ -45,10 +41,12 @@ interface ReglasEntreCampos {
   fecha_hasta?: Date;
 }
 
-// ck_promociones_x2 y ck_promociones_x3, cuando vienen los dos campos. Si en una edición viene uno
-// solo, el service las revisa con el valor guardado.
+// ck_promociones_x3 y un porcentaje menor a 100, cuando vienen los dos campos. Si en una edición viene
+// uno solo, el service las revisa con el valor guardado. El DER admite el 100 % (ck_promociones_x2),
+// pero dejaría la cuota en 0 y un pago tiene que ser mayor a 0 (ck_pagos_x1): ese alumno no podría
+// pagar ni recibir el alta definitiva.
 function porcentajeValido({ tipo_descuento, valor }: ReglasEntreCampos): boolean {
-  return tipo_descuento !== "PORCENTAJE" || valor === undefined || valor <= 100;
+  return tipo_descuento !== "PORCENTAJE" || valor === undefined || valor < 100;
 }
 
 function fechasEnOrden({ fecha_desde, fecha_hasta }: ReglasEntreCampos): boolean {
@@ -56,7 +54,7 @@ function fechasEnOrden({ fecha_desde, fecha_hasta }: ReglasEntreCampos): boolean
 }
 
 const PORCENTAJE_INVALIDO = {
-  message: "Un descuento en porcentaje no puede superar el 100 %",
+  message: "Un descuento en porcentaje tiene que ser menor al 100 %",
   path: ["valor"],
 };
 const FECHAS_INVERTIDAS = {

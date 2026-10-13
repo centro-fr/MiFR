@@ -20,7 +20,7 @@ const promocionSchema = z
     codigo: z.string(),
     nombre: z.string(),
     tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
-    valor: z.number().openapi({ description: "Porcentaje (hasta 100) o monto fijo en pesos" }),
+    valor: z.number().openapi({ description: "Porcentaje (menor a 100) o monto fijo en pesos" }),
     fecha_desde: fechaSchema,
     fecha_hasta: fechaSchema,
     activo: z.boolean(),
@@ -37,7 +37,7 @@ export function registrarDocumentacionPromociones(registro: OpenAPIRegistry): vo
   const promocion = respuestaJson("Promoción", promocionSchema);
   const soloPropietaria = "Solo la propietaria: rol `PROPIETARIA` y el permiso `PLANES_EDITAR`.";
   const reglas =
-    "Un porcentaje va de más de 0 a 100; un monto fijo no puede superar el precio vigente de ninguno de sus " +
+    "Un porcentaje va de más de 0 a menos de 100; un monto fijo tiene que ser menor que el precio vigente de cada uno de sus " +
     "planes a `fecha_desde` (400). Los planes tienen que existir y estar vigentes (400). Dos promociones " +
     "activas no se superponen en fechas sobre un mismo plan (409), y el código no se repite (409).";
 
