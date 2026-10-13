@@ -50,7 +50,7 @@ function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): S
   };
 }
 
-function conSituacion(
+function inscripcionesConSituacion(
   inscripciones: InscripcionConDatos[],
   habilitaciones: Map<number, HabilitacionDeInscripcion>,
 ): InscripcionConSituacion[] {
@@ -112,7 +112,7 @@ export class GestionPersonasService implements ILogicaPersonas {
 
     const pagina = await this.alumnos.listar({ ...filtro, ids });
     const situaciones = await this.situacionPorAlumno(pagina.datos.map(({ id_alumno }) => id_alumno));
-    return { ...pagina, datos: conSuSituacion(pagina.datos, situaciones) };
+    return { ...pagina, datos: alumnosConSituacion(pagina.datos, situaciones) };
   }
 
   // Quién pide se verifica antes de buscar al alumno: a una profesora, un alumno que no existe le
@@ -130,8 +130,8 @@ export class GestionPersonasService implements ILogicaPersonas {
     ]);
     return {
       ...alumno,
-      inscripciones: conSituacion(inscripciones, habilitaciones),
-      inscripciones_de_la_baja: conSituacion(deLaBaja, habilitaciones),
+      inscripciones: inscripcionesConSituacion(inscripciones, habilitaciones),
+      inscripciones_de_la_baja: inscripcionesConSituacion(deLaBaja, habilitaciones),
       historial_cuotas: historial,
     };
   }
@@ -189,7 +189,7 @@ export class GestionPersonasService implements ILogicaPersonas {
     const alumnos = await this.alumnos.buscarPorIds(idsDeLaPagina);
     const porId = new Map(alumnos.map((alumno) => [alumno.id_alumno, alumno]));
     return {
-      datos: conSuSituacion(
+      datos: alumnosConSituacion(
         idsDeLaPagina.flatMap((id) => porId.get(id) ?? []),
         situaciones,
       ),
@@ -236,7 +236,10 @@ export class GestionPersonasService implements ILogicaPersonas {
   }
 }
 
-function conSuSituacion(alumnos: Alumno[], situaciones: Map<number, SituacionDelAlumno>): AlumnoEnListado[] {
+function alumnosConSituacion(
+  alumnos: Alumno[],
+  situaciones: Map<number, SituacionDelAlumno>,
+): AlumnoEnListado[] {
   return alumnos.map((alumno) => ({
     ...alumno,
     ...(situaciones.get(alumno.id_alumno) ?? SIN_INSCRIPCION_VIGENTE),
