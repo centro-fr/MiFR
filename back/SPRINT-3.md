@@ -125,7 +125,7 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
   - [x] `DIAS_RESERVA_PREINSCRIPCION` (`ENTERO`, por defecto `3`).
 - [x] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
 - [x] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
-- [ ] Tests del service, de las rutas y de integración.
+- [x] Tests del service, de las rutas y de integración.
 
 ---
 

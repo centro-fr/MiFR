@@ -1092,7 +1092,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Panel público de disponibilidad (PI-46)                               | 163 | 163 aprobados | 110,9 s | Pasaron también los 1311 tests unitarios, con cobertura del 100 %; chequeo de tipos correcto. Las 3 fallas provocadas fueron detectadas |
 | 12/10/2026 | Grilla real del centro en el escenario y cierre a las 23:00 (PI-05)     | 164 | 164 aprobados | 119,9 s | 16 tests se adaptaron al escenario nuevo. Pasaron también los 1311 tests unitarios, con cobertura del 100 %; build y chequeo de tipos correctos. La falla provocada fue detectada |
 | 12/10/2026 | Las actividades públicas reemplazan al panel de disponibilidad (PI-46) | 164 | 164 aprobados | 117,9 s | Pasaron también los 1307 tests unitarios, con cobertura del 100 %; build y formato correctos. La falla provocada fue detectada |
-| 12/10/2026 | Parámetros del sistema por la API (PI-47, PI-48)                      | 182 | 182 aprobados | 166,2 s | Corrida completa con el archivo J. Sin fallas provocadas. |
+| 12/10/2026 | Parámetros del sistema por la API (PI-47, PI-48)                      | 182 | 182 aprobados | 166,2 s | Corrida completa con el archivo J. Pasaron también los 1386 tests unitarios; build correcto. Sin fallas provocadas. |
 
 ### 8.2 Resultado por caso
 
