@@ -21,6 +21,9 @@ interface Paso2PlanYProfesoraProps {
   onSeleccionarPlan: (idPlan: number) => void;
   idProfesoraSeleccionada: number | null;
   onSeleccionarProfesora: (idProfesora: number) => void;
+  actividadesDisponibles: { id_actividad: number; nombre: string }[];
+  idActividadSeleccionada: number | null;
+  onSeleccionarActividad: (idActividad: number) => void;
   esSoloProfesora: boolean;
   sinCargo: boolean;
   onToggleSinCargo: (sinCargo: boolean) => void;
@@ -35,6 +38,9 @@ export function Paso2PlanYProfesora({
   onSeleccionarPlan,
   idProfesoraSeleccionada,
   onSeleccionarProfesora,
+  actividadesDisponibles,
+  idActividadSeleccionada,
+  onSeleccionarActividad,
   esSoloProfesora,
   sinCargo,
   onToggleSinCargo,
@@ -117,19 +123,19 @@ export function Paso2PlanYProfesora({
         </div>
       </div>
 
-      {/* 2. Asignación de Profesora */}
+      {/* 2. Asignación de Profesora y Actividad */}
       <div className="pt-2 border-t border-border/40 space-y-4">
         <div className="flex items-center gap-2 mb-1">
           <User className="size-4 text-primary" />
           <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-            Profesora a Cargo <span className="text-destructive">*</span>
+            Profesora y Actividad <span className="text-destructive">*</span>
           </h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="selector-profesora" className="text-xs font-medium">
-              Profesora Asignada
+              Profesora Asignada <span className="text-destructive">*</span>
             </Label>
             {esSoloProfesora ? (
               <div className="flex items-center gap-2.5 p-2 rounded-xl border border-border/80 bg-muted/40 min-h-[42px]">
@@ -182,6 +188,47 @@ export function Paso2PlanYProfesora({
               value={fechaInicio}
               onChange={(e) => onChangeFechaInicio(e.target.value)}
             />
+          </div>
+
+          {/* Selector de Actividad que imparte la profesora */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="selector-actividad" className="text-xs font-medium flex items-center gap-1">
+              <Dumbbell className="size-3.5 text-primary" />
+              Actividad que imparte <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={idActividadSeleccionada ? String(idActividadSeleccionada) : ""}
+              onValueChange={(val) => onSeleccionarActividad(Number(val))}
+              disabled={!idProfesoraSeleccionada || actividadesDisponibles.length === 0}
+            >
+              <SelectTrigger id="selector-actividad" className="w-full">
+                <SelectValue
+                  placeholder={
+                    !idProfesoraSeleccionada
+                      ? "Primero seleccioná una profesora"
+                      : actividadesDisponibles.length === 0
+                        ? "La profesora no tiene horarios ni actividades cargadas"
+                        : "Seleccioná la actividad que realizará el alumno"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {actividadesDisponibles.map((act) => (
+                  <SelectItem key={act.id_actividad} value={String(act.id_actividad)}>
+                    {act.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {idProfesoraSeleccionada && actividadesDisponibles.length === 0 ? (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                Esta profesora no posee horarios configurados para actividades.
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Los horarios disponibles en el siguiente paso corresponderán únicamente a esta actividad.
+              </p>
+            )}
           </div>
         </div>
 

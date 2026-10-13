@@ -68,7 +68,7 @@ export function filtrarPlanes(planes: Plan[], filtros: FiltrosPlanes): Plan[] {
 }
 
 export function hayFiltrosActivos(filtros: FiltrosPlanes): boolean {
-  return filtros.busqueda.trim() !== "" || filtros.idActividad !== "" || filtros.modalidad !== "" || filtros.estado !== "VIGENTES";
+  return filtros.busqueda.trim() !== "" || filtros.idActividad !== "" || filtros.estado !== "VIGENTES";
 }
 
 /** Las actividades que aparecen en algún plan, para el filtro, sin repetir y por nombre. */

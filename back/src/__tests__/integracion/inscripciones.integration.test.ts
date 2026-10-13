@@ -6,9 +6,9 @@ import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
 
-// Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38 y PI-41: preinscripción (con peso y talla si la actividad
-// los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
-// reactivación y cambios de plan/horarios.
+// Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 y PI-44: preinscripción (con peso y talla si la
+// actividad los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
+// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -64,6 +64,11 @@ async function inscribir(
 
 async function darDeBaja(idAlumno: number, motivo_baja = "ABANDONO") {
   return comoMarina("post", `/alumnos/${idAlumno}/baja`).send({ motivo_baja });
+}
+
+// El primer pago por la API: confirma la inscripción y da el alta definitiva (US-07, US-15).
+function cobrarEnEfectivo(idInscripcion: number, monto: number) {
+  return comoMarina("post", "/pagos/efectivo").send({ id_inscripcion: idInscripcion, monto });
 }
 
 async function obtenerInscripcion(idInscripcion: number) {
@@ -235,10 +240,11 @@ describe("PI-22: baja y reactivación", () => {
     expect((await darDeBaja(primero.id_alumno)).status).toBe(409);
   });
 
-  it("reactiva creando una inscripción nueva y conserva el historial de baja", async () => {
+  it("reactiva a quien ya pagó con una inscripción nueva activa y conserva el historial de baja", async () => {
     const idHorario = await crearHorarioConCupo(1);
     const alumno = await crearAlumno(prisma);
     const anterior = await inscribir(alumno.id_alumno, [idHorario]);
+    expect((await cobrarEnEfectivo(anterior.body.id_inscripcion, 25000)).status).toBe(201);
     await darDeBaja(alumno.id_alumno);
 
     const reactivacion = await comoMarina("post", `/alumnos/${alumno.id_alumno}/reactivar`).send({
@@ -404,6 +410,19 @@ describe("PI-27: ocupación de los horarios", () => {
     await inscribir(primero.id_alumno, [idHorario]);
     await inscribir(segundo.id_alumno, [idHorario]);
     await darDeBaja(segundo.id_alumno);
+    // Todas las actividades del escenario tienen cupo: el horario sin cupo es de una actividad nueva.
+    const yoga = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+    const { id_horario: idHorarioSinCupo } = await crearHorarioDePrueba(prisma, {
+      id_actividad: yoga.body.id_actividad,
+      id_profesora: datosDemo.idProfesora.get(LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "13:00",
+      hora_fin: "14:00",
+    });
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
 
     const detalle = await comoMarina("get", `/horarios/${idHorario}`);
@@ -412,17 +431,21 @@ describe("PI-27: ocupación de los horarios", () => {
     expect(detalle.body).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
     const enListado = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorario);
     expect(enListado).toMatchObject({ inscriptos: 1, cupo_disponible: 2 });
-    const funcionalSinCupo = listado.body.find(
-      (h: { cupo_maximo_efectivo: number | null }) => h.cupo_maximo_efectivo === null,
-    );
-    expect(funcionalSinCupo.cupo_disponible).toBeNull();
+    const sinCupo = listado.body.find((h: { id_horario: number }) => h.id_horario === idHorarioSinCupo);
+    expect(sinCupo).toMatchObject({ cupo_maximo_efectivo: null, cupo_disponible: null });
   });
 });
 
 describe("PI-30: la profesora pre-inscribe solo a su cargo", () => {
+  // El Training de los lunes y los miércoles a las 19: dos clases, las que da el plan Básico.
   async function horariosDeLucia(): Promise<number[]> {
     const horarios = await prisma.horarios.findMany({
-      where: { id_profesora: datosDemo.idProfesora.get(LUCIA), fecha_baja: null },
+      where: {
+        id_profesora: datosDemo.idProfesora.get(LUCIA),
+        id_actividad: datosDemo.idActividad.get("TRAINING"),
+        dia_semana: { in: [1, 3] },
+        fecha_baja: null,
+      },
       select: { id_horario: true },
       orderBy: { dia_semana: "asc" },
     });
@@ -539,9 +562,7 @@ describe("PI-37: peso y talla al pre-inscribir en una actividad que los pide", (
     const respuesta = await preinscribirPersonalizado(id_alumno, await horarioPersonalizadoDeCarla());
 
     expect(respuesta.status).toBe(400);
-    expect(respuesta.body.error.message).toBe(
-      "Entrenamiento Personalizado pide el peso y la talla para pre-inscribir",
-    );
+    expect(respuesta.body.error.message).toBe("Personalizado pide el peso y la talla para pre-inscribir");
     expect(await contarFilas()).toEqual(antes);
   });
 
@@ -832,5 +853,52 @@ describe("PI-41: el detalle de la baja con el motivo OTRO", () => {
       estado: "PREINSCRIPTA",
       detalle_baja: null,
     });
+  });
+});
+
+describe("PI-44: reactivar a quien nunca pagó", () => {
+  async function estadoDelAlumno(idAlumno: number) {
+    return prisma.alumnos.findUniqueOrThrow({
+      where: { id_alumno: idAlumno },
+      select: {
+        estado: true,
+        usuario: { select: { estado: true, roles: { select: { rol: { select: { codigo: true } } } } } },
+      },
+    });
+  }
+
+  function login(email: string) {
+    return request(app).post("/api/v1/auth/google").send({ id_token: email });
+  }
+
+  it("vuelve como pre-inscripto, sin acceso, y el primer pago le da el alta con su rol", async () => {
+    const alumno = await crearAlumno(prisma, { email: "sin.pago@example.com" });
+    const [horario] = await horariosFuncionales();
+    const anterior = await inscribir(alumno.id_alumno, [horario.id_horario]);
+    await darDeBaja(alumno.id_alumno);
+
+    const reactivacion = await comoMarina("post", `/alumnos/${alumno.id_alumno}/reactivar`).send({
+      id_plan: datosDemo.idPlan.get("Básico"),
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [horario.id_horario],
+    });
+
+    expect(reactivacion.status).toBe(201);
+    expect(reactivacion.body).toMatchObject({ estado: "PREINSCRIPTA", reserva: { vencida: false } });
+    expect((await obtenerInscripcion(anterior.body.id_inscripcion))?.estado).toBe("BAJA");
+    expect(await estadoDelAlumno(alumno.id_alumno)).toEqual({
+      estado: "INACTIVO",
+      usuario: { estado: "INACTIVO", roles: [] },
+    });
+    expect((await login("sin.pago@example.com")).status).toBe(403);
+
+    expect((await cobrarEnEfectivo(reactivacion.body.id_inscripcion, 25000)).status).toBe(201);
+
+    expect((await obtenerInscripcion(reactivacion.body.id_inscripcion))?.estado).toBe("ACTIVA");
+    expect(await estadoDelAlumno(alumno.id_alumno)).toEqual({
+      estado: "ACTIVO",
+      usuario: { estado: "ACTIVO", roles: [{ rol: { codigo: "ALUMNO" } }] },
+    });
+    expect((await login("sin.pago@example.com")).status).toBe(200);
   });
 });

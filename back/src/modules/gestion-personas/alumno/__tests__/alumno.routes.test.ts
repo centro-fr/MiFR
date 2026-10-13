@@ -1,6 +1,8 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
+import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import { AlumnoExistenteError, ForbiddenError } from "../../../../shared/errors/app-error.js";
 import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
@@ -43,6 +45,8 @@ describe("rutas de alumnos", () => {
       gestionPersonas: logica as unknown as ILogicaPersonas,
       gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
+      gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+      difusionPublica: logicaDifusionPublicaNoConfigurada,
       autenticacion,
       autorizacion,
     });
@@ -135,6 +139,25 @@ describe("rutas de alumnos", () => {
       { id_plan: 3, id_actividad: 4, limit: 20, offset: 0 },
       { idUsuario: 2, esPropietaria: false },
     );
+  });
+
+  it("le pasa a la lógica el filtro por estado de cuota y rechaza un estado que no existe", async () => {
+    logica.listarAlumnos.mockResolvedValue({ datos: [], total: 0, limit: 20, offset: 0 });
+
+    const valido = await request(app)
+      .get("/api/v1/alumnos?estado_cuota=VENCIDA")
+      .set("Authorization", "Bearer propietaria");
+    const invalido = await request(app)
+      .get("/api/v1/alumnos?estado_cuota=MOROSO")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(valido.status).toBe(200);
+    expect(logica.listarAlumnos).toHaveBeenCalledWith(
+      { estado_cuota: "VENCIDA", limit: 20, offset: 0 },
+      expect.objectContaining({ esPropietaria: true }),
+    );
+    expect(invalido.status).toBe(400);
+    expect(logica.listarAlumnos).toHaveBeenCalledTimes(1);
   });
 
   it("responde 403 si la profesora pide un alumno que no tiene a cargo", async () => {

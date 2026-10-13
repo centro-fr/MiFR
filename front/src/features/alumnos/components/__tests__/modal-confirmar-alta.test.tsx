@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
 import { describe, expect, it, vi } from "vitest";
-import { ModalConfirmarAlta } from "@/features/alumnos/components/alta-definitiva/modal-confirmar-alta";
-import { crearPendiente } from "@/features/alumnos/__tests__/pendiente-de-prueba";
+import { ModalConfirmarAlta } from "../alta-definitiva/modal-confirmar-alta";
+import { crearPendiente } from "../../__tests__/pendiente-de-prueba";
 import type { FormaPrimerPago } from "@/types/alta-definitiva";
 
 // jsdom no trae ResizeObserver y el RadioGroup de Radix lo usa para medir.

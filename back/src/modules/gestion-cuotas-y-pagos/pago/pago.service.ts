@@ -4,7 +4,7 @@ import {
   MontoDistintoError,
   NotFoundError,
 } from "../../../shared/errors/app-error.js";
-import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
@@ -17,21 +17,42 @@ import type {
   RechazarTransferenciaInput,
   RegistrarEfectivoInput,
   RegistrarTransferenciaRecibidaInput,
+  RendirLoteInput,
 } from "./pago.schemas.js";
 import type {
+  CobroEnEfectivo,
+  CobroSinRendir,
   Comprobante,
   DatosDePago,
+  EfectivoPendiente,
   EstadoPago,
+  FiltroEfectivo,
+  FiltroEfectivoEnInstantes,
   FiltroTransferencias,
+  MotivoSinRendir,
+  PaginaRendiciones,
   Pago,
   PagoConCuota,
   PagoParaComprobante,
+  ResultadoRendicion,
+  ResumenEfectivoPendiente,
   TransferenciaConAlumno,
   TransferenciaEnRevision,
 } from "./pago.types.js";
 
 const MS_POR_HORA = 3_600_000;
+const MS_POR_DIA = 24 * MS_POR_HORA;
 const HORAS_PARA_REVISAR = 24;
+
+function enInstantes({ id_profesora, desde, hasta }: FiltroEfectivo): FiltroEfectivoEnInstantes {
+  return { id_profesora, ...rangoDeDiasArgentinos(desde, hasta) };
+}
+
+// Días de Argentina entre el cobro y hoy: un cobro de anoche a las 22:00 lleva un día, no cero.
+function conDiasSinRendir({ fecha_rendicion: _, ...cobro }: CobroEnEfectivo, hoy: Date): CobroSinRendir {
+  const dias = Math.round((hoy.getTime() - fechaActualArgentina(cobro.fecha_pago).getTime()) / MS_POR_DIA);
+  return { ...cobro, dias_sin_rendir: dias };
+}
 
 function verificarMonto(monto: number, esperado: number, confirmado: boolean): void {
   if (monto !== esperado && !confirmado) throw new MontoDistintoError(esperado);
@@ -156,6 +177,77 @@ export class PagoService implements IInfoPagos {
     });
   }
 
+  // US-19: lo que cada profesora tiene que rendir: los totales completos y una página del detalle.
+  async efectivoPendiente(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<EfectivoPendiente> {
+    const enRango = enInstantes(filtro);
+    const [totales, cobros] = await Promise.all([
+      this.repositorio.totalesSinRendir(enRango),
+      this.repositorio.listarSinRendir(enRango, pagina),
+    ]);
+    const hoy = fechaActualArgentina();
+    return {
+      ...sumar(totales),
+      profesoras: totales,
+      cobros: cobros.map((cobro) => conDiasSinRendir(cobro, hoy)),
+      ...pagina,
+    };
+  }
+
+  // US-26: el resumen del día, sin el detalle de cada cobro.
+  async resumenEfectivoPendiente(): Promise<ResumenEfectivoPendiente> {
+    const [totales, [masAntiguo]] = await Promise.all([
+      this.repositorio.totalesSinRendir({}),
+      this.repositorio.listarSinRendir({}, { limit: 1, offset: 0 }),
+    ]);
+    return {
+      ...sumar(totales),
+      profesoras: totales,
+      mas_antiguo: masAntiguo ? conDiasSinRendir(masAntiguo, fechaActualArgentina()) : null,
+    };
+  }
+
+  async listarRendiciones(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<PaginaRendiciones> {
+    const { datos, total } = await this.repositorio.listarRendidos(enInstantes(filtro), pagina);
+    return { datos, total, ...pagina };
+  }
+
+  // Rendir uno que no se puede responde con el motivo: el lote, en cambio, saltea y sigue.
+  async rendir(id: number): Promise<ResultadoRendicion> {
+    const resultado = await this.rendirLote({ ids_pagos: [id] });
+    const [salteado] = resultado.salteados;
+    if (salteado?.motivo === "NO_EXISTE") throw new NotFoundError("Pago no encontrado");
+    if (salteado?.motivo === "YA_RENDIDO") throw new ConflictError("El cobro ya se rindió");
+    if (salteado) {
+      throw new ConflictError("Solo se rinden cobros en efectivo confirmados que cobró una profesora");
+    }
+    return resultado;
+  }
+
+  async rendirLote(input: RendirLoteInput): Promise<ResultadoRendicion> {
+    const ids =
+      "ids_pagos" in input
+        ? input.ids_pagos
+        : await this.repositorio.idsSinRendirDeProfesora(input.id_profesora);
+    if (ids.length === 0) return { rendidos: [], cantidad: 0, total: 0, salteados: [] };
+    const rendidos = await this.repositorio.rendir(ids, new Date());
+    const deLosRendidos = new Set(rendidos.map(({ id_pago }) => id_pago));
+    const sinRendir = ids.filter((id) => !deLosRendidos.has(id));
+    const motivos: Map<number, MotivoSinRendir> =
+      sinRendir.length > 0 ? await this.repositorio.motivosSinRendir(sinRendir) : new Map();
+    return {
+      rendidos: [...deLosRendidos],
+      cantidad: rendidos.length,
+      total: redondear(rendidos.reduce((suma, { monto }) => suma + monto, 0)),
+      salteados: sinRendir.map((id_pago) => ({ id_pago, motivo: motivos.get(id_pago) as MotivoSinRendir })),
+    };
+  }
+
   listarMisTransferencias(solicitante: Solicitante): Promise<TransferenciaConAlumno[]> {
     return this.repositorio.listarTransferenciasDeUsuario(solicitante.idUsuario);
   }
@@ -253,8 +345,13 @@ export class PagoService implements IInfoPagos {
   }
 }
 
+// La cuota guarda lo que había que cobrar ese día, ya con el descuento (US-13): la diferencia con el
+// precio de lista es lo que se descontó. Sin promoción en la inscripción no hay descuento que mostrar.
 function armarComprobante(pago: PagoParaComprobante): Comprobante {
-  const { cuota, usuario_registra, profesora_cobra } = pago;
+  const { cuota, usuario_registra, profesora_cobra, precio_lista } = pago;
+  const { promocion } = cuota.inscripcion;
+  const descuento =
+    promocion && precio_lista !== null ? Math.max(0, redondear(precio_lista - cuota.monto)) : 0;
   return {
     numero: pago.id_pago,
     fecha: pago.fecha_pago,
@@ -262,8 +359,23 @@ function armarComprobante(pago: PagoParaComprobante): Comprobante {
     monto: pago.monto,
     alumno: cuota.inscripcion.alumno.usuario,
     plan: cuota.inscripcion.plan.nombre,
-    cuota: { numero: cuota.numero_cuota, vencimiento: cuota.fecha_vencimiento },
+    cuota: { numero: cuota.numero_cuota, vencimiento: cuota.fecha_vencimiento, monto: cuota.monto },
+    precio_lista,
+    descuento,
+    promocion: descuento > 0 ? promocion : null,
     registrado_por: usuario_registra,
     profesora_cobra: profesora_cobra?.usuario ?? null,
+  };
+}
+
+// Los montos son NUMERIC(10,2): la suma en number se redondea a centavos para no arrastrar 0,000001.
+function redondear(monto: number): number {
+  return Math.round(monto * 100) / 100;
+}
+
+function sumar(totales: { cantidad: number; total: number }[]): { cantidad: number; total: number } {
+  return {
+    cantidad: totales.reduce((suma, { cantidad }) => suma + cantidad, 0),
+    total: redondear(totales.reduce((suma, { total }) => suma + total, 0)),
   };
 }

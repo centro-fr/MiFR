@@ -15,7 +15,6 @@ import { ListaTransferencias } from "@/features/transferencias/components/lista-
 import { ModalAprobarTransferencia } from "@/features/transferencias/components/modal-aprobar-transferencia";
 import { ModalRechazarTransferencia } from "@/features/transferencias/components/modal-rechazar-transferencia";
 import { PanelDetalle } from "@/features/transferencias/components/panel-detalle";
-import { ResumenPlazos } from "@/features/transferencias/components/resumen-plazos";
 import {
   useAprobarTransferencia,
   useRechazarTransferencia,
@@ -26,7 +25,6 @@ import {
   filtrarTransferencias,
   hayFiltrosActivos,
 } from "@/features/transferencias/utils/filtros-transferencias";
-import { contarPorTramo, type TramoPlazo } from "@/features/transferencias/utils/plazo-verificacion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { EstadoTransferencia, Transferencia } from "@/types/transferencia";
 import { cn } from "@/utils/cn";
@@ -211,26 +209,19 @@ function useListado() {
   // de 151 a menos de 100 ms. Los filtros no se difieren: lo que se escribe se ve al instante.
   const datosDelListado = useDeferredValue(listado.data);
   const visibles = useMemo(() => filtrarTransferencias(datosDelListado ?? [], filtros), [datosDelListado, filtros]);
-  const cuenta = useMemo(() => pendientes.data && contarPorTramo(pendientes.data), [pendientes.data]);
-
   const cambiarEstado = (nuevo: EstadoTransferencia) => {
     setEstado(nuevo);
     // El tramo del plazo solo aplica a las pendientes.
     if (nuevo !== "PENDIENTE") setFiltros((actuales) => ({ ...actuales, tramo: null }));
   };
 
-  const elegirTramo = (tramo: TramoPlazo | null) => {
-    setEstado("PENDIENTE");
-    setFiltros((actuales) => ({ ...actuales, tramo }));
-  };
-
   const actualizar = () => Promise.all([pendientes.refetch(), estado === "PENDIENTE" ? null : listado.refetch()]);
 
-  return { estado, filtros, setFiltros, pendientes, listado, visibles, cuenta, cambiarEstado, elegirTramo, actualizar };
+  return { estado, filtros, setFiltros, pendientes, listado, visibles, cambiarEstado, actualizar };
 }
 
 function ContenidoTransferencias() {
-  const { estado, filtros, setFiltros, pendientes, listado, visibles, cuenta, cambiarEstado, elegirTramo, actualizar } = useListado();
+  const { estado, filtros, setFiltros, pendientes, listado, visibles, cambiarEstado, actualizar } = useListado();
   const esEscritorio = useMediaQuery(ESCRITORIO);
   const [idSeleccionada, setIdSeleccionada] = useState<number | null>(null);
   // En escritorio siempre hay una abierta: la elegida o, si no, la más prioritaria de la lista.
@@ -250,7 +241,6 @@ function ContenidoTransferencias() {
   return (
     <>
       <Encabezado pendientes={pendientes.data?.length} actualizando={pendientes.isFetching || listado.isFetching} onActualizar={() => void actualizar()} />
-      <ResumenPlazos cuenta={cuenta} seleccionado={filtros.tramo} onSeleccionar={elegirTramo} />
       <BarraFiltros estado={estado} filtros={filtros} onEstado={cambiarEstado} onChange={setFiltros} onLimpiar={limpiar} />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">

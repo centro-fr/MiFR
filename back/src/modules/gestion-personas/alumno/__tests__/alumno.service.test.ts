@@ -23,6 +23,7 @@ function crearRepositorioMock() {
     buscarPorIdUsuario: vi.fn(),
     buscarPorIds: vi.fn(),
     listar: vi.fn(),
+    listarIds: vi.fn(),
     actualizar: vi.fn(),
     activar: vi.fn(),
     darDeBaja: vi.fn(),
@@ -323,6 +324,13 @@ describe("AlumnoService", () => {
     expect(repositorio.listar).toHaveBeenCalledWith(filtro);
   });
 
+  it("listarIds pide al repositorio los ids del listado hasta el tope", async () => {
+    repositorio.listarIds.mockResolvedValue([3, 1]);
+
+    await expect(servicio.listarIds({ busqueda: "lop" }, 501)).resolves.toEqual([3, 1]);
+    expect(repositorio.listarIds).toHaveBeenCalledWith({ busqueda: "lop" }, 501);
+  });
+
   it("obtenerPorId lanza NotFoundError si no existe", async () => {
     repositorio.buscarPorId.mockResolvedValue(null);
 
@@ -497,18 +505,19 @@ describe("AlumnoService", () => {
       await expect(servicio.darDeBaja(1)).rejects.toThrow(ConflictError);
     });
 
-    it("reactivar vuelve a activar a un alumno dado de baja", async () => {
+    it("reactivar devuelve a un alumno dado de baja al estado pedido", async () => {
       const alumno = crearAlumno({ estado: "BAJA" });
       repositorio.buscarPorId.mockResolvedValue(alumno);
-      repositorio.reactivar.mockResolvedValue({ ...alumno, estado: "ACTIVO" });
+      repositorio.reactivar.mockResolvedValue({ ...alumno, estado: "INACTIVO" });
 
-      await expect(servicio.reactivar(1)).resolves.toMatchObject({ estado: "ACTIVO" });
+      await expect(servicio.reactivar(1, "INACTIVO")).resolves.toMatchObject({ estado: "INACTIVO" });
+      expect(repositorio.reactivar).toHaveBeenCalledWith(alumno, "INACTIVO");
     });
 
     it("reactivar lanza ConflictError si el alumno no está dado de baja", async () => {
       repositorio.buscarPorId.mockResolvedValue(crearAlumno({ estado: "ACTIVO" }));
 
-      await expect(servicio.reactivar(1)).rejects.toThrow(ConflictError);
+      await expect(servicio.reactivar(1, "ACTIVO")).rejects.toThrow(ConflictError);
     });
   });
 });

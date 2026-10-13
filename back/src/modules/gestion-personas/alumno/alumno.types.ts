@@ -1,6 +1,8 @@
 import type { alumnos, estado_alumno, usuarios } from "@prisma/client";
 
 export type EstadoAlumno = estado_alumno;
+// El estado con el que vuelve un alumno dado de baja: ACTIVO si ya pagó alguna vez, INACTIVO si no.
+export type EstadoAlReactivar = Exclude<EstadoAlumno, "BAJA">;
 
 // Los datos personales viven en usuarios (DER: alumnos.id_usuario). Se traen con el alumno y
 // con su tutor, sin google_id ni fechas de auditoría, que el cliente no necesita.

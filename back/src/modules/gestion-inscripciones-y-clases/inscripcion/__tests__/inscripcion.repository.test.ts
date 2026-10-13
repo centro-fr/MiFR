@@ -21,6 +21,8 @@ const transaccion = {
   },
   inscripcion_horarios: {
     groupBy: vi.fn(),
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
     updateMany: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
@@ -44,6 +46,7 @@ const nueva = {
   id_alumno: 5,
   id_plan: 1,
   id_plan_precio: 15,
+  id_promocion: 4,
   id_profesora: 3,
   sin_cargo: false,
   fecha_inicio: DIA,
@@ -110,6 +113,33 @@ describe("InscripcionRepository", () => {
       expect(prisma.inscripciones.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id_alumno: 5, estado: { in: ["PREINSCRIPTA", "ACTIVA"] } } }),
       );
+    });
+
+    it("listarDeLaUltimaBaja trae las inscripciones que cerró la última baja del alumno, sin los cambios de plan", async () => {
+      const instante = new Date("2026-10-05T14:00:00Z");
+      prisma.inscripciones.findFirst.mockResolvedValue({ fecha_baja: instante });
+      prisma.inscripciones.findMany.mockResolvedValue([{ id_inscripcion: 12 }]);
+
+      await expect(repositorio.listarDeLaUltimaBaja(5)).resolves.toEqual([{ id_inscripcion: 12 }]);
+
+      const deBaja = { id_alumno: 5, estado: "BAJA", motivo_baja: { not: "CAMBIO_PLAN" } };
+      expect(prisma.inscripciones.findFirst).toHaveBeenCalledWith({
+        where: deBaja,
+        orderBy: { fecha_baja: "desc" },
+        select: { fecha_baja: true },
+      });
+      expect(prisma.inscripciones.findMany).toHaveBeenCalledWith({
+        where: { ...deBaja, fecha_baja: instante },
+        include: INCLUIR_DATOS_INSCRIPCION,
+        orderBy: { id_inscripcion: "asc" },
+      });
+    });
+
+    it("listarDeLaUltimaBaja no devuelve nada si el alumno nunca se dio de baja", async () => {
+      prisma.inscripciones.findFirst.mockResolvedValue(null);
+
+      await expect(repositorio.listarDeLaUltimaBaja(5)).resolves.toEqual([]);
+      expect(prisma.inscripciones.findMany).not.toHaveBeenCalled();
     });
 
     it("listar combina los filtros; la actividad se busca en los horarios vigentes", async () => {
@@ -215,6 +245,81 @@ describe("InscripcionRepository", () => {
       });
     });
 
+    const INSCRIPTOS_DEL_HORARIO_8 = {
+      id_horario: 8,
+      fecha_desde: { lte: DIA },
+      OR: [{ fecha_hasta: null }, { fecha_hasta: { gte: DIA } }],
+      // Solo la inscripción activa: un pre-inscripto no está en la clase.
+      inscripcion: { estado: "ACTIVA", alumno: { estado: { not: "BAJA" } } },
+    };
+    const SELECCION_INSCRIPTO = {
+      inscripcion: {
+        select: {
+          id_inscripcion: true,
+          id_alumno: true,
+          alumno: { select: { usuario: { select: { nombre: true, apellido: true } } } },
+        },
+      },
+    };
+    const inscripto = {
+      id_inscripcion: 12,
+      id_alumno: 5,
+      alumno: { usuario: { nombre: "Ana", apellido: "Paz" } },
+    };
+
+    it("listarParaAsistencia bloquea el horario y trae los inscriptos vigentes ese día, por apellido", async () => {
+      transaccion.inscripcion_horarios.findMany.mockResolvedValue([{ inscripcion: inscripto }]);
+
+      await expect(repositorio.listarParaAsistencia(8, DIA)).resolves.toEqual([inscripto]);
+      expect(clavesBloqueadas()).toEqual(["inscripcion-horario:8"]);
+      expect(transaccion.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        transaccion.inscripcion_horarios.findMany.mock.invocationCallOrder[0]!,
+      );
+      expect(transaccion.inscripcion_horarios.findMany).toHaveBeenCalledWith({
+        where: INSCRIPTOS_DEL_HORARIO_8,
+        select: SELECCION_INSCRIPTO,
+        orderBy: [
+          { inscripcion: { alumno: { usuario: { apellido: "asc" } } } },
+          { inscripcion: { alumno: { usuario: { nombre: "asc" } } } },
+        ],
+      });
+    });
+
+    it("buscarParaAsistencia bloquea el horario y devuelve solo una inscripción vigente del alumno", async () => {
+      transaccion.inscripcion_horarios.findFirst.mockResolvedValue({ inscripcion: inscripto });
+
+      await expect(repositorio.buscarParaAsistencia(8, 5, DIA)).resolves.toEqual(inscripto);
+      expect(clavesBloqueadas()).toEqual(["inscripcion-horario:8"]);
+      expect(transaccion.inscripcion_horarios.findFirst).toHaveBeenCalledWith({
+        where: {
+          ...INSCRIPTOS_DEL_HORARIO_8,
+          inscripcion: { ...INSCRIPTOS_DEL_HORARIO_8.inscripcion, id_alumno: 5 },
+        },
+        select: SELECCION_INSCRIPTO,
+      });
+    });
+
+    it("buscarParaAsistencia devuelve null cuando el alumno dejó de estar inscripto", async () => {
+      transaccion.inscripcion_horarios.findFirst.mockResolvedValue(null);
+
+      await expect(repositorio.buscarParaAsistencia(8, 5, DIA)).resolves.toBeNull();
+    });
+
+    it("contarInscriptosParaAsistencia devuelve vacío sin consultar y agrupa por fecha vigente", async () => {
+      await expect(repositorio.contarInscriptosParaAsistencia([], DIA)).resolves.toEqual(new Map());
+      expect(prisma.inscripcion_horarios.groupBy).not.toHaveBeenCalled();
+
+      prisma.inscripcion_horarios.groupBy.mockResolvedValue([{ id_horario: 8, _count: { id_horario: 2 } }]);
+      await expect(repositorio.contarInscriptosParaAsistencia([8, 9], DIA)).resolves.toEqual(
+        new Map([[8, 2]]),
+      );
+      expect(prisma.inscripcion_horarios.groupBy).toHaveBeenCalledWith({
+        by: ["id_horario"],
+        where: { ...INSCRIPTOS_DEL_HORARIO_8, id_horario: { in: [8, 9] } },
+        _count: { id_horario: true },
+      });
+    });
+
     it("contarLugaresOcupados cuenta por horario las activas y las pre-inscripciones con la reserva vigente", async () => {
       await expect(repositorio.contarLugaresOcupados([], RESERVAS)).resolves.toEqual(new Map());
       expect(prisma.inscripcion_horarios.groupBy).not.toHaveBeenCalled();
@@ -247,6 +352,7 @@ describe("InscripcionRepository", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             estado: "PREINSCRIPTA",
+            id_promocion: 4,
             horarios: {
               create: [
                 { id_horario: 9, fecha_desde: DIA },
@@ -404,20 +510,28 @@ describe("InscripcionRepository", () => {
   describe("reactivar", () => {
     const reactivacion = { ...nueva, estado: "ACTIVA" as const };
 
-    it("crea una inscripción nueva ACTIVA si hay cupo", async () => {
+    it("crea una inscripción nueva en el estado pedido si hay cupo", async () => {
       await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toMatchObject({
         resultado: "ok",
       });
+      await repositorio.reactivar({ ...reactivacion, estado: "PREINSCRIPTA" }, [8], DIA, RESERVAS);
 
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({ estado: "ACTIVA" });
+      expect(transaccion.inscripciones.create.mock.calls[1][0].data).toMatchObject({
+        estado: "PREINSCRIPTA",
+      });
     });
 
-    it("devuelve la activa que ya existía en lugar de crear otra", async () => {
+    it("devuelve la vigente que ya existía en lugar de crear otra", async () => {
       transaccion.inscripciones.findFirst.mockResolvedValue({ id_inscripcion: 12 });
 
       await expect(repositorio.reactivar(reactivacion, [8], DIA, RESERVAS)).resolves.toEqual({
         resultado: "ok",
         inscripcion: { id_inscripcion: 12 },
+      });
+      expect(transaccion.inscripciones.findFirst.mock.calls[0][0].where).toEqual({
+        id_alumno: 5,
+        estado: { in: ["PREINSCRIPTA", "ACTIVA"] },
       });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();
     });
@@ -436,12 +550,16 @@ describe("InscripcionRepository", () => {
   describe("cambiarPlan", () => {
     const cambio = { id_plan: 2, id_profesora: 3, ids_horarios: [9], sin_cargo: false };
     const fechas = { instante: INSTANTE, dia: DIA };
+    // US-13: la inscripción nueva guarda la promoción vigente del plan nuevo.
+    const PRECIO_NUEVO = { id_plan_precio: 16, id_promocion: 6 };
 
     it("da de baja la actual con CAMBIO_PLAN y crea la nueva con el mismo estado", async () => {
       conCupoLibre([9]);
       transaccion.inscripciones.findUnique.mockResolvedValue({ estado: "ACTIVA" });
 
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toMatchObject({
+      await expect(
+        repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS),
+      ).resolves.toMatchObject({
         resultado: "ok",
       });
 
@@ -458,6 +576,7 @@ describe("InscripcionRepository", () => {
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
         id_plan: 2,
         id_plan_precio: 16,
+        id_promocion: 6,
         estado: "ACTIVA",
         fecha_inicio: DIA,
         horarios: { create: [{ id_horario: 9, fecha_desde: DIA }] },
@@ -468,7 +587,13 @@ describe("InscripcionRepository", () => {
       conCupoLibre([9]);
       const empezoAntes = new Date("2026-10-02T00:00:00Z");
 
-      await repositorio.cambiarPlan({ ...actual, fecha_inicio: empezoAntes }, cambio, 16, fechas, RESERVAS);
+      await repositorio.cambiarPlan(
+        { ...actual, fecha_inicio: empezoAntes },
+        cambio,
+        PRECIO_NUEVO,
+        fechas,
+        RESERVAS,
+      );
 
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
         estado: "PREINSCRIPTA",
@@ -479,17 +604,17 @@ describe("InscripcionRepository", () => {
 
     it("no cambia si dejó de estar vigente, si el plan nuevo ya está vigente o si no hay cupo", async () => {
       transaccion.inscripciones.findUnique.mockResolvedValueOnce({ estado: "BAJA" });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "no-vigente",
       });
 
       transaccion.inscripciones.findFirst.mockResolvedValueOnce({ id_inscripcion: 30 });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "plan-duplicado",
       });
 
       transaccion.horarios.findMany.mockResolvedValue([]);
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();

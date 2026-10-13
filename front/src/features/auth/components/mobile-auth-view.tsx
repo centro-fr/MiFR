@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LogoFr } from "@/components/marca/logo-fr";
 import { AuthFormBlock } from "@/features/auth/components/auth-form-block";
 import type { AuthErrorCode } from "@/types/auth";
 
@@ -19,12 +20,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
       {/* Header mínimo público: solo logo (Stitch) */}
       <header className="flex items-center border-b border-slate-100 bg-white px-6 py-4 dark:border-white/10 dark:bg-surface-low">
         <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-primary-dark to-primary text-sm font-extrabold tracking-wider text-white shadow-sm"
-          >
-            FR
-          </span>
+          <LogoFr className="size-8" />
           <span className="text-sm font-extrabold tracking-tight text-dark dark:text-white">MiFR</span>
         </div>
       </header>
@@ -32,12 +28,7 @@ export function MobileAuthView({ errorCode, isLoading, onLogin, onRetry, onClear
       {/* Contenido central */}
       <div className="flex flex-1 flex-col justify-center px-6 py-8">
         <div className="flex flex-col items-center text-center">
-          <div
-            aria-hidden="true"
-            className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary-dark via-primary to-primary-dark text-2xl font-extrabold tracking-wider text-white shadow-xl ring-4 ring-pink-50 dark:ring-primary/20"
-          >
-            FR
-          </div>
+          <LogoFr className="mb-5 size-20 drop-shadow-xl" />
           <h1 className="text-2xl font-extrabold tracking-tight text-dark dark:text-white">MiFR</h1>
           <p className="mt-1 text-sm font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
             Centro de Entrenamiento FR

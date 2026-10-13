@@ -96,6 +96,8 @@
   --animate-nav-in: fade-in 0.18s ease-out both;
   /* Modal centrado: entrada con leve escala y elevación */
   --animate-modal-in: modal-in 0.22s ease-out both;
+  /* Franja de disciplinas de la home: se desplaza sola, en bucle (la lista va duplicada). */
+  --animate-marquesina: marquesina 40s linear infinite;
 }
 
 /* Tokens shadcn: `inline` para que las utilidades (bg-background,
@@ -267,6 +269,15 @@
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes marquesina {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 

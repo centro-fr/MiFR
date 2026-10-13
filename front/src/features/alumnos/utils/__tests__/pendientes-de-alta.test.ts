@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { crearPendiente } from "@/features/alumnos/__tests__/pendiente-de-prueba";
+import { crearPendiente } from "../../__tests__/pendiente-de-prueba";
 import {
   FILTROS_INICIALES,
   filtrarPendientes,
   hayFiltrosActivos,
   planesDe,
   textoHorarios,
-} from "@/features/alumnos/utils/pendientes-de-alta";
+} from "../pendientes-de-alta";
 
 const AHORA = new Date("2026-10-10T15:00:00Z");
 

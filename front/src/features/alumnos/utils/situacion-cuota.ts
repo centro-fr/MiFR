@@ -39,9 +39,11 @@ function dias(cantidad: number): string {
 /** "Vence en 5 días", "Vence hoy" o "Venció hace 3 días"; null sin cuota paga. */
 export function detalleVencimiento({ dias_restantes: restantes, fecha_vencimiento: fecha }: SituacionCuota): string | null {
   if (restantes === null || fecha === null) return null;
-  if (restantes > 0) return `Vence en ${dias(restantes)} (${formatearFecha(fecha)})`;
+  const textoFecha = formatearFecha(fecha);
+  const sufijoFecha = textoFecha ? ` (${textoFecha})` : "";
+  if (restantes > 0) return `Vence en ${dias(restantes)}${sufijoFecha}`;
   if (restantes === 0) return "Vence hoy";
-  return `Venció hace ${dias(-restantes)} (${formatearFecha(fecha)})`;
+  return `Venció hace ${dias(-restantes)}${sufijoFecha}`;
 }
 
 export interface DeudaAlIrse {

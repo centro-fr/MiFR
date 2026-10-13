@@ -1,11 +1,16 @@
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "../../shared/db/datos-demo.js";
+import {
+  ALUMNOS_DEMO,
+  cargarDatosDemo,
+  EMAIL_MULTIROL_DEMO,
+  type DatosDemoCargados,
+} from "../../shared/db/datos-demo.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
 // Casos PI-04 a PI-06 del plan de pruebas de integración, sobre los mismos datos que carga db:seed:demo:
-// Marina (propietaria y profesora), Lucía y Carla (profesoras), Funcional Grupal y Entrenamiento Personalizado.
+// Marina (propietaria y profesora), Lucía y Carla (profesoras) y la grilla semanal del centro.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma } = entorno;
 
@@ -77,10 +82,10 @@ describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
     expect(actividad.status).toBe(201);
     expect(horario.status).toBe(201);
     expect(horario.body.cupo_maximo_efectivo).toBe(3);
-    expect(entrenamientoPersonalizado.body).toHaveLength(2);
+    // Personalizado se da lunes, miércoles y viernes a las 15 y martes y jueves a las 18.
     expect(
       entrenamientoPersonalizado.body.map((h: { cupo_maximo_efectivo: number }) => h.cupo_maximo_efectivo),
-    ).toEqual([4, 4]);
+    ).toEqual([4, 4, 4, 4, 4]);
   });
 
   it("el cupo propio de un horario manda sobre el de su actividad", async () => {
@@ -92,12 +97,21 @@ describe("PI-04: actividad personalizada y cupo de sus horarios", () => {
       hora_fin: "12:00",
       cupo_maximo: 2,
     });
-    const deMarina = await comoMarina("get", `/horarios?id_profesora=${idProfesora(EMAIL_MULTIROL_DEMO)}`);
+    const training = await comoMarina("get", `/horarios?id_actividad=${idActividad("TRAINING")}`);
 
     expect(conCupoPropio.status).toBe(201);
     expect(conCupoPropio.body.cupo_maximo_efectivo).toBe(2);
-    expect(deMarina.body).toHaveLength(1);
-    expect(deMarina.body[0]).toMatchObject({ dia_semana: VIERNES, cupo_maximo_efectivo: 12 });
+    // Training tiene cupo 12; el del viernes, 15 propio (CA-07).
+    expect(
+      training.body.map((h: { dia_semana: number; cupo_maximo_efectivo: number }) => [
+        h.dia_semana,
+        h.cupo_maximo_efectivo,
+      ]),
+    ).toEqual([
+      [LUNES, 12],
+      [3, 12],
+      [VIERNES, 15],
+    ]);
   });
 
   it("una actividad grupal sin cupo se crea y se asigna sin cupo", async () => {
@@ -167,8 +181,8 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
         id_actividad: idActividad("FUNCIONAL"),
         id_profesora: idProfesora(EMAIL_MULTIROL_DEMO),
         dia_semana: VIERNES,
-        hora_inicio: "18:30",
-        hora_fin: "19:30",
+        hora_inicio: "20:30",
+        hora_fin: "21:30",
       }),
       409,
     );
@@ -222,6 +236,31 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
     expect(await prisma.horarios.count({ where: { dia_semana: DOMINGO } })).toBe(0);
   });
 
+  it("una clase puede terminar a las 23:00, el cierre del centro, y no después", async () => {
+    const hastaElCierre = await crearHorario({
+      id_actividad: idActividad("FUNCIONAL"),
+      id_profesora: idProfesora(LUCIA),
+      dia_semana: SABADO,
+      hora_inicio: "22:00",
+      hora_fin: "23:00",
+    });
+    const despuesDelCierre = await esperarRechazoSinCambios(
+      crearHorario({
+        id_actividad: idActividad("FUNCIONAL"),
+        id_profesora: idProfesora(CARLA),
+        dia_semana: SABADO,
+        hora_inicio: "22:30",
+        hora_fin: "23:30",
+      }),
+      400,
+    );
+
+    expect(hastaElCierre.status).toBe(201);
+    expect(despuesDelCierre.body.error.details.fieldErrors.hora_fin).toEqual([
+      "La hora debe estar entre las 07:00 y las 23:00",
+    ]);
+  });
+
   it("no se puede pasar un horario al domingo", async () => {
     const delLunes = await prisma.horarios.findFirstOrThrow({
       where: { id_profesora: idProfesora(LUCIA), dia_semana: LUNES },
@@ -239,6 +278,9 @@ describe("PI-05: validaciones al asignar profesora y horario", () => {
 });
 
 describe("PI-06: modificación y baja de actividades con horarios", () => {
+  // Lunes, miércoles y viernes a las 8, 21 y 22, y martes y jueves a las 15.
+  const HORARIOS_DE_FUNCIONAL = 11;
+
   it("la descripción nueva de una actividad se ve en todos sus horarios", async () => {
     const modificar = await comoMarina("patch", `/actividades/${idActividad("FUNCIONAL")}`).send({
       descripcion: "Circuito funcional de alta intensidad",
@@ -246,14 +288,14 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     const horarios = await comoMarina("get", `/horarios?id_actividad=${idActividad("FUNCIONAL")}`);
 
     expect(modificar.status).toBe(200);
-    expect(horarios.body).toHaveLength(3);
+    expect(horarios.body).toHaveLength(HORARIOS_DE_FUNCIONAL);
     for (const horario of horarios.body) {
       expect(horario.actividad.descripcion).toBe("Circuito funcional de alta intensidad");
     }
   });
 
   it("no se puede dar de baja una actividad con alumnos inscriptos en sus horarios", async () => {
-    // En el escenario, Sofía está inscripta en Funcional los lunes y los miércoles.
+    // En el escenario, Sofía está inscripta en Funcional los lunes y los miércoles a las 8.
     const respuesta = await comoMarina("delete", `/actividades/${idActividad("FUNCIONAL")}`);
 
     expect(respuesta.status).toBe(409);
@@ -266,7 +308,7 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
     expect(funcional?.activo).toBe(true);
     expect(
       await prisma.horarios.count({ where: { id_actividad: idActividad("FUNCIONAL"), fecha_baja: null } }),
-    ).toBe(3);
+    ).toBe(HORARIOS_DE_FUNCIONAL);
   });
 
   it("la baja de una actividad sin alumnos da de baja también sus horarios", async () => {
@@ -377,14 +419,77 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
   });
 
   it("una actividad no puede pasar a personalizada sin cupo", async () => {
-    const respuesta = await comoMarina("patch", `/actividades/${idActividad("FUNCIONAL")}`).send({
+    const actividad = await comoMarina("post", "/actividades").send({
+      codigo: "YOGA",
+      nombre: "Yoga",
+      modalidad: "GRUPAL",
+    });
+
+    const respuesta = await comoMarina("patch", `/actividades/${actividad.body.id_actividad}`).send({
       modalidad: "PERSONALIZADA",
     });
 
     expect(respuesta.status).toBe(400);
-    const funcional = await prisma.actividades.findUnique({
-      where: { id_actividad: idActividad("FUNCIONAL") },
+    const yoga = await prisma.actividades.findUnique({
+      where: { id_actividad: actividad.body.id_actividad },
     });
-    expect(funcional?.modalidad).toBe("GRUPAL");
+    expect(yoga?.modalidad).toBe("GRUPAL");
+  });
+});
+
+describe("PI-46: las actividades públicas del centro", () => {
+  const LUNES_A_VIERNES = [1, 2, 3, 4, 5];
+
+  function consultarActividades() {
+    return request(app).get("/api/v1/publico/actividades");
+  }
+
+  function actividad(respuesta: request.Response, nombre: string) {
+    return respuesta.body.actividades.find((a: { nombre: string }) => a.nombre === nombre);
+  }
+
+  it("un visitante sin sesión ve las actividades con sus días, y la grilla de horarios no es pública", async () => {
+    const publicas = await consultarActividades();
+    const disponibilidad = await request(app).get("/api/v1/publico/disponibilidad");
+    const grilla = await request(app).get("/api/v1/horarios");
+
+    expect(publicas.status).toBe(200);
+    expect(publicas.headers["cache-control"]).toBe("public, max-age=60");
+    expect(publicas.body.actividades).toHaveLength(8);
+    expect(actividad(publicas, "Funcional")).toEqual({
+      id_actividad: idActividad("FUNCIONAL"),
+      nombre: "Funcional",
+      descripcion: "Entrenamiento funcional en grupo",
+      modalidad: "GRUPAL",
+      dias: LUNES_A_VIERNES,
+      clases_por_semana: 11,
+    });
+    expect(actividad(publicas, "Combat")).toMatchObject({ dias: [2, 4], clases_por_semana: 2 });
+    // Ni horas, ni profesoras, ni cupos, ni datos de alumnos.
+    const texto = JSON.stringify(publicas.body);
+    for (const campo of ["hora_inicio", "profesora", "cupo", "Lucía", "@"]) {
+      expect(texto).not.toContain(campo);
+    }
+    for (const alumno of ALUMNOS_DEMO) {
+      expect(texto).not.toContain(alumno.dni);
+    }
+    expect(disponibilidad.status).toBe(404);
+    expect(grilla.status).toBe(401);
+  });
+
+  it("una actividad sin horarios vigentes deja de ofrecerse y la baja de un horario se refleja en sus días", async () => {
+    const delCombat = await prisma.horarios.findMany({ where: { id_actividad: idActividad("COMBAT") } });
+    const trainingDelViernes = await prisma.horarios.findFirstOrThrow({
+      where: { id_actividad: idActividad("TRAINING"), dia_semana: VIERNES },
+    });
+    for (const { id_horario } of [...delCombat, trainingDelViernes]) {
+      expect((await comoMarina("delete", `/horarios/${id_horario}`)).status).toBe(200);
+    }
+
+    const publicas = await consultarActividades();
+
+    expect(actividad(publicas, "Combat")).toBeUndefined();
+    expect(actividad(publicas, "Training")).toMatchObject({ dias: [LUNES, 3], clases_por_semana: 2 });
+    expect(publicas.body.actividades).toHaveLength(7);
   });
 });

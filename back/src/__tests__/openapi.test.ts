@@ -48,6 +48,9 @@ const OPERACIONES_ESPERADAS = [
   "delete /planes/{id}",
   "get /planes/{id}/precios",
   "post /planes/{id}/precios",
+  "get /parametros",
+  "get /parametros/datos-bancarios",
+  "patch /parametros/{clave}",
   "get /inscripciones",
   "post /inscripciones",
   "get /inscripciones/{id}",
@@ -55,6 +58,35 @@ const OPERACIONES_ESPERADAS = [
   "post /alumnos/{id}/reactivar",
   "post /inscripciones/{id}/cambio-plan",
   "patch /inscripciones/{id}/horarios",
+  "post /pagos/efectivo",
+  "post /pagos/transferencia",
+  "post /pagos/transferencia-recibida",
+  "get /pagos/mis-transferencias",
+  "get /pagos/transferencias",
+  "post /pagos/{id}/aprobar",
+  "post /pagos/{id}/rechazar",
+  "get /pagos/{id}/comprobante",
+  "get /promociones",
+  "get /promociones/{id}",
+  "post /promociones",
+  "patch /promociones/{id}",
+  "post /promociones/{id}/desactivar",
+  "get /pagos/efectivo-pendiente",
+  "get /pagos/rendiciones",
+  "post /pagos/{id}/rendir",
+  "post /pagos/rendir",
+  "get /publico/actividades",
+  "get /clases/hoy",
+  "get /clases/{id}/asistencia",
+  "put /clases/{id}/asistencia/{idAlumno}",
+  "post /clases/{id}/asistencia/todos-presentes",
+  "post /clases/{id}/cerrar",
+  "get /clases",
+  "post /clases/{id}/cancelar",
+  "get /suplencias",
+  "post /suplencias",
+  "patch /suplencias/{idClase}",
+  "delete /suplencias/{idClase}",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {
@@ -83,7 +115,7 @@ describe("documentación OpenAPI", () => {
     expect(listarOperaciones(generarDocumentoOpenApi())).not.toContain("post /auth/desarrollo");
   });
 
-  it("registrarDocumentacionApi exige el token Bearer en todo menos el login", () => {
+  it("registrarDocumentacionApi exige el token Bearer en todo menos el login y el panel público", () => {
     const documento = generarDocumentoOpenApi();
     const sinSeguridad = Object.entries(documento.paths).flatMap(([ruta, operaciones]) =>
       Object.entries(operaciones as Record<string, { security?: unknown[] }>)
@@ -91,7 +123,7 @@ describe("documentación OpenAPI", () => {
         .map(([metodo]) => `${metodo} ${ruta}`),
     );
 
-    expect(sinSeguridad).toEqual(["post /auth/google"]);
+    expect(sinSeguridad.sort()).toEqual(["get /publico/actividades", "post /auth/google"]);
   });
 
   it("createApp publica el documento y Swagger UI cuando recibe la documentación", async () => {

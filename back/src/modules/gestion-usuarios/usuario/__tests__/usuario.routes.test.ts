@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import { createApp as crearAppBase } from "../../../../app.js";
+import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
+import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
 import { JwtService } from "../../sesion/jwt.service.js";
@@ -15,7 +17,11 @@ import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logi
 function createApp(
   dependencias: Omit<
     Parameters<typeof crearAppBase>[0],
-    "gestionServicioEntrenamiento" | "gestionPersonas" | "gestionInscripcionesYClases"
+    | "gestionServicioEntrenamiento"
+    | "gestionPersonas"
+    | "gestionInscripcionesYClases"
+    | "gestionCuotasYPagos"
+    | "difusionPublica"
   >,
 ) {
   return crearAppBase({
@@ -23,6 +29,8 @@ function createApp(
     gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
     gestionPersonas: {} as unknown as ILogicaPersonas,
     gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
+    gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
+    difusionPublica: logicaDifusionPublicaNoConfigurada,
   });
 }
 

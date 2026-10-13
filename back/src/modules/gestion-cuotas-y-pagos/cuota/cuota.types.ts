@@ -1,4 +1,5 @@
 import type { estado_pago, forma_pago, tipo_plan } from "@prisma/client";
+import type { Habilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 
 export type EstadoPago = estado_pago;
@@ -10,6 +11,8 @@ export interface SituacionDeCuotas {
   id_inscripcion: number;
   tipo_plan: tipo_plan;
   dias_gracia: number;
+  // El instante en que se dio de baja la inscripción; null si sigue vigente.
+  fecha_baja: Date | null;
   cuotas: {
     id_cuota: number;
     numero_cuota: number;
@@ -17,6 +20,37 @@ export interface SituacionDeCuotas {
     estados_pagos: EstadoPago[];
   }[];
 }
+
+// Una inscripción activa con cuotas que pueden pedir un aviso de vencimiento (US-25): su situación,
+// el plan y a quién avisar.
+export interface SituacionParaAviso extends SituacionDeCuotas {
+  nombre_plan: string;
+  alumno: {
+    id_alumno: number;
+    id_usuario: number;
+    // El tutor, si el alumno es menor: quien entra al sistema y recibe los avisos.
+    id_usuario_responsable: number | null;
+    nombre: string;
+    apellido: string;
+  };
+}
+
+export type TipoAvisoCuota = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA";
+
+// La cuota vigente de una inscripción que pide un aviso en la fecha consultada (US-25). Quién lo
+// recibe (el alumno o su tutor) lo decide quien registra la notificación.
+export interface CuotaParaAviso {
+  tipo: TipoAvisoCuota;
+  id_cuota: number;
+  id_inscripcion: number;
+  fecha_vencimiento: Date;
+  nombre_plan: string;
+  alumno: SituacionParaAviso["alumno"];
+}
+
+// La habilitación de una inscripción y si tiene una transferencia sin revisar (US-16), que la
+// habilitación usa pero no devuelve: la ficha la muestra para no cobrar dos veces.
+export type HabilitacionDeInscripcion = Habilitacion & { tienePagoPendiente: boolean };
 
 // Una cuota con todos sus pagos, también los rechazados, para el historial de la ficha del alumno
 // (US-10). El plan sale de la inscripción, que puede no ser la vigente.

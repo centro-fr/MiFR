@@ -14,7 +14,13 @@ import type {
   DatosUsuarioAlumno,
 } from "./alumno.repository.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, TutorInput } from "./alumno.schemas.js";
-import type { Alumno, FiltroAlumno, PaginaAlumnos, TutorResuelto } from "./alumno.types.js";
+import type {
+  Alumno,
+  EstadoAlReactivar,
+  FiltroAlumno,
+  PaginaAlumnos,
+  TutorResuelto,
+} from "./alumno.types.js";
 import type { IInfoAlumnos } from "./interface/i-info-alumnos.js";
 
 // US-06: la edad de corte. Pasa a parametros_sistema cuando exista ese componente.
@@ -93,6 +99,10 @@ export class AlumnoService implements IInfoAlumnos {
     return { datos, total, limit: filtro.limit, offset: filtro.offset };
   }
 
+  listarIds(filtro: Omit<FiltroAlumno, "limit" | "offset">, tope: number): Promise<number[]> {
+    return this.repositorio.listarIds(filtro, tope);
+  }
+
   async obtenerPorId(id: number): Promise<Alumno> {
     const alumno = await this.repositorio.buscarPorId(id);
     if (!alumno) throw new NotFoundError("Alumno no encontrado");
@@ -165,10 +175,10 @@ export class AlumnoService implements IInfoAlumnos {
     return this.repositorio.darDeBaja(alumno);
   }
 
-  async reactivar(id: number): Promise<Alumno> {
+  async reactivar(id: number, estado: EstadoAlReactivar): Promise<Alumno> {
     const alumno = await this.obtenerPorId(id);
     if (alumno.estado !== "BAJA") throw new ConflictError("Solo se reactiva un alumno dado de baja");
-    return this.repositorio.reactivar(alumno);
+    return this.repositorio.reactivar(alumno, estado);
   }
 
   // El DNI ya registrado en un alumno tiene su propio código, para que el front ofrezca abrir esa

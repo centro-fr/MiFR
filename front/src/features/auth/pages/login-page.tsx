@@ -8,6 +8,7 @@ import { GisOfficialOverlay } from "@/features/auth/components/gis-official-over
 import { LoginHero } from "@/features/auth/components/login-hero";
 import { MobileAuthView } from "@/features/auth/components/mobile-auth-view";
 import { LoginDesarrolloPanel } from "@/features/auth/components/login-desarrollo-panel";
+import { VolverAlInicio } from "@/features/auth/components/volver-al-inicio";
 import { mapLoginError, useLogin, type LoginVariables } from "@/features/auth/hooks/use-login";
 import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
@@ -144,7 +145,7 @@ function LoginDesarrolloPage() {
   );
 }
 
-export function LoginPage() {
+function VarianteDeLogin() {
   if (USE_MOCKS && LOGIN_DESARROLLO) return <MockUserPickerPage />;
   if (USE_MOCKS) return <MockLoginPage />;
   if (LOGIN_DESARROLLO) return <LoginDesarrolloPage />;
@@ -173,5 +174,14 @@ function LoginSinConfigurar() {
         </AlertDescription>
       </Alert>
     </main>
+  );
+}
+
+export function LoginPage() {
+  return (
+    <>
+      <VolverAlInicio />
+      <VarianteDeLogin />
+    </>
   );
 }

@@ -126,10 +126,10 @@ Cada grupo desplegable tiene además su **pantalla de grupo**: muestra sus sub-o
 | Grupo | Pantalla | Sub-opciones |
 | ------ | ------ | ------------------- |
 | **Alumnos** | `/app/alumnos` | Listado (`/app/alumnos/listado`; la ficha `/app/alumnos/:id` lo mantiene marcado) · Pendientes de alta (US-07, con contador) |
-| **Cobros y Cuotas** | `/app/pagos` | Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
+| **Cobros y Cuotas** | `/app/pagos` | Estado de cuotas (US-15) → `/app/pagos/cuotas` · Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
 | **Profesora** (rol extra) | `/app/profesora` | Hoy · Mis clases |
 
-Las demás pantallas de Cobros y Cuotas (cobros en efectivo, rendiciones, cuotas vencidas) se suman como sub-opciones cuando se implementen.
+Las demás pantallas de Cobros y Cuotas (rendiciones, cuotas vencidas) se suman como sub-opciones cuando se implementen.
 
 > La profesora no tiene el grupo Alumnos: su ítem "Alumnos" va directo al listado, y si entra a `/app/alumnos` se la redirige ahí. Igual con `/app/profesora`, que la lleva a "Hoy".
 

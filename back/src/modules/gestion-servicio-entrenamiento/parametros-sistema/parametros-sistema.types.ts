@@ -30,3 +30,20 @@ export interface DefinicionParametro<T> {
 }
 
 export type CatalogoParametros = { [C in ClaveParametro]: DefinicionParametro<ValoresParametros[C]> };
+
+// Un parámetro como lo ve la API: su valor ya convertido a su tipo. fecha_actualizacion es null si
+// todavía no tiene fila y rige su valor inicial del catálogo.
+export interface Parametro {
+  clave: ClaveParametro;
+  tipo_dato: TipoDatoParametro;
+  valor: ValoresParametros[ClaveParametro];
+  descripcion: string;
+  fecha_actualizacion: Date | null;
+}
+
+// US-16: lo que necesita el alumno o su tutor para transferir.
+export interface DatosBancarios {
+  cbu: string;
+  alias: string;
+  titular: string;
+}

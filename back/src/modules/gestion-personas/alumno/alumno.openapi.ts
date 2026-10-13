@@ -1,5 +1,6 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
+import { ESTADOS_HABILITACION } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import {
   cuerpoJson,
   fechaSchema,
@@ -52,19 +53,92 @@ export const alumnoSchema = z
   })
   .openapi("Alumno");
 
+const situacionCuotaSchema = z
+  .object({
+    estado: z.enum(ESTADOS_HABILITACION).openapi({
+      description:
+        "POR_VENCER: dentro de los días de gracia del plan. PENDIENTE_DE_PAGO: sin ninguna cuota paga " +
+        "(pre-inscripto, o con la única transferencia rechazada)",
+    }),
+    fecha_vencimiento: fechaSchema.nullable().openapi({
+      description: "Vencimiento de la última cuota paga; null sin cuotas pagas",
+    }),
+    dias_restantes: z.number().int().nullable().openapi({
+      description: "Días hasta el vencimiento: 0 el mismo día, negativo si ya venció (días de atraso)",
+    }),
+    puede_asistir: z.boolean().openapi({
+      description:
+        "Según el estado y el parámetro VENCIDOS_PUEDEN_ASISTIR; una transferencia pendiente nunca bloquea",
+    }),
+    tiene_pago_pendiente: z.boolean().openapi({
+      description: "Hay una transferencia informada que la propietaria todavía no revisó",
+    }),
+  })
+  .openapi("SituacionCuota", {
+    description:
+      "Se calcula en cada consulta. En una inscripción dada de baja se calcula al día de la baja: muestra lo " +
+      "que debía el alumno al irse",
+  });
+
+const inscripcionConSituacionSchema = inscripcionSchema.extend({
+  situacion_cuota: situacionCuotaSchema.nullable(),
+});
+
 const alumnoEnListadoSchema = alumnoSchema
   .extend({
     inscripcion: resumenInscripcionSchema.nullable().openapi({
       description: "Plan y profesora de la inscripción vigente más reciente; null si no tiene",
     }),
+    situacion_cuota: situacionCuotaSchema.nullable().openapi({
+      description: "La de la inscripción de `inscripcion`; null si no tiene una vigente",
+    }),
   })
   .openapi("AlumnoEnListado");
 
+const cuotaDelHistorialSchema = z
+  .object({
+    id_cuota: z.number().int(),
+    id_inscripcion: z.number().int(),
+    plan: z.string().openapi({ description: "Nombre del plan de la inscripción" }),
+    numero_cuota: z.number().int(),
+    fecha_vencimiento: fechaSchema,
+    monto: z.number(),
+    pagos: z
+      .array(
+        z.object({
+          id_pago: z.number().int(),
+          forma_pago: z.enum(["EFECTIVO", "TRANSFERENCIA"]),
+          estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]),
+          monto: z.number(),
+          fecha_pago: fechaSchema,
+          motivo_rechazo: z.string().nullable(),
+        }),
+      )
+      .openapi({
+        description: "Todos los pagos de la cuota, también los rechazados, del más viejo al más nuevo",
+      }),
+  })
+  .openapi("CuotaDelHistorial");
+
 const fichaAlumnoSchema = alumnoSchema
   .extend({
-    inscripciones: z.array(inscripcionSchema).openapi({
-      description: "Inscripciones vigentes (pre-inscriptas o activas) con plan, precio y horarios",
+    inscripciones: z.array(inscripcionConSituacionSchema).openapi({
+      description:
+        "Inscripciones vigentes (pre-inscriptas o activas) con plan, precio, horarios y situación de cuota",
     }),
+    inscripciones_de_la_baja: z.array(inscripcionConSituacionSchema).openapi({
+      description:
+        "Solo en un alumno dado de baja (vacío en los demás): las inscripciones que cerró su última baja, con " +
+        "la situación de cuota al día de la baja, para advertir una deuda antes de reactivarlo",
+    }),
+    historial_cuotas: z
+      .array(cuotaDelHistorialSchema)
+      .nullable()
+      .openapi({
+        description:
+          "Historial de cuotas y pagos, de la cuota más nueva a la más vieja, hasta 100. Es un dato financiero: " +
+          "solo lo ve la propietaria; a una profesora le llega null",
+      }),
   })
   .openapi("FichaAlumno");
 
@@ -100,7 +174,10 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
       "parciales en el nombre y el apellido del alumno o de su tutor, sin distinguir acentos ni mayúsculas. " +
       "`dni` busca el DNI exacto. Los dados de baja no salen salvo con `incluirBajas=true` o `estado=BAJA`. " +
       "`id_plan`, `id_profesora` e `id_actividad` filtran por la inscripción vigente. Cada fila trae su plan y " +
-      "profesora. Paginado con `limit` (por defecto 20, máximo 100) y `offset`.",
+      "profesora y la situación de cuota de esa inscripción. `estado_cuota` filtra por el estado de esa situación: " +
+      "como se calcula en cada consulta, se calcula para todos los alumnos que cumplen los otros filtros, y si son " +
+      "más de 500 responde 400 para que se acote la búsqueda. Paginado con `limit` (por defecto 20, máximo 100) y " +
+      "`offset`.",
     request: { query: listarAlumnoQuerySchema },
     responses: {
       200: respuestaJson("Página de alumnos", paginaAlumnosSchema),
@@ -154,7 +231,9 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     summary: "Ficha de un alumno",
     description:
       `Requiere el permiso \`ALUMNOS_VER\`. ${aCargo} Con un alumno que no tiene a cargo, la profesora ` +
-      "recibe 403. La ficha trae las inscripciones vigentes con su plan, precio, profesora y horarios.",
+      "recibe 403. La ficha trae las inscripciones vigentes con su plan, precio, profesora, horarios y situación " +
+      "de cuota; la de un alumno dado de baja, también las inscripciones de su última baja. A la propietaria le " +
+      "trae además el historial de cuotas y pagos.",
     request: { params: alumnoIdParamSchema },
     responses: {
       200: respuestaJson("Ficha del alumno", fichaAlumnoSchema),

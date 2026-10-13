@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError } from "../../../shared/errors/app-error.js";
+import { ConflictError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { ActividadService } from "../actividad/actividad.service.js";
 import type { Actividad } from "../actividad/actividad.types.js";
 import type { HorarioService } from "../horario/horario.service.js";
+import type { ParametrosSistemaService } from "../parametros-sistema/parametros-sistema.service.js";
 import type { PlanService } from "../plan/plan.service.js";
+import type { PromocionService } from "../promocion/promocion.service.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import { GestionServicioEntrenamientoService } from "../gestion-servicio-entrenamiento.service.js";
 
@@ -46,7 +48,9 @@ describe("GestionServicioEntrenamientoService", () => {
       actividades as unknown as ActividadService,
       horarios as unknown as HorarioService,
       planes as unknown as PlanService,
+      {} as unknown as ParametrosSistemaService,
       inscripciones as unknown as IInfoInscripciones,
+      {} as unknown as PromocionService,
     );
   });
 
@@ -168,15 +172,27 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     listarPrecios: vi.fn().mockResolvedValue("resultado"),
     registrarPrecio: vi.fn().mockResolvedValue("resultado"),
   };
+  const parametros = {
+    listar: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+    obtenerDatosBancarios: vi.fn().mockResolvedValue("resultado"),
+  };
   const inscripciones = {
     contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
     contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
+  };
+  const promociones = {
+    listar: vi.fn().mockResolvedValue("resultado"),
+    obtenerPorId: vi.fn().mockResolvedValue("resultado"),
+    desactivar: vi.fn().mockResolvedValue("resultado"),
   };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
     horarios as unknown as HorarioService,
     planes as unknown as PlanService,
+    parametros as unknown as ParametrosSistemaService,
     inscripciones as unknown as IInfoInscripciones,
+    promociones as unknown as PromocionService,
   );
   const cuerpo = { nombre: "X" };
 
@@ -194,10 +210,103 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["darDeBajaPlan", [3], planes.darDeBaja],
     ["listarPreciosPlan", [3], planes.listarPrecios],
     ["registrarPrecioPlan", [3, cuerpo], planes.registrarPrecio],
+    ["listarParametros", [], parametros.listar],
+    ["actualizarParametro", ["DIAS_RESERVA_PREINSCRIPCION", 5], parametros.actualizar],
+    ["obtenerDatosBancarios", [], parametros.obtenerDatosBancarios],
+    ["listarPromociones", [{ estado: "ACTIVA" }], promociones.listar],
+    ["obtenerPromocion", [3], promociones.obtenerPorId],
+    ["desactivarPromocion", [3], promociones.desactivar],
   ] as const)("%s", async (operacion, argumentos, destino) => {
     const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
 
     await expect(metodo.apply(servicio, [...argumentos])).resolves.toBe("resultado");
     expect(destino).toHaveBeenCalledWith(...argumentos);
+  });
+});
+
+describe("GestionServicioEntrenamientoService: los planes de una promoción (US-13)", () => {
+  const DESDE = new Date("2026-12-01T00:00:00Z");
+  const alta = {
+    codigo: "VERANO26",
+    nombre: "Verano",
+    tipo_descuento: "MONTO_FIJO" as const,
+    valor: 5000,
+    fecha_desde: DESDE,
+    fecha_hasta: new Date("2027-02-28T00:00:00Z"),
+    ids_planes: [1, 2],
+  };
+  let planes: { buscarPorId: ReturnType<typeof vi.fn>; precioVigente: ReturnType<typeof vi.fn> };
+  let promociones: Record<string, ReturnType<typeof vi.fn>>;
+  let servicio: GestionServicioEntrenamientoService;
+
+  beforeEach(() => {
+    planes = {
+      buscarPorId: vi.fn(async (id: number) => ({ id_plan: id, fecha_baja: null })),
+      precioVigente: vi.fn().mockResolvedValue({ precio: 25000 }),
+    };
+    promociones = {
+      crear: vi.fn().mockResolvedValue("creada"),
+      actualizar: vi.fn().mockResolvedValue("actualizada"),
+      obtenerPorId: vi.fn().mockResolvedValue({
+        tipo_descuento: "PORCENTAJE",
+        valor: 10,
+        fecha_desde: DESDE,
+        planes: [{ id_plan: 1, nombre: "Básico" }],
+      }),
+    };
+    servicio = new GestionServicioEntrenamientoService(
+      {} as unknown as ActividadService,
+      {} as unknown as HorarioService,
+      planes as unknown as PlanService,
+      {} as unknown as ParametrosSistemaService,
+      {} as unknown as IInfoInscripciones,
+      promociones as unknown as PromocionService,
+    );
+  });
+
+  it("crea una promoción de monto fijo si no supera el precio de ningún plan al empezar", async () => {
+    await expect(servicio.crearPromocion(alta)).resolves.toBe("creada");
+    expect(planes.precioVigente).toHaveBeenCalledWith(1, DESDE);
+    expect(planes.precioVigente).toHaveBeenCalledWith(2, DESDE);
+    expect(promociones.crear).toHaveBeenCalledWith(alta);
+  });
+
+  it("un porcentaje no consulta los precios", async () => {
+    await servicio.crearPromocion({ ...alta, tipo_descuento: "PORCENTAJE", valor: 20 });
+
+    expect(planes.precioVigente).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["un plan que no existe", () => planes.buscarPorId.mockResolvedValueOnce(null)],
+    [
+      "un plan dado de baja",
+      () => planes.buscarPorId.mockResolvedValueOnce({ id_plan: 1, fecha_baja: DESDE }),
+    ],
+    ["un plan sin precio al empezar", () => planes.precioVigente.mockResolvedValueOnce(null)],
+    ["un monto mayor al precio", () => planes.precioVigente.mockResolvedValueOnce({ precio: 4999 })],
+    ["un monto igual al precio", () => planes.precioVigente.mockResolvedValueOnce({ precio: 5000 })],
+  ])("rechaza %s sin crear nada", async (_caso, preparar) => {
+    preparar();
+
+    await expect(servicio.crearPromocion(alta)).rejects.toBeInstanceOf(ValidationError);
+    expect(promociones.crear).not.toHaveBeenCalled();
+  });
+
+  it("al editar revisa los planes con lo que resulta del cambio", async () => {
+    await expect(
+      servicio.actualizarPromocion(7, { tipo_descuento: "MONTO_FIJO", valor: 30000 }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(planes.precioVigente).toHaveBeenCalledWith(1, DESDE);
+
+    await expect(servicio.actualizarPromocion(7, { nombre: "Otro" })).resolves.toBe("actualizada");
+    expect(promociones.actualizar).toHaveBeenCalledWith(7, { nombre: "Otro" });
+  });
+
+  it("al cambiar los planes, revisa los nuevos", async () => {
+    await servicio.actualizarPromocion(7, { ids_planes: [3], fecha_desde: new Date("2026-12-15T00:00:00Z") });
+
+    expect(planes.buscarPorId).toHaveBeenCalledWith(3);
+    expect(planes.buscarPorId).not.toHaveBeenCalledWith(1);
   });
 });

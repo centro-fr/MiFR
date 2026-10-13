@@ -64,16 +64,20 @@ const SECCIONES_EN_CONSTRUCCION = [
   { path: "reportes", seccion: "Reportes" },
   // Menú de la profesora (MENUS.md).
   { path: "mis-clases", seccion: "Mis clases" },
-  { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
-  { path: "mi-plan", seccion: "Mi plan" },
   { path: "progreso", seccion: "Progreso" },
   { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
 ];
 
 export const router = createBrowserRouter([
-  { path: "/", element: <Navigate to="/login" replace />, errorElement: <RouteErrorBoundary /> },
+  // Página pública: la ve cualquiera, con sesión o sin ella. Desde ahí se llega al login.
+  {
+    path: "/",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
   { path: "/seguridad/permisos", element: <Navigate to="/app/seguridad/permisos" replace /> },
   {
     path: "/login",
@@ -184,6 +188,21 @@ export const router = createBrowserRouter([
         children: [
           { index: true, lazy: paginaDeGrupo("/app/pagos", "/app/dashboard") },
           {
+            // US-15: estado de cuotas de alumnos y cobro en efectivo. Actor: Propietaria con PAGOS_REGISTRAR.
+            path: "cuotas",
+            element: (
+              <PermissionGuard permission="PAGOS_REGISTRAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              {
+                index: true,
+                lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
+              },
+            ],
+          },
+          {
             // US-17: revisión de las transferencias que informan los alumnos, con el mismo permiso
             // que exige el back (pago.routes.ts).
             path: "transferencias",
@@ -209,6 +228,22 @@ export const router = createBrowserRouter([
             index: true,
             lazy: paginaPerezosa(() => import("@/features/seguridad/pages/permisos-page"), "PermisosPage"),
           },
+        ],
+      },
+      {
+        // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.
+        path: "cobros",
+        element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      {
+        // US-16: Mi plan y transferencias bancarias. Actor: Alumno o Tutor.
+        path: "mi-plan",
+        element: guardiaDeSeccion("mi-plan"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
         ],
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({

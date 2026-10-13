@@ -5,12 +5,16 @@ import type { ILogicaPagos } from "../interface/i-logica-cuotas-pagos.js";
 import { createPagoController } from "./pago.controller.js";
 import {
   aprobarTransferenciaSchema,
+  efectivoPendienteQuerySchema,
   informarTransferenciaSchema,
   listarTransferenciasQuerySchema,
   pagoIdParamSchema,
   rechazarTransferenciaSchema,
   registrarEfectivoSchema,
   registrarTransferenciaRecibidaSchema,
+  rendicionesQuerySchema,
+  rendirLoteSchema,
+  rendirPagoSchema,
 } from "./pago.schemas.js";
 
 export function createPagoRoutes(logica: ILogicaPagos, acceso: ControlDeAcceso): Router {
@@ -18,6 +22,8 @@ export function createPagoRoutes(logica: ILogicaPagos, acceso: ControlDeAcceso):
   const controller = createPagoController(logica);
   // Revisar transferencias es un dato financiero: rol PROPIETARIA además del permiso, como la matriz.
   const propietariaConfirma = [acceso.rol("PROPIETARIA"), acceso.permiso("PAGOS_CONFIRMAR")];
+  // US-19: la rendición del efectivo es de la propietaria; PAGOS_RENDICION_VER ya es exclusivo.
+  const propietariaRinde = [acceso.rol("PROPIETARIA"), acceso.permiso("PAGOS_RENDICION_VER")];
   // Alumno y tutor no tienen permisos: lo suyo se resuelve por pertenencia, en el service.
   const alumnoOTutor = acceso.rol("ALUMNO", "TUTOR");
 
@@ -59,6 +65,25 @@ export function createPagoRoutes(logica: ILogicaPagos, acceso: ControlDeAcceso):
     ...propietariaConfirma,
     validate({ params: pagoIdParamSchema, body: rechazarTransferenciaSchema }),
     controller.rechazar,
+  );
+  router.get(
+    "/efectivo-pendiente",
+    ...propietariaRinde,
+    validate({ query: efectivoPendienteQuerySchema }),
+    controller.efectivoPendiente,
+  );
+  router.get(
+    "/rendiciones",
+    ...propietariaRinde,
+    validate({ query: rendicionesQuerySchema }),
+    controller.rendiciones,
+  );
+  router.post("/rendir", ...propietariaRinde, validate({ body: rendirLoteSchema }), controller.rendirLote);
+  router.post(
+    "/:id/rendir",
+    ...propietariaRinde,
+    validate({ params: pagoIdParamSchema, body: rendirPagoSchema }),
+    controller.rendir,
   );
   router.get("/:id/comprobante", validate({ params: pagoIdParamSchema }), controller.comprobante);
 

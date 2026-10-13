@@ -5,11 +5,16 @@ import type {
   RechazarTransferenciaInput,
   RegistrarEfectivoInput,
   RegistrarTransferenciaRecibidaInput,
+  RendirLoteInput,
 } from "../pago/pago.schemas.js";
 import type {
   Comprobante,
+  EfectivoPendiente,
+  FiltroEfectivo,
   FiltroTransferencias,
+  PaginaRendiciones,
   Pago,
+  ResultadoRendicion,
   TransferenciaConAlumno,
   TransferenciaEnRevision,
 } from "../pago/pago.types.js";
@@ -32,6 +37,17 @@ export interface ILogicaPagos {
   listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaEnRevision[]>;
   listarMisTransferencias(solicitante: Solicitante): Promise<TransferenciaConAlumno[]>;
   obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante>;
+  // US-19: la rendición del efectivo que cobraron las profesoras. Solo la propietaria.
+  listarEfectivoPendiente(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<EfectivoPendiente>;
+  listarRendiciones(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<PaginaRendiciones>;
+  rendirCobro(id: number): Promise<ResultadoRendicion>;
+  rendirCobros(input: RendirLoteInput): Promise<ResultadoRendicion>;
 }
 
 // Interfaz del subsistema GestionCuotasYPagos en la vista arquitectónica: lo que consume la

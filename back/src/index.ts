@@ -3,7 +3,7 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-open
 import { PrismaClient } from "@prisma/client";
 import { OAuth2Client } from "google-auth-library";
 import { createApp } from "./app.js";
-import { construirDependencias } from "./composicion.js";
+import { construirSistema } from "./composicion.js";
 import { GoogleAutenticacion } from "./modules/gestion-usuarios/sesion/google-autenticacion.js";
 import { JwtService } from "./modules/gestion-usuarios/sesion/jwt.service.js";
 import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "./openapi.js";
@@ -21,7 +21,7 @@ if (!resultado.valida) {
 const { configuracion } = resultado;
 
 const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
-const dependencias = construirDependencias({
+const { dependencias, cierreAsistencia } = construirSistema({
   prisma,
   googleAuth: new GoogleAutenticacion(
     new OAuth2Client(configuracion.googleClientId),
@@ -29,6 +29,16 @@ const dependencias = construirDependencias({
   ),
   jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
 });
+
+// US-21: Render duerme el proceso sin tráfico, así que esto no es la única vía de cierre; las rutas
+// de clases también cierran las ventanas vencidas al leerlas (decisión de SPRINT-3.md). unref() no
+// deja vivo el proceso solo por el intervalo.
+const MILISEGUNDOS_ENTRE_CIERRES = 60_000;
+setInterval(() => {
+  cierreAsistencia.procesarCierresAutomaticos().catch((error: unknown) => {
+    console.error("No se pudieron cerrar las asistencias vencidas", error);
+  });
+}, MILISEGUNDOS_ENTRE_CIERRES).unref();
 
 function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   const registro = new OpenAPIRegistry();

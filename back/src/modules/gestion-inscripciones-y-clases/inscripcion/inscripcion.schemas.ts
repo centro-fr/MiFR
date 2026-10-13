@@ -1,13 +1,9 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
+import { fechaSchema as fecha } from "../../../shared/utils/esquemas-fecha.js";
 import { medidaCorporalSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
-
-const fecha = z
-  .string({ invalid_type_error: "La fecha debe tener formato AAAA-MM-DD" })
-  .date("La fecha debe tener formato AAAA-MM-DD")
-  .transform((valor) => new Date(`${valor}T00:00:00Z`));
 
 // El tope es el máximo de clases por semana de un plan (ck_planes_x1): más horarios no entran en
 // ninguno, y sin tope una lista enorme llegaba hasta las consultas de cupo.

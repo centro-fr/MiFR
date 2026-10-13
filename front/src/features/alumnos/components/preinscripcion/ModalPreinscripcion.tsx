@@ -67,6 +67,10 @@ export function ModalPreinscripcion({
     planSeleccionado,
     idProfesora,
     setIdProfesora,
+    idActividad,
+    setIdActividad,
+    actividadesDisponibles,
+    actividadSeleccionada,
     idsHorarios,
     toggleHorario,
     clasesRequeridas,
@@ -143,6 +147,9 @@ export function ModalPreinscripcion({
               onSeleccionarPlan={(id) => setIdPlan(id)}
               idProfesoraSeleccionada={idProfesora}
               onSeleccionarProfesora={(id) => setIdProfesora(id)}
+              actividadesDisponibles={actividadesDisponibles}
+              idActividadSeleccionada={idActividad}
+              onSeleccionarActividad={(id) => setIdActividad(id)}
               esSoloProfesora={esSoloProfesora}
               sinCargo={sinCargo}
               onToggleSinCargo={setSinCargo}
@@ -167,6 +174,7 @@ export function ModalPreinscripcion({
               edadCalculada={edadCalculada}
               plan={planSeleccionado}
               profesora={profesoraSeleccionada}
+              actividad={actividadSeleccionada}
               horariosSeleccionados={horariosSeleccionadosCompletos}
               sinCargo={sinCargo}
               fechaInicio={fechaInicio}

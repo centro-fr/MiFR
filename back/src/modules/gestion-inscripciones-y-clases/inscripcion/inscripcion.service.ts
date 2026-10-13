@@ -32,6 +32,7 @@ import type {
   InscripcionACobrar,
   InscripcionConDatos,
   InscripcionGuardada,
+  InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 
@@ -55,6 +56,8 @@ interface DatosDeInscripcion {
 type DatosPreparados = Omit<DatosDeInscripcion, "ids_horarios" | "fecha_inicio"> & {
   fecha_inicio: Date;
   id_plan_precio: number;
+  // US-13: la promoción vigente del plan el día en que se pre-inscribe; la aplica cada cobro.
+  id_promocion: number | null;
 };
 
 interface InscripcionPreparada {
@@ -191,6 +194,10 @@ export class InscripcionService implements IInfoInscripciones {
     return this.conReservas(await this.repositorio.listarVigentesPorAlumno(idAlumno));
   }
 
+  async listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionConDatos[]> {
+    return this.conReservas(await this.repositorio.listarDeLaUltimaBaja(idAlumno));
+  }
+
   async activar(id: number): Promise<InscripcionConDatos> {
     const actual = await this.obtenerPorId(id);
     if (actual.estado === "BAJA") throw new ConflictError("No se puede activar una inscripción dada de baja");
@@ -215,14 +222,20 @@ export class InscripcionService implements IInfoInscripciones {
     await this.alumnos.darDeBaja(idAlumno);
   }
 
-  async reactivarAlumno(idAlumno: number, input: ReactivarAlumnoInput): Promise<InscripcionConDatos> {
+  // Quien ya pagó alguna vez vuelve con la inscripción ACTIVA; quien nunca pagó, PREINSCRIPTA, y el
+  // primer pago le da el alta como a cualquier pre-inscripto (US-07). Lo decide la fachada, que ve los pagos.
+  async reactivarAlumno(
+    idAlumno: number,
+    input: ReactivarAlumnoInput,
+    estado: "PREINSCRIPTA" | "ACTIVA",
+  ): Promise<InscripcionConDatos> {
     const alumno = await this.alumnos.buscarPorId(idAlumno);
     if (!alumno) throw new NotFoundError("Alumno no encontrado");
     if (alumno.estado !== "BAJA") throw new ConflictError("Solo se puede reactivar un alumno dado de baja");
 
     const existente = await this.repositorio.buscarVigentePorAlumno(idAlumno);
     if (existente?.estado === "ACTIVA") {
-      await this.alumnos.reactivar(idAlumno);
+      await this.alumnos.reactivar(idAlumno, "ACTIVO");
       return { ...existente, reserva: null };
     }
     if (existente) {
@@ -233,7 +246,7 @@ export class InscripcionService implements IInfoInscripciones {
       {
         ...input,
         id_alumno: idAlumno,
-        estado: "ACTIVA",
+        estado,
       },
       true,
     );
@@ -246,7 +259,9 @@ export class InscripcionService implements IInfoInscripciones {
     );
     const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
     const alumnoActual = await this.alumnos.buscarPorId(idAlumno);
-    if (alumnoActual?.estado === "BAJA") await this.alumnos.reactivar(idAlumno);
+    if (alumnoActual?.estado === "BAJA") {
+      await this.alumnos.reactivar(idAlumno, inscripcion.estado === "ACTIVA" ? "ACTIVO" : "INACTIVO");
+    }
     return inscripcion;
   }
 
@@ -264,7 +279,7 @@ export class InscripcionService implements IInfoInscripciones {
     const resultado = await this.repositorio.cambiarPlan(
       actual,
       input,
-      nuevoPlan.id_plan_precio,
+      { id_plan_precio: nuevoPlan.id_plan_precio, id_promocion: nuevoPlan.id_promocion },
       this.fechasDeBaja(),
       inicioDeReservasVigentes(plazo),
     );
@@ -292,8 +307,20 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.resumirInscripcionesVigentes(idsAlumnos);
   }
 
+  listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]> {
+    return this.repositorio.listarParaAsistencia(idHorario, fecha);
+  }
+
+  buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null> {
+    return this.repositorio.buscarParaAsistencia(idHorario, idAlumno, fecha);
+  }
+
   contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
     return this.repositorio.contarInscriptosVigentes(idsHorarios);
+  }
+
+  contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>> {
+    return this.repositorio.contarInscriptosParaAsistencia(idsHorarios, fecha);
   }
 
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {
@@ -340,12 +367,20 @@ export class InscripcionService implements IInfoInscripciones {
     if (input.fecha_fin_estimado && input.fecha_fin_estimado <= fechaInicio) {
       throw new ValidationError("La fecha estimada de fin debe ser posterior al inicio");
     }
-    const precio = await this.planes.precioVigente(input.id_plan, hoy);
+    const [precio, promocion] = await Promise.all([
+      this.planes.precioVigente(input.id_plan, hoy),
+      this.planes.promocionVigente(input.id_plan, hoy),
+    ]);
     if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
     const horarios = await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
 
     return {
-      datos: { ...input, fecha_inicio: fechaInicio, id_plan_precio: precio.id_plan_precio },
+      datos: {
+        ...input,
+        fecha_inicio: fechaInicio,
+        id_plan_precio: precio.id_plan_precio,
+        id_promocion: promocion?.id_promocion ?? null,
+      },
       horarios,
     };
   }

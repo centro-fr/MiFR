@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck:app": "tsc -p tsconfig.app.json --noEmit",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+    "typecheck": "pnpm typecheck:app && pnpm typecheck:test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

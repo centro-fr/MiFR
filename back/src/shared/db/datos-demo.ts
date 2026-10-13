@@ -37,14 +37,14 @@ interface HorarioDemo {
 function usuariosDemo(emailMultirol: string): UsuarioDemo[] {
   return [
     {
-      email: "lucia.gomez@example.com",
+      email: LUCIA,
       nombre: "Lucía",
       apellido: "Gómez",
       roles: ["PROFESORA"],
       especialidad: "Entrenamiento funcional",
     },
     {
-      email: "carla.ruiz@example.com",
+      email: CARLA,
       nombre: "Carla",
       apellido: "Ruiz",
       roles: ["PROFESORA"],
@@ -60,70 +60,132 @@ function usuariosDemo(emailMultirol: string): UsuarioDemo[] {
   ];
 }
 
+// Las actividades y la grilla semanal del centro. Las grupales tienen cupo 12; el personalizado, 4.
 export const ACTIVIDADES_DEMO: ActividadDemo[] = [
   {
     codigo: "FUNCIONAL",
-    nombre: "Funcional Grupal",
-    descripcion: "Clase grupal de entrenamiento funcional",
+    nombre: "Funcional",
+    descripcion: "Entrenamiento funcional en grupo",
     modalidad: "GRUPAL",
-    cupo_maximo: null,
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
+  {
+    codigo: "FUNCIONAL_45",
+    nombre: "Funcional +45",
+    descripcion: "Entrenamiento funcional para mayores de 45 años",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
+  {
+    codigo: "KID_FIT",
+    nombre: "Kid Fit",
+    descripcion: "Entrenamiento para chicos",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
     requiere_medidas: false,
   },
   {
     codigo: "ENTRENAMIENTO_PERS",
-    nombre: "Entrenamiento Personalizado",
+    nombre: "Personalizado",
     descripcion: "Preparación física general con rutina individual",
     modalidad: "PERSONALIZADA",
     cupo_maximo: 4,
     // La rutina individual parte del peso y la talla: la pre-inscripción los pide (US-05).
     requiere_medidas: true,
   },
+  {
+    codigo: "HIIT",
+    nombre: "HIIT",
+    descripcion: "Entrenamiento por intervalos de alta intensidad",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
+  {
+    codigo: "GAP",
+    nombre: "GAP",
+    descripcion: "Glúteos, abdominales y piernas",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
+  {
+    codigo: "TRAINING",
+    nombre: "Training",
+    descripcion: "Entrenamiento general en grupo",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
+  {
+    codigo: "COMBAT",
+    nombre: "Combat",
+    descripcion: "Entrenamiento con movimientos de deportes de combate",
+    modalidad: "GRUPAL",
+    cupo_maximo: 12,
+    requiere_medidas: false,
+  },
 ];
 
+const LUCIA = "lucia.gomez@example.com";
+const CARLA = "carla.ruiz@example.com";
+
+// Cada actividad la da siempre la misma profesora, así ninguna tiene dos clases a la misma hora.
+function profesoraDe(codigoActividad: string, emailMultirol: string): string {
+  if (["FUNCIONAL", "FUNCIONAL_45", "TRAINING"].includes(codigoActividad)) return LUCIA;
+  if (["ENTRENAMIENTO_PERS", "KID_FIT", "GAP"].includes(codigoActividad)) return CARLA;
+  return emailMultirol;
+}
+
+// La grilla de la semana: lunes, miércoles y viernes repiten la misma, y martes y jueves la otra. El
+// sábado no hay clases. Cada clase dura una hora.
+const GRILLA_LUNES_MIERCOLES_VIERNES: [string, string][] = [
+  ["08:00", "FUNCIONAL"],
+  ["09:00", "FUNCIONAL_45"],
+  ["15:00", "ENTRENAMIENTO_PERS"],
+  ["16:00", "HIIT"],
+  ["19:00", "TRAINING"],
+  ["20:00", "HIIT"],
+  ["21:00", "FUNCIONAL"],
+  ["22:00", "FUNCIONAL"],
+];
+const GRILLA_MARTES_JUEVES: [string, string][] = [
+  ["09:00", "KID_FIT"],
+  ["15:00", "FUNCIONAL"],
+  ["16:00", "GAP"],
+  ["17:00", "KID_FIT"],
+  ["18:00", "ENTRENAMIENTO_PERS"],
+  ["19:00", "HIIT"],
+  ["20:00", "COMBAT"],
+];
+const GRILLA_POR_DIA: Record<number, [string, string][]> = {
+  1: GRILLA_LUNES_MIERCOLES_VIERNES,
+  2: GRILLA_MARTES_JUEVES,
+  3: GRILLA_LUNES_MIERCOLES_VIERNES,
+  4: GRILLA_MARTES_JUEVES,
+  5: GRILLA_LUNES_MIERCOLES_VIERNES,
+};
+
+// Cupo propio del horario, distinto del de la actividad (CA-07): el Training del viernes.
+const CUPO_PROPIO_TRAINING_VIERNES = 15;
+
+function unaHoraDespues(hora: string): string {
+  return `${String(Number(hora.slice(0, 2)) + 1).padStart(2, "0")}:00`;
+}
+
 function horariosDemo(emailMultirol: string): HorarioDemo[] {
-  return [
-    {
-      codigoActividad: "FUNCIONAL",
-      emailProfesora: "lucia.gomez@example.com",
-      dia_semana: 1,
-      hora_inicio: "18:00",
-      hora_fin: "19:00",
-      cupo_maximo: null,
-    },
-    {
-      codigoActividad: "FUNCIONAL",
-      emailProfesora: "lucia.gomez@example.com",
-      dia_semana: 3,
-      hora_inicio: "18:00",
-      hora_fin: "19:00",
-      cupo_maximo: null,
-    },
-    {
-      codigoActividad: "ENTRENAMIENTO_PERS",
-      emailProfesora: "carla.ruiz@example.com",
-      dia_semana: 2,
-      hora_inicio: "09:00",
-      hora_fin: "10:00",
-      cupo_maximo: null,
-    },
-    {
-      codigoActividad: "ENTRENAMIENTO_PERS",
-      emailProfesora: "carla.ruiz@example.com",
-      dia_semana: 4,
-      hora_inicio: "09:00",
-      hora_fin: "10:00",
-      cupo_maximo: null,
-    },
-    // Cupo propio del horario, distinto del de la actividad (CA-07).
-    {
-      codigoActividad: "FUNCIONAL",
-      emailProfesora: emailMultirol,
-      dia_semana: 5,
-      hora_inicio: "19:00",
-      hora_fin: "20:00",
-      cupo_maximo: 12,
-    },
-  ];
+  return Object.entries(GRILLA_POR_DIA).flatMap(([dia, clases]) =>
+    clases.map(([hora_inicio, codigoActividad]) => ({
+      codigoActividad,
+      emailProfesora: profesoraDe(codigoActividad, emailMultirol),
+      dia_semana: Number(dia),
+      hora_inicio,
+      hora_fin: unaHoraDespues(hora_inicio),
+      cupo_maximo: codigoActividad === "TRAINING" && dia === "5" ? CUPO_PROPIO_TRAINING_VIERNES : null,
+    })),
+  );
 }
 
 interface PlanDemo {
@@ -233,9 +295,10 @@ interface InscripcionDemo {
   dniAlumno: string;
   nombrePlan: string;
   emailProfesora: string;
-  // Los horarios de la profesora en esos días, de la actividad indicada.
+  // Los horarios de la profesora en esos días y a esa hora, de la actividad indicada.
   codigoActividad: string;
   dias: number[];
+  horaInicio: string;
   estado: "PREINSCRIPTA" | "ACTIVA";
 }
 
@@ -247,6 +310,7 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     emailProfesora: "lucia.gomez@example.com",
     codigoActividad: "FUNCIONAL",
     dias: [1, 3],
+    horaInicio: "08:00",
     estado: "PREINSCRIPTA",
   },
   {
@@ -255,6 +319,7 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     emailProfesora: "carla.ruiz@example.com",
     codigoActividad: "ENTRENAMIENTO_PERS",
     dias: [2, 4],
+    horaInicio: "18:00",
     estado: "PREINSCRIPTA",
   },
   {
@@ -263,6 +328,7 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     emailProfesora: "carla.ruiz@example.com",
     codigoActividad: "ENTRENAMIENTO_PERS",
     dias: [2, 4],
+    horaInicio: "18:00",
     estado: "ACTIVA",
   },
 ];
@@ -457,6 +523,7 @@ async function cargarInscripciones(
           id_profesora,
           id_actividad: ids.idActividad.get(inscripcion.codigoActividad),
           dia_semana: { in: inscripcion.dias },
+          hora_inicio: convertirHora(inscripcion.horaInicio),
           fecha_baja: null,
         },
       }),

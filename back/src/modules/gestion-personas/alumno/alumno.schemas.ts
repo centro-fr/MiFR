@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ESTADOS_HABILITACION } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import {
   dniSchema,
@@ -96,6 +97,7 @@ export const listarAlumnoQuerySchema = z.object({
   id_plan: idDesdeTextoSchema.optional(),
   id_profesora: idDesdeTextoSchema.optional(),
   id_actividad: idDesdeTextoSchema.optional(),
+  estado_cuota: z.enum(ESTADOS_HABILITACION).optional(),
   incluirBajas: z
     .enum(["true", "false"])
     .transform((valor) => valor === "true")

@@ -5,7 +5,7 @@ import {
   esMenorDeEdad,
   obtenerLimitesFechaNacimiento,
   type EdicionAlumnoValores,
-} from "@/features/alumnos/schemas/alumno";
+} from "../alumno";
 
 function datosAlumno(fechaNacimiento = "1992-04-18"): EdicionAlumnoValores {
   return {

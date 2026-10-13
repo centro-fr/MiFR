@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PendientesDeAltaPage } from "@/features/alumnos/pages/pendientes-de-alta-page";
-import { useConfirmarAltaDefinitiva, usePreInscripcionesPendientes } from "@/features/alumnos/hooks/use-alta-definitiva";
-import { crearPendiente } from "@/features/alumnos/__tests__/pendiente-de-prueba";
+import { PendientesDeAltaPage } from "../pendientes-de-alta-page";
+import { useConfirmarAltaDefinitiva, usePreInscripcionesPendientes } from "../../hooks/use-alta-definitiva";
+import { crearPendiente } from "../../__tests__/pendiente-de-prueba";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { crearSesion, crearUsuario } from "@/test/sesion-de-prueba";
 
@@ -12,7 +12,7 @@ vi.mock("@/components/layout/owner-layout", () => ({
   OwnerLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 vi.mock("@/features/auth/hooks/use-auth", () => ({ useAuth: vi.fn() }));
-vi.mock("@/features/alumnos/hooks/use-alta-definitiva", () => ({
+vi.mock("../../hooks/use-alta-definitiva", () => ({
   usePreInscripcionesPendientes: vi.fn(),
   useConfirmarAltaDefinitiva: vi.fn(),
 }));

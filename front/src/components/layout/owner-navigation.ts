@@ -96,6 +96,12 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     to: "/app/pagos",
     descripcion: "Transferencias, cobros en efectivo y cuotas de los alumnos.",
     hijos: [
+      {
+        etiqueta: "Estado de cuotas",
+        to: "/app/pagos/cuotas",
+        icono: Banknote,
+        descripcion: "Supervisar vencimientos de cuotas y registrar cobros en efectivo.",
+      },
       // US-17: transferencias informadas por los alumnos que esperan verificación.
       {
         etiqueta: "Transferencias pendientes",
