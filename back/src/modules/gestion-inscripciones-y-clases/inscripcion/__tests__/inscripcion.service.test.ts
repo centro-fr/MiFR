@@ -107,6 +107,7 @@ function crearMocks() {
     planes: {
       buscarPorId: vi.fn().mockResolvedValue(plan),
       precioVigente: vi.fn().mockResolvedValue({ id_plan_precio: 15 }),
+      promocionVigente: vi.fn().mockResolvedValue(null),
     },
     horarios: { buscarPorIds: vi.fn().mockResolvedValue([horario]) },
     profesores: {
@@ -143,6 +144,21 @@ describe("InscripcionService", () => {
   afterEach(() => vi.useRealTimers());
 
   describe("crear", () => {
+    it("guarda la promoción vigente del plan el día en que se pre-inscribe (US-13)", async () => {
+      mocks.planes.promocionVigente.mockResolvedValue({ id_promocion: 4 });
+
+      await servicio.crear(alta, PROPIETARIA);
+
+      expect(mocks.planes.promocionVigente).toHaveBeenCalledWith(1, HOY);
+      expect(mocks.repositorio.crear.mock.calls[0][0]).toMatchObject({ id_promocion: 4 });
+    });
+
+    it("sin promoción vigente guarda la inscripción sin promoción", async () => {
+      await servicio.crear(alta, PROPIETARIA);
+
+      expect(mocks.repositorio.crear.mock.calls[0][0]).toMatchObject({ id_promocion: null });
+    });
+
     it("pre-inscribe con el precio vigente hoy y los horarios elegidos", async () => {
       await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
 
@@ -539,14 +555,14 @@ describe("InscripcionService", () => {
   });
 
   describe("cambiarPlan y actualizarHorarios (US-09)", () => {
-    it("cambiarPlan conserva el estado y usa el precio vigente del plan nuevo", async () => {
+    it("cambiarPlan conserva el estado y usa el precio y la promoción vigentes del plan nuevo", async () => {
       await servicio.cambiarPlan(12, { ...reactivacion, id_plan: 2 });
 
       expect(mocks.planes.buscarPorId).toHaveBeenCalledWith(2);
       expect(mocks.repositorio.cambiarPlan).toHaveBeenCalledWith(
         inscripcion,
         expect.objectContaining({ id_plan: 2 }),
-        15,
+        { id_plan_precio: 15, id_promocion: null },
         { instante: AHORA, dia: HOY },
         INICIO_RESERVAS,
       );

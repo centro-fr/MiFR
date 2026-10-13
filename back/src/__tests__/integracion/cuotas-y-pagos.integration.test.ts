@@ -7,6 +7,7 @@ import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { armarCuotasYPagos, UN_DIA_EN_MS } from "./cobro.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
+import { crearAlumno, crearHorarioDePrueba } from "./fabricas.js";
 
 // Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) y el precio que aplica el cobro
 // (US-12) sobre los datos de db:seed:demo. Sofía Medina está pre-inscripta en el Básico y sin

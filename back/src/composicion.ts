@@ -22,6 +22,8 @@ import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/pl
 import { ParametrosSistemaRepository } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.repository.js";
 import { ParametrosSistemaService } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.service.js";
 import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
+import { PromocionRepository } from "./modules/gestion-servicio-entrenamiento/promocion/promocion.repository.js";
+import { PromocionService } from "./modules/gestion-servicio-entrenamiento/promocion/promocion.service.js";
 import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
 import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
 import { RegistroProgresoRepository } from "./modules/gestion-rutinas-y-progreso/registro-progreso/registro-progreso.repository.js";
@@ -38,11 +40,14 @@ import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.
 import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
 import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
+import type { IInfoClases } from "./modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
 import { ClaseRepository } from "./modules/gestion-inscripciones-y-clases/clase/clase.repository.js";
 import { ClaseService } from "./modules/gestion-inscripciones-y-clases/clase/clase.service.js";
 import { AsistenciaRepository } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.repository.js";
 import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.service.js";
 import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
+import { SuplenciaRepository } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.repository.js";
+import { SuplenciaService } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -56,6 +61,7 @@ export interface PiezasDeInfraestructura {
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
+  infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
 }
 
@@ -75,7 +81,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
   const actividadService = new ActividadService(new ActividadRepository(prisma));
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
-  const planService = new PlanService(new PlanRepository(prisma), actividadService);
+  const promocionService = new PromocionService(new PromocionRepository(prisma));
+  const planService = new PlanService(new PlanRepository(prisma), actividadService, promocionService);
   const parametrosService = new ParametrosSistemaService(new ParametrosSistemaRepository(prisma));
   const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
   const unidadDeTrabajo = new UnidadDeTrabajoPrisma(prisma);
@@ -95,6 +102,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     planService,
     parametrosService,
     inscripcionService,
+    promocionService,
   );
   const cuotaService = new CuotaService(
     new CuotaRepository(prisma),
@@ -129,6 +137,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     asistenciaService,
     cierreAsistencia,
     unidadDeTrabajo,
+    new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
@@ -150,6 +159,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       autorizacion: rolService,
     },
     infoInscripciones: inscripcionService,
+    infoClases: claseService,
     cierreAsistencia,
   };
 }

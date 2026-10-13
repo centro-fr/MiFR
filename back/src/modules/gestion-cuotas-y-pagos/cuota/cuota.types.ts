@@ -21,6 +21,28 @@ export interface SituacionDeCuotas {
   }[];
 }
 
+export interface SituacionParaAviso extends SituacionDeCuotas {
+  nombre_plan: string;
+  alumno: {
+    id_alumno: number;
+    id_usuario: number;
+    id_usuario_responsable: number | null;
+    nombre: string;
+    apellido: string;
+  };
+}
+
+export type TipoAvisoCuota = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA";
+
+export interface CuotaParaAviso {
+  tipo: TipoAvisoCuota;
+  id_cuota: number;
+  id_inscripcion: number;
+  fecha_vencimiento: Date;
+  nombre_plan: string;
+  alumno: SituacionParaAviso["alumno"];
+}
+
 // La habilitación de una inscripción y si tiene una transferencia sin revisar (US-16), que la
 // habilitación usa pero no devuelve: la ficha la muestra para no cobrar dos veces.
 export type HabilitacionDeInscripcion = Habilitacion & { tienePagoPendiente: boolean };

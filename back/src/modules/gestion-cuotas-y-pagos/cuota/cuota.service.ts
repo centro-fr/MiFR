@@ -1,5 +1,6 @@
 import { ConflictError } from "../../../shared/errors/app-error.js";
-import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
+import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { ICalculoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
 import type { ICalculoVencimiento } from "../../calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -10,14 +11,21 @@ import type { CuotaRepository } from "./cuota.repository.js";
 import type {
   CuotaACobrar,
   CuotaDelHistorial,
+  CuotaParaAviso,
   HabilitacionDeInscripcion,
+  SituacionParaAviso,
   SituacionDeCuotas,
+  TipoAvisoCuota,
 } from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
 
 type CuotaDeLaSituacion = SituacionDeCuotas["cuotas"][number];
 
 const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
+
+function sumarDias(fecha: Date, dias: number): Date {
+  return new Date(fecha.getTime() + dias * UN_DIA_EN_MS);
+}
 
 function estaConfirmada(cuota: CuotaDeLaSituacion): boolean {
   return cuota.estados_pagos.includes("CONFIRMADO");
@@ -72,7 +80,7 @@ export class CuotaService implements IInfoCuotas {
     const hoy = fechaActualArgentina();
     const [[situacion], precio] = await Promise.all([
       this.repositorio.situacionDeInscripciones([inscripcion.id_inscripcion]),
-      this.planes.precioVigente(inscripcion.id_plan, hoy),
+      this.planes.precioACobrar(inscripcion.id_plan, hoy, inscripcion.id_promocion),
     ]);
     if (tienePagoPendiente(situacion)) {
       throw new ConflictError("La inscripción tiene una transferencia pendiente de revisión");
@@ -88,7 +96,7 @@ export class CuotaService implements IInfoCuotas {
         tipoPlan: situacion.tipo_plan,
         desde: this.desdeCuandoCubre(situacion, hoy),
       }),
-      monto: precio.precio,
+      monto: precio.monto,
     };
   }
 
@@ -140,4 +148,60 @@ export class CuotaService implements IInfoCuotas {
   tuvoPagoConfirmado(idAlumno: number): Promise<boolean> {
     return this.repositorio.tuvoPagoConfirmado(idAlumno);
   }
+
+  async cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>> {
+    if (idsInscripciones.length === 0) return new Map();
+    const { inicio, fin } = rangoDeDiasArgentinos(desde, hasta);
+    const cobrado = await this.repositorio.cobradoEnPeriodo(idsInscripciones, inicio, fin);
+    return new Map(idsInscripciones.map((id) => [id, cobrado.get(id) ?? 0]));
+  }
+
+  async paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]> {
+    const situaciones = await this.repositorio.situacionParaAvisos(sumarDias(fecha, diasPrevios));
+    return situaciones.flatMap((situacion) => {
+      const aviso = this.avisoPara(situacion, fecha, diasPrevios);
+      return aviso ? [aviso] : [];
+    });
+  }
+
+  private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {
+    const vencimiento = vencimientoConfirmado(situacion);
+    if (vencimiento === null || tienePagoPendiente(situacion)) return null;
+    const { estado, diasRestantes } = this.habilitaciones.calcular({
+      tipoPlan: situacion.tipo_plan,
+      vencimiento,
+      diasGracia: situacion.dias_gracia,
+      tienePagoPendiente: false,
+      vencidosPuedenAsistir: true,
+      hoy: fecha,
+    });
+    const tipo = tipoDeAviso(estado, diasRestantes, diasPrevios);
+    if (tipo === null) return null;
+
+    const cuota = situacion.cuotas.find(
+      (candidata) =>
+        estaConfirmada(candidata) && candidata.fecha_vencimiento.getTime() === vencimiento.getTime(),
+    );
+    if (!cuota) return null;
+    return {
+      tipo,
+      id_cuota: cuota.id_cuota,
+      id_inscripcion: situacion.id_inscripcion,
+      fecha_vencimiento: vencimiento,
+      nombre_plan: situacion.nombre_plan,
+      alumno: situacion.alumno,
+    };
+  }
+}
+
+function tipoDeAviso(
+  estado: EstadoHabilitacion,
+  diasRestantes: number | null,
+  diasPrevios: number,
+): TipoAvisoCuota | null {
+  if (estado === "VENCIDA") return "CUOTA_VENCIDA";
+  if (estado === "AL_DIA" && diasRestantes !== null && diasRestantes <= diasPrevios) {
+    return "CUOTA_POR_VENCER";
+  }
+  return null;
 }

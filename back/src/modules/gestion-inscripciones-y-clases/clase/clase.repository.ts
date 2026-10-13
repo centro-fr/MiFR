@@ -3,6 +3,7 @@ import { clienteEnCurso } from "../../../shared/db/transaccion.js";
 import {
   INCLUIR_DATOS_CLASE,
   type ClaseConDatos,
+  type ClaseSuplida,
   type EstadoClase,
   type HorarioDeClase,
 } from "./clase.types.js";
@@ -48,6 +49,13 @@ export class ClaseRepository {
     });
   }
 
+  buscarPorHorarioYFecha(idHorario: number, fecha: Date): Promise<ClaseConDatos | null> {
+    return this.prisma.clases.findUnique({
+      where: { id_horario_fecha_clase: { id_horario: idHorario, fecha_clase: fecha } },
+      include: INCLUIR_DATOS_CLASE,
+    });
+  }
+
   buscarPorId(idClase: number): Promise<ClaseConDatos | null> {
     return this.prisma.clases.findUnique({ where: { id_clase: idClase }, include: INCLUIR_DATOS_CLASE });
   }
@@ -66,6 +74,42 @@ export class ClaseRepository {
       where: { id_clase: idClase, estado: "PROGRAMADA" },
       data: { estado: "CANCELADA" },
     });
+  }
+
+  async cambiarDictante(idClase: number, idProfesora: number): Promise<void> {
+    await clienteEnCurso(this.prisma).clases.update({
+      where: { id_clase: idClase },
+      data: { id_prof_dictante: idProfesora },
+    });
+  }
+
+  // Las canceladas no se dictaron: no se le paga a nadie por ellas.
+  async listarSuplidasEnPeriodo(desde: Date, hasta: Date): Promise<ClaseSuplida[]> {
+    const clases = await this.prisma.clases.findMany({
+      where: {
+        fecha_clase: { gte: desde, lte: hasta },
+        estado: { not: "CANCELADA" },
+        suplencias: { some: {} },
+      },
+      select: {
+        id_clase: true,
+        id_horario: true,
+        fecha_clase: true,
+        id_prof_dictante: true,
+        horario: { select: { hora_inicio: true, hora_fin: true } },
+        suplencias: { select: { id_prof_ausente: true } },
+      },
+      orderBy: [{ fecha_clase: "asc" }, { id_clase: "asc" }],
+    });
+    return clases.flatMap(({ horario, suplencias, id_prof_dictante, ...clase }) =>
+      suplencias.map(({ id_prof_ausente }) => ({
+        ...clase,
+        hora_inicio: horario.hora_inicio,
+        hora_fin: horario.hora_fin,
+        id_prof_suplente: id_prof_dictante,
+        id_prof_ausente,
+      })),
+    );
   }
 
   // Solo cierra una PROGRAMADA: si dos cierres se cruzan, el segundo no encuentra nada que cerrar.

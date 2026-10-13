@@ -9,6 +9,7 @@ import type { AsistenciaService } from "../asistencia/asistencia.service.js";
 import type { CierreAsistenciaService } from "../cierre-asistencia/cierre-asistencia.service.js";
 import type { ClaseService } from "../clase/clase.service.js";
 import type { InscripcionService } from "../inscripcion/inscripcion.service.js";
+import type { SuplenciaService } from "../suplencia/suplencia.service.js";
 
 const solicitante: Solicitante = { idUsuario: 1, esPropietaria: true };
 const cambios = { id_plan: 2, id_profesora: 3, ids_horarios: [8], sin_cargo: false };
@@ -57,6 +58,7 @@ describe("GestionInscripcionesYClasesService", () => {
   };
   const cierre = { procesarCierresAutomaticos: vi.fn(), cerrarManualmente: vi.fn() };
   const unidadDeTrabajo = { ejecutar: vi.fn(<T>(operacion: () => Promise<T>) => operacion()) };
+  const suplencias = {} as SuplenciaService;
   const gestion = new GestionInscripcionesYClasesService(
     inscripciones as unknown as InscripcionService,
     cuotas as unknown as IInfoCuotas,
@@ -64,6 +66,7 @@ describe("GestionInscripcionesYClasesService", () => {
     asistencias as unknown as AsistenciaService,
     cierre as unknown as CierreAsistenciaService,
     unidadDeTrabajo as unknown as IUnidadDeTrabajo,
+    suplencias,
   );
 
   beforeEach(() => vi.clearAllMocks());

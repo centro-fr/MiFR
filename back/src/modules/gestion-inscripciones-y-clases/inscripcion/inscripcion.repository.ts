@@ -31,7 +31,12 @@ type DatosNuevaInscripcion = Pick<
   | "fecha_inicio"
   | "fecha_fin_estimado"
   | "observaciones"
-> & { fecha_inicio: Date; id_plan_precio: number; estado: "PREINSCRIPTA" | "ACTIVA" };
+> & {
+  fecha_inicio: Date;
+  id_plan_precio: number;
+  id_promocion: number | null;
+  estado: "PREINSCRIPTA" | "ACTIVA";
+};
 type ResultadoOperacion =
   | { resultado: "ok"; inscripcion: InscripcionGuardada }
   | { resultado: "plan-duplicado" }
@@ -165,6 +170,7 @@ function mapearDatosDeCreacion(
     id_alumno: input.id_alumno,
     id_plan: input.id_plan,
     id_plan_precio: input.id_plan_precio,
+    id_promocion: input.id_promocion,
     id_profesora: input.id_profesora,
     sin_cargo: input.sin_cargo,
     fecha_inicio: input.fecha_inicio,
@@ -411,7 +417,7 @@ export class InscripcionRepository {
   async cambiarPlan(
     actual: InscripcionGuardada,
     nuevoPlan: Omit<CambiarPlanInput, "fecha_inicio">,
-    idPlanPrecio: number,
+    precio: { id_plan_precio: number; id_promocion: number | null },
     fechas: FechasDeBaja,
     inicioReservas: Date,
   ): Promise<ResultadoOperacion> {
@@ -460,7 +466,8 @@ export class InscripcionRepository {
         data: {
           id_alumno: actual.id_alumno,
           id_plan: nuevoPlan.id_plan,
-          id_plan_precio: idPlanPrecio,
+          id_plan_precio: precio.id_plan_precio,
+          id_promocion: precio.id_promocion,
           id_profesora: nuevoPlan.id_profesora,
           sin_cargo: nuevoPlan.sin_cargo,
           fecha_inicio: fechaInicio,

@@ -1,4 +1,8 @@
-import type { CuotaDelHistorial, HabilitacionDeInscripcion } from "../cuota.types.js";
+import type {
+  CuotaDelHistorial,
+  CuotaParaAviso,
+  HabilitacionDeInscripcion,
+} from "../cuota.types.js";
 
 // Interfaz provista por Cuota (GestionCuotasYPagos) para que otros subsistemas sepan si un alumno
 // está al día: la lista de asistencia (US-20) y el listado y la ficha de alumnos (US-10). Cuota
@@ -16,4 +20,8 @@ export interface IInfoCuotas {
   // Si el alumno tuvo alguna vez un pago confirmado, en cualquiera de sus inscripciones: la
   // reactivación de quien nunca pagó vuelve a la pre-inscripción (US-07, US-08).
   tuvoPagoConfirmado(idAlumno: number): Promise<boolean>;
+
+  cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>>;
+
+  paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]>;
 }

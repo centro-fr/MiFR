@@ -10,6 +10,8 @@ import type {
   DatosBancarios,
   Parametro,
 } from "../parametros-sistema/parametros-sistema.types.js";
+import type { ActualizarPromocionInput, CrearPromocionInput } from "../promocion/promocion.schemas.js";
+import type { FiltroPromociones, Promocion } from "../promocion/promocion.types.js";
 
 // Las partes de ILogicaServicioEntrenamiento, una por componente: cada controller depende solo
 // de la suya. No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
@@ -44,6 +46,14 @@ export interface ILogicaPlanes {
   registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan>;
 }
 
+export interface ILogicaPromociones {
+  listarPromociones(filtro: FiltroPromociones): Promise<Promocion[]>;
+  obtenerPromocion(id: number): Promise<Promocion>;
+  crearPromocion(input: CrearPromocionInput): Promise<Promocion>;
+  actualizarPromocion(id: number, input: ActualizarPromocionInput): Promise<Promocion>;
+  desactivarPromocion(id: number): Promise<Promocion>;
+}
+
 // Lo que la API le pide a ParametrosSistema: ver y editar la configuración del centro (solo la
 // propietaria) y dar los datos bancarios para transferir (US-16). La lectura que usan los demás
 // componentes es IInfoParametros, que no pasa por acá.
@@ -55,4 +65,4 @@ export interface ILogicaParametros {
 
 // Interfaz del subsistema GestionServicioEntrenamiento en la vista arquitectónica.
 export interface ILogicaServicioEntrenamiento
-  extends ILogicaActividades, ILogicaHorarios, ILogicaPlanes, ILogicaParametros {}
+  extends ILogicaActividades, ILogicaHorarios, ILogicaPlanes, ILogicaPromociones, ILogicaParametros {}

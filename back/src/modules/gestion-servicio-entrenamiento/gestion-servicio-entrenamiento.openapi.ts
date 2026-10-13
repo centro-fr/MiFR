@@ -3,10 +3,12 @@ import { registrarDocumentacionActividades } from "./actividad/actividad.openapi
 import { registrarDocumentacionHorarios } from "./horario/horario.openapi.js";
 import { registrarDocumentacionPlanes } from "./plan/plan.openapi.js";
 import { registrarDocumentacionParametros } from "./parametros-sistema/parametros-sistema.openapi.js";
+import { registrarDocumentacionPromociones } from "./promocion/promocion.openapi.js";
 
 export function registrarDocumentacionGestionServicioEntrenamiento(registro: OpenAPIRegistry): void {
   registrarDocumentacionActividades(registro);
   registrarDocumentacionHorarios(registro);
   registrarDocumentacionPlanes(registro);
   registrarDocumentacionParametros(registro);
+  registrarDocumentacionPromociones(registro);
 }
