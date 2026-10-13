@@ -4,9 +4,9 @@ Sprint 3: **Núcleo Transaccional y Operación Diaria** (según `docs/v.1.1 Spri
 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-15 | Registro de cobro en efectivo | Pendiente | Francisco |
-| US-16 | Registro de pago por transferencia | Pendiente | Francisco |
-| US-17 | Aprobación o rechazo de transferencias | Pendiente | Francisco |
+| US-15 | Registro de cobro en efectivo | Hecho | Francisco |
+| US-16 | Registro de pago por transferencia | Hecho (el aviso es de US-25, Sprint 4) | Francisco |
+| US-17 | Aprobación o rechazo de transferencias | Hecho (el aviso es de US-25, Sprint 4) | Francisco |
 | US-18 | Cálculo del estado de habilitación del alumno | Hecho | Rosario |
 | US-20 | Registro de asistencia por clase | Hecho (falta EA) | Nicolas |
 | US-21 | Registro automático de inasistencias | Hecho | Nicolas |
@@ -21,7 +21,7 @@ El Sprint 3 se apoya en las inscripciones: un pago se registra sobre una cuota, 
 | --- | --- | --- |
 | Migración de `inscripciones` e `inscripcion_horarios` | Nicolas | Francisco (FK de `cuotas`) y Nicolas (FK de `asistencias`) |
 | Componente `Inscripcion` (US-05, US-07, US-08, plan y horarios de US-09) e `IInfoInscripciones` | Nicolas | Francisco (alta definitiva al confirmar el pago) y Nicolas (lista de asistencia) |
-| Lo que falta de US-10: la profesora ve a sus alumnos, filtros por plan, profesora y actividad, inscripción en la ficha | Francisco | — (usa `IInfoInscripciones`) |
+| Lo que falta de US-10: el historial de cuotas y pagos en la ficha y el filtro por estado de cuota. Lo demás ya está hecho (ver "Lo que queda de US-10") | Francisco | — (usa `IInfoInscripciones` e `IInfoCuotas`) |
 
 **Prioridad 1 de Nicolas:** subir a `dev` la migración de inscripciones, aunque el componente no esté terminado.
 
@@ -193,7 +193,7 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
 - [x] Estado de cuota en el listado y la ficha (`IInfoCuotas`): `situacion_cuota` con el estado, el vencimiento, los días restantes, si puede asistir y si tiene una transferencia sin revisar. Una inscripción dada de baja se calcula al día de su baja, y la ficha de un alumno de baja trae las inscripciones de su última baja (`inscripciones_de_la_baja`) para advertir una deuda antes de reactivarlo (US-08). Test PI-45.
 - [ ] Filtro por estado de cuota. El estado se calcula, no se guarda, así que no se puede filtrar en la consulta: filtrar después de paginar rompe la paginación, y calcular a todos los alumnos lee la tabla entera. Hay que decidir el enfoque antes de implementarlo.
 - [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
-- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas`, que ya se arma en `composicion.ts`.
+- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` ya recibe `IInfoCuotas` (lo usa para `situacion_cuota`), pero todavía no llama a `historialDeAlumno`.
 
 ## Lo que necesita el front para el Sprint 2
 
