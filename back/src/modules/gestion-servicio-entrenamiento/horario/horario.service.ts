@@ -41,6 +41,12 @@ export class HorarioService implements IInfoHorarios {
     return horarios.map((horario) => this.conCupoEfectivo(horario));
   }
 
+  async listarActivosDelDia(fecha: Date): Promise<HorarioRespuesta[]> {
+    const diaSemana = fecha.getUTCDay() || 7;
+    const horarios = await this.repositorio.listarActivosDelDia(diaSemana, fecha);
+    return horarios.map((horario) => this.conCupoEfectivo(horario));
+  }
+
   async obtenerPorId(id: number): Promise<HorarioRespuesta> {
     return this.conCupoEfectivo(await this.obtenerHorario(id));
   }

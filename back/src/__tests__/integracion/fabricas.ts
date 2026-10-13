@@ -158,3 +158,45 @@ export async function crearHorarioDePrueba(
   });
   return horario;
 }
+
+interface OpcionesInscripcion {
+  id_alumno: number;
+  plan: PlanDePrueba;
+  id_profesora: number;
+  id_horario: number;
+  estado?: "PREINSCRIPTA" | "ACTIVA" | "BAJA";
+  fecha_inicio?: Date;
+}
+
+// Inscripción en un horario, directo en la base: los casos de asistencia (US-20, US-21) la usan
+// para armar la lista de una clase sin pasar por la pre-inscripción y el cobro.
+export async function crearInscripcionDePrueba(
+  prisma: PrismaClient,
+  {
+    id_alumno,
+    plan,
+    id_profesora,
+    id_horario,
+    estado = "ACTIVA",
+    fecha_inicio = new Date("2026-10-01T00:00:00Z"),
+  }: OpcionesInscripcion,
+): Promise<{ id_inscripcion: number }> {
+  const deBaja = estado === "BAJA";
+  return prisma.inscripciones.create({
+    data: {
+      id_alumno,
+      id_plan: plan.id_plan,
+      id_plan_precio: plan.id_plan_precio,
+      id_profesora,
+      sin_cargo: false,
+      fecha_inicio,
+      estado,
+      fecha_baja: deBaja ? fecha_inicio : null,
+      motivo_baja: deBaja ? "ABANDONO" : null,
+      horarios: {
+        create: { id_horario, fecha_desde: fecha_inicio, fecha_hasta: deBaja ? fecha_inicio : null },
+      },
+    },
+    select: { id_inscripcion: true },
+  });
+}

@@ -94,6 +94,8 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Sesión                           | `entorno.iniciarSesion(correo)`, que pasa por el login real con Google simulado                                                                                                                                                                                                                                        |
 | Planes                           | Fábrica `crearPlan` (`back/src/__tests__/integracion/fabricas.ts`): plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026), o con el nombre, tipo, precio, fecha y actividad exclusiva que se pidan. La usan los casos de planes y la van a usar los de inscripciones           |
 | Alumnos                          | Fábrica `crearAlumno` (`back/src/__tests__/integracion/fabricas.ts`): alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles) y mayor de edad por defecto; se le puede pasar nombre, apellido, DNI, email (o `null` para un menor), fecha de nacimiento, estado y tutor. La van a usar los casos de inscripciones |
+| Inscripciones                    | Fábrica `crearInscripcionDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): inscripción de un alumno en un horario, directo en la base, `ACTIVA` por defecto o con el estado que se pida (una `BAJA` sale con motivo y horario cerrado). La usan los casos de asistencia para armar la lista de una clase sin pasar por el cobro |
+| Reloj fijo                       | Los casos de asistencia (PI-47 a PI-50) fijan solo `Date` con `vi.useFakeTimers({ toFake: ["Date"] })` en el lunes 12/10/2026 a las 15:00 de Argentina: las clases del día y su cierre dependen del día de la semana y de la hora. El cierre automático se corre con `entorno.cierreAsistencia.procesarCierresAutomaticos(hora)` |
 | Horarios                         | Fábrica `crearHorarioDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): horario directo para el test con actividad, profesora, día, horas y cupo propios configurables                                                                                                                                       |
 | Cuotas y pagos                   | `armarCuotasYPagos` (`back/src/__tests__/integracion/cobro.ts`): arma el subsistema con los componentes y repositorios reales sobre la base de prueba. Repite el cableado de `composicion.ts`, con los calculadores reales, para poder pasarle otro `PagoRepository` y simular una falla al guardar el pago (PI-35). Los flujos por HTTP (PI-42, PI-43) usan la API montada |
 | Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                                    |
@@ -192,10 +194,10 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
 | US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43                                           | Sí                                                                                     |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
-| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45                                                  | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha y el listado        |
+| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47                                           | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha, el listado y la lista de asistencia |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
-| US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                                        |
-| US-21 | Registro automático de inasistencias                      |   3    | PI-39                                                         | Parcial: el parámetro `MINUTOS_CIERRE_ASISTENCIA`; el cierre, cuando exista            |
+| US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49                                           | Sí (la consulta de clases de días anteriores, opcional en la spec, pendiente)          |
+| US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50                                           | Sí (la clase cancelada, fuera del MVP, pendiente)                                      |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                               |                                                                                        |
 | US-23 | Informe mensual automático de honorarios                  |   4    |                                                               |                                                                                        |
 | US-24 | Registro de suplencias entre profesoras                   |   4    |                                                               |                                                                                        |
@@ -267,8 +269,12 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-44         | Reactivar a quien nunca pagó                                        | US-07, US-08        | Servicios          | Demostración                                               | Sí           |
 | PI-45         | La situación de cuota en la ficha y el listado de alumnos           | US-08, US-10, US-18 | Servicios          | Demostración                                               | Sí           |
 | PI-46         | Las actividades públicas del centro                                 | US-32, US-04        | Servicios          | Demostración                                               | Sí           |
+| PI-47         | Las clases del día y su lista de asistencia                         | US-20, US-18        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-48         | Marcar asistencia                                                   | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-49         | Cerrar la asistencia con el botón                                   | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-50         | Cierre automático al terminar la clase                              | US-21               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3).
 
 ### 6.2 Detalle
 
@@ -847,9 +853,59 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (B-19 y B-20).
 
+#### PI-47 — Las clases del día y su lista de asistencia
+
+**US:** US-20, US-18 · **Precondición:** escenario de demostración y reloj fijo el lunes 12/10/2026 a las 15:00. Lucía tiene un horario de Funcional los lunes de 20:00 a 21:00 (cupo 10) con cinco inscriptos vigentes: Acosta (al día), Benítez (vencida), Castro (vencida, con una transferencia sin revisar), Díaz (pre-inscripta) y Escobar (activa, sin cuotas). Ferreyra se dio de baja hoy y Gómez está en el horario de Lucía de los miércoles.
+
+1. Lucía pide `GET /clases/hoy` dos veces.
+2. Con un horario de Carla del mismo lunes, Lucía vuelve a pedir sus clases y después las pide Carla.
+3. Lucía abre `GET /clases/:id/asistencia` de su clase.
+4. Valentina, alumna, pide `GET /clases/hoy`.
+
+**Resultado esperado:** en el paso 1 las dos respuestas son iguales (200), con solo clases de Lucía; la de las 20:00 está `PROGRAMADA`, con 5 inscriptos y 5 lugares libres, y en la base hay una sola fila de `clases` para ese horario y ninguna para el de los miércoles. En el paso 2 el pedido de Lucía no crea la clase del horario de Carla, y Carla no ve la clase de Lucía. En el paso 3 la lista trae a los cinco vigentes por apellido, sin marcar, sin Ferreyra ni Gómez, con la situación de cuota: `AL_DIA`, `VENCIDA` (con `puede_asistir: true`, por `VENCIDOS_PUEDEN_ASISTIR`), `VENCIDA` con `tiene_pago_pendiente: true` y dos `PENDIENTE_DE_PAGO`. En el paso 4, 403 y ninguna clase creada.
+
+**Automatizado:** Sí (J-01 a J-03).
+
+#### PI-48 — Marcar asistencia
+
+**US:** US-20 · **Precondición:** la de PI-47.
+
+1. Lucía marca presente a Acosta y después ausente.
+2. Lucía intenta marcar a Gómez (otro horario) y a Ferreyra (dado de baja); Carla intenta marcar a Acosta y abrir la lista de la clase de Lucía.
+3. En una clase de Lucía del lunes anterior, ya `DICTADA`, marcan Lucía y después Marina.
+4. Lucía marca ausente a Benítez y usa `POST /clases/:id/asistencia/todos-presentes`.
+
+**Resultado esperado:** en el paso 1, 200 las dos veces y una sola fila de Acosta con `asistio = false`, su inscripción, el `id_usuario_registra` de Lucía y la hora del marcado. En el paso 2, 404 en los cuatro pedidos y ninguna fila en `asistencias`. En el paso 3 Lucía recibe 404 (la clase no es de hoy) y Marina 200, con la corrección guardada. En el paso 4 los cinco vigentes quedan presentes, Benítez incluida.
+
+**Automatizado:** Sí (J-04 a J-07).
+
+#### PI-49 — Cerrar la asistencia con el botón
+
+**US:** US-21, US-20 · **Precondición:** la de PI-47; Lucía marcó presentes a Acosta, Benítez y Castro.
+
+1. Lucía cierra la asistencia (`POST /clases/:id/cerrar`) y la vuelve a cerrar.
+2. Con la clase cerrada, Lucía intenta marcar a Escobar y Marina lo marca presente.
+3. Lucía intenta "todos presentes".
+
+**Resultado esperado:** en el paso 1, 200 las dos veces; la clase queda `DICTADA` con `fecha_cierre_asist`, hay cinco filas y las dos nuevas son ausentes (Díaz y Escobar) con `id_usuario_registra` NULL; Ferreyra no tiene fila y el segundo cierre no agrega nada. En el paso 2 Lucía recibe 409 y Marina 200: Escobar queda presente, con quién lo corrigió. En el paso 3, 409.
+
+**Automatizado:** Sí (J-08 y J-09).
+
+#### PI-50 — Cierre automático al terminar la clase
+
+**US:** US-21 · **Precondición:** la de PI-47 y dos clases de hoy de 20:00 a 21:00: en una Lucía marcó presente a Acosta, la otra no tiene marcas.
+
+1. Se corre el cierre automático a las 20:59 y a las 21:00.
+2. Con la base reiniciada y `MINUTOS_CIERRE_ASISTENCIA = 15`, se corre a las 21:14 y a las 21:15.
+3. Con la base reiniciada y el reloj a las 21:00, Marina abre la lista de la clase con marcas, sin que haya corrido el cierre.
+
+**Resultado esperado:** en el paso 1 a las 20:59 no cierra ninguna; a las 21:00 cierra las dos, con `fecha_cierre_asist` a las 21:00: la que tenía marcas suma cuatro ausentes y la otra queda `DICTADA` sin ninguna fila en `asistencias`. En el paso 2 no cierra a las 21:14 y cierra las dos a las 21:15. En el paso 3 la lista ya muestra la clase `DICTADA` con los cuatro ausentes.
+
+**Automatizado:** Sí (J-10 a J-12).
+
 ## 7. Tests automatizados
 
-164 tests en nueve archivos:
+176 tests en diez archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -862,6 +918,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 16 (H-01 a H-16) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
+|    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 12 (J-01 a J-12) | PI-47 a PI-50                     |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -938,6 +995,18 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
+| J-01        | La profesora ve solo sus clases de hoy; pedirlas dos veces no las duplica y no se crean clases de otros días ni de horarios de otra profesora | PI-47 |
+| J-02        | La lista trae a los inscriptos vigentes del horario, por apellido, con su situación de cuota (al día, vencida, transferencia sin revisar, pendiente de pago), sin el dado de baja ni el de otro horario | PI-47 |
+| J-03        | Un alumno no accede a las clases (403) y no se crea ninguna                                                                                                     | PI-47 |
+| J-04        | La marca se guarda al momento con quién y cuándo, y la última vale                                                                                                | PI-48 |
+| J-05        | No se marca a un alumno de otro horario ni a uno dado de baja, ni en la clase de otra profesora (404); la base queda igual                                        | PI-48 |
+| J-06        | La profesora no toma asistencia de una clase de otro día; la propietaria la corrige                                                                             | PI-48 |
+| J-07        | "Todos presentes" marca a los inscriptos vigentes y pisa una marca anterior                                                                                      | PI-48 |
+| J-08        | Con 5 inscriptos y 3 presentes, el cierre registra 2 ausentes sin usuario, no toca al dado de baja y cerrar otra vez no duplica nada                              | PI-49 |
+| J-09        | Después del cierre la profesora no marca más (409) y la propietaria corrige                                                                                      | PI-49 |
+| J-10        | El cierre automático cierra al terminar la clase, ni un minuto antes, y solo genera ausentes donde se marcó a alguien                                             | PI-50 |
+| J-11        | El cierre automático espera además los `MINUTOS_CIERRE_ASISTENCIA`                                                                                               | PI-50 |
+| J-12        | Leer una clase vencida la cierra aunque el intervalo no haya corrido                                                                                            | PI-50 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -1017,6 +1086,15 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La ficha del alumno de baja no trae las inscripciones de su última baja               | H-16                                                                                                       |
 | Las actividades públicas traen la profesora de cada horario                             | B-19                                                                                                       |
 | El centro vuelve a cerrar a las 20:00                                                  | B-07 (responde 400 en lugar de 409: el horario de 20:30 a 21:30 queda fuera) y B-21                       |
+| El cierre automático genera ausentes aunque nadie haya marcado                          | J-10                                                                                                       |
+| El cierre automático no espera los `MINUTOS_CIERRE_ASISTENCIA`                          | J-11                                                                                                       |
+| El cierre con el botón no registra los ausentes                                         | J-08                                                                                                       |
+| El cierre pisa a los ya marcados (sin `skipDuplicates`)                                 | J-08, J-10 a J-12                                                                                          |
+| La profesora marca en una clase `DICTADA`                                               | J-09                                                                                                       |
+| La profesora accede a clases de otro día                                                | J-06                                                                                                       |
+| Marcar no verifica que el alumno esté en el horario                                     | J-05                                                                                                       |
+| La profesora materializa las clases de horarios ajenos                                  | J-01. Al principio ningún test falló: el listado filtra igual por profesora. Se sumó al escenario un horario de Carla del mismo día |
+| La lista incluye inscripciones y alumnos dados de baja                                  | J-01, J-02, J-05, J-07, J-08, J-10, J-12. Al principio ningún test falló: el dado de baja tenía el horario cerrado antes de hoy y lo sacaba la fecha. Se lo pasó a dado de baja hoy, cuando solo lo saca el estado |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1053,6 +1131,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Panel público de disponibilidad (PI-46)                               | 163 | 163 aprobados | 110,9 s | Pasaron también los 1311 tests unitarios, con cobertura del 100 %; chequeo de tipos correcto. Las 3 fallas provocadas fueron detectadas |
 | 12/10/2026 | Grilla real del centro en el escenario y cierre a las 23:00 (PI-05)     | 164 | 164 aprobados | 119,9 s | 16 tests se adaptaron al escenario nuevo. Pasaron también los 1311 tests unitarios, con cobertura del 100 %; build y chequeo de tipos correctos. La falla provocada fue detectada |
 | 12/10/2026 | Las actividades públicas reemplazan al panel de disponibilidad (PI-46) | 164 | 164 aprobados | 117,9 s | Pasaron también los 1307 tests unitarios, con cobertura del 100 %; build y formato correctos. La falla provocada fue detectada |
+| 12/10/2026 | Clases, asistencia y cierre (PI-47 a PI-50)                           | 176 | 176 aprobados | 34,2 s | Pasaron también los 1400 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 9 fallas provocadas fueron detectadas (dos, después de reforzar los datos). La primera corrida falló en 10 tests de inscripciones y cuotas porque el cliente de Prisma estaba generado con un esquema viejo; se regeneró (`pnpm prisma:generate`) |
 
 ### 8.2 Resultado por caso
 
@@ -1079,6 +1158,10 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-45         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-15 y H-16; sin defectos                                                  |
 | PI-46         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-19 y B-20 con las actividades públicas; sin defectos                     |
 | PI-05         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-05 a B-09, B-14, B-15 y B-21 con la grilla nueva; sin defectos            |
+| PI-47         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-01 a J-03; sin defectos                                                  |
+| PI-48         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-04 a J-07; sin defectos                                                  |
+| PI-49         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-08 y J-09; sin defectos                                                  |
+| PI-50         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-10 a J-12; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1122,6 +1205,10 @@ Los defectos se numeran D-01, D-02…
 | PI-38 | ¿La reserva de cupo de una pre-inscripción vence (el diseño del front decía 72 hs y lista de espera)? Resuelto: vence sola, contada desde el inicio de clases y no desde el alta, con un plazo en días que configura la propietaria (`DIAS_RESERVA_PREINSCRIPCION`, 3 por defecto). Se calcula al consultar, sin proceso programado. Sin lista de espera: el lugar vuelve a figurar disponible | Cerrado |
 | PI-46 | Las actividades públicas no tienen límite de pedidos por IP: hoy ningún endpoint lo tiene (tampoco el login). Detrás del proxy de Render hace falta `trust proxy` para que el límite no caiga sobre la IP del proxy. Mientras tanto, la respuesta se puede reusar un minuto (`Cache-Control`). Falta decidir si se agrega `express-rate-limit` para toda la API | Abierto |
 | PI-41 | ¿Dónde se guarda el texto libre de una baja con el motivo "Otro" (US-08)? `observaciones` es de la inscripción y se pisaría. Resuelto: columna nueva `inscripciones.detalle_baja` (VARCHAR(200), opcional), solo con el motivo `OTRO` (`ck_inscripciones_x2`); cambio del DER decidido el 11/10/2026 | Cerrado |
+| PI-48 | La propietaria corrige solo las clases que ya existen: una clase se crea cuando alguien pide las del día, y no hay una ruta para listar o crear las de días anteriores ("consultar asistencias de clases anteriores", opcional en US-20). Falta decidir si se agrega `GET /clases?fecha=` | Abierto |
+| PI-47 | Los pre-inscriptos del horario aparecen en la lista con `PENDIENTE_DE_PAGO` y `puede_asistir: false`, para que la profesora los vea en su primera clase y se pueda marcar su asistencia. Falta confirmar con la propietaria si deben aparecer | Abierto |
+| PI-50 | No hay forma de cancelar una clase: el estado `CANCELADA` existe en el DER y en el ciclo de la clase (`estados_clase.puml`), y una cancelada no admite marcas ni cierre, pero la transición queda para cuando se implemente (US-21 la deja fuera del MVP; el aviso `CLASE_CANCELADA` es de US-25) | Abierto |
+| PI-48 | La lista devuelve las `observaciones` de cada asistencia, pero ninguna ruta las carga todavía | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -1173,3 +1260,4 @@ Los defectos se numeran D-01, D-02…
 |   2.10  | 12/10/2026 | Caso PI-46 y tests B-19 y B-20 (panel público de disponibilidad); US-32 pasa a parcialmente automatizada; punto abierto sobre el límite de pedidos | Francisco Andrade |
 |   2.11  | 12/10/2026 | El escenario de demostración pasa a la grilla real del centro (ocho actividades y 38 horarios); el centro cierra a las 23:00 (PI-05, test B-21); PI-04, PI-05, PI-06 y PI-46 se ajustan a los datos nuevos | Francisco Andrade |
 |   2.12  | 12/10/2026 | PI-46 pasa a las actividades públicas (`GET /publico/actividades`): los horarios y los cupos dejan de ser públicos; B-19 y B-20 se reescriben | Francisco Andrade |
+|   2.13  | 12/10/2026 | Casos PI-47 a PI-50 (clases del día, toma de asistencia y cierre con ausentes, US-20 y US-21) y archivo J con los tests J-01 a J-12; fábrica `crearInscripcionDePrueba` y reloj fijo en los datos comunes; US-20 y US-21 pasan a automatizadas; cuatro puntos a confirmar abiertos | Nicolas |

@@ -93,6 +93,9 @@ function crearMocks() {
       obtenerIdsDeAlumnos: vi.fn().mockResolvedValue([5]),
       resumirInscripcionesVigentes: vi.fn().mockResolvedValue([]),
       contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map([[8, 2]])),
+      listarParaAsistencia: vi.fn().mockResolvedValue([]),
+      buscarParaAsistencia: vi.fn().mockResolvedValue(null),
+      contarInscriptosParaAsistencia: vi.fn().mockResolvedValue(new Map([[8, 2]])),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map([[8, 1]])),
     },
     alumnos: {
@@ -583,6 +586,9 @@ describe("InscripcionService", () => {
       await expect(servicio.obtenerIdsDeAlumnos({ id_plan: 1 })).resolves.toEqual([5]);
       await expect(servicio.resumirInscripcionesVigentes([5])).resolves.toEqual([]);
       await expect(servicio.contarInscriptosVigentes([8])).resolves.toEqual(new Map([[8, 2]]));
+      await expect(servicio.listarParaAsistencia(8, HOY)).resolves.toEqual([]);
+      await expect(servicio.buscarParaAsistencia(8, 5, HOY)).resolves.toBeNull();
+      await expect(servicio.contarInscriptosParaAsistencia([8], HOY)).resolves.toEqual(new Map([[8, 2]]));
       mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcion]);
       await expect(servicio.listarVigentesDeAlumno(5)).resolves.toEqual([respuesta]);
       mocks.repositorio.listarDeLaUltimaBaja.mockResolvedValue([inscripcion]);

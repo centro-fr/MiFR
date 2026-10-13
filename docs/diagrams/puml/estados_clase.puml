@@ -1,0 +1,24 @@
+@startuml
+title Ciclo de vida de una clase
+
+[*] --> PROGRAMADA : generar desde horario
+PROGRAMADA --> DICTADA : cerrar asistencia
+PROGRAMADA --> CANCELADA : cancelar clase
+
+note right of PROGRAMADA
+  Las marcas se guardan en Asistencia.
+  El cierre manual completa como ausentes
+  a los inscriptos vigentes sin marcar.
+  El cierre automático solo completa ausentes
+  si hubo al menos una marca manual.
+end note
+
+note right of DICTADA
+  Estado terminal. La asistencia queda cerrada.
+end note
+
+note right of CANCELADA
+  Estado terminal. No genera inasistencias.
+end note
+
+@enduml
