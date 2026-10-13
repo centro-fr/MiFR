@@ -1,9 +1,10 @@
-import { ConflictError, NotFoundError } from "../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
+import type { HorarioRespuesta } from "../../gestion-servicio-entrenamiento/horario/horario.types.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
-import type { ClaseConDatos, EstadoClase } from "./clase.types.js";
+import type { ClaseConDatos, ClaseSuplida, EstadoClase } from "./clase.types.js";
 import type { ClaseRepository } from "./clase.repository.js";
 import type { IInfoClases } from "./interface/i-info-clases.js";
 
@@ -81,10 +82,49 @@ export class ClaseService implements IInfoClases {
     return this.repositorio.cerrar(idClase, fechaCierre);
   }
 
+  // US-24: una suplencia puede ser de cualquier día, así que la clase se materializa para esa fecha y
+  // no solo para hoy. Si ya existía, queda como estaba: el único (id_horario, fecha_clase) no la duplica.
+  async materializar(idHorario: number, fecha: Date): Promise<ClaseConDatos> {
+    const [horario] = await this.horarios.buscarPorIds([idHorario]);
+    if (!horario) throw new NotFoundError("Horario no encontrado");
+    if ((fecha.getUTCDay() || 7) !== horario.dia_semana) {
+      throw new ValidationError("La fecha no corresponde al día de la semana del horario");
+    }
+    if (!estabaVigente(horario, fecha)) throw new ConflictError("El horario no estaba vigente en esa fecha");
+
+    await this.repositorio.crearDelDia([horario], fecha);
+    const clase = await this.repositorio.buscarPorHorarioYFecha(idHorario, fecha);
+    if (!clase) throw new Error(`La clase del horario ${idHorario} no quedó creada`);
+    return clase;
+  }
+
+  async bloquearParaSuplencia(idClase: number): Promise<ClaseConDatos> {
+    const estado = await this.repositorio.bloquear(idClase);
+    if (estado === null) throw new NotFoundError("Clase no encontrada");
+    if (estado === "CANCELADA") throw new ConflictError("La clase está cancelada: no tiene suplencia");
+    const clase = await this.repositorio.buscarPorId(idClase);
+    if (!clase) throw new Error(`La clase ${idClase} bloqueada no se encontró`);
+    return clase;
+  }
+
+  cambiarDictante(idClase: number, idProfesora: number): Promise<void> {
+    return this.repositorio.cambiarDictante(idClase, idProfesora);
+  }
+
+  listarSuplidasEnPeriodo(desde: Date, hasta: Date): Promise<ClaseSuplida[]> {
+    return this.repositorio.listarSuplidasEnPeriodo(desde, hasta);
+  }
+
   // undefined: la propietaria, que ve todas. null: quien no es una profesora activa, que no ve ninguna.
   private async idProfesoraSegun(solicitante: Solicitante): Promise<number | null | undefined> {
     if (solicitante.esPropietaria) return undefined;
     const profesora = await this.profesores.buscarPorUsuario(solicitante.idUsuario);
     return profesora?.id_profesora ?? null;
   }
+}
+
+// El día de la baja el horario ya no se dicta.
+function estabaVigente(horario: Pick<HorarioRespuesta, "fecha_alta" | "fecha_baja">, fecha: Date): boolean {
+  if (fecha < horario.fecha_alta) return false;
+  return horario.fecha_baja === null || fecha < horario.fecha_baja;
 }

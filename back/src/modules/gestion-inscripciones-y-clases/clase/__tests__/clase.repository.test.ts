@@ -13,6 +13,7 @@ function crearPrismaMock() {
       findMany: vi.fn().mockResolvedValue([clase]),
       findUnique: vi.fn().mockResolvedValue(clase),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      update: vi.fn(),
     },
     $queryRaw: vi.fn(),
   };
@@ -123,5 +124,68 @@ describe("ClaseRepository", () => {
 
     await expect(repositorio.cerrar(20, new Date())).resolves.toBeNull();
     expect(prisma.clases.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("buscarPorHorarioYFecha busca por el único (id_horario, fecha_clase)", async () => {
+    await expect(repositorio.buscarPorHorarioYFecha(4, HOY)).resolves.toBe(clase);
+
+    expect(prisma.clases.findUnique).toHaveBeenCalledWith({
+      where: { id_horario_fecha_clase: { id_horario: 4, fecha_clase: HOY } },
+      include: INCLUIR_DATOS_CLASE,
+    });
+  });
+
+  it("cambiarDictante actualiza la profesora que dicta la clase", async () => {
+    await repositorio.cambiarDictante(20, 9);
+
+    expect(prisma.clases.update).toHaveBeenCalledWith({
+      where: { id_clase: 20 },
+      data: { id_prof_dictante: 9 },
+    });
+  });
+
+  it("listarSuplidasEnPeriodo trae las clases con suplencia sin las canceladas, una fila por suplencia", async () => {
+    const desde = new Date("2026-10-01T00:00:00Z");
+    const horario = {
+      hora_inicio: new Date("1970-01-01T18:00:00Z"),
+      hora_fin: new Date("1970-01-01T19:00:00Z"),
+    };
+    prisma.clases.findMany.mockResolvedValue([
+      {
+        id_clase: 20,
+        id_horario: 4,
+        fecha_clase: HOY,
+        id_prof_dictante: 9,
+        horario,
+        suplencias: [{ id_prof_ausente: 8 }],
+      },
+    ]);
+
+    await expect(repositorio.listarSuplidasEnPeriodo(desde, HOY)).resolves.toEqual([
+      {
+        id_clase: 20,
+        id_horario: 4,
+        fecha_clase: HOY,
+        ...horario,
+        id_prof_suplente: 9,
+        id_prof_ausente: 8,
+      },
+    ]);
+    expect(prisma.clases.findMany).toHaveBeenCalledWith({
+      where: {
+        fecha_clase: { gte: desde, lte: HOY },
+        estado: { not: "CANCELADA" },
+        suplencias: { some: {} },
+      },
+      select: {
+        id_clase: true,
+        id_horario: true,
+        fecha_clase: true,
+        id_prof_dictante: true,
+        horario: { select: { hora_inicio: true, hora_fin: true } },
+        suplencias: { select: { id_prof_ausente: true } },
+      },
+      orderBy: [{ fecha_clase: "asc" }, { id_clase: "asc" }],
+    });
   });
 });

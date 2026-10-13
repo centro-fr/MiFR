@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, NotFoundError } from "../../../../shared/errors/app-error.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../../../shared/errors/app-error.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { Solicitante } from "../../../../shared/utils/solicitante.types.js";
@@ -11,6 +11,14 @@ const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
 const PROFESORA: Solicitante = { idUsuario: 2, esPropietaria: false };
 const profesora = { id_profesora: 8, id_usuario: 2 };
 const claseDeHoy = { id_clase: 20, id_prof_dictante: 8, fecha_clase: HOY };
+// El 12/10/2026 es lunes.
+const horarioDeLosLunes = {
+  id_horario: 4,
+  id_profesora: 8,
+  dia_semana: 1,
+  fecha_alta: new Date("2026-09-01T00:00:00Z"),
+  fecha_baja: null,
+};
 
 function crearMocks() {
   return {
@@ -22,12 +30,16 @@ function crearMocks() {
       cerrar: vi.fn(),
       cancelar: vi.fn(),
       listarAbiertasHasta: vi.fn(),
+      buscarPorHorarioYFecha: vi.fn().mockResolvedValue(claseDeHoy),
+      cambiarDictante: vi.fn(),
+      listarSuplidasEnPeriodo: vi.fn(),
     },
     horarios: {
       listarActivosDelDia: vi.fn().mockResolvedValue([
         { id_horario: 4, id_profesora: 8 },
         { id_horario: 5, id_profesora: 9 },
       ]),
+      buscarPorIds: vi.fn().mockResolvedValue([horarioDeLosLunes]),
     },
     profesores: { buscarPorUsuario: vi.fn().mockResolvedValue(profesora) },
   };
@@ -200,5 +212,93 @@ describe("ClaseService", () => {
     await expect(servicio.cerrar(20, fecha)).resolves.toBe("cerrada");
     expect(mocks.repositorio.listarAbiertasHasta).toHaveBeenCalledWith(HOY);
     expect(mocks.repositorio.cerrar).toHaveBeenCalledWith(20, fecha);
+  });
+
+  it("materializar crea la clase del horario en esa fecha con la titular y la devuelve", async () => {
+    await expect(servicio.materializar(4, HOY)).resolves.toBe(claseDeHoy);
+
+    expect(mocks.horarios.buscarPorIds).toHaveBeenCalledWith([4]);
+    expect(mocks.repositorio.crearDelDia).toHaveBeenCalledWith([horarioDeLosLunes], HOY);
+    expect(mocks.repositorio.buscarPorHorarioYFecha).toHaveBeenCalledWith(4, HOY);
+  });
+
+  it("materializar acepta un sábado como día 6 y un horario dado de baja después de la fecha", async () => {
+    const sabado = new Date("2026-10-17T00:00:00Z");
+    mocks.horarios.buscarPorIds.mockResolvedValue([
+      { ...horarioDeLosLunes, dia_semana: 6, fecha_baja: new Date("2026-10-18T00:00:00Z") },
+    ]);
+
+    await expect(servicio.materializar(4, sabado)).resolves.toBe(claseDeHoy);
+  });
+
+  it("materializar lanza NotFoundError si el horario no existe", async () => {
+    mocks.horarios.buscarPorIds.mockResolvedValue([]);
+
+    await expect(servicio.materializar(4, HOY)).rejects.toBeInstanceOf(NotFoundError);
+    expect(mocks.repositorio.crearDelDia).not.toHaveBeenCalled();
+  });
+
+  it("materializar rechaza con 400 una fecha de otro día de la semana, también un domingo", async () => {
+    await expect(servicio.materializar(4, new Date("2026-10-13T00:00:00Z"))).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(servicio.materializar(4, new Date("2026-10-11T00:00:00Z"))).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    expect(mocks.repositorio.crearDelDia).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["antes del alta", { fecha_alta: new Date("2026-10-13T00:00:00Z") }],
+    ["el día de la baja", { fecha_baja: HOY }],
+    ["después de la baja", { fecha_baja: new Date("2026-10-05T00:00:00Z") }],
+  ])("materializar rechaza un horario que no estaba vigente: %s", async (_caso, cambio) => {
+    mocks.horarios.buscarPorIds.mockResolvedValue([{ ...horarioDeLosLunes, ...cambio }]);
+
+    await expect(servicio.materializar(4, HOY)).rejects.toThrow("El horario no estaba vigente en esa fecha");
+    expect(mocks.repositorio.crearDelDia).not.toHaveBeenCalled();
+  });
+
+  it("materializar falla como error interno si la clase no aparece después de crearla", async () => {
+    mocks.repositorio.buscarPorHorarioYFecha.mockResolvedValue(null);
+
+    await expect(servicio.materializar(4, HOY)).rejects.not.toBeInstanceOf(NotFoundError);
+  });
+
+  it("bloquearParaSuplencia bloquea la clase y la devuelve, aunque esté DICTADA", async () => {
+    mocks.repositorio.bloquear.mockResolvedValue("DICTADA");
+
+    await expect(servicio.bloquearParaSuplencia(20)).resolves.toBe(claseDeHoy);
+    expect(mocks.repositorio.bloquear).toHaveBeenCalledWith(20);
+  });
+
+  it("bloquearParaSuplencia lanza NotFoundError si la clase no existe", async () => {
+    mocks.repositorio.bloquear.mockResolvedValue(null);
+
+    await expect(servicio.bloquearParaSuplencia(20)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("bloquearParaSuplencia rechaza una clase CANCELADA", async () => {
+    mocks.repositorio.bloquear.mockResolvedValue("CANCELADA");
+
+    await expect(servicio.bloquearParaSuplencia(20)).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it("bloquearParaSuplencia falla como error interno si la clase bloqueada no se encuentra", async () => {
+    mocks.repositorio.bloquear.mockResolvedValue("PROGRAMADA");
+    mocks.repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.bloquearParaSuplencia(20)).rejects.not.toBeInstanceOf(NotFoundError);
+  });
+
+  it("cambiarDictante y listarSuplidasEnPeriodo se delegan en el repositorio", async () => {
+    const desde = new Date("2026-10-01T00:00:00Z");
+    mocks.repositorio.listarSuplidasEnPeriodo.mockResolvedValue(["suplida"]);
+
+    await servicio.cambiarDictante(20, 9);
+    await expect(servicio.listarSuplidasEnPeriodo(desde, HOY)).resolves.toEqual(["suplida"]);
+
+    expect(mocks.repositorio.cambiarDictante).toHaveBeenCalledWith(20, 9);
+    expect(mocks.repositorio.listarSuplidasEnPeriodo).toHaveBeenCalledWith(desde, HOY);
   });
 });

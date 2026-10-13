@@ -9,6 +9,7 @@ import type { AsistenciaService } from "../asistencia/asistencia.service.js";
 import type { CierreAsistenciaService } from "../cierre-asistencia/cierre-asistencia.service.js";
 import type { ClaseService } from "../clase/clase.service.js";
 import type { InscripcionService } from "../inscripcion/inscripcion.service.js";
+import type { SuplenciaService } from "../suplencia/suplencia.service.js";
 
 const solicitante: Solicitante = { idUsuario: 1, esPropietaria: true };
 const cambios = { id_plan: 2, id_profesora: 3, ids_horarios: [8], sin_cargo: false };
@@ -57,6 +58,12 @@ describe("GestionInscripcionesYClasesService", () => {
   };
   const cierre = { procesarCierresAutomaticos: vi.fn(), cerrarManualmente: vi.fn() };
   const unidadDeTrabajo = { ejecutar: vi.fn(<T>(operacion: () => Promise<T>) => operacion()) };
+  const suplencias = {
+    listar: vi.fn().mockResolvedValue("suplencias.listar"),
+    registrar: vi.fn().mockResolvedValue("suplencias.registrar"),
+    cambiar: vi.fn().mockResolvedValue("suplencias.cambiar"),
+    eliminar: vi.fn().mockResolvedValue("suplencias.eliminar"),
+  };
   const gestion = new GestionInscripcionesYClasesService(
     inscripciones as unknown as InscripcionService,
     cuotas as unknown as IInfoCuotas,
@@ -64,6 +71,7 @@ describe("GestionInscripcionesYClasesService", () => {
     asistencias as unknown as AsistenciaService,
     cierre as unknown as CierreAsistenciaService,
     unidadDeTrabajo as unknown as IUnidadDeTrabajo,
+    suplencias as unknown as SuplenciaService,
   );
 
   beforeEach(() => vi.clearAllMocks());
@@ -246,5 +254,21 @@ describe("GestionInscripcionesYClasesService", () => {
 
     await expect(gestion.cerrarAsistencia(20, solicitante)).resolves.toBe("cerrada");
     expect(cierre.cerrarManualmente).toHaveBeenCalledWith(20, solicitante);
+  });
+
+  it.each([
+    ["listarSuplencias", [{ limit: 50, offset: 0 }], "listar"],
+    [
+      "registrarSuplencia",
+      [{ id_horario: 4, fecha_clase: new Date(), id_profesora_suplente: 9 }, 1],
+      "registrar",
+    ],
+    ["cambiarSuplencia", [20, { motivo: "Viaje" }, 1], "cambiar"],
+    ["eliminarSuplencia", [20], "eliminar"],
+  ] as const)("%s se delega en Suplencia", async (metodo, argumentos, destino) => {
+    const llamar = gestion[metodo] as (...args: unknown[]) => Promise<unknown>;
+
+    await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`suplencias.${destino}`);
+    expect(suplencias[destino]).toHaveBeenCalledWith(...argumentos);
   });
 });
