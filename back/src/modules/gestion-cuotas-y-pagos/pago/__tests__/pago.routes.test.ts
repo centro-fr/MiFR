@@ -33,6 +33,10 @@ function crearLogicaMock() {
     listarTransferencias: vi.fn().mockResolvedValue([]),
     listarMisTransferencias: vi.fn().mockResolvedValue([]),
     obtenerComprobante: vi.fn().mockResolvedValue({ numero: 7 }),
+    listarEfectivoPendiente: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, profesoras: [] }),
+    listarRendiciones: vi.fn().mockResolvedValue({ datos: [], total: 0, limit: 100, offset: 0 }),
+    rendirCobro: vi.fn().mockResolvedValue({ rendidos: [7], cantidad: 1, total: 25000, salteados: [] }),
+    rendirCobros: vi.fn().mockResolvedValue({ rendidos: [], cantidad: 0, total: 0, salteados: [] }),
   };
 }
 
@@ -184,6 +188,88 @@ describe("rutas de pagos", () => {
     expect((await como("alumna", "get", "/abc/comprobante")).status).toBe(400);
   });
 
+  describe("rendición del efectivo (US-19)", () => {
+    it.each([
+      ["get", "/efectivo-pendiente"],
+      ["get", "/rendiciones"],
+      ["post", "/7/rendir"],
+      ["post", "/rendir"],
+    ] as const)("%s %s es solo de la propietaria con PAGOS_RENDICION_VER", async (metodo, ruta) => {
+      const deLaProfesora = await como("profesora", metodo, ruta).send({ id_profesora: 3 });
+      vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
+      const sinElPermiso = await como("propietaria", metodo, ruta).send({ id_profesora: 3 });
+
+      expect(deLaProfesora.status).toBe(403);
+      expect(sinElPermiso.status).toBe(403);
+      expect(autorizacion.tienePermiso).toHaveBeenCalledWith(1, "PAGOS_RENDICION_VER");
+      expect(logica.listarEfectivoPendiente).not.toHaveBeenCalled();
+      expect(logica.listarRendiciones).not.toHaveBeenCalled();
+      expect(logica.rendirCobro).not.toHaveBeenCalled();
+      expect(logica.rendirCobros).not.toHaveBeenCalled();
+    });
+
+    it("el pendiente y el historial llegan a la lógica con los filtros convertidos", async () => {
+      const pendiente = await como(
+        "propietaria",
+        "get",
+        "/efectivo-pendiente?id_profesora=3&desde=2026-10-01",
+      );
+      const historial = await como("propietaria", "get", "/rendiciones?hasta=2026-10-31&limit=10");
+
+      expect(pendiente.status).toBe(200);
+      expect(logica.listarEfectivoPendiente).toHaveBeenCalledWith(
+        { id_profesora: 3, desde: new Date("2026-10-01T00:00:00Z") },
+        { limit: 100, offset: 0 },
+      );
+      expect((await como("propietaria", "get", "/efectivo-pendiente?limit=101")).status).toBe(400);
+      expect(historial.status).toBe(200);
+      expect(logica.listarRendiciones).toHaveBeenCalledWith(
+        { hasta: new Date("2026-10-31T00:00:00Z") },
+        { limit: 10, offset: 0 },
+      );
+      expect((await como("propietaria", "get", "/efectivo-pendiente?desde=hoy")).status).toBe(400);
+    });
+
+    it("rendir uno y un lote dejan en la auditoría quién rindió y las observaciones", async () => {
+      const advertencias = vi.mocked(console.warn);
+      logica.rendirCobros.mockResolvedValue({ rendidos: [7, 9], cantidad: 2, total: 55000, salteados: [] });
+
+      const uno = await como("propietaria", "post", "/7/rendir").send({ observaciones: "Entregó en mano" });
+      const lote = await como("propietaria", "post", "/rendir").send({ id_profesora: 3 });
+
+      expect(uno.status).toBe(200);
+      expect(logica.rendirCobro).toHaveBeenCalledWith(7);
+      expect(lote.status).toBe(200);
+      expect(logica.rendirCobros).toHaveBeenCalledWith({ id_profesora: 3 });
+      const auditados = advertencias.mock.calls.map(([linea]) => JSON.parse(String(linea)));
+      expect(auditados).toEqual([
+        expect.objectContaining({
+          auditoria: "EFECTIVO_RENDIDO",
+          por: 1,
+          ids_pagos: [7],
+          total: 25000,
+          observaciones: "Entregó en mano",
+        }),
+        expect.objectContaining({ auditoria: "EFECTIVO_RENDIDO", ids_pagos: [7, 9], observaciones: null }),
+      ]);
+    });
+
+    it("un lote sin nada que rendir no deja auditoría, y uno inválido responde 400", async () => {
+      const lote = await como("propietaria", "post", "/rendir").send({ ids_pagos: [8] });
+      const invalido = await como("propietaria", "post", "/rendir").send({ id_profesora: 3, ids_pagos: [7] });
+
+      expect(lote.status).toBe(200);
+      expect(vi.mocked(console.warn)).not.toHaveBeenCalled();
+      expect(invalido.status).toBe(400);
+    });
+
+    it("rendir uno ya rendido responde 409", async () => {
+      logica.rendirCobro.mockRejectedValue(new ConflictError("El cobro ya se rindió"));
+
+      expect((await como("propietaria", "post", "/7/rendir")).status).toBe(409);
+    });
+  });
+
   it("documenta en Swagger todas las operaciones del subsistema", () => {
     const registro = new OpenAPIRegistry();
     registrarDocumentacionGestionCuotasYPagos(registro);
@@ -201,6 +287,10 @@ describe("rutas de pagos", () => {
         "post /pagos/{id}/aprobar",
         "post /pagos/{id}/rechazar",
         "get /pagos/{id}/comprobante",
+        "get /pagos/efectivo-pendiente",
+        "get /pagos/rendiciones",
+        "post /pagos/{id}/rendir",
+        "post /pagos/rendir",
       ].sort(),
     );
   });

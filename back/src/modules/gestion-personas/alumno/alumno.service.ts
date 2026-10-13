@@ -99,6 +99,10 @@ export class AlumnoService implements IInfoAlumnos {
     return { datos, total, limit: filtro.limit, offset: filtro.offset };
   }
 
+  listarIds(filtro: Omit<FiltroAlumno, "limit" | "offset">, tope: number): Promise<number[]> {
+    return this.repositorio.listarIds(filtro, tope);
+  }
+
   async obtenerPorId(id: number): Promise<Alumno> {
     const alumno = await this.repositorio.buscarPorId(id);
     if (!alumno) throw new NotFoundError("Alumno no encontrado");

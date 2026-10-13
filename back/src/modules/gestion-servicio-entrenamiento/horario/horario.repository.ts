@@ -105,6 +105,20 @@ export class HorarioRepository {
     });
   }
 
+  // Los que regían ese día: para un día pasado también los que se dieron de baja después (la
+  // corrección de asistencia de la propietaria, US-20). Uno dado de baja ese mismo día ya no rige.
+  listarActivosDelDia(diaSemana: number, fecha: Date): Promise<HorarioConDatos[]> {
+    return this.prisma.horarios.findMany({
+      where: {
+        dia_semana: diaSemana,
+        fecha_alta: { lte: fecha },
+        OR: [{ fecha_baja: null }, { fecha_baja: { gt: fecha } }],
+      },
+      include: CON_DATOS,
+      orderBy: [{ hora_inicio: "asc" }, { id_horario: "asc" }],
+    });
+  }
+
   buscarPorId(id: number): Promise<HorarioConDatos | null> {
     return this.prisma.horarios.findUnique({ where: { id_horario: id }, include: CON_DATOS });
   }

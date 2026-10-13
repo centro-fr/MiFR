@@ -4,12 +4,12 @@ Sprint 3: **Núcleo Transaccional y Operación Diaria** (según `docs/v.1.1 Spri
 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-15 | Registro de cobro en efectivo | Pendiente | Francisco |
-| US-16 | Registro de pago por transferencia | Pendiente | Francisco |
-| US-17 | Aprobación o rechazo de transferencias | Pendiente | Francisco |
+| US-15 | Registro de cobro en efectivo | Hecho | Francisco |
+| US-16 | Registro de pago por transferencia | Hecho (el aviso es de US-25, Sprint 4) | Francisco |
+| US-17 | Aprobación o rechazo de transferencias | Hecho (el aviso es de US-25, Sprint 4) | Francisco |
 | US-18 | Cálculo del estado de habilitación del alumno | Hecho | Rosario |
-| US-20 | Registro de asistencia por clase | Pendiente | Nicolas |
-| US-21 | Registro automático de inasistencias | Pendiente | Nicolas |
+| US-20 | Registro de asistencia por clase | Hecho (falta EA) | Nicolas |
+| US-21 | Registro automático de inasistencias | Hecho | Nicolas |
 
 Fuentes: `docs/specs/05-*` y `docs/specs/06-*`, `docs/sdd/05-*` y `docs/sdd/06-*`, y el DER. Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
 
@@ -21,7 +21,7 @@ El Sprint 3 se apoya en las inscripciones: un pago se registra sobre una cuota, 
 | --- | --- | --- |
 | Migración de `inscripciones` e `inscripcion_horarios` | Nicolas | Francisco (FK de `cuotas`) y Nicolas (FK de `asistencias`) |
 | Componente `Inscripcion` (US-05, US-07, US-08, plan y horarios de US-09) e `IInfoInscripciones` | Nicolas | Francisco (alta definitiva al confirmar el pago) y Nicolas (lista de asistencia) |
-| Lo que falta de US-10: la profesora ve a sus alumnos, filtros por plan, profesora y actividad, inscripción en la ficha | Francisco | — (usa `IInfoInscripciones`) |
+| Lo que falta de US-10: hecho (ver "Lo que queda de US-10") | Francisco | — (usa `IInfoInscripciones` e `IInfoCuotas`) |
 
 **Prioridad 1 de Nicolas:** subir a `dev` la migración de inscripciones, aunque el componente no esté terminado.
 
@@ -116,16 +116,16 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 
 ### Pendiente (ParametrosSistema)
 
-- [ ] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
-- [ ] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
+- [x] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento` (parte `ILogicaParametros`).
+- [x] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
 - [x] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
   - [x] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`, vacíos hasta que la propietaria los cargue).
   - [x] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
   - [x] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
   - [x] `DIAS_RESERVA_PREINSCRIPCION` (`ENTERO`, por defecto `3`).
-- [ ] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
-- [ ] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
-- [ ] Tests del service, de las rutas y de integración.
+- [x] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
+- [x] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
+- [x] Tests del service, de las rutas y de integración.
 
 ---
 
@@ -180,7 +180,7 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
   - [x] Solo se aprueba o rechaza una `PENDIENTE`; dos aprobaciones seguidas no duplican nada.
   - [x] Monto distinto del esperado → se aprueba solo con confirmación.
   - [x] Misma transferencia informada dos veces (alumno, monto y día de Argentina) → 409.
-- [ ] El aviso a la propietaria y al alumno es de notificaciones (US-25, Sprint 4): por ahora alcanza con el listado.
+- Pasa al Sprint 4 (decidido el 12/10/2026): el aviso a la propietaria y al alumno es de notificaciones (US-25). El DER no tiene tipos de aviso para las transferencias y el subsistema de notificaciones todavía no existe; por ahora alcanza con el listado.
 - [x] Tests de integración: PI-43 (ver "Montaje en la API" en US-15).
 
 ## Lo que queda de US-10 (del Sprint 2)
@@ -191,9 +191,9 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
 - [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
 - [x] Ficha con la inscripción vigente y sus horarios.
 - [x] Estado de cuota en el listado y la ficha (`IInfoCuotas`): `situacion_cuota` con el estado, el vencimiento, los días restantes, si puede asistir y si tiene una transferencia sin revisar. Una inscripción dada de baja se calcula al día de su baja, y la ficha de un alumno de baja trae las inscripciones de su última baja (`inscripciones_de_la_baja`) para advertir una deuda antes de reactivarlo (US-08). Test PI-45.
-- [ ] Filtro por estado de cuota. El estado se calcula, no se guarda, así que no se puede filtrar en la consulta: filtrar después de paginar rompe la paginación, y calcular a todos los alumnos lee la tabla entera. Hay que decidir el enfoque antes de implementarlo.
+- [x] Filtro por estado de cuota (`GET /alumnos?estado_cuota=`), que el front confirmó que necesita. El estado se calcula, no se guarda, así que la base no puede filtrarlo: la fachada calcula el estado de todos los alumnos que cumplen los otros filtros y pagina en memoria, con el total de los que coinciden. **Decidido con Francisco** (12/10/2026): con un tope de 500 alumnos; si son más, responde 400 para que se acote la búsqueda con otro filtro. Test PI-51.
 - [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
-- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` recibe `IInfoCuotas`, que ya se arma en `composicion.ts`.
+- [x] Historial en la ficha (`historial_cuotas`), solo para la propietaria: a una profesora le llega `null`, porque la spec deja los datos financieros a la propietaria. Test PI-52.
 
 ## Lo que necesita el front para el Sprint 2
 
@@ -217,41 +217,56 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 
 `clases.estado` (`PROGRAMADA → DICTADA | CANCELADA`) es un ciclo chico: `patrones.md` recomienda un `switch` en el service antes que State.
 
-### Pendiente (US-20)
+### Hecho (US-20)
 
 - [x] Agregar al `.puml` y a EA que `GestionInscripcionesYClases` requiere `IInfoCuotas` (regla dura 2).
-- [ ] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
-- [ ] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
-- [ ] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
-- [ ] `GET /api/v1/clases/:id/asistencia`: inscriptos del horario con su estado de cuota (`IInfoCuotas`) y su asistencia (`presente`, `ausente` o sin marcar).
-- [ ] `PUT /api/v1/clases/:id/asistencia/:idAlumno`: marca presente o ausente; se guarda al momento y el último marcado vale. `POST /api/v1/clases/:id/asistencia/todos-presentes`.
-- [ ] **Reglas**:
-  - [ ] Solo clases del día; las de otros días, solo la propietaria (corrección).
-  - [ ] Solo aparecen los inscriptos en ese horario con la inscripción vigente; un dado de baja no aparece.
-  - [ ] Un vencido aparece con advertencia; si puede asistir lo decide `VENCIDOS_PUEDEN_ASISTIR`. Uno con transferencia pendiente aparece sin restricción.
-  - [ ] Con la asistencia cerrada no se marca más, salvo la propietaria. Cada marcado guarda quién y cuándo (`id_usuario_registra`, `fecha_registro`).
-  - [ ] Toma asistencia la profesora dictante o la propietaria (`ASISTENCIAS_MARCAR`).
-- [ ] Tests del service y de integración.
+- [x] Modelos `clases` y `asistencias` en Prisma + migración (`ck_clases_estado`, único `(id_horario, fecha_clase)`, PK compuesta de `asistencias`).
+- [x] Componentes `clase/` (`IInfoClases`) y `asistencia/` (`IInfoAsistencia`) en `gestion-inscripciones-y-clases`.
+- [x] `GET /api/v1/clases/hoy`: las clases del día de la profesora con sesión iniciada (o de todas, para la propietaria). Las clases se crean al pedirlas, a partir de los horarios del día; el único `(id_horario, fecha_clase)` evita duplicarlas (ver decisiones).
+- [x] `GET /api/v1/clases/:id/asistencia`: inscriptos del horario con su estado de cuota (`IInfoCuotas`) y su asistencia (`presente`, `ausente` o sin marcar).
+- [x] `PUT /api/v1/clases/:id/asistencia/:idAlumno`: marca presente o ausente; se guarda al momento y el último marcado vale. `POST /api/v1/clases/:id/asistencia/todos-presentes`.
+- [x] **Reglas**:
+  - [x] Solo clases del día; las de otros días, solo la propietaria (corrección).
+  - [x] Solo aparecen los inscriptos en ese horario con la inscripción vigente; un dado de baja no aparece.
+  - [x] Un vencido aparece con advertencia; si puede asistir lo decide `VENCIDOS_PUEDEN_ASISTIR`. Uno con transferencia pendiente aparece sin restricción.
+  - [x] Con la asistencia cerrada no se marca más, salvo la propietaria. Cada marcado guarda quién y cuándo (`id_usuario_registra`, `fecha_registro`).
+  - [x] Toma asistencia la profesora dictante o la propietaria (`ASISTENCIAS_MARCAR`).
+- [x] Tests del service y de integración: PI-47 a PI-49 (J-01 a J-09).
+- [x] Agregar al `.puml` que `Clase` requiere `IInfoHorarios` (materializa las clases del día) y que `CierreAsistencia` usa `Clase` (la pasa a `DICTADA`). Ciclo de la clase en `estados_clase.puml`.
+
+### Pendiente (US-20)
+
+- [ ] Reflejar en el `.eap` de Enterprise Architect las dos dependencias nuevas y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [x] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`, resueltos el 12/10/2026:
+  - [x] Clases de días anteriores: `GET /clases?fecha=AAAA-MM-DD`, solo la propietaria y hasta hoy. Crea las clases de ese día con los horarios que regían (también los dados de baja después). Una que ya terminó sale cerrada sin ausentes y la propietaria la corrige marcando. Test PI-55.
+  - [x] Los pre-inscriptos no aparecen en la lista: no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo, así que el cupo disponible de la clase la descuenta. Tests PI-47 y PI-48.
+  - [x] Observaciones: se cargan con la marca (`observaciones`, opcional, hasta 255 caracteres); sin el campo se conservan y `""` las borra. Test J-13.
 
 ## US-21 – Inasistencias automáticas
 
 **Responsable:** Nicolas
 
+### Hecho (US-21)
+
+- [x] `POST /api/v1/clases/:id/cerrar`: la profesora cierra la asistencia; guarda `fecha_cierre_asist` y la clase pasa a `DICTADA`.
+- [x] `CierreAsistencia`: los inscriptos sin marcar quedan `asistio = false` con `id_usuario_registra = NULL` (lo registró el cierre). No toca a los ya marcados.
+- [x] Cierre automático de las clases que terminaron (más `MINUTOS_CIERRE_ASISTENCIA`) y siguen abiertas (ver decisiones).
+- [x] **Reglas**:
+  - [x] El cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano: si no se tomó asistencia, no inventa faltas. El cierre con el botón siempre los genera (ver decisiones).
+  - [x] Los dados de baja no generan inasistencias.
+  - [x] Cerrar dos veces no duplica nada.
+- [x] Tests del service y de integración (5 inscriptos, 3 presentes, cierre → 2 ausentes): PI-49 y PI-50 (J-08 a J-12).
+- [x] El cierre automático corre cada minuto dentro del proceso (`index.ts`) y además antes de cada lectura o marcado de `/clases`.
+
 ### Pendiente (US-21)
 
-- [ ] `POST /api/v1/clases/:id/cerrar`: la profesora cierra la asistencia; guarda `fecha_cierre_asist` y la clase pasa a `DICTADA`.
-- [ ] `CierreAsistencia`: los inscriptos sin marcar quedan `asistio = false` con `id_usuario_registra = NULL` (lo registró el cierre). No toca a los ya marcados.
-- [ ] Cierre automático de las clases que terminaron (más `MINUTOS_CIERRE_ASISTENCIA`) y siguen abiertas (ver decisiones).
-- [ ] **Reglas**:
-  - [ ] El cierre automático genera ausentes solo si la clase tiene al menos una asistencia marcada a mano: si no se tomó asistencia, no inventa faltas. El cierre con el botón siempre los genera (ver decisiones).
-  - [ ] Los dados de baja no generan inasistencias.
-  - [ ] Cerrar dos veces no duplica nada.
-- [ ] Tests del service y de integración (5 inscriptos, 3 presentes, cierre → 2 ausentes).
+- [x] Cancelar una clase: `POST /clases/:id/cancelar`, solo la propietaria (decidido el 12/10/2026). Solo una PROGRAMADA sin asistencias marcadas (409 si no); queda `CANCELADA`, sin marcas ni inasistencias, y el cierre automático no la toca. Test PI-56.
+- Pasa al Sprint 4: el aviso `CLASE_CANCELADA` a los alumnos, con las notificaciones (US-25).
 
 ### Pendientes del Sprint 1 que siguen esperando
 
 - [x] Un horario con alumnos inscriptos no se da de baja (409; fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
-- [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
+- [x] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos: sí, la fachada cuenta los inscriptos vigentes de cada horario (`IInfoInscripciones`) y solo bloquea si alguno tiene; si no, da de baja los horarios con la actividad. Punto PI-06 cerrado.
 
 ---
 

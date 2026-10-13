@@ -141,6 +141,25 @@ describe("rutas de alumnos", () => {
     );
   });
 
+  it("le pasa a la lógica el filtro por estado de cuota y rechaza un estado que no existe", async () => {
+    logica.listarAlumnos.mockResolvedValue({ datos: [], total: 0, limit: 20, offset: 0 });
+
+    const valido = await request(app)
+      .get("/api/v1/alumnos?estado_cuota=VENCIDA")
+      .set("Authorization", "Bearer propietaria");
+    const invalido = await request(app)
+      .get("/api/v1/alumnos?estado_cuota=MOROSO")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(valido.status).toBe(200);
+    expect(logica.listarAlumnos).toHaveBeenCalledWith(
+      { estado_cuota: "VENCIDA", limit: 20, offset: 0 },
+      expect.objectContaining({ esPropietaria: true }),
+    );
+    expect(invalido.status).toBe(400);
+    expect(logica.listarAlumnos).toHaveBeenCalledTimes(1);
+  });
+
   it("responde 403 si la profesora pide un alumno que no tiene a cargo", async () => {
     logica.obtenerAlumnoPorId.mockRejectedValue(
       new ForbiddenError("Solo puede ver y editar a los alumnos que tiene a cargo"),

@@ -92,3 +92,10 @@ export interface ResumenInscripcionAlumno {
   nombre_profesora: string;
   ids_horarios: number[];
 }
+
+// Un inscripto en la lista de asistencia de un horario (US-20).
+export interface InscriptoDeHorario {
+  id_inscripcion: number;
+  id_alumno: number;
+  alumno: { usuario: { nombre: string; apellido: string } };
+}

@@ -51,8 +51,8 @@ back/
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro)
-      fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...)
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + infoClases (clases suplidas, sin endpoint) + cierreAsistencia (cierre automático con la hora que pida el test)
+      fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...), crearInscripcionDePrueba(...)
 ```
 
 ## Datos disponibles
@@ -62,6 +62,8 @@ back/
 - **`crearPlan`:** plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026); se le puede pasar nombre, tipo, precio, fecha de vigencia y actividad exclusiva. Devuelve `id_plan` e `id_plan_precio`, que es lo que necesita una inscripción.
 - **`crearAlumno`:** alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles), mayor de edad y con email `alumnoN@example.com`; se le puede pasar nombre, apellido, DNI, email (`null` para un menor), fecha de nacimiento, estado y `id_usuario_responsable`. Devuelve `id_alumno` e `id_usuario`.
 - **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Planes Básico, Intermedio, Personalizado 2 días (exclusivo de Entrenamiento Personalizado, profesora única) y Clase suelta, con precios desde el 01/01/2026; alumnos pre-inscriptos Sofía Medina (mayor) y Mateo Romero (menor, tutora Paula Romero). Devuelve los ids de profesoras por correo, de actividades por código, de planes por nombre y de alumnos por DNI. Como el escenario ya trae planes y alumnos, los tests cuentan contra lo que había o filtran por sus propios nombres.
+- **`crearInscripcionDePrueba`:** inscripción de un alumno en un horario, directo en la base, `ACTIVA` por defecto (o `PREINSCRIPTA`, o `BAJA` con motivo y horario cerrado), con inicio el 01/10/2026.
+- **Reloj fijo:** lo que depende del día o la hora (las clases del día, el cierre de la asistencia) fija solo `Date` con `vi.useFakeTimers({ toFake: ["Date"] })` y lo restaura en `afterEach`; la base y supertest siguen con sus temporizadores reales.
 - Los horarios tienen que caer de lunes a sábado, entre las 07:00 y las 23:00 (horario de atención): un domingo o una hora fuera de esa franja hacen que la API responda 400 antes de llegar a la regla que se quiere probar.
 
 ## Archivos y códigos asignados
@@ -77,8 +79,11 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
 | G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora, el peso y la talla y la reserva de cupo que vence), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación, paginación y el detalle de la baja con el motivo OTRO; la reactivación de quien nunca pagó | G-32 |
-| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`); el cobro en efectivo, la transferencia y su revisión por la API; la situación de cuota en la ficha y el listado de alumnos | H-16 |
+| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`); el cobro en efectivo, la transferencia y su revisión por la API; la situación de cuota en la ficha y el listado de alumnos; el filtro del listado por estado de cuota y el historial de pagos en la ficha; los contratos de `IInfoCuotas` del Sprint 4, la rendición del efectivo y las promociones | H-27 |
 | I | `src/shared/db/__tests__/parametros-iniciales.integration.test.ts` | Carga de los parámetros del sistema | I-04 |
+| J | `src/__tests__/integracion/clases-y-asistencia.integration.test.ts` | Clases del día, lista y toma de asistencia con observaciones, cierre con el botón y cierre automático, corrección de días anteriores y clase cancelada (con el reloj fijo en un lunes) | J-17 |
+| K | `src/__tests__/integracion/parametros.integration.test.ts` | Los parámetros del sistema por la API: listado y edición de la propietaria con la validación de tipo y rango, los datos bancarios para el alumno y el tutor, y quién no puede verlos ni editarlos | K-18 |
+| L | `src/__tests__/integracion/suplencias.integration.test.ts` | Suplencias entre profesoras: registro, rechazos (también el registro simultáneo), cambio y baja, listado con filtros y las clases suplidas del período por `entorno.infoClases` (con el reloj fijo en un lunes) | L-15 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

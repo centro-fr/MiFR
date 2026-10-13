@@ -57,6 +57,10 @@ function crearMocks() {
       listarTransferencias: vi.fn().mockResolvedValue("transferencias"),
       listarMisTransferencias: vi.fn().mockResolvedValue("mis transferencias"),
       obtenerComprobante: vi.fn().mockResolvedValue("comprobante"),
+      efectivoPendiente: vi.fn().mockResolvedValue("pendiente"),
+      listarRendiciones: vi.fn().mockResolvedValue("rendiciones"),
+      rendir: vi.fn().mockResolvedValue("rendido"),
+      rendirLote: vi.fn().mockResolvedValue("lote"),
     },
   };
 }
@@ -179,6 +183,15 @@ describe("GestionCuotasYPagosService", () => {
     ["listarTransferencias", [{ estado: "PENDIENTE" }], "listarTransferencias", "transferencias"],
     ["listarMisTransferencias", [solicitante], "listarMisTransferencias", "mis transferencias"],
     ["obtenerComprobante", [7, solicitante], "obtenerComprobante", "comprobante"],
+    [
+      "listarEfectivoPendiente",
+      [{ id_profesora: 3 }, { limit: 10, offset: 0 }],
+      "efectivoPendiente",
+      "pendiente",
+    ],
+    ["listarRendiciones", [{}, { limit: 10, offset: 0 }], "listarRendiciones", "rendiciones"],
+    ["rendirCobro", [7], "rendir", "rendido"],
+    ["rendirCobros", [{ id_profesora: 3 }], "rendirLote", "lote"],
   ] as const)("%s se delega en Pago", async (metodo, argumentos, destino, resultado) => {
     const llamar = gestion[metodo] as (...args: unknown[]) => Promise<unknown>;
 

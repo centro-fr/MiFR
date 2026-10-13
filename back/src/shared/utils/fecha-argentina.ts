@@ -16,3 +16,35 @@ const formateadorDiaArgentino = new Intl.DateTimeFormat("en-CA", {
 export function fechaActualArgentina(ahora: Date = new Date()): Date {
   return new Date(`${formateadorDiaArgentino.format(ahora)}T00:00:00Z`);
 }
+
+// Argentina está en UTC-3 todo el año: no tiene horario de verano desde 2009.
+const HORAS_DETRAS_DE_UTC = 3;
+
+const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
+
+// Un rango de días de Argentina, inclusive, en instantes reales para comparar un TIMESTAMP: desde
+// las 00:00 del primero hasta antes de las 00:00 del día siguiente al último. Sin un extremo, el
+// rango queda abierto de ese lado.
+export function rangoDeDiasArgentinos(desde?: Date, hasta?: Date): { inicio?: Date; fin?: Date } {
+  const medianoche = new Date(0);
+  return {
+    inicio: desde && instanteArgentino(desde, medianoche),
+    fin: hasta && instanteArgentino(new Date(hasta.getTime() + UN_DIA_EN_MS), medianoche),
+  };
+}
+
+// Junta un día (columna DATE) y una hora del centro (columna TIME, que Prisma entrega el
+// 1970-01-01 en UTC) en el instante real. Una clase que termina a las 23:00 del 12/10 termina
+// a las 02:00 UTC del 13/10.
+export function instanteArgentino(dia: Date, hora: Date): Date {
+  return new Date(
+    Date.UTC(
+      dia.getUTCFullYear(),
+      dia.getUTCMonth(),
+      dia.getUTCDate(),
+      hora.getUTCHours() + HORAS_DETRAS_DE_UTC,
+      hora.getUTCMinutes(),
+      hora.getUTCSeconds(),
+    ),
+  );
+}

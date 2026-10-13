@@ -278,6 +278,7 @@ describe("PI-25: la profesora ve y edita solo a los alumnos a su cargo", () => {
     const listado = await como(tokenLucia, "get", "/alumnos");
     const fichaPropia = await como(tokenLucia, "get", `/alumnos/${sofia}`);
     const fichaAjena = await como(tokenLucia, "get", `/alumnos/${mateo}`);
+    const fichaInexistente = await como(tokenLucia, "get", "/alumnos/999999");
     const filtroPorOtra = await como(
       tokenLucia,
       "get",
@@ -292,6 +293,9 @@ describe("PI-25: la profesora ve y edita solo a los alumnos a su cargo", () => {
     expect(fichaPropia.status).toBe(200);
     expect(fichaPropia.body.inscripciones[0].horarios).toHaveLength(2);
     expect(fichaAjena.status).toBe(403);
+    // Un id que no existe responde igual que uno ajeno: la profesora no averigua qué alumnos hay.
+    expect(fichaInexistente.status).toBe(403);
+    expect(fichaInexistente.body).toEqual(fichaAjena.body);
     expect(filtroPorOtra.body).toMatchObject({ datos: [], total: 0 });
   });
 

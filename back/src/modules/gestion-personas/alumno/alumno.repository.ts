@@ -45,7 +45,7 @@ function patronDeBusqueda(texto: string): string {
   return `%${texto.replace(/[\\%_]/g, (caracter) => `\\${caracter}`)}%`;
 }
 
-function condicionesDelListado(filtro: FiltroAlumno): Prisma.Sql {
+function condicionesDelListado(filtro: Omit<FiltroAlumno, "limit" | "offset">): Prisma.Sql {
   const condiciones: Prisma.Sql[] = [];
   if (filtro.estado) {
     condiciones.push(Prisma.sql`a.estado = ${filtro.estado}::estado_alumno`);
@@ -61,6 +61,13 @@ function condicionesDelListado(filtro: FiltroAlumno): Prisma.Sql {
     );
   }
   return condiciones.length > 0 ? Prisma.sql`WHERE ${Prisma.join(condiciones, " AND ")}` : Prisma.empty;
+}
+
+function desdeElListado(filtro: Omit<FiltroAlumno, "limit" | "offset">): Prisma.Sql {
+  return Prisma.sql`FROM alumnos a
+    JOIN usuarios u ON u.id_usuario = a.id_usuario
+    LEFT JOIN usuarios r ON r.id_usuario = a.id_usuario_responsable
+    ${condicionesDelListado(filtro)}`;
 }
 
 async function idDelTutor(transaccion: Prisma.TransactionClient, tutor: TutorResuelto): Promise<number> {
@@ -109,22 +116,30 @@ export class AlumnoRepository {
   // La búsqueda sin acentos necesita unaccent, que Prisma no expone: los ids de la página y el
   // total salen de SQL y las filas completas, de una sola consulta más.
   async listar(filtro: FiltroAlumno): Promise<{ datos: Alumno[]; total: number }> {
-    const desde = Prisma.sql`FROM alumnos a
-      JOIN usuarios u ON u.id_usuario = a.id_usuario
-      LEFT JOIN usuarios r ON r.id_usuario = a.id_usuario_responsable
-      ${condicionesDelListado(filtro)}`;
+    const desde = desdeElListado(filtro);
     const [pagina, [{ total }]] = await Promise.all([
-      this.prisma.$queryRaw<{ id_alumno: number }[]>`
-        SELECT a.id_alumno ${desde}
-        ORDER BY u.apellido, u.nombre, a.id_alumno
-        LIMIT ${filtro.limit} OFFSET ${filtro.offset}`,
+      this.idsEnOrden(desde, filtro.limit, filtro.offset),
       this.prisma.$queryRaw<{ total: bigint }[]>`SELECT count(*) AS total ${desde}`,
     ]);
 
-    const ids = pagina.map((fila) => fila.id_alumno);
-    const alumnos = ids.length > 0 ? await this.buscarPorIds(ids) : [];
+    const alumnos = pagina.length > 0 ? await this.buscarPorIds(pagina) : [];
     const porId = new Map(alumnos.map((alumno) => [alumno.id_alumno, alumno]));
-    return { datos: ids.map((id) => porId.get(id) as Alumno), total: Number(total) };
+    // Un alumno cuya cuenta se borró entre las dos consultas no sale: una fila sin sus datos rompe al cliente.
+    return { datos: pagina.flatMap((id) => porId.get(id) ?? []), total: Number(total) };
+  }
+
+  // Los ids del listado, en el mismo orden y sin paginar, hasta el tope: para filtrar por algo que
+  // no está en la base, como el estado de cuota (US-10).
+  listarIds(filtro: Omit<FiltroAlumno, "limit" | "offset">, tope: number): Promise<number[]> {
+    return this.idsEnOrden(desdeElListado(filtro), tope, 0);
+  }
+
+  private async idsEnOrden(desde: Prisma.Sql, limite: number, desplazamiento: number): Promise<number[]> {
+    const filas = await this.prisma.$queryRaw<{ id_alumno: number }[]>`
+      SELECT a.id_alumno ${desde}
+      ORDER BY u.apellido, u.nombre, a.id_alumno
+      LIMIT ${limite} OFFSET ${desplazamiento}`;
+    return filas.map((fila) => fila.id_alumno);
   }
 
   actualizar(

@@ -32,6 +32,7 @@ import type {
   InscripcionACobrar,
   InscripcionConDatos,
   InscripcionGuardada,
+  InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 
@@ -55,6 +56,8 @@ interface DatosDeInscripcion {
 type DatosPreparados = Omit<DatosDeInscripcion, "ids_horarios" | "fecha_inicio"> & {
   fecha_inicio: Date;
   id_plan_precio: number;
+  // US-13: la promoción vigente del plan el día en que se pre-inscribe; la aplica cada cobro.
+  id_promocion: number | null;
 };
 
 interface InscripcionPreparada {
@@ -276,7 +279,7 @@ export class InscripcionService implements IInfoInscripciones {
     const resultado = await this.repositorio.cambiarPlan(
       actual,
       input,
-      nuevoPlan.id_plan_precio,
+      { id_plan_precio: nuevoPlan.id_plan_precio, id_promocion: nuevoPlan.id_promocion },
       this.fechasDeBaja(),
       inicioDeReservasVigentes(plazo),
     );
@@ -304,8 +307,20 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.resumirInscripcionesVigentes(idsAlumnos);
   }
 
+  listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]> {
+    return this.repositorio.listarParaAsistencia(idHorario, fecha);
+  }
+
+  buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null> {
+    return this.repositorio.buscarParaAsistencia(idHorario, idAlumno, fecha);
+  }
+
   contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {
     return this.repositorio.contarInscriptosVigentes(idsHorarios);
+  }
+
+  contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>> {
+    return this.repositorio.contarInscriptosParaAsistencia(idsHorarios, fecha);
   }
 
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {
@@ -352,12 +367,20 @@ export class InscripcionService implements IInfoInscripciones {
     if (input.fecha_fin_estimado && input.fecha_fin_estimado <= fechaInicio) {
       throw new ValidationError("La fecha estimada de fin debe ser posterior al inicio");
     }
-    const precio = await this.planes.precioVigente(input.id_plan, hoy);
+    const [precio, promocion] = await Promise.all([
+      this.planes.precioVigente(input.id_plan, hoy),
+      this.planes.promocionVigente(input.id_plan, hoy),
+    ]);
     if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
     const horarios = await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
 
     return {
-      datos: { ...input, fecha_inicio: fechaInicio, id_plan_precio: precio.id_plan_precio },
+      datos: {
+        ...input,
+        fecha_inicio: fechaInicio,
+        id_plan_precio: precio.id_plan_precio,
+        id_promocion: promocion?.id_promocion ?? null,
+      },
       horarios,
     };
   }

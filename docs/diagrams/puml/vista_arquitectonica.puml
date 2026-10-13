@@ -132,6 +132,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     component "Horario"           as Horario
     interface "IInfoParametros" as I_InfoParametros
     interface "IInfoPlanes"     as I_InfoPlanes
+    interface "IInfoPromociones" as I_InfoPromociones
     interface "IInfoActividades" as I_InfoActividades
     interface "IInfoHorarios"   as I_InfoHorarios
     interface "IInfoProfesores" as R_GSE_InfoProfesores
@@ -141,6 +142,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Actividad -up- I_InfoActividades
     Horario -left- I_InfoHorarios
     Horario -right-( R_GSE_InfoProfesores
+    Promocion -down- I_InfoPromociones
     Plan    ..> Promocion
     Plan    ..> Actividad
     Horario ..> Actividad
@@ -244,10 +246,12 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoInscripciones" as I_InfoInscripciones
     interface "IInfoClases"        as I_InfoClases
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresClase
+    interface "IInfoHorarios"      as R_GIC_InfoHorariosClase
     interface "IInfoAsistencia"    as I_InfoAsistencia
     interface "IInfoParametros"    as R_GIC_InfoParametros
     interface "IInfoProgreso"      as R_GIC_InfoProgreso
     interface "IInfoParametros"    as R_GIC_InfoParametrosInsc
+    interface "IInfoProfesores"    as R_GIC_InfoProfesoresSupl
 
     Inscripcion -left-( R_GIC_InfoHorarios
     Inscripcion -left-( R_GIC_InfoProfesoresInsc
@@ -258,12 +262,15 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
     Clase       -right-( R_GIC_InfoProfesoresClase
+    Clase       -right-( R_GIC_InfoHorariosClase
     Asistencia  -right- I_InfoAsistencia
     CierreAsistencia -down-( R_GIC_InfoParametros
+    Suplencia        -down-( R_GIC_InfoProfesoresSupl
     Suplencia        ..> Clase
     Asistencia       ..> Inscripcion
     Asistencia       ..> Clase
     CierreAsistencia ..> Asistencia
+    CierreAsistencia ..> Clase
     Inscripcion -[hidden]right-> Clase
     Clase       -[hidden]right-> Suplencia
     Clase       -[hidden]down-> Asistencia

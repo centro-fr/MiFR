@@ -4,7 +4,7 @@ API del sistema de gestión de MiFR, un centro de entrenamiento. Administra usua
 
 **Stack:** Node + TypeScript (ESM), Express 5, Prisma sobre PostgreSQL, Zod para validación, Vitest para tests. Monorepo pnpm; este paquete vive en `back/`.
 
-**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan y la lectura de `parametros-sistema`; su edición desde la API todavía no), `gestion-inscripciones-y-clases` (inscripción) y `gestion-cuotas-y-pagos` (cuota, pago), que usa los cálculos puros de `calculos-del-negocio` (vencimiento de la cuota y habilitación del alumno). De `gestion-rutinas-y-progreso` existe solo el componente `registro-progreso`, que guarda el peso y la talla de la pre-inscripción (US-05). Los demás subsistemas del diagrama todavía no tienen carpeta.
+**Estado actual:** están implementados `gestion-usuarios` (usuario, sesión, rol), `gestion-personas` (profesor, alumno), `gestion-servicio-entrenamiento` (actividad, horario, plan, promoción y `parametros-sistema`), `gestion-inscripciones-y-clases` (inscripción, clase, asistencia y el cierre de la asistencia) y `gestion-cuotas-y-pagos` (cuota, pago), que usa los cálculos puros de `calculos-del-negocio` (vencimiento de la cuota y habilitación del alumno). De `gestion-rutinas-y-progreso` existe solo el componente `registro-progreso`, que guarda el peso y la talla de la pre-inscripción (US-05). Los demás subsistemas del diagrama todavía no tienen carpeta.
 
 ## Comandos
 

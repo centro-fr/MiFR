@@ -4,6 +4,14 @@ import type { ActualizarHorarioInput, CrearHorarioInput } from "../horario/horar
 import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "../horario/horario.types.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "../plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "../plan/plan.types.js";
+import type { ActualizarParametroInput } from "../parametros-sistema/parametros-sistema.schemas.js";
+import type { ActualizarPromocionInput, CrearPromocionInput } from "../promocion/promocion.schemas.js";
+import type { FiltroPromociones, Promocion } from "../promocion/promocion.types.js";
+import type {
+  ClaveParametro,
+  DatosBancarios,
+  Parametro,
+} from "../parametros-sistema/parametros-sistema.types.js";
 
 // Las partes de ILogicaServicioEntrenamiento, una por componente: cada controller depende solo
 // de la suya. No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
@@ -38,5 +46,25 @@ export interface ILogicaPlanes {
   registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan>;
 }
 
+// US-13: las promociones. Que los planes existan y que un monto fijo no supere su precio lo cruza la
+// fachada con Plan.
+export interface ILogicaPromociones {
+  listarPromociones(filtro: FiltroPromociones): Promise<Promocion[]>;
+  obtenerPromocion(id: number): Promise<Promocion>;
+  crearPromocion(input: CrearPromocionInput): Promise<Promocion>;
+  actualizarPromocion(id: number, input: ActualizarPromocionInput): Promise<Promocion>;
+  desactivarPromocion(id: number): Promise<Promocion>;
+}
+
+// Lo que la API le pide a ParametrosSistema: ver y editar la configuración del centro (solo la
+// propietaria) y dar los datos bancarios para transferir (US-16). La lectura que usan los demás
+// componentes es IInfoParametros, que no pasa por acá.
+export interface ILogicaParametros {
+  listarParametros(): Promise<Parametro[]>;
+  actualizarParametro(clave: ClaveParametro, valor: ActualizarParametroInput["valor"]): Promise<Parametro>;
+  obtenerDatosBancarios(): Promise<DatosBancarios>;
+}
+
 // Interfaz del subsistema GestionServicioEntrenamiento en la vista arquitectónica.
-export interface ILogicaServicioEntrenamiento extends ILogicaActividades, ILogicaHorarios, ILogicaPlanes {}
+export interface ILogicaServicioEntrenamiento
+  extends ILogicaActividades, ILogicaHorarios, ILogicaPlanes, ILogicaPromociones, ILogicaParametros {}

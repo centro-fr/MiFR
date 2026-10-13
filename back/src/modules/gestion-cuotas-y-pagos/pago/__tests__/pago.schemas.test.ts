@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  efectivoPendienteQuerySchema,
+  rendicionesQuerySchema,
+  rendirLoteSchema,
+  rendirPagoSchema,
   aprobarTransferenciaSchema,
   informarTransferenciaSchema,
   listarTransferenciasQuerySchema,
@@ -93,5 +97,69 @@ describe("schemas de pagos", () => {
       expect(listarTransferenciasQuerySchema.safeParse({ estado: "VENCIDA" }).success).toBe(false);
       expect(listarTransferenciasQuerySchema.safeParse({ id_alumno: "-0" }).success).toBe(false);
     });
+  });
+});
+
+describe("rendición del efectivo (US-19)", () => {
+  it("el filtro del pendiente convierte la profesora y las fechas", () => {
+    expect(
+      efectivoPendienteQuerySchema.parse({ id_profesora: "3", desde: "2026-10-01", hasta: "2026-10-31" }),
+    ).toEqual({
+      id_profesora: 3,
+      desde: new Date("2026-10-01T00:00:00Z"),
+      hasta: new Date("2026-10-31T00:00:00Z"),
+      limit: 100,
+      offset: 0,
+    });
+    expect(efectivoPendienteQuerySchema.parse({ limit: "20", offset: "40" })).toEqual({
+      limit: 20,
+      offset: 40,
+    });
+    expect(efectivoPendienteQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
+  });
+
+  it.each([
+    { id_profesora: "0" },
+    { id_profesora: "03" },
+    { desde: "2026-02-30" },
+    { hasta: "31/10/2026" },
+    { desde: "2026-10-31", hasta: "2026-10-01" },
+  ])("el filtro rechaza %j", (query) => {
+    expect(efectivoPendienteQuerySchema.safeParse(query).success).toBe(false);
+  });
+
+  it("el historial pagina con los mismos filtros", () => {
+    expect(rendicionesQuerySchema.parse({ limit: "10" })).toEqual({ limit: 10, offset: 0 });
+    expect(rendicionesQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
+    expect(rendicionesQuerySchema.safeParse({ desde: "2026-10-31", hasta: "2026-10-01" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rendir uno acepta un cuerpo vacío y observaciones", () => {
+    expect(rendirPagoSchema.parse(undefined)).toEqual({});
+    expect(rendirPagoSchema.parse({ observaciones: " Entregó en mano " })).toEqual({
+      observaciones: "Entregó en mano",
+    });
+    expect(rendirPagoSchema.safeParse({ observaciones: "a".repeat(256) }).success).toBe(false);
+  });
+
+  it("el lote es de una profesora o una lista de cobros", () => {
+    expect(rendirLoteSchema.parse({ id_profesora: 3 })).toEqual({ id_profesora: 3 });
+    expect(rendirLoteSchema.parse({ ids_pagos: [7, 8], observaciones: "Lote" })).toEqual({
+      ids_pagos: [7, 8],
+      observaciones: "Lote",
+    });
+  });
+
+  it.each([
+    ["vacío", {}],
+    ["con las dos cosas", { id_profesora: 3, ids_pagos: [7] }],
+    ["sin cobros", { ids_pagos: [] }],
+    ["con un cobro repetido", { ids_pagos: [7, 7] }],
+    ["con más de 100 cobros", { ids_pagos: Array.from({ length: 101 }, (_, indice) => indice + 1) }],
+    ["con una profesora inválida", { id_profesora: -0 }],
+  ])("el lote rechaza un pedido %s", (_caso, cuerpo) => {
+    expect(rendirLoteSchema.safeParse(cuerpo).success).toBe(false);
   });
 });

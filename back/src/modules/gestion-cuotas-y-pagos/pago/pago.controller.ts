@@ -4,13 +4,17 @@ import { auditar, type EventoSeguridad } from "../../../shared/utils/auditoria.j
 import type { ILogicaPagos } from "../interface/i-logica-cuotas-pagos.js";
 import type {
   AprobarTransferenciaInput,
+  EfectivoPendienteQuery,
   InformarTransferenciaInput,
   ListarTransferenciasQuery,
   RechazarTransferenciaInput,
   RegistrarEfectivoInput,
   RegistrarTransferenciaRecibidaInput,
+  RendicionesQuery,
+  RendirLoteInput,
+  RendirPagoInput,
 } from "./pago.schemas.js";
-import type { Pago } from "./pago.types.js";
+import type { Pago, ResultadoRendicion } from "./pago.types.js";
 
 // Los movimientos de dinero quedan en la auditoría con quién los hizo.
 function auditarPago(evento: EventoSeguridad, req: Request, pago: Pago): void {
@@ -19,6 +23,17 @@ function auditarPago(evento: EventoSeguridad, req: Request, pago: Pago): void {
     id_pago: pago.id_pago,
     monto: pago.monto,
     estado: pago.estado,
+  });
+}
+
+// US-19: el DER no guarda quién rindió ni las observaciones (decisión de SPRINT-4.md).
+function auditarRendicion(req: Request, resultado: ResultadoRendicion, observaciones?: string | null): void {
+  if (resultado.cantidad === 0) return;
+  auditar("EFECTIVO_RENDIDO", {
+    por: req.usuario?.id_usuario,
+    ids_pagos: resultado.rendidos,
+    total: resultado.total,
+    observaciones: observaciones ?? null,
   });
 }
 
@@ -80,6 +95,29 @@ export function createPagoController(logica: ILogicaPagos) {
 
     async comprobante(req: Request, res: Response) {
       res.json(await logica.obtenerComprobante(Number(req.params.id), solicitanteDe(req)));
+    },
+
+    async efectivoPendiente(req: Request, res: Response) {
+      const { limit, offset, ...filtro } = req.query as unknown as EfectivoPendienteQuery;
+      res.json(await logica.listarEfectivoPendiente(filtro, { limit, offset }));
+    },
+
+    async rendiciones(req: Request, res: Response) {
+      const { limit, offset, ...filtro } = req.query as unknown as RendicionesQuery;
+      res.json(await logica.listarRendiciones(filtro, { limit, offset }));
+    },
+
+    async rendir(req: Request, res: Response) {
+      const resultado = await logica.rendirCobro(Number(req.params.id));
+      auditarRendicion(req, resultado, (req.body as RendirPagoInput).observaciones);
+      res.json(resultado);
+    },
+
+    async rendirLote(req: Request, res: Response) {
+      const input = req.body as RendirLoteInput;
+      const resultado = await logica.rendirCobros(input);
+      auditarRendicion(req, resultado, input.observaciones);
+      res.json(resultado);
     },
   };
 }

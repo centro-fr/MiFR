@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError } from "../../../../shared/errors/app-error.js";
+import { CalculadorHabilitacion } from "../../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.js";
 import type { ICalculoHabilitacion } from "../../../calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
 import type { ICalculoVencimiento } from "../../../calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
 import type { InscripcionACobrar } from "../../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -20,6 +21,7 @@ const VENCIMIENTO_CALCULADO = new Date("2026-11-09T00:00:00Z");
 const inscripcion = {
   id_inscripcion: 12,
   id_plan: 1,
+  id_promocion: null,
   estado: "ACTIVA",
   alumno: { estado: "ACTIVO" },
 } as unknown as InscripcionACobrar;
@@ -48,7 +50,7 @@ function crearMocks() {
       tuvoPagoConfirmado: vi.fn().mockResolvedValue(true),
     },
     inscripciones: { buscarParaCobro: vi.fn().mockResolvedValue(inscripcion), activar: vi.fn() },
-    planes: { precioVigente: vi.fn().mockResolvedValue({ precio: 30000 }) },
+    planes: { precioACobrar: vi.fn().mockResolvedValue({ precio_lista: 30000, descuento: 0, monto: 30000 }) },
     vencimientos: { calcularVencimiento: vi.fn().mockReturnValue(VENCIMIENTO_CALCULADO) },
     habilitaciones: { calcular: vi.fn().mockReturnValue({ estado: "AL_DIA", puedeAsistir: true }) },
     parametros: { obtener: vi.fn().mockResolvedValue(true) },
@@ -76,6 +78,14 @@ describe("CuotaService", () => {
   afterEach(() => vi.useRealTimers());
 
   describe("prepararCobro", () => {
+    it("cobra con el descuento de la promoción que guardó la inscripción (US-13)", async () => {
+      mocks.planes.precioACobrar.mockResolvedValue({ precio_lista: 30000, descuento: 3000, monto: 27000 });
+      const conPromocion = { ...inscripcion, id_promocion: 4 } as unknown as InscripcionACobrar;
+
+      await expect(servicio.prepararCobro(conPromocion)).resolves.toMatchObject({ monto: 27000 });
+      expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, 4);
+    });
+
     it("la primera cuota cubre desde hoy, con el precio vigente y el vencimiento calculado", async () => {
       await expect(servicio.prepararCobro(inscripcion)).resolves.toEqual({
         inscripcion,
@@ -84,7 +94,7 @@ describe("CuotaService", () => {
         fechaVencimiento: VENCIMIENTO_CALCULADO,
         monto: 30000,
       });
-      expect(mocks.planes.precioVigente).toHaveBeenCalledWith(1, HOY);
+      expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, null);
       expect(mocks.vencimientos.calcularVencimiento).toHaveBeenCalledWith({
         tipoPlan: "MENSUAL",
         desde: HOY,
@@ -164,7 +174,7 @@ describe("CuotaService", () => {
 
       const cobro = servicio.prepararCobro(inscripcion);
       await Promise.resolve();
-      expect(mocks.planes.precioVigente).toHaveBeenCalled();
+      expect(mocks.planes.precioACobrar).toHaveBeenCalled();
 
       resolverSituacion([situacion()]);
       await expect(cobro).resolves.toMatchObject({ numeroCuota: 1 });
@@ -176,7 +186,7 @@ describe("CuotaService", () => {
       ]);
       await expect(servicio.prepararCobro(inscripcion)).rejects.toThrow("transferencia pendiente");
 
-      mocks.planes.precioVigente.mockResolvedValueOnce(null);
+      mocks.planes.precioACobrar.mockResolvedValueOnce(null);
       await expect(servicio.prepararCobro(inscripcion)).rejects.toThrow(ConflictError);
     });
   });
@@ -254,6 +264,144 @@ describe("CuotaService", () => {
 
       expect(mocks.habilitaciones.calcular).toHaveBeenCalledWith(
         expect.objectContaining({ vencimiento: null, tienePagoPendiente: false }),
+      );
+    });
+  });
+});
+
+describe("CuotaService: los contratos del Sprint 4", () => {
+  const PAGO = "CONFIRMADO" as const;
+  let repositorio: {
+    situacionParaAvisos: ReturnType<typeof vi.fn>;
+    cobradoEnPeriodo: ReturnType<typeof vi.fn>;
+  };
+  let servicio: CuotaService;
+
+  // El cálculo real: lo que se prueba es que el aviso diga lo mismo que la ficha.
+  beforeEach(() => {
+    repositorio = { situacionParaAvisos: vi.fn(), cobradoEnPeriodo: vi.fn().mockResolvedValue(new Map()) };
+    servicio = new CuotaService(
+      repositorio as unknown as CuotaRepository,
+      {} as IInfoInscripciones,
+      {} as IInfoPlanes,
+      {} as ICalculoVencimiento,
+      new CalculadorHabilitacion(),
+      {} as IInfoParametros,
+    );
+  });
+
+  const alumno = {
+    id_alumno: 4,
+    id_usuario: 40,
+    id_usuario_responsable: 41,
+    nombre: "Tomás",
+    apellido: "Pérez",
+  };
+
+  function paraAviso(
+    cuotas: SituacionDeCuotas["cuotas"],
+    diasGracia = 5,
+  ): SituacionDeCuotas & { nombre_plan: string; alumno: typeof alumno } {
+    return { ...situacion(cuotas), dias_gracia: diasGracia, nombre_plan: "Intermedio", alumno };
+  }
+
+  function dia(texto: string) {
+    return new Date(`${texto}T00:00:00Z`);
+  }
+
+  describe("paraAvisoDeVencimiento", () => {
+    it("pide las inscripciones con cuotas que vencen hasta la fecha más los días previos", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([]);
+
+      await expect(servicio.paraAvisoDeVencimiento(dia("2026-10-09"), 3)).resolves.toEqual([]);
+      expect(repositorio.situacionParaAvisos).toHaveBeenCalledWith(dia("2026-10-12"));
+    });
+
+    it.each([
+      ["4 días antes del vencimiento", "2026-10-08", []],
+      ["3 días antes del vencimiento", "2026-10-09", ["CUOTA_POR_VENCER"]],
+      ["el mismo día del vencimiento", "2026-10-12", ["CUOTA_POR_VENCER"]],
+      ["en los días de gracia", "2026-10-17", []],
+      ["terminada la gracia", "2026-10-18", ["CUOTA_VENCIDA"]],
+    ])("con la cuota que vence el 12/10 y 5 días de gracia, %s", async (_caso, hoy, tipos) => {
+      repositorio.situacionParaAvisos.mockResolvedValue([paraAviso([cuota(1, [PAGO], dia("2026-10-12"))])]);
+
+      const avisos = await servicio.paraAvisoDeVencimiento(dia(hoy), 3);
+
+      expect(avisos.map(({ tipo }) => tipo)).toEqual(tipos);
+    });
+
+    it("devuelve la cuota, la inscripción, el plan y el alumno con su tutor", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([paraAviso([cuota(1, [PAGO], dia("2026-10-12"))])]);
+
+      await expect(servicio.paraAvisoDeVencimiento(dia("2026-10-12"), 3)).resolves.toEqual([
+        {
+          tipo: "CUOTA_POR_VENCER",
+          id_cuota: 101,
+          id_inscripcion: 12,
+          fecha_vencimiento: dia("2026-10-12"),
+          nombre_plan: "Intermedio",
+          alumno,
+        },
+      ]);
+    });
+
+    it("con 0 días de gracia avisa la vencida al día siguiente del vencimiento, como la ficha", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([
+        paraAviso([cuota(1, [PAGO], dia("2026-10-12"))], 0),
+      ]);
+
+      const elMismoDia = await servicio.paraAvisoDeVencimiento(dia("2026-10-12"), 3);
+      const alSiguiente = await servicio.paraAvisoDeVencimiento(dia("2026-10-13"), 3);
+
+      expect(elMismoDia.map(({ tipo }) => tipo)).toEqual(["CUOTA_POR_VENCER"]);
+      expect(alSiguiente.map(({ tipo }) => tipo)).toEqual(["CUOTA_VENCIDA"]);
+    });
+
+    it("si renovó, avisa por la última cuota paga y no por la anterior", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([
+        paraAviso([cuota(2, [PAGO], dia("2026-11-12")), cuota(1, [PAGO], dia("2026-10-12"))]),
+      ]);
+
+      await expect(servicio.paraAvisoDeVencimiento(dia("2026-10-20"), 3)).resolves.toEqual([]);
+      const antesDeLaNueva = await servicio.paraAvisoDeVencimiento(dia("2026-11-10"), 3);
+      expect(antesDeLaNueva.map(({ id_cuota }) => id_cuota)).toEqual([102]);
+    });
+
+    it("no avisa con una transferencia pendiente ni sin una cuota paga", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([
+        paraAviso([cuota(2, ["PENDIENTE"], dia("2026-11-12")), cuota(1, [PAGO], dia("2026-10-01"))]),
+        paraAviso([cuota(1, ["RECHAZADO"], dia("2026-10-01"))]),
+      ]);
+
+      await expect(servicio.paraAvisoDeVencimiento(dia("2026-10-20"), 3)).resolves.toEqual([]);
+    });
+  });
+
+  describe("cobradoEnPeriodo", () => {
+    it("no consulta nada sin inscripciones", async () => {
+      await expect(servicio.cobradoEnPeriodo([], dia("2026-10-01"), dia("2026-10-31"))).resolves.toEqual(
+        new Map(),
+      );
+      expect(repositorio.cobradoEnPeriodo).not.toHaveBeenCalled();
+    });
+
+    it("toma los días de Argentina completos y devuelve 0 a la inscripción sin cobros", async () => {
+      repositorio.cobradoEnPeriodo.mockResolvedValue(new Map([[12, 55000]]));
+
+      const cobrado = await servicio.cobradoEnPeriodo([12, 13], dia("2026-10-01"), dia("2026-10-31"));
+
+      expect(cobrado).toEqual(
+        new Map([
+          [12, 55000],
+          [13, 0],
+        ]),
+      );
+      // 00:00 de Argentina es 03:00 UTC: del 1/10 a las 03:00 hasta antes del 1/11 a las 03:00.
+      expect(repositorio.cobradoEnPeriodo).toHaveBeenCalledWith(
+        [12, 13],
+        new Date("2026-10-01T03:00:00Z"),
+        new Date("2026-11-01T03:00:00Z"),
       );
     });
   });

@@ -1,5 +1,6 @@
-import { ConflictError, ForbiddenError } from "../../shared/errors/app-error.js";
+import { ConflictError, ForbiddenError, ValidationError } from "../../shared/errors/app-error.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
+import type { EstadoHabilitacion } from "../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { HabilitacionDeInscripcion } from "../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type { IInfoCuotas } from "../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
@@ -7,9 +8,10 @@ import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/insc
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "./alumno/alumno.service.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno/alumno.schemas.js";
-import type { Alumno, PaginaAlumnos } from "./alumno/alumno.types.js";
+import type { Alumno, FiltroAlumno, PaginaAlumnos } from "./alumno/alumno.types.js";
 import type {
   AlumnoDadoDeAlta,
+  AlumnoEnListado,
   FichaAlumno,
   ILogicaPersonas,
   InscripcionConSituacion,
@@ -29,6 +31,14 @@ const CAMPOS_QUE_EDITA_LA_PROFESORA = new Set([
   "observaciones",
 ]);
 
+// El estado de cuota se calcula en cada consulta y no se guarda, así que la base no puede filtrarlo
+// ni paginarlo: se calcula para todos los alumnos que cumplen los otros filtros y se pagina en
+// memoria. El tope evita que un listado sin acotar lea la tabla entera.
+export const TOPE_FILTRO_ESTADO_CUOTA = 500;
+
+type SituacionDelAlumno = Pick<AlumnoEnListado, "inscripcion" | "situacion_cuota">;
+const SIN_INSCRIPCION_VIGENTE: SituacionDelAlumno = { inscripcion: null, situacion_cuota: null };
+
 function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): SituacionCuota | null {
   if (!habilitacion) return null;
   return {
@@ -40,7 +50,7 @@ function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): S
   };
 }
 
-function conSituacion(
+function inscripcionesConSituacion(
   inscripciones: InscripcionConDatos[],
   habilitaciones: Map<number, HabilitacionDeInscripcion>,
 ): InscripcionConSituacion[] {
@@ -95,58 +105,34 @@ export class GestionPersonasService implements ILogicaPersonas {
   }
 
   async listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos> {
-    const { id_plan, id_profesora, id_actividad, ...filtro } = consulta;
-    const aCargoDe = await this.profesoraACargo(solicitante);
-    if (
-      aCargoDe === null ||
-      (aCargoDe !== undefined && id_profesora !== undefined && id_profesora !== aCargoDe)
-    ) {
-      return paginaVacia(filtro);
-    }
-
-    const profesora = aCargoDe ?? id_profesora;
-    const filtraPorInscripcion =
-      id_plan !== undefined || profesora !== undefined || id_actividad !== undefined;
-    const ids = filtraPorInscripcion
-      ? await this.inscripciones.obtenerIdsDeAlumnos({ id_plan, id_profesora: profesora, id_actividad })
-      : undefined;
-    if (ids?.length === 0) return paginaVacia(filtro);
+    const { id_plan, id_profesora, id_actividad, estado_cuota, ...filtro } = consulta;
+    const ids = await this.alumnosAlAlcance({ id_plan, id_profesora, id_actividad }, solicitante);
+    if (ids === null) return paginaVacia(filtro);
+    if (estado_cuota) return this.listarPorEstadoDeCuota({ ...filtro, ids }, estado_cuota);
 
     const pagina = await this.alumnos.listar({ ...filtro, ids });
-    const resumenes = await this.inscripciones.resumirInscripcionesVigentes(
-      pagina.datos.map(({ id_alumno }) => id_alumno),
-    );
-    const resumenPorAlumno = new Map(resumenes.map((resumen) => [resumen.id_alumno, resumen]));
-    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
-      resumenes.map(({ id_inscripcion }) => id_inscripcion),
-    );
-    return {
-      ...pagina,
-      datos: pagina.datos.map((alumno) => {
-        const inscripcion = resumenPorAlumno.get(alumno.id_alumno) ?? null;
-        return {
-          ...alumno,
-          inscripcion,
-          situacion_cuota: inscripcion
-            ? aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion))
-            : null,
-        };
-      }),
-    };
+    const situaciones = await this.situacionPorAlumno(pagina.datos.map(({ id_alumno }) => id_alumno));
+    return { ...pagina, datos: alumnosConSituacion(pagina.datos, situaciones) };
   }
 
+  // Quién pide se verifica antes de buscar al alumno: a una profesora, un alumno que no existe le
+  // responde 403, igual que uno ajeno, y no le cuenta qué ids existen.
   async obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno> {
-    const alumno = await this.alumnos.obtenerPorId(id);
     const inscripciones = await this.inscripciones.listarVigentesDeAlumno(id);
     await this.verificarQueLoTieneACargo(inscripciones, solicitante);
+    const alumno = await this.alumnos.obtenerPorId(id);
     const deLaBaja = alumno.estado === "BAJA" ? await this.inscripciones.listarDeLaUltimaBaja(id) : [];
-    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
-      [...inscripciones, ...deLaBaja].map(({ id_inscripcion }) => id_inscripcion),
-    );
+    const [habilitaciones, historial] = await Promise.all([
+      this.cuotas.habilitacionDeInscripciones(
+        [...inscripciones, ...deLaBaja].map(({ id_inscripcion }) => id_inscripcion),
+      ),
+      solicitante.esPropietaria ? this.cuotas.historialDeAlumno(id) : null,
+    ]);
     return {
       ...alumno,
-      inscripciones: conSituacion(inscripciones, habilitaciones),
-      inscripciones_de_la_baja: conSituacion(deLaBaja, habilitaciones),
+      inscripciones: inscripcionesConSituacion(inscripciones, habilitaciones),
+      inscripciones_de_la_baja: inscripcionesConSituacion(deLaBaja, habilitaciones),
+      historial_cuotas: historial,
     };
   }
 
@@ -167,6 +153,69 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.alumnos.actualizar(id, input);
   }
 
+  // Los alumnos que dejan ver los filtros por inscripción y lo que tiene a cargo quien pide (US-10):
+  // undefined si no hay que restringir, null si no puede haber ninguno.
+  private async alumnosAlAlcance(
+    filtro: Pick<ListarAlumnoQuery, "id_plan" | "id_profesora" | "id_actividad">,
+    solicitante: Solicitante,
+  ): Promise<number[] | null | undefined> {
+    const aCargoDe = await this.profesoraACargo(solicitante);
+    if (aCargoDe === null) return null;
+    if (aCargoDe !== undefined && filtro.id_profesora !== undefined && filtro.id_profesora !== aCargoDe) {
+      return null;
+    }
+
+    const id_profesora = aCargoDe ?? filtro.id_profesora;
+    const { id_plan, id_actividad } = filtro;
+    if (id_plan === undefined && id_profesora === undefined && id_actividad === undefined) return undefined;
+    const ids = await this.inscripciones.obtenerIdsDeAlumnos({ id_plan, id_profesora, id_actividad });
+    return ids.length > 0 ? ids : null;
+  }
+
+  private async listarPorEstadoDeCuota(
+    filtro: FiltroAlumno,
+    estado: EstadoHabilitacion,
+  ): Promise<PaginaListadoAlumnos> {
+    const candidatos = await this.alumnos.listarIds(filtro, TOPE_FILTRO_ESTADO_CUOTA + 1);
+    if (candidatos.length > TOPE_FILTRO_ESTADO_CUOTA) {
+      throw new ValidationError(
+        `Hay más de ${TOPE_FILTRO_ESTADO_CUOTA} alumnos para filtrar por estado de cuota: acote la búsqueda con otro filtro`,
+      );
+    }
+
+    const situaciones = await this.situacionPorAlumno(candidatos);
+    const coinciden = candidatos.filter((id) => situaciones.get(id)?.situacion_cuota?.estado === estado);
+    const idsDeLaPagina = coinciden.slice(filtro.offset, filtro.offset + filtro.limit);
+    const alumnos = await this.alumnos.buscarPorIds(idsDeLaPagina);
+    const porId = new Map(alumnos.map((alumno) => [alumno.id_alumno, alumno]));
+    return {
+      datos: alumnosConSituacion(
+        idsDeLaPagina.flatMap((id) => porId.get(id) ?? []),
+        situaciones,
+      ),
+      total: coinciden.length,
+      limit: filtro.limit,
+      offset: filtro.offset,
+    };
+  }
+
+  // La inscripción vigente más reciente de cada alumno y su situación de cuota, en dos consultas.
+  private async situacionPorAlumno(idsAlumnos: number[]): Promise<Map<number, SituacionDelAlumno>> {
+    const resumenes = await this.inscripciones.resumirInscripcionesVigentes(idsAlumnos);
+    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
+      resumenes.map(({ id_inscripcion }) => id_inscripcion),
+    );
+    return new Map(
+      resumenes.map((resumen) => [
+        resumen.id_alumno,
+        {
+          inscripcion: resumen,
+          situacion_cuota: aSituacionCuota(habilitaciones.get(resumen.id_inscripcion)),
+        },
+      ]),
+    );
+  }
+
   // undefined: ve a todos (propietaria). Si no, el id de la profesora de su usuario, o null si no
   // tiene un perfil de profesora activo, y entonces no tiene alumnos a cargo.
   private async profesoraACargo(solicitante: Solicitante): Promise<number | null | undefined> {
@@ -185,6 +234,16 @@ export class GestionPersonasService implements ILogicaPersonas {
       throw new ForbiddenError("Solo puede ver y editar a los alumnos que tiene a cargo");
     }
   }
+}
+
+function alumnosConSituacion(
+  alumnos: Alumno[],
+  situaciones: Map<number, SituacionDelAlumno>,
+): AlumnoEnListado[] {
+  return alumnos.map((alumno) => ({
+    ...alumno,
+    ...(situaciones.get(alumno.id_alumno) ?? SIN_INSCRIPCION_VIGENTE),
+  }));
 }
 
 function paginaVacia({ limit, offset }: Pick<PaginaAlumnos, "limit" | "offset">): PaginaListadoAlumnos {
