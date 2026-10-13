@@ -51,9 +51,64 @@ export const listarTransferenciasQuerySchema = z.object({
 
 export const pagoIdParamSchema = z.object({ id: idDesdeTextoSchema });
 
+const fechaDeFiltro = z
+  .string()
+  .date("La fecha debe tener formato AAAA-MM-DD")
+  .transform((valor) => new Date(`${valor}T00:00:00Z`));
+
+const filtroEfectivo = {
+  id_profesora: idDesdeTextoSchema.optional(),
+  desde: fechaDeFiltro.optional(),
+  hasta: fechaDeFiltro.optional(),
+};
+
+function rangoValido({ desde, hasta }: { desde?: Date; hasta?: Date }): boolean {
+  return !desde || !hasta || desde <= hasta;
+}
+
+const RANGO_INVALIDO = { message: "La fecha desde no puede ser posterior a hasta", path: ["desde"] };
+
+// US-19: los cobros sin rendir, por la fecha del cobro.
+export const efectivoPendienteQuerySchema = z.object(filtroEfectivo).refine(rangoValido, RANGO_INVALIDO);
+
+// US-19: el historial de lo rendido, por la fecha de la rendición.
+export const rendicionesQuerySchema = z
+  .object({ ...filtroEfectivo, ...paginacionSchema(LIMITE_MAXIMO) })
+  .refine(rangoValido, RANGO_INVALIDO);
+
+// Rendir normalmente no lleva cuerpo: sin él, Express 5 deja req.body undefined.
+export const rendirPagoSchema = z.object({ observaciones }).default({});
+
+// Un lote es todo lo pendiente de una profesora o una lista de cobros, nunca las dos cosas.
+const MAXIMO_COBROS_POR_LOTE = LIMITE_MAXIMO;
+export const rendirLoteSchema = z.union(
+  [
+    z.object({ id_profesora: idSchema, observaciones }).strict(),
+    z
+      .object({
+        ids_pagos: z
+          .array(idSchema)
+          .min(1, "Indique al menos un cobro")
+          .max(MAXIMO_COBROS_POR_LOTE, `No se pueden rendir más de ${MAXIMO_COBROS_POR_LOTE} cobros por vez`)
+          .refine((ids) => new Set(ids).size === ids.length, "No se puede repetir un cobro"),
+        observaciones,
+      })
+      .strict(),
+  ],
+  {
+    errorMap: () => ({
+      message: "Indique la profesora (id_profesora) o los cobros (ids_pagos), no las dos cosas",
+    }),
+  },
+);
+
 export type RegistrarEfectivoInput = z.infer<typeof registrarEfectivoSchema>;
 export type InformarTransferenciaInput = z.infer<typeof informarTransferenciaSchema>;
 export type RegistrarTransferenciaRecibidaInput = z.infer<typeof registrarTransferenciaRecibidaSchema>;
 export type AprobarTransferenciaInput = z.infer<typeof aprobarTransferenciaSchema>;
 export type RechazarTransferenciaInput = z.infer<typeof rechazarTransferenciaSchema>;
 export type ListarTransferenciasQuery = z.infer<typeof listarTransferenciasQuerySchema>;
+export type EfectivoPendienteQuery = z.infer<typeof efectivoPendienteQuerySchema>;
+export type RendicionesQuery = z.infer<typeof rendicionesQuerySchema>;
+export type RendirPagoInput = z.infer<typeof rendirPagoSchema>;
+export type RendirLoteInput = z.infer<typeof rendirLoteSchema>;

@@ -176,9 +176,44 @@ model planes {
   fecha_alta             DateTime  @default(now()) @db.Date
   fecha_baja             DateTime? @db.Date
 
-  actividad_exclusiva actividades?    @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  actividad_exclusiva actividades?       @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
   precios             plan_precios[]
   inscripciones       inscripciones[]
+  promociones         promocion_planes[]
+}
+
+enum tipo_descuento {
+  PORCENTAJE
+  MONTO_FIJO
+}
+
+// US-13: el estado (activa, programada, vencida, desactivada) no se guarda: sale de las fechas y de activo.
+model promociones {
+  id_promocion   Int            @id(map: "PK_promociones") @default(autoincrement())
+  codigo         String         @unique(map: "UK_promociones_codigo") @db.VarChar(20)
+  nombre         String         @db.VarChar(60)
+  tipo_descuento tipo_descuento
+  // > 0; <= 100 si PORCENTAJE
+  valor          Decimal        @db.Decimal(10, 2)
+  fecha_desde    DateTime       @db.Date
+  // >= fecha_desde
+  fecha_hasta    DateTime       @db.Date
+  activo         Boolean
+
+  planes        promocion_planes[]
+  inscripciones inscripciones[]
+}
+
+model promocion_planes {
+  id_promocion Int
+  id_plan      Int
+
+  promocion promociones @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_promocion_planes_promociones")
+  plan      planes      @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_promocion_planes_planes")
+
+  @@id([id_promocion, id_plan], map: "PK_promocion_planes")
+  @@index([id_plan], map: "IXFK_promocion_planes_planes")
+  @@index([id_promocion], map: "IXFK_promocion_planes_promociones")
 }
 
 model plan_precios {
@@ -279,6 +314,7 @@ model inscripciones {
   plan        planes                 @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_planes")
   plan_precio plan_precios           @relation(fields: [id_plan_precio], references: [id_plan_precio], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_plan_precios")
   profesora   profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_profesoras")
+  promocion   promociones?           @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_promociones")
   horarios    inscripcion_horarios[]
   cuotas      cuotas[]
   asistencias asistencias[]
@@ -287,6 +323,7 @@ model inscripciones {
   @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
   @@index([id_plan], map: "IXFK_inscripciones_planes")
   @@index([id_profesora], map: "IXFK_inscripciones_profesoras")
+  @@index([id_promocion], map: "IXFK_inscripciones_promociones")
 }
 
 model inscripcion_horarios {

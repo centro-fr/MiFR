@@ -11,11 +11,16 @@ import type {
   RechazarTransferenciaInput,
   RegistrarEfectivoInput,
   RegistrarTransferenciaRecibidaInput,
+  RendirLoteInput,
 } from "./pago/pago.schemas.js";
 import type {
   Comprobante,
+  EfectivoPendiente,
+  FiltroEfectivo,
   FiltroTransferencias,
+  PaginaRendiciones,
   Pago,
+  ResultadoRendicion,
   TransferenciaConAlumno,
   TransferenciaEnRevision,
 } from "./pago/pago.types.js";
@@ -91,6 +96,25 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
 
   obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante> {
     return this.pagos.obtenerComprobante(id, solicitante);
+  }
+
+  listarEfectivoPendiente(filtro: FiltroEfectivo): Promise<EfectivoPendiente> {
+    return this.pagos.efectivoPendiente(filtro);
+  }
+
+  listarRendiciones(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<PaginaRendiciones> {
+    return this.pagos.listarRendiciones(filtro, pagina);
+  }
+
+  rendirCobro(id: number): Promise<ResultadoRendicion> {
+    return this.pagos.rendir(id);
+  }
+
+  rendirCobros(input: RendirLoteInput): Promise<ResultadoRendicion> {
+    return this.pagos.rendirLote(input);
   }
 
   private conAltaDefinitiva(idInscripcion: number, confirmarPago: () => Promise<Pago>): Promise<Pago> {

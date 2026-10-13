@@ -1,8 +1,9 @@
 // RNF-04: los eventos de seguridad van por ahora al log del proceso, una línea JSON por
 // evento para poder filtrarlos. El DER no tiene tabla de auditoría y se decidió no agregarla.
 // Por la misma vía queda quién cambió un precio (US-12) o los datos de un alumno (US-09), que el
-// DER no registra, cada movimiento de dinero (US-15, US-17) y cada suplencia, que decide a qué
-// profesora se le paga una clase (US-24).
+// DER no registra, cada movimiento de dinero (US-15, US-17), incluida la rendición del efectivo
+// con quién la hizo y sus observaciones (US-19), y cada suplencia, que decide a qué profesora se
+// le paga una clase (US-24).
 export type EventoSeguridad =
   | "LOGIN_NO_REGISTRADO"
   | "LOGIN_DESARROLLO"
@@ -18,6 +19,10 @@ export type EventoSeguridad =
   | "TRANSFERENCIA_RECIBIDA_REGISTRADA"
   | "TRANSFERENCIA_APROBADA"
   | "TRANSFERENCIA_RECHAZADA"
+  | "EFECTIVO_RENDIDO"
+  | "PROMOCION_CREADA"
+  | "PROMOCION_MODIFICADA"
+  | "PROMOCION_DESACTIVADA"
   | "SUPLENCIA_REGISTRADA"
   | "SUPLENCIA_MODIFICADA"
   | "SUPLENCIA_ELIMINADA";

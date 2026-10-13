@@ -1,13 +1,19 @@
 import type { pagos, Prisma, PrismaClient } from "@prisma/client";
+import { Prisma as PrismaSql } from "@prisma/client";
 import { enTransaccion } from "../../../shared/db/transaccion.js";
+import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type {
+  CobroEnEfectivo,
   CuotaAGuardar,
   DatosDePago,
   EstadoPago,
+  FiltroEfectivoEnInstantes,
   FiltroTransferencias,
+  MotivoSinRendir,
   Pago,
   PagoConCuota,
   PagoParaComprobante,
+  TotalDeProfesora,
   TransferenciaConAlumno,
 } from "./pago.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
@@ -27,6 +33,60 @@ const CON_ALUMNO = {
 } satisfies Prisma.pagosInclude;
 
 type FilaConAlumno = Prisma.pagosGetPayload<{ include: typeof CON_ALUMNO }>;
+
+// US-19: lo único que se rinde es el efectivo confirmado que cobró una profesora. Lo que cobra la
+// propietaria nace rendido.
+const EFECTIVO_DE_PROFESORA = {
+  forma_pago: "EFECTIVO",
+  estado: "CONFIRMADO",
+  id_profesora_cobra: { not: null },
+} satisfies Prisma.pagosWhereInput;
+
+const DATOS_DEL_COBRO = {
+  cuota: {
+    select: {
+      numero_cuota: true,
+      fecha_vencimiento: true,
+      inscripcion: {
+        select: {
+          plan: { select: { nombre: true } },
+          alumno: { select: { id_alumno: true, usuario: { select: { nombre: true, apellido: true } } } },
+        },
+      },
+    },
+  },
+  profesora_cobra: { select: { id_profesora: true, usuario: { select: { nombre: true, apellido: true } } } },
+} satisfies Prisma.pagosInclude;
+
+type FilaDeCobro = Prisma.pagosGetPayload<{ include: typeof DATOS_DEL_COBRO }>;
+
+function aCobro({ cuota, profesora_cobra, ...fila }: FilaDeCobro): CobroEnEfectivo {
+  const { alumno, plan } = cuota.inscripcion;
+  // EFECTIVO_DE_PROFESORA garantiza que la profesora está.
+  const profesora = profesora_cobra as NonNullable<FilaDeCobro["profesora_cobra"]>;
+  return {
+    id_pago: fila.id_pago,
+    monto: fila.monto.toNumber(),
+    fecha_pago: fila.fecha_pago,
+    fecha_rendicion: fila.fecha_rendicion,
+    alumno: { id_alumno: alumno.id_alumno, ...alumno.usuario },
+    plan: plan.nombre,
+    cuota: { numero: cuota.numero_cuota, vencimiento: cuota.fecha_vencimiento },
+    profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
+  };
+}
+
+function conFiltro(
+  filtro: FiltroEfectivoEnInstantes,
+  fecha: "fecha_pago" | "fecha_rendicion",
+): Prisma.pagosWhereInput {
+  return {
+    ...(filtro.id_profesora === undefined ? {} : { id_profesora_cobra: filtro.id_profesora }),
+    ...(filtro.inicio || filtro.fin
+      ? { [fecha]: { ...(filtro.inicio && { gte: filtro.inicio }), ...(filtro.fin && { lt: filtro.fin }) } }
+      : {}),
+  };
+}
 
 function aPago(fila: pagos): Pago {
   return { ...fila, monto: fila.monto.toNumber() };
@@ -142,9 +202,13 @@ export class PagoRepository {
           select: {
             numero_cuota: true,
             fecha_vencimiento: true,
+            fecha_generacion: true,
+            monto: true,
             inscripcion: {
               select: {
+                id_plan: true,
                 plan: { select: { nombre: true } },
+                promocion: { select: { codigo: true, nombre: true } },
                 alumno: {
                   select: {
                     id_usuario: true,
@@ -160,7 +224,124 @@ export class PagoRepository {
         profesora_cobra: { select: { usuario: nombre } },
       },
     });
-    return fila ? { ...fila, monto: fila.monto.toNumber() } : null;
+    if (!fila) return null;
+    const { fecha_generacion, monto, inscripcion } = fila.cuota;
+    const { id_plan, ...datosDeInscripcion } = inscripcion;
+    const dia = fechaActualArgentina(fecha_generacion);
+    const precio = await this.prisma.plan_precios.findFirst({
+      where: {
+        id_plan,
+        fecha_vigencia_desde: { lte: dia },
+        OR: [{ fecha_vigencia_hasta: null }, { fecha_vigencia_hasta: { gte: dia } }],
+      },
+      select: { precio: true },
+    });
+    return {
+      ...fila,
+      monto: fila.monto.toNumber(),
+      cuota: {
+        numero_cuota: fila.cuota.numero_cuota,
+        fecha_vencimiento: fila.cuota.fecha_vencimiento,
+        monto: monto.toNumber(),
+        inscripcion: datosDeInscripcion,
+      },
+      precio_lista: precio ? precio.precio.toNumber() : null,
+    };
+  }
+
+  // Los totales por profesora salen de la base, completos aunque el detalle tenga tope. Incluye a
+  // las profesoras dadas de baja: lo que cobraron se rinde igual.
+  async totalesSinRendir(filtro: FiltroEfectivoEnInstantes): Promise<TotalDeProfesora[]> {
+    const grupos = await this.prisma.pagos.groupBy({
+      by: ["id_profesora_cobra"],
+      where: { ...EFECTIVO_DE_PROFESORA, rendido: false, ...conFiltro(filtro, "fecha_pago") },
+      _count: { id_pago: true },
+      _sum: { monto: true },
+    });
+    if (grupos.length === 0) return [];
+    const profesoras = await this.prisma.profesoras.findMany({
+      where: { id_profesora: { in: grupos.map(({ id_profesora_cobra }) => id_profesora_cobra as number) } },
+      select: { id_profesora: true, usuario: { select: { nombre: true, apellido: true } } },
+    });
+    const porId = new Map(profesoras.map(({ id_profesora, usuario }) => [id_profesora, usuario]));
+    return grupos
+      .map(({ id_profesora_cobra, _count, _sum }) => ({
+        id_profesora: id_profesora_cobra as number,
+        ...(porId.get(id_profesora_cobra as number) as { nombre: string; apellido: string }),
+        cantidad: _count.id_pago,
+        total: (_sum.monto as PrismaSql.Decimal).toNumber(),
+      }))
+      .sort((a, b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
+  }
+
+  async listarSinRendir(filtro: FiltroEfectivoEnInstantes, tope: number): Promise<CobroEnEfectivo[]> {
+    const filas = await this.prisma.pagos.findMany({
+      where: { ...EFECTIVO_DE_PROFESORA, rendido: false, ...conFiltro(filtro, "fecha_pago") },
+      include: DATOS_DEL_COBRO,
+      orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
+      take: tope,
+    });
+    return filas.map(aCobro);
+  }
+
+  async listarRendidos(
+    filtro: FiltroEfectivoEnInstantes,
+    pagina: { limit: number; offset: number },
+  ): Promise<{ datos: CobroEnEfectivo[]; total: number }> {
+    const where = { ...EFECTIVO_DE_PROFESORA, rendido: true, ...conFiltro(filtro, "fecha_rendicion") };
+    const [filas, total] = await Promise.all([
+      this.prisma.pagos.findMany({
+        where,
+        include: DATOS_DEL_COBRO,
+        orderBy: [{ fecha_rendicion: "desc" }, { id_pago: "desc" }],
+        take: pagina.limit,
+        skip: pagina.offset,
+      }),
+      this.prisma.pagos.count({ where }),
+    ]);
+    return { datos: filas.map(aCobro), total };
+  }
+
+  async idsSinRendirDeProfesora(idProfesora: number): Promise<number[]> {
+    const filas = await this.prisma.pagos.findMany({
+      where: { ...EFECTIVO_DE_PROFESORA, rendido: false, id_profesora_cobra: idProfesora },
+      select: { id_pago: true },
+      orderBy: { id_pago: "asc" },
+    });
+    return filas.map(({ id_pago }) => id_pago);
+  }
+
+  // Una sola sentencia: verificar y marcar no pueden separarse, y dos rendiciones a la vez no rinden
+  // dos veces el mismo cobro. Devuelve los que rindió con su monto.
+  rendir(ids: number[], fecha: Date): Promise<{ id_pago: number; monto: number }[]> {
+    return this.prisma.$queryRaw<{ id_pago: number; monto: PrismaSql.Decimal }[]>`
+      UPDATE pagos SET rendido = true, fecha_rendicion = ${fecha}
+      WHERE id_pago = ANY(${ids})
+        AND forma_pago = 'EFECTIVO'
+        AND estado = 'CONFIRMADO'
+        AND id_profesora_cobra IS NOT NULL
+        AND rendido = false
+      RETURNING id_pago, monto`.then((filas) =>
+      filas.map(({ id_pago, monto }) => ({ id_pago, monto: Number(monto) })),
+    );
+  }
+
+  // Por qué no se rindió cada uno de esos cobros.
+  async motivosSinRendir(ids: number[]): Promise<Map<number, MotivoSinRendir>> {
+    const filas = await this.prisma.pagos.findMany({
+      where: { id_pago: { in: ids } },
+      select: { id_pago: true, rendido: true, forma_pago: true, estado: true, id_profesora_cobra: true },
+    });
+    const porId = new Map(filas.map((fila) => [fila.id_pago, fila]));
+    return new Map(
+      ids.map((id) => {
+        const fila = porId.get(id);
+        if (!fila) return [id, "NO_EXISTE"];
+        const esDeProfesora =
+          fila.forma_pago === "EFECTIVO" && fila.estado === "CONFIRMADO" && fila.id_profesora_cobra !== null;
+        return [id, esDeProfesora && fila.rendido ? "YA_RENDIDO" : "NO_ES_EFECTIVO_DE_PROFESORA"];
+      }),
+    );
   }
 
   // Reusa la última cuota si sigue sin pagos confirmados ni pendientes y la pone al día; si no,

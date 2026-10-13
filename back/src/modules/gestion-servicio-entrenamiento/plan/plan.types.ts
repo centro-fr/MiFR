@@ -20,6 +20,16 @@ export type Plan = planes & {
   precio_programado: PrecioPlan | null;
 };
 
+// US-13: lo que se cobra de un plan un día: el precio de lista y, si la promoción de la inscripción
+// sigue vigente, su descuento.
+export interface PrecioACobrar {
+  id_plan_precio: number;
+  precio_lista: number;
+  descuento: number;
+  monto: number;
+  promocion: { id_promocion: number; codigo: string; nombre: string } | null;
+}
+
 export interface FiltroPlan {
   busqueda?: string;
   tipo?: TipoPlan;
