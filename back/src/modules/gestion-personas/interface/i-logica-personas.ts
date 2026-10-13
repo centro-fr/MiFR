@@ -1,5 +1,6 @@
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
+import type { CuotaDelHistorial } from "../../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type {
   InscripcionConDatos,
   ResumenInscripcionAlumno,
@@ -32,7 +33,8 @@ export type InscripcionConSituacion = InscripcionConDatos & { situacion_cuota: S
 // US-10: cada fila del listado trae su plan y profesora vigentes, y la ficha sus inscripciones
 // vigentes con los horarios. Los dos salen de Inscripcion, en el otro subsistema; la situación de
 // cuota, de Cuota. La ficha de un alumno dado de baja trae además las inscripciones de su última
-// baja, con lo que debía al irse (US-08).
+// baja, con lo que debía al irse (US-08). El historial de cuotas y pagos es un dato financiero: solo
+// lo ve la propietaria, y a una profesora le llega null.
 export type AlumnoEnListado = Alumno & {
   inscripcion: ResumenInscripcionAlumno | null;
   situacion_cuota: SituacionCuota | null;
@@ -41,6 +43,7 @@ export type PaginaListadoAlumnos = Omit<PaginaAlumnos, "datos"> & { datos: Alumn
 export type FichaAlumno = Alumno & {
   inscripciones: InscripcionConSituacion[];
   inscripciones_de_la_baja: InscripcionConSituacion[];
+  historial_cuotas: CuotaDelHistorial[] | null;
 };
 // A una profesora el alta le devuelve del tutor solo su identificación (ver GestionPersonasService).
 export type AlumnoDadoDeAlta = Omit<Alumno, "responsable"> & {

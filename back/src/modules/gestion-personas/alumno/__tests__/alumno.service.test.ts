@@ -23,6 +23,7 @@ function crearRepositorioMock() {
     buscarPorIdUsuario: vi.fn(),
     buscarPorIds: vi.fn(),
     listar: vi.fn(),
+    listarIds: vi.fn(),
     actualizar: vi.fn(),
     activar: vi.fn(),
     darDeBaja: vi.fn(),
@@ -321,6 +322,13 @@ describe("AlumnoService", () => {
       offset: 20,
     });
     expect(repositorio.listar).toHaveBeenCalledWith(filtro);
+  });
+
+  it("listarIds pide al repositorio los ids del listado hasta el tope", async () => {
+    repositorio.listarIds.mockResolvedValue([3, 1]);
+
+    await expect(servicio.listarIds({ busqueda: "lop" }, 501)).resolves.toEqual([3, 1]);
+    expect(repositorio.listarIds).toHaveBeenCalledWith({ busqueda: "lop" }, 501);
   });
 
   it("obtenerPorId lanza NotFoundError si no existe", async () => {

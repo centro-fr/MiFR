@@ -521,3 +521,82 @@ describe("PI-45: la situación de cuota en la ficha y el listado de alumnos", ()
     ]);
   });
 });
+
+describe("PI-51: el filtro del listado de alumnos por estado de cuota", () => {
+  function listar(consulta: string, email = EMAIL_MULTIROL_DEMO) {
+    return pedir("get", `/alumnos?${consulta}`, email);
+  }
+
+  function apellidos(respuesta: request.Response) {
+    return respuesta.body.datos.map(({ usuario }: { usuario: { apellido: string } }) => usuario.apellido);
+  }
+
+  it("filtra por el estado calculado, pagina sobre los que coinciden y a la profesora le deja solo los suyos", async () => {
+    const pendientes = await listar("estado_cuota=PENDIENTE_DE_PAGO");
+    expect(pendientes.status).toBe(200);
+    expect(apellidos(pendientes)).toEqual(["Medina", "Romero"]);
+    expect(pendientes.body.total).toBe(2);
+    expect(pendientes.body.datos[0].situacion_cuota).toMatchObject({ estado: "PENDIENTE_DE_PAGO" });
+
+    const segundaPagina = await listar("estado_cuota=PENDIENTE_DE_PAGO&limit=1&offset=1");
+    expect(apellidos(segundaPagina)).toEqual(["Romero"]);
+    expect(segundaPagina.body).toMatchObject({ total: 2, limit: 1, offset: 1 });
+
+    expect(apellidos(await listar("estado_cuota=AL_DIA"))).toEqual(["Herrera"]);
+    const deCarla = await listar("estado_cuota=PENDIENTE_DE_PAGO", "carla.ruiz@example.com");
+    expect(apellidos(deCarla)).toEqual(["Romero"]);
+    expect(deCarla.body.total).toBe(1);
+  });
+
+  it("sigue al vencimiento sin que nada se guarde, y rechaza un estado que no existe", async () => {
+    await prisma.cuotas.updateMany({
+      where: { id_inscripcion: datos.idInscripcion.get(DNI_VALENTINA)! },
+      data: { fecha_vencimiento: new Date(fechaActualArgentina().getTime() - 30 * UN_DIA_EN_MS) },
+    });
+
+    expect(apellidos(await listar("estado_cuota=VENCIDA"))).toEqual(["Herrera"]);
+    expect((await listar("estado_cuota=AL_DIA")).body).toMatchObject({ datos: [], total: 0 });
+    expect((await listar("estado_cuota=MOROSO")).status).toBe(400);
+  });
+});
+
+describe("PI-52: el historial de cuotas y pagos en la ficha", () => {
+  it("la propietaria ve las cuotas con todos sus pagos, también el rechazado; la profesora a cargo no ve el historial", async () => {
+    const idAlumnoValentina = datos.idAlumno.get(DNI_VALENTINA)!;
+    const informada = await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+      id_inscripcion: datos.idInscripcion.get(DNI_VALENTINA)!,
+      monto: 30000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+    expect(informada.status).toBe(201);
+    const rechazo = await pedir("post", `/pagos/${informada.body.id_pago}/rechazar`, EMAIL_MULTIROL_DEMO, {
+      motivo_rechazo: "No llegó a la cuenta",
+    });
+    expect(rechazo.status).toBe(200);
+
+    const dePropietaria = await pedir("get", `/alumnos/${idAlumnoValentina}`, EMAIL_MULTIROL_DEMO);
+    expect(dePropietaria.status).toBe(200);
+    expect(dePropietaria.body.historial_cuotas).toEqual([
+      expect.objectContaining({
+        numero_cuota: 2,
+        plan: "Intermedio",
+        pagos: [
+          expect.objectContaining({
+            forma_pago: "TRANSFERENCIA",
+            estado: "RECHAZADO",
+            motivo_rechazo: "No llegó a la cuenta",
+          }),
+        ],
+      }),
+      expect.objectContaining({
+        numero_cuota: 1,
+        pagos: [expect.objectContaining({ forma_pago: "EFECTIVO", estado: "CONFIRMADO" })],
+      }),
+    ]);
+
+    const deCarla = await pedir("get", `/alumnos/${idAlumnoValentina}`, "carla.ruiz@example.com");
+    expect(deCarla.status).toBe(200);
+    expect(deCarla.body.historial_cuotas).toBeNull();
+    expect(deCarla.body.inscripciones[0].situacion_cuota).toMatchObject({ estado: "AL_DIA" });
+  });
+});

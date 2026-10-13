@@ -182,6 +182,21 @@ describe("AlumnoRepository", () => {
     });
   });
 
+  describe("listarIds", () => {
+    it("devuelve los ids en el orden del listado, con los mismos filtros y hasta el tope", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id_alumno: 7 }, { id_alumno: 3 }]);
+
+      await expect(repositorio.listarIds({ busqueda: "pe", ids: [3, 7] }, 501)).resolves.toEqual([7, 3]);
+
+      const consulta = sqlDeLaLlamada(0);
+      expect(consulta.text).toContain("a.estado <> 'BAJA'");
+      expect(consulta.text).toContain("a.id_alumno = ANY($1)");
+      expect(consulta.text).toContain("ORDER BY u.apellido, u.nombre, a.id_alumno");
+      expect(consulta.values).toEqual([[3, 7], "%pe%", 501, 0]);
+      expect(prisma.alumnos.findMany).not.toHaveBeenCalled();
+    });
+  });
+
   describe("actualizar", () => {
     it("actualiza ficha y usuario sin tocar el tutor si no viene", async () => {
       await repositorio.actualizar(1, { telefono: "3794 445566" }, { observaciones: "Nota" }, undefined);
