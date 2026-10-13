@@ -178,31 +178,97 @@ function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number):
   };
 }
 
+const UNA_HORA_EN_MS = 3_600_000;
+
+interface DatosTransferencia {
+  id_pago: number;
+  id_inscripcion: number;
+  monto: number;
+  /** Hace cuántas horas la informó el alumno: con eso se miden las 24 horas (US-17). */
+  horasDesdeLaCarga: number;
+  titular_cuenta_origen?: string;
+  observaciones?: string;
+}
+
+// Transferencia que informó el alumno (US-16): queda PENDIENTE hasta que la revise la propietaria.
+function transferenciaPendiente(datos: DatosTransferencia): PagoMock {
+  const cargada = Date.now() - datos.horasDesdeLaCarga * UNA_HORA_EN_MS;
+  return {
+    id_pago: datos.id_pago,
+    id_cuota: datos.id_pago,
+    id_inscripcion: datos.id_inscripcion,
+    forma_pago: "TRANSFERENCIA",
+    estado: "PENDIENTE",
+    monto: datos.monto,
+    fecha_pago: new Date(cargada).toISOString(),
+    titular_cuenta_origen: datos.titular_cuenta_origen ?? null,
+    // El alumno la informa un rato después de hacerla.
+    fecha_hora_transferencia: new Date(cargada - UNA_HORA_EN_MS).toISOString(),
+    id_usuario_registra: 1,
+    id_profesora_cobra: null,
+    rendido: true,
+    fecha_rendicion: null,
+    id_usuario_confirma: null,
+    fecha_confirmacion: null,
+    motivo_rechazo: null,
+    observaciones: datos.observaciones ?? null,
+  };
+}
+
+function transferenciaResuelta(datos: DatosTransferencia, resolucion: Pick<PagoMock, "estado" | "motivo_rechazo">): PagoMock {
+  const pendiente = transferenciaPendiente(datos);
+  const resuelta = new Date(new Date(pendiente.fecha_pago).getTime() + 6 * UNA_HORA_EN_MS).toISOString();
+  return { ...pendiente, ...resolucion, id_usuario_confirma: 1, fecha_confirmacion: resuelta };
+}
+
+// US-17: una por cada tramo del plazo (más de 24 h, entre 12 y 24 h, menos de 12 h), una con un
+// monto distinto del precio vigente, una primera cuota (da el alta definitiva al aprobarla) y dos
+// ya resueltas. Valentina (3) también tiene una rechazada: no cuenta como cuota paga.
+function transferenciasSemilla(): PagoMock[] {
+  return [
+    transferenciaPendiente({ id_pago: 8, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 26, titular_cuenta_origen: "Herrera Valentina" }),
+    transferenciaPendiente({
+      id_pago: 9,
+      id_inscripcion: 4,
+      monto: 22000,
+      horasDesdeLaCarga: 15,
+      observaciones: "Te transferí desde la cuenta de mi hermana. Faltan $3.000, te los llevo en efectivo.",
+    }),
+    transferenciaPendiente({ id_pago: 10, id_inscripcion: 1, monto: PRECIOS[0], horasDesdeLaCarga: 3, observaciones: "Es mi primera cuota." }),
+    transferenciaResuelta({ id_pago: 11, id_inscripcion: 4, monto: PRECIOS[0], horasDesdeLaCarga: 50 }, { estado: "CONFIRMADO", motivo_rechazo: null }),
+    transferenciaResuelta(
+      { id_pago: 12, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 74 },
+      { estado: "RECHAZADO", motivo_rechazo: "No se encontró la transferencia en el extracto" },
+    ),
+  ];
+}
+
 // Cada pago cubre un mes (mocks/situacion-cuota.ts): la inscripción 3 pagó uno de los dos meses que
-// lleva y está vencida, la 4 pagó los tres y está al día, y Micaela (5) se fue debiendo (US-08).
+// lleva y está vencida, la 4 pagó todos y está al día, y Micaela (5) se fue debiendo (US-08).
 export function pagosSemilla(): PagoMock[] {
   return [
     pagoConfirmado(1, 3, PRECIOS[1]),
     ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
+    ...transferenciasSemilla(),
 
     // Pagos de las 15 inscripciones demo
-    pagoConfirmado(11, 11, PRECIOS[2]),
-    pagoConfirmado(12, 12, PRECIOS[0]),
-    pagoConfirmado(13, 13, PRECIOS[1]),
-    pagoConfirmado(14, 14, PRECIOS[3]),
-    pagoConfirmado(15, 15, PRECIOS[0]),
+    pagoConfirmado(111, 11, PRECIOS[2]),
+    pagoConfirmado(112, 12, PRECIOS[0]),
+    pagoConfirmado(113, 13, PRECIOS[1]),
+    pagoConfirmado(114, 14, PRECIOS[3]),
+    pagoConfirmado(115, 15, PRECIOS[0]),
 
-    pagoConfirmado(16, 16, PRECIOS[1]),
-    pagoConfirmado(17, 17, PRECIOS[3]),
-    pagoConfirmado(18, 18, PRECIOS[0]),
-    pagoConfirmado(19, 19, PRECIOS[2]),
-    pagoConfirmado(20, 20, PRECIOS[1]),
+    pagoConfirmado(116, 16, PRECIOS[1]),
+    pagoConfirmado(117, 17, PRECIOS[3]),
+    pagoConfirmado(118, 18, PRECIOS[0]),
+    pagoConfirmado(119, 19, PRECIOS[2]),
+    pagoConfirmado(120, 20, PRECIOS[1]),
 
-    pagoConfirmado(21, 21, PRECIOS[3]),
-    pagoConfirmado(22, 22, PRECIOS[0]),
-    pagoConfirmado(23, 23, PRECIOS[1]),
-    pagoConfirmado(24, 24, PRECIOS[2]),
-    pagoConfirmado(25, 25, PRECIOS[0]),
+    pagoConfirmado(121, 21, PRECIOS[3]),
+    pagoConfirmado(122, 22, PRECIOS[0]),
+    pagoConfirmado(123, 23, PRECIOS[1]),
+    pagoConfirmado(124, 24, PRECIOS[2]),
+    pagoConfirmado(125, 25, PRECIOS[0]),
   ];
 }

@@ -155,7 +155,7 @@ export function AlumnoDetallePage() {
     <OwnerLayout>
       <main className="mx-auto w-full max-w-[1240px] py-5 pb-8 md:py-8">
         <Link
-          to="/app/alumnos"
+          to="/app/alumnos/listado"
           className="mb-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#BC1266] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82] dark:text-slate-300"
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
@@ -634,7 +634,7 @@ function EstadoFicha({
         </Button>
       )}
       <Button asChild variant="outline" className="min-h-[44px]">
-        <Link to="/app/alumnos">Volver al listado</Link>
+        <Link to="/app/alumnos/listado">Volver al listado</Link>
       </Button>
     </Card>
   );

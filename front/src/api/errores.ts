@@ -1,6 +1,13 @@
 import { isAxiosError } from "axios";
 import { ZodError } from "zod";
 
+/** El `code` de un error del back (por ejemplo "MONTO_DISTINTO"), o null si no vino del back. */
+export function codigoDeErrorApi(error: unknown): string | null {
+  if (!isAxiosError(error)) return null;
+  const datos = error.response?.data as { error?: { code?: unknown } } | undefined;
+  return typeof datos?.error?.code === "string" ? datos.error.code : null;
+}
+
 // El back responde los errores como { error: { code, message } } y el mensaje ya está
 // pensado para mostrarse (por ejemplo, el 409 de una superposición de horarios).
 export function mensajeDeErrorApi(error: unknown, mensajePorDefecto: string): string {
