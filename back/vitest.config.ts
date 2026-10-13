@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
+    // Solo los fuentes: la exclusión por defecto de Vitest ya no deja afuera dist/, y un build viejo
+    // correría sus tests compilados contra el código actual.
+    include: ["src/**/*.test.ts"],
     // Los de integración necesitan Postgres: corren aparte con vitest.integration.config.ts.
     exclude: [...configDefaults.exclude, "src/**/*.integration.test.ts"],
     coverage: {

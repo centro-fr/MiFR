@@ -10,6 +10,12 @@ import type { FiltroInscripciones, InscripcionConDatos } from "../inscripcion/in
 import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { InscriptoConAsistencia, MarcarAsistenciaInput } from "../asistencia/asistencia.types.js";
 import type { ClaseConDatos } from "../clase/clase.types.js";
+import type {
+  CambiarSuplenciaInput,
+  ListarSuplenciasQuery,
+  RegistrarSuplenciaInput,
+} from "../suplencia/suplencia.schemas.js";
+import type { SuplenciaConDatos, SuplenciaRegistrada } from "../suplencia/suplencia.types.js";
 
 // La parte de ILogicaInscripcionesYClases que usa el controller de Inscripcion. No es una
 // interfaz nueva del diagrama.
@@ -65,6 +71,21 @@ export interface ILogicaClasesYAsistencia {
   cancelarClase(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos>;
 }
 
+// La parte que usa el router de /suplencias (US-24). Quién registra llega como id de usuario: las
+// suplencias son solo de la propietaria, así que no hay alcance que acotar.
+export interface ILogicaSuplencias {
+  listarSuplencias(filtro: ListarSuplenciasQuery): Promise<SuplenciaConDatos[]>;
+  registrarSuplencia(input: RegistrarSuplenciaInput, idUsuario: number): Promise<SuplenciaRegistrada>;
+  cambiarSuplencia(
+    idClase: number,
+    input: CambiarSuplenciaInput,
+    idUsuario: number,
+  ): Promise<SuplenciaConDatos>;
+  // Devuelve la suplencia borrada, para que quede en la auditoría.
+  eliminarSuplencia(idClase: number): Promise<SuplenciaConDatos>;
+}
+
 // Interfaz del subsistema GestionInscripcionesYClases en la vista arquitectónica: es lo único que
 // ve la capa de presentación (InscripcionYClasesPresWeb).
-export interface ILogicaInscripcionesYClases extends ILogicaInscripciones, ILogicaClasesYAsistencia {}
+export interface ILogicaInscripcionesYClases
+  extends ILogicaInscripciones, ILogicaClasesYAsistencia, ILogicaSuplencias {}

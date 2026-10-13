@@ -46,6 +46,7 @@ const nueva = {
   id_alumno: 5,
   id_plan: 1,
   id_plan_precio: 15,
+  id_promocion: 4,
   id_profesora: 3,
   sin_cargo: false,
   fecha_inicio: DIA,
@@ -351,6 +352,7 @@ describe("InscripcionRepository", () => {
         expect.objectContaining({
           data: expect.objectContaining({
             estado: "PREINSCRIPTA",
+            id_promocion: 4,
             horarios: {
               create: [
                 { id_horario: 9, fecha_desde: DIA },
@@ -548,12 +550,16 @@ describe("InscripcionRepository", () => {
   describe("cambiarPlan", () => {
     const cambio = { id_plan: 2, id_profesora: 3, ids_horarios: [9], sin_cargo: false };
     const fechas = { instante: INSTANTE, dia: DIA };
+    // US-13: la inscripción nueva guarda la promoción vigente del plan nuevo.
+    const PRECIO_NUEVO = { id_plan_precio: 16, id_promocion: 6 };
 
     it("da de baja la actual con CAMBIO_PLAN y crea la nueva con el mismo estado", async () => {
       conCupoLibre([9]);
       transaccion.inscripciones.findUnique.mockResolvedValue({ estado: "ACTIVA" });
 
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toMatchObject({
+      await expect(
+        repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS),
+      ).resolves.toMatchObject({
         resultado: "ok",
       });
 
@@ -570,6 +576,7 @@ describe("InscripcionRepository", () => {
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
         id_plan: 2,
         id_plan_precio: 16,
+        id_promocion: 6,
         estado: "ACTIVA",
         fecha_inicio: DIA,
         horarios: { create: [{ id_horario: 9, fecha_desde: DIA }] },
@@ -580,7 +587,13 @@ describe("InscripcionRepository", () => {
       conCupoLibre([9]);
       const empezoAntes = new Date("2026-10-02T00:00:00Z");
 
-      await repositorio.cambiarPlan({ ...actual, fecha_inicio: empezoAntes }, cambio, 16, fechas, RESERVAS);
+      await repositorio.cambiarPlan(
+        { ...actual, fecha_inicio: empezoAntes },
+        cambio,
+        PRECIO_NUEVO,
+        fechas,
+        RESERVAS,
+      );
 
       expect(transaccion.inscripciones.create.mock.calls[0][0].data).toMatchObject({
         estado: "PREINSCRIPTA",
@@ -591,17 +604,17 @@ describe("InscripcionRepository", () => {
 
     it("no cambia si dejó de estar vigente, si el plan nuevo ya está vigente o si no hay cupo", async () => {
       transaccion.inscripciones.findUnique.mockResolvedValueOnce({ estado: "BAJA" });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "no-vigente",
       });
 
       transaccion.inscripciones.findFirst.mockResolvedValueOnce({ id_inscripcion: 30 });
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "plan-duplicado",
       });
 
       transaccion.horarios.findMany.mockResolvedValue([]);
-      await expect(repositorio.cambiarPlan(actual, cambio, 16, fechas, RESERVAS)).resolves.toEqual({
+      await expect(repositorio.cambiarPlan(actual, cambio, PRECIO_NUEVO, fechas, RESERVAS)).resolves.toEqual({
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripciones.create).not.toHaveBeenCalled();

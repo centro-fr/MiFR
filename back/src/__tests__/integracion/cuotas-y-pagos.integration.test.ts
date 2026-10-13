@@ -7,6 +7,7 @@ import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { armarCuotasYPagos, UN_DIA_EN_MS } from "./cobro.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
+import { crearAlumno, crearHorarioDePrueba } from "./fabricas.js";
 
 // Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) y el precio que aplica el cobro
 // (US-12) sobre los datos de db:seed:demo. Sofía Medina está pre-inscripta en el Básico y sin
@@ -598,5 +599,310 @@ describe("PI-52: el historial de cuotas y pagos en la ficha", () => {
     expect(deCarla.status).toBe(200);
     expect(deCarla.body.historial_cuotas).toBeNull();
     expect(deCarla.body.inscripciones[0].situacion_cuota).toMatchObject({ estado: "AL_DIA" });
+  });
+});
+
+describe("PI-57: lo cobrado en un período y las cuotas para avisar (contratos de IInfoCuotas)", () => {
+  const DNI_MATEO = "52111222";
+
+  it("cobradoEnPeriodo suma lo confirmado entre los días de Argentina del período, y 0 a quien no pagó", async () => {
+    const { cuotas } = armarCuotasYPagos(prisma, infoInscripciones);
+    const cuota = await crearCuota();
+    for (const [fecha_pago, monto] of [
+      ["2026-10-01T02:59:00Z", 1000], // 30/09 a las 23:59 de Argentina: afuera
+      ["2026-10-01T03:00:00Z", 2000], // 01/10 a las 00:00: adentro
+      ["2026-11-01T02:59:00Z", 4000], // 31/10 a las 23:59: adentro
+      ["2026-11-01T03:00:00Z", 8000], // 01/11 a las 00:00: afuera
+    ] as const) {
+      await crearPago(cuota.id_cuota, { fecha_pago: new Date(fecha_pago), monto });
+    }
+    await crearPago(cuota.id_cuota, {
+      fecha_pago: new Date("2026-10-15T15:00:00Z"),
+      monto: 16000,
+      forma_pago: "TRANSFERENCIA",
+      estado: "RECHAZADO",
+      motivo_rechazo: "No figura en el extracto",
+      fecha_hora_transferencia: new Date("2026-10-15T14:00:00Z"),
+      rendido: true,
+    });
+    const idMateo = datos.idInscripcion.get(DNI_MATEO)!;
+
+    const cobrado = await cuotas.cobradoEnPeriodo(
+      [idInscripcion, idMateo],
+      new Date("2026-10-01T00:00:00Z"),
+      new Date("2026-10-31T00:00:00Z"),
+    );
+
+    expect(cobrado).toEqual(
+      new Map([
+        [idInscripcion, 6000],
+        [idMateo, 0],
+      ]),
+    );
+  });
+
+  it("paraAvisoDeVencimiento avisa a Valentina antes de vencer y al terminar la gracia, y nunca a un pre-inscripto", async () => {
+    const { cuotas } = armarCuotasYPagos(prisma, infoInscripciones);
+    const idInscripcionValentina = datos.idInscripcion.get(DNI_VALENTINA)!;
+    const [cuota] = await prisma.cuotas.findMany({ where: { id_inscripcion: idInscripcionValentina } });
+    const aDias = (dias: number) => new Date(cuota.fecha_vencimiento.getTime() + dias * UN_DIA_EN_MS);
+    const avisos = async (dias: number) =>
+      (await cuotas.paraAvisoDeVencimiento(aDias(dias), 3)).map(({ tipo, id_cuota, id_inscripcion }) => ({
+        tipo,
+        id_cuota,
+        id_inscripcion,
+      }));
+
+    expect(await avisos(-4)).toEqual([]);
+    expect(await avisos(-3)).toEqual([
+      { tipo: "CUOTA_POR_VENCER", id_cuota: cuota.id_cuota, id_inscripcion: idInscripcionValentina },
+    ]);
+    // Intermedio tiene 5 días de gracia: el sexto día después del vencimiento ya está vencida.
+    expect(await avisos(5)).toEqual([]);
+    expect(await avisos(6)).toEqual([
+      { tipo: "CUOTA_VENCIDA", id_cuota: cuota.id_cuota, id_inscripcion: idInscripcionValentina },
+    ]);
+    const [aviso] = await cuotas.paraAvisoDeVencimiento(aDias(0), 3);
+    expect(aviso).toMatchObject({
+      nombre_plan: "Intermedio",
+      alumno: { nombre: "Valentina", apellido: "Herrera", id_usuario_responsable: null },
+    });
+
+    await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+      id_inscripcion: idInscripcionValentina,
+      monto: 30000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+    expect(await avisos(-3)).toEqual([]);
+  });
+
+  it("paraAvisoDeVencimiento no avisa a un alumno dado de baja", async () => {
+    const { cuotas } = armarCuotasYPagos(prisma, infoInscripciones);
+    const idAlumnoValentina = datos.idAlumno.get(DNI_VALENTINA)!;
+    const [cuota] = await prisma.cuotas.findMany({
+      where: { id_inscripcion: datos.idInscripcion.get(DNI_VALENTINA)! },
+    });
+    await prisma.alumnos.update({ where: { id_alumno: idAlumnoValentina }, data: { estado: "BAJA" } });
+
+    await expect(cuotas.paraAvisoDeVencimiento(cuota.fecha_vencimiento, 3)).resolves.toEqual([]);
+  });
+});
+
+describe("PI-58: la rendición del efectivo que cobran las profesoras", () => {
+  const DNI_MATEO = "52111222";
+
+  async function pendiente(consulta = "") {
+    return pedir("get", `/pagos/efectivo-pendiente${consulta}`, EMAIL_MULTIROL_DEMO);
+  }
+
+  it("lista lo pendiente por profesora sin lo que cobró la propietaria, rinde uno y un lote, y deja el historial", async () => {
+    const idLucia = datos.idProfesora.get(EMAIL_LUCIA)!;
+    const idCarla = datos.idProfesora.get("carla.ruiz@example.com")!;
+    const deLucia = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      id_inscripcion: idInscripcion,
+      monto: 25000,
+    });
+    const deMarina = await pedir("post", "/pagos/efectivo", EMAIL_MULTIROL_DEMO, {
+      id_inscripcion: datos.idInscripcion.get(DNI_MATEO)!,
+      monto: 1000,
+      confirmar_monto_distinto: true,
+    });
+    expect([deLucia.status, deMarina.status]).toEqual([201, 201]);
+    const [{ id_pago: idDeCarla }] = await prisma.pagos.findMany({ where: { id_profesora_cobra: idCarla } });
+
+    const todo = await pendiente();
+    expect(todo.status).toBe(200);
+    expect(todo.body).toMatchObject({ cantidad: 2, detalle_completo: true });
+    expect(
+      todo.body.profesoras.map(({ id_profesora }: { id_profesora: number }) => id_profesora).sort(),
+    ).toEqual([idLucia, idCarla].sort());
+    const deLaPropietaria = todo.body.profesoras.flatMap(({ cobros }: { cobros: { id_pago: number }[] }) =>
+      cobros.map(({ id_pago }) => id_pago),
+    );
+    expect(deLaPropietaria).not.toContain(deMarina.body.id_pago);
+    expect((await pendiente(`?id_profesora=${idCarla}`)).body.profesoras).toEqual([
+      expect.objectContaining({
+        id_profesora: idCarla,
+        cantidad: 1,
+        cobros: [expect.objectContaining({ id_pago: idDeCarla, dias_sin_rendir: 0 })],
+      }),
+    ]);
+
+    const rendido = await pedir("post", `/pagos/${idDeCarla}/rendir`, EMAIL_MULTIROL_DEMO, {
+      observaciones: "En mano",
+    });
+    const otraVez = await pedir("post", `/pagos/${idDeCarla}/rendir`, EMAIL_MULTIROL_DEMO);
+    expect(rendido.status).toBe(200);
+    expect(rendido.body).toMatchObject({ rendidos: [idDeCarla], cantidad: 1 });
+    expect(otraVez.status).toBe(409);
+    expect(await prisma.pagos.findUniqueOrThrow({ where: { id_pago: idDeCarla } })).toMatchObject({
+      rendido: true,
+      fecha_rendicion: expect.any(Date),
+    });
+    expect((await pedir("post", `/pagos/${deMarina.body.id_pago}/rendir`, EMAIL_MULTIROL_DEMO)).status).toBe(
+      409,
+    );
+
+    const lote = await pedir("post", "/pagos/rendir", EMAIL_MULTIROL_DEMO, { id_profesora: idLucia });
+    expect(lote.body).toMatchObject({
+      rendidos: [deLucia.body.id_pago],
+      cantidad: 1,
+      total: 25000,
+      salteados: [],
+    });
+    expect((await pendiente()).body).toMatchObject({ cantidad: 0, total: 0, profesoras: [] });
+
+    const historial = await pedir("get", "/pagos/rendiciones", EMAIL_MULTIROL_DEMO);
+    expect(historial.body).toMatchObject({ total: 2 });
+    expect(historial.body.datos.map(({ id_pago }: { id_pago: number }) => id_pago).sort()).toEqual(
+      [idDeCarla, deLucia.body.id_pago].sort(),
+    );
+  });
+
+  it("solo la propietaria ve y rinde el efectivo, y un lote saltea lo que no se puede rendir", async () => {
+    expect((await pedir("get", "/pagos/efectivo-pendiente", EMAIL_LUCIA)).status).toBe(403);
+    expect((await pedir("post", "/pagos/rendir", EMAIL_LUCIA, { id_profesora: 1 })).status).toBe(403);
+
+    const lote = await pedir("post", "/pagos/rendir", EMAIL_MULTIROL_DEMO, { ids_pagos: [999999] });
+    expect(lote.status).toBe(200);
+    expect(lote.body).toEqual({
+      rendidos: [],
+      cantidad: 0,
+      total: 0,
+      salteados: [{ id_pago: 999999, motivo: "NO_EXISTE" }],
+    });
+  });
+});
+
+describe("PI-59: las promociones y su descuento en el cobro", () => {
+  const enDias = (dias: number) =>
+    new Date(fechaActualArgentina().getTime() + dias * UN_DIA_EN_MS).toISOString().slice(0, 10);
+  const idBasico = () => datos.idPlan.get("Básico")!;
+
+  function crearPromocion(cambios: Record<string, unknown> = {}, email = EMAIL_MULTIROL_DEMO) {
+    return pedir("post", "/promociones", email, {
+      codigo: "VERANO26",
+      nombre: "Verano",
+      tipo_descuento: "PORCENTAJE",
+      valor: 20,
+      fecha_desde: enDias(0),
+      fecha_hasta: enDias(30),
+      ids_planes: [idBasico()],
+      ...cambios,
+    });
+  }
+
+  // Una pre-inscripción nueva en el Básico con Lucía, hecha por la API.
+  async function preinscribir(): Promise<number> {
+    const alumno = await crearAlumno(prisma);
+    const horario = await crearHorarioDePrueba(prisma, {
+      id_actividad: datos.idActividad.get("FUNCIONAL")!,
+      id_profesora: datos.idProfesora.get(EMAIL_LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "11:00",
+      hora_fin: "12:00",
+    });
+    const inscripcion = await pedir("post", "/inscripciones", EMAIL_MULTIROL_DEMO, {
+      id_alumno: alumno.id_alumno,
+      id_plan: idBasico(),
+      id_profesora: datos.idProfesora.get(EMAIL_LUCIA)!,
+      ids_horarios: [horario.id_horario],
+    });
+    expect(inscripcion.status).toBe(201);
+    return inscripcion.body.id_inscripcion as number;
+  }
+
+  it("quien se pre-inscribe durante la promoción paga con el descuento, y al desactivarla lo cobrado no cambia", async () => {
+    const creada = await crearPromocion();
+    expect(creada.status).toBe(201);
+    expect(creada.body).toMatchObject({ codigo: "VERANO26", estado: "ACTIVA" });
+    const idConPromocion = await preinscribir();
+    expect(
+      await prisma.inscripciones.findUniqueOrThrow({ where: { id_inscripcion: idConPromocion } }),
+    ).toMatchObject({ id_promocion: creada.body.id_promocion });
+    // Sofía se pre-inscribió antes de la promoción: no la tiene.
+    expect(
+      await prisma.inscripciones.findUniqueOrThrow({ where: { id_inscripcion: idInscripcion } }),
+    ).toMatchObject({
+      id_promocion: null,
+    });
+
+    const conDescuento = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      id_inscripcion: idConPromocion,
+      monto: 20000,
+    });
+    expect(conDescuento.status).toBe(201);
+    const comprobante = await pedir(
+      "get",
+      `/pagos/${conDescuento.body.id_pago}/comprobante`,
+      EMAIL_MULTIROL_DEMO,
+    );
+    expect(comprobante.body).toMatchObject({
+      monto: 20000,
+      precio_lista: 25000,
+      descuento: 5000,
+      promocion: { codigo: "VERANO26", nombre: "Verano" },
+      cuota: { monto: 20000 },
+    });
+    const deSofia = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      id_inscripcion: idInscripcion,
+      monto: 25000,
+    });
+    expect(deSofia.status).toBe(201);
+
+    expect(
+      (await pedir("post", `/promociones/${creada.body.id_promocion}/desactivar`, EMAIL_MULTIROL_DEMO))
+        .status,
+    ).toBe(200);
+    const yaCobrada = await prisma.cuotas.findFirstOrThrow({ where: { id_inscripcion: idConPromocion } });
+    expect(yaCobrada.monto.toNumber()).toBe(20000);
+    const despues = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      id_inscripcion: idConPromocion,
+      monto: 20000,
+    });
+    expect(despues.status).toBe(409);
+    expect(despues.body).toMatchObject({ error: { code: "MONTO_DISTINTO" } });
+  });
+
+  it("no deja superponer dos promociones en un plan, ni un monto fijo mayor al precio, ni editar una vencida", async () => {
+    const primera = await crearPromocion();
+    expect(primera.status).toBe(201);
+
+    const superpuesta = await crearPromocion({
+      codigo: "OTRA",
+      fecha_desde: enDias(10),
+      fecha_hasta: enDias(40),
+    });
+    const montoAlto = await crearPromocion({
+      codigo: "FIJO",
+      tipo_descuento: "MONTO_FIJO",
+      valor: 30000,
+      fecha_desde: enDias(60),
+      fecha_hasta: enDias(70),
+    });
+    const repetida = await crearPromocion({ fecha_desde: enDias(60), fecha_hasta: enDias(70) });
+    expect([superpuesta.status, montoAlto.status, repetida.status]).toEqual([409, 400, 409]);
+    expect(await prisma.promociones.count()).toBe(1);
+
+    await prisma.promociones.update({
+      where: { id_promocion: primera.body.id_promocion },
+      data: {
+        fecha_desde: new Date(`${enDias(-20)}T00:00:00Z`),
+        fecha_hasta: new Date(`${enDias(-1)}T00:00:00Z`),
+      },
+    });
+    const vencida = await pedir("get", `/promociones/${primera.body.id_promocion}`, EMAIL_LUCIA);
+    expect(vencida.body).toMatchObject({ estado: "VENCIDA" });
+    const edicion = await request(entorno.app)
+      .patch(`/api/v1/promociones/${primera.body.id_promocion}`)
+      .set("Authorization", `Bearer ${await entorno.iniciarSesion(EMAIL_MULTIROL_DEMO)}`)
+      .send({ valor: 10 });
+    expect(edicion.status).toBe(409);
+  });
+
+  it("la profesora ve las promociones pero no las crea", async () => {
+    expect((await crearPromocion({}, EMAIL_LUCIA)).status).toBe(403);
+    expect((await pedir("get", "/promociones", EMAIL_LUCIA)).status).toBe(200);
+    expect(await prisma.promociones.count()).toBe(0);
   });
 });

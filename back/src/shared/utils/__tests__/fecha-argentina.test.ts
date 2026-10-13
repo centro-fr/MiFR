@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fechaActualArgentina, instanteArgentino } from "../fecha-argentina.js";
+import { rangoDeDiasArgentinos, fechaActualArgentina, instanteArgentino } from "../fecha-argentina.js";
 
 describe("fechaActualArgentina", () => {
   it("devuelve el día argentino aunque en UTC ya sea el día siguiente", () => {
@@ -52,5 +52,21 @@ describe("instanteArgentino", () => {
     expect(instanteArgentino(fin, new Date("1970-01-01T22:00:00Z"))).toEqual(
       new Date("2027-01-01T01:00:00Z"),
     );
+  });
+});
+
+describe("rangoDeDiasArgentinos", () => {
+  it("va desde las 00:00 de Argentina del primer día hasta antes de las 00:00 del día siguiente al último", () => {
+    expect(rangoDeDiasArgentinos(new Date("2026-10-01T00:00:00Z"), new Date("2026-10-31T00:00:00Z"))).toEqual(
+      { inicio: new Date("2026-10-01T03:00:00Z"), fin: new Date("2026-11-01T03:00:00Z") },
+    );
+  });
+
+  it("sin un extremo deja el rango abierto de ese lado", () => {
+    expect(rangoDeDiasArgentinos(undefined, new Date("2026-10-31T00:00:00Z"))).toEqual({
+      inicio: undefined,
+      fin: new Date("2026-11-01T03:00:00Z"),
+    });
+    expect(rangoDeDiasArgentinos()).toEqual({ inicio: undefined, fin: undefined });
   });
 });

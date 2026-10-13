@@ -1,4 +1,4 @@
-import { ConflictError } from "../../shared/errors/app-error.js";
+import { ConflictError, ValidationError } from "../../shared/errors/app-error.js";
 import type {
   HorarioConOcupacion,
   ILogicaServicioEntrenamiento,
@@ -13,6 +13,9 @@ import type { PlanService } from "./plan/plan.service.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "./plan/plan.types.js";
 import type { ParametrosSistemaService } from "./parametros-sistema/parametros-sistema.service.js";
+import type { PromocionService } from "./promocion/promocion.service.js";
+import type { ActualizarPromocionInput, CrearPromocionInput } from "./promocion/promocion.schemas.js";
+import type { FiltroPromociones, Promocion, TipoDescuento } from "./promocion/promocion.types.js";
 import type { ActualizarParametroInput } from "./parametros-sistema/parametros-sistema.schemas.js";
 import type {
   ClaveParametro,
@@ -29,7 +32,37 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     private readonly planes: PlanService,
     private readonly parametros: ParametrosSistemaService,
     private readonly inscripciones: IInfoInscripciones,
+    private readonly promociones: PromocionService,
   ) {}
+
+  listarPromociones(filtro: FiltroPromociones): Promise<Promocion[]> {
+    return this.promociones.listar(filtro);
+  }
+
+  obtenerPromocion(id: number): Promise<Promocion> {
+    return this.promociones.obtenerPorId(id);
+  }
+
+  async crearPromocion(input: CrearPromocionInput): Promise<Promocion> {
+    await this.validarPlanesDePromocion(input);
+    return this.promociones.crear(input);
+  }
+
+  // Los planes y el monto fijo se revisan con lo que queda después del cambio.
+  async actualizarPromocion(id: number, input: ActualizarPromocionInput): Promise<Promocion> {
+    const actual = await this.promociones.obtenerPorId(id);
+    await this.validarPlanesDePromocion({
+      ids_planes: input.ids_planes ?? actual.planes.map(({ id_plan }) => id_plan),
+      tipo_descuento: input.tipo_descuento ?? actual.tipo_descuento,
+      valor: input.valor ?? actual.valor,
+      fecha_desde: input.fecha_desde ?? actual.fecha_desde,
+    });
+    return this.promociones.actualizar(id, input);
+  }
+
+  desactivarPromocion(id: number): Promise<Promocion> {
+    return this.promociones.desactivar(id);
+  }
 
   crearActividad(input: CrearActividadInput): Promise<Actividad> {
     return this.actividades.crear(input);
@@ -163,5 +196,32 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
 
   obtenerDatosBancarios(): Promise<DatosBancarios> {
     return this.parametros.obtenerDatosBancarios();
+  }
+
+  // US-13: Promocion no conoce a Plan (es Plan el que la usa), así que el subsistema cruza los dos.
+  // Los planes tienen que estar vigentes, y un monto fijo no puede superar el precio de ninguno al
+  // empezar la promoción: el cobro quedaría en cero o negativo.
+  private async validarPlanesDePromocion(datos: {
+    ids_planes: number[];
+    tipo_descuento: TipoDescuento;
+    valor: number;
+    fecha_desde: Date;
+  }): Promise<void> {
+    const planes = await Promise.all(datos.ids_planes.map((id) => this.planes.buscarPorId(id)));
+    const ausente = datos.ids_planes.find((_, indice) => !planes[indice] || planes[indice]?.fecha_baja);
+    if (ausente !== undefined) throw new ValidationError(`El plan ${ausente} no existe o está dado de baja`);
+    if (datos.tipo_descuento !== "MONTO_FIJO") return;
+
+    const precios = await Promise.all(
+      datos.ids_planes.map((id) => this.planes.precioVigente(id, datos.fecha_desde)),
+    );
+    datos.ids_planes.forEach((id, indice) => {
+      const precio = precios[indice];
+      if (!precio)
+        throw new ValidationError(`El plan ${id} no tiene un precio vigente al empezar la promoción`);
+      if (datos.valor > precio.precio) {
+        throw new ValidationError(`El descuento supera el precio del plan ${id} (${precio.precio})`);
+      }
+    });
   }
 }

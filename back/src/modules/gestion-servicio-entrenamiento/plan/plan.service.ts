@@ -1,6 +1,8 @@
 import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { IInfoActividades } from "../actividad/interface/i-info-actividades.js";
+import type { IInfoPromociones } from "../promocion/interface/i-info-promociones.js";
+import type { PromocionAplicable } from "../promocion/promocion.types.js";
 import type { IInfoPlanes } from "./interface/i-info-planes.js";
 import type { PlanRepository } from "./plan.repository.js";
 import {
@@ -9,7 +11,7 @@ import {
   type CrearPlanInput,
   type RegistrarPrecioInput,
 } from "./plan.schemas.js";
-import type { FiltroPlan, Plan, PrecioPlan } from "./plan.types.js";
+import type { FiltroPlan, Plan, PrecioACobrar, PrecioPlan } from "./plan.types.js";
 
 // Componente "Plan" de la vista arquitectónica: la oferta comercial (US-11) y sus precios con
 // vigencia (US-12). Según el DER el plan no tiene profesora: se elige al inscribir.
@@ -17,6 +19,7 @@ export class PlanService implements IInfoPlanes {
   constructor(
     private readonly repositorio: PlanRepository,
     private readonly actividades: IInfoActividades,
+    private readonly promociones: IInfoPromociones,
   ) {}
 
   async crear(input: CrearPlanInput): Promise<Plan> {
@@ -91,6 +94,36 @@ export class PlanService implements IInfoPlanes {
 
   precioVigente(idPlan: number, fecha: Date): Promise<PrecioPlan | null> {
     return this.repositorio.precioVigente(idPlan, fecha);
+  }
+
+  promocionVigente(idPlan: number, fecha: Date): Promise<PromocionAplicable | null> {
+    return this.promociones.vigenteParaPlan(idPlan, fecha);
+  }
+
+  // US-13: el descuento se calcula sobre el precio de lista de ese día; lo ya cobrado no cambia.
+  async precioACobrar(
+    idPlan: number,
+    fecha: Date,
+    idPromocion: number | null,
+  ): Promise<PrecioACobrar | null> {
+    const precio = await this.repositorio.precioVigente(idPlan, fecha);
+    if (!precio) return null;
+    const aplicada =
+      idPromocion === null
+        ? null
+        : await this.promociones.descuentoAplicable(idPromocion, idPlan, fecha, precio.precio);
+    const descuento = aplicada?.descuento ?? 0;
+    return {
+      id_plan_precio: precio.id_plan_precio,
+      precio_lista: precio.precio,
+      descuento,
+      monto: Math.round((precio.precio - descuento) * 100) / 100,
+      promocion: aplicada && {
+        id_promocion: aplicada.id_promocion,
+        codigo: aplicada.codigo,
+        nombre: aplicada.nombre,
+      },
+    };
   }
 
   private async obtenerVigente(id: number): Promise<Plan> {

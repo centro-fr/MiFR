@@ -21,6 +21,33 @@ export interface SituacionDeCuotas {
   }[];
 }
 
+// Una inscripción activa con cuotas que pueden pedir un aviso de vencimiento (US-25): su situación,
+// el plan y a quién avisar.
+export interface SituacionParaAviso extends SituacionDeCuotas {
+  nombre_plan: string;
+  alumno: {
+    id_alumno: number;
+    id_usuario: number;
+    // El tutor, si el alumno es menor: quien entra al sistema y recibe los avisos.
+    id_usuario_responsable: number | null;
+    nombre: string;
+    apellido: string;
+  };
+}
+
+export type TipoAvisoCuota = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA";
+
+// La cuota vigente de una inscripción que pide un aviso en la fecha consultada (US-25). Quién lo
+// recibe (el alumno o su tutor) lo decide quien registra la notificación.
+export interface CuotaParaAviso {
+  tipo: TipoAvisoCuota;
+  id_cuota: number;
+  id_inscripcion: number;
+  fecha_vencimiento: Date;
+  nombre_plan: string;
+  alumno: SituacionParaAviso["alumno"];
+}
+
 // La habilitación de una inscripción y si tiene una transferencia sin revisar (US-16), que la
 // habilitación usa pero no devuelve: la ficha la muestra para no cobrar dos veces.
 export type HabilitacionDeInscripcion = Habilitacion & { tienePagoPendiente: boolean };

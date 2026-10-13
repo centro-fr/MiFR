@@ -51,7 +51,7 @@ back/
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + cierreAsistencia (cierre automático con la hora que pida el test)
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + infoClases (clases suplidas, sin endpoint) + cierreAsistencia (cierre automático con la hora que pida el test)
       fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...), crearInscripcionDePrueba(...)
 ```
 
@@ -79,10 +79,11 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | E | `src/__tests__/integracion/alumnos.integration.test.ts` | Alta de alumnos y tutores, modificación, búsqueda, lo que ve la profesora y el tutor en el alta de un menor | E-23 |
 | F | `src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | Activación, baja y reactivación del alumno sobre el componente (todavía sin endpoint) | F-03 |
 | G | `src/__tests__/integracion/inscripciones.integration.test.ts` | Pre-inscripción (también la de una profesora, el peso y la talla y la reserva de cupo que vence), alta definitiva, baja, reactivación, cambios de plan y horarios, baja de horario con inscriptos, ocupación, paginación y el detalle de la baja con el motivo OTRO; la reactivación de quien nunca pagó | G-32 |
-| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`); el cobro en efectivo, la transferencia y su revisión por la API; la situación de cuota en la ficha y el listado de alumnos; el filtro del listado por estado de cuota y el historial de pagos en la ficha | H-19 |
+| H | `src/__tests__/integracion/cuotas-y-pagos.integration.test.ts` | Restricciones de cuotas y pagos, el pago del escenario de demostración el cobro en una sola transacción, el pago adelantado, el historial de cuotas y el precio que aplica el cobro según la vigencia (sobre los componentes, armados con `armarCuotasYPagos` de `cobro.ts`); el cobro en efectivo, la transferencia y su revisión por la API; la situación de cuota en la ficha y el listado de alumnos; el filtro del listado por estado de cuota y el historial de pagos en la ficha; los contratos de `IInfoCuotas` del Sprint 4, la rendición del efectivo y las promociones | H-27 |
 | I | `src/shared/db/__tests__/parametros-iniciales.integration.test.ts` | Carga de los parámetros del sistema | I-04 |
 | J | `src/__tests__/integracion/clases-y-asistencia.integration.test.ts` | Clases del día, lista y toma de asistencia con observaciones, cierre con el botón y cierre automático, corrección de días anteriores y clase cancelada (con el reloj fijo en un lunes) | J-17 |
 | K | `src/__tests__/integracion/parametros.integration.test.ts` | Los parámetros del sistema por la API: listado y edición de la propietaria con la validación de tipo y rango, los datos bancarios para el alumno y el tutor, y quién no puede verlos ni editarlos | K-18 |
+| L | `src/__tests__/integracion/suplencias.integration.test.ts` | Suplencias entre profesoras: registro, rechazos (también el registro simultáneo), cambio y baja, listado con filtros y las clases suplidas del período por `entorno.infoClases` (con el reloj fijo en un lunes) | L-15 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

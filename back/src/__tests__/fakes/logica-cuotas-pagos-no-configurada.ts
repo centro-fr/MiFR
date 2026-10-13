@@ -13,4 +13,8 @@ export const logicaCuotasPagosNoConfigurada = {
   listarTransferencias: operacionNoConfigurada,
   listarMisTransferencias: operacionNoConfigurada,
   obtenerComprobante: operacionNoConfigurada,
+  listarEfectivoPendiente: operacionNoConfigurada,
+  listarRendiciones: operacionNoConfigurada,
+  rendirCobro: operacionNoConfigurada,
+  rendirCobros: operacionNoConfigurada,
 } satisfies ILogicaCuotasPagos;

@@ -11,6 +11,7 @@ const transaccion = {
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
   pagos: { findMany: vi.fn(), findUnique: vi.fn() },
+  plan_precios: { findFirst: vi.fn() },
 };
 
 const AHORA = new Date("2026-10-09T15:00:00Z");
@@ -188,14 +189,213 @@ describe("PagoRepository", () => {
     });
   });
 
-  it("buscarParaComprobante trae los datos del comprobante, o null", async () => {
-    prisma.pagos.findUnique.mockResolvedValueOnce({ ...filaPago, cuota: { numero_cuota: 2 } });
+  it("buscarParaComprobante trae los datos del comprobante con el precio de lista del día de la cuota, o null", async () => {
+    // 01:00 UTC del 10/10: en Argentina la cuota se generó el 9.
+    const generada = new Date("2026-10-10T01:00:00Z");
+    const inscripcion = { id_plan: 2, plan: { nombre: "Intermedio" }, promocion: null, alumno };
+    prisma.pagos.findUnique.mockResolvedValueOnce({
+      ...filaPago,
+      cuota: {
+        numero_cuota: 2,
+        fecha_vencimiento: VENCIMIENTO,
+        fecha_generacion: generada,
+        monto: decimal(27000),
+        inscripcion,
+      },
+    });
+    prisma.plan_precios.findFirst.mockResolvedValueOnce({ precio: decimal(30000) });
 
     await expect(repositorio.buscarParaComprobante(7)).resolves.toMatchObject({
       monto: 30000,
-      cuota: { numero_cuota: 2 },
+      cuota: {
+        numero_cuota: 2,
+        monto: 27000,
+        inscripcion: { plan: { nombre: "Intermedio" }, promocion: null, alumno },
+      },
+      precio_lista: 30000,
     });
+    const dia = new Date("2026-10-09T00:00:00Z");
+    expect(prisma.plan_precios.findFirst).toHaveBeenCalledWith({
+      where: {
+        id_plan: 2,
+        fecha_vigencia_desde: { lte: dia },
+        OR: [{ fecha_vigencia_hasta: null }, { fecha_vigencia_hasta: { gte: dia } }],
+      },
+      select: { precio: true },
+    });
+
+    prisma.pagos.findUnique.mockResolvedValueOnce({
+      ...filaPago,
+      cuota: {
+        numero_cuota: 2,
+        fecha_vencimiento: VENCIMIENTO,
+        fecha_generacion: generada,
+        monto: decimal(1),
+        inscripcion,
+      },
+    });
+    prisma.plan_precios.findFirst.mockResolvedValueOnce(null);
+    await expect(repositorio.buscarParaComprobante(7)).resolves.toMatchObject({ precio_lista: null });
+
     prisma.pagos.findUnique.mockResolvedValueOnce(null);
     await expect(repositorio.buscarParaComprobante(8)).resolves.toBeNull();
+  });
+});
+
+describe("PagoRepository: rendición del efectivo (US-19)", () => {
+  const prismaRendicion = {
+    pagos: { groupBy: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+    profesoras: { findMany: vi.fn() },
+    $queryRaw: vi.fn(),
+  };
+  const EFECTIVO_DE_PROFESORA = {
+    forma_pago: "EFECTIVO",
+    estado: "CONFIRMADO",
+    id_profesora_cobra: { not: null },
+  };
+  const INICIO = new Date("2026-10-01T03:00:00Z");
+  const FIN = new Date("2026-11-01T03:00:00Z");
+  const filaCobro = {
+    id_pago: 7,
+    monto: decimal(25000),
+    fecha_pago: AHORA,
+    fecha_rendicion: null,
+    cuota: {
+      numero_cuota: 2,
+      fecha_vencimiento: VENCIMIENTO,
+      inscripcion: { plan: { nombre: "Intermedio" }, alumno },
+    },
+    profesora_cobra: { id_profesora: 3, usuario: { nombre: "Carla", apellido: "Ruiz" } },
+  };
+  const cobro = {
+    id_pago: 7,
+    monto: 25000,
+    fecha_pago: AHORA,
+    fecha_rendicion: null,
+    alumno: { id_alumno: 5, nombre: "Valentina", apellido: "Herrera" },
+    plan: "Intermedio",
+    cuota: { numero: 2, vencimiento: VENCIMIENTO },
+    profesora: { id_profesora: 3, nombre: "Carla", apellido: "Ruiz" },
+  };
+  let repositorio: PagoRepository;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    repositorio = new PagoRepository(prismaRendicion as unknown as PrismaClient);
+  });
+
+  it("totalesSinRendir agrupa en la base por profesora, con los nombres, y ordena por apellido", async () => {
+    prismaRendicion.pagos.groupBy.mockResolvedValue([
+      { id_profesora_cobra: 3, _count: { id_pago: 2 }, _sum: { monto: decimal(50000) } },
+      { id_profesora_cobra: 4, _count: { id_pago: 1 }, _sum: { monto: decimal(30000) } },
+    ]);
+    prismaRendicion.profesoras.findMany.mockResolvedValue([
+      { id_profesora: 3, usuario: { nombre: "Lucía", apellido: "Gómez" } },
+      { id_profesora: 4, usuario: { nombre: "Ana", apellido: "Gómez" } },
+    ]);
+
+    await expect(
+      repositorio.totalesSinRendir({ id_profesora: 3, inicio: INICIO, fin: FIN }),
+    ).resolves.toEqual([
+      { id_profesora: 4, nombre: "Ana", apellido: "Gómez", cantidad: 1, total: 30000 },
+      { id_profesora: 3, nombre: "Lucía", apellido: "Gómez", cantidad: 2, total: 50000 },
+    ]);
+    expect(prismaRendicion.pagos.groupBy.mock.calls[0][0].where).toEqual({
+      ...EFECTIVO_DE_PROFESORA,
+      rendido: false,
+      id_profesora_cobra: 3,
+      fecha_pago: { gte: INICIO, lt: FIN },
+    });
+  });
+
+  it("totalesSinRendir sin pendientes no busca profesoras", async () => {
+    prismaRendicion.pagos.groupBy.mockResolvedValue([]);
+
+    await expect(repositorio.totalesSinRendir({})).resolves.toEqual([]);
+    expect(prismaRendicion.profesoras.findMany).not.toHaveBeenCalled();
+    expect(prismaRendicion.pagos.groupBy.mock.calls[0][0].where).toEqual({
+      ...EFECTIVO_DE_PROFESORA,
+      rendido: false,
+    });
+  });
+
+  it("listarSinRendir trae los más viejos primero, con un extremo abierto y hasta el tope", async () => {
+    prismaRendicion.pagos.findMany.mockResolvedValue([filaCobro]);
+
+    await expect(repositorio.listarSinRendir({ fin: FIN }, 501)).resolves.toEqual([cobro]);
+    expect(prismaRendicion.pagos.findMany.mock.calls[0][0]).toMatchObject({
+      where: { ...EFECTIVO_DE_PROFESORA, rendido: false, fecha_pago: { lt: FIN } },
+      orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
+      take: 501,
+    });
+  });
+
+  it("listarRendidos pagina lo rendido por la fecha de rendición, con el total", async () => {
+    prismaRendicion.pagos.findMany.mockResolvedValue([{ ...filaCobro, fecha_rendicion: AHORA }]);
+    prismaRendicion.pagos.count.mockResolvedValue(31);
+
+    await expect(repositorio.listarRendidos({ inicio: INICIO }, { limit: 10, offset: 20 })).resolves.toEqual({
+      datos: [{ ...cobro, fecha_rendicion: AHORA }],
+      total: 31,
+    });
+    const where = { ...EFECTIVO_DE_PROFESORA, rendido: true, fecha_rendicion: { gte: INICIO } };
+    expect(prismaRendicion.pagos.findMany.mock.calls[0][0]).toMatchObject({
+      where,
+      orderBy: [{ fecha_rendicion: "desc" }, { id_pago: "desc" }],
+      take: 10,
+      skip: 20,
+    });
+    expect(prismaRendicion.pagos.count).toHaveBeenCalledWith({ where });
+  });
+
+  it("idsSinRendirDeProfesora trae los cobros pendientes de esa profesora", async () => {
+    prismaRendicion.pagos.findMany.mockResolvedValue([{ id_pago: 7 }, { id_pago: 9 }]);
+
+    await expect(repositorio.idsSinRendirDeProfesora(3)).resolves.toEqual([7, 9]);
+    expect(prismaRendicion.pagos.findMany.mock.calls[0][0].where).toEqual({
+      ...EFECTIVO_DE_PROFESORA,
+      rendido: false,
+      id_profesora_cobra: 3,
+    });
+  });
+
+  it("rendir marca en una sola sentencia solo el efectivo de profesora sin rendir y devuelve los rendidos", async () => {
+    prismaRendicion.$queryRaw.mockResolvedValue([{ id_pago: 7, monto: decimal(25000.5) }]);
+
+    await expect(repositorio.rendir([7, 8], AHORA)).resolves.toEqual([{ id_pago: 7, monto: 25000.5 }]);
+    const [consulta, ...valores] = prismaRendicion.$queryRaw.mock.calls[0];
+    const texto = consulta.join("?");
+    expect(texto).toContain("UPDATE pagos SET rendido = true, fecha_rendicion = ?");
+    expect(texto).toContain("forma_pago = 'EFECTIVO'");
+    expect(texto).toContain("estado = 'CONFIRMADO'");
+    expect(texto).toContain("id_profesora_cobra IS NOT NULL");
+    expect(texto).toContain("rendido = false");
+    expect(texto).toContain("RETURNING id_pago, monto");
+    expect(valores).toEqual([AHORA, [7, 8]]);
+  });
+
+  it("motivosSinRendir explica por qué no se rindió cada cobro", async () => {
+    prismaRendicion.pagos.findMany.mockResolvedValue([
+      { id_pago: 7, rendido: true, forma_pago: "EFECTIVO", estado: "CONFIRMADO", id_profesora_cobra: 3 },
+      { id_pago: 8, rendido: true, forma_pago: "EFECTIVO", estado: "CONFIRMADO", id_profesora_cobra: null },
+      {
+        id_pago: 9,
+        rendido: false,
+        forma_pago: "TRANSFERENCIA",
+        estado: "CONFIRMADO",
+        id_profesora_cobra: null,
+      },
+      { id_pago: 10, rendido: false, forma_pago: "EFECTIVO", estado: "RECHAZADO", id_profesora_cobra: 3 },
+    ]);
+
+    await expect(repositorio.motivosSinRendir([7, 8, 9, 10, 11])).resolves.toEqual(
+      new Map([
+        [7, "YA_RENDIDO"],
+        [8, "NO_ES_EFECTIVO_DE_PROFESORA"],
+        [9, "NO_ES_EFECTIVO_DE_PROFESORA"],
+        [10, "NO_ES_EFECTIVO_DE_PROFESORA"],
+        [11, "NO_EXISTE"],
+      ]),
+    );
   });
 });
