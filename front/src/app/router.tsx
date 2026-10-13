@@ -48,7 +48,6 @@ function paginaEnConstruccion(seccion: string): NonNullable<RouteObject["lazy"]>
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
   { path: "pagos", seccion: "Cobros y Cuotas" },
-  { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
   { path: "notificaciones", seccion: "Notificaciones" },
   { path: "reportes", seccion: "Reportes" },
@@ -103,9 +102,21 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        // US-20/21: la propietaria consulta fechas anteriores y corrige marcas individuales.
+        path: "asistencia",
+        element: guardiaDeSeccion("asistencia", "ASISTENCIAS_MARCAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "AsistenciaPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "AsistenciaPage") },
+        ],
+      },
+      {
         path: "hoy",
-        element: guardiaDeSeccion("hoy"),
-        children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "TeacherHomePage") }],
+        element: guardiaDeSeccion("hoy", "ASISTENCIAS_MARCAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "ClasesDeHoyPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "ClasesDeHoyPage") },
+        ],
       },
       {
         path: "inicio",

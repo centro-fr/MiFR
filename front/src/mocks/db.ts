@@ -36,6 +36,25 @@ export interface HorarioMock extends HorarioSemilla {
   fecha_baja: string | null;
 }
 
+export interface ClaseAsistenciaMock {
+  id_clase: number;
+  id_horario: number;
+  fecha_clase: string;
+  estado: "PROGRAMADA" | "DICTADA" | "CANCELADA";
+  fecha_cierre_asist: string | null;
+  observaciones: string | null;
+}
+
+export interface RegistroAsistenciaMock {
+  id_clase: number;
+  id_alumno: number;
+  id_inscripcion: number;
+  asistio: boolean;
+  observaciones: string | null;
+  id_usuario_registra: number | null;
+  fecha_registro: string;
+}
+
 // Estado en memoria que comparten todos los handlers, como la base del back:
 // así un horario nuevo ve las actividades y profesoras que ya existen.
 interface BaseMock {
@@ -51,6 +70,8 @@ interface BaseMock {
   planPrecios: PlanPrecioMock[];
   inscripciones: InscripcionMock[];
   pagos: PagoMock[];
+  clases: ClaseAsistenciaMock[];
+  asistencias: RegistroAsistenciaMock[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
 }
@@ -74,6 +95,8 @@ export const db: BaseMock = {
   planPrecios: structuredClone(PLAN_PRECIOS_SEMILLA),
   inscripciones: inscripcionesSemilla(),
   pagos: pagosSemilla(),
+  clases: [],
+  asistencias: [],
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
   idUsuarioSesion: leerUsuarioGuardado() ?? ID_USUARIO_SESION_INICIAL,

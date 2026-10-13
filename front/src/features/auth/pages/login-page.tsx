@@ -97,7 +97,7 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
 // Solo se pide con VITE_USE_MOCKS: así el selector de usuarios de prueba no entra al build real.
 const LoginMocksPanel = lazy(() => import("@/features/auth/components/login-mocks-panel"));
 
-// Con mocks, el login de desarrollo no tiene un email que tipear: se elige entre los usuarios de la semilla.
+// Con mocks se elige un perfil de la semilla, sin depender de la configuración del login de desarrollo.
 function MockUserPickerPage() {
   const flow = useLoginFlow();
   return (
@@ -108,16 +108,6 @@ function MockUserPickerPage() {
         onSelect={(email) => void flow.startLogin(() => Promise.resolve({ email }))}
       />
     </Suspense>
-  );
-}
-
-function MockLoginPage() {
-  const flow = useLoginFlow();
-  return (
-    <LoginLayout
-      flow={flow}
-      onLogin={() => void flow.startLogin(() => Promise.resolve({ idToken: "mock-google-id-token" }))}
-    />
   );
 }
 
@@ -145,13 +135,8 @@ function LoginDesarrolloPage() {
   );
 }
 
-<<<<<<< HEAD
-export function LoginPage() {
-  if (USE_MOCKS && LOGIN_DESARROLLO) return <MockUserPickerPage />;
-=======
 function VarianteDeLogin() {
->>>>>>> fad4076e6afc18213e7307a3027bf483377071b6
-  if (USE_MOCKS) return <MockLoginPage />;
+  if (USE_MOCKS) return <MockUserPickerPage />;
   if (LOGIN_DESARROLLO) return <LoginDesarrolloPage />;
   if (!GOOGLE_CLIENT_ID) return <LoginSinConfigurar />;
   return (

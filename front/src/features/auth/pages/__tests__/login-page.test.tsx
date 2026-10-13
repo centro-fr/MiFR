@@ -24,7 +24,7 @@ function errorHttp(status: number, code: string) {
 }
 
 function renderLogin(login: AuthContextValue["login"]) {
-  vi.mocked(useAuth).mockReturnValue({ ...crearSesion(null), login });
+  vi.mocked(useAuth).mockReturnValue({ ...crearSesion(null), login, loginDesarrollo: login });
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
       <MemoryRouter initialEntries={["/login"]}>
@@ -39,16 +39,25 @@ function renderLogin(login: AuthContextValue["login"]) {
   );
 }
 
-// La página renderiza la vista mobile y la de escritorio a la vez (se alterna con CSS), por eso se toma el primer elemento.
-function botonGoogle() {
-  return screen.getAllByRole("button", { name: /iniciar sesión con google/i })[0];
+const PERFIL_POR_ROL: Record<RoleCode, { etiqueta: string; email: string }> = {
+  PROPIETARIA: { etiqueta: "Propietaria + Profesora", email: "marina.sosa@example.com" },
+  PROFESORA: { etiqueta: "Profesora", email: "lucia.gomez@example.com" },
+  ALUMNO: { etiqueta: "Alumno", email: "camila.perez@example.com" },
+  TUTOR: { etiqueta: "Tutor", email: "mariana.lopez@example.com" },
+};
+
+async function seleccionarPerfil(rol: RoleCode) {
+  const selector = await screen.findByLabelText("Rol");
+  const opcion = await screen.findByRole("option", { name: PERFIL_POR_ROL[rol].etiqueta });
+  fireEvent.change(selector, { target: { value: opcion.getAttribute("value") ?? "" } });
 }
 
-// US-01: criterios de aceptación y estados de la pantalla, probados sobre el flujo completo.
+// US-01: selector de perfil mock y estados del flujo de autenticación de desarrollo.
 describe("LoginPage (US-01)", () => {
-  it("pantalla de login: muestra el botón de Google y ningún mensaje de error", () => {
+  it("con mocks muestra el selector de perfiles y ningún mensaje de error", async () => {
     renderLogin(vi.fn());
-    expect(botonGoogle()).toBeInTheDocument();
+    expect(await screen.findByLabelText("Rol")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Entrar" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -56,35 +65,29 @@ describe("LoginPage (US-01)", () => {
     ["PROPIETARIA", "Panel de la propietaria"],
     ["PROFESORA", "Clases de hoy"],
     ["ALUMNO", "Inicio del alumno"],
-  ] as [RoleCode, string][])("cuenta registrada con rol %s: ingresa y va a su pantalla de inicio", async (rol, pantalla) => {
+  ] as [RoleCode, string][])("al elegir el perfil %s ingresa a su pantalla de inicio", async (rol, pantalla) => {
     const login = vi.fn().mockResolvedValue(crearUsuario([rol]));
     renderLogin(login);
-    fireEvent.click(botonGoogle());
+    await seleccionarPerfil(rol);
+    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
     expect(await screen.findByText(pantalla)).toBeInTheDocument();
-    expect(login).toHaveBeenCalledTimes(1);
+    expect(login).toHaveBeenCalledWith(PERFIL_POR_ROL[rol].email);
   });
 
-  it("mientras autentica: muestra 'Iniciando sesión' y todavía no redirige", async () => {
+  it("mientras autentica deshabilita el botón y todavía no redirige", async () => {
     renderLogin(vi.fn(() => new Promise<never>(() => {})));
-    fireEvent.click(botonGoogle());
-    expect((await screen.findAllByRole("status", { name: "Iniciando sesión" })).length).toBeGreaterThan(0);
+    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
+    expect(await screen.findByRole("button", { name: "Entrando…" })).toBeDisabled();
     expect(screen.queryByText("Panel de la propietaria")).not.toBeInTheDocument();
   });
 
-  it("cuenta de Google no registrada: muestra 'Acceso no habilitado' y no ingresa", async () => {
-    renderLogin(vi.fn().mockRejectedValue(errorHttp(403, "USUARIO_NO_REGISTRADO")));
-    fireEvent.click(botonGoogle());
-    expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent("Acceso no habilitado");
-    expect(screen.queryByText("Panel de la propietaria")).not.toBeInTheDocument();
-  });
-
-  it("error de red al validar el token: avisa de la conexión y permite reintentar hasta ingresar", async () => {
-    const login = vi.fn().mockRejectedValueOnce(new AxiosError("Network Error")).mockResolvedValueOnce(crearUsuario(["PROFESORA"]));
+  it("si falla el ingreso, informa el error y permite reintentar", async () => {
+    const login = vi.fn().mockRejectedValueOnce(errorHttp(500, "ERROR_SERVIDOR")).mockResolvedValueOnce(crearUsuario(["PROFESORA"]));
     renderLogin(login);
-    fireEvent.click(botonGoogle());
-    expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent("Verificá tu conexión");
+    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo iniciar sesión con ese perfil.");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /reintentar con google/i })[0]);
+    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
     expect(await screen.findByText("Clases de hoy")).toBeInTheDocument();
     expect(login).toHaveBeenCalledTimes(2);
   });
