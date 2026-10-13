@@ -40,11 +40,14 @@ import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.
 import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
 import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
+import type { IInfoClases } from "./modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
 import { ClaseRepository } from "./modules/gestion-inscripciones-y-clases/clase/clase.repository.js";
 import { ClaseService } from "./modules/gestion-inscripciones-y-clases/clase/clase.service.js";
 import { AsistenciaRepository } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.repository.js";
 import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.service.js";
 import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
+import { SuplenciaRepository } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.repository.js";
+import { SuplenciaService } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -53,11 +56,13 @@ export interface PiezasDeInfraestructura {
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
-// tests de integración dan el alta definitiva sin pasar por un cobro; y el cierre automático de la
-// asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
+// tests de integración dan el alta definitiva sin pasar por un cobro; IInfoClases, con la que prueban
+// las clases suplidas que lee la liquidación (US-23) mientras no tiene endpoint; y el cierre automático
+// de la asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
+  infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
 }
 
@@ -133,6 +138,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     asistenciaService,
     cierreAsistencia,
     unidadDeTrabajo,
+    new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
@@ -154,6 +160,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       autorizacion: rolService,
     },
     infoInscripciones: inscripcionService,
+    infoClases: claseService,
     cierreAsistencia,
   };
 }

@@ -83,6 +83,10 @@ const OPERACIONES_ESPERADAS = [
   "post /clases/{id}/cerrar",
   "get /clases",
   "post /clases/{id}/cancelar",
+  "get /suplencias",
+  "post /suplencias",
+  "patch /suplencias/{idClase}",
+  "delete /suplencias/{idClase}",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {

@@ -18,3 +18,15 @@ export interface HorarioDeClase {
   id_horario: number;
   id_profesora: number;
 }
+
+// Una clase cubierta por una suplente (US-24), con lo que necesita la liquidación de honorarios
+// (US-23): a quién se le suma, a quién se le descuenta y cuánto duró.
+export interface ClaseSuplida {
+  id_clase: number;
+  id_horario: number;
+  fecha_clase: Date;
+  hora_inicio: Date;
+  hora_fin: Date;
+  id_prof_suplente: number;
+  id_prof_ausente: number;
+}

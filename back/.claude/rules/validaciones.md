@@ -18,6 +18,7 @@ Cada `<x>.schemas.ts` arma sus campos con los esquemas compartidos de `src/share
 | `dniSchema` | `esquemas-persona.ts` | Entre 6 y 10 dígitos, sin puntos ni ceros adelante |
 | `telefonoSchema` | `esquemas-persona.ts` | Dígitos, espacios, guiones, paréntesis y un `+` inicial; empieza con `+`, dígito o paréntesis (`"-1234567"` no); entre 7 y 15 dígitos y 20 caracteres |
 | `emailSchema` | `esquemas-persona.ts` | Email válido, recortado y en minúsculas, hasta 120 caracteres |
+| `fechaSchema` | `esquemas-fecha.ts` | Fecha `AAAA-MM-DD` que existe en el calendario, convertida a las 00:00 UTC para una columna `DATE` |
 | `fechaNacimientoSchema` | `esquemas-persona.ts` | Fecha que existe en el calendario (`2026-02-30` no), entre 1900-01-01 y hoy en Argentina |
 
 ## Reglas

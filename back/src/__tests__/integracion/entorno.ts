@@ -5,6 +5,7 @@ import { createApp } from "../../app.js";
 import { construirSistema } from "../../composicion.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
+import type { IInfoClases } from "../../modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
 import type { IAutenticacionGoogleAuth } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
 import { JwtService } from "../../modules/gestion-usuarios/sesion/jwt.service.js";
 import { crearPrismaDePrueba } from "./base-de-prueba.js";
@@ -22,6 +23,8 @@ export interface EntornoDeIntegracion {
   prisma: PrismaClient;
   // El alta definitiva sin pasar por un cobro, para los tests que solo necesitan una inscripción activa.
   infoInscripciones: IInfoInscripciones;
+  // Las clases suplidas que lee la liquidación (US-23), que todavía no tiene endpoint.
+  infoClases: IInfoClases;
   // El cierre automático de la asistencia (US-21), para correrlo con la hora que pide cada caso.
   cierreAsistencia: CierreAsistenciaService;
   iniciarSesion(email: string): Promise<string>;
@@ -30,7 +33,7 @@ export interface EntornoDeIntegracion {
 
 export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
-  const { dependencias, infoInscripciones, cierreAsistencia } = construirSistema({
+  const { dependencias, infoInscripciones, infoClases, cierreAsistencia } = construirSistema({
     prisma,
     googleAuth: googleSimulado,
     jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
@@ -52,6 +55,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     app,
     prisma,
     infoInscripciones,
+    infoClases,
     cierreAsistencia,
     iniciarSesion,
     cerrar: () => prisma.$disconnect(),

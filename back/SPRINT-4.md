@@ -8,7 +8,7 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 | US-19 | Control de efectivo pendiente de rendición | Hecho | Francisco |
 | US-26 | Resumen diario para la propietaria | Pendiente | Francisco |
 | US-22 | Detección de alumnos inactivos con cuota al día | Pendiente | Nicolas |
-| US-24 | Registro de suplencias entre profesoras | Pendiente | Nicolas |
+| US-24 | Registro de suplencias entre profesoras | Hecho (falta EA y la regla del período liquidado) | Nicolas |
 | US-25 | Aviso automático de vencimiento de cuota | Pendiente | Nicolas |
 | US-23 | Informe mensual automático de honorarios | Pendiente | Rosario |
 
@@ -86,7 +86,7 @@ Cómo trabajar en paralelo sin bloquearse:
 1. [ ] **Día 1:** subir a `dev` los contratos, solo los tipos, para que cada uno programe contra la interfaz de los otros y la reemplace por un fake en los tests unitarios:
    - `gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.catalogo.ts` (Rosario): `INASISTENCIAS_CONSECUTIVAS_INACTIVO` (`ENTERO`, 3), `DIAS_AVISO_VENCIMIENTO` (`ENTERO`, 3) y `HORA_RESUMEN_DIARIO` (`TEXTO` con formato `HH:MM`, `20:00`). Los usan Nicolas y Francisco.
    - `calculos-del-negocio/calculador-honorarios/interface/i-calculo-honorarios.ts` (Rosario implementa y usa).
-   - `IInfoClases.suplenciasEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): cada clase suplida con fecha, horario, suplente (`id_prof_dictante`) y ausente (`id_prof_ausente`).
+   - [x] `IInfoClases.listarSuplidasEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): cada clase suplida con fecha, horario, horas, suplente (`id_prof_suplente`) y ausente (`id_prof_ausente`), sin las canceladas. Hecha con US-24.
    - `IInfoInscripciones.aCargoEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): las inscripciones que estuvieron `ACTIVA` en algún día del período, con profesora, plan, `sin_cargo`, alta y baja.
    - [x] `IInfoCuotas.cobradoEnPeriodo(idsInscripcion, desde, hasta)` y `IInfoCuotas.paraAvisoDeVencimiento(fecha, diasPrevios)` (Francisco implementa; usan Rosario y Nicolas). Implementados, no solo los tipos (13/10/2026, PI-57). `cobradoEnPeriodo` devuelve un `Map` con todas las inscripciones pedidas (0 si no hubo cobros) y toma la fecha del pago. `paraAvisoDeVencimiento` devuelve el `tipo` del aviso, la cuota, el plan y el alumno con su tutor; quién lo recibe lo decide quien registra la notificación. Con 0 días de gracia avisa la vencida al día siguiente del vencimiento, como la ficha (`ICalculoHabilitacion`), y no el mismo día: hay que revisarlo con la regla de US-25.
    - `gestion-notificaciones/notificacion/`: tipos y firma de `registrar` (Nicolas implementa, usa Francisco para el resumen diario).
@@ -94,7 +94,7 @@ Cómo trabajar en paralelo sin bloquearse:
    Si al implementar hace falta cambiar un contrato, se acuerda entre quien lo provee y quien lo usa, y se sube a `dev` antes que el resto.
 2. **Regla dura 2:** cada uno agrega al `.puml` y a EA las dependencias que le faltan al diagrama (las marcadas arriba) en el primer commit de su parte, antes de codificarla.
 3. **Migraciones:** todas las tablas nuevas apuntan a tablas que ya están en `dev`, así que nadie espera a nadie. Para que no choquen en el orden: Nicolas (`suplencias`, `notificaciones`) → Francisco (`promociones`, `promocion_planes` y la FK de `inscripciones.id_promocion`) → Rosario (`tarifas_honorario`, `liquidaciones`, `liquidacion_detalles`). Antes de generar una, traer `dev` a la rama propia; si dos se generan en paralelo, la segunda en integrarse se vuelve a generar sobre la primera.
-4. **Rosario** puede arrancar el calculador ya: no toca la base y prueba con datos armados a mano. `Liquidacion` se integra cuando estén `suplenciasEnPeriodo` y `aCargoEnPeriodo`.
+4. **Rosario** puede arrancar el calculador ya: no toca la base y prueba con datos armados a mano. `Liquidacion` se integra cuando estén `listarSuplidasEnPeriodo` (ya hecha) y `aCargoEnPeriodo`.
 5. **Francisco** arranca por US-19 y US-13; el resumen diario (US-26) va al final, cuando `Notificacion` esté en `dev`.
 6. Cada uno suma sus datos al escenario de demostración (`src/shared/db/datos-demo.ts`) y sus casos a `PRUEBAS-INTEGRACION.md` (desde PI-57: PI-53 a PI-56 ya se usaron al cerrar el Sprint 3). El front trabaja con Swagger y el seed, así que cada ruta nueva se documenta en su `<x>.openapi.ts` y se suma a `src/__tests__/openapi.test.ts`.
 7. Las **diferencias** con las specs y el SDD están al final del archivo: se cierran entre los tres antes de escribir las migraciones.
@@ -200,24 +200,28 @@ Lo que hay que saber:
 
 El DER ya resuelve quién dicta: la suplente pasa a ser `clases.id_prof_dictante` y `suplencias` guarda a la titular ausente (`id_prof_ausente`). Así la suplente toma asistencia sin cambios en US-20, que ya habilita a la profesora dictante.
 
+### Hecho (US-24)
+
+- [x] Agregar al `.puml` que `Suplencia` requiere `IInfoProfesores` (regla dura 2).
+- [x] Modelo `suplencias` en Prisma + migración `agregar_suplencias` (PK `(id_clase, id_prof_ausente)`, FK a `clases`, `profesoras` y `usuarios`).
+- [x] Componente `gestion-inscripciones-y-clases/suplencia/`; sus operaciones son la parte `ILogicaSuplencias` de `ILogicaInscripcionesYClases`.
+- [x] `POST /api/v1/suplencias` (`id_horario`, `fecha_clase`, `id_profesora_suplente`, `motivo` opcional): materializa la clase si todavía no existe (`IInfoClases.materializar`; el único `(id_horario, fecha_clase)` evita duplicarla), registra a la titular como ausente y pone a la suplente como dictante, en una transacción y con el bloqueo de la clase.
+- [x] `GET /api/v1/suplencias`: filtros por rango de fechas, profesora (titular o suplente) y actividad, paginado.
+- [x] `PATCH /api/v1/suplencias/:idClase` (cambiar la suplente o el motivo: la última vale) y `DELETE /api/v1/suplencias/:idClase` (devuelve la clase a la titular).
+- [x] Solo la propietaria: rol `PROPIETARIA` + `HONORARIOS_VER_TODOS` para listar y `HONORARIOS_LIQUIDAR` para registrar, cambiar y borrar. Cada cambio queda en la auditoría (`SUPLENCIA_REGISTRADA`, `SUPLENCIA_MODIFICADA`, `SUPLENCIA_ELIMINADA`).
+- [x] `IInfoClases.listarSuplidasEnPeriodo(desde, hasta)` para la liquidación (US-23): cada clase suplida con fecha, horario, horas, suplente (`id_prof_suplente`) y ausente (`id_prof_ausente`), sin las canceladas.
+- [x] **Reglas**:
+  - [x] Titular y suplente distintas → si no, 400.
+  - [x] La suplente es una profesora activa (`IInfoProfesores`) → si no, 409. La titular puede estar dada de baja (suplencia retroactiva).
+  - [x] La fecha corresponde al día de la semana del horario y el horario regía ese día → si no, 400 y 409.
+  - [x] Clase `CANCELADA` → 409. Clase ya suplida → 409 (se cambia con `PATCH`).
+  - [x] Fecha futura: se permite, con una advertencia en la respuesta.
+- [x] Tests unitarios (100 %) y de integración: PI-60 a PI-63 (L-01 a L-15).
+
 ### Pendiente (US-24)
 
-- [ ] Agregar al `.puml` y a EA que `Suplencia` requiere `IInfoProfesores` (regla dura 2).
-- [ ] Modelo `suplencias` en Prisma + migración (PK `(id_clase, id_prof_ausente)`, FK a `clases`, `profesoras` y `usuarios`).
-- [ ] Componente `gestion-inscripciones-y-clases/suplencia/`; las operaciones para la API se suman a `ILogicaInscripcionesYClases`.
-- [ ] `POST /api/v1/suplencias` (`id_horario`, `fecha_clase`, `id_profesora_suplente`, `motivo` opcional): materializa la clase si todavía no existe (el único `(id_horario, fecha_clase)` evita duplicarla), registra a la titular como ausente y pone a la suplente como dictante, en una transacción.
-- [ ] `GET /api/v1/suplencias`: filtros por rango de fechas, profesora (titular o suplente) y actividad.
-- [ ] `PATCH /api/v1/suplencias/:idClase` (cambiar la suplente: la última vale) y `DELETE /api/v1/suplencias/:idClase` (devuelve la clase a la titular).
-- [ ] Solo la propietaria (rol `PROPIETARIA` + `HONORARIOS_LIQUIDAR`, porque mueve plata entre profesoras).
-- [ ] `IInfoClases.suplenciasEnPeriodo(desde, hasta)` para la liquidación (US-23).
-- [ ] **Reglas**:
-  - [ ] Titular y suplente distintas → si no, 400.
-  - [ ] La suplente es una profesora activa (`IInfoProfesores`) → si no, 409. La titular puede estar dada de baja (suplencia retroactiva).
-  - [ ] La fecha corresponde al día de la semana del horario → si no, 400.
-  - [ ] Clase `CANCELADA` → 409. Clase ya suplida → 409 con la suplencia existente (se cambia con `PATCH`).
-  - [ ] Fecha futura: se permite, con una advertencia en la respuesta.
-  - [ ] No se modifica ni se borra una suplencia de un período con liquidación `CERRADA` o `PAGADA` (ver decisiones).
-- [ ] Tests del service y de integración (registro, suplente que toma asistencia, borrar y volver a la titular).
+- [ ] Reflejar en el `.eap` de Enterprise Architect que `Suplencia` requiere `IInfoProfesores` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [ ] No se modifica ni se borra una suplencia de un período con liquidación `CERRADA` o `PAGADA`: espera a las liquidaciones de US-23 y a la decisión de "Suplencia en un período liquidado".
 
 ## US-22 – Detección de alumnos inactivos con cuota al día
 

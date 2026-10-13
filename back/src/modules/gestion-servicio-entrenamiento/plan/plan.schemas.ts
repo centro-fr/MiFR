@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { enteroNoNegativoSchema, montoSchema } from "../../../shared/utils/esquemas-numero.js";
+import { fechaSchema as fecha } from "../../../shared/utils/esquemas-fecha.js";
 import {
   textoBusquedaSchema,
   textoOpcionalSchema,
@@ -16,13 +17,6 @@ const id_actividad_exclusiva = idSchema.nullable().optional();
 const profesora_unica = z.boolean();
 
 const precio = montoSchema("precio");
-
-// Llega como AAAA-MM-DD y se guarda en una columna DATE: se convierte a las 00:00 UTC, que es
-// como Prisma espera ese tipo.
-const fecha = z
-  .string({ invalid_type_error: "La fecha debe tener formato AAAA-MM-DD" })
-  .date("La fecha debe tener formato AAAA-MM-DD")
-  .transform((valor) => new Date(`${valor}T00:00:00Z`));
 
 interface DatosDeFrecuencia {
   tipo?: "MENSUAL" | "CLASE_SUELTA";

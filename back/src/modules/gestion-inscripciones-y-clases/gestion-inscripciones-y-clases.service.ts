@@ -24,6 +24,13 @@ import type {
   SituacionCuotaEnClase,
 } from "./interface/i-logica-inscripciones-y-clases.js";
 import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";
+import type {
+  CambiarSuplenciaInput,
+  ListarSuplenciasQuery,
+  RegistrarSuplenciaInput,
+} from "./suplencia/suplencia.schemas.js";
+import type { SuplenciaService } from "./suplencia/suplencia.service.js";
+import type { SuplenciaConDatos, SuplenciaRegistrada } from "./suplencia/suplencia.types.js";
 
 function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): SituacionCuotaEnClase | null {
   if (!habilitacion) return null;
@@ -47,6 +54,7 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     private readonly asistencias: AsistenciaService,
     private readonly cierreAsistencia: CierreAsistenciaService,
     private readonly unidadDeTrabajo: IUnidadDeTrabajo,
+    private readonly suplencias: SuplenciaService,
   ) {}
 
   crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
@@ -140,6 +148,26 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
       await this.clases.cancelar(idClase);
     });
     return this.clases.obtenerPara(idClase, solicitante);
+  }
+
+  listarSuplencias(filtro: ListarSuplenciasQuery): Promise<SuplenciaConDatos[]> {
+    return this.suplencias.listar(filtro);
+  }
+
+  registrarSuplencia(input: RegistrarSuplenciaInput, idUsuario: number): Promise<SuplenciaRegistrada> {
+    return this.suplencias.registrar(input, idUsuario);
+  }
+
+  cambiarSuplencia(
+    idClase: number,
+    input: CambiarSuplenciaInput,
+    idUsuario: number,
+  ): Promise<SuplenciaConDatos> {
+    return this.suplencias.cambiar(idClase, input, idUsuario);
+  }
+
+  eliminarSuplencia(idClase: number): Promise<SuplenciaConDatos> {
+    return this.suplencias.eliminar(idClase);
   }
 
   // Materializa antes de cerrar: una clase que ya terminó y nadie había pedido sale cerrada. La
