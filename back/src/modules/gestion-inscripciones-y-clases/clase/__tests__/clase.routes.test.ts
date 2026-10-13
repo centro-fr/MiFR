@@ -20,6 +20,8 @@ function crearLogicaMock() {
     marcarAsistencia: vi.fn().mockResolvedValue(undefined),
     marcarTodosPresentes: vi.fn().mockResolvedValue(undefined),
     cerrarAsistencia: vi.fn().mockResolvedValue({ id_clase: 20, estado: "DICTADA" }),
+    listarClasesDeFecha: vi.fn().mockResolvedValue([]),
+    cancelarClase: vi.fn().mockResolvedValue({ id_clase: 20, estado: "CANCELADA" }),
   };
 }
 
@@ -73,6 +75,8 @@ describe("rutas de clases y asistencia", () => {
     ["put", "/clases/20/asistencia/5"],
     ["post", "/clases/20/asistencia/todos-presentes"],
     ["post", "/clases/20/cerrar"],
+    ["get", "/clases?fecha=2026-10-01"],
+    ["post", "/clases/20/cancelar"],
   ] as const)("%s %s responde 403 sin ASISTENCIAS_MARCAR", async (metodo, ruta) => {
     vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
 
@@ -127,6 +131,60 @@ describe("rutas de clases y asistencia", () => {
     expect(cierre.status).toBe(200);
     expect(cierre.body).toMatchObject({ estado: "DICTADA" });
     expect(logica.cerrarAsistencia).toHaveBeenCalledWith(20, profesora);
+  });
+
+  it("GET /clases?fecha= lleva a la lógica la fecha convertida y quién pide", async () => {
+    const respuesta = await como("get", "/clases?fecha=2026-10-01", "propietaria");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.listarClasesDeFecha).toHaveBeenCalledWith(new Date("2026-10-01T00:00:00Z"), {
+      idUsuario: 1,
+      esPropietaria: true,
+    });
+  });
+
+  it.each(["", "?fecha=2026-02-30", "?fecha=2999-01-01"])(
+    "GET /clases%s responde 400 sin llegar a la lógica",
+    async (consulta) => {
+      const respuesta = await como("get", `/clases${consulta}`, "propietaria");
+
+      expect(respuesta.status).toBe(400);
+      expect(logica.listarClasesDeFecha).not.toHaveBeenCalled();
+    },
+  );
+
+  it("POST /clases/:id/cancelar cancela la clase de la propietaria", async () => {
+    const respuesta = await como("post", "/clases/20/cancelar", "propietaria");
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toMatchObject({ estado: "CANCELADA" });
+    expect(logica.cancelarClase).toHaveBeenCalledWith(20, { idUsuario: 1, esPropietaria: true });
+  });
+
+  it.each([
+    ["get", "/clases?fecha=2026-10-01"],
+    ["post", "/clases/20/cancelar"],
+  ] as const)("%s %s es solo de la propietaria: la profesora recibe 403", async (metodo, ruta) => {
+    const respuesta = await como(metodo, ruta);
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.listarClasesDeFecha).not.toHaveBeenCalled();
+    expect(logica.cancelarClase).not.toHaveBeenCalled();
+  });
+
+  it("PUT /clases/:id/asistencia/:idAlumno lleva las observaciones", async () => {
+    const respuesta = await como("put", "/clases/20/asistencia/5").send({
+      asistio: true,
+      observaciones: "Llegó tarde",
+    });
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.marcarAsistencia).toHaveBeenCalledWith(
+      20,
+      5,
+      { asistio: true, observaciones: "Llegó tarde" },
+      profesora,
+    );
   });
 
   it("traduce los errores de negocio a 404 y 409", async () => {

@@ -17,4 +17,6 @@ export const logicaInscripcionesNoConfigurada = {
   marcarAsistencia: operacionNoConfigurada,
   marcarTodosPresentes: operacionNoConfigurada,
   cerrarAsistencia: operacionNoConfigurada,
+  listarClasesDeFecha: operacionNoConfigurada,
+  cancelarClase: operacionNoConfigurada,
 } satisfies ILogicaInscripcionesYClases;

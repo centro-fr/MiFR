@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import type { ILogicaClasesYAsistencia } from "../interface/i-logica-inscripciones-y-clases.js";
-import { claseIdParamSchema } from "./clase.schemas.js";
+import { claseIdParamSchema, listarClasesQuerySchema } from "./clase.schemas.js";
 import { createClaseController } from "./clase.controller.js";
 import { claseYAlumnoParamSchema, marcarAsistenciaSchema } from "../asistencia/asistencia.schemas.js";
 
@@ -12,6 +12,12 @@ export function createClaseRoutes(logica: ILogicaClasesYAsistencia, acceso: Cont
 
   router.use(acceso.sesion, acceso.permiso("ASISTENCIAS_MARCAR"));
   router.get("/hoy", controller.listarDelDia);
+  router.get(
+    "/",
+    acceso.rol("PROPIETARIA"),
+    validate({ query: listarClasesQuerySchema }),
+    controller.listarDeFecha,
+  );
   router.get("/:id/asistencia", validate({ params: claseIdParamSchema }), controller.obtenerAsistencia);
   router.put(
     "/:id/asistencia/:idAlumno",
@@ -24,6 +30,12 @@ export function createClaseRoutes(logica: ILogicaClasesYAsistencia, acceso: Cont
     controller.marcarTodosPresentes,
   );
   router.post("/:id/cerrar", validate({ params: claseIdParamSchema }), controller.cerrar);
+  router.post(
+    "/:id/cancelar",
+    acceso.rol("PROPIETARIA"),
+    validate({ params: claseIdParamSchema }),
+    controller.cancelar,
+  );
 
   return router;
 }

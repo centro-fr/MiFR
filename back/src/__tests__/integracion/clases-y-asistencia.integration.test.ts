@@ -11,8 +11,8 @@ import {
   type PlanDePrueba,
 } from "./fabricas.js";
 
-// Casos PI-47 a PI-50: las clases del día, la toma de asistencia (US-20) y el cierre con los
-// ausentes (US-21). El reloj queda fijo el lunes 12/10/2026 a las 15:00 de Argentina: la clase de
+// Casos PI-47 a PI-50, PI-55 y PI-56: las clases del día, la toma de asistencia (US-20), el cierre
+// con los ausentes (US-21), la corrección de días anteriores y la clase cancelada. El reloj queda fijo el lunes 12/10/2026 a las 15:00 de Argentina: la clase de
 // Lucía de 20:00 a 21:00 es de hoy y todavía no terminó. Solo se simula Date: la base y los
 // pedidos corren con sus temporizadores reales.
 const entorno = crearEntornoDeIntegracion();
@@ -37,8 +37,10 @@ interface Escenario {
   idHorario: number;
   idOtroHorario: number;
   idLucia: number;
-  // Los cinco inscriptos vigentes, en el orden de la lista (por apellido).
+  // Los cinco inscriptos activos, en el orden de la lista (por apellido).
   vigentes: { id_alumno: number; id_inscripcion: number }[];
+  // Pre-inscripto en el mismo horario, con la reserva vigente: ocupa cupo, pero no está en la clase.
+  idPreinscripto: number;
   idDadoDeBaja: number;
   idDeOtroHorario: number;
 }
@@ -84,11 +86,12 @@ async function armarEscenario(): Promise<Escenario> {
     ["Acosta", "ACTIVA"],
     ["Benítez", "ACTIVA"],
     ["Castro", "ACTIVA"],
-    ["Díaz", "PREINSCRIPTA"],
+    ["Díaz", "ACTIVA"],
     ["Escobar", "ACTIVA"],
   ] as const) {
     vigentes.push(await inscribir(plan, idLucia, idHorario, apellido, estado));
   }
+  const preinscripto = await inscribir(plan, idLucia, idHorario, "Ibarra", "PREINSCRIPTA", HOY);
   const dadoDeBaja = await inscribir(plan, idLucia, idHorario, "Ferreyra", "BAJA");
   await prisma.alumnos.update({ where: { id_alumno: dadoDeBaja.id_alumno }, data: { estado: "BAJA" } });
   // Se dio de baja hoy: su horario todavía figura vigente este día y solo lo saca el estado.
@@ -105,6 +108,7 @@ async function armarEscenario(): Promise<Escenario> {
     idOtroHorario,
     idLucia,
     vigentes,
+    idPreinscripto: preinscripto.id_alumno,
     idDadoDeBaja: dadoDeBaja.id_alumno,
     idDeOtroHorario: deOtroHorario.id_alumno,
   };
@@ -116,6 +120,7 @@ async function inscribir(
   idHorario: number,
   apellido: string,
   estado: "PREINSCRIPTA" | "ACTIVA" | "BAJA",
+  fecha_inicio?: Date,
 ) {
   const { id_alumno } = await crearAlumno(prisma, {
     apellido,
@@ -127,6 +132,7 @@ async function inscribir(
     id_profesora: idProfesora,
     id_horario: idHorario,
     estado,
+    fecha_inicio,
   });
   return { id_alumno, id_inscripcion };
 }
@@ -195,8 +201,8 @@ function asistenciasDe(idClase: number) {
   return prisma.asistencias.findMany({ where: { id_clase: idClase }, orderBy: { id_alumno: "asc" } });
 }
 
-function marcar(idClase: number, idAlumno: number, asistio: boolean, email = LUCIA) {
-  return pedir("put", `/clases/${idClase}/asistencia/${idAlumno}`, email, { asistio });
+function marcar(idClase: number, idAlumno: number, asistio: boolean, email = LUCIA, observaciones?: string) {
+  return pedir("put", `/clases/${idClase}/asistencia/${idAlumno}`, email, { asistio, observaciones });
 }
 
 describe("PI-47: las clases del día y su lista de asistencia", () => {
@@ -218,7 +224,8 @@ describe("PI-47: las clases del día y su lista de asistencia", () => {
       estado: "PROGRAMADA",
       fecha_clase: HOY.toISOString(),
       inscriptos: 5,
-      cupo_disponible: 5,
+      // Cupo 10: los cinco activos y el pre-inscripto con la reserva vigente.
+      cupo_disponible: 4,
     });
     expect(await prisma.clases.count({ where: { id_horario: escenario.idHorario } })).toBe(1);
     expect(await prisma.clases.count({ where: { id_horario: escenario.idOtroHorario } })).toBe(0);
@@ -241,7 +248,7 @@ describe("PI-47: las clases del día y su lista de asistencia", () => {
     ).toBe(false);
   });
 
-  it("la lista trae a los inscriptos vigentes del horario con su situación de cuota, sin el dado de baja ni el de otro horario", async () => {
+  it("la lista trae a los inscriptos activos del horario con su situación de cuota, sin el pre-inscripto, el dado de baja ni el de otro horario", async () => {
     const idClase = await claseDeHoy();
 
     const respuesta = await pedir("get", `/clases/${idClase}/asistencia`, LUCIA);
@@ -299,11 +306,12 @@ describe("PI-48: marcar asistencia", () => {
     ]);
   });
 
-  it("no se marca a un alumno de otro horario ni a uno dado de baja, ni en la clase de otra profesora", async () => {
+  it("no se marca a un alumno de otro horario, a uno dado de baja ni a un pre-inscripto, ni en la clase de otra profesora", async () => {
     const idClase = await claseDeHoy();
 
     expect((await marcar(idClase, escenario.idDeOtroHorario, true)).status).toBe(404);
     expect((await marcar(idClase, escenario.idDadoDeBaja, true)).status).toBe(404);
+    expect((await marcar(idClase, escenario.idPreinscripto, true)).status).toBe(404);
     expect((await marcar(idClase, escenario.vigentes[0]!.id_alumno, true, CARLA)).status).toBe(404);
     expect((await pedir("get", `/clases/${idClase}/asistencia`, CARLA)).status).toBe(404);
     expect(await asistenciasDe(idClase)).toEqual([]);
@@ -325,6 +333,28 @@ describe("PI-48: marcar asistencia", () => {
     expect(await asistenciasDe(pasada.id_clase)).toEqual([
       expect.objectContaining({ id_alumno: ana.id_alumno, asistio: true }),
     ]);
+  });
+
+  it("las observaciones se guardan con la marca, se conservan si no vienen y se borran con un texto vacío", async () => {
+    const idClase = await claseDeHoy();
+    const ana = escenario.vigentes[0]!.id_alumno;
+    const observaciones = async () =>
+      (
+        await prisma.asistencias.findUniqueOrThrow({
+          where: { id_clase_id_alumno: { id_clase: idClase, id_alumno: ana } },
+        })
+      ).observaciones;
+
+    expect((await marcar(idClase, ana, true, LUCIA, "  Llegó tarde ")).status).toBe(200);
+    expect(await observaciones()).toBe("Llegó tarde");
+    const lista = await pedir("get", `/clases/${idClase}/asistencia`, LUCIA);
+    expect(lista.body.inscriptos[0]).toMatchObject({ id_alumno: ana, observaciones: "Llegó tarde" });
+
+    await marcar(idClase, ana, false);
+    expect(await observaciones()).toBe("Llegó tarde");
+    await marcar(idClase, ana, false, LUCIA, "");
+    expect(await observaciones()).toBeNull();
+    expect((await marcar(idClase, ana, true, LUCIA, "a".repeat(256))).status).toBe(400);
   });
 
   it("todos presentes marca a los inscriptos vigentes y pisa una marca anterior", async () => {
@@ -361,6 +391,7 @@ describe("PI-49: cerrar la asistencia con el botón", () => {
     );
     expect(ausentes.every(({ id_usuario_registra }) => id_usuario_registra === null)).toBe(true);
     expect(asistencias.some(({ id_alumno }) => id_alumno === escenario.idDadoDeBaja)).toBe(false);
+    expect(asistencias.some(({ id_alumno }) => id_alumno === escenario.idPreinscripto)).toBe(false);
   });
 
   it("después del cierre la profesora no marca más y la propietaria corrige", async () => {
@@ -455,5 +486,84 @@ describe("PI-50: cierre automático al terminar la clase", () => {
     expect(
       respuesta.body.inscriptos.filter(({ asistencia }: { asistencia: string }) => asistencia === "ausente"),
     ).toHaveLength(4);
+  });
+});
+
+describe("PI-55: la propietaria corrige las clases de un día anterior", () => {
+  const LUNES_PASADO = "2026-10-05";
+
+  it("las clases de ese día se crean con los horarios que regían, salen cerradas sin ausentes y la propietaria las corrige", async () => {
+    // El horario se dio de baja después del lunes pasado: ese día todavía regía.
+    await prisma.horarios.update({
+      where: { id_horario: escenario.idHorario },
+      data: { fecha_baja: new Date("2026-10-08T00:00:00Z") },
+    });
+
+    const respuesta = await pedir("get", `/clases?fecha=${LUNES_PASADO}`, EMAIL_MULTIROL_DEMO);
+    const otraVez = await pedir("get", `/clases?fecha=${LUNES_PASADO}`, EMAIL_MULTIROL_DEMO);
+
+    expect(respuesta.status).toBe(200);
+    expect(otraVez.body.map(({ id_clase }: { id_clase: number }) => id_clase)).toEqual(
+      respuesta.body.map(({ id_clase }: { id_clase: number }) => id_clase),
+    );
+    const pasada = respuesta.body.find(
+      ({ id_horario }: { id_horario: number }) => id_horario === escenario.idHorario,
+    );
+    expect(pasada).toMatchObject({
+      fecha_clase: `${LUNES_PASADO}T00:00:00.000Z`,
+      estado: "DICTADA",
+      inscriptos: 5,
+    });
+    expect(await asistenciasDe(pasada.id_clase)).toEqual([]);
+
+    const ana = escenario.vigentes[0]!.id_alumno;
+    expect((await marcar(pasada.id_clase, ana, true, EMAIL_MULTIROL_DEMO)).status).toBe(200);
+    expect(await asistenciasDe(pasada.id_clase)).toEqual([
+      expect.objectContaining({ id_alumno: ana, asistio: true }),
+    ]);
+  });
+
+  it("solo la propietaria pide otro día, y no uno futuro", async () => {
+    const deLaProfesora = await pedir("get", `/clases?fecha=${LUNES_PASADO}`, LUCIA);
+    const futura = await pedir("get", "/clases?fecha=2026-10-13", EMAIL_MULTIROL_DEMO);
+
+    expect(deLaProfesora.status).toBe(403);
+    expect(futura.status).toBe(400);
+    expect(await prisma.clases.count()).toBe(0);
+  });
+});
+
+describe("PI-56: la propietaria cancela una clase", () => {
+  it("una clase cancelada no admite marcas ni cierre y el cierre automático no le genera ausentes", async () => {
+    const idClase = await claseDeHoy();
+
+    const cancelada = await pedir("post", `/clases/${idClase}/cancelar`, EMAIL_MULTIROL_DEMO);
+    const otraVez = await pedir("post", `/clases/${idClase}/cancelar`, EMAIL_MULTIROL_DEMO);
+
+    expect(cancelada.status).toBe(200);
+    expect(cancelada.body).toMatchObject({ id_clase: idClase, estado: "CANCELADA" });
+    expect(otraVez.status).toBe(200);
+    expect((await marcar(idClase, escenario.vigentes[0]!.id_alumno, true)).status).toBe(409);
+    expect((await marcar(idClase, escenario.vigentes[0]!.id_alumno, true, EMAIL_MULTIROL_DEMO)).status).toBe(
+      409,
+    );
+    expect((await pedir("post", `/clases/${idClase}/cerrar`, LUCIA)).status).toBe(409);
+    await cierreAsistencia.procesarCierresAutomaticos(FIN_DE_CLASE);
+    expect(await prisma.clases.findUniqueOrThrow({ where: { id_clase: idClase } })).toMatchObject({
+      estado: "CANCELADA",
+      fecha_cierre_asist: null,
+    });
+    expect(await asistenciasDe(idClase)).toEqual([]);
+  });
+
+  it("no se cancela una clase con asistencias marcadas ni una dictada, y la profesora no cancela", async () => {
+    const idClase = await claseDeHoy();
+
+    expect((await pedir("post", `/clases/${idClase}/cancelar`, LUCIA)).status).toBe(403);
+    await marcar(idClase, escenario.vigentes[0]!.id_alumno, true);
+    expect((await pedir("post", `/clases/${idClase}/cancelar`, EMAIL_MULTIROL_DEMO)).status).toBe(409);
+    await pedir("post", `/clases/${idClase}/cerrar`, LUCIA);
+    expect((await pedir("post", `/clases/${idClase}/cancelar`, EMAIL_MULTIROL_DEMO)).status).toBe(409);
+    expect((await prisma.clases.findUniqueOrThrow({ where: { id_clase: idClase } })).estado).toBe("DICTADA");
   });
 });

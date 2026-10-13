@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ConflictError } from "../../../shared/errors/app-error.js";
+import type { IUnidadDeTrabajo } from "../../../shared/db/transaccion.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import { GestionInscripcionesYClasesService } from "../gestion-inscripciones-y-clases.service.js";
@@ -37,17 +39,31 @@ describe("GestionInscripcionesYClasesService", () => {
     cambiarPlan: vi.fn().mockResolvedValue("inscripciones.cambiarPlan"),
     actualizarHorarios: vi.fn().mockResolvedValue("inscripciones.actualizarHorarios"),
     contarInscriptosParaAsistencia: vi.fn(),
+    contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
   };
   const cuotas = { tuvoPagoConfirmado: vi.fn(), habilitacionDeInscripciones: vi.fn() };
-  const clases = { materializarDelDia: vi.fn(), listarDelDia: vi.fn(), obtenerPara: vi.fn() };
-  const asistencias = { listarDeClase: vi.fn(), marcar: vi.fn(), marcarTodosPresentes: vi.fn() };
+  const clases = {
+    materializarDelDia: vi.fn(),
+    listarDelDia: vi.fn(),
+    obtenerPara: vi.fn(),
+    bloquearParaCancelar: vi.fn(),
+    cancelar: vi.fn(),
+  };
+  const asistencias = {
+    listarDeClase: vi.fn(),
+    marcar: vi.fn(),
+    marcarTodosPresentes: vi.fn(),
+    tieneMarcasManuales: vi.fn(),
+  };
   const cierre = { procesarCierresAutomaticos: vi.fn(), cerrarManualmente: vi.fn() };
+  const unidadDeTrabajo = { ejecutar: vi.fn(<T>(operacion: () => Promise<T>) => operacion()) };
   const gestion = new GestionInscripcionesYClasesService(
     inscripciones as unknown as InscripcionService,
     cuotas as unknown as IInfoCuotas,
     clases as unknown as ClaseService,
     asistencias as unknown as AsistenciaService,
     cierre as unknown as CierreAsistenciaService,
+    unidadDeTrabajo as unknown as IUnidadDeTrabajo,
   );
 
   beforeEach(() => vi.clearAllMocks());
@@ -91,16 +107,18 @@ describe("GestionInscripcionesYClasesService", () => {
     const [listar] = clases.listarDelDia.mock.invocationCallOrder;
     expect(materializar).toBeLessThan(cerrar!);
     expect(cerrar).toBeLessThan(listar!);
-    expect(clases.materializarDelDia).toHaveBeenCalledWith(solicitante);
+    expect(clases.materializarDelDia).toHaveBeenCalledWith(solicitante, undefined);
   });
 
-  it("listarClasesDeHoy suma los inscriptos de hoy y el cupo disponible, del horario o de la actividad", async () => {
+  it("listarClasesDeHoy suma los inscriptos de la lista y el cupo disponible, que descuenta también las reservas", async () => {
     clases.listarDelDia.mockResolvedValue([
       claseCon(1, 10, 20),
       claseCon(2, null, 8),
       claseCon(3, null, null),
     ]);
     inscripciones.contarInscriptosParaAsistencia.mockResolvedValue(new Map([[1, 4]]));
+    // El horario 1 tiene además un pre-inscripto con la reserva vigente: ocupa lugar, pero no está en la lista.
+    inscripciones.contarLugaresOcupados.mockResolvedValue(new Map([[1, 5]]));
 
     const resultado = await gestion.listarClasesDeHoy(solicitante);
 
@@ -108,11 +126,25 @@ describe("GestionInscripcionesYClasesService", () => {
       [1, 2, 3],
       fechaActualArgentina(),
     );
+    expect(inscripciones.contarLugaresOcupados).toHaveBeenCalledWith([1, 2, 3]);
     expect(resultado.map(({ inscriptos, cupo_disponible }) => [inscriptos, cupo_disponible])).toEqual([
-      [4, 6],
+      [4, 5],
       [0, 8],
       [0, null],
     ]);
+  });
+
+  it("listarClasesDeFecha materializa, lista y cuenta los inscriptos de ese día", async () => {
+    const ayer = new Date("2026-10-11T00:00:00Z");
+    clases.listarDelDia.mockResolvedValue([claseCon(1, 10, 20)]);
+    inscripciones.contarInscriptosParaAsistencia.mockResolvedValue(new Map());
+
+    await gestion.listarClasesDeFecha(ayer, solicitante);
+
+    expect(clases.materializarDelDia).toHaveBeenCalledWith(solicitante, ayer);
+    expect(cierre.procesarCierresAutomaticos).toHaveBeenCalled();
+    expect(clases.listarDelDia).toHaveBeenCalledWith(solicitante, ayer);
+    expect(inscripciones.contarInscriptosParaAsistencia).toHaveBeenCalledWith([1], ayer);
   });
 
   it("obtenerAsistenciaDeClase cierra las vencidas antes de leer y suma la situación de cuota de cada inscripto", async () => {
@@ -167,6 +199,46 @@ describe("GestionInscripcionesYClasesService", () => {
       asistencias.marcarTodosPresentes.mock.invocationCallOrder[0]!,
     );
     expect(asistencias.marcarTodosPresentes).toHaveBeenCalledWith(20, solicitante);
+  });
+
+  describe("cancelarClase", () => {
+    it("cancela una clase PROGRAMADA sin marcas, bajo el bloqueo de la clase, y la devuelve", async () => {
+      clases.bloquearParaCancelar.mockResolvedValue("PROGRAMADA");
+      asistencias.tieneMarcasManuales.mockResolvedValue(false);
+      clases.obtenerPara.mockResolvedValue({ id_clase: 20, estado: "CANCELADA" });
+      // Adentro de la transacción la lectura todavía vería la clase sin cancelar: se relee al confirmar.
+      unidadDeTrabajo.ejecutar.mockImplementationOnce(async (operacion: () => Promise<unknown>) => {
+        await operacion();
+        expect(clases.obtenerPara).not.toHaveBeenCalled();
+      });
+
+      await expect(gestion.cancelarClase(20, solicitante)).resolves.toEqual({
+        id_clase: 20,
+        estado: "CANCELADA",
+      });
+      expect(unidadDeTrabajo.ejecutar).toHaveBeenCalledTimes(1);
+      expect(clases.bloquearParaCancelar).toHaveBeenCalledWith(20);
+      expect(asistencias.tieneMarcasManuales).toHaveBeenCalledWith(20);
+      expect(clases.cancelar).toHaveBeenCalledWith(20);
+      expect(clases.obtenerPara).toHaveBeenCalledWith(20, solicitante);
+    });
+
+    it("no cancela una clase que ya tiene asistencias marcadas", async () => {
+      clases.bloquearParaCancelar.mockResolvedValue("PROGRAMADA");
+      asistencias.tieneMarcasManuales.mockResolvedValue(true);
+
+      await expect(gestion.cancelarClase(20, solicitante)).rejects.toBeInstanceOf(ConflictError);
+      expect(clases.cancelar).not.toHaveBeenCalled();
+    });
+
+    it("cancelar una clase ya cancelada la devuelve sin tocar nada", async () => {
+      clases.bloquearParaCancelar.mockResolvedValue("CANCELADA");
+      clases.obtenerPara.mockResolvedValue({ id_clase: 20, estado: "CANCELADA" });
+
+      await expect(gestion.cancelarClase(20, solicitante)).resolves.toMatchObject({ estado: "CANCELADA" });
+      expect(asistencias.tieneMarcasManuales).not.toHaveBeenCalled();
+      expect(clases.cancelar).not.toHaveBeenCalled();
+    });
   });
 
   it("cerrarAsistencia se delega en CierreAsistencia", async () => {

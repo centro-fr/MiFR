@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { clienteEnCurso } from "../../../shared/db/transaccion.js";
 import type { InscriptoDeHorario } from "../inscripcion/inscripcion.types.js";
-import type { Asistencia } from "./asistencia.types.js";
+import type { Asistencia, MarcarAsistenciaInput } from "./asistencia.types.js";
 
 export interface MarcaDeAsistencia {
   idClase: number;
@@ -16,12 +16,17 @@ export class AsistenciaRepository {
     return this.prisma.asistencias.findMany({ where: { id_clase: idClase }, orderBy: { id_alumno: "asc" } });
   }
 
-  async marcar(inscripto: InscriptoDeHorario, asistio: boolean, marca: MarcaDeAsistencia): Promise<void> {
+  async marcar(
+    inscripto: InscriptoDeHorario,
+    { asistio, observaciones }: MarcarAsistenciaInput,
+    marca: MarcaDeAsistencia,
+  ): Promise<void> {
     const registro = {
       id_inscripcion: inscripto.id_inscripcion,
       asistio,
       id_usuario_registra: marca.idUsuario,
       fecha_registro: marca.fechaRegistro,
+      ...(observaciones === undefined ? {} : { observaciones }),
     };
     await clienteEnCurso(this.prisma).asistencias.upsert({
       where: { id_clase_id_alumno: { id_clase: marca.idClase, id_alumno: inscripto.id_alumno } },

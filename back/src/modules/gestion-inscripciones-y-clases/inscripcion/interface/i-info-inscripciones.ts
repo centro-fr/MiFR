@@ -19,8 +19,8 @@ export interface IInfoInscripciones {
   // Las que cerró la última baja del alumno (US-08), sin las que cerró un cambio de plan: la ficha de
   // un alumno dado de baja muestra con ellas lo que debía al irse.
   listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionConDatos[]>;
-  // Inscriptos de un horario el día de una clase (US-20, US-21): inscripción vigente, horario
-  // vigente ese día y alumno no dado de baja. Toman el bloqueo del horario en la transacción en
+  // Inscriptos de un horario el día de una clase (US-20, US-21): inscripción activa (un pre-inscripto
+  // no figura), horario vigente ese día y alumno no dado de baja. Toman el bloqueo del horario en la transacción en
   // curso, así una baja no se cruza con el marcado o el cierre.
   listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]>;
   buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null>;

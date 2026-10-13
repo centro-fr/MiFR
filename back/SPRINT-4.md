@@ -16,13 +16,13 @@ Fuentes: `docs/specs/04-*/US-13`, `docs/specs/05-*/US-19`, `docs/specs/06-*/US-2
 
 ## Antes de arrancar: lo que queda del Sprint 3
 
-Ninguno de estos pendientes bloquea el Sprint 4, salvo la API de parámetros: tres historias nuevas suman un parámetro que la propietaria tiene que poder editar.
+Ninguno de estos pendientes bloquea el Sprint 4. La API de parámetros, que era el único que bloqueaba (tres historias nuevas suman un parámetro que la propietaria tiene que poder editar), ya está en `dev`.
 
 | Pendiente | Responsable | Bloquea a |
 | --- | --- | --- |
-| API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango | Rosario | La configuración de US-22, US-25 y US-26 (los tres leen con los valores iniciales mientras tanto) |
+| ~~API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango~~ Hecha e integrada a `dev` el 12/10/2026 (PI-53, PI-54). Falta solo validar las claves nuevas de este sprint | Rosario | — |
 | Reflejar en el `.eap` las dependencias nuevas de `Clase` y `CierreAsistencia` y regenerar el `.jpg` y el `.pdf` (US-20) | Nicolas | — |
-| Puntos abiertos de la sección 9 de `PRUEBAS-INTEGRACION.md` (clases de días anteriores, pre-inscriptos en la lista, observaciones) | Nicolas | — |
+| ~~Puntos abiertos de la sección 9 de `PRUEBAS-INTEGRACION.md` (clases de días anteriores, pre-inscriptos en la lista, observaciones)~~ Resueltos el 12/10/2026, junto con la clase cancelada (PI-55, PI-56; ver `SPRINT-3.md`) | Nicolas | — |
 
 **Prioridad 1 de Rosario:** el día 1 suma al catálogo de parámetros las claves nuevas del sprint (ver "Cómo trabajar en paralelo"), aunque la API de edición llegue después.
 
@@ -96,7 +96,7 @@ Cómo trabajar en paralelo sin bloquearse:
 3. **Migraciones:** todas las tablas nuevas apuntan a tablas que ya están en `dev`, así que nadie espera a nadie. Para que no choquen en el orden: Nicolas (`suplencias`, `notificaciones`) → Francisco (`promociones`, `promocion_planes` y la FK de `inscripciones.id_promocion`) → Rosario (`tarifas_honorario`, `liquidaciones`, `liquidacion_detalles`). Antes de generar una, traer `dev` a la rama propia; si dos se generan en paralelo, la segunda en integrarse se vuelve a generar sobre la primera.
 4. **Rosario** puede arrancar el calculador ya: no toca la base y prueba con datos armados a mano. `Liquidacion` se integra cuando estén `suplenciasEnPeriodo` y `aCargoEnPeriodo`.
 5. **Francisco** arranca por US-19 y US-13; el resumen diario (US-26) va al final, cuando `Notificacion` esté en `dev`.
-6. Cada uno suma sus datos al escenario de demostración (`src/shared/db/datos-demo.ts`) y sus casos a `PRUEBAS-INTEGRACION.md` (desde PI-53). El front trabaja con Swagger y el seed, así que cada ruta nueva se documenta en su `<x>.openapi.ts` y se suma a `src/__tests__/openapi.test.ts`.
+6. Cada uno suma sus datos al escenario de demostración (`src/shared/db/datos-demo.ts`) y sus casos a `PRUEBAS-INTEGRACION.md` (desde PI-57: PI-53 a PI-56 ya se usaron al cerrar el Sprint 3). El front trabaja con Swagger y el seed, así que cada ruta nueva se documenta en su `<x>.openapi.ts` y se suma a `src/__tests__/openapi.test.ts`.
 7. Las **diferencias** con las specs y el SDD están al final del archivo: se cierran entre los tres antes de escribir las migraciones.
 
 ---
@@ -276,7 +276,8 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
   - [ ] Cada clase suplida suma `CLASE_SUPLIDA` a la suplente y resta `DESCUENTO_AUSENCIA` (monto negativo) a la titular, por la tarifa `HORA_SUPLENCIA` de la suplente.
   - [ ] La tarifa que aplica es la vigente a la fecha de cada línea; sin tarifa → la línea no se genera y la respuesta la informa como advertencia.
   - [ ] Profesora sin alumnos ni suplencias → honorario 0. `monto_total` es la suma de sus detalles.
-- [ ] `ParametrosSistema` (pendiente del Sprint 3): `GET /api/v1/parametros`, `PATCH /api/v1/parametros/:clave` (rol `PROPIETARIA` + `PARAMETROS_EDITAR`, permiso nuevo exclusivo), validación por `tipo_dato` y por rango (no negativos; `HORA_RESUMEN_DIARIO` con formato `HH:MM`) y `GET /api/v1/parametros/datos-bancarios` para alumnos y tutores.
+- [x] `ParametrosSistema` (pendiente del Sprint 3): `GET /api/v1/parametros`, `PATCH /api/v1/parametros/:clave` (rol `PROPIETARIA` + `PARAMETROS_EDITAR`, permiso nuevo exclusivo), validación por `tipo_dato` y por rango (no negativos) y `GET /api/v1/parametros/datos-bancarios` para alumnos y tutores. Integrado a `dev` el 12/10/2026 (PI-53, PI-54).
+- [ ] Validar las claves nuevas del sprint al editarlas: `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los enteros no negativos.
 - [ ] Tests parametrizados del calculador (alta y baja en el medio del mes, porcentaje, suplencias, sin tarifa), del service (estados de la liquidación) y de integración.
 
 ---

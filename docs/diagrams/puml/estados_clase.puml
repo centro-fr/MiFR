@@ -3,7 +3,7 @@ title Ciclo de vida de una clase
 
 [*] --> PROGRAMADA : generar desde horario
 PROGRAMADA --> DICTADA : cerrar asistencia
-PROGRAMADA --> CANCELADA : cancelar clase
+PROGRAMADA --> CANCELADA : cancelar clase\n[propietaria, sin asistencias marcadas]
 
 note right of PROGRAMADA
   Las marcas se guardan en Asistencia.
@@ -18,7 +18,8 @@ note right of DICTADA
 end note
 
 note right of CANCELADA
-  Estado terminal. No genera inasistencias.
+  Estado terminal. No admite marcas
+  ni genera inasistencias.
 end note
 
 @enduml

@@ -1,7 +1,7 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { respuestaJson, respuestasDeError, SEGURIDAD_BEARER } from "../../../shared/openapi/registro.js";
-import { claseIdParamSchema } from "./clase.schemas.js";
+import { claseIdParamSchema, listarClasesQuerySchema } from "./clase.schemas.js";
 import { claseYAlumnoParamSchema, marcarAsistenciaSchema } from "../asistencia/asistencia.schemas.js";
 
 const fecha = z.string().datetime();
@@ -80,10 +80,30 @@ export function registrarDocumentacionClases(registro: OpenAPIRegistry): void {
     tags,
     security,
     summary: "Clases de hoy (US-20)",
-    description: `${permiso} Las clases se materializan desde los horarios activos y no se duplican al consultar más de una vez.`,
+    description:
+      `${permiso} Las clases se materializan desde los horarios activos y no se duplican al consultar más de una vez. ` +
+      "`inscriptos` son los que figuran en la lista (inscripción activa, sin pre-inscriptos); `cupo_disponible` es el " +
+      "de hoy, que descuenta también las pre-inscripciones con la reserva vigente.",
     responses: {
       200: respuestaJson("Clases de hoy", z.array(claseDelDiaSchema)),
       ...respuestasDeError(401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/clases",
+    tags,
+    security,
+    summary: "Clases de un día pasado, para corregir (US-20)",
+    description:
+      `${permiso} Además, solo la propietaria (403 para los demás). Materializa las clases de ese día desde los ` +
+      "horarios que regían, si todavía no existían. Una que ya terminó sale cerrada (DICTADA) sin ausentes, porque " +
+      "nadie la marcó: la propietaria la corrige marcando a cada alumno. Una fecha futura responde 400.",
+    request: { query: listarClasesQuerySchema },
+    responses: {
+      200: respuestaJson("Clases del día", z.array(claseDelDiaSchema)),
+      ...respuestasDeError(400, 401, 403),
     },
   });
 
@@ -93,7 +113,9 @@ export function registrarDocumentacionClases(registro: OpenAPIRegistry): void {
     tags,
     security,
     summary: "Lista de asistencia de una clase (US-20)",
-    description: `${permiso} Incluye solo inscriptos vigentes del horario, estado de cuota y marcas actuales.`,
+    description:
+      `${permiso} Incluye solo a los inscriptos con la inscripción activa en el horario (un pre-inscripto no figura), ` +
+      "con su estado de cuota, sus marcas y sus observaciones.",
     request: { params: claseIdParamSchema },
     responses: {
       200: respuestaJson("Clase y lista de asistencia", asistenciaDeClaseSchema),
@@ -107,7 +129,10 @@ export function registrarDocumentacionClases(registro: OpenAPIRegistry): void {
     tags,
     security,
     summary: "Marcar asistencia de un alumno (US-20)",
-    description: `${permiso} La última marca vale. Una clase cerrada solo admite correcciones de la propietaria.`,
+    description:
+      `${permiso} La última marca vale. Una clase cerrada solo admite correcciones de la propietaria y una ` +
+      "cancelada no admite marcas (409). `observaciones` es opcional: si no viene se conservan las que había y " +
+      '`""` las borra. Un pre-inscripto no está en la clase (404).',
     request: {
       params: claseYAlumnoParamSchema,
       body: {
@@ -145,6 +170,24 @@ export function registrarDocumentacionClases(registro: OpenAPIRegistry): void {
     request: { params: claseIdParamSchema },
     responses: {
       200: respuestaJson("Clase cerrada", claseSchema),
+      ...respuestasDeError(400, 401, 403, 404, 409),
+    },
+  });
+
+  registro.registerPath({
+    method: "post",
+    path: "/clases/{id}/cancelar",
+    tags,
+    security,
+    summary: "Cancelar una clase (US-21)",
+    description:
+      `${permiso} Además, solo la propietaria (403 para los demás). Pasa una clase PROGRAMADA a CANCELADA: no ` +
+      "admite marcas ni genera inasistencias. Una clase dictada o con asistencias ya marcadas responde 409; " +
+      "cancelar dos veces devuelve la clase sin cambios. El aviso a los alumnos (CLASE_CANCELADA) llega con las " +
+      "notificaciones (US-25).",
+    request: { params: claseIdParamSchema },
+    responses: {
+      200: respuestaJson("Clase cancelada", claseSchema),
       ...respuestasDeError(400, 401, 403, 404, 409),
     },
   });

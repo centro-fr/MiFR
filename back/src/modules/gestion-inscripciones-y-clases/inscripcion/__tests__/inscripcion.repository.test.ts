@@ -248,7 +248,8 @@ describe("InscripcionRepository", () => {
       id_horario: 8,
       fecha_desde: { lte: DIA },
       OR: [{ fecha_hasta: null }, { fecha_hasta: { gte: DIA } }],
-      inscripcion: { estado: { in: ["PREINSCRIPTA", "ACTIVA"] }, alumno: { estado: { not: "BAJA" } } },
+      // Solo la inscripción activa: un pre-inscripto no está en la clase.
+      inscripcion: { estado: "ACTIVA", alumno: { estado: { not: "BAJA" } } },
     };
     const SELECCION_INSCRIPTO = {
       inscripcion: {

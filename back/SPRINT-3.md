@@ -116,16 +116,16 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 
 ### Pendiente (ParametrosSistema)
 
-- [ ] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
-- [ ] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
+- [x] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento` (parte `ILogicaParametros`).
+- [x] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
 - [x] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
   - [x] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`, vacíos hasta que la propietaria los cargue).
   - [x] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
   - [x] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
   - [x] `DIAS_RESERVA_PREINSCRIPCION` (`ENTERO`, por defecto `3`).
-- [ ] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
-- [ ] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
-- [ ] Tests del service, de las rutas y de integración.
+- [x] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
+- [x] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
+- [x] Tests del service, de las rutas y de integración.
 
 ---
 
@@ -180,7 +180,7 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
   - [x] Solo se aprueba o rechaza una `PENDIENTE`; dos aprobaciones seguidas no duplican nada.
   - [x] Monto distinto del esperado → se aprueba solo con confirmación.
   - [x] Misma transferencia informada dos veces (alumno, monto y día de Argentina) → 409.
-- [ ] El aviso a la propietaria y al alumno es de notificaciones (US-25, Sprint 4): por ahora alcanza con el listado.
+- Pasa al Sprint 4 (decidido el 12/10/2026): el aviso a la propietaria y al alumno es de notificaciones (US-25). El DER no tiene tipos de aviso para las transferencias y el subsistema de notificaciones todavía no existe; por ahora alcanza con el listado.
 - [x] Tests de integración: PI-43 (ver "Montaje en la API" en US-15).
 
 ## Lo que queda de US-10 (del Sprint 2)
@@ -237,7 +237,10 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 ### Pendiente (US-20)
 
 - [ ] Reflejar en el `.eap` de Enterprise Architect las dos dependencias nuevas y regenerar el `.jpg` y el `.pdf` (regla dura 2).
-- [ ] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`: consultar o crear clases de días anteriores para la corrección, si los pre-inscriptos aparecen en la lista y cómo se cargan las observaciones.
+- [x] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`, resueltos el 12/10/2026:
+  - [x] Clases de días anteriores: `GET /clases?fecha=AAAA-MM-DD`, solo la propietaria y hasta hoy. Crea las clases de ese día con los horarios que regían (también los dados de baja después). Una que ya terminó sale cerrada sin ausentes y la propietaria la corrige marcando. Test PI-55.
+  - [x] Los pre-inscriptos no aparecen en la lista: no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo, así que el cupo disponible de la clase la descuenta. Tests PI-47 y PI-48.
+  - [x] Observaciones: se cargan con la marca (`observaciones`, opcional, hasta 255 caracteres); sin el campo se conservan y `""` las borra. Test J-13.
 
 ## US-21 – Inasistencias automáticas
 
@@ -257,12 +260,13 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 
 ### Pendiente (US-21)
 
-- [ ] Cancelar una clase (`CANCELADA`, sin inasistencias): fuera del MVP según la spec; el aviso `CLASE_CANCELADA` es de US-25.
+- [x] Cancelar una clase: `POST /clases/:id/cancelar`, solo la propietaria (decidido el 12/10/2026). Solo una PROGRAMADA sin asistencias marcadas (409 si no); queda `CANCELADA`, sin marcas ni inasistencias, y el cierre automático no la toca. Test PI-56.
+- Pasa al Sprint 4: el aviso `CLASE_CANCELADA` a los alumnos, con las notificaciones (US-25).
 
 ### Pendientes del Sprint 1 que siguen esperando
 
 - [x] Un horario con alumnos inscriptos no se da de baja (409; fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
-- [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
+- [x] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos: sí, la fachada cuenta los inscriptos vigentes de cada horario (`IInfoInscripciones`) y solo bloquea si alguno tiene; si no, da de baja los horarios con la actividad. Punto PI-06 cerrado.
 
 ---
 

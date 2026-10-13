@@ -37,10 +37,30 @@ describe("AsistenciaRepository", () => {
     });
   });
 
-  it("marcar crea o pisa la fila del alumno en la clase con quién y cuándo", async () => {
-    await repositorio.marcar(ana, false, marca);
+  it("marcar crea o pisa la fila del alumno en la clase con quién y cuándo, sin tocar las observaciones", async () => {
+    await repositorio.marcar(ana, { asistio: false }, marca);
 
     const registro = { id_inscripcion: 50, asistio: false, id_usuario_registra: 2, fecha_registro: FECHA };
+    expect(prisma.asistencias.upsert).toHaveBeenCalledWith({
+      where: { id_clase_id_alumno: { id_clase: 20, id_alumno: 5 } },
+      create: { id_clase: 20, id_alumno: 5, ...registro },
+      update: registro,
+    });
+  });
+
+  it.each([
+    ["las guarda", "Llegó tarde"],
+    ["las borra con null", null],
+  ])("marcar con observaciones %s", async (_caso, observaciones) => {
+    await repositorio.marcar(ana, { asistio: true, observaciones }, marca);
+
+    const registro = {
+      id_inscripcion: 50,
+      asistio: true,
+      id_usuario_registra: 2,
+      fecha_registro: FECHA,
+      observaciones,
+    };
     expect(prisma.asistencias.upsert).toHaveBeenCalledWith({
       where: { id_clase_id_alumno: { id_clase: 20, id_alumno: 5 } },
       create: { id_clase: 20, id_alumno: 5, ...registro },

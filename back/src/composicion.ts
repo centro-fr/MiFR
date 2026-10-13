@@ -93,6 +93,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     actividadService,
     horarioService,
     planService,
+    parametrosService,
     inscripcionService,
   );
   const cuotaService = new CuotaService(
@@ -127,6 +128,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     claseService,
     asistenciaService,
     cierreAsistencia,
+    unidadDeTrabajo,
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,

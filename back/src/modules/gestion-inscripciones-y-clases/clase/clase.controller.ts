@@ -9,6 +9,11 @@ export function createClaseController(logica: ILogicaClasesYAsistencia) {
       res.json(await logica.listarClasesDeHoy(solicitanteDe(req)));
     },
 
+    async listarDeFecha(req: Request, res: Response) {
+      const { fecha } = req.query as unknown as { fecha: Date };
+      res.json(await logica.listarClasesDeFecha(fecha, solicitanteDe(req)));
+    },
+
     async obtenerAsistencia(req: Request, res: Response) {
       res.json(await logica.obtenerAsistenciaDeClase(Number(req.params.id), solicitanteDe(req)));
     },
@@ -30,6 +35,10 @@ export function createClaseController(logica: ILogicaClasesYAsistencia) {
 
     async cerrar(req: Request, res: Response) {
       res.json(await logica.cerrarAsistencia(Number(req.params.id), solicitanteDe(req)));
+    },
+
+    async cancelar(req: Request, res: Response) {
+      res.json(await logica.cancelarClase(Number(req.params.id), solicitanteDe(req)));
     },
   };
 }

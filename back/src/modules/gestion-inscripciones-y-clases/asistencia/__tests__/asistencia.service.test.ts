@@ -101,11 +101,15 @@ describe("AsistenciaService", () => {
     expect(mocks.unidadDeTrabajo.ejecutar).toHaveBeenCalledTimes(1);
     expect(mocks.clases.bloquearParaMarcar).toHaveBeenCalledWith(20, PROFESORA);
     expect(mocks.inscripciones.buscarParaAsistencia).toHaveBeenCalledWith(4, 5, FECHA_CLASE);
-    expect(mocks.repositorio.marcar).toHaveBeenCalledWith(ana, true, {
-      idClase: 20,
-      idUsuario: 2,
-      fechaRegistro: AHORA,
-    });
+    expect(mocks.repositorio.marcar).toHaveBeenCalledWith(
+      ana,
+      { asistio: true },
+      {
+        idClase: 20,
+        idUsuario: 2,
+        fechaRegistro: AHORA,
+      },
+    );
   });
 
   it("marcar no guarda nada si la clase no admite marcas", async () => {

@@ -109,6 +109,15 @@ describe("ClaseRepository", () => {
     });
   });
 
+  it("cancelar pasa a CANCELADA solo una clase PROGRAMADA", async () => {
+    await repositorio.cancelar(20);
+
+    expect(prisma.clases.updateMany).toHaveBeenCalledWith({
+      where: { id_clase: 20, estado: "PROGRAMADA" },
+      data: { estado: "CANCELADA" },
+    });
+  });
+
   it("cerrar devuelve null sin releer si la clase ya no estaba PROGRAMADA", async () => {
     prisma.clases.updateMany.mockResolvedValue({ count: 0 });
 
