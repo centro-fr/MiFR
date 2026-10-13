@@ -1011,12 +1011,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 **US:** US-19 · **Precondición:** escenario de demostración cargado (Carla cobró en efectivo la primera cuota de Valentina y no la rindió).
 
 1. Lucía cobra en efectivo a Sofía y Marina, la propietaria, cobra a Mateo.
-2. Marina pide `GET /pagos/efectivo-pendiente`, después filtrado por Carla.
+2. Marina pide `GET /pagos/efectivo-pendiente`, después con `limit=1` y después filtrado por Carla.
 3. Marina rinde el cobro de Carla (`POST /pagos/:id/rendir`) dos veces e intenta rendir el suyo.
 4. Marina rinde todo lo de Lucía (`POST /pagos/rendir`) y vuelve a pedir el pendiente y el historial (`GET /pagos/rendiciones`).
 5. Lucía pide el pendiente y un lote; Marina rinde un lote con un cobro que no existe.
 
-**Resultado esperado:** en el paso 2, dos cobros agrupados en Carla y Lucía, sin el de Marina; con el filtro, solo Carla, con el cobro de hoy (0 días sin rendir). En el paso 3, 200, después 409, y en la base el cobro queda rendido con su fecha; el de Marina, 409. En el paso 4 el lote rinde el de Lucía (25000), el pendiente queda vacío y el historial trae los dos. En el paso 5 Lucía recibe 403, y el lote responde 200 sin rendir nada, con el cobro inexistente salteado por `NO_EXISTE`.
+**Resultado esperado:** en el paso 2, los totales de Carla y Lucía y sus dos cobros, sin el de Marina; con `limit=1`, un solo cobro pero los totales de las dos y `cantidad: 2`; con el filtro, solo Carla, con el cobro de hoy (0 días sin rendir). En el paso 3, 200, después 409, y en la base el cobro queda rendido con su fecha; el de Marina, 409. En el paso 4 el lote rinde el de Lucía (25000), el pendiente queda vacío y el historial trae los dos. En el paso 5 Lucía recibe 403, y el lote responde 200 sin rendir nada, con el cobro inexistente salteado por `NO_EXISTE`.
 
 **Automatizado:** Sí (H-23 y H-24).
 
@@ -1027,10 +1027,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Marina crea una promoción del 20 % sobre el Básico, de hoy a 30 días, y se pre-inscribe un alumno nuevo en el Básico con Lucía.
 2. Lucía le cobra 20000 al alumno nuevo y 25000 a Sofía; Marina pide el comprobante del primero.
 3. Marina desactiva la promoción y Lucía intenta cobrarle otra cuota al alumno nuevo por 20000.
-4. Con la base reiniciada, Marina crea una promoción y después otra que se superpone en el mismo plan, una de monto fijo mayor al precio y otra con el mismo código; una promoción vencida se intenta editar.
+4. Con la base reiniciada, Marina crea una promoción y después otra que se superpone en el mismo plan, una de monto fijo mayor al precio, otra con el mismo código y una del 100 %; una promoción vencida se intenta editar.
 5. Lucía intenta crear una promoción y lista las promociones.
 
-**Resultado esperado:** en el paso 1 la promoción nace `ACTIVA`, la inscripción nueva guarda su `id_promocion` y la de Sofía no tiene. En el paso 2 los dos cobros responden 201: el comprobante muestra el precio de lista 25000, el descuento 5000 y la promoción. En el paso 3 la cuota ya cobrada sigue en 20000 y el cobro nuevo responde 409 `MONTO_DISTINTO`: sin la promoción se espera el precio de lista. En el paso 4, 409, 400 y 409, con una sola promoción guardada, y la vencida responde 409 al editarla. En el paso 5, 403 al crear y 200 al listar.
+**Resultado esperado:** en el paso 1 la promoción nace `ACTIVA`, la inscripción nueva guarda su `id_promocion` y la de Sofía no tiene. En el paso 2 los dos cobros responden 201: el comprobante muestra el precio de lista 25000, el descuento 5000 y la promoción. En el paso 3 la cuota ya cobrada sigue en 20000 y el cobro nuevo responde 409 `MONTO_DISTINTO`: sin la promoción se espera el precio de lista. En el paso 4, 409, 400, 409 y 400 (el 100 % dejaría la cuota en 0 y un pago tiene que ser mayor a 0), con una sola promoción guardada, y la vencida responde 409 al editarla. En el paso 5, 403 al crear y 200 al listar.
 
 **Automatizado:** Sí (H-25 a H-27).
 
@@ -1182,10 +1182,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-20        | `cobradoEnPeriodo` suma los pagos confirmados entre los días de Argentina del período, con los bordes exactos, y da 0 a quien no pagó | PI-57 |
 | H-21        | `paraAvisoDeVencimiento` avisa antes de vencer y al terminar la gracia, con los datos del alumno, nunca a un pre-inscripto ni con una transferencia pendiente | PI-57 |
 | H-22        | `paraAvisoDeVencimiento` no avisa a un alumno dado de baja                                                                                                     | PI-57 |
-| H-23        | El pendiente por profesora sin lo de la propietaria; rendir uno, dos veces (409) y el de la propietaria (409); rendir un lote y el historial                     | PI-58 |
+| H-23        | El pendiente con los totales por profesora sin lo de la propietaria y el detalle paginado; rendir uno, dos veces (409) y el de la propietaria (409); rendir un lote y el historial | PI-58 |
 | H-24        | Solo la propietaria ve y rinde el efectivo; un lote saltea el cobro que no existe                                                                              | PI-58 |
 | H-25        | La pre-inscripción durante la promoción la guarda y cobra con el descuento; el comprobante lo muestra; desactivarla no cambia lo cobrado y el cobro siguiente vuelve al precio de lista | PI-59 |
-| H-26        | Promociones superpuestas (409), monto fijo mayor al precio (400), código repetido (409) y vencida que no se edita (409)                                       | PI-59 |
+| H-26        | Promociones superpuestas (409), monto fijo mayor al precio (400), código repetido (409), 100 % (400) y vencida que no se edita (409)                          | PI-59 |
 | H-27        | La profesora ve las promociones pero no las crea (403)                                                                                                         | PI-59 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
@@ -1330,6 +1330,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | `paraAvisoDeVencimiento` avisa con una transferencia pendiente                          | H-21 y un unitario de Cuota                                                                                |
 | `cobradoEnPeriodo` incluye el instante en que empieza el día siguiente al período       | H-20 y dos unitarios                                                                                       |
 | La rendición acepta el efectivo de la propietaria (sin `id_profesora_cobra IS NOT NULL`) | Solo un unitario del repositorio. Ningún test de integración falló: lo que cobra la propietaria nace rendido y `rendido = false` ya lo excluye; la condición es defensiva |
+| Una promoción del 100 %                                                                 | H-26 y un unitario de los schemas                                                                          |
+| El detalle del efectivo pendiente sin paginar                                           | H-23 y un unitario del repositorio                                                                         |
 | El filtro por estado de cuota deja los que no coinciden                                 | H-17, H-18 y cuatro unitarios de la fachada                                                                |
 | El filtro pagina sin el `offset`                                                        | H-17                                                                                                       |
 | El historial llega también a la profesora                                               | H-19 y un unitario de la fachada                                                                           |
@@ -1392,6 +1394,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 13/10/2026 | Sprint 4 de Francisco: contratos de `IInfoCuotas`, rendición del efectivo y promociones (PI-57 a PI-59) | 210 | 210 aprobados | 149,7 s | Pasaron también los 1693 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. De 5 fallas provocadas, 4 las detectan los de integración y la quinta solo un unitario (ver 7.1). Las migraciones `agregar_promociones` y `agregar_checks_promociones` se aplicaron solas al arrancar la suite |
 | 13/10/2026 | Suplencias entre profesoras (PI-60 a PI-63)                            | 217 | 217 aprobados | 40,7 s | Corrida completa después de traer dev. Pasaron también los 1624 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. De 9 fallas provocadas se detectan 8 (una, después de reforzar L-09); la del bloqueo la frena la PK, como se esperaba (sección 7.1). La primera corrida falló en L-10 por el test: los dos registros simultáneos abrían sesión a la vez y competían por vincular la cuenta de Google; se abre la sesión antes |
 | 13/10/2026 | Suplencias integradas con dev: promociones, rendición del efectivo y contratos de `IInfoCuotas` (PI-57 a PI-63) | 225 | 225 aprobados | 44,3 s | Primera corrida de las suplencias junto con el Sprint 4 de Francisco. Pasaron también los 1783 tests unitarios, con cobertura del 100 %; build, chequeo de tipos y formato correctos. Las migraciones `agregar_suplencias`, `agregar_promociones` y `agregar_checks_promociones` se aplicaron juntas sin conflicto |
+| 13/10/2026 | Correcciones de la auditoría: promoción del 100 % y efectivo pendiente paginado (PI-58, PI-59) | 225 | 225 aprobados | 171,1 s | Con las suplencias de Nicolas ya integradas. Pasaron también los 1785 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1545,3 +1548,4 @@ Los defectos se numeran D-01, D-02…
 |   2.20  | 12/10/2026 | Casos PI-55 (corrección de días anteriores) y PI-56 (clase cancelada) y tests J-13 a J-17; PI-47 y PI-48 sin el pre-inscripto en la clase y con las observaciones; se cierran los cuatro puntos de asistencia de la sección 9; US-20 y US-21 quedan automatizadas sin pendientes | Francisco Andrade |
 |   2.21  | 13/10/2026 | Casos PI-57 (contratos `cobradoEnPeriodo` y `paraAvisoDeVencimiento` de `IInfoCuotas`), PI-58 (rendición del efectivo, US-19) y PI-59 (promociones, US-13) y tests H-20 a H-27; US-13 y US-19 pasan a automatizadas | Francisco Andrade |
 |   2.22  | 13/10/2026 | Casos PI-60 a PI-63 (suplencias entre profesoras, US-24) y archivo L con L-01 a L-15; `entorno.infoClases` para las clases suplidas; defecto D-23 (Vitest corría los tests de `dist/`); punto abierto de la suplencia en un período liquidado; US-24 queda automatizada y US-20 suma PI-60 | Nicolas |
+|   2.23  | 13/10/2026 | PI-58: el detalle del efectivo pendiente se pagina (máximo 100 por pedido) y los totales siguen completos; PI-59: una promoción del 100 % o de un monto fijo igual al precio responde 400, porque dejaría la cuota en 0. H-23 y H-26 actualizados | Francisco Andrade |
