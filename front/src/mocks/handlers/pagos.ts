@@ -4,11 +4,12 @@ import { db, siguienteId } from "@/mocks/db";
 import { precioVigenteDePlan } from "@/mocks/precios";
 import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
-import { errorApi, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
+import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 
-// Mock de POST /pagos/efectivo y POST /pagos/transferencia-recibida (pago.routes.ts), con las
-// reglas de pago.service.ts. El primer pago de una pre-inscripción da el alta definitiva (US-07).
-// El mock no guarda cuotas: cada pago lleva un id_cuota nuevo.
+// Mock de pago.routes.ts con las reglas de pago.service.ts: el cobro en efectivo, la transferencia
+// recibida y la revisión de las transferencias que informan los alumnos (US-17). El primer pago de
+// una pre-inscripción da el alta definitiva (US-07). El mock no guarda cuotas: cada pago lleva un
+// id_cuota nuevo.
 
 const monto = z
   .number()
@@ -120,6 +121,82 @@ async function leerCuerpo<T extends z.ZodTypeAny>(request: Request, esquema: T) 
   return esquema.safeParse(await request.json().catch(() => null)) as z.SafeParseReturnType<unknown, z.infer<T>>;
 }
 
+// ---------- US-17: revisión de transferencias ----------
+
+const UNA_HORA_EN_MS = 3_600_000;
+const HORAS_PARA_REVISAR = 24;
+const LIMITE_MAXIMO = 100;
+
+const listarTransferenciasQuerySchema = z.object({
+  estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]).optional(),
+  id_alumno: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(LIMITE_MAXIMO).default(LIMITE_MAXIMO),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+// Aprobar normalmente no lleva cuerpo (aprobarTransferenciaSchema).
+const aprobarSchema = z.object({ confirmar_monto_distinto: z.boolean().default(false) }).default({});
+
+// textoSchema(255) del back: obligatorio, con alguna letra y sin caracteres de control.
+const rechazarSchema = z.object({
+  motivo_rechazo: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .refine((valor) => /\p{L}/u.test(valor) && !/[\p{Cc}\p{Cf}]/u.test(valor)),
+});
+
+// TransferenciaEnRevision: el pago con el alumno y las horas desde que se cargó.
+function transferenciaEnRevision(pago: PagoMock) {
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)!;
+  const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno)!;
+  const usuario = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario)!;
+  const horas = Math.floor((Date.now() - new Date(pago.fecha_pago).getTime()) / UNA_HORA_EN_MS);
+  return {
+    ...pago,
+    alumno: { id_alumno: alumno.id_alumno, nombre: usuario.nombre, apellido: usuario.apellido },
+    horas_desde_la_carga: horas,
+    supera_24_horas: pago.estado === "PENDIENTE" && horas >= HORAS_PARA_REVISAR,
+  };
+}
+
+function idAlumnoDe(pago: PagoMock): number | undefined {
+  return db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)?.id_alumno;
+}
+
+// Como pago.repository.ts: solo transferencias, de la más antigua a la más nueva.
+function listarTransferencias(filtro: z.infer<typeof listarTransferenciasQuerySchema>) {
+  return db.pagos
+    .filter(
+      (pago) =>
+        pago.forma_pago === "TRANSFERENCIA" &&
+        (filtro.estado === undefined || pago.estado === filtro.estado) &&
+        (filtro.id_alumno === undefined || idAlumnoDe(pago) === filtro.id_alumno),
+    )
+    .sort((a, b) => a.fecha_pago.localeCompare(b.fecha_pago) || a.id_pago - b.id_pago)
+    .slice(filtro.offset, filtro.offset + filtro.limit)
+    .map(transferenciaEnRevision);
+}
+
+// transferenciaPendiente de pago.service.ts: 404 si no existe, 409 si ya se resolvió.
+function buscarTransferenciaPendiente(id: number | null) {
+  const pago = id === null ? undefined : db.pagos.find((p) => p.id_pago === id);
+  if (!pago) return { error: errorApi(404, "NOT_FOUND", "Pago no encontrado") };
+  if (pago.forma_pago !== "TRANSFERENCIA" || pago.estado !== "PENDIENTE") {
+    return { error: errorApi(409, "CONFLICT", "Solo se aprueba o rechaza una transferencia pendiente") };
+  }
+  return { pago };
+}
+
+function resolver(pago: PagoMock, request: Request, cambios: Pick<PagoMock, "estado" | "motivo_rechazo">): PagoMock {
+  Object.assign(pago, cambios, {
+    id_usuario_confirma: usuarioDeLaSesion(request)!.id_usuario,
+    fecha_confirmacion: new Date().toISOString(),
+  });
+  return pago;
+}
+
 export const pagosHandlers = [
   http.post("*/api/v1/pagos/efectivo", async ({ request }) => {
     await delay(500);
@@ -160,5 +237,54 @@ export const pagosHandlers = [
     });
     activarSiEsPrimerPago(inscripcion!);
     return HttpResponse.json(pago, { status: 201 });
+  }),
+
+  http.get("*/api/v1/pagos/transferencias", async ({ request }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_CONFIRMAR" });
+    if (denegado) return denegado;
+    const query = listarTransferenciasQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
+    if (!query.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    return HttpResponse.json(listarTransferencias(query.data));
+  }),
+
+  // Aprobar da el alta definitiva si es la primera cuota (fachada de gestion-cuotas-y-pagos).
+  http.post("*/api/v1/pagos/:id/aprobar", async ({ request, params }) => {
+    await delay(600);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_CONFIRMAR" });
+    if (denegado) return denegado;
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+    // Sin cuerpo, json() falla: queda undefined y el esquema aplica su valor por defecto.
+    const cuerpo = aprobarSchema.safeParse(await request.json().catch(() => undefined));
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+
+    const { pago, error } = buscarTransferenciaPendiente(id);
+    if (error) return error;
+    const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)!;
+    const esperado = precioVigente(inscripcion.id_plan);
+    if (esperado !== undefined && pago.monto !== esperado && !cuerpo.data.confirmar_monto_distinto) {
+      return errorApi(
+        409,
+        "MONTO_DISTINTO",
+        `El monto no coincide con el esperado (${esperado}). Para registrarlo igual, confirmá el monto distinto`,
+      );
+    }
+    activarSiEsPrimerPago(inscripcion);
+    return HttpResponse.json(resolver(pago, request, { estado: "CONFIRMADO", motivo_rechazo: null }));
+  }),
+
+  http.post("*/api/v1/pagos/:id/rechazar", async ({ request, params }) => {
+    await delay(600);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_CONFIRMAR" });
+    if (denegado) return denegado;
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+    const cuerpo = await leerCuerpo(request, rechazarSchema);
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+
+    const { pago, error } = buscarTransferenciaPendiente(id);
+    if (error) return error;
+    return HttpResponse.json(resolver(pago, request, { estado: "RECHAZADO", motivo_rechazo: cuerpo.data.motivo_rechazo }));
   }),
 ];

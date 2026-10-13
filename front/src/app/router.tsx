@@ -44,10 +44,20 @@ function paginaEnConstruccion(seccion: string): NonNullable<RouteObject["lazy"]>
   };
 }
 
+/**
+ * Pantalla de un grupo del menú (sus sub-opciones como tarjetas). Quien no tiene ese grupo en su
+ * menú va a `alternativa`: la profesora no tiene el grupo Alumnos y entra directo al listado.
+ */
+function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObject["lazy"]> {
+  return async () => {
+    const { GrupoMenuPage } = await import("@/pages/grupo-menu-page");
+    return { element: <GrupoMenuPage ruta={ruta} alternativa={alternativa} /> };
+  };
+}
+
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
   { path: "notificaciones", seccion: "Notificaciones" },
@@ -97,6 +107,12 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        // Grupo "Profesora" que suma a su menú la propietaria que también dicta clases.
+        path: "profesora",
+        element: guardiaDeSeccion("profesora"),
+        children: [{ index: true, lazy: paginaDeGrupo("/app/profesora", "/app/hoy") }],
+      },
+      {
         path: "hoy",
         element: guardiaDeSeccion("hoy"),
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "TeacherHomePage") }],
@@ -119,11 +135,14 @@ export const router = createBrowserRouter([
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") }],
       },
       {
-        // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
+        // La guardia sale del listado, que lo tienen la propietaria y la profesora: las dos abren la ficha.
         path: "alumnos",
-        element: guardiaDeSeccion("alumnos", "ALUMNOS_VER"),
+        element: guardiaDeSeccion("alumnos/listado", "ALUMNOS_VER"),
         children: [
-          { index: true, lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
+          // Pantalla del grupo Alumnos (solo en el menú de la propietaria).
+          { index: true, lazy: paginaDeGrupo("/app/alumnos", "/app/alumnos/listado") },
+          // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
+          { path: "listado", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
           // Ficha del alumno: datos y edición (US-09), plan y horarios, baja y reactivación (US-08).
           { path: ":id", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage") },
         ],
@@ -154,6 +173,30 @@ export const router = createBrowserRouter([
             children: [
               { path: "nuevo", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "NuevoPlanPage") },
               { path: ":idPlan/editar", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "EditarPlanPage") },
+            ],
+          },
+        ],
+      },
+      {
+        // Cobros y Cuotas (US-15 a US-19): la pantalla del grupo y cada una de sus opciones.
+        path: "pagos",
+        element: guardiaDeSeccion("pagos"),
+        children: [
+          { index: true, lazy: paginaDeGrupo("/app/pagos", "/app/dashboard") },
+          {
+            // US-17: revisión de las transferencias que informan los alumnos, con el mismo permiso
+            // que exige el back (pago.routes.ts).
+            path: "transferencias",
+            element: (
+              <PermissionGuard permission="PAGOS_CONFIRMAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              {
+                index: true,
+                lazy: paginaPerezosa(() => import("@/features/transferencias/pages/transferencias-page"), "TransferenciasPage"),
+              },
             ],
           },
         ],

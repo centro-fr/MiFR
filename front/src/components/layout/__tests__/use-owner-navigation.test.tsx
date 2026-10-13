@@ -25,11 +25,11 @@ function subOpcionActiva(ruta: string): string | undefined {
 
 describe("useOwnerNavigation: sección Alumnos", () => {
   it("marca Alumnos en el listado", () => {
-    expect(alumnosActivo("/app/alumnos")).toBe(true);
+    expect(alumnosActivo("/app/alumnos/listado")).toBe(true);
   });
 
   it("marca la sub-opción Listado en el listado", () => {
-    expect(subOpcionActiva("/app/alumnos")).toBe("Listado");
+    expect(subOpcionActiva("/app/alumnos/listado")).toBe("Listado");
   });
 
   // La ficha (US-08) se abre desde el listado: no tiene sub-opción propia y queda marcado Listado.

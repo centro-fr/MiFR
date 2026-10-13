@@ -114,6 +114,25 @@ Acceso a opciones secundarias (esquina superior derecha):
 | 10 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
 | 11 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
 
+### Grupos con pantalla propia
+
+Cada grupo desplegable tiene además su **pantalla de grupo**: muestra sus sub-opciones como tarjetas (ícono, nombre, descripción y contador), como otra forma de llegar a ellas además del menú.
+
+- Tocar el **nombre del grupo** en el menú abre su pantalla (y lo despliega); la **flecha** solo despliega o pliega, sin navegar.
+- En la miga de pan, el grupo es un enlace a su pantalla: "Inicio / Alumnos / Listado".
+- Con el menú contraído, el menú flotante del grupo empieza con un acceso a su pantalla.
+- La pantalla sale del mismo menú (`owner-navigation.ts`): una sub-opción nueva aparece sola en las dos.
+
+| Grupo | Pantalla | Sub-opciones |
+| ------ | ------ | ------------------- |
+| **Alumnos** | `/app/alumnos` | Listado (`/app/alumnos/listado`; la ficha `/app/alumnos/:id` lo mantiene marcado) · Pendientes de alta (US-07, con contador) |
+| **Cobros y Cuotas** | `/app/pagos` | Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
+| **Profesora** (rol extra) | `/app/profesora` | Hoy · Mis clases |
+
+Las demás pantallas de Cobros y Cuotas (cobros en efectivo, rendiciones, cuotas vencidas) se suman como sub-opciones cuando se implementen.
+
+> La profesora no tiene el grupo Alumnos: su ítem "Alumnos" va directo al listado, y si entra a `/app/alumnos` se la redirige ahí. Igual con `/app/profesora`, que la lleva a "Hoy".
+
 ### Actividades y Horarios (ítems independientes)
 
 "Actividades" y "Horarios" se presentan como dos accesos directos independientes en el menú (no forman un grupo desplegable):
