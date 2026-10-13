@@ -1212,6 +1212,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Correcciones de la auditoría de la ficha (PI-25, D-22)                 | 179 | 179 aprobados | 141,4 s | Pasaron también los 1422 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La falla provocada fue detectada |
 | 12/10/2026 | Actualización de Vitest de 3.2.7 a 5.0.4                              | 179 | 179 aprobados | 142,3 s | Sin cambios en los tests ni en la configuración. Pasaron también los 1422 tests unitarios, con cobertura del 100 % (el umbral sigue frenando el comando si baja); build y formato correctos |
 | 12/10/2026 | Parámetros del sistema por la API (PI-53, PI-54)                      | 182 | 182 aprobados | 166,2 s | Corrida completa con el archivo de parámetros. Pasaron también los 1386 tests unitarios; build correcto. Sin fallas provocadas. |
+| 12/10/2026 | Parámetros del sistema integrados con dev (PI-53, PI-54)               | 197 | 197 aprobados | 151,0 s | Primera corrida de los parámetros junto con clases y asistencia, el filtro por estado de cuota y Vitest 5. Pasaron también los 1501 tests unitarios, con cobertura del 100 %; build, chequeo de tipos y formato correctos. De 3 fallas provocadas, 2 las detectan K-18 y K-04 a K-08; la tercera (las rutas de edición sin `acceso.rol("PROPIETARIA")`) solo la detectan los unitarios de las rutas, porque `PARAMETROS_EDITAR` es exclusivo de la propietaria y ningún otro rol lo tiene en la base |
 
 ### 8.2 Resultado por caso
 
@@ -1352,3 +1353,4 @@ Los defectos se numeran D-01, D-02…
 |   2.16  | 12/10/2026 | PI-25 suma la ficha de un alumno que no existe, que a la profesora le responde 403 como uno ajeno (defecto D-22); E-15 lo verifica | Francisco Andrade |
 |   2.17  | 12/10/2026 | Corrida completa con Vitest 5.0.4, que reemplaza a la 3.2.7 por las vulnerabilidades de `tinypool` y `brace-expansion` | Francisco Andrade |
 |   2.18  | 12/10/2026 | Casos PI-53 (los parámetros del sistema los edita solo la propietaria) y PI-54 (los datos bancarios para transferir) y archivo K con K-01 a K-18; US-05, US-16, US-18 y US-21 suman los casos nuevos | Rosario Mendoza |
+|   2.19  | 12/10/2026 | Corrida de los parámetros integrados con dev y verificación de que sus tests detectan fallas | Francisco Andrade |
