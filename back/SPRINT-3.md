@@ -180,7 +180,7 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
   - [x] Solo se aprueba o rechaza una `PENDIENTE`; dos aprobaciones seguidas no duplican nada.
   - [x] Monto distinto del esperado → se aprueba solo con confirmación.
   - [x] Misma transferencia informada dos veces (alumno, monto y día de Argentina) → 409.
-- [ ] El aviso a la propietaria y al alumno es de notificaciones (US-25, Sprint 4): por ahora alcanza con el listado.
+- Pasa al Sprint 4 (decidido el 12/10/2026): el aviso a la propietaria y al alumno es de notificaciones (US-25). El DER no tiene tipos de aviso para las transferencias y el subsistema de notificaciones todavía no existe; por ahora alcanza con el listado.
 - [x] Tests de integración: PI-43 (ver "Montaje en la API" en US-15).
 
 ## Lo que queda de US-10 (del Sprint 2)
@@ -237,7 +237,10 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 ### Pendiente (US-20)
 
 - [ ] Reflejar en el `.eap` de Enterprise Architect las dos dependencias nuevas y regenerar el `.jpg` y el `.pdf` (regla dura 2).
-- [ ] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`: consultar o crear clases de días anteriores para la corrección, si los pre-inscriptos aparecen en la lista y cómo se cargan las observaciones.
+- [x] Puntos abiertos en la sección 9 de `PRUEBAS-INTEGRACION.md`, resueltos el 12/10/2026:
+  - [x] Clases de días anteriores: `GET /clases?fecha=AAAA-MM-DD`, solo la propietaria y hasta hoy. Crea las clases de ese día con los horarios que regían (también los dados de baja después). Una que ya terminó sale cerrada sin ausentes y la propietaria la corrige marcando. Test PI-55.
+  - [x] Los pre-inscriptos no aparecen en la lista: no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo, así que el cupo disponible de la clase la descuenta. Tests PI-47 y PI-48.
+  - [x] Observaciones: se cargan con la marca (`observaciones`, opcional, hasta 255 caracteres); sin el campo se conservan y `""` las borra. Test J-13.
 
 ## US-21 – Inasistencias automáticas
 
@@ -257,7 +260,8 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 
 ### Pendiente (US-21)
 
-- [ ] Cancelar una clase (`CANCELADA`, sin inasistencias): fuera del MVP según la spec; el aviso `CLASE_CANCELADA` es de US-25.
+- [x] Cancelar una clase: `POST /clases/:id/cancelar`, solo la propietaria (decidido el 12/10/2026). Solo una PROGRAMADA sin asistencias marcadas (409 si no); queda `CANCELADA`, sin marcas ni inasistencias, y el cierre automático no la toca. Test PI-56.
+- Pasa al Sprint 4: el aviso `CLASE_CANCELADA` a los alumnos, con las notificaciones (US-25).
 
 ### Pendientes del Sprint 1 que siguen esperando
 

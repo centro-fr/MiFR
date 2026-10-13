@@ -196,8 +196,8 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
 | US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47, PI-51, PI-53                             | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha, el listado y la lista de asistencia |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
-| US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49                                           | Sí (la consulta de clases de días anteriores, opcional en la spec, pendiente)          |
-| US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50, PI-53                                    | Sí (la clase cancelada, fuera del MVP, pendiente)                                      |
+| US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49, PI-55, PI-56                             | Sí                                                                                     |
+| US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50, PI-53, PI-56                             | Sí                                                                                     |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                               |                                                                                        |
 | US-23 | Informe mensual automático de honorarios                  |   4    |                                                               |                                                                                        |
 | US-24 | Registro de suplencias entre profesoras                   |   4    |                                                               |                                                                                        |
@@ -277,8 +277,10 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-52         | El historial de cuotas y pagos en la ficha                          | US-10, US-17        | Servicios          | Demostración                                               | Sí           |
 | PI-53         | Los parámetros del sistema los ve y edita solo la propietaria      | US-05, US-16, US-18, US-21 | Servicios   | Comunes                                                    | Sí           |
 | PI-54         | Los datos bancarios para transferir los ven el alumno y su tutor   | US-16               | Servicios          | Comunes                                                    | Sí           |
+| PI-55         | La propietaria corrige las clases de un día anterior                | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-56         | La propietaria cancela una clase                                    | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir.
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026).
 
 ### 6.2 Detalle
 
@@ -859,14 +861,14 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-47 — Las clases del día y su lista de asistencia
 
-**US:** US-20, US-18 · **Precondición:** escenario de demostración y reloj fijo el lunes 12/10/2026 a las 15:00. Lucía tiene un horario de Funcional los lunes de 20:00 a 21:00 (cupo 10) con cinco inscriptos vigentes: Acosta (al día), Benítez (vencida), Castro (vencida, con una transferencia sin revisar), Díaz (pre-inscripta) y Escobar (activa, sin cuotas). Ferreyra se dio de baja hoy y Gómez está en el horario de Lucía de los miércoles.
+**US:** US-20, US-18 · **Precondición:** escenario de demostración y reloj fijo el lunes 12/10/2026 a las 15:00. Lucía tiene un horario de Funcional los lunes de 20:00 a 21:00 (cupo 10) con cinco inscriptos activos: Acosta (al día), Benítez (vencida), Castro (vencida, con una transferencia sin revisar), Díaz y Escobar (activos, sin cuotas). Ibarra está pre-inscripto desde hoy, con la reserva vigente. Ferreyra se dio de baja hoy y Gómez está en el horario de Lucía de los miércoles.
 
 1. Lucía pide `GET /clases/hoy` dos veces.
 2. Con un horario de Carla del mismo lunes, Lucía vuelve a pedir sus clases y después las pide Carla.
 3. Lucía abre `GET /clases/:id/asistencia` de su clase.
 4. Valentina, alumna, pide `GET /clases/hoy`.
 
-**Resultado esperado:** en el paso 1 las dos respuestas son iguales (200), con solo clases de Lucía; la de las 20:00 está `PROGRAMADA`, con 5 inscriptos y 5 lugares libres, y en la base hay una sola fila de `clases` para ese horario y ninguna para el de los miércoles. En el paso 2 el pedido de Lucía no crea la clase del horario de Carla, y Carla no ve la clase de Lucía. En el paso 3 la lista trae a los cinco vigentes por apellido, sin marcar, sin Ferreyra ni Gómez, con la situación de cuota: `AL_DIA`, `VENCIDA` (con `puede_asistir: true`, por `VENCIDOS_PUEDEN_ASISTIR`), `VENCIDA` con `tiene_pago_pendiente: true` y dos `PENDIENTE_DE_PAGO`. En el paso 4, 403 y ninguna clase creada.
+**Resultado esperado:** en el paso 1 las dos respuestas son iguales (200), con solo clases de Lucía; la de las 20:00 está `PROGRAMADA`, con 5 inscriptos y 4 lugares libres (Ibarra no está en la lista, pero su reserva ocupa un lugar), y en la base hay una sola fila de `clases` para ese horario y ninguna para el de los miércoles. En el paso 2 el pedido de Lucía no crea la clase del horario de Carla, y Carla no ve la clase de Lucía. En el paso 3 la lista trae a los cinco activos por apellido, sin marcar, sin Ibarra (pre-inscripto), Ferreyra ni Gómez, con la situación de cuota: `AL_DIA`, `VENCIDA` (con `puede_asistir: true`, por `VENCIDOS_PUEDEN_ASISTIR`), `VENCIDA` con `tiene_pago_pendiente: true` y dos `PENDIENTE_DE_PAGO`. En el paso 4, 403 y ninguna clase creada.
 
 **Automatizado:** Sí (J-01 a J-03).
 
@@ -875,13 +877,14 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 **US:** US-20 · **Precondición:** la de PI-47.
 
 1. Lucía marca presente a Acosta y después ausente.
-2. Lucía intenta marcar a Gómez (otro horario) y a Ferreyra (dado de baja); Carla intenta marcar a Acosta y abrir la lista de la clase de Lucía.
+2. Lucía intenta marcar a Gómez (otro horario), a Ferreyra (dado de baja) y a Ibarra (pre-inscripto); Carla intenta marcar a Acosta y abrir la lista de la clase de Lucía.
 3. En una clase de Lucía del lunes anterior, ya `DICTADA`, marcan Lucía y después Marina.
 4. Lucía marca ausente a Benítez y usa `POST /clases/:id/asistencia/todos-presentes`.
+5. Lucía marca a Acosta con la observación "  Llegó tarde ", lo vuelve a marcar sin observaciones, después con un texto vacío y por último con 256 caracteres.
 
-**Resultado esperado:** en el paso 1, 200 las dos veces y una sola fila de Acosta con `asistio = false`, su inscripción, el `id_usuario_registra` de Lucía y la hora del marcado. En el paso 2, 404 en los cuatro pedidos y ninguna fila en `asistencias`. En el paso 3 Lucía recibe 404 (la clase no es de hoy) y Marina 200, con la corrección guardada. En el paso 4 los cinco vigentes quedan presentes, Benítez incluida.
+**Resultado esperado:** en el paso 1, 200 las dos veces y una sola fila de Acosta con `asistio = false`, su inscripción, el `id_usuario_registra` de Lucía y la hora del marcado. En el paso 2, 404 en los cinco pedidos y ninguna fila en `asistencias`. En el paso 3 Lucía recibe 404 (la clase no es de hoy) y Marina 200, con la corrección guardada. En el paso 4 los cinco activos quedan presentes, Benítez incluida. En el paso 5 la observación se guarda recortada y sale en la lista; la marca sin observaciones la conserva, el texto vacío la borra (NULL) y la de 256 caracteres responde 400.
 
-**Automatizado:** Sí (J-04 a J-07).
+**Automatizado:** Sí (J-04 a J-07 y J-13).
 
 #### PI-49 — Cerrar la asistencia con el botón
 
@@ -958,9 +961,33 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (K-11 a K-13).
 
+#### PI-55 — La propietaria corrige las clases de un día anterior
+
+**US:** US-20 · **Precondición:** la de PI-47. El horario de Lucía de los lunes se dio de baja el 08/10/2026, después del lunes 05/10/2026.
+
+1. Marina pide `GET /clases?fecha=2026-10-05` dos veces.
+2. Marina marca presente a Acosta en la clase de ese día.
+3. Lucía pide `GET /clases?fecha=2026-10-05` y Marina pide `GET /clases?fecha=2026-10-13` (mañana).
+
+**Resultado esperado:** en el paso 1 las dos respuestas traen las mismas clases (200): la del horario de Lucía aparece, aunque hoy esté dado de baja, porque ese día regía; está `DICTADA` (ya terminó y nadie la marcó: el cierre automático no le inventa faltas), con 5 inscriptos y sin filas en `asistencias`. En el paso 2, 200 y la corrección queda guardada. En el paso 3 Lucía recibe 403 y la fecha futura 400, sin crear ninguna clase.
+
+**Automatizado:** Sí (J-14 y J-15).
+
+#### PI-56 — La propietaria cancela una clase
+
+**US:** US-21, US-20 · **Precondición:** la de PI-47.
+
+1. Marina cancela la clase de hoy de Lucía (`POST /clases/:id/cancelar`) dos veces.
+2. Lucía y Marina intentan marcar a Acosta, Lucía intenta cerrar la asistencia y corre el cierre automático al terminar la clase.
+3. Con la base reiniciada, Lucía intenta cancelar la clase; marca a Acosta y Marina intenta cancelarla; Lucía la cierra y Marina vuelve a intentar.
+
+**Resultado esperado:** en el paso 1, 200 las dos veces y la clase queda `CANCELADA`. En el paso 2 las marcas y el cierre responden 409 y el cierre automático no la toca: sigue `CANCELADA`, sin `fecha_cierre_asist` y sin filas en `asistencias`. En el paso 3 Lucía recibe 403, la clase con una marca responde 409 y la dictada también 409; termina `DICTADA`. El aviso `CLASE_CANCELADA` a los alumnos llega con las notificaciones (US-25, Sprint 4).
+
+**Automatizado:** Sí (J-16 y J-17).
+
 ## 7. Tests automatizados
 
-197 tests en once archivos:
+202 tests en once archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -973,7 +1000,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 19 (H-01 a H-19) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
-|    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 12 (J-01 a J-12) | PI-47 a PI-50                     |
+|    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
@@ -1055,10 +1082,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
 | J-01        | La profesora ve solo sus clases de hoy; pedirlas dos veces no las duplica y no se crean clases de otros días ni de horarios de otra profesora | PI-47 |
-| J-02        | La lista trae a los inscriptos vigentes del horario, por apellido, con su situación de cuota (al día, vencida, transferencia sin revisar, pendiente de pago), sin el dado de baja ni el de otro horario | PI-47 |
+| J-02        | La lista trae a los inscriptos activos del horario, por apellido, con su situación de cuota (al día, vencida, transferencia sin revisar, pendiente de pago), sin el pre-inscripto, el dado de baja ni el de otro horario; la clase cuenta 5 inscriptos y 4 lugares libres | PI-47 |
 | J-03        | Un alumno no accede a las clases (403) y no se crea ninguna                                                                                                     | PI-47 |
 | J-04        | La marca se guarda al momento con quién y cuándo, y la última vale                                                                                                | PI-48 |
-| J-05        | No se marca a un alumno de otro horario ni a uno dado de baja, ni en la clase de otra profesora (404); la base queda igual                                        | PI-48 |
+| J-05        | No se marca a un alumno de otro horario, a uno dado de baja ni a un pre-inscripto, ni en la clase de otra profesora (404); la base queda igual                  | PI-48 |
 | J-06        | La profesora no toma asistencia de una clase de otro día; la propietaria la corrige                                                                             | PI-48 |
 | J-07        | "Todos presentes" marca a los inscriptos vigentes y pisa una marca anterior                                                                                      | PI-48 |
 | J-08        | Con 5 inscriptos y 3 presentes, el cierre registra 2 ausentes sin usuario, no toca al dado de baja y cerrar otra vez no duplica nada                              | PI-49 |
@@ -1066,6 +1093,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | J-10        | El cierre automático cierra al terminar la clase, ni un minuto antes, y solo genera ausentes donde se marcó a alguien                                             | PI-50 |
 | J-11        | El cierre automático espera además los `MINUTOS_CIERRE_ASISTENCIA`                                                                                               | PI-50 |
 | J-12        | Leer una clase vencida la cierra aunque el intervalo no haya corrido                                                                                            | PI-50 |
+| J-13        | Las observaciones se guardan con la marca y salen en la lista; una marca sin observaciones las conserva y un texto vacío las borra; más de 255 caracteres, 400 | PI-48 |
+| J-14        | La propietaria pide un día anterior: se crean sus clases con los horarios que regían, salen cerradas sin ausentes, no se duplican y las corrige                | PI-55 |
+| J-15        | Otro día lo pide solo la propietaria (403 para la profesora) y una fecha futura responde 400, sin crear clases                                                    | PI-55 |
+| J-16        | Una clase cancelada no admite marcas ni cierre, y el cierre automático no la toca ni le genera ausentes; cancelar dos veces no cambia nada                       | PI-56 |
+| J-17        | No se cancela una clase con asistencias marcadas ni una dictada (409), y la profesora no cancela (403)                                                           | PI-56 |
 | K-01        | Lista todos los parámetros del catálogo, con su tipo y su valor inicial                                                                                                       | PI-53 |
 | K-02, K-03  | La propietaria cambia un parámetro entero y uno booleano, y el valor queda en la base y en el listado                                                                         | PI-53 |
 | K-04 a K-08 | Rechaza con 400 un negativo, 366 días, un texto en un entero, más de 1440 minutos y un texto en un booleano, sin tocar la base                                                | PI-53 |
@@ -1164,6 +1196,11 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Marcar no verifica que el alumno esté en el horario                                     | J-05                                                                                                       |
 | La profesora materializa las clases de horarios ajenos                                  | J-01. Al principio ningún test falló: el listado filtra igual por profesora. Se sumó al escenario un horario de Carla del mismo día |
 | La lista incluye inscripciones y alumnos dados de baja                                  | J-01, J-02, J-05, J-07, J-08, J-10, J-12. Al principio ningún test falló: el dado de baja tenía el horario cerrado antes de hoy y lo sacaba la fecha. Se lo pasó a dado de baja hoy, cuando solo lo saca el estado |
+| La lista vuelve a incluir a los pre-inscriptos                                          | J-01, J-02, J-05, J-08 a J-10, J-12 y J-14                                                                 |
+| Un día anterior solo toma los horarios que siguen vigentes hoy                          | J-14                                                                                                       |
+| La cancelación no revisa si la clase ya tiene marcas                                    | J-17 y un unitario de la fachada                                                                           |
+| Una marca sin observaciones las borra                                                   | J-13 y un unitario del repositorio                                                                         |
+| Otro día sin `acceso.rol("PROPIETARIA")`                                                | J-15 y un unitario de las rutas                                                                            |
 | El filtro por estado de cuota deja los que no coinciden                                 | H-17, H-18 y cuatro unitarios de la fachada                                                                |
 | El filtro pagina sin el `offset`                                                        | H-17                                                                                                       |
 | El historial llega también a la profesora                                               | H-19 y un unitario de la fachada                                                                           |
@@ -1213,6 +1250,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Actualización de Vitest de 3.2.7 a 5.0.4                              | 179 | 179 aprobados | 142,3 s | Sin cambios en los tests ni en la configuración. Pasaron también los 1422 tests unitarios, con cobertura del 100 % (el umbral sigue frenando el comando si baja); build y formato correctos |
 | 12/10/2026 | Parámetros del sistema por la API (PI-53, PI-54)                      | 182 | 182 aprobados | 166,2 s | Corrida completa con el archivo de parámetros. Pasaron también los 1386 tests unitarios; build correcto. Sin fallas provocadas. |
 | 12/10/2026 | Parámetros del sistema integrados con dev (PI-53, PI-54)               | 197 | 197 aprobados | 151,0 s | Primera corrida de los parámetros junto con clases y asistencia, el filtro por estado de cuota y Vitest 5. Pasaron también los 1501 tests unitarios, con cobertura del 100 %; build, chequeo de tipos y formato correctos. De 3 fallas provocadas, 2 las detectan K-18 y K-04 a K-08; la tercera (las rutas de edición sin `acceso.rol("PROPIETARIA")`) solo la detectan los unitarios de las rutas, porque `PARAMETROS_EDITAR` es exclusivo de la propietaria y ningún otro rol lo tiene en la base |
+| 12/10/2026 | Puntos abiertos de asistencia: pre-inscriptos, días anteriores, observaciones y clase cancelada (PI-47, PI-48, PI-55, PI-56) | 202 | 202 aprobados | 149,6 s | J-01, J-02, J-05 y J-08 se adaptaron: el pre-inscripto ya no está en la clase. Pasaron también los 1534 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas. La primera corrida falló en J-16: la clase cancelada se releía dentro de la transacción y salía sin cancelar; se relee al confirmar |
 
 ### 8.2 Resultado por caso
 
@@ -1247,6 +1285,9 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-52         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa H-19; sin defectos                                                          |
 | PI-25         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan E-15 a E-17 con la ficha de un alumno inexistente (defecto D-22)           |
 | PI-53, PI-54  | 12/10/2026 | Rosario Mendoza   | Aprobado           | Pasan K-01 a K-18 por la API; sin defectos                                       |
+| PI-47, PI-48  | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-01 a J-07 y J-13 sin el pre-inscripto en la clase y con las observaciones |
+| PI-55         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-14 y J-15; sin defectos                                                  |
+| PI-56         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-16 y J-17; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1292,10 +1333,10 @@ Los defectos se numeran D-01, D-02…
 | PI-38 | ¿La reserva de cupo de una pre-inscripción vence (el diseño del front decía 72 hs y lista de espera)? Resuelto: vence sola, contada desde el inicio de clases y no desde el alta, con un plazo en días que configura la propietaria (`DIAS_RESERVA_PREINSCRIPCION`, 3 por defecto). Se calcula al consultar, sin proceso programado. Sin lista de espera: el lugar vuelve a figurar disponible | Cerrado |
 | PI-46 | Las actividades públicas no tienen límite de pedidos por IP: hoy ningún endpoint lo tiene (tampoco el login). Detrás del proxy de Render hace falta `trust proxy` para que el límite no caiga sobre la IP del proxy. Mientras tanto, la respuesta se puede reusar un minuto (`Cache-Control`). Falta decidir si se agrega `express-rate-limit` para toda la API | Abierto |
 | PI-41 | ¿Dónde se guarda el texto libre de una baja con el motivo "Otro" (US-08)? `observaciones` es de la inscripción y se pisaría. Resuelto: columna nueva `inscripciones.detalle_baja` (VARCHAR(200), opcional), solo con el motivo `OTRO` (`ck_inscripciones_x2`); cambio del DER decidido el 11/10/2026 | Cerrado |
-| PI-48 | La propietaria corrige solo las clases que ya existen: una clase se crea cuando alguien pide las del día, y no hay una ruta para listar o crear las de días anteriores ("consultar asistencias de clases anteriores", opcional en US-20). Falta decidir si se agrega `GET /clases?fecha=` | Abierto |
-| PI-47 | Los pre-inscriptos del horario aparecen en la lista con `PENDIENTE_DE_PAGO` y `puede_asistir: false`, para que la profesora los vea en su primera clase y se pueda marcar su asistencia. Falta confirmar con la propietaria si deben aparecer | Abierto |
-| PI-50 | No hay forma de cancelar una clase: el estado `CANCELADA` existe en el DER y en el ciclo de la clase (`estados_clase.puml`), y una cancelada no admite marcas ni cierre, pero la transición queda para cuando se implemente (US-21 la deja fuera del MVP; el aviso `CLASE_CANCELADA` es de US-25) | Abierto |
-| PI-48 | La lista devuelve las `observaciones` de cada asistencia, pero ninguna ruta las carga todavía | Abierto |
+| PI-48 | La propietaria corrige solo las clases que ya existen. Resuelto: `GET /clases?fecha=` (solo la propietaria, hasta hoy) crea las clases de ese día con los horarios que regían; ver PI-55 | Cerrado |
+| PI-47 | ¿Los pre-inscriptos aparecen en la lista de asistencia? Resuelto (12/10/2026): no; todavía no pagaron y no habilitan a asistir (US-07), así que no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo | Cerrado |
+| PI-50 | ¿Cómo se cancela una clase? Resuelto: `POST /clases/:id/cancelar`, solo la propietaria y solo una clase PROGRAMADA sin marcas; no genera inasistencias. El aviso `CLASE_CANCELADA` llega con las notificaciones (US-25, Sprint 4); ver PI-56 | Cerrado |
+| PI-48 | ¿Cómo se cargan las `observaciones` de una asistencia? Resuelto: con la marca (`PUT /clases/:id/asistencia/:idAlumno`, campo opcional): sin el campo se conservan y `""` las borra; ver J-13 | Cerrado |
 
 ## 10. Cómo sumar casos
 
@@ -1354,3 +1395,4 @@ Los defectos se numeran D-01, D-02…
 |   2.17  | 12/10/2026 | Corrida completa con Vitest 5.0.4, que reemplaza a la 3.2.7 por las vulnerabilidades de `tinypool` y `brace-expansion` | Francisco Andrade |
 |   2.18  | 12/10/2026 | Casos PI-53 (los parámetros del sistema los edita solo la propietaria) y PI-54 (los datos bancarios para transferir) y archivo K con K-01 a K-18; US-05, US-16, US-18 y US-21 suman los casos nuevos | Rosario Mendoza |
 |   2.19  | 12/10/2026 | Corrida de los parámetros integrados con dev y verificación de que sus tests detectan fallas | Francisco Andrade |
+|   2.20  | 12/10/2026 | Casos PI-55 (corrección de días anteriores) y PI-56 (clase cancelada) y tests J-13 a J-17; PI-47 y PI-48 sin el pre-inscripto en la clase y con las observaciones; se cierran los cuatro puntos de asistencia de la sección 9; US-20 y US-21 quedan automatizadas sin pendientes | Francisco Andrade |
