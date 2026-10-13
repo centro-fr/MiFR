@@ -188,6 +188,21 @@ export const router = createBrowserRouter([
         children: [
           { index: true, lazy: paginaDeGrupo("/app/pagos", "/app/dashboard") },
           {
+            // US-15: estado de cuotas de alumnos y cobro en efectivo. Actor: Propietaria con PAGOS_REGISTRAR.
+            path: "cuotas",
+            element: (
+              <PermissionGuard permission="PAGOS_REGISTRAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              {
+                index: true,
+                lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
+              },
+            ],
+          },
+          {
             // US-17: revisión de las transferencias que informan los alumnos, con el mismo permiso
             // que exige el back (pago.routes.ts).
             path: "transferencias",
@@ -219,14 +234,6 @@ export const router = createBrowserRouter([
         // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.
         path: "cobros",
         element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
-        children: [
-          { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
-        ],
-      },
-      {
-        // US-15 a US-19: Cobros y Cuotas. Actor: Propietaria (menú 'Cobros y Cuotas') con PAGOS_REGISTRAR.
-        path: "pagos",
-        element: guardiaDeSeccion("pagos", "PAGOS_REGISTRAR"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
         ],
