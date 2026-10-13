@@ -116,7 +116,7 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 
 ### Pendiente (ParametrosSistema)
 
-- [ ] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
+- [x] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento` (parte `ILogicaParametros`).
 - [x] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
 - [x] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
   - [x] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`, vacíos hasta que la propietaria los cargue).
@@ -262,7 +262,7 @@ El front todavía no hizo el Sprint 2 (planes, alumnos e inscripciones). Antes d
 ### Pendientes del Sprint 1 que siguen esperando
 
 - [x] Un horario con alumnos inscriptos no se da de baja (409; fachada `GestionServicioEntrenamientoService` + `IInfoInscripciones`).
-- [ ] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos.
+- [x] Revisar si el bloqueo de baja de actividad (US-03) se limita a horarios con alumnos inscriptos: sí, la fachada cuenta los inscriptos vigentes de cada horario (`IInfoInscripciones`) y solo bloquea si alguno tiene; si no, da de baja los horarios con la actividad. Punto PI-06 cerrado.
 
 ---
 
