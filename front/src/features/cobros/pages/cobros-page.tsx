@@ -180,7 +180,7 @@ export function CobrosPage() {
     void recargarAlumnos();
   }
 
-  const tituloPagina = esProfesora ? "Cobros en efectivo" : "Cobros y Cuotas";
+  const tituloPagina = esProfesora ? "Cobros en efectivo" : "Estado de cuotas";
 
   return (
     <OwnerLayout>
