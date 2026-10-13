@@ -87,18 +87,18 @@ describe("MiPlanPage (US-16)", () => {
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof hooks.useMiPlan>);
 
     vi.spyOn(hooks, "useMisTransferencias").mockReturnValue({
       data: mockTransferencias,
       isLoading: false,
       isError: false,
-    } as any);
+    } as unknown as ReturnType<typeof hooks.useMisTransferencias>);
 
     vi.spyOn(hooks, "useInformarTransferencia").mockReturnValue({
       mutateAsync: vi.fn().mockResolvedValue({ id_pago: 102 }),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof hooks.useInformarTransferencia>);
   });
 
   it("renderiza la pantalla de Mi plan y transferencias con los datos del centro", () => {
@@ -144,7 +144,7 @@ describe("MiPlanPage (US-16)", () => {
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof hooks.useMiPlan>);
 
     renderMiPlanPage();
 
