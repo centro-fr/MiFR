@@ -146,11 +146,15 @@ describe("HorarioRepository", () => {
     });
   });
 
-  it("listarActivosDelDia filtra por día, fecha de alta y horarios no dados de baja", async () => {
+  it("listarActivosDelDia filtra por día, fecha de alta y horarios que regían ese día", async () => {
     await repositorio.listarActivosDelDia(1, HOY_EN_ARGENTINA);
 
     expect(prisma.horarios.findMany).toHaveBeenCalledWith({
-      where: { dia_semana: 1, fecha_alta: { lte: HOY_EN_ARGENTINA }, fecha_baja: null },
+      where: {
+        dia_semana: 1,
+        fecha_alta: { lte: HOY_EN_ARGENTINA },
+        OR: [{ fecha_baja: null }, { fecha_baja: { gt: HOY_EN_ARGENTINA } }],
+      },
       include: CON_DATOS,
       orderBy: [{ hora_inicio: "asc" }, { id_horario: "asc" }],
     });

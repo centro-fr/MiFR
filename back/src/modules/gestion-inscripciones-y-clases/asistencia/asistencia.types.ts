@@ -14,4 +14,6 @@ export interface InscriptoConAsistencia {
 
 export interface MarcarAsistenciaInput {
   asistio: boolean;
+  // undefined: se conservan las que había; null: se borran.
+  observaciones?: string | null;
 }

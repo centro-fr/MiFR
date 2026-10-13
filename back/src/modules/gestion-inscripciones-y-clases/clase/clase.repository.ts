@@ -61,6 +61,13 @@ export class ClaseRepository {
     return filas[0]?.estado ?? null;
   }
 
+  async cancelar(idClase: number): Promise<void> {
+    await clienteEnCurso(this.prisma).clases.updateMany({
+      where: { id_clase: idClase, estado: "PROGRAMADA" },
+      data: { estado: "CANCELADA" },
+    });
+  }
+
   // Solo cierra una PROGRAMADA: si dos cierres se cruzan, el segundo no encuentra nada que cerrar.
   async cerrar(idClase: number, fechaCierre: Date): Promise<ClaseConDatos | null> {
     const cliente = clienteEnCurso(this.prisma);

@@ -52,6 +52,7 @@ export interface AsistenciaDeClase {
 // subsistema le suma el estado de cuota de cada inscripto (IInfoCuotas).
 export interface ILogicaClasesYAsistencia {
   listarClasesDeHoy(solicitante: Solicitante): Promise<ClaseDelDia[]>;
+  listarClasesDeFecha(fecha: Date, solicitante: Solicitante): Promise<ClaseDelDia[]>;
   obtenerAsistenciaDeClase(idClase: number, solicitante: Solicitante): Promise<AsistenciaDeClase>;
   marcarAsistencia(
     idClase: number,
@@ -61,6 +62,7 @@ export interface ILogicaClasesYAsistencia {
   ): Promise<void>;
   marcarTodosPresentes(idClase: number, solicitante: Solicitante): Promise<void>;
   cerrarAsistencia(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos>;
+  cancelarClase(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos>;
 }
 
 // Interfaz del subsistema GestionInscripcionesYClases en la vista arquitectónica: es lo único que

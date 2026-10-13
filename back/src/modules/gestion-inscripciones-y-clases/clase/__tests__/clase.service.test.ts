@@ -20,6 +20,7 @@ function crearMocks() {
       buscarPorId: vi.fn().mockResolvedValue(claseDeHoy),
       bloquear: vi.fn(),
       cerrar: vi.fn(),
+      cancelar: vi.fn(),
       listarAbiertasHasta: vi.fn(),
     },
     horarios: {
@@ -154,6 +155,40 @@ describe("ClaseService", () => {
     mocks.repositorio.bloquear.mockResolvedValue(null);
 
     await expect(servicio.bloquearParaMarcar(20, PROPIETARIA)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("materializarDelDia y listarDelDia usan la fecha que se les pasa (corrección de la propietaria)", async () => {
+    const ayer = new Date("2026-10-11T00:00:00.000Z");
+
+    await servicio.materializarDelDia(PROPIETARIA, ayer);
+    await servicio.listarDelDia(PROPIETARIA, ayer);
+
+    expect(mocks.horarios.listarActivosDelDia).toHaveBeenCalledWith(ayer);
+    expect(mocks.repositorio.crearDelDia).toHaveBeenCalledWith(expect.any(Array), ayer);
+    expect(mocks.repositorio.listarPorFecha).toHaveBeenCalledWith(ayer, undefined);
+  });
+
+  it.each(["PROGRAMADA", "CANCELADA"] as const)(
+    "bloquearParaCancelar toma el bloqueo y devuelve el estado de una clase %s",
+    async (estado) => {
+      mocks.repositorio.bloquear.mockResolvedValue(estado);
+
+      await expect(servicio.bloquearParaCancelar(20)).resolves.toBe(estado);
+      expect(mocks.repositorio.bloquear).toHaveBeenCalledWith(20);
+    },
+  );
+
+  it("bloquearParaCancelar rechaza una clase DICTADA y una que no existe", async () => {
+    mocks.repositorio.bloquear.mockResolvedValueOnce("DICTADA").mockResolvedValueOnce(null);
+
+    await expect(servicio.bloquearParaCancelar(20)).rejects.toBeInstanceOf(ConflictError);
+    await expect(servicio.bloquearParaCancelar(20)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it("cancelar se delega en el repositorio", async () => {
+    await servicio.cancelar(20);
+
+    expect(mocks.repositorio.cancelar).toHaveBeenCalledWith(20);
   });
 
   it("listarAbiertasHasta y cerrar se delegan en el repositorio", async () => {

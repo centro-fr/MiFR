@@ -3,7 +3,7 @@ import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
-import type { ClaseConDatos } from "./clase.types.js";
+import type { ClaseConDatos, EstadoClase } from "./clase.types.js";
 import type { ClaseRepository } from "./clase.repository.js";
 import type { IInfoClases } from "./interface/i-info-clases.js";
 
@@ -16,21 +16,24 @@ export class ClaseService implements IInfoClases {
     private readonly profesores: IInfoProfesores,
   ) {}
 
-  async materializarDelDia(solicitante: Solicitante): Promise<void> {
-    const hoy = fechaActualArgentina();
+  // Otro día que no sea hoy lo pide solo la propietaria, para corregir (la ruta lo exige).
+  async materializarDelDia(solicitante: Solicitante, fecha: Date = fechaActualArgentina()): Promise<void> {
     const idProfesora = await this.idProfesoraSegun(solicitante);
     if (idProfesora === null) return;
-    const horarios = await this.horarios.listarActivosDelDia(hoy);
+    const horarios = await this.horarios.listarActivosDelDia(fecha);
     const propios = horarios.filter(
       (horario) => idProfesora === undefined || horario.id_profesora === idProfesora,
     );
-    await this.repositorio.crearDelDia(propios, hoy);
+    await this.repositorio.crearDelDia(propios, fecha);
   }
 
-  async listarDelDia(solicitante: Solicitante): Promise<ClaseConDatos[]> {
+  async listarDelDia(
+    solicitante: Solicitante,
+    fecha: Date = fechaActualArgentina(),
+  ): Promise<ClaseConDatos[]> {
     const idProfesora = await this.idProfesoraSegun(solicitante);
     if (idProfesora === null) return [];
-    return this.repositorio.listarPorFecha(fechaActualArgentina(), idProfesora);
+    return this.repositorio.listarPorFecha(fecha, idProfesora);
   }
 
   // US-20: la profesora toma asistencia solo de las clases que dicta hoy; las de otros días
@@ -54,6 +57,20 @@ export class ClaseService implements IInfoClases {
     if (estado === "DICTADA" && !solicitante.esPropietaria) {
       throw new ConflictError("La asistencia de la clase está cerrada: solo la propietaria la corrige");
     }
+  }
+
+  // Toma el bloqueo de la clase en la transacción en curso, como el marcado, y devuelve su estado:
+  // una marca y la cancelación no pueden cruzarse. Una clase dictada ya no se cancela.
+  async bloquearParaCancelar(idClase: number): Promise<EstadoClase> {
+    const estado = await this.repositorio.bloquear(idClase);
+    if (estado === null) throw new NotFoundError("Clase no encontrada");
+    if (estado === "DICTADA") throw new ConflictError("La clase ya se dictó: no se puede cancelar");
+    return estado;
+  }
+
+  // PROGRAMADA → CANCELADA (estados_clase.puml). Una cancelada no admite marcas ni genera faltas.
+  async cancelar(idClase: number): Promise<void> {
+    await this.repositorio.cancelar(idClase);
   }
 
   listarAbiertasHasta(fecha: Date): Promise<ClaseConDatos[]> {

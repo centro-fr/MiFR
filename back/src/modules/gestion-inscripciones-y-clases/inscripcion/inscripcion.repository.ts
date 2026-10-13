@@ -51,13 +51,14 @@ function clavesDeInscripcion(idAlumno: number, idsHorarios: number[], idPlan?: n
   ];
 }
 
-// Quién está en una clase (US-20, US-21): el horario vigente ese día, la inscripción vigente y el
-// alumno no dado de baja.
+// Quién está en una clase (US-20, US-21): el horario vigente ese día, la inscripción activa y el
+// alumno no dado de baja. Un pre-inscripto no figura: todavía no pagó y no habilita a asistir (US-07),
+// así que tampoco se le marca asistencia ni se le registra una falta (decidido el 12/10/2026).
 function inscriptosVigentesEl(fecha: Date) {
   return {
     fecha_desde: { lte: fecha },
     OR: [{ fecha_hasta: null }, { fecha_hasta: { gte: fecha } }],
-    inscripcion: { estado: { in: [...ESTADOS_VIGENTES] }, alumno: { estado: { not: "BAJA" as const } } },
+    inscripcion: { estado: "ACTIVA" as const, alumno: { estado: { not: "BAJA" as const } } },
   } satisfies Prisma.inscripcion_horariosWhereInput;
 }
 

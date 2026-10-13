@@ -5,6 +5,8 @@ import type {
   DarDeBajaAlumnoInput,
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
+import { ConflictError } from "../../shared/errors/app-error.js";
+import type { IUnidadDeTrabajo } from "../../shared/db/transaccion.js";
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 import type { HabilitacionDeInscripcion } from "../gestion-cuotas-y-pagos/cuota/cuota.types.js";
@@ -44,6 +46,7 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     private readonly clases: ClaseService,
     private readonly asistencias: AsistenciaService,
     private readonly cierreAsistencia: CierreAsistenciaService,
+    private readonly unidadDeTrabajo: IUnidadDeTrabajo,
   ) {}
 
   crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
@@ -77,20 +80,13 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     return this.inscripciones.actualizarHorarios(id, input);
   }
 
-  // Materializa antes de cerrar: una clase de hoy que ya terminó y nadie había pedido sale cerrada.
-  async listarClasesDeHoy(solicitante: Solicitante): Promise<ClaseDelDia[]> {
-    await this.clases.materializarDelDia(solicitante);
-    await this.cierreAsistencia.procesarCierresAutomaticos();
-    const clases = await this.clases.listarDelDia(solicitante);
-    const inscriptos = await this.inscripciones.contarInscriptosParaAsistencia(
-      clases.map(({ id_horario }) => id_horario),
-      fechaActualArgentina(),
-    );
-    return clases.map((clase) => {
-      const cantidad = inscriptos.get(clase.id_horario) ?? 0;
-      const cupo = clase.horario.cupo_maximo ?? clase.horario.actividad.cupo_maximo;
-      return { ...clase, inscriptos: cantidad, cupo_disponible: cupo === null ? null : cupo - cantidad };
-    });
+  listarClasesDeHoy(solicitante: Solicitante): Promise<ClaseDelDia[]> {
+    return this.listarClasesDelDia(solicitante);
+  }
+
+  // Corrección de la propietaria (US-20): materializa las clases de ese día, si todavía no existían.
+  listarClasesDeFecha(fecha: Date, solicitante: Solicitante): Promise<ClaseDelDia[]> {
+    return this.listarClasesDelDia(solicitante, fecha);
   }
 
   async obtenerAsistenciaDeClase(idClase: number, solicitante: Solicitante): Promise<AsistenciaDeClase> {
@@ -128,5 +124,44 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
 
   cerrarAsistencia(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos> {
     return this.cierreAsistencia.cerrarManualmente(idClase, solicitante);
+  }
+
+  // Cruza Clase y Asistencia, que el diagrama no conecta en ese sentido: una clase con alguien marcado
+  // ya se dio y no se cancela. Las dos lecturas y el cambio de estado van bajo el bloqueo de la clase.
+  // Cancelar dos veces devuelve la clase sin tocar nada. Se relee después de confirmar: la lectura
+  // no va por la transacción y adentro todavía vería la clase sin cancelar.
+  async cancelarClase(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos> {
+    await this.unidadDeTrabajo.ejecutar(async () => {
+      const estado = await this.clases.bloquearParaCancelar(idClase);
+      if (estado !== "PROGRAMADA") return;
+      if (await this.asistencias.tieneMarcasManuales(idClase)) {
+        throw new ConflictError("La clase ya tiene asistencias marcadas: no se puede cancelar");
+      }
+      await this.clases.cancelar(idClase);
+    });
+    return this.clases.obtenerPara(idClase, solicitante);
+  }
+
+  // Materializa antes de cerrar: una clase que ya terminó y nadie había pedido sale cerrada. La
+  // cantidad son los que están en la lista (sin pre-inscriptos); el cupo disponible, el de hoy, que
+  // descuenta también las pre-inscripciones con la reserva vigente.
+  private async listarClasesDelDia(solicitante: Solicitante, fecha?: Date): Promise<ClaseDelDia[]> {
+    await this.clases.materializarDelDia(solicitante, fecha);
+    await this.cierreAsistencia.procesarCierresAutomaticos();
+    const clases = await this.clases.listarDelDia(solicitante, fecha);
+    const idsHorarios = clases.map(({ id_horario }) => id_horario);
+    const [inscriptos, ocupados] = await Promise.all([
+      this.inscripciones.contarInscriptosParaAsistencia(idsHorarios, fecha ?? fechaActualArgentina()),
+      this.inscripciones.contarLugaresOcupados(idsHorarios),
+    ]);
+    return clases.map((clase) => {
+      const cupo = clase.horario.cupo_maximo ?? clase.horario.actividad.cupo_maximo;
+      const ocupado = ocupados.get(clase.id_horario) ?? 0;
+      return {
+        ...clase,
+        inscriptos: inscriptos.get(clase.id_horario) ?? 0,
+        cupo_disponible: cupo === null ? null : cupo - ocupado,
+      };
+    });
   }
 }

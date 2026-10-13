@@ -128,6 +128,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     claseService,
     asistenciaService,
     cierreAsistencia,
+    unidadDeTrabajo,
   );
   const gestionPersonas = new GestionPersonasService(
     profesorService,

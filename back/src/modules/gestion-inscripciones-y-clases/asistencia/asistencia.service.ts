@@ -64,7 +64,7 @@ export class AsistenciaService implements IInfoAsistencia {
         clase.fecha_clase,
       );
       if (!inscripto) throw new NotFoundError("El alumno no está inscripto en este horario");
-      await this.repositorio.marcar(inscripto, input.asistio, this.marcaDe(idClase, solicitante));
+      await this.repositorio.marcar(inscripto, input, this.marcaDe(idClase, solicitante));
     });
   }
 
