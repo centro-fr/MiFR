@@ -137,6 +137,8 @@ interface OpcionesHorario {
   hora_inicio: string;
   hora_fin: string;
   cupo_maximo?: number | null;
+  // Sin valor, la base pone el día real. Un test con el reloj simulado la fija antes de ese día.
+  fecha_alta?: Date;
 }
 
 function convertirHora(hora: string): Date {
