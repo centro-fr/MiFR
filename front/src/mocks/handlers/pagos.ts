@@ -20,6 +20,7 @@ const efectivoSchema = z.object({
   id_inscripcion: z.number().int().positive(),
   monto,
   confirmar_monto_distinto: z.boolean().default(false),
+  observaciones: z.string().max(255).optional(),
 });
 
 const transferenciaRecibidaSchema = efectivoSchema.extend({
@@ -28,6 +29,17 @@ const transferenciaRecibidaSchema = efectivoSchema.extend({
     .datetime({ offset: true })
     .refine((valor) => new Date(valor) <= new Date(), { message: "La transferencia no puede ser futura" }),
   titular_cuenta_origen: z.string().trim().min(1).max(80).optional(),
+});
+
+const informarTransferenciaSchema = z.object({
+  id_inscripcion: z.number().int().positive(),
+  monto,
+  fecha_hora_transferencia: z
+    .string()
+    .datetime({ offset: true })
+    .refine((valor) => new Date(valor) <= new Date(), { message: "La transferencia no puede ser futura" }),
+  titular_cuenta_origen: z.string().trim().min(1).max(80).optional(),
+  observaciones: z.string().max(255).optional(),
 });
 
 function precioVigente(idPlan: number): number | undefined {
@@ -95,13 +107,19 @@ function nuevoPago(
 
 // Cobra la profesora a cargo de la inscripción o la propietaria; lo que cobra una profesora
 // queda pendiente de rendición (US-19).
-function cobroEnEfectivo(usuario: UsuarioSemilla, inscripcion: InscripcionMock, montoCobrado: number) {
+function cobroEnEfectivo(
+  usuario: UsuarioSemilla,
+  inscripcion: InscripcionMock,
+  montoCobrado: number,
+  observaciones?: string,
+) {
   if (usuario.roles.includes("PROPIETARIA")) {
     return nuevoPago({
       id_inscripcion: inscripcion.id_inscripcion,
       forma_pago: "EFECTIVO",
       monto: montoCobrado,
       id_usuario_registra: usuario.id_usuario,
+      observaciones: observaciones ?? null,
     });
   }
   const profesora = db.profesoras.find((p) => p.id_usuario === usuario.id_usuario);
@@ -113,6 +131,7 @@ function cobroEnEfectivo(usuario: UsuarioSemilla, inscripcion: InscripcionMock, 
     id_usuario_registra: usuario.id_usuario,
     id_profesora_cobra: profesora.id_profesora,
     rendido: false,
+    observaciones: observaciones ?? null,
   });
 }
 
@@ -121,6 +140,85 @@ async function leerCuerpo<T extends z.ZodTypeAny>(request: Request, esquema: T) 
 }
 
 export const pagosHandlers = [
+  http.get("*/api/v1/pagos/:id/comprobante", async ({ params, request }) => {
+    await delay(200);
+    const denegado = verificarAcceso(request);
+    if (denegado) return denegado;
+
+    const idPago = Number(params.id);
+    const pago = db.pagos.find((p) => p.id_pago === idPago);
+    if (!pago) return errorApi(404, "NOT_FOUND", "Pago no encontrado");
+    if (pago.estado !== "CONFIRMADO") {
+      return errorApi(409, "CONFLICT", "Solo un pago confirmado tiene comprobante");
+    }
+
+    const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion);
+    if (!inscripcion) return errorApi(404, "NOT_FOUND", "Inscripción no encontrada");
+    const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
+    if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+    const usuarioAlumno = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario);
+    const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
+    const usuarioRegistra =
+      db.usuarios.find((u) => u.id_usuario === pago.id_usuario_registra) ||
+      db.usuariosPersonas.find((u) => u.id_usuario === pago.id_usuario_registra) || {
+        nombre: "Administración",
+        apellido: "FR",
+      };
+    const profesora = pago.id_profesora_cobra
+      ? db.profesoras.find((pr) => pr.id_profesora === pago.id_profesora_cobra)
+      : null;
+    const profesoraUsuario = profesora ? db.usuarios.find((u) => u.id_usuario === profesora.id_usuario) : null;
+
+    return HttpResponse.json({
+      numero: pago.id_pago,
+      fecha: pago.fecha_pago,
+      forma_pago: pago.forma_pago,
+      monto: pago.monto,
+      alumno: {
+        nombre: usuarioAlumno?.nombre ?? "Alumno",
+        apellido: usuarioAlumno?.apellido ?? "",
+        dni: usuarioAlumno?.dni ?? null,
+      },
+      plan: plan?.nombre ?? "Plan",
+      cuota: {
+        numero: pago.id_cuota,
+        vencimiento: pago.fecha_pago,
+      },
+      registrado_por: {
+        nombre: usuarioRegistra.nombre,
+        apellido: usuarioRegistra.apellido,
+      },
+      profesora_cobra: profesoraUsuario
+        ? { nombre: profesoraUsuario.nombre, apellido: profesoraUsuario.apellido }
+        : null,
+    });
+  }),
+
+  http.get("*/api/v1/pagos", async ({ request }) => {
+    await delay(200);
+    const denegado = verificarAcceso(request);
+    if (denegado) return denegado;
+
+    const url = new URL(request.url);
+    const idInscripcion = url.searchParams.get("id_inscripcion");
+    const idAlumno = url.searchParams.get("id_alumno");
+
+    let pagos = [...db.pagos];
+    if (idInscripcion) {
+      pagos = pagos.filter((p) => p.id_inscripcion === Number(idInscripcion));
+    } else if (idAlumno) {
+      const inscripcionesAlumno = db.inscripciones
+        .filter((i) => i.id_alumno === Number(idAlumno))
+        .map((i) => i.id_inscripcion);
+      pagos = pagos.filter((p) => inscripcionesAlumno.includes(p.id_inscripcion));
+    }
+
+    // Ordenar los más recientes primero
+    pagos.sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime());
+
+    return HttpResponse.json(pagos);
+  }),
+
   http.post("*/api/v1/pagos/efectivo", async ({ request }) => {
     await delay(500);
     const denegado = verificarAcceso(request, { permiso: "PAGOS_REGISTRAR" });
@@ -132,7 +230,12 @@ export const pagosHandlers = [
     const rechazo = errorAntesDeCobrar(inscripcion, cuerpo.data);
     if (rechazo) return rechazo;
 
-    const pago = cobroEnEfectivo(usuarioDeLaSesion(request)!, inscripcion!, cuerpo.data.monto);
+    const pago = cobroEnEfectivo(
+      usuarioDeLaSesion(request)!,
+      inscripcion!,
+      cuerpo.data.monto,
+      cuerpo.data.observaciones,
+    );
     if (!pago) return errorApi(403, "FORBIDDEN", "Solo cobra la profesora a cargo de la inscripción o la propietaria");
     activarSiEsPrimerPago(inscripcion!);
     return HttpResponse.json(pago, { status: 201 });
@@ -160,5 +263,118 @@ export const pagosHandlers = [
     });
     activarSiEsPrimerPago(inscripcion!);
     return HttpResponse.json(pago, { status: 201 });
+  }),
+
+  // US-16: Informar una transferencia (Alumno o Tutor).
+  http.post("*/api/v1/pagos/transferencia", async ({ request }) => {
+    await delay(500);
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
+
+    const cuerpo = await leerCuerpo(request, informarTransferenciaSchema);
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+
+    const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === cuerpo.data.id_inscripcion);
+    if (!inscripcion) return errorApi(404, "NOT_FOUND", "Inscripción no encontrada");
+
+    const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
+    if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+    if (alumno.estado === "BAJA" || inscripcion.estado === "BAJA") {
+      return errorApi(409, "CONFLICT", "El alumno está dado de baja");
+    }
+
+    // Verificar pertenencia salvo si es la propietaria probando el flujo
+    const persona = db.usuariosPersonas.find(
+      (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
+    );
+    const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+    const esPropietaria = usuario.roles.includes("PROPIETARIA");
+    if (
+      !esPropietaria &&
+      !idsCandidatos.includes(alumno.id_usuario) &&
+      (alumno.id_usuario_responsable === null || !idsCandidatos.includes(alumno.id_usuario_responsable))
+    ) {
+      return errorApi(403, "FORBIDDEN", "Solo podés informar transferencias tuyas o de un menor a tu cargo");
+    }
+
+    // US-17 / US-16: verificar que no esté repetida el mismo día por el mismo monto
+    const diaTransferencia = new Date(cuerpo.data.fecha_hora_transferencia).toISOString().slice(0, 10);
+    const repetida = db.pagos.some((p) => {
+      if (p.forma_pago !== "TRANSFERENCIA" || p.monto !== cuerpo.data.monto) return false;
+      const insc = db.inscripciones.find((i) => i.id_inscripcion === p.id_inscripcion);
+      if (!insc || insc.id_alumno !== alumno.id_alumno) return false;
+      const pDia = p.fecha_hora_transferencia
+        ? p.fecha_hora_transferencia.slice(0, 10)
+        : p.fecha_pago.slice(0, 10);
+      return pDia === diaTransferencia;
+    });
+
+    if (repetida) {
+      return errorApi(409, "CONFLICT", "Ya hay una transferencia de ese alumno por el mismo monto ese día");
+    }
+
+    const pago = nuevoPago({
+      id_inscripcion: inscripcion.id_inscripcion,
+      forma_pago: "TRANSFERENCIA",
+      monto: cuerpo.data.monto,
+      id_usuario_registra: usuario.id_usuario,
+      fecha_hora_transferencia: new Date(cuerpo.data.fecha_hora_transferencia).toISOString(),
+      titular_cuenta_origen: cuerpo.data.titular_cuenta_origen ?? null,
+      observaciones: cuerpo.data.observaciones ?? null,
+    });
+    pago.estado = "PENDIENTE";
+    pago.rendido = false;
+
+    return HttpResponse.json(pago, { status: 201 });
+  }),
+
+  // US-16: Mis transferencias (Alumno o Tutor)
+  http.get("*/api/v1/pagos/mis-transferencias", async ({ request }) => {
+    await delay(300);
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
+
+    const persona = db.usuariosPersonas.find(
+      (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
+    );
+    const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+
+    const misAlumnos = db.alumnos.filter(
+      (a) =>
+        idsCandidatos.includes(a.id_usuario) ||
+        (a.id_usuario_responsable !== null && idsCandidatos.includes(a.id_usuario_responsable)),
+    );
+    const idsMisAlumnos = misAlumnos.map((a) => a.id_alumno);
+
+    // Historial de pagos del alumno (efectivo y transferencias)
+    let transferencias = [...db.pagos];
+
+    // Si tiene alumnos vinculados, filtrar por ellos; si no (ej: propietaria testeando), mostrar todas
+    if (idsMisAlumnos.length > 0) {
+      const idsInscripciones = db.inscripciones
+        .filter((i) => idsMisAlumnos.includes(i.id_alumno))
+        .map((i) => i.id_inscripcion);
+      transferencias = transferencias.filter((p) => idsInscripciones.includes(p.id_inscripcion));
+    }
+
+    transferencias.sort(
+      (a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime(),
+    );
+
+    const respuesta = transferencias.map((p) => {
+      const insc = db.inscripciones.find((i) => i.id_inscripcion === p.id_inscripcion);
+      const al = insc ? db.alumnos.find((a) => a.id_alumno === insc.id_alumno) : null;
+      const persona = al ? db.usuariosPersonas.find((u) => u.id_usuario === al.id_usuario) : null;
+      return {
+        ...p,
+        alumno: {
+          id_alumno: al?.id_alumno ?? 0,
+          nombre: persona?.nombre ?? "Alumno",
+          apellido: persona?.apellido ?? "",
+        },
+      };
+    });
+
+    return HttpResponse.json(respuesta);
   }),
 ];

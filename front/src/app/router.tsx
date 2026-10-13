@@ -47,16 +47,13 @@ function paginaEnConstruccion(seccion: string): NonNullable<RouteObject["lazy"]>
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "asistencia", seccion: "Asistencia" },
   { path: "honorarios", seccion: "Honorarios" },
   { path: "notificaciones", seccion: "Notificaciones" },
   { path: "reportes", seccion: "Reportes" },
   // Menú de la profesora (MENUS.md).
   { path: "mis-clases", seccion: "Mis clases" },
-  { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
-  { path: "mi-plan", seccion: "Mi plan" },
   { path: "progreso", seccion: "Progreso" },
   { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
@@ -172,6 +169,30 @@ export const router = createBrowserRouter([
             index: true,
             lazy: paginaPerezosa(() => import("@/features/seguridad/pages/permisos-page"), "PermisosPage"),
           },
+        ],
+      },
+      {
+        // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.
+        path: "cobros",
+        element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      {
+        // US-15 a US-19: Cobros y Cuotas. Actor: Propietaria (menú 'Cobros y Cuotas') con PAGOS_REGISTRAR.
+        path: "pagos",
+        element: guardiaDeSeccion("pagos", "PAGOS_REGISTRAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      {
+        // US-16: Mi plan y transferencias bancarias. Actor: Alumno o Tutor.
+        path: "mi-plan",
+        element: guardiaDeSeccion("mi-plan"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
         ],
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({
