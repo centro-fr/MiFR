@@ -141,6 +141,17 @@ describe("AlumnoRepository", () => {
       expect(pagina.values).toEqual([20, 0]);
     });
 
+    it("descarta un alumno cuya cuenta se borró entre las dos consultas", async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ id_alumno: 2 }, { id_alumno: 1 }])
+        .mockResolvedValueOnce([{ total: 2n }]);
+      prisma.alumnos.findMany.mockResolvedValue([{ id_alumno: 1 }]);
+
+      const resultado = await repositorio.listar({ limit: 20, offset: 0 });
+
+      expect(resultado.datos).toEqual([{ id_alumno: 1 }]);
+    });
+
     it("no consulta las filas si la página está vacía", async () => {
       prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0n }]);
 
@@ -179,6 +190,21 @@ describe("AlumnoRepository", () => {
       await repositorio.listar({ incluirBajas: true, limit: 20, offset: 0 });
 
       expect(sqlDeLaLlamada(1).text).not.toContain("WHERE");
+    });
+  });
+
+  describe("listarIds", () => {
+    it("devuelve los ids en el orden del listado, con los mismos filtros y hasta el tope", async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ id_alumno: 7 }, { id_alumno: 3 }]);
+
+      await expect(repositorio.listarIds({ busqueda: "pe", ids: [3, 7] }, 501)).resolves.toEqual([7, 3]);
+
+      const consulta = sqlDeLaLlamada(0);
+      expect(consulta.text).toContain("a.estado <> 'BAJA'");
+      expect(consulta.text).toContain("a.id_alumno = ANY($1)");
+      expect(consulta.text).toContain("ORDER BY u.apellido, u.nombre, a.id_alumno");
+      expect(consulta.values).toEqual([[3, 7], "%pe%", 501, 0]);
+      expect(prisma.alumnos.findMany).not.toHaveBeenCalled();
     });
   });
 

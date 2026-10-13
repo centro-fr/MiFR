@@ -186,7 +186,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44, PI-45                      | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
-| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36, PI-45        | Sí (el filtro por estado de cuota y el historial en la ficha, pendientes)              |
+| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36, PI-45, PI-51, PI-52 | Sí                                                                              |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
@@ -194,7 +194,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
 | US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43                                           | Sí                                                                                     |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
-| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47                                           | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha, el listado y la lista de asistencia |
+| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47, PI-51                                    | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha, el listado y la lista de asistencia |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49                                           | Sí (la consulta de clases de días anteriores, opcional en la spec, pendiente)          |
 | US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50                                           | Sí (la clase cancelada, fuera del MVP, pendiente)                                      |
@@ -273,8 +273,10 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-48         | Marcar asistencia                                                   | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-49         | Cerrar la asistencia con el botón                                   | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-50         | Cierre automático al terminar la clase                              | US-21               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-51         | El filtro del listado de alumnos por estado de cuota                | US-10, US-18        | Servicios          | Demostración                                               | Sí           |
+| PI-52         | El historial de cuotas y pagos en la ficha                          | US-10, US-17        | Servicios          | Demostración                                               | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos.
 
 ### 6.2 Detalle
 
@@ -593,11 +595,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **US:** US-09, US-10 · **Precondición:** escenario de demostración cargado (Sofía a cargo de Lucía, Mateo a cargo de Carla); sesión de Lucía.
 
-1. Lucía lista los alumnos, abre la ficha de Sofía y la de Mateo, y filtra por Carla.
+1. Lucía lista los alumnos, abre la ficha de Sofía, la de Mateo y la de un id que no existe, y filtra por Carla.
 2. Lucía modifica el teléfono y las observaciones de Sofía; después intenta cambiarle el nombre y modificar el teléfono de Mateo.
 3. Lucía lista las inscripciones y abre la de Mateo.
 
-**Resultado esperado:** en el paso 1 el listado trae solo a Sofía, con su plan (Básico) y su profesora; la ficha de Sofía trae su inscripción con dos horarios; la de Mateo responde 403, y el filtro por Carla devuelve una página vacía. En el paso 2 el contacto se guarda (200), el nombre y el alumno ajeno responden 403, y en la base Sofía conserva su nombre y Mateo no cambia. En el paso 3 solo aparece la inscripción de Sofía y la de Mateo responde 403.
+**Resultado esperado:** en el paso 1 el listado trae solo a Sofía, con su plan (Básico) y su profesora; la ficha de Sofía trae su inscripción con dos horarios; la de Mateo responde 403, la del id que no existe responde el mismo 403 (no le cuenta qué alumnos existen) y el filtro por Carla devuelve una página vacía. En el paso 2 el contacto se guarda (200), el nombre y el alumno ajeno responden 403, y en la base Sofía conserva su nombre y Mateo no cambia. En el paso 3 solo aparece la inscripción de Sofía y la de Mateo responde 403.
 
 **Automatizado:** Sí (E-15 a E-17).
 
@@ -903,9 +905,34 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (J-10 a J-12).
 
+#### PI-51 — El filtro del listado de alumnos por estado de cuota
+
+**US:** US-10, US-18 · **Precondición:** escenario de demostración cargado (Sofía Medina pre-inscripta con Lucía y Mateo Romero pre-inscripto con Carla, los dos sin cuotas; Valentina Herrera al día con Carla). El vencimiento se corre en la base para simular el paso del tiempo.
+
+1. Marina lista los alumnos con `estado_cuota=PENDIENTE_DE_PAGO`, después con `limit=1&offset=1` y después con `estado_cuota=AL_DIA`.
+2. Carla lista los alumnos con `estado_cuota=PENDIENTE_DE_PAGO`.
+3. Con la base reiniciada, la cuota de Valentina pasa a vencer hace 30 días y Marina lista con `VENCIDA` y con `AL_DIA`.
+4. Marina lista con `estado_cuota=MOROSO`.
+
+**Resultado esperado:** en el paso 1, Medina y Romero, por apellido, con `total: 2` y su `situacion_cuota` `PENDIENTE_DE_PAGO`; la segunda página trae solo a Romero con `total: 2`; con `AL_DIA`, solo Herrera. En el paso 2 Carla ve solo a Romero, con `total: 1`: Sofía no está a su cargo. En el paso 3 Herrera sale con `VENCIDA` y `AL_DIA` da una página vacía, sin que nada se haya guardado: el estado se calcula en cada consulta. En el paso 4, 400. Si los alumnos que cumplen los otros filtros son más de 500, el listado responde 400 para que se acote la búsqueda (probado en los unitarios de la fachada).
+
+**Automatizado:** Sí (H-17 y H-18).
+
+#### PI-52 — El historial de cuotas y pagos en la ficha
+
+**US:** US-10, US-17 · **Precondición:** escenario de demostración cargado (Valentina Herrera con su primera cuota pagada en efectivo a Carla).
+
+1. Valentina informa una transferencia y Marina la rechaza con el motivo "No llegó a la cuenta".
+2. Marina abre la ficha de Valentina.
+3. Carla, su profesora, abre la misma ficha.
+
+**Resultado esperado:** en el paso 2 la ficha trae `historial_cuotas` de la cuota más nueva a la más vieja: la cuota 2 del Intermedio con el pago por transferencia `RECHAZADO` y su motivo, y la cuota 1 con el pago en efectivo `CONFIRMADO`. En el paso 3 Carla recibe 200 con la situación de cuota `AL_DIA` y `historial_cuotas: null`: los datos financieros son solo de la propietaria.
+
+**Automatizado:** Sí (H-19).
+
 ## 7. Tests automatizados
 
-176 tests en diez archivos:
+179 tests en diez archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -916,7 +943,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 16 (H-01 a H-16) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 19 (H-01 a H-19) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 12 (J-01 a J-12) | PI-47 a PI-50                     |
 
@@ -955,7 +982,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-05 a E-08 | Menor sin tutor; menor con tutora nueva inactiva; hermanos con la misma tutora; menor con email y tutor menor de edad                                                           | PI-16 |
 | E-09 a E-11 | Cambio de teléfono; menor que pasa a mayor (sin email se rechaza, con email pierde el tutor); DNI de otro usuario                                                               | PI-17 |
 | E-12 a E-14 | Búsqueda sin acentos, por tutor y por DNI exacto; dados de baja fuera del listado; paginación por apellido con total                                                           | PI-18 |
-| E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; la base no cambia con los rechazos                          | PI-25 |
+| E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; un alumno que no existe le responde igual que uno ajeno; la base no cambia con los rechazos | PI-25 |
 | E-18 a E-20 | Filtros por plan, profesora y actividad; alumno sin inscripción con `inscripcion: null`; ficha con la inscripción vigente, su plan, profesora y horarios; el alumno activo de la demostración inicia sesión | PI-26 |
 | E-21 a E-23 | La profesora no elige un tutor por id (403); un tutor con DNI y email de la misma cuenta se reusa y la profesora ve solo su nombre; DNI de una cuenta y email de otra (409) | PI-31 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
@@ -992,6 +1019,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-14        | La aprobación confirma el pago con quién lo revisó; la transferencia que carga la propietaria da el alta                                                           | PI-43 |
 | H-15        | La ficha y el listado traen la situación de cuota (al día, pendiente de pago) y la profesora ve la transferencia sin revisar                                      | PI-45 |
 | H-16        | La cuota vencida muestra los días de atraso; la ficha del alumno de baja trae las inscripciones de su última baja, calculadas al día de la baja                  | PI-45 |
+| H-17        | El filtro por estado de cuota trae solo los que coinciden, pagina sobre ellos con su total y a la profesora le deja solo los suyos                                | PI-51 |
+| H-18        | El filtro sigue al vencimiento sin que nada se guarde y rechaza un estado que no existe                                                                         | PI-51 |
+| H-19        | La propietaria ve el historial de cuotas con todos sus pagos, también el rechazado; la profesora a cargo recibe la ficha sin el historial                        | PI-52 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
@@ -1095,6 +1125,12 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Marcar no verifica que el alumno esté en el horario                                     | J-05                                                                                                       |
 | La profesora materializa las clases de horarios ajenos                                  | J-01. Al principio ningún test falló: el listado filtra igual por profesora. Se sumó al escenario un horario de Carla del mismo día |
 | La lista incluye inscripciones y alumnos dados de baja                                  | J-01, J-02, J-05, J-07, J-08, J-10, J-12. Al principio ningún test falló: el dado de baja tenía el horario cerrado antes de hoy y lo sacaba la fecha. Se lo pasó a dado de baja hoy, cuando solo lo saca el estado |
+| El filtro por estado de cuota deja los que no coinciden                                 | H-17, H-18 y cuatro unitarios de la fachada                                                                |
+| El filtro pagina sin el `offset`                                                        | H-17                                                                                                       |
+| El historial llega también a la profesora                                               | H-19 y un unitario de la fachada                                                                           |
+| El tope corta en 500 alumnos en lugar de pasarlo                                        | Unitario de la fachada (con exactamente 500 candidatos)                                                    |
+| Los candidatos se piden sin el uno de más que delata el tope                            | Dos unitarios de la fachada                                                                                |
+| La ficha busca al alumno antes de comprobar si la profesora lo tiene a cargo            | E-15 y un unitario de la fachada                                                                           |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1133,6 +1169,9 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Las actividades públicas reemplazan al panel de disponibilidad (PI-46) | 164 | 164 aprobados | 117,9 s | Pasaron también los 1307 tests unitarios, con cobertura del 100 %; build y formato correctos. La falla provocada fue detectada |
 | 12/10/2026 | Clases, asistencia y cierre (PI-47 a PI-50)                           | 176 | 176 aprobados | 34,2 s | Pasaron también los 1400 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 9 fallas provocadas fueron detectadas (dos, después de reforzar los datos). La primera corrida falló en 10 tests de inscripciones y cuotas porque el cliente de Prisma estaba generado con un esquema viejo; se regeneró (`pnpm prisma:generate`) |
 | 12/10/2026 | Corrección de los tests de asistencia que fallaron en CI (D-21)       | 176 | 176 aprobados | 37,7 s | En GitHub Actions fallaron 7 tests de J, reproducidos localmente con `TZ=UTC` después de las 21:00 de Argentina. Corregidos, pasan con `TZ=UTC` y con la hora local. Pasaron también los 1400 tests unitarios; la falla provocada de los horarios ajenos se sigue detectando |
+| 12/10/2026 | Filtro por estado de cuota e historial en la ficha (PI-51, PI-52)     | 179 | 179 aprobados | 143,8 s | Pasaron también los 1418 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas |
+| 12/10/2026 | Correcciones de la auditoría de la ficha (PI-25, D-22)                 | 179 | 179 aprobados | 141,4 s | Pasaron también los 1422 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La falla provocada fue detectada |
+| 12/10/2026 | Actualización de Vitest de 3.2.7 a 5.0.4                              | 179 | 179 aprobados | 142,3 s | Sin cambios en los tests ni en la configuración. Pasaron también los 1422 tests unitarios, con cobertura del 100 % (el umbral sigue frenando el comando si baja); build y formato correctos |
 
 ### 8.2 Resultado por caso
 
@@ -1163,6 +1202,9 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-48         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-04 a J-07; sin defectos                                                  |
 | PI-49         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-08 y J-09; sin defectos                                                  |
 | PI-50         | 12/10/2026 | Nicolas           | Aprobado           | Pasan J-10 a J-12; sin defectos                                                  |
+| PI-51         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-17 y H-18; sin defectos                                                  |
+| PI-52         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa H-19; sin defectos                                                          |
+| PI-25         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan E-15 a E-17 con la ficha de un alumno inexistente (defecto D-22)           |
 
 ### 8.3 Defectos
 
@@ -1189,6 +1231,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | D-19 | PI-06 | La baja de una actividad no revisaba sus planes exclusivos: la actividad quedaba dada de baja y esos planes seguían vigentes y ofrecidos, pero inscribir en ellos fallaba porque ya no tenían horarios. Corregido: la baja responde 409 y nombra los planes vigentes exclusivos, que hay que dar de baja o pasar a otra actividad | Media | Francisco Andrade | `GestionServicioEntrenamientoService` |
 | D-20 | PI-22, PI-44 | Reactivar a un pre-inscripto dado de baja que nunca pagó creaba la inscripción `ACTIVA` y dejaba activos al alumno y a su usuario, sin rol. El primer pago después ya no daba el alta, así que el alumno nunca recibía su rol. G-07 daba por bueno ese comportamiento. Corregido: si el alumno nunca tuvo un pago confirmado, la reactivación crea la inscripción `PREINSCRIPTA` y lo deja `INACTIVO`, y el primer pago le da el alta | Alta | Francisco Andrade | `GestionInscripcionesYClasesService`, `InscripcionService`, `AlumnoService` |
 | D-21 | PI-47 a PI-49 | Los tests J-01, J-02, J-04, J-05, J-07, J-08 y J-09 simulaban el lunes 12/10/2026, pero los horarios del escenario tomaban `fecha_alta` del reloj real de Postgres. Desde las 21:00 de Argentina (00:00 UTC del 13/10), y desde ese día en adelante siempre, el horario nacía después del lunes simulado y su clase no se materializaba. Era un defecto de los tests, no del código. Corregido: los horarios del escenario se crean con `fecha_alta` el 01/01/2026 (`crearHorarioDePrueba` acepta la fecha) | Alta | Nicolas | `clases-y-asistencia.integration.test.ts`, `fabricas.ts` |
+| D-22 | PI-25 | La ficha buscaba al alumno antes de comprobar si la profesora lo tenía a cargo: un id que no existía respondía 404 y uno ajeno 403, así que una profesora podía averiguar qué alumnos existen (`seguridad.md`, regla 3). Lo encontró la auditoría de la rama del filtro por estado de cuota. Corregido: primero se comprueba quién pide, y a la profesora los dos casos le responden el mismo 403 | Media | Francisco Andrade | `GestionPersonasService` |
 
 Los defectos se numeran D-01, D-02…
 
@@ -1264,3 +1307,6 @@ Los defectos se numeran D-01, D-02…
 |   2.12  | 12/10/2026 | PI-46 pasa a las actividades públicas (`GET /publico/actividades`): los horarios y los cupos dejan de ser públicos; B-19 y B-20 se reescriben | Francisco Andrade |
 |   2.13  | 12/10/2026 | Casos PI-47 a PI-50 (clases del día, toma de asistencia y cierre con ausentes, US-20 y US-21) y archivo J con los tests J-01 a J-12; fábrica `crearInscripcionDePrueba` y reloj fijo en los datos comunes; US-20 y US-21 pasan a automatizadas; cuatro puntos a confirmar abiertos | Nicolas |
 |   2.14  | 12/10/2026 | Defecto D-21: los tests de asistencia dependían de la fecha real; los horarios del escenario se crean con `fecha_alta` fija y `crearHorarioDePrueba` acepta la fecha | Nicolas |
+|   2.15  | 12/10/2026 | Casos PI-51 (filtro del listado de alumnos por estado de cuota, con tope de 500) y PI-52 (historial de cuotas y pagos en la ficha, solo para la propietaria) y tests H-17 a H-19; US-10 pasa a automatizada | Francisco Andrade |
+|   2.16  | 12/10/2026 | PI-25 suma la ficha de un alumno que no existe, que a la profesora le responde 403 como uno ajeno (defecto D-22); E-15 lo verifica | Francisco Andrade |
+|   2.17  | 12/10/2026 | Corrida completa con Vitest 5.0.4, que reemplaza a la 3.2.7 por las vulnerabilidades de `tinypool` y `brace-expansion` | Francisco Andrade |
