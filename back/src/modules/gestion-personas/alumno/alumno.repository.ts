@@ -124,7 +124,8 @@ export class AlumnoRepository {
 
     const alumnos = pagina.length > 0 ? await this.buscarPorIds(pagina) : [];
     const porId = new Map(alumnos.map((alumno) => [alumno.id_alumno, alumno]));
-    return { datos: pagina.map((id) => porId.get(id) as Alumno), total: Number(total) };
+    // Un alumno cuya cuenta se borró entre las dos consultas no sale: una fila sin sus datos rompe al cliente.
+    return { datos: pagina.flatMap((id) => porId.get(id) ?? []), total: Number(total) };
   }
 
   // Los ids del listado, en el mismo orden y sin paginar, hasta el tope: para filtrar por algo que

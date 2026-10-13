@@ -141,6 +141,17 @@ describe("AlumnoRepository", () => {
       expect(pagina.values).toEqual([20, 0]);
     });
 
+    it("descarta un alumno cuya cuenta se borró entre las dos consultas", async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([{ id_alumno: 2 }, { id_alumno: 1 }])
+        .mockResolvedValueOnce([{ total: 2n }]);
+      prisma.alumnos.findMany.mockResolvedValue([{ id_alumno: 1 }]);
+
+      const resultado = await repositorio.listar({ limit: 20, offset: 0 });
+
+      expect(resultado.datos).toEqual([{ id_alumno: 1 }]);
+    });
+
     it("no consulta las filas si la página está vacía", async () => {
       prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0n }]);
 

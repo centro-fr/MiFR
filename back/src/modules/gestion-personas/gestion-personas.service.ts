@@ -190,7 +190,7 @@ export class GestionPersonasService implements ILogicaPersonas {
     const porId = new Map(alumnos.map((alumno) => [alumno.id_alumno, alumno]));
     return {
       datos: conSuSituacion(
-        idsDeLaPagina.map((id) => porId.get(id) as Alumno),
+        idsDeLaPagina.flatMap((id) => porId.get(id) ?? []),
         situaciones,
       ),
       total: coinciden.length,

@@ -246,6 +246,15 @@ describe("GestionPersonasService", () => {
       expect(pagina.datos.map(({ id_alumno }) => id_alumno)).toEqual([2, 1]);
     });
 
+    it("descarta un alumno cuya cuenta se borró entre las dos consultas", async () => {
+      conCandidatos({ 1: HABILITACION, 2: HABILITACION });
+      mocks.alumnos.buscarPorIds.mockResolvedValue([{ id_alumno: 2 }]);
+
+      const pagina = await servicio.listarAlumnos({ ...consulta, estado_cuota: "VENCIDA" }, PROPIETARIA);
+
+      expect(pagina.datos.map(({ id_alumno }) => id_alumno)).toEqual([2]);
+    });
+
     it("un alumno sin inscripción vigente no tiene estado de cuota y no sale en ningún filtro", async () => {
       conCandidatos({ 1: HABILITACION }, [6]);
 
