@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError, ValidationError } from "../../../../share
 import type { IInfoActividades } from "../../actividad/interface/i-info-actividades.js";
 import type { Actividad } from "../../actividad/actividad.types.js";
 import type { PlanRepository } from "../plan.repository.js";
+import type { IInfoPromociones } from "../../promocion/interface/i-info-promociones.js";
 import { PlanService } from "../plan.service.js";
 import type { Plan, PrecioPlan } from "../plan.types.js";
 
@@ -51,6 +52,10 @@ const actividadActiva = { id_actividad: 4, activo: true } as Actividad;
 describe("PlanService", () => {
   let repositorio: ReturnType<typeof crearRepositorioMock>;
   let actividades: { buscarPorId: ReturnType<typeof vi.fn> };
+  let promociones: {
+    vigenteParaPlan: ReturnType<typeof vi.fn>;
+    descuentoAplicable: ReturnType<typeof vi.fn>;
+  };
   let servicio: PlanService;
 
   beforeEach(() => {
@@ -58,9 +63,14 @@ describe("PlanService", () => {
     vi.setSystemTime(new Date("2026-10-08T15:00:00Z"));
     repositorio = crearRepositorioMock();
     actividades = { buscarPorId: vi.fn().mockResolvedValue(actividadActiva) };
+    promociones = {
+      vigenteParaPlan: vi.fn().mockResolvedValue(null),
+      descuentoAplicable: vi.fn().mockResolvedValue(null),
+    };
     servicio = new PlanService(
       repositorio as unknown as PlanRepository,
       actividades as unknown as IInfoActividades,
+      promociones as unknown as IInfoPromociones,
     );
     repositorio.existeVigenteConNombre.mockResolvedValue(false);
   });
@@ -268,5 +278,58 @@ describe("PlanService", () => {
 
     await expect(servicio.precioVigente(1, fecha)).resolves.toEqual(precio);
     expect(repositorio.precioVigente).toHaveBeenCalledWith(1, fecha);
+  });
+
+  describe("promociones (US-13)", () => {
+    const HOY = new Date("2026-10-08T00:00:00Z");
+    const promocion = {
+      id_promocion: 4,
+      codigo: "VERANO26",
+      nombre: "Verano",
+      tipo_descuento: "PORCENTAJE",
+      valor: 10,
+    };
+
+    it("promocionVigente consulta a Promocion", async () => {
+      promociones.vigenteParaPlan.mockResolvedValue(promocion);
+
+      await expect(servicio.promocionVigente(1, HOY)).resolves.toBe(promocion);
+      expect(promociones.vigenteParaPlan).toHaveBeenCalledWith(1, HOY);
+    });
+
+    it("precioACobrar descuenta la promoción de la inscripción si sigue vigente", async () => {
+      repositorio.precioVigente.mockResolvedValue({ ...precio, precio: 25000.5 });
+      promociones.descuentoAplicable.mockResolvedValue({ ...promocion, descuento: 2500.05 });
+
+      await expect(servicio.precioACobrar(1, HOY, 4)).resolves.toEqual({
+        id_plan_precio: 7,
+        precio_lista: 25000.5,
+        descuento: 2500.05,
+        monto: 22500.45,
+        promocion: { id_promocion: 4, codigo: "VERANO26", nombre: "Verano" },
+      });
+      expect(promociones.descuentoAplicable).toHaveBeenCalledWith(4, 1, HOY, 25000.5);
+    });
+
+    it("precioACobrar sin promoción, o con una que ya no aplica, cobra el precio de lista", async () => {
+      repositorio.precioVigente.mockResolvedValue(precio);
+
+      await expect(servicio.precioACobrar(1, HOY, null)).resolves.toMatchObject({
+        descuento: 0,
+        monto: 28000,
+        promocion: null,
+      });
+      expect(promociones.descuentoAplicable).not.toHaveBeenCalled();
+      await expect(servicio.precioACobrar(1, HOY, 4)).resolves.toMatchObject({
+        monto: 28000,
+        promocion: null,
+      });
+    });
+
+    it("precioACobrar devuelve null si el plan no tiene precio ese día", async () => {
+      repositorio.precioVigente.mockResolvedValue(null);
+
+      await expect(servicio.precioACobrar(1, HOY, 4)).resolves.toBeNull();
+    });
   });
 });

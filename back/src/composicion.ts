@@ -22,6 +22,8 @@ import { PlanRepository } from "./modules/gestion-servicio-entrenamiento/plan/pl
 import { ParametrosSistemaRepository } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.repository.js";
 import { ParametrosSistemaService } from "./modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.service.js";
 import { PlanService } from "./modules/gestion-servicio-entrenamiento/plan/plan.service.js";
+import { PromocionRepository } from "./modules/gestion-servicio-entrenamiento/promocion/promocion.repository.js";
+import { PromocionService } from "./modules/gestion-servicio-entrenamiento/promocion/promocion.service.js";
 import { InscripcionRepository } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.repository.js";
 import { InscripcionService } from "./modules/gestion-inscripciones-y-clases/inscripcion/inscripcion.service.js";
 import { RegistroProgresoRepository } from "./modules/gestion-rutinas-y-progreso/registro-progreso/registro-progreso.repository.js";
@@ -75,7 +77,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
   const actividadService = new ActividadService(new ActividadRepository(prisma));
   const profesorService = new ProfesorService(new ProfesorRepository(prisma), usuarioService, rolService);
   const horarioService = new HorarioService(new HorarioRepository(prisma), actividadService, profesorService);
-  const planService = new PlanService(new PlanRepository(prisma), actividadService);
+  const promocionService = new PromocionService(new PromocionRepository(prisma));
+  const planService = new PlanService(new PlanRepository(prisma), actividadService, promocionService);
   const parametrosService = new ParametrosSistemaService(new ParametrosSistemaRepository(prisma));
   const alumnoService = new AlumnoService(new AlumnoRepository(prisma), usuarioService, rolService);
   const unidadDeTrabajo = new UnidadDeTrabajoPrisma(prisma);
@@ -95,6 +98,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     planService,
     parametrosService,
     inscripcionService,
+    promocionService,
   );
   const cuotaService = new CuotaService(
     new CuotaRepository(prisma),

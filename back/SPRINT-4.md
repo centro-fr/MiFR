@@ -4,8 +4,8 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 
 | US | Historia | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-13 | Alta de descuentos y promociones temporales | Pendiente | Francisco |
-| US-19 | Control de efectivo pendiente de rendición | Pendiente | Francisco |
+| US-13 | Alta de descuentos y promociones temporales | Hecho (falta EA) | Francisco |
+| US-19 | Control de efectivo pendiente de rendición | Hecho | Francisco |
 | US-26 | Resumen diario para la propietaria | Pendiente | Francisco |
 | US-22 | Detección de alumnos inactivos con cuota al día | Pendiente | Nicolas |
 | US-24 | Registro de suplencias entre profesoras | Pendiente | Nicolas |
@@ -88,9 +88,9 @@ Cómo trabajar en paralelo sin bloquearse:
    - `calculos-del-negocio/calculador-honorarios/interface/i-calculo-honorarios.ts` (Rosario implementa y usa).
    - `IInfoClases.suplenciasEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): cada clase suplida con fecha, horario, suplente (`id_prof_dictante`) y ausente (`id_prof_ausente`).
    - `IInfoInscripciones.aCargoEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): las inscripciones que estuvieron `ACTIVA` en algún día del período, con profesora, plan, `sin_cargo`, alta y baja.
-   - `IInfoCuotas.cobradoEnPeriodo(idsInscripcion, desde, hasta)` y `IInfoCuotas.paraAvisoDeVencimiento(fecha, diasPrevios)` (Francisco implementa; usan Rosario y Nicolas).
+   - [x] `IInfoCuotas.cobradoEnPeriodo(idsInscripcion, desde, hasta)` y `IInfoCuotas.paraAvisoDeVencimiento(fecha, diasPrevios)` (Francisco implementa; usan Rosario y Nicolas). Implementados, no solo los tipos (13/10/2026, PI-57). `cobradoEnPeriodo` devuelve un `Map` con todas las inscripciones pedidas (0 si no hubo cobros) y toma la fecha del pago. `paraAvisoDeVencimiento` devuelve el `tipo` del aviso, la cuota, el plan y el alumno con su tutor; quién lo recibe lo decide quien registra la notificación. Con 0 días de gracia avisa la vencida al día siguiente del vencimiento, como la ficha (`ICalculoHabilitacion`), y no el mismo día: hay que revisarlo con la regla de US-25.
    - `gestion-notificaciones/notificacion/`: tipos y firma de `registrar` (Nicolas implementa, usa Francisco para el resumen diario).
-   - `IInfoPlanes.promocionVigente(idPlan, fecha)` (Francisco implementa y usa en `Inscripcion` y `Cuota`).
+   - [x] `IInfoPlanes.promocionVigente(idPlan, fecha)` (Francisco implementa y usa en `Inscripcion` y `Cuota`). Se sumó `IInfoPlanes.precioACobrar(idPlan, fecha, idPromocion)`, que es lo que usa `Cuota`.
    Si al implementar hace falta cambiar un contrato, se acuerda entre quien lo provee y quien lo usa, y se sube a `dev` antes que el resto.
 2. **Regla dura 2:** cada uno agrega al `.puml` y a EA las dependencias que le faltan al diagrama (las marcadas arriba) en el primer commit de su parte, antes de codificarla.
 3. **Migraciones:** todas las tablas nuevas apuntan a tablas que ya están en `dev`, así que nadie espera a nadie. Para que no choquen en el orden: Nicolas (`suplencias`, `notificaciones`) → Francisco (`promociones`, `promocion_planes` y la FK de `inscripciones.id_promocion`) → Rosario (`tarifas_honorario`, `liquidaciones`, `liquidacion_detalles`). Antes de generar una, traer `dev` a la rama propia; si dos se generan en paralelo, la segunda en integrarse se vuelve a generar sobre la primera.
@@ -107,24 +107,38 @@ Cómo trabajar en paralelo sin bloquearse:
 
 La promoción queda en la inscripción (`inscripciones.id_promocion`) y se aplica al calcular el monto de cada cuota. Nunca cambia lo ya cobrado: `cuotas.monto` guarda el monto del día del cobro.
 
+### Hecho (US-13)
+
+- [x] Modelos `promociones` y `promocion_planes` en Prisma + migración, con los CHECK del SQL de EA (`ck_promociones_tipo_descuento`, `ck_promociones_x1`, `ck_promociones_x2`, `ck_promociones_x3`), el único de `codigo` y la FK `FK_inscripciones_promociones` sobre la columna que ya existe.
+- [x] Componente `gestion-servicio-entrenamiento/promocion/`; las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
+- [x] Endpoints: `GET /api/v1/promociones` (filtros por estado y plan), `GET /api/v1/promociones/:id`, `POST`, `PATCH /:id` y `POST /:id/desactivar` (baja lógica con `activo = false`). Protegidos con `PLANES_VER` / `PLANES_EDITAR`.
+- [x] El estado (`ACTIVA`, `PROGRAMADA`, `VENCIDA`, `DESACTIVADA`) se calcula con las fechas y `activo`; no se guarda.
+- [x] `IInfoPlanes.promocionVigente(idPlan, fecha)` y el monto con descuento.
+- [x] `Inscripcion` guarda `id_promocion` al pre-inscribir si hay una promoción vigente para el plan (revisa Nicolas, dueño del componente).
+- [x] `Cuota` calcula el monto esperado con el descuento (US-15, US-16, US-17) y el comprobante muestra el precio de lista y el descuento.
+- [x] **Reglas**:
+  - [x] `PORCENTAJE` entre 0 y 100 (sin incluir el 0); `MONTO_FIJO` mayor a 0 y no mayor al precio vigente de ninguno de sus planes a `fecha_desde` → 400.
+  - [x] `fecha_hasta >= fecha_desde`; las dos obligatorias. Vigencia inclusiva en los dos extremos (fechas de Argentina).
+  - [x] Al menos un plan, vigente.
+  - [x] Una promoción vencida no se edita (409). Una desactivada deja de aplicar en el momento.
+  - [x] Dos promociones activas que se superponen en fechas sobre un mismo plan → 409 (ver decisiones).
+  - [x] El monto de la cuota nunca queda negativo (`ck_cuotas_x2`).
+- [x] Auditoría del alta, la edición y la desactivación (`shared/utils/auditoria.ts`): el DER no guarda quién lo hizo.
+- [x] Tests del service (bordes de fechas, porcentaje y monto fijo, superposición) y de integración: cobro dentro y fuera de la promoción, cuota ya cobrada que no cambia. Test PI-59.
+
+Lo que hay que saber:
+
+- **Diagrama:** `Plan ..> Promocion` se realiza con una interfaz nueva, `IInfoPromociones`, que Promocion provee solo a Plan. Ya está en el `.puml`.
+- **Fachada:** que los planes existan y estén vigentes, y que un monto fijo no supere su precio, lo comprueba la fachada `GestionServicioEntrenamientoService`, que ve a Plan y a Promocion (ver `patrones.md`).
+- **Código:** se guarda en mayúsculas; solo admite letras sin acentos, dígitos, guion y guion bajo.
+- **Fechas:** no se crea una promoción que ya terminó; una vencida o desactivada no se edita (409).
+- **Inscripcion (Nicolas):** guarda `id_promocion` en el alta, la reactivación y el cambio de plan, con la promoción vigente del plan ese día.
+- **Comprobante:** muestra la cuota con su monto, el precio de lista de ese día, el descuento y la promoción.
+
 ### Pendiente (US-13)
 
-- [ ] Modelos `promociones` y `promocion_planes` en Prisma + migración, con los CHECK del SQL de EA (`ck_promociones_tipo_descuento`, `ck_promociones_x1`, `ck_promociones_x2`, `ck_promociones_x3`), el único de `codigo` y la FK `FK_inscripciones_promociones` sobre la columna que ya existe.
-- [ ] Componente `gestion-servicio-entrenamiento/promocion/`; las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
-- [ ] Endpoints: `GET /api/v1/promociones` (filtros por estado y plan), `GET /api/v1/promociones/:id`, `POST`, `PATCH /:id` y `POST /:id/desactivar` (baja lógica con `activo = false`). Protegidos con `PLANES_VER` / `PLANES_EDITAR`.
-- [ ] El estado (`ACTIVA`, `PROGRAMADA`, `VENCIDA`, `DESACTIVADA`) se calcula con las fechas y `activo`; no se guarda.
-- [ ] `IInfoPlanes.promocionVigente(idPlan, fecha)` y el monto con descuento.
-- [ ] `Inscripcion` guarda `id_promocion` al pre-inscribir si hay una promoción vigente para el plan (revisa Nicolas, dueño del componente).
-- [ ] `Cuota` calcula el monto esperado con el descuento (US-15, US-16, US-17) y el comprobante muestra el precio de lista y el descuento.
-- [ ] **Reglas**:
-  - [ ] `PORCENTAJE` entre 0 y 100 (sin incluir el 0); `MONTO_FIJO` mayor a 0 y no mayor al precio vigente de ninguno de sus planes a `fecha_desde` → 400.
-  - [ ] `fecha_hasta >= fecha_desde`; las dos obligatorias. Vigencia inclusiva en los dos extremos (fechas de Argentina).
-  - [ ] Al menos un plan, vigente.
-  - [ ] Una promoción vencida no se edita (409). Una desactivada deja de aplicar en el momento.
-  - [ ] Dos promociones activas que se superponen en fechas sobre un mismo plan → 409 (ver decisiones).
-  - [ ] El monto de la cuota nunca queda negativo (`ck_cuotas_x2`).
-- [ ] Auditoría del alta, la edición y la desactivación (`shared/utils/auditoria.ts`): el DER no guarda quién lo hizo.
-- [ ] Tests del service (bordes de fechas, porcentaje y monto fijo, superposición) y de integración: cobro dentro y fuera de la promoción, cuota ya cobrada que no cambia.
+- [ ] Reflejar en el `.eap` de Enterprise Architect la interfaz `IInfoPromociones` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+
 
 ## US-19 – Control de efectivo pendiente de rendición
 
@@ -132,18 +146,26 @@ La promoción queda en la inscripción (`inscripciones.id_promocion`) y se aplic
 
 El cobro en efectivo ya nace con `rendido = false` si cobró una profesora, y `true` si cobró la propietaria (US-15). Falta listar y rendir.
 
-### Pendiente (US-19)
+### Hecho (US-19)
 
-- [ ] `GET /api/v1/pagos/efectivo-pendiente`: cobros `EFECTIVO`, `CONFIRMADO` y `rendido = false`, agrupados por profesora, con cantidad, total por profesora y total general. Cada cobro con alumno, monto, fecha, plan, período de la cuota y los días que lleva sin rendir. Filtros por profesora y rango de fechas. Incluye a las profesoras dadas de baja.
-- [ ] `POST /api/v1/pagos/:id/rendir` y `POST /api/v1/pagos/rendir` (lote: los de una profesora, o una lista de ids): `rendido = true` y `fecha_rendicion`, en una transacción.
-- [ ] `GET /api/v1/pagos/rendiciones`: historial de lo rendido, paginado, con los mismos filtros.
-- [ ] Solo la propietaria: rol `PROPIETARIA` + `PAGOS_RENDICION_VER` (ya existe y es exclusivo).
-- [ ] **Reglas**:
-  - [ ] Un cobro ya rendido no se rinde de nuevo: 409, y en el lote se informan cuáles se saltearon.
-  - [ ] Solo se rinden cobros en efectivo confirmados de una profesora.
-  - [ ] Quién rindió y las observaciones van a la auditoría: el DER no tiene columnas para eso.
-- [ ] `IInfoPagos.efectivoPendiente()` y `IInfoPagos.transferenciasPendientes()` para el resumen diario (US-26).
-- [ ] Tests del service y de integración (total por profesora, rendir dos veces, cobro de la propietaria que no aparece).
+- [x] `GET /api/v1/pagos/efectivo-pendiente`: cobros `EFECTIVO`, `CONFIRMADO` y `rendido = false`, agrupados por profesora, con cantidad, total por profesora y total general. Cada cobro con alumno, monto, fecha, plan, período de la cuota y los días que lleva sin rendir. Filtros por profesora y rango de fechas. Incluye a las profesoras dadas de baja.
+- [x] `POST /api/v1/pagos/:id/rendir` y `POST /api/v1/pagos/rendir` (lote: los de una profesora, o una lista de ids): `rendido = true` y `fecha_rendicion`, en una transacción.
+- [x] `GET /api/v1/pagos/rendiciones`: historial de lo rendido, paginado, con los mismos filtros.
+- [x] Solo la propietaria: rol `PROPIETARIA` + `PAGOS_RENDICION_VER` (ya existe y es exclusivo).
+- [x] **Reglas**:
+  - [x] Un cobro ya rendido no se rinde de nuevo: 409, y en el lote se informan cuáles se saltearon.
+  - [x] Solo se rinden cobros en efectivo confirmados de una profesora.
+  - [x] Quién rindió y las observaciones van a la auditoría: el DER no tiene columnas para eso.
+- [x] `IInfoPagos.resumenEfectivoPendiente()` para el resumen diario (US-26): cantidad y total, por profesora y en general, y el cobro más viejo. Las transferencias pendientes ya las da `IInfoPagos.listarTransferencias`.
+- [x] Tests del service y de integración (total por profesora, rendir dos veces, cobro de la propietaria que no aparece). Test PI-58.
+
+Lo que hay que saber:
+
+- **Topes:** los totales del pendiente salen de la base y son completos; el detalle llega hasta 500 cobros, los más viejos, con `detalle_completo` en false si hay más.
+- **Lote:** acepta `id_profesora` o `ids_pagos` (hasta 100), nunca las dos cosas.
+- **Rendición:** cada cobro se rinde con un `UPDATE ... RETURNING` que vuelve a comprobar las condiciones, así dos rendiciones a la vez no rinden dos veces el mismo cobro.
+- **Fechas:** `desde` y `hasta` son días de Argentina. En el historial se aplican a la fecha de la rendición.
+
 
 ## US-26 – Resumen diario para la propietaria
 
@@ -286,10 +308,10 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 
 **Responsables:** los tres. Las decididas están tildadas; las demás llevan una propuesta para discutir antes de escribir las migraciones. Criterio usado: el DER se cambia solo cuando la spec lo exige en sus criterios de aceptación.
 
-- [ ] **Cuándo aplica la promoción (US-13).** La spec dice que aplica a "nuevas inscripciones" y que fuera de su vigencia "el precio vuelve al valor normal". El DER la guarda en la inscripción. **Propuesta:** la inscripción guarda la promoción vigente al pre-inscribirse, y cada cuota aplica el descuento si la fecha del cobro cae dentro de la vigencia y la promoción sigue activa. Cumple las dos frases de la spec.
-- [ ] **Promociones superpuestas (US-13).** La spec deja elegir entre "la más reciente" y no permitirlas. **Propuesta:** no permitirlas (409): es explícito y no deja a la propietaria adivinando qué descuento se aplicó.
-- [ ] **Descripción y condiciones de la promoción (US-13).** La spec las pide; el DER no tiene columnas, pero sí exige un `codigo` único que la spec no menciona. **Propuesta:** manda el DER; el `codigo` lo carga la propietaria y las condiciones quedan fuera del MVP.
-- [ ] **Quién rindió y observaciones (US-19).** El DER solo tiene `rendido` y `fecha_rendicion`. **Propuesta:** van a la auditoría, como el cambio de precio de US-12.
+- [x] **Cuándo aplica la promoción (US-13).** La spec dice que aplica a "nuevas inscripciones" y que fuera de su vigencia "el precio vuelve al valor normal". El DER la guarda en la inscripción. **Decidido** (13/10/2026): la inscripción guarda la promoción vigente al pre-inscribirse, y cada cuota aplica el descuento si la fecha del cobro cae dentro de la vigencia y la promoción sigue activa. Cumple las dos frases de la spec.
+- [x] **Promociones superpuestas (US-13).** La spec deja elegir entre "la más reciente" y no permitirlas. **Decidido** (13/10/2026): no permitirlas (409): es explícito y no deja a la propietaria adivinando qué descuento se aplicó.
+- [x] **Descripción y condiciones de la promoción (US-13).** La spec las pide; el DER no tiene columnas, pero sí exige un `codigo` único que la spec no menciona. **Decidido** (13/10/2026): manda el DER; el `codigo` lo carga la propietaria y las condiciones quedan fuera del MVP.
+- [x] **Quién rindió y observaciones (US-19).** El DER solo tiene `rendido` y `fecha_rendicion`. **Decidido** (13/10/2026): van a la auditoría, como el cambio de precio de US-12.
 - [x] **Estado de gestión de los inactivos (US-22).** La spec pide marcar `contactado`, `gestionado` o `ignorado` y lo exige en un criterio de aceptación; el DER no tiene dónde guardarlo. **Decidido** (12/10/2026): se agrega al DER la tabla `seguimientos_inactividad` (`id_inscripcion` PK y FK, `estado` `CONTACTADO|GESTIONADO|IGNORADO`, `fecha_registro`, `id_usuario_registra`), una marca por inscripción que se pisa al volver a marcar. La marca vence sola: si el alumno asiste después de `fecha_registro`, deja de valer y una racha nueva aparece como pendiente. La tabla es del componente `Asistencia` y la expone `IInfoAsistencia`, que `DetectorInactividad` ya requiere: `Reportes` es no persistente y no puede tener tablas, y así la vista arquitectónica no cambia, solo el DER.
 - [ ] **Permiso del listado de inactivos (US-22).** **Propuesta:** `REPORTES_COBRANZA_VER`, que ya es exclusivo de la propietaria, en lugar de sumar un permiso nuevo.
 - [ ] **"Cuota al día" (US-22).** **Propuesta:** `AL_DIA` y `POR_VENCER` (en la gracia todavía puede asistir); `VENCIDA` y `PENDIENTE_DE_PAGO` no.

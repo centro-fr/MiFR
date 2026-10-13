@@ -47,6 +47,73 @@ interface NombreCompleto {
   apellido: string;
 }
 
+// US-19: los días de Argentina en que se filtran los cobros (desde y hasta inclusive) y la profesora.
+export interface FiltroEfectivo {
+  id_profesora?: number;
+  desde?: Date;
+  hasta?: Date;
+}
+
+// El mismo filtro, ya en instantes reales para comparar contra un TIMESTAMP.
+export interface FiltroEfectivoEnInstantes {
+  id_profesora?: number;
+  inicio?: Date;
+  fin?: Date;
+}
+
+// Un cobro en efectivo de una profesora, con lo que la propietaria necesita para reclamarlo.
+export interface CobroEnEfectivo {
+  id_pago: number;
+  monto: number;
+  fecha_pago: Date;
+  fecha_rendicion: Date | null;
+  alumno: AlumnoDelPago;
+  plan: string;
+  cuota: { numero: number; vencimiento: Date };
+  profesora: { id_profesora: number } & NombreCompleto;
+}
+
+export type CobroSinRendir = Omit<CobroEnEfectivo, "fecha_rendicion"> & { dias_sin_rendir: number };
+
+export interface TotalDeProfesora extends NombreCompleto {
+  id_profesora: number;
+  cantidad: number;
+  total: number;
+}
+
+// Lo que la propietaria tiene que cobrarle a cada profesora: los totales son exactos y el detalle,
+// del cobro más viejo al más nuevo, llega hasta un tope.
+export interface EfectivoPendiente {
+  cantidad: number;
+  total: number;
+  profesoras: (TotalDeProfesora & { cobros: CobroSinRendir[] })[];
+  detalle_completo: boolean;
+}
+
+// US-26: el resumen del efectivo sin rendir, sin el detalle de cada cobro.
+export interface ResumenEfectivoPendiente {
+  cantidad: number;
+  total: number;
+  profesoras: TotalDeProfesora[];
+  mas_antiguo: CobroSinRendir | null;
+}
+
+export type MotivoSinRendir = "NO_EXISTE" | "YA_RENDIDO" | "NO_ES_EFECTIVO_DE_PROFESORA";
+
+export interface ResultadoRendicion {
+  rendidos: number[];
+  cantidad: number;
+  total: number;
+  salteados: { id_pago: number; motivo: MotivoSinRendir }[];
+}
+
+export interface PaginaRendiciones {
+  datos: CobroEnEfectivo[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // US-15: lo que lleva el comprobante. El número es el id del pago; el front lo arma para
 // imprimir o guardar como PDF (decisión de SPRINT-3.md).
 export interface Comprobante {
@@ -56,7 +123,11 @@ export interface Comprobante {
   monto: number;
   alumno: NombreCompleto & { dni: string | null };
   plan: string;
-  cuota: { numero: number; vencimiento: Date };
+  cuota: { numero: number; vencimiento: Date; monto: number };
+  // US-13: el precio de lista del plan el día del cobro y el descuento de la promoción, si la tuvo.
+  precio_lista: number | null;
+  descuento: number;
+  promocion: { codigo: string; nombre: string } | null;
   registrado_por: NombreCompleto;
   profesora_cobra: NombreCompleto | null;
 }
@@ -66,8 +137,10 @@ export type PagoParaComprobante = Pago & {
   cuota: {
     numero_cuota: number;
     fecha_vencimiento: Date;
+    monto: number;
     inscripcion: {
       plan: { nombre: string };
+      promocion: { codigo: string; nombre: string } | null;
       alumno: {
         id_usuario: number;
         id_usuario_responsable: number | null;
@@ -77,4 +150,6 @@ export type PagoParaComprobante = Pago & {
   };
   usuario_registra: NombreCompleto;
   profesora_cobra: { usuario: NombreCompleto } | null;
+  // El precio de lista del plan el día en que se generó la cuota; null si ese día no tenía.
+  precio_lista: number | null;
 };
