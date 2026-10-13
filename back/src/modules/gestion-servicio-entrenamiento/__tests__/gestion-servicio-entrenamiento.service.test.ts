@@ -285,6 +285,7 @@ describe("GestionServicioEntrenamientoService: los planes de una promoción (US-
     ],
     ["un plan sin precio al empezar", () => planes.precioVigente.mockResolvedValueOnce(null)],
     ["un monto mayor al precio", () => planes.precioVigente.mockResolvedValueOnce({ precio: 4999 })],
+    ["un monto igual al precio", () => planes.precioVigente.mockResolvedValueOnce({ precio: 5000 })],
   ])("rechaza %s sin crear nada", async (_caso, preparar) => {
     preparar();
 

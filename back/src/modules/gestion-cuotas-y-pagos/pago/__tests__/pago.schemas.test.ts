@@ -108,8 +108,14 @@ describe("rendición del efectivo (US-19)", () => {
       id_profesora: 3,
       desde: new Date("2026-10-01T00:00:00Z"),
       hasta: new Date("2026-10-31T00:00:00Z"),
+      limit: 100,
+      offset: 0,
     });
-    expect(efectivoPendienteQuerySchema.parse({})).toEqual({});
+    expect(efectivoPendienteQuerySchema.parse({ limit: "20", offset: "40" })).toEqual({
+      limit: 20,
+      offset: 40,
+    });
+    expect(efectivoPendienteQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
   });
 
   it.each([

@@ -199,8 +199,8 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
   }
 
   // US-13: Promocion no conoce a Plan (es Plan el que la usa), así que el subsistema cruza los dos.
-  // Los planes tienen que estar vigentes, y un monto fijo no puede superar el precio de ninguno al
-  // empezar la promoción: el cobro quedaría en cero o negativo.
+  // Los planes tienen que estar vigentes, y un monto fijo tiene que ser menor que el precio de cada uno
+  // al empezar la promoción: igual o mayor dejaría la cuota en 0, y un pago tiene que ser mayor a 0.
   private async validarPlanesDePromocion(datos: {
     ids_planes: number[];
     tipo_descuento: TipoDescuento;
@@ -219,8 +219,10 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
       const precio = precios[indice];
       if (!precio)
         throw new ValidationError(`El plan ${id} no tiene un precio vigente al empezar la promoción`);
-      if (datos.valor > precio.precio) {
-        throw new ValidationError(`El descuento supera el precio del plan ${id} (${precio.precio})`);
+      if (datos.valor >= precio.precio) {
+        throw new ValidationError(
+          `El descuento tiene que ser menor que el precio del plan ${id} (${precio.precio})`,
+        );
       }
     });
   }

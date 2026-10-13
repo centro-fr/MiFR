@@ -217,10 +217,11 @@ describe("rutas de pagos", () => {
       const historial = await como("propietaria", "get", "/rendiciones?hasta=2026-10-31&limit=10");
 
       expect(pendiente.status).toBe(200);
-      expect(logica.listarEfectivoPendiente).toHaveBeenCalledWith({
-        id_profesora: 3,
-        desde: new Date("2026-10-01T00:00:00Z"),
-      });
+      expect(logica.listarEfectivoPendiente).toHaveBeenCalledWith(
+        { id_profesora: 3, desde: new Date("2026-10-01T00:00:00Z") },
+        { limit: 100, offset: 0 },
+      );
+      expect((await como("propietaria", "get", "/efectivo-pendiente?limit=101")).status).toBe(400);
       expect(historial.status).toBe(200);
       expect(logica.listarRendiciones).toHaveBeenCalledWith(
         { hasta: new Date("2026-10-31T00:00:00Z") },

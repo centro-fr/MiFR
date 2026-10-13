@@ -98,8 +98,11 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     return this.pagos.obtenerComprobante(id, solicitante);
   }
 
-  listarEfectivoPendiente(filtro: FiltroEfectivo): Promise<EfectivoPendiente> {
-    return this.pagos.efectivoPendiente(filtro);
+  listarEfectivoPendiente(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<EfectivoPendiente> {
+    return this.pagos.efectivoPendiente(filtro, pagina);
   }
 
   listarRendiciones(

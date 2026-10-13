@@ -98,7 +98,8 @@ export function createPagoController(logica: ILogicaPagos) {
     },
 
     async efectivoPendiente(req: Request, res: Response) {
-      res.json(await logica.listarEfectivoPendiente(req.query as unknown as EfectivoPendienteQuery));
+      const { limit, offset, ...filtro } = req.query as unknown as EfectivoPendienteQuery;
+      res.json(await logica.listarEfectivoPendiente(filtro, { limit, offset }));
     },
 
     async rendiciones(req: Request, res: Response) {

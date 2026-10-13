@@ -38,7 +38,10 @@ export interface ILogicaPagos {
   listarMisTransferencias(solicitante: Solicitante): Promise<TransferenciaConAlumno[]>;
   obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante>;
   // US-19: la rendición del efectivo que cobraron las profesoras. Solo la propietaria.
-  listarEfectivoPendiente(filtro: FiltroEfectivo): Promise<EfectivoPendiente>;
+  listarEfectivoPendiente(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<EfectivoPendiente>;
   listarRendiciones(
     filtro: FiltroEfectivo,
     pagina: { limit: number; offset: number },

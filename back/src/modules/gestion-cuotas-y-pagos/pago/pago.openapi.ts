@@ -20,7 +20,6 @@ import {
   rendirLoteSchema,
   rendirPagoSchema,
 } from "./pago.schemas.js";
-import { TOPE_DETALLE_EFECTIVO } from "./pago.service.js";
 
 const pagoSchema = z
   .object({
@@ -110,12 +109,16 @@ const totalDeProfesoraSchema = nombreSchema.extend({
 
 const efectivoPendienteSchema = z
   .object({
-    cantidad: z.number().int(),
+    cantidad: z.number().int().openapi({ description: "Cobros sin rendir en total, para paginar" }),
     total: z.number(),
-    profesoras: z.array(totalDeProfesoraSchema.extend({ cobros: z.array(cobroSinRendirSchema) })),
-    detalle_completo: z.boolean().openapi({
-      description: `false si había más de ${TOPE_DETALLE_EFECTIVO} cobros: el detalle trae los más viejos y los totales son completos`,
+    profesoras: z.array(totalDeProfesoraSchema).openapi({
+      description: "Cantidad y total de cada profesora, completos aunque el detalle esté paginado",
     }),
+    cobros: z
+      .array(cobroSinRendirSchema)
+      .openapi({ description: "Una página, del cobro más viejo al más nuevo" }),
+    limit: z.number().int(),
+    offset: z.number().int(),
   })
   .openapi("EfectivoPendiente");
 
@@ -310,9 +313,10 @@ export function registrarDocumentacionPagos(registro: OpenAPIRegistry): void {
     security,
     summary: "Efectivo pendiente de rendición (US-19)",
     description:
-      `${propietariaRinde} Agrupado por profesora, también las dadas de baja, con la cantidad y el total de cada ` +
-      "una y en general. Cada cobro trae el alumno, el plan, la cuota y los días que lleva sin rendir. Filtros " +
-      "por profesora y por los días de Argentina del cobro (`desde` y `hasta`, inclusive).",
+      `${propietariaRinde} La cantidad y el total de cada profesora, también las dadas de baja, y en general, ` +
+      "siempre completos; los cobros, paginados con `limit` (máximo 100) y `offset`, del más viejo al más nuevo, " +
+      "con el alumno, el plan, la cuota y los días que llevan sin rendir. Filtros por profesora y por los días de " +
+      "Argentina del cobro (`desde` y `hasta`, inclusive).",
     request: { query: efectivoPendienteQuerySchema },
     responses: {
       200: respuestaJson("Efectivo pendiente", efectivoPendienteSchema),

@@ -26,11 +26,16 @@ describe("crearPromocionSchema", () => {
     });
   });
 
-  it("acepta un 100 % y un monto fijo mayor a 100", () => {
-    expect(crearPromocionSchema.safeParse({ ...alta, valor: 100 }).success).toBe(true);
+  it("acepta un 99,99 % y un monto fijo mayor a 100", () => {
+    expect(crearPromocionSchema.safeParse({ ...alta, valor: 99.99 }).success).toBe(true);
     expect(
       crearPromocionSchema.safeParse({ ...alta, tipo_descuento: "MONTO_FIJO", valor: 5000 }).success,
     ).toBe(true);
+  });
+
+  // El 100 % dejaría la cuota en 0, y un pago tiene que ser mayor a 0.
+  it("rechaza un 100 %", () => {
+    expect(crearPromocionSchema.safeParse({ ...alta, valor: 100 }).success).toBe(false);
   });
 
   it("acepta una promoción de un solo día", () => {

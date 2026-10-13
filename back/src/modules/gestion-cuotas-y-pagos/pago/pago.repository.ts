@@ -274,12 +274,16 @@ export class PagoRepository {
       .sort((a, b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
   }
 
-  async listarSinRendir(filtro: FiltroEfectivoEnInstantes, tope: number): Promise<CobroEnEfectivo[]> {
+  async listarSinRendir(
+    filtro: FiltroEfectivoEnInstantes,
+    pagina: { limit: number; offset: number },
+  ): Promise<CobroEnEfectivo[]> {
     const filas = await this.prisma.pagos.findMany({
       where: { ...EFECTIVO_DE_PROFESORA, rendido: false, ...conFiltro(filtro, "fecha_pago") },
       include: DATOS_DEL_COBRO,
       orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
-      take: tope,
+      take: pagina.limit,
+      skip: pagina.offset,
     });
     return filas.map(aCobro);
   }

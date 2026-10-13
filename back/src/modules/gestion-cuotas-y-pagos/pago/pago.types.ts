@@ -81,13 +81,15 @@ export interface TotalDeProfesora extends NombreCompleto {
   total: number;
 }
 
-// Lo que la propietaria tiene que cobrarle a cada profesora: los totales son exactos y el detalle,
-// del cobro más viejo al más nuevo, llega hasta un tope.
+// Lo que la propietaria tiene que cobrarle a cada profesora: los totales, completos, y una página de
+// los cobros, del más viejo al más nuevo. cantidad es el total de cobros, para paginar.
 export interface EfectivoPendiente {
   cantidad: number;
   total: number;
-  profesoras: (TotalDeProfesora & { cobros: CobroSinRendir[] })[];
-  detalle_completo: boolean;
+  profesoras: TotalDeProfesora[];
+  cobros: CobroSinRendir[];
+  limit: number;
+  offset: number;
 }
 
 // US-26: el resumen del efectivo sin rendir, sin el detalle de cada cobro.

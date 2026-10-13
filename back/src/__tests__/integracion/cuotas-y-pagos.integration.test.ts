@@ -712,20 +712,22 @@ describe("PI-58: la rendición del efectivo que cobran las profesoras", () => {
 
     const todo = await pendiente();
     expect(todo.status).toBe(200);
-    expect(todo.body).toMatchObject({ cantidad: 2, detalle_completo: true });
+    expect(todo.body).toMatchObject({ cantidad: 2, limit: 100, offset: 0 });
     expect(
       todo.body.profesoras.map(({ id_profesora }: { id_profesora: number }) => id_profesora).sort(),
     ).toEqual([idLucia, idCarla].sort());
-    const deLaPropietaria = todo.body.profesoras.flatMap(({ cobros }: { cobros: { id_pago: number }[] }) =>
-      cobros.map(({ id_pago }) => id_pago),
-    );
-    expect(deLaPropietaria).not.toContain(deMarina.body.id_pago);
-    expect((await pendiente(`?id_profesora=${idCarla}`)).body.profesoras).toEqual([
-      expect.objectContaining({
-        id_profesora: idCarla,
-        cantidad: 1,
-        cobros: [expect.objectContaining({ id_pago: idDeCarla, dias_sin_rendir: 0 })],
-      }),
+    const cobrados = todo.body.cobros.map(({ id_pago }: { id_pago: number }) => id_pago);
+    expect(cobrados).not.toContain(deMarina.body.id_pago);
+    const primeraPagina = await pendiente("?limit=1");
+    expect(primeraPagina.body).toMatchObject({ cantidad: 2, limit: 1 });
+    expect(primeraPagina.body.cobros).toHaveLength(1);
+    expect(primeraPagina.body.profesoras).toHaveLength(2);
+    const deCarla = await pendiente(`?id_profesora=${idCarla}`);
+    expect(deCarla.body.profesoras).toEqual([
+      expect.objectContaining({ id_profesora: idCarla, cantidad: 1 }),
+    ]);
+    expect(deCarla.body.cobros).toEqual([
+      expect.objectContaining({ id_pago: idDeCarla, dias_sin_rendir: 0 }),
     ]);
 
     const rendido = await pedir("post", `/pagos/${idDeCarla}/rendir`, EMAIL_MULTIROL_DEMO, {
@@ -750,7 +752,7 @@ describe("PI-58: la rendición del efectivo que cobran las profesoras", () => {
       total: 25000,
       salteados: [],
     });
-    expect((await pendiente()).body).toMatchObject({ cantidad: 0, total: 0, profesoras: [] });
+    expect((await pendiente()).body).toMatchObject({ cantidad: 0, total: 0, profesoras: [], cobros: [] });
 
     const historial = await pedir("get", "/pagos/rendiciones", EMAIL_MULTIROL_DEMO);
     expect(historial.body).toMatchObject({ total: 2 });
@@ -881,7 +883,16 @@ describe("PI-59: las promociones y su descuento en el cobro", () => {
       fecha_hasta: enDias(70),
     });
     const repetida = await crearPromocion({ fecha_desde: enDias(60), fecha_hasta: enDias(70) });
-    expect([superpuesta.status, montoAlto.status, repetida.status]).toEqual([409, 400, 409]);
+    // El 100 % dejaría la cuota en 0, y un pago tiene que ser mayor a 0.
+    const gratis = await crearPromocion({
+      codigo: "GRATIS",
+      valor: 100,
+      fecha_desde: enDias(80),
+      fecha_hasta: enDias(90),
+    });
+    expect([superpuesta.status, montoAlto.status, repetida.status, gratis.status]).toEqual([
+      409, 400, 409, 400,
+    ]);
     expect(await prisma.promociones.count()).toBe(1);
 
     await prisma.promociones.update({

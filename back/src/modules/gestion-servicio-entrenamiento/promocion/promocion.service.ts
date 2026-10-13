@@ -15,6 +15,8 @@ import type {
 } from "./promocion.types.js";
 
 const MAXIMO_PORCENTAJE = 100;
+// Lo mínimo que queda por cobrar: un pago tiene que ser mayor a 0 (ck_pagos_x1).
+const MONTO_MINIMO = 0.01;
 
 export function estadoDePromocion(
   { activo, fecha_desde, fecha_hasta }: Pick<PromocionGuardada, "activo" | "fecha_desde" | "fecha_hasta">,
@@ -25,10 +27,13 @@ export function estadoDePromocion(
   return fecha_desde > hoy ? "PROGRAMADA" : "ACTIVA";
 }
 
-// Los montos son NUMERIC(10,2): se redondea a centavos y el descuento nunca supera el precio.
+// Los montos son NUMERIC(10,2): se redondea a centavos. El descuento nunca deja la cuota en 0, aunque
+// el precio del plan haya bajado después de crear una promoción de monto fijo: siempre queda algo que
+// cobrar, porque sin un pago confirmado no hay alta definitiva (US-07).
 function descuentoSobre(precio: number, { tipo_descuento, valor }: PromocionAplicable): number {
   const descuento = tipo_descuento === "PORCENTAJE" ? (precio * valor) / MAXIMO_PORCENTAJE : valor;
-  return Math.round(Math.min(descuento, precio) * 100) / 100;
+  const redondeado = Math.round(descuento * 100) / 100;
+  return Math.max(0, Math.min(redondeado, Math.round((precio - MONTO_MINIMO) * 100) / 100));
 }
 
 function conEstado(promocion: PromocionGuardada): Promocion {
@@ -120,8 +125,8 @@ export class PromocionService implements IInfoPromociones {
 
 // Las mismas reglas que el schema del alta, para los datos que resultan de una edición parcial.
 function validarDatos({ tipo_descuento, valor, fecha_desde, fecha_hasta }: DatosPromocion): void {
-  if (tipo_descuento === "PORCENTAJE" && valor > MAXIMO_PORCENTAJE) {
-    throw new ValidationError("Un descuento en porcentaje no puede superar el 100 %");
+  if (tipo_descuento === "PORCENTAJE" && valor >= MAXIMO_PORCENTAJE) {
+    throw new ValidationError("Un descuento en porcentaje tiene que ser menor al 100 %");
   }
   if (fecha_hasta < fecha_desde) {
     throw new ValidationError("La fecha hasta no puede ser anterior a la fecha desde");

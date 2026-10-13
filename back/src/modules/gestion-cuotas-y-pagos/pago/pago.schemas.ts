@@ -2,6 +2,7 @@ import { z } from "zod";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema, textoSchema } from "../../../shared/utils/esquemas-texto.js";
+import { fechaSchema } from "../../../shared/utils/esquemas-fecha.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
 const monto = montoSchema("monto");
@@ -51,15 +52,10 @@ export const listarTransferenciasQuerySchema = z.object({
 
 export const pagoIdParamSchema = z.object({ id: idDesdeTextoSchema });
 
-const fechaDeFiltro = z
-  .string()
-  .date("La fecha debe tener formato AAAA-MM-DD")
-  .transform((valor) => new Date(`${valor}T00:00:00Z`));
-
 const filtroEfectivo = {
   id_profesora: idDesdeTextoSchema.optional(),
-  desde: fechaDeFiltro.optional(),
-  hasta: fechaDeFiltro.optional(),
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
 };
 
 function rangoValido({ desde, hasta }: { desde?: Date; hasta?: Date }): boolean {
@@ -68,8 +64,11 @@ function rangoValido({ desde, hasta }: { desde?: Date; hasta?: Date }): boolean 
 
 const RANGO_INVALIDO = { message: "La fecha desde no puede ser posterior a hasta", path: ["desde"] };
 
-// US-19: los cobros sin rendir, por la fecha del cobro.
-export const efectivoPendienteQuerySchema = z.object(filtroEfectivo).refine(rangoValido, RANGO_INVALIDO);
+// US-19: los cobros sin rendir, por la fecha del cobro. El detalle se pagina (máximo 100 por pedido,
+// seguridad.md, regla 8); los totales son siempre completos.
+export const efectivoPendienteQuerySchema = z
+  .object({ ...filtroEfectivo, ...paginacionSchema(LIMITE_MAXIMO) })
+  .refine(rangoValido, RANGO_INVALIDO);
 
 // US-19: el historial de lo rendido, por la fecha de la rendición.
 export const rendicionesQuerySchema = z

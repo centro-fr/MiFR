@@ -117,7 +117,7 @@ La promoción queda en la inscripción (`inscripciones.id_promocion`) y se aplic
 - [x] `Inscripcion` guarda `id_promocion` al pre-inscribir si hay una promoción vigente para el plan (revisa Nicolas, dueño del componente).
 - [x] `Cuota` calcula el monto esperado con el descuento (US-15, US-16, US-17) y el comprobante muestra el precio de lista y el descuento.
 - [x] **Reglas**:
-  - [x] `PORCENTAJE` entre 0 y 100 (sin incluir el 0); `MONTO_FIJO` mayor a 0 y no mayor al precio vigente de ninguno de sus planes a `fecha_desde` → 400.
+  - [x] `PORCENTAJE` mayor a 0 y menor a 100; `MONTO_FIJO` mayor a 0 y menor que el precio vigente de cada uno de sus planes a `fecha_desde` → 400. El DER admite el 100 %, pero dejaría la cuota en 0 y un pago tiene que ser mayor a 0 (`ck_pagos_x1`): el alumno no podría pagar ni recibir el alta. Por lo mismo, si el precio baja después, el descuento siempre deja al menos un centavo para cobrar (corrección de la auditoría, 13/10/2026).
   - [x] `fecha_hasta >= fecha_desde`; las dos obligatorias. Vigencia inclusiva en los dos extremos (fechas de Argentina).
   - [x] Al menos un plan, vigente.
   - [x] Una promoción vencida no se edita (409). Una desactivada deja de aplicar en el momento.
@@ -161,7 +161,7 @@ El cobro en efectivo ya nace con `rendido = false` si cobró una profesora, y `t
 
 Lo que hay que saber:
 
-- **Topes:** los totales del pendiente salen de la base y son completos; el detalle llega hasta 500 cobros, los más viejos, con `detalle_completo` en false si hay más.
+- **Topes:** los totales del pendiente salen de la base y son completos; el detalle se pagina con `limit` (máximo 100) y `offset`, del cobro más viejo al más nuevo (seguridad.md, regla 8; corrección de la auditoría, 13/10/2026).
 - **Lote:** acepta `id_profesora` o `ids_pagos` (hasta 100), nunca las dos cosas.
 - **Rendición:** cada cobro se rinde con un `UPDATE ... RETURNING` que vuelve a comprobar las condiciones, así dos rendiciones a la vez no rinden dos veces el mismo cobro.
 - **Fechas:** `desde` y `hasta` son días de Argentina. En el historial se aplican a la fecha de la rendición.

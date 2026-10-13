@@ -144,7 +144,7 @@ describe("PromocionService", () => {
     });
 
     it.each([
-      ["un porcentaje mayor a 100 con el tipo guardado", { valor: 150 }],
+      ["un porcentaje de 100 con el tipo guardado", { valor: 100 }],
       ["una fecha hasta anterior a la desde guardada", { fecha_hasta: dia("2026-09-30") }],
     ])("rechaza %s", async (_caso, cambio) => {
       await expect(servicio.actualizar(4, cambio)).rejects.toBeInstanceOf(ValidationError);
@@ -176,7 +176,14 @@ describe("PromocionService", () => {
     it.each([
       ["un porcentaje, redondeado a centavos", "PORCENTAJE", 15, 25000.55, 3750.08],
       ["un monto fijo", "MONTO_FIJO", 5000, 25000, 5000],
-      ["un monto fijo mayor al precio, hasta el precio", "MONTO_FIJO", 30000, 25000, 25000],
+      [
+        "un monto fijo igual o mayor al precio, dejando un centavo para cobrar",
+        "MONTO_FIJO",
+        30000,
+        25000,
+        24999.99,
+      ],
+      ["un porcentaje sobre un precio de un centavo, sin descuento", "PORCENTAJE", 50, 0.01, 0],
     ] as const)("calcula %s", async (_caso, tipo_descuento, valor, precio, descuento) => {
       repositorio.buscarAplicable.mockResolvedValue({ ...aplicable, tipo_descuento, valor });
 
