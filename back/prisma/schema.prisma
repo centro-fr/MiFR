@@ -48,6 +48,7 @@ model usuarios {
   pagos_registrados       pagos[]         @relation("pago_usuario_registra")
   pagos_confirmados       pagos[]         @relation("pago_usuario_confirma")
   asistencias_registradas asistencias[]
+  suplencias_registradas  suplencias[]
 }
 
 model roles {
@@ -132,6 +133,7 @@ model profesoras {
   pagos_cobrados     pagos[]
   clases_dictadas    clases[]
   registros_progreso registros_progreso[]
+  ausencias_suplidas suplencias[]
 }
 
 model horarios {
@@ -319,10 +321,26 @@ model clases {
   horario     horarios      @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_horarios")
   profesora   profesoras    @relation(fields: [id_prof_dictante], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_profesoras")
   asistencias asistencias[]
+  suplencias  suplencias[]
 
   @@unique([id_horario, fecha_clase], map: "UK_clases_horario_fecha")
   @@index([id_horario], map: "IXFK_clases_horarios")
   @@index([id_prof_dictante], map: "IXFK_clases_profesoras")
+}
+
+// La suplente es la dictante de la clase (clases.id_prof_dictante); acá queda la titular que faltó (US-24).
+model suplencias {
+  id_clase            Int
+  id_prof_ausente     Int
+  motivo              String?  @db.VarChar(255)
+  fecha_registro      DateTime @default(now()) @db.Timestamp(6)
+  id_usuario_registra Int
+
+  clase             clases     @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_clases")
+  profesora_ausente profesoras @relation(fields: [id_prof_ausente], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_prof_ausente")
+  usuario_registra  usuarios   @relation(fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_usuario_registra")
+
+  @@id([id_clase, id_prof_ausente], map: "PK_suplencias")
 }
 
 model asistencias {
