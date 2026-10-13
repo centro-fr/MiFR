@@ -21,7 +21,7 @@ El Sprint 3 se apoya en las inscripciones: un pago se registra sobre una cuota, 
 | --- | --- | --- |
 | Migración de `inscripciones` e `inscripcion_horarios` | Nicolas | Francisco (FK de `cuotas`) y Nicolas (FK de `asistencias`) |
 | Componente `Inscripcion` (US-05, US-07, US-08, plan y horarios de US-09) e `IInfoInscripciones` | Nicolas | Francisco (alta definitiva al confirmar el pago) y Nicolas (lista de asistencia) |
-| Lo que falta de US-10: el historial de cuotas y pagos en la ficha y el filtro por estado de cuota. Lo demás ya está hecho (ver "Lo que queda de US-10") | Francisco | — (usa `IInfoInscripciones` e `IInfoCuotas`) |
+| Lo que falta de US-10: hecho (ver "Lo que queda de US-10") | Francisco | — (usa `IInfoInscripciones` e `IInfoCuotas`) |
 
 **Prioridad 1 de Nicolas:** subir a `dev` la migración de inscripciones, aunque el componente no esté terminado.
 
@@ -191,9 +191,9 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
 - [x] Filtros por plan, profesora y actividad; cada fila con su plan y profesora.
 - [x] Ficha con la inscripción vigente y sus horarios.
 - [x] Estado de cuota en el listado y la ficha (`IInfoCuotas`): `situacion_cuota` con el estado, el vencimiento, los días restantes, si puede asistir y si tiene una transferencia sin revisar. Una inscripción dada de baja se calcula al día de su baja, y la ficha de un alumno de baja trae las inscripciones de su última baja (`inscripciones_de_la_baja`) para advertir una deuda antes de reactivarlo (US-08). Test PI-45.
-- [ ] Filtro por estado de cuota. El estado se calcula, no se guarda, así que no se puede filtrar en la consulta: filtrar después de paginar rompe la paginación, y calcular a todos los alumnos lee la tabla entera. Hay que decidir el enfoque antes de implementarlo.
+- [x] Filtro por estado de cuota (`GET /alumnos?estado_cuota=`), que el front confirmó que necesita. El estado se calcula, no se guarda, así que la base no puede filtrarlo: la fachada calcula el estado de todos los alumnos que cumplen los otros filtros y pagina en memoria, con el total de los que coinciden. **Decidido con Francisco** (12/10/2026): con un tope de 500 alumnos; si son más, responde 400 para que se acote la búsqueda con otro filtro. Test PI-51.
 - [x] Historial de cuotas y pagos para la ficha: `IInfoCuotas.historialDeAlumno`, sin cambiar el diagrama (`GestionPersonas` ya requiere `IInfoCuotas`). Cada cuota trae el plan y todos sus pagos, también los rechazados; de la más nueva a la más vieja, con tope de 100. Test PI-36.
-- [ ] Mostrar el historial en la ficha, solo a la propietaria: `GestionPersonasService` ya recibe `IInfoCuotas` (lo usa para `situacion_cuota`), pero todavía no llama a `historialDeAlumno`.
+- [x] Historial en la ficha (`historial_cuotas`), solo para la propietaria: a una profesora le llega `null`, porque la spec deja los datos financieros a la propietaria. Test PI-52.
 
 ## Lo que necesita el front para el Sprint 2
 
