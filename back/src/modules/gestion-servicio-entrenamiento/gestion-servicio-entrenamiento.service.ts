@@ -12,6 +12,13 @@ import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "./h
 import type { PlanService } from "./plan/plan.service.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "./plan/plan.types.js";
+import type { ParametrosSistemaService } from "./parametros-sistema/parametros-sistema.service.js";
+import type { ActualizarParametroInput } from "./parametros-sistema/parametros-sistema.schemas.js";
+import type {
+  ClaveParametro,
+  DatosBancarios,
+  Parametro,
+} from "./parametros-sistema/parametros-sistema.types.js";
 import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 
 // Realiza ILogicaServicioEntrenamiento
@@ -20,6 +27,7 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     private readonly actividades: ActividadService,
     private readonly horarios: HorarioService,
     private readonly planes: PlanService,
+    private readonly parametros: ParametrosSistemaService,
     private readonly inscripciones: IInfoInscripciones,
   ) {}
 
@@ -143,5 +151,17 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
 
   registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan> {
     return this.planes.registrarPrecio(id, input);
+  }
+
+  listarParametros(): Promise<Parametro[]> {
+    return this.parametros.listar();
+  }
+
+  actualizarParametro(clave: ClaveParametro, valor: ActualizarParametroInput["valor"]): Promise<Parametro> {
+    return this.parametros.actualizar(clave, valor);
+  }
+
+  obtenerDatosBancarios(): Promise<DatosBancarios> {
+    return this.parametros.obtenerDatosBancarios();
   }
 }

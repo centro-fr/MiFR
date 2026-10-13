@@ -93,6 +93,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     actividadService,
     horarioService,
     planService,
+    parametrosService,
     inscripcionService,
   );
   const cuotaService = new CuotaService(
