@@ -117,14 +117,14 @@ La lectura la adelantó Francisco (11/10/2026) porque la necesitaba la reserva d
 ### Pendiente (ParametrosSistema)
 
 - [ ] Las operaciones para la API se suman a `ILogicaServicioEntrenamiento`.
-- [ ] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
+- [x] `GET /api/v1/parametros` y `PATCH /api/v1/parametros/:clave`: rol `PROPIETARIA` + `PARAMETROS_EDITAR` (permiso nuevo, exclusivo de la propietaria). El valor se valida según `tipo_dato`.
 - [x] Los parámetros iniciales se cargan en el seed de producción (`prisma/seed.ts`), sin pisar los que la propietaria ya cambió (como el catálogo de seguridad):
   - [x] `DATOS_BANCARIOS_CBU`, `DATOS_BANCARIOS_ALIAS`, `DATOS_BANCARIOS_TITULAR` (`TEXTO`, vacíos hasta que la propietaria los cargue).
   - [x] `VENCIDOS_PUEDEN_ASISTIR` (`BOOLEANO`, por defecto `true`: aparecen en la lista con advertencia, US-20).
   - [x] `MINUTOS_CIERRE_ASISTENCIA` (`ENTERO`, por defecto `0`: la asistencia se cierra al terminar la clase).
   - [x] `DIAS_RESERVA_PREINSCRIPCION` (`ENTERO`, por defecto `3`).
-- [ ] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
-- [ ] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
+- [x] Al editar, validar además el rango de cada número: `DIAS_RESERVA_PREINSCRIPCION` y `MINUTOS_CIERRE_ASISTENCIA` no pueden ser negativos.
+- [x] `GET /api/v1/parametros/datos-bancarios`: lo pueden leer alumnos y tutores para transferir (US-16).
 - [ ] Tests del service, de las rutas y de integración.
 
 ---
