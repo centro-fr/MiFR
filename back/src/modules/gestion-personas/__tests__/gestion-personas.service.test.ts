@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, ForbiddenError, ValidationError } from "../../../shared/errors/app-error.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoCuotas } from "../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
@@ -330,6 +335,21 @@ describe("GestionPersonasService", () => {
       mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([{ id_inscripcion: 9, id_profesora: 99 }]);
 
       await expect(servicio.obtenerAlumnoPorId(4, PROFESORA)).rejects.toThrow(ForbiddenError);
+    });
+
+    it("a la profesora un alumno que no existe le responde 403 como uno ajeno, sin buscarlo", async () => {
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+      mocks.alumnos.obtenerPorId.mockRejectedValue(new NotFoundError("Alumno no encontrado"));
+
+      await expect(servicio.obtenerAlumnoPorId(999, PROFESORA)).rejects.toThrow(ForbiddenError);
+      expect(mocks.alumnos.obtenerPorId).not.toHaveBeenCalled();
+    });
+
+    it("a la propietaria un alumno que no existe le responde 404", async () => {
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+      mocks.alumnos.obtenerPorId.mockRejectedValue(new NotFoundError("Alumno no encontrado"));
+
+      await expect(servicio.obtenerAlumnoPorId(999, PROPIETARIA)).rejects.toThrow(NotFoundError);
     });
   });
 

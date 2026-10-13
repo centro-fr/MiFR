@@ -115,10 +115,12 @@ export class GestionPersonasService implements ILogicaPersonas {
     return { ...pagina, datos: conSuSituacion(pagina.datos, situaciones) };
   }
 
+  // Quién pide se verifica antes de buscar al alumno: a una profesora, un alumno que no existe le
+  // responde 403, igual que uno ajeno, y no le cuenta qué ids existen.
   async obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno> {
-    const alumno = await this.alumnos.obtenerPorId(id);
     const inscripciones = await this.inscripciones.listarVigentesDeAlumno(id);
     await this.verificarQueLoTieneACargo(inscripciones, solicitante);
+    const alumno = await this.alumnos.obtenerPorId(id);
     const deLaBaja = alumno.estado === "BAJA" ? await this.inscripciones.listarDeLaUltimaBaja(id) : [];
     const [habilitaciones, historial] = await Promise.all([
       this.cuotas.habilitacionDeInscripciones(
