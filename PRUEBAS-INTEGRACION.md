@@ -179,7 +179,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38, PI-46        | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39       | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39, PI-47 | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44, PI-45                      | Sí                                                                                     |
@@ -190,12 +190,12 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-13 | Alta de descuentos y promociones temporales               |   4    |                                                               |                                                                                        |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
 | US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43                                           | Sí                                                                                     |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43, PI-47, PI-48                             | Sí                                                                                     |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
-| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45                                                  | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha y el listado        |
+| US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47                                           | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha y el listado        |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    |                                                               |                                                                                        |
-| US-21 | Registro automático de inasistencias                      |   3    | PI-39                                                         | Parcial: el parámetro `MINUTOS_CIERRE_ASISTENCIA`; el cierre, cuando exista            |
+| US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-47                                                  | Parcial: el parámetro `MINUTOS_CIERRE_ASISTENCIA`; el cierre, cuando exista            |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    |                                                               |                                                                                        |
 | US-23 | Informe mensual automático de honorarios                  |   4    |                                                               |                                                                                        |
 | US-24 | Registro de suplencias entre profesoras                   |   4    |                                                               |                                                                                        |
@@ -267,6 +267,8 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-44         | Reactivar a quien nunca pagó                                        | US-07, US-08        | Servicios          | Demostración                                               | Sí           |
 | PI-45         | La situación de cuota en la ficha y el listado de alumnos           | US-08, US-10, US-18 | Servicios          | Demostración                                               | Sí           |
 | PI-46         | Las actividades públicas del centro                                 | US-32, US-04        | Servicios          | Demostración                                               | Sí           |
+| PI-47         | Los parámetros del sistema los ve y edita solo la propietaria      | US-05, US-16, US-18, US-21 | Servicios   | Comunes                                                    | Sí           |
+| PI-48         | Los datos bancarios para transferir los ven el alumno y su tutor   | US-16               | Servicios          | Comunes                                                    | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP.
 
@@ -847,9 +849,35 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (B-19 y B-20).
 
+#### PI-47 — Los parámetros del sistema los ve y edita solo la propietaria
+
+**US:** US-05, US-16, US-18, US-21 · **Precondición:** base de prueba recién reiniciada, con los parámetros cargados; sesión de la propietaria.
+
+1. La propietaria lista los parámetros (`GET /parametros`).
+2. Cambia `DIAS_RESERVA_PREINSCRIPCION` a 7 y `VENCIDOS_PUEDEN_ASISTIR` a false (`PATCH /parametros/{clave}`).
+3. Intenta cargar un negativo, 366 días, un texto en un parámetro entero, más de 1440 minutos, un texto en un booleano y una clave que no existe.
+4. Se borra la fila de un parámetro; la propietaria lo lista y lo edita.
+5. Sin sesión, y con la sesión de una profesora, un alumno y un tutor, se intenta listar y editar los parámetros; la profesora también pide los datos bancarios.
+
+**Resultado esperado:** el paso 1 devuelve todos los parámetros del catálogo con su tipo y su valor inicial. En el paso 2 los dos pedidos responden 200 y los valores quedan guardados y se ven en el listado. En el paso 3 todos responden 400 y la base no cambia ni crea filas. En el paso 4 el listado muestra el valor inicial con `fecha_actualizacion` en null, y al editarlo se crea la fila. En el paso 5 responde 401 sin sesión y 403 para los demás roles (la profesora no ve los datos bancarios), y el valor no cambia.
+
+**Automatizado:** Sí (J-01 a J-10 y J-14 a J-18).
+
+#### PI-48 — Los datos bancarios para transferir los ven el alumno y su tutor
+
+**US:** US-16 · **Precondición:** base de prueba recién reiniciada, con los parámetros cargados; sesiones de la propietaria, un alumno y un tutor.
+
+1. El alumno y el tutor piden los datos bancarios (`GET /parametros/datos-bancarios`).
+2. La propietaria carga el CBU, el alias y el titular, y el alumno y el tutor los piden de nuevo.
+3. La propietaria también los pide.
+
+**Resultado esperado:** el paso 1 responde 200 con el CBU, el alias y el titular vacíos. En el paso 2 las tres cargas responden 200 y el alumno y el tutor ven los datos cargados. El paso 3 responde 200.
+
+**Automatizado:** Sí (J-11 a J-13).
+
 ## 7. Tests automatizados
 
-164 tests en nueve archivos:
+182 tests en diez archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -862,6 +890,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 16 (H-01 a H-16) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
+|    J    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (J-01 a J-18) | PI-47, PI-48                      |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -938,6 +967,16 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
+| J-01        | Lista todos los parámetros del catálogo, con su tipo y su valor inicial                                                                                                       | PI-47 |
+| J-02, J-03  | La propietaria cambia un parámetro entero y uno booleano, y el valor queda en la base y en el listado                                                                         | PI-47 |
+| J-04 a J-08 | Rechaza con 400 un negativo, 366 días, un texto en un entero, más de 1440 minutos y un texto en un booleano, sin tocar la base                                                | PI-47 |
+| J-09        | Una clave que no existe responde 400 y no crea ninguna fila                                                                                                                   | PI-47 |
+| J-10        | Un parámetro sin fila rige con su valor inicial y al editarlo se crea                                                                                                         | PI-47 |
+| J-11        | Sin cargar, el alumno y el tutor reciben los datos bancarios vacíos                                                                                                           | PI-48 |
+| J-12, J-13  | La propietaria carga los datos bancarios y el alumno, el tutor y ella misma los ven                                                                                           | PI-48 |
+| J-14        | Sin sesión, las tres rutas responden 401                                                                                                                                      | PI-47 |
+| J-15 a J-17 | La profesora, el alumno y el tutor no listan ni editan los parámetros, y el valor no cambia                                                                                   | PI-47 |
+| J-18        | La profesora no ve los datos bancarios                                                                                                                                        | PI-47 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -1053,6 +1092,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Panel público de disponibilidad (PI-46)                               | 163 | 163 aprobados | 110,9 s | Pasaron también los 1311 tests unitarios, con cobertura del 100 %; chequeo de tipos correcto. Las 3 fallas provocadas fueron detectadas |
 | 12/10/2026 | Grilla real del centro en el escenario y cierre a las 23:00 (PI-05)     | 164 | 164 aprobados | 119,9 s | 16 tests se adaptaron al escenario nuevo. Pasaron también los 1311 tests unitarios, con cobertura del 100 %; build y chequeo de tipos correctos. La falla provocada fue detectada |
 | 12/10/2026 | Las actividades públicas reemplazan al panel de disponibilidad (PI-46) | 164 | 164 aprobados | 117,9 s | Pasaron también los 1307 tests unitarios, con cobertura del 100 %; build y formato correctos. La falla provocada fue detectada |
+| 12/10/2026 | Parámetros del sistema por la API (PI-47, PI-48)                      | 182 | 182 aprobados | 166,2 s | Corrida completa con el archivo J. Sin fallas provocadas. |
 
 ### 8.2 Resultado por caso
 
@@ -1079,6 +1119,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-45         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-15 y H-16; sin defectos                                                  |
 | PI-46         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-19 y B-20 con las actividades públicas; sin defectos                     |
 | PI-05         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan B-05 a B-09, B-14, B-15 y B-21 con la grilla nueva; sin defectos            |
+| PI-47, PI-48  | 12/10/2026 | Rosario Mendoza   | Aprobado           | Pasan J-01 a J-18 por la API; sin defectos                                       |
 
 ### 8.3 Defectos
 
@@ -1173,3 +1214,4 @@ Los defectos se numeran D-01, D-02…
 |   2.10  | 12/10/2026 | Caso PI-46 y tests B-19 y B-20 (panel público de disponibilidad); US-32 pasa a parcialmente automatizada; punto abierto sobre el límite de pedidos | Francisco Andrade |
 |   2.11  | 12/10/2026 | El escenario de demostración pasa a la grilla real del centro (ocho actividades y 38 horarios); el centro cierra a las 23:00 (PI-05, test B-21); PI-04, PI-05, PI-06 y PI-46 se ajustan a los datos nuevos | Francisco Andrade |
 |   2.12  | 12/10/2026 | PI-46 pasa a las actividades públicas (`GET /publico/actividades`): los horarios y los cupos dejan de ser públicos; B-19 y B-20 se reescriben | Francisco Andrade |
+|  2.13   | 12/10/2026 | Casos PI-47 (los parámetros del sistema los edita solo la propietaria) y PI-48 (los datos bancarios para transferir) y archivo J con J-01 a J-18; US-05, US-16, US-18 y US-21 suman los casos nuevos | Rosario Mendoza |
