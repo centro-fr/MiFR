@@ -7,13 +7,19 @@ import {
   formatearFecha,
   inicialesDe,
   textoEdad,
-} from "@/features/alumnos/utils/formato-ficha";
+} from "../formato-ficha";
 
 describe("formatearFecha", () => {
   // Una columna DATE no debe correrse un día por el huso horario de Argentina (UTC-3).
   it("muestra la fecha calendario tal cual, sin desfasaje por huso horario", () => {
     expect(formatearFecha("1996-04-24")).toBe("24/04/1996");
     expect(formatearFecha("2026-01-01")).toBe("01/01/2026");
+  });
+
+  it("tolera timestamps ISO completos provenientes del backend sin arrojar RangeError", () => {
+    expect(formatearFecha("2026-10-15T00:00:00.000Z")).toBe("15/10/2026");
+    expect(formatearFecha("2026-10-25T14:30:00.123Z")).toBe("25/10/2026");
+    expect(formatearFecha("")).toBe("");
   });
 });
 

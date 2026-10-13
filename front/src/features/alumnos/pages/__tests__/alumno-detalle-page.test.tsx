@@ -2,14 +2,14 @@ import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
-import { useAlumno } from "@/features/alumnos/hooks/use-alumnos";
-import { AlumnoDetallePage } from "@/features/alumnos/pages/alumno-detalle-page";
+import { useAlumno } from "../../hooks/use-alumnos";
+import { AlumnoDetallePage } from "../alumno-detalle-page";
 
 vi.mock("@/components/layout/owner-layout", () => ({
   OwnerLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("@/features/alumnos/hooks/use-alumnos", () => ({
+vi.mock("../../hooks/use-alumnos", () => ({
   useAlumno: vi.fn(() => ({})),
 }));
 

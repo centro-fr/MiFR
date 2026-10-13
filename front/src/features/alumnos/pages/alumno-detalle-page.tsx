@@ -31,6 +31,7 @@ import { formatearPrecio } from "@/utils/moneda";
 import { calcularEdad, type AlumnoDetalle, type InscripcionDeAlumno } from "@/features/alumnos/schemas/alumno";
 import { diaSemana } from "@/features/alumnos/utils/fecha";
 import { detalleVencimiento } from "@/features/alumnos/utils/situacion-cuota";
+import { HistorialCobrosAlumno } from "@/features/cobros/components/historial-cobros-alumno";
 
 type SeccionFicha = "datos" | "plan" | "cobros" | "asistencia" | "progreso";
 
@@ -105,6 +106,7 @@ export function AlumnoDetallePage() {
   const consulta = useAlumno(idValido ? idAlumno : 0);
   const { hasPermission, hasRole } = usePermissions();
   const esPropietaria = hasRole("PROPIETARIA");
+  const puedeVerCobros = esPropietaria || hasPermission("PAGOS_REGISTRAR");
   // Como en el back (PATCH /alumnos/:id): con ALUMNOS_EDITAR la propietaria edita todo; la
   // profesora, solo contacto y observaciones. Baja, reactivación y cambio de plan, solo la propietaria.
   const puedeEditarTodosLosDatos = esPropietaria && hasPermission("ALUMNOS_EDITAR");
@@ -120,7 +122,7 @@ export function AlumnoDetallePage() {
   const secciones: { id: SeccionFicha; etiqueta: string }[] = [
     { id: "datos", etiqueta: "Datos personales" },
     { id: "plan", etiqueta: "Plan y horarios" },
-    ...(esPropietaria ? [{ id: "cobros" as const, etiqueta: "Cobros" }] : []),
+    ...(puedeVerCobros ? [{ id: "cobros" as const, etiqueta: "Cobros" }] : []),
     { id: "asistencia", etiqueta: "Asistencia" },
     { id: "progreso", etiqueta: "Progreso y rutina" },
   ];
@@ -413,15 +415,8 @@ export function AlumnoDetallePage() {
                 />
               )}
 
-              {seccion === "cobros" && esPropietaria && (
-                <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                  <h2 className="text-base font-extrabold text-[#181C26] dark:text-white">
-                    Historial de cobros
-                  </h2>
-                  <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                    El historial de cobros todavía no está disponible.
-                  </p>
-                </Card>
+              {seccion === "cobros" && puedeVerCobros && (
+                <HistorialCobrosAlumno alumno={alumno} />
               )}
 
               {seccion === "asistencia" && (

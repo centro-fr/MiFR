@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -76,6 +76,7 @@ export function usePreinscripcion({
   // Una profesora solo pre-inscribe a su nombre (el back responde 403 si no): para ella no se elige.
   const [idProfesoraElegida, setIdProfesora] = useState<number | null>(null);
   const idProfesora = esSoloProfesora ? idProfesoraInicial : idProfesoraElegida;
+  const [idActividad, setIdActividad] = useState<number | null>(null);
   const [idsHorarios, setIdsHorarios] = useState<number[]>([]);
   const [sinCargo, setSinCargo] = useState<boolean>(false);
   const [fechaInicio, setFechaInicio] = useState<string>(() => new Date().toISOString().slice(0, 10));
@@ -97,18 +98,55 @@ export function usePreinscripcion({
     return planSeleccionado.clases_por_semana ?? 1;
   }, [planSeleccionado]);
 
-  // Horarios filtrados para la profesora y modalidad elegidas
-  const horariosDisponibles = useMemo(() => {
+  // Actividades que da la profesora elegida (respetando exclusividad si el plan la tiene)
+  const actividadesDisponibles = useMemo(() => {
     if (!idProfesora) return [];
+    const mapa = new Map<number, { id_actividad: number; nombre: string }>();
+    horarios.forEach((h) => {
+      if (h.id_profesora === idProfesora && h.actividad) {
+        if (planSeleccionado?.id_actividad_exclusiva) {
+          if (h.id_actividad === planSeleccionado.id_actividad_exclusiva) {
+            mapa.set(h.id_actividad, {
+              id_actividad: h.id_actividad,
+              nombre: h.actividad.nombre,
+            });
+          }
+        } else {
+          mapa.set(h.id_actividad, {
+            id_actividad: h.id_actividad,
+            nombre: h.actividad.nombre,
+          });
+        }
+      }
+    });
+    return Array.from(mapa.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }, [horarios, idProfesora, planSeleccionado]);
+
+  // Auto-seleccionar actividad cuando corresponda
+  useEffect(() => {
+    if (planSeleccionado?.id_actividad_exclusiva) {
+      setIdActividad(planSeleccionado.id_actividad_exclusiva);
+    } else if (actividadesDisponibles.length === 1) {
+      setIdActividad(actividadesDisponibles[0].id_actividad);
+    } else if (idActividad && !actividadesDisponibles.some((a) => a.id_actividad === idActividad)) {
+      setIdActividad(null);
+    }
+  }, [planSeleccionado, actividadesDisponibles, idActividad]);
+
+  const actividadSeleccionada = useMemo(
+    () => actividadesDisponibles.find((a) => a.id_actividad === idActividad) ?? null,
+    [actividadesDisponibles, idActividad],
+  );
+
+  // Horarios filtrados exclusivamente para la profesora y actividad elegidas
+  const horariosDisponibles = useMemo(() => {
+    if (!idProfesora || !idActividad) return [];
     return horarios.filter((h) => {
       if (h.id_profesora !== idProfesora) return false;
-      // Si el plan tiene actividad exclusiva, filtrar por esa actividad
-      if (planSeleccionado?.id_actividad_exclusiva) {
-        return h.id_actividad === planSeleccionado.id_actividad_exclusiva;
-      }
+      if (h.id_actividad !== idActividad) return false;
       return true;
     });
-  }, [horarios, idProfesora, planSeleccionado]);
+  }, [horarios, idProfesora, idActividad]);
 
   // Manejo de horarios seleccionados (toggle)
   const toggleHorario = useCallback(
@@ -144,6 +182,28 @@ export function usePreinscripcion({
     return true;
   }, [datosAlumno]);
 
+  const seleccionarPlan = useCallback(
+    (id: number) => {
+      setIdPlan(id);
+      setIdsHorarios([]);
+      const nuevoPlan = planes.find((p) => p.id_plan === id);
+      if (nuevoPlan?.id_actividad_exclusiva) {
+        setIdActividad(nuevoPlan.id_actividad_exclusiva);
+      }
+    },
+    [planes],
+  );
+
+  const seleccionarProfesora = useCallback((id: number) => {
+    setIdProfesora(id);
+    setIdsHorarios([]);
+  }, []);
+
+  const seleccionarActividad = useCallback((id: number) => {
+    setIdActividad(id);
+    setIdsHorarios([]);
+  }, []);
+
   const validarPaso2 = useCallback((): boolean => {
     if (!idPlan) {
       toast.error("Debes seleccionar un plan de entrenamiento.");
@@ -153,8 +213,12 @@ export function usePreinscripcion({
       toast.error("Debes seleccionar una profesora.");
       return false;
     }
+    if (!idActividad) {
+      toast.error("Debes seleccionar una actividad.");
+      return false;
+    }
     return true;
-  }, [idPlan, idProfesora]);
+  }, [idPlan, idProfesora, idActividad]);
 
   const validarPaso3 = useCallback((): boolean => {
     if (idsHorarios.length !== clasesRequeridas) {
@@ -184,6 +248,7 @@ export function usePreinscripcion({
     setErroresPaso1({});
     setIdPlan(null);
     setIdProfesora(null);
+    setIdActividad(null);
     setIdsHorarios([]);
     setSinCargo(false);
     setObservacionesInscripcion("");
@@ -191,7 +256,7 @@ export function usePreinscripcion({
 
   // Confirmar y guardar la pre-inscripción
   const confirmarPreinscripcion = useCallback(async () => {
-    if (!idPlan || !idProfesora || idsHorarios.length !== clasesRequeridas) {
+    if (!idPlan || !idProfesora || !idActividad || idsHorarios.length !== clasesRequeridas) {
       toast.error("Faltan datos requeridos para completar la pre-inscripción.");
       return;
     }
@@ -256,6 +321,7 @@ export function usePreinscripcion({
   }, [
     idPlan,
     idProfesora,
+    idActividad,
     idsHorarios,
     clasesRequeridas,
     datosAlumno,
@@ -278,10 +344,14 @@ export function usePreinscripcion({
     menorDeEdad,
     esSoloProfesora,
     idPlan,
-    setIdPlan,
+    setIdPlan: seleccionarPlan,
     planSeleccionado,
     idProfesora,
-    setIdProfesora,
+    setIdProfesora: seleccionarProfesora,
+    idActividad,
+    setIdActividad: seleccionarActividad,
+    actividadesDisponibles,
+    actividadSeleccionada,
     idsHorarios,
     toggleHorario,
     clasesRequeridas,

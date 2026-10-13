@@ -13,6 +13,7 @@ interface Paso4ResumenConfirmacionProps {
   edadCalculada: number | null;
   plan: PlanApiRespuesta | null;
   profesora: ProfesoraDatos | null;
+  actividad?: { id_actividad: number; nombre: string } | null;
   horariosSeleccionados: HorarioApi[];
   sinCargo: boolean;
   fechaInicio: string;
@@ -36,6 +37,7 @@ export function Paso4ResumenConfirmacion({
   edadCalculada,
   plan,
   profesora,
+  actividad,
   horariosSeleccionados,
   sinCargo,
   fechaInicio,
@@ -138,6 +140,11 @@ export function Paso4ResumenConfirmacion({
             <p className="text-muted-foreground">
               <strong>Profesora:</strong> {profesora ? `${profesora.nombre} ${profesora.apellido}` : "—"}
             </p>
+            {actividad && (
+              <p className="text-muted-foreground">
+                <strong>Actividad:</strong> {actividad.nombre}
+              </p>
+            )}
             <p className="text-muted-foreground">
               <strong>Fecha inicio:</strong> {fechaInicio}
             </p>

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
+import { ModalBajaAlumno } from "../modal-baja-alumno";
 
 // jsdom no trae ResizeObserver y el RadioGroup de Radix lo usa para medir.
 vi.stubGlobal("ResizeObserver", class {

@@ -123,15 +123,36 @@ function inscripcion(
 // (US-07): la de Mateo empezó hace 5 días y ya tiene la reserva vencida. Micaela está de baja (US-08).
 export function inscripcionesSemilla(): InscripcionMock[] {
   return [
-    inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "PREINSCRIPTA" }),
-    inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }, 5),
-    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 40),
-    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 90),
+    inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "PREINSCRIPTA" }),
+    inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [26, 27], estado: "PREINSCRIPTA" }, 5),
+    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 40),
+    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 90),
     inscripcion(
       5,
-      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [5], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
+      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [28], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
       200,
     ),
+
+    // 5 Vencidas (diasAtras >= 42)
+    inscripcion(11, { id_alumno: 11, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 50),
+    inscripcion(12, { id_alumno: 12, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 45),
+    inscripcion(13, { id_alumno: 13, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 48),
+    inscripcion(14, { id_alumno: 14, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 55),
+    inscripcion(15, { id_alumno: 15, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 42),
+
+    // 5 Por vencer (diasAtras entre 31 y 34, dentro del período de gracia de 5 días)
+    inscripcion(16, { id_alumno: 16, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 32),
+    inscripcion(17, { id_alumno: 17, id_plan: 4, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 33),
+    inscripcion(18, { id_alumno: 18, id_plan: 1, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 31),
+    inscripcion(19, { id_alumno: 19, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 34),
+    inscripcion(20, { id_alumno: 20, id_plan: 2, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 32),
+
+    // 5 Al día (diasAtras entre 5 y 15)
+    inscripcion(21, { id_alumno: 21, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 10),
+    inscripcion(22, { id_alumno: 22, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 8),
+    inscripcion(23, { id_alumno: 23, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 15),
+    inscripcion(24, { id_alumno: 24, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 5),
+    inscripcion(25, { id_alumno: 25, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
   ];
 }
 
@@ -164,5 +185,24 @@ export function pagosSemilla(): PagoMock[] {
     pagoConfirmado(1, 3, PRECIOS[1]),
     ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
+
+    // Pagos de las 15 inscripciones demo
+    pagoConfirmado(11, 11, PRECIOS[2]),
+    pagoConfirmado(12, 12, PRECIOS[0]),
+    pagoConfirmado(13, 13, PRECIOS[1]),
+    pagoConfirmado(14, 14, PRECIOS[3]),
+    pagoConfirmado(15, 15, PRECIOS[0]),
+
+    pagoConfirmado(16, 16, PRECIOS[1]),
+    pagoConfirmado(17, 17, PRECIOS[3]),
+    pagoConfirmado(18, 18, PRECIOS[0]),
+    pagoConfirmado(19, 19, PRECIOS[2]),
+    pagoConfirmado(20, 20, PRECIOS[1]),
+
+    pagoConfirmado(21, 21, PRECIOS[3]),
+    pagoConfirmado(22, 22, PRECIOS[0]),
+    pagoConfirmado(23, 23, PRECIOS[1]),
+    pagoConfirmado(24, 24, PRECIOS[2]),
+    pagoConfirmado(25, 25, PRECIOS[0]),
   ];
 }

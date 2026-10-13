@@ -6,7 +6,7 @@ import {
   requiereConfirmarMonto,
   valoresInicialesPrimerPago,
   type PrimerPagoFormValues,
-} from "@/features/alumnos/schemas/primer-pago";
+} from "../primer-pago";
 
 const AHORA = new Date("2026-10-10T15:00:00Z"); // 12:00 en Argentina
 const CONTEXTO = { precio: 25000, ahora: AHORA, backInformoMontoDistinto: false };
