@@ -25,9 +25,10 @@ import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcio
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { cn } from "@/utils/cn";
 
-const TAMANO_PAGINA = 25;
+const TAMANO_PAGINA = 10;
 type FiltrosDeLaPantalla = Omit<FiltrosAlumnos, "busqueda" | "limit" | "offset">;
 
 const FILTROS_INICIALES: FiltrosDeLaPantalla = {
@@ -61,7 +62,6 @@ function useOpcionesDeFiltros() {
 function hayFiltrosActivos(busqueda: string, filtros: FiltrosDeLaPantalla): boolean {
   return (
     busqueda.trim() !== "" ||
-    filtros.estado !== "TODOS" ||
     filtros.id_plan !== "" ||
     filtros.id_profesora !== "" ||
     filtros.id_actividad !== "" ||
@@ -130,6 +130,8 @@ function Filtro({
 }
 
 export function AlumnosPage() {
+  const { hasRole } = usePermissions();
+  const esProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
   const [busqueda, setBusqueda] = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [filtros, setFiltros] = useState<FiltrosDeLaPantalla>(FILTROS_INICIALES);
@@ -163,30 +165,21 @@ export function AlumnosPage() {
     return (
       <>
         <Filtro
-          id={`${prefijo}-filtro-estado`}
-          etiqueta="Estado"
-          valor={filtros.estado}
-          opciones={[
-            { id: "TODOS", etiqueta: "Activos y pendientes" },
-            { id: "ACTIVO", etiqueta: "Activo" },
-            { id: "PENDIENTE", etiqueta: "Pendiente de alta" },
-          ]}
-          onChange={(valor) => cambiarFiltro("estado", valor)}
-        />
-        <Filtro
           id={`${prefijo}-filtro-plan`}
           etiqueta="Plan"
           valor={filtros.id_plan}
           opciones={[{ id: "", etiqueta: "Todos los planes" }, ...opciones.planes]}
           onChange={(valor) => cambiarFiltro("id_plan", valor)}
         />
-        <Filtro
-          id={`${prefijo}-filtro-profesora`}
-          etiqueta="Profesora"
-          valor={filtros.id_profesora}
-          opciones={[{ id: "", etiqueta: "Todas las profesoras" }, ...opciones.profesoras]}
-          onChange={(valor) => cambiarFiltro("id_profesora", valor)}
-        />
+        {!esProfesora && (
+          <Filtro
+            id={`${prefijo}-filtro-profesora`}
+            etiqueta="Profesora"
+            valor={filtros.id_profesora}
+            opciones={[{ id: "", etiqueta: "Todas las profesoras" }, ...opciones.profesoras]}
+            onChange={(valor) => cambiarFiltro("id_profesora", valor)}
+          />
+        )}
         <Filtro
           id={`${prefijo}-filtro-actividad`}
           etiqueta="Actividad"
@@ -278,7 +271,10 @@ export function AlumnosPage() {
         </details>
         <section
           aria-label="Filtros de alumnos"
-          className="mb-5 hidden grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:grid lg:grid-cols-3 2xl:grid-cols-5 dark:border-slate-600 dark:bg-slate-800"
+          className={cn(
+            "mb-5 hidden grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:grid dark:border-slate-600 dark:bg-slate-800",
+            esProfesora ? "lg:grid-cols-3" : "lg:grid-cols-4",
+          )}
         >
           {controlesFiltros("desktop")}
         </section>

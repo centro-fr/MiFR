@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-form";
-import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
+import { AlumnoEdicionForm } from "../alumno-edicion-form";
+import type { AlumnoDetalle } from "../../schemas/alumno";
 
-vi.mock("@/features/alumnos/hooks/use-alumnos", () => ({
+vi.mock("../../hooks/use-alumnos", () => ({
   useActualizarAlumno: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
@@ -33,6 +33,7 @@ function crearAlumno(): AlumnoDetalle {
     fecha_alta: "2025-02-10T12:00:00.000Z",
     fecha_baja: null,
     inscripcion: null,
+    inscripciones_de_la_baja: [],
   };
 }
 

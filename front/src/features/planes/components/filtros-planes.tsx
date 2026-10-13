@@ -1,15 +1,8 @@
 import { Search } from "lucide-react";
 import { CLASE_CONTROL } from "@/features/planes/components/estilos";
 import { SIN_ACTIVIDAD, type EstadoFiltro, type FiltrosPlanes } from "@/features/planes/utils/planes";
-import type { ModalidadActividad } from "@/types/actividad";
 import type { ActividadDelPlan } from "@/types/plan";
 import { cn } from "@/utils/cn";
-
-const MODALIDADES: { valor: ModalidadActividad | ""; texto: string }[] = [
-  { valor: "", texto: "Todos" },
-  { valor: "GRUPAL", texto: "Grupal" },
-  { valor: "PERSONALIZADA", texto: "Personalizada" },
-];
 
 const ESTADOS: { valor: EstadoFiltro; texto: string }[] = [
   { valor: "VIGENTES", texto: "Vigentes" },
@@ -30,9 +23,9 @@ export function FiltrosPlanesBar({ filtros, actividades, onChange }: Props) {
     <div
       role="search"
       aria-label="Filtrar planes"
-      className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-white p-3 shadow-sm sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(13rem,1fr)_minmax(10rem,0.7fr)_auto] dark:bg-surface-low"
+      className="grid grid-cols-1 gap-3 rounded-2xl border border-border bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,1fr)_minmax(11rem,0.8fr)] dark:bg-surface-low"
     >
-      <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 xl:col-span-1">
+      <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-1">
         <label htmlFor="buscar-plan" className={CLASE_ETIQUETA}>
           Buscar
         </label>
@@ -74,22 +67,6 @@ export function FiltrosPlanesBar({ filtros, actividades, onChange }: Props) {
           ))}
         </select>
       </div>
-      <fieldset className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 xl:col-span-1">
-        <legend className={cn(CLASE_ETIQUETA, "mb-1.5")}>Tipo de actividad</legend>
-        <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-white/15 dark:bg-white/5">
-          {MODALIDADES.map(({ valor, texto }) => (
-            <button
-              key={texto}
-              type="button"
-              aria-pressed={filtros.modalidad === valor}
-              onClick={() => onChange({ modalidad: valor })}
-              className="min-h-[44px] flex-1 rounded-lg px-3 text-sm font-bold whitespace-nowrap text-slate-600 aria-pressed:bg-white aria-pressed:text-slate-900 aria-pressed:shadow-sm focus-visible:outline-2 focus-visible:outline-primary dark:text-slate-300 dark:aria-pressed:bg-surface-low dark:aria-pressed:text-white"
-            >
-              {texto}
-            </button>
-          ))}
-        </div>
-      </fieldset>
     </div>
   );
 }

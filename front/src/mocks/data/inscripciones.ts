@@ -123,15 +123,36 @@ function inscripcion(
 // (US-07): la de Mateo empezó hace 5 días y ya tiene la reserva vencida. Micaela está de baja (US-08).
 export function inscripcionesSemilla(): InscripcionMock[] {
   return [
-    inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "PREINSCRIPTA" }),
-    inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [3, 4], estado: "PREINSCRIPTA" }, 5),
-    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 40),
-    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 2], estado: "ACTIVA" }, 90),
+    inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "PREINSCRIPTA" }),
+    inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [26, 27], estado: "PREINSCRIPTA" }, 5),
+    inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 40),
+    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 90),
     inscripcion(
       5,
-      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [5], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
+      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [28], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
       200,
     ),
+
+    // 5 Vencidas (diasAtras >= 42)
+    inscripcion(11, { id_alumno: 11, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 50),
+    inscripcion(12, { id_alumno: 12, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 45),
+    inscripcion(13, { id_alumno: 13, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 48),
+    inscripcion(14, { id_alumno: 14, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 55),
+    inscripcion(15, { id_alumno: 15, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 42),
+
+    // 5 Por vencer (diasAtras entre 31 y 34, dentro del período de gracia de 5 días)
+    inscripcion(16, { id_alumno: 16, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 32),
+    inscripcion(17, { id_alumno: 17, id_plan: 4, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 33),
+    inscripcion(18, { id_alumno: 18, id_plan: 1, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 31),
+    inscripcion(19, { id_alumno: 19, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 34),
+    inscripcion(20, { id_alumno: 20, id_plan: 2, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 32),
+
+    // 5 Al día (diasAtras entre 5 y 15)
+    inscripcion(21, { id_alumno: 21, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 10),
+    inscripcion(22, { id_alumno: 22, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 8),
+    inscripcion(23, { id_alumno: 23, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 15),
+    inscripcion(24, { id_alumno: 24, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 5),
+    inscripcion(25, { id_alumno: 25, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
   ];
 }
 
@@ -157,12 +178,97 @@ function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number):
   };
 }
 
+const UNA_HORA_EN_MS = 3_600_000;
+
+interface DatosTransferencia {
+  id_pago: number;
+  id_inscripcion: number;
+  monto: number;
+  /** Hace cuántas horas la informó el alumno: con eso se miden las 24 horas (US-17). */
+  horasDesdeLaCarga: number;
+  titular_cuenta_origen?: string;
+  observaciones?: string;
+}
+
+// Transferencia que informó el alumno (US-16): queda PENDIENTE hasta que la revise la propietaria.
+function transferenciaPendiente(datos: DatosTransferencia): PagoMock {
+  const cargada = Date.now() - datos.horasDesdeLaCarga * UNA_HORA_EN_MS;
+  return {
+    id_pago: datos.id_pago,
+    id_cuota: datos.id_pago,
+    id_inscripcion: datos.id_inscripcion,
+    forma_pago: "TRANSFERENCIA",
+    estado: "PENDIENTE",
+    monto: datos.monto,
+    fecha_pago: new Date(cargada).toISOString(),
+    titular_cuenta_origen: datos.titular_cuenta_origen ?? null,
+    // El alumno la informa un rato después de hacerla.
+    fecha_hora_transferencia: new Date(cargada - UNA_HORA_EN_MS).toISOString(),
+    id_usuario_registra: 1,
+    id_profesora_cobra: null,
+    rendido: true,
+    fecha_rendicion: null,
+    id_usuario_confirma: null,
+    fecha_confirmacion: null,
+    motivo_rechazo: null,
+    observaciones: datos.observaciones ?? null,
+  };
+}
+
+function transferenciaResuelta(datos: DatosTransferencia, resolucion: Pick<PagoMock, "estado" | "motivo_rechazo">): PagoMock {
+  const pendiente = transferenciaPendiente(datos);
+  const resuelta = new Date(new Date(pendiente.fecha_pago).getTime() + 6 * UNA_HORA_EN_MS).toISOString();
+  return { ...pendiente, ...resolucion, id_usuario_confirma: 1, fecha_confirmacion: resuelta };
+}
+
+// US-17: una por cada tramo del plazo (más de 24 h, entre 12 y 24 h, menos de 12 h), una con un
+// monto distinto del precio vigente, una primera cuota (da el alta definitiva al aprobarla) y dos
+// ya resueltas. Valentina (3) también tiene una rechazada: no cuenta como cuota paga.
+function transferenciasSemilla(): PagoMock[] {
+  return [
+    transferenciaPendiente({ id_pago: 8, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 26, titular_cuenta_origen: "Herrera Valentina" }),
+    transferenciaPendiente({
+      id_pago: 9,
+      id_inscripcion: 4,
+      monto: 22000,
+      horasDesdeLaCarga: 15,
+      observaciones: "Te transferí desde la cuenta de mi hermana. Faltan $3.000, te los llevo en efectivo.",
+    }),
+    transferenciaPendiente({ id_pago: 10, id_inscripcion: 1, monto: PRECIOS[0], horasDesdeLaCarga: 3, observaciones: "Es mi primera cuota." }),
+    transferenciaResuelta({ id_pago: 11, id_inscripcion: 4, monto: PRECIOS[0], horasDesdeLaCarga: 50 }, { estado: "CONFIRMADO", motivo_rechazo: null }),
+    transferenciaResuelta(
+      { id_pago: 12, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 74 },
+      { estado: "RECHAZADO", motivo_rechazo: "No se encontró la transferencia en el extracto" },
+    ),
+  ];
+}
+
 // Cada pago cubre un mes (mocks/situacion-cuota.ts): la inscripción 3 pagó uno de los dos meses que
-// lleva y está vencida, la 4 pagó los tres y está al día, y Micaela (5) se fue debiendo (US-08).
+// lleva y está vencida, la 4 pagó todos y está al día, y Micaela (5) se fue debiendo (US-08).
 export function pagosSemilla(): PagoMock[] {
   return [
     pagoConfirmado(1, 3, PRECIOS[1]),
     ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
+    ...transferenciasSemilla(),
+
+    // Pagos de las 15 inscripciones demo
+    pagoConfirmado(111, 11, PRECIOS[2]),
+    pagoConfirmado(112, 12, PRECIOS[0]),
+    pagoConfirmado(113, 13, PRECIOS[1]),
+    pagoConfirmado(114, 14, PRECIOS[3]),
+    pagoConfirmado(115, 15, PRECIOS[0]),
+
+    pagoConfirmado(116, 16, PRECIOS[1]),
+    pagoConfirmado(117, 17, PRECIOS[3]),
+    pagoConfirmado(118, 18, PRECIOS[0]),
+    pagoConfirmado(119, 19, PRECIOS[2]),
+    pagoConfirmado(120, 20, PRECIOS[1]),
+
+    pagoConfirmado(121, 21, PRECIOS[3]),
+    pagoConfirmado(122, 22, PRECIOS[0]),
+    pagoConfirmado(123, 23, PRECIOS[1]),
+    pagoConfirmado(124, 24, PRECIOS[2]),
+    pagoConfirmado(125, 25, PRECIOS[0]),
   ];
 }

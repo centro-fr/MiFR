@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AxiosError, AxiosHeaders } from "axios";
 import { apiClient } from "@/api/client";
-import { esMontoDistinto, listarPreInscripcionesPendientes } from "@/features/alumnos/api/alta-definitiva-api";
+import { esMontoDistinto, listarPreInscripcionesPendientes } from "../alta-definitiva-api";
 
 vi.mock("@/api/client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
 

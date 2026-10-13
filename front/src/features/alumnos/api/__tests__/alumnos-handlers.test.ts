@@ -1,12 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { setupServer } from "msw/node";
-import { listarAlumnos } from "@/features/alumnos/api/alumnos-api";
-import { clearSessionToken, setSessionToken } from "@/features/auth/api/session-token";
-import { ALUMNOS_SEMILLA, USUARIOS_PERSONAS_SEMILLA } from "@/mocks/data/alumnos";
-import { inscripcionesSemilla } from "@/mocks/data/inscripciones";
-import { db } from "@/mocks/db";
-import { alumnosHandlers } from "@/mocks/handlers/alumnos";
-import { MOCK_JWT } from "@/mocks/handlers/respuestas";
+import { listarAlumnos } from "../alumnos-api";
+import { clearSessionToken, setSessionToken } from "../../../auth/api/session-token";
+import { ALUMNOS_SEMILLA, USUARIOS_PERSONAS_SEMILLA } from "../../../../mocks/data/alumnos";
+import { inscripcionesSemilla } from "../../../../mocks/data/inscripciones";
+import { db } from "../../../../mocks/db";
+import { alumnosHandlers } from "../../../../mocks/handlers/alumnos";
+import { MOCK_JWT } from "../../../../mocks/handlers/respuestas";
 
 const server = setupServer(...alumnosHandlers);
 const authHeaders = { Authorization: `Bearer ${MOCK_JWT}` };
@@ -49,8 +49,8 @@ describe("alumnosHandlers", () => {
         offset: 0,
       });
 
-      expect(respuesta.total).toBe(4);
-      expect(respuesta.items).toHaveLength(4);
+      expect(respuesta.total).toBe(19);
+      expect(respuesta.items).toHaveLength(19);
       expect(respuesta.items.some((alumno) => alumno.estado === "BAJA")).toBe(false);
     } finally {
       clearSessionToken();
@@ -95,7 +95,7 @@ describe("alumnosHandlers", () => {
     const cuerpo = (await respuesta.json()) as { datos: { estado: string }[]; total: number };
 
     expect(cuerpo.datos.some((alumno) => alumno.estado === "BAJA")).toBe(true);
-    expect(cuerpo.total).toBe(5);
+    expect(cuerpo.total).toBe(20);
   });
 
   it("devuelve la ficha con tutor e inscripciones, sin el antiguo historial de cobros", async () => {

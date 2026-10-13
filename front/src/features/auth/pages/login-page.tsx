@@ -111,6 +111,16 @@ function MockUserPickerPage() {
   );
 }
 
+function MockLoginPage() {
+  const flow = useLoginFlow();
+  return (
+    <LoginLayout
+      flow={flow}
+      onLogin={() => void flow.startLogin(() => Promise.resolve({ idToken: "mock-google-id-token" }))}
+    />
+  );
+}
+
 function GoogleLoginInner() {
   const flow = useLoginFlow();
   // La credencial (ID token JWT) la emite el botón oficial de GIS, montado
@@ -136,7 +146,8 @@ function LoginDesarrolloPage() {
 }
 
 function VarianteDeLogin() {
-  if (USE_MOCKS) return <MockUserPickerPage />;
+  if (USE_MOCKS && LOGIN_DESARROLLO) return <MockUserPickerPage />;
+  if (USE_MOCKS) return <MockLoginPage />;
   if (LOGIN_DESARROLLO) return <LoginDesarrolloPage />;
   if (!GOOGLE_CLIENT_ID) return <LoginSinConfigurar />;
   return (

@@ -23,12 +23,20 @@ export interface Miga {
   to?: string;
 }
 
-// La hija con la ruta más larga que contiene a la actual: en /app/alumnos/pendientes gana
-// "Pendientes de alta", y en la ficha /app/alumnos/baja/3 gana "Listado", desde donde se abre.
+// Qué tan bien una opción coincide con la ruta (0: no coincide). Su ruta, o una subruta, gana por
+// largo: en /app/alumnos/pendientes gana "Pendientes de alta". `subrutasDe` cubre lo que se abre
+// desde la opción sin ser su ruta (la ficha /app/alumnos/12 marca "Listado") y pierde ante una
+// opción propia; la ruta exacta de `subrutasDe` es la pantalla del grupo, no de la opción.
+function coincidencia(ruta: string, opcion: Pick<SubItemMenu, "to" | "subrutasDe">): number {
+  if (esRutaDe(ruta, opcion.to)) return opcion.to.length;
+  return opcion.subrutasDe && ruta.startsWith(`${opcion.subrutasDe}/`) ? opcion.subrutasDe.length : 0;
+}
+
 function hijaActiva(hijos: SubItemMenu[], ruta: string): string | undefined {
   return hijos
-    .filter((hijo) => esRutaDe(ruta, hijo.to))
-    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
+    .map((hijo) => ({ to: hijo.to, puntaje: coincidencia(ruta, hijo) }))
+    .filter(({ puntaje }) => puntaje > 0)
+    .sort((a, b) => b.puntaje - a.puntaje)[0]?.to;
 }
 
 function sumar(valores: (number | undefined)[]): number | undefined {
@@ -44,9 +52,11 @@ function marcarActivo(item: ItemMenu, ruta: string, contadores: ContadoresMenu):
       esActivo: hijo.to === activa,
       contador: contador && contadores[contador],
     }));
-    return { ...item, hijos, esActivo: activa !== undefined, contador: sumar(hijos.map((h) => h.contador)) };
+    // El grupo queda marcado en su pantalla y en todo lo que cuelga de ella (por ejemplo, la ficha).
+    const enElGrupo = activa !== undefined || (item.to !== undefined && esRutaDe(ruta, item.to));
+    return { ...item, hijos, esActivo: enElGrupo, contador: sumar(hijos.map((h) => h.contador)) };
   }
-  return { ...item, hijos: undefined, esActivo: item.activo ?? (item.to !== undefined && esRutaDe(ruta, item.to)) };
+  return { ...item, hijos: undefined, esActivo: item.activo ?? (item.to !== undefined && coincidencia(ruta, { to: item.to, subrutasDe: item.subrutasDe }) > 0) };
 }
 
 // Las subrutas (ej: la ficha /app/alumnos/12) mantienen marcada la sección en el menú.
@@ -58,9 +68,11 @@ function construirMigas(items: ItemConEstado[], inicio: string): Miga[] {
   const migas: Miga[] = [{ etiqueta: "Inicio", to: inicio }];
   for (const item of items) {
     if (item.hijos) {
+      if (!item.esActivo) continue;
       const hijo = item.hijos.find((h) => h.esActivo);
-      if (!hijo) continue;
-      migas.push({ etiqueta: item.etiqueta }, { etiqueta: hijo.etiqueta });
+      // El grupo enlaza a su pantalla, salvo que sea la actual.
+      migas.push({ etiqueta: item.etiqueta, to: hijo ? item.to : undefined });
+      if (hijo) migas.push({ etiqueta: hijo.etiqueta });
       break;
     }
     if (item.esActivo) {
@@ -78,10 +90,13 @@ const ROLES_POR_DEFECTO: RoleCode[] = ["PROPIETARIA"];
 /** Ítems del menú de los roles de la sesión con su estado activo y las migas de pan, derivados de la ruta. */
 export function useOwnerNavigation(contadores: ContadoresMenu = {}, roles: readonly RoleCode[] = ROLES_POR_DEFECTO) {
   const { pathname } = useLocation();
+  // Los números por separado: el objeto de contadores es nuevo en cada render y rompería el useMemo.
   const pendientesDeAlta = contadores.PENDIENTES_DE_ALTA;
+  const transferenciasPendientes = contadores.TRANSFERENCIAS_PENDIENTES;
   const menu = useMemo(() => itemsDelMenu(roles), [roles]);
   return useMemo(() => {
-    const items = menu.map((item) => marcarActivo(item, pathname, { PENDIENTES_DE_ALTA: pendientesDeAlta }));
+    const numeros: ContadoresMenu = { PENDIENTES_DE_ALTA: pendientesDeAlta, TRANSFERENCIAS_PENDIENTES: transferenciasPendientes };
+    const items = menu.map((item) => marcarActivo(item, pathname, numeros));
     return { items, migas: construirMigas(items, homePathForRoles(roles)) };
-  }, [menu, pathname, pendientesDeAlta, roles]);
+  }, [menu, pathname, pendientesDeAlta, transferenciasPendientes, roles]);
 }

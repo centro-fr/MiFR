@@ -2,13 +2,14 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { LogoFr } from "@/components/marca/logo-fr";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -18,6 +19,7 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -137,6 +139,16 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
+          {item.to && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link to={item.to} className="font-bold">
+                  {item.etiqueta}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           {item.hijos?.map((hijo) => (
             <DropdownMenuItem key={hijo.to} asChild>
               <Link to={hijo.to} aria-current={hijo.esActivo ? "page" : undefined}>
@@ -151,31 +163,73 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
   );
 }
 
+function Flecha({ abierto, className }: { abierto: boolean; className?: string }) {
+  return (
+    <ChevronDown
+      aria-hidden="true"
+      className={cn("transition-transform duration-200 motion-reduce:transition-none", abierto && "rotate-180", className)}
+    />
+  );
+}
+
+/**
+ * Cabecera de un grupo con pantalla propia: el nombre lleva a esa pantalla (las sub-opciones como
+ * tarjetas) y la flecha, aparte, solo despliega o pliega sin navegar.
+ */
+function CabeceraConPantalla({ item, to, abierto, alNavegar, alternar }: { item: ItemConEstado; to: string; abierto: boolean; alNavegar: () => void; alternar: () => void }) {
+  const Icono = item.icono;
+  const enSuPantalla = item.esActivo && !item.hijos?.some((hijo) => hijo.esActivo);
+  return (
+    <>
+      <SidebarMenuButton asChild isActive={enSuPantalla} className={cn(CLASES_ITEM, "pr-11")}>
+        <Link to={to} onClick={alNavegar} aria-current={enSuPantalla ? "page" : undefined}>
+          <Icono aria-hidden="true" />
+          <span>{item.etiqueta}</span>
+          {!abierto && <Contador valor={item.contador} className="ml-auto" />}
+        </Link>
+      </SidebarMenuButton>
+      <SidebarMenuAction
+        type="button"
+        aria-expanded={abierto}
+        aria-label={abierto ? `Plegar ${item.etiqueta}` : `Desplegar ${item.etiqueta}`}
+        onClick={alternar}
+        // Centrada en el ítem: 44 px táctil y 36 px con mouse, menos su tamaño, dejan 4 px arriba.
+        className="top-1 right-1 size-9 rounded-md peer-data-[size=default]/menu-button:top-1 pointer-fine:size-7 [&>svg]:size-4"
+      >
+        <Flecha abierto={abierto} />
+      </SidebarMenuAction>
+    </>
+  );
+}
+
+function CabeceraSinPantalla({ item, abierto, alternar }: { item: ItemConEstado; abierto: boolean; alternar: () => void }) {
+  const Icono = item.icono;
+  return (
+    <SidebarMenuButton type="button" aria-expanded={abierto} onClick={alternar} className={CLASES_ITEM}>
+      <Icono aria-hidden="true" />
+      <span>{item.etiqueta}</span>
+      {/* Abierto, el número se ve en la sub-opción: no se repite en el grupo. */}
+      {!abierto && <Contador valor={item.contador} className="ml-auto" />}
+      <Flecha abierto={abierto} className={cn((abierto || !item.contador) && "ml-auto")} />
+    </SidebarMenuButton>
+  );
+}
+
 function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
   const { pathname } = useLocation();
   // Estado derivado (sin efectos): nace abierto en rutas hijas y el toggle manual
   // solo vale para la ruta donde se hizo; al cambiar de sección vuelve al default.
   const [forzado, setForzado] = useState<{ ruta: string; abierto: boolean } | null>(null);
   const abierto = forzado?.ruta === pathname ? forzado.abierto : item.esActivo;
-  const Icono = item.icono;
+  const alternar = () => setForzado({ ruta: pathname, abierto: !abierto });
 
   return (
     <SidebarMenuItem {...entrada}>
-      <SidebarMenuButton
-        type="button"
-        aria-expanded={abierto}
-        onClick={() => setForzado({ ruta: pathname, abierto: !abierto })}
-        className={CLASES_ITEM}
-      >
-        <Icono aria-hidden="true" />
-        <span>{item.etiqueta}</span>
-        {/* Abierto, el número se ve en la sub-opción: no se repite en el grupo. */}
-        {!abierto && <Contador valor={item.contador} className="ml-auto" />}
-        <ChevronDown
-          aria-hidden="true"
-          className={cn("transition-transform duration-200 motion-reduce:transition-none", abierto && "rotate-180", (abierto || !item.contador) && "ml-auto")}
-        />
-      </SidebarMenuButton>
+      {item.to ? (
+        <CabeceraConPantalla item={item} to={item.to} abierto={abierto} alNavegar={alNavegar} alternar={alternar} />
+      ) : (
+        <CabeceraSinPantalla item={item} abierto={abierto} alternar={alternar} />
+      )}
       {/* Altura animada con grid-rows 0fr→1fr; `inert` cerrado saca a las hijas del tab. */}
       <div
         inert={!abierto}
@@ -190,7 +244,9 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
               <SidebarMenuSubButton
                 asChild
                 isActive={hijo.esActivo}
-                className="h-11 pointer-fine:h-8 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground"
+                // Alto mínimo y no fijo: un nombre largo ("Transferencias pendientes" con su contador)
+                // pasa a dos líneas en lugar de cortarse o encimarse con el ítem de abajo.
+                className="h-auto min-h-11 py-1.5 leading-tight pointer-fine:min-h-8 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground"
               >
                 <Link to={hijo.to} onClick={alNavegar} aria-current={hijo.esActivo ? "page" : undefined}>
                   <span>{hijo.etiqueta}</span>

@@ -9,10 +9,10 @@ import { LoginPage } from "@/features/auth/pages/login-page";
 import { crearSesion, crearUsuario } from "@/test/sesion-de-prueba";
 import type { RoleCode } from "@/types/auth";
 
-// Modo mock del login (sin popup real de Google): el flujo es el mismo, cambia solo de dónde sale el token.
+// Estas pruebas cubren el selector de perfiles del login de desarrollo con autenticación mock.
 vi.hoisted(() => {
   vi.stubEnv("VITE_USE_MOCKS", "true");
-  vi.stubEnv("VITE_LOGIN_DESARROLLO", "");
+  vi.stubEnv("VITE_LOGIN_DESARROLLO", "true");
   vi.stubEnv("VITE_GOOGLE_CLIENT_ID", "");
 });
 vi.mock("@/features/auth/hooks/use-auth", () => ({ useAuth: vi.fn() }));
