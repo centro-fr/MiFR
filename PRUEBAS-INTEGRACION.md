@@ -1171,6 +1171,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Corrección de los tests de asistencia que fallaron en CI (D-21)       | 176 | 176 aprobados | 37,7 s | En GitHub Actions fallaron 7 tests de J, reproducidos localmente con `TZ=UTC` después de las 21:00 de Argentina. Corregidos, pasan con `TZ=UTC` y con la hora local. Pasaron también los 1400 tests unitarios; la falla provocada de los horarios ajenos se sigue detectando |
 | 12/10/2026 | Filtro por estado de cuota e historial en la ficha (PI-51, PI-52)     | 179 | 179 aprobados | 143,8 s | Pasaron también los 1418 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas |
 | 12/10/2026 | Correcciones de la auditoría de la ficha (PI-25, D-22)                 | 179 | 179 aprobados | 141,4 s | Pasaron también los 1422 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La falla provocada fue detectada |
+| 12/10/2026 | Actualización de Vitest de 3.2.7 a 5.0.4                              | 179 | 179 aprobados | 142,3 s | Sin cambios en los tests ni en la configuración. Pasaron también los 1422 tests unitarios, con cobertura del 100 % (el umbral sigue frenando el comando si baja); build y formato correctos |
 
 ### 8.2 Resultado por caso
 
@@ -1308,3 +1309,4 @@ Los defectos se numeran D-01, D-02…
 |   2.14  | 12/10/2026 | Defecto D-21: los tests de asistencia dependían de la fecha real; los horarios del escenario se crean con `fecha_alta` fija y `crearHorarioDePrueba` acepta la fecha | Nicolas |
 |   2.15  | 12/10/2026 | Casos PI-51 (filtro del listado de alumnos por estado de cuota, con tope de 500) y PI-52 (historial de cuotas y pagos en la ficha, solo para la propietaria) y tests H-17 a H-19; US-10 pasa a automatizada | Francisco Andrade |
 |   2.16  | 12/10/2026 | PI-25 suma la ficha de un alumno que no existe, que a la profesora le responde 403 como uno ajeno (defecto D-22); E-15 lo verifica | Francisco Andrade |
+|   2.17  | 12/10/2026 | Corrida completa con Vitest 5.0.4, que reemplaza a la 3.2.7 por las vulnerabilidades de `tinypool` y `brace-expansion` | Francisco Andrade |
