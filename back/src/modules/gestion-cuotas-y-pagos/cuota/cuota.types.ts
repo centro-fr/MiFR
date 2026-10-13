@@ -1,4 +1,5 @@
 import type { estado_pago, forma_pago, tipo_plan } from "@prisma/client";
+import type { Habilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 
 export type EstadoPago = estado_pago;
@@ -10,6 +11,8 @@ export interface SituacionDeCuotas {
   id_inscripcion: number;
   tipo_plan: tipo_plan;
   dias_gracia: number;
+  // El instante en que se dio de baja la inscripción; null si sigue vigente.
+  fecha_baja: Date | null;
   cuotas: {
     id_cuota: number;
     numero_cuota: number;
@@ -17,6 +20,10 @@ export interface SituacionDeCuotas {
     estados_pagos: EstadoPago[];
   }[];
 }
+
+// La habilitación de una inscripción y si tiene una transferencia sin revisar (US-16), que la
+// habilitación usa pero no devuelve: la ficha la muestra para no cobrar dos veces.
+export type HabilitacionDeInscripcion = Habilitacion & { tienePagoPendiente: boolean };
 
 // Una cuota con todos sus pagos, también los rechazados, para el historial de la ficha del alumno
 // (US-10). El plan sale de la inscripción, que puede no ser la vigente.

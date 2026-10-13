@@ -3,6 +3,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../../app.js";
 import { construirSistema } from "../../composicion.js";
+import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IAutenticacionGoogleAuth } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
 import { JwtService } from "../../modules/gestion-usuarios/sesion/jwt.service.js";
@@ -19,15 +20,17 @@ const googleSimulado: IAutenticacionGoogleAuth = {
 export interface EntornoDeIntegracion {
   app: Express;
   prisma: PrismaClient;
-  // Hasta que exista el cobro (Sprint 3), el alta definitiva solo se alcanza por esta interfaz.
+  // El alta definitiva sin pasar por un cobro, para los tests que solo necesitan una inscripción activa.
   infoInscripciones: IInfoInscripciones;
+  // El cierre automático de la asistencia (US-21), para correrlo con la hora que pide cada caso.
+  cierreAsistencia: CierreAsistenciaService;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
 
 export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
-  const { dependencias, infoInscripciones } = construirSistema({
+  const { dependencias, infoInscripciones, cierreAsistencia } = construirSistema({
     prisma,
     googleAuth: googleSimulado,
     jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
@@ -45,5 +48,12 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     return respuesta.body.token as string;
   }
 
-  return { app, prisma, infoInscripciones, iniciarSesion, cerrar: () => prisma.$disconnect() };
+  return {
+    app,
+    prisma,
+    infoInscripciones,
+    cierreAsistencia,
+    iniciarSesion,
+    cerrar: () => prisma.$disconnect(),
+  };
 }

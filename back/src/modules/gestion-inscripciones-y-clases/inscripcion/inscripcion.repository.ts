@@ -14,6 +14,7 @@ import {
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
   type InscripcionGuardada,
+  type InscriptoDeHorario,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
@@ -48,6 +49,37 @@ function clavesDeInscripcion(idAlumno: number, idsHorarios: number[], idPlan?: n
     ...(idPlan === undefined ? [] : [`inscripcion-plan:${idAlumno}:${idPlan}`]),
     ...idsHorarios.map((idHorario) => `inscripcion-horario:${idHorario}`),
   ];
+}
+
+// Quién está en una clase (US-20, US-21): el horario vigente ese día, la inscripción activa y el
+// alumno no dado de baja. Un pre-inscripto no figura: todavía no pagó y no habilita a asistir (US-07),
+// así que tampoco se le marca asistencia ni se le registra una falta (decidido el 12/10/2026).
+function inscriptosVigentesEl(fecha: Date) {
+  return {
+    fecha_desde: { lte: fecha },
+    OR: [{ fecha_hasta: null }, { fecha_hasta: { gte: fecha } }],
+    inscripcion: { estado: "ACTIVA" as const, alumno: { estado: { not: "BAJA" as const } } },
+  } satisfies Prisma.inscripcion_horariosWhereInput;
+}
+
+function inscriptosDeHorarioEl(idHorario: number, fecha: Date) {
+  return { id_horario: idHorario, ...inscriptosVigentesEl(fecha) };
+}
+
+const SELECCION_INSCRIPTO = {
+  inscripcion: {
+    select: {
+      id_inscripcion: true,
+      id_alumno: true,
+      alumno: { select: { usuario: { select: { nombre: true, apellido: true } } } },
+    },
+  },
+} satisfies Prisma.inscripcion_horariosSelect;
+
+// Mismo bloqueo que toman el alta, la baja y el cambio de horarios: lo que la asistencia lee para
+// escribir no cambia hasta que termine.
+async function bloquearHorario(transaccion: Transaccion, idHorario: number): Promise<void> {
+  await bloquearRecursos(transaccion, [`inscripcion-horario:${idHorario}`]);
 }
 
 async function obtenerCupos(
@@ -222,6 +254,54 @@ export class InscripcionRepository {
     });
   }
 
+  // La baja del alumno cierra todas sus inscripciones vigentes en el mismo instante: las de la última
+  // baja son las que comparten su fecha_baja.
+  async listarDeLaUltimaBaja(idAlumno: number): Promise<InscripcionGuardada[]> {
+    const deBaja = {
+      id_alumno: idAlumno,
+      estado: "BAJA" as const,
+      motivo_baja: { not: "CAMBIO_PLAN" as const },
+    };
+    const ultima = await this.prisma.inscripciones.findFirst({
+      where: deBaja,
+      orderBy: { fecha_baja: "desc" },
+      select: { fecha_baja: true },
+    });
+    if (!ultima?.fecha_baja) return [];
+    return this.prisma.inscripciones.findMany({
+      where: { ...deBaja, fecha_baja: ultima.fecha_baja },
+      include: INCLUIR_DATOS_INSCRIPCION,
+      orderBy: { id_inscripcion: "asc" },
+    });
+  }
+
+  listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      await bloquearHorario(transaccion, idHorario);
+      const filas = await transaccion.inscripcion_horarios.findMany({
+        where: inscriptosDeHorarioEl(idHorario, fecha),
+        select: SELECCION_INSCRIPTO,
+        orderBy: [
+          { inscripcion: { alumno: { usuario: { apellido: "asc" } } } },
+          { inscripcion: { alumno: { usuario: { nombre: "asc" } } } },
+        ],
+      });
+      return filas.map(({ inscripcion }) => inscripcion);
+    });
+  }
+
+  buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      await bloquearHorario(transaccion, idHorario);
+      const base = inscriptosDeHorarioEl(idHorario, fecha);
+      const fila = await transaccion.inscripcion_horarios.findFirst({
+        where: { ...base, inscripcion: { ...base.inscripcion, id_alumno: idAlumno } },
+        select: SELECCION_INSCRIPTO,
+      });
+      return fila?.inscripcion ?? null;
+    });
+  }
+
   async buscarVigentePorAlumno(idAlumno: number): Promise<InscripcionGuardada | null> {
     return this.prisma.inscripciones.findFirst({
       where: { id_alumno: idAlumno, estado: { in: [...ESTADOS_VIGENTES] } },
@@ -303,10 +383,11 @@ export class InscripcionRepository {
   ): Promise<ResultadoOperacion> {
     return enTransaccion(this.prisma, async (transaccion) => {
       await bloquearRecursos(transaccion, clavesDeInscripcion(input.id_alumno, idsHorarios, input.id_plan));
+      // Dos reactivaciones a la vez: la segunda devuelve la inscripción que dejó la primera.
       const existente = await transaccion.inscripciones.findFirst({
         where: {
           id_alumno: input.id_alumno,
-          estado: "ACTIVA",
+          estado: { in: [...ESTADOS_VIGENTES] },
         },
         orderBy: [{ fecha_inicio: "desc" }, { id_inscripcion: "desc" }],
         include: INCLUIR_DATOS_INSCRIPCION,
@@ -315,7 +396,7 @@ export class InscripcionRepository {
       if (!(await hayCupo(transaccion, idsHorarios, inicioReservas))) return { resultado: "sin-cupo" };
       const inscripcion = await transaccion.inscripciones.create({
         data: {
-          ...mapearDatosDeCreacion(input, "ACTIVA"),
+          ...mapearDatosDeCreacion(input, input.estado),
           fecha_inicio: input.fecha_inicio,
           horarios: {
             create: idsHorarios.map((id_horario) => ({ id_horario, fecha_desde: fecha })),
@@ -501,6 +582,16 @@ export class InscripcionRepository {
         fecha_hasta: null,
         inscripcion: { estado: { in: [...ESTADOS_VIGENTES] }, alumno: { estado: { not: "BAJA" } } },
       },
+      _count: { id_horario: true },
+    });
+    return new Map(filas.map(({ id_horario, _count }) => [id_horario, _count.id_horario]));
+  }
+
+  async contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>> {
+    if (idsHorarios.length === 0) return new Map();
+    const filas = await this.prisma.inscripcion_horarios.groupBy({
+      by: ["id_horario"],
+      where: { id_horario: { in: idsHorarios }, ...inscriptosVigentesEl(fecha) },
       _count: { id_horario: true },
     });
     return new Map(filas.map(({ id_horario, _count }) => [id_horario, _count.id_horario]));

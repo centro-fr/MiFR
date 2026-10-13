@@ -3,6 +3,7 @@ import { ConflictError } from "../../../shared/errors/app-error.js";
 import type { ActividadService } from "../actividad/actividad.service.js";
 import type { Actividad } from "../actividad/actividad.types.js";
 import type { HorarioService } from "../horario/horario.service.js";
+import type { ParametrosSistemaService } from "../parametros-sistema/parametros-sistema.service.js";
 import type { PlanService } from "../plan/plan.service.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import { GestionServicioEntrenamientoService } from "../gestion-servicio-entrenamiento.service.js";
@@ -46,6 +47,7 @@ describe("GestionServicioEntrenamientoService", () => {
       actividades as unknown as ActividadService,
       horarios as unknown as HorarioService,
       planes as unknown as PlanService,
+      {} as unknown as ParametrosSistemaService,
       inscripciones as unknown as IInfoInscripciones,
     );
   });
@@ -168,6 +170,11 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     listarPrecios: vi.fn().mockResolvedValue("resultado"),
     registrarPrecio: vi.fn().mockResolvedValue("resultado"),
   };
+  const parametros = {
+    listar: vi.fn().mockResolvedValue("resultado"),
+    actualizar: vi.fn().mockResolvedValue("resultado"),
+    obtenerDatosBancarios: vi.fn().mockResolvedValue("resultado"),
+  };
   const inscripciones = {
     contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
     contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
@@ -176,6 +183,7 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     actividades as unknown as ActividadService,
     horarios as unknown as HorarioService,
     planes as unknown as PlanService,
+    parametros as unknown as ParametrosSistemaService,
     inscripciones as unknown as IInfoInscripciones,
   );
   const cuerpo = { nombre: "X" };
@@ -194,6 +202,9 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["darDeBajaPlan", [3], planes.darDeBaja],
     ["listarPreciosPlan", [3], planes.listarPrecios],
     ["registrarPrecioPlan", [3, cuerpo], planes.registrarPrecio],
+    ["listarParametros", [], parametros.listar],
+    ["actualizarParametro", ["DIAS_RESERVA_PREINSCRIPCION", 5], parametros.actualizar],
+    ["obtenerDatosBancarios", [], parametros.obtenerDatosBancarios],
   ] as const)("%s", async (operacion, argumentos, destino) => {
     const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
 

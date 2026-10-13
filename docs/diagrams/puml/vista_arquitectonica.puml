@@ -244,6 +244,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoInscripciones" as I_InfoInscripciones
     interface "IInfoClases"        as I_InfoClases
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresClase
+    interface "IInfoHorarios"      as R_GIC_InfoHorariosClase
     interface "IInfoAsistencia"    as I_InfoAsistencia
     interface "IInfoParametros"    as R_GIC_InfoParametros
     interface "IInfoProgreso"      as R_GIC_InfoProgreso
@@ -258,12 +259,14 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
     Clase       -right-( R_GIC_InfoProfesoresClase
+    Clase       -right-( R_GIC_InfoHorariosClase
     Asistencia  -right- I_InfoAsistencia
     CierreAsistencia -down-( R_GIC_InfoParametros
     Suplencia        ..> Clase
     Asistencia       ..> Inscripcion
     Asistencia       ..> Clase
     CierreAsistencia ..> Asistencia
+    CierreAsistencia ..> Clase
     Inscripcion -[hidden]right-> Clase
     Clase       -[hidden]right-> Suplencia
     Clase       -[hidden]down-> Asistencia

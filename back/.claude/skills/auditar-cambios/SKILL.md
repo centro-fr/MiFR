@@ -15,6 +15,7 @@ Correr desde `back/`. Si alguno falla, se reporta como BLOQUEANTE:
 
 ```bash
 pnpm build
+pnpm typecheck              # también los tests, que el build excluye
 pnpm format:check
 pnpm test:coverage          # 100 % de sentencias, ramas y funciones
 pnpm audit --prod           # vulnerabilidades en dependencias de producción
@@ -66,6 +67,5 @@ Si hay BLOQUEANTES, la rama no se integra. Si no hay hallazgos, decirlo en una l
 
 Se anota acá lo aceptado conscientemente, para no reportarlo en cada auditoría:
 
-- `gestion-cuotas-y-pagos` todavía no está montado en `app.ts` ni en `composicion.ts`: espera los calculadores (ver `SPRINT-3.md`).
 - La baja de un alumno y la de sus inscripciones, y la activación de un alumno fuera del cobro, todavía no usan `IUnidadDeTrabajo`.
 - No hay linter: typescript-eslint no soporta TypeScript 7 (ver `back/CLAUDE.md`).

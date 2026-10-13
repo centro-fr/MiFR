@@ -77,11 +77,25 @@ describe("listarAlumnoQuerySchema", () => {
   });
 
   it.each([
+    "AL_DIA",
+    "POR_VENCER",
+    "VENCIDA",
+    "CLASE_SUELTA_VIGENTE",
+    "CLASE_SUELTA_VENCIDA",
+    "PENDIENTE_DE_PAGO",
+  ])("acepta el estado de cuota %s", (estado_cuota) => {
+    expect(listarAlumnoQuerySchema.parse({ estado_cuota })).toMatchObject({ estado_cuota });
+  });
+
+  it.each([
     { limit: "0" },
     { limit: "101" },
     { offset: "-1" },
     { estado: "PENDIENTE" },
     { dni: "12.345.678" },
+    { estado_cuota: "al_dia" },
+    { estado_cuota: "EN_GRACIA" },
+    { estado_cuota: "" },
   ])("rechaza %j", (query) => {
     expect(listarAlumnoQuerySchema.safeParse(query).success).toBe(false);
   });

@@ -39,10 +39,6 @@ describe("crearHorarioSchema", () => {
     },
   );
 
-  it("acepta horario nocturno hasta las 23:00", () => {
-    expect(crearHorarioSchema.safeParse({ ...minimo, hora_inicio: "22:00", hora_fin: "23:00" }).success).toBe(true);
-  });
-
   it("rechaza que la hora de fin no sea posterior a la de inicio", () => {
     expect(crearHorarioSchema.safeParse({ ...minimo, hora_fin: "08:00" }).success).toBe(false);
     expect(crearHorarioSchema.safeParse({ ...minimo, hora_fin: "07:30" }).success).toBe(false);

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { ICalculoHabilitacion } from "../../modules/calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
-import type { ICalculoVencimiento } from "../../modules/calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
+import { CalculadorHabilitacion } from "../../modules/calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.js";
+import { CalculadorVencimientoCuota } from "../../modules/calculos-del-negocio/calculador-vencimiento-cuota/calculador-vencimiento-cuota.js";
 import { CuotaRepository } from "../../modules/gestion-cuotas-y-pagos/cuota/cuota.repository.js";
 import { CuotaService } from "../../modules/gestion-cuotas-y-pagos/cuota/cuota.service.js";
 import { GestionCuotasYPagosService } from "../../modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.service.js";
@@ -11,7 +11,8 @@ import { ProfesorRepository } from "../../modules/gestion-personas/profesor/prof
 import { ProfesorService } from "../../modules/gestion-personas/profesor/profesor.service.js";
 import { ActividadRepository } from "../../modules/gestion-servicio-entrenamiento/actividad/actividad.repository.js";
 import { ActividadService } from "../../modules/gestion-servicio-entrenamiento/actividad/actividad.service.js";
-import type { IInfoParametros } from "../../modules/gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
+import { ParametrosSistemaRepository } from "../../modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.repository.js";
+import { ParametrosSistemaService } from "../../modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.service.js";
 import { PlanRepository } from "../../modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
 import { PlanService } from "../../modules/gestion-servicio-entrenamiento/plan/plan.service.js";
 import { RolRepository } from "../../modules/gestion-usuarios/rol/rol.repository.js";
@@ -21,18 +22,9 @@ import { UsuarioService } from "../../modules/gestion-usuarios/usuario/usuario.s
 import { UnidadDeTrabajoPrisma } from "../../shared/db/transaccion.js";
 
 export const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
-const UN_MES_EN_MS = 30 * UN_DIA_EN_MS;
 
-// Los calculadores (capa no persistente) todavía no están implementados, así que el subsistema no se
-// arma en composicion.ts. El test lo arma con los componentes reales y reemplaza solo los cálculos
-// puros, que no tocan la base y no cambian lo que se prueba acá: qué queda guardado.
-const vencimientos: ICalculoVencimiento = {
-  calcularVencimiento: ({ desde }) => new Date(desde.getTime() + UN_MES_EN_MS),
-};
-const habilitaciones: ICalculoHabilitacion = {
-  calcular: () => ({ estado: "AL_DIA", fechaVencimiento: null, diasRestantes: null, puedeAsistir: true }),
-};
-const parametros = { obtener: async () => true } as unknown as IInfoParametros;
+// Repite el cableado de composicion.ts para poder cambiarle el repositorio de pagos: así PI-35 hace
+// fallar el guardado del pago después del alta y comprueba que la transacción no deja nada.
 
 export interface CuotasYPagosArmado {
   gestion: GestionCuotasYPagosService;
@@ -56,9 +48,9 @@ export function armarCuotasYPagos(
     new CuotaRepository(prisma),
     infoInscripciones,
     planService,
-    vencimientos,
-    habilitaciones,
-    parametros,
+    new CalculadorVencimientoCuota(),
+    new CalculadorHabilitacion(),
+    new ParametrosSistemaService(new ParametrosSistemaRepository(prisma)),
   );
   const gestion = new GestionCuotasYPagosService(
     cuotaService,

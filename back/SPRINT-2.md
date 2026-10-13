@@ -114,7 +114,7 @@ Cómo trabajar en paralelo sin bloquearse:
   - [x] DNI ya registrado → 409 `ALUMNO_EXISTENTE` con el id del alumno existente, para que el front muestre la advertencia.
   - [x] Mayor de edad → email obligatorio (decidido); el tutor también lo lleva, porque es quien entra.
 - [x] `IInfoAlumnos.activar(id)`: pasa alumno y usuario a `ACTIVO` y asigna el rol `ALUMNO`, o `TUTOR` al responsable si es menor. Tiene que ser idempotente: la va a llamar `Inscripcion` y un pago confirmado dos veces no puede duplicar nada.
-- [x] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id)` para US-08 (la baja deja al usuario `INACTIVO`; el tutor no se toca porque puede tener otros alumnos).
+- [x] `IInfoAlumnos.darDeBaja(id)` e `IInfoAlumnos.reactivar(id, estado)` para US-08 (la baja deja al usuario `INACTIVO`; el tutor no se toca porque puede tener otros alumnos).
 - [x] Catálogo: la profesora tiene `ALUMNOS_EDITAR` y `PLANES_VER` en `MATRIZ_INICIAL`. En una base ya cargada la carga del catálogo no los agrega, porque ya existían: mientras estemos en desarrollo, se regenera la base (ver `DESPLIEGUE.md`).
 - [x] Tests del service (menor sin tutor, reutilización del tutor, activación idempotente) y de integración: PI-15, PI-16 y PI-19 (tests E-01 a E-08 y F-01 a F-03).
 
@@ -138,6 +138,7 @@ Cómo trabajar en paralelo sin bloquearse:
 - [x] `IInfoInscripciones.activar(id)` es idempotente desde `ACTIVA`, rechaza `BAJA` con 409, revalida cupo y activa al alumno. No está en la API: US-07 dice que el alta definitiva la dispara el pago confirmado, así que la va a llamar el cobro del Sprint 3.
 - [x] `POST /api/v1/alumnos/:id/baja` cierra inscripciones y horarios vigentes, guarda el motivo y la fecha de baja, y luego da de baja al alumno; repetirla responde 409. Con el motivo `OTRO` acepta `detalle_baja` (opcional, hasta 200 caracteres), que se guarda en cada inscripción dada de baja; con otro motivo el detalle responde 400. La columna se sumó al DER el 11/10/2026 (PI-41).
 - [x] `POST /api/v1/alumnos/:id/reactivar` crea una inscripción nueva, conserva la anterior como historial, valida cupos y reactiva al alumno. Sin cupo responde 409 sin cambiar su estado.
+  - [x] Quien nunca tuvo un pago confirmado vuelve pre-inscripto: la inscripción queda `PREINSCRIPTA` y el alumno `INACTIVO`, y el primer pago le da el alta (US-07). La fachada lo consulta con `IInfoCuotas.tuvoPagoConfirmado` (PI-44, defecto D-20).
 - [x] Baja, reactivación, cambio de plan y cambio de horarios requieren rol `PROPIETARIA` y permiso `ALUMNOS_EDITAR`. Una profesora solo ve las inscripciones que tiene a cargo.
 - [x] `IInfoInscripciones` expone ids de alumnos por plan/profesora/actividad y el resumen vigente por lote (sin N+1), además del conteo de cupo para horarios.
 - [x] Tests unitarios del ciclo de vida y de integración PI-20 a PI-23.

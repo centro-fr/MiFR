@@ -220,7 +220,10 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Reactivar un alumno",
-    description: `${propietariaEditar} Crea una inscripción nueva y valida nuevamente el cupo. ${reglasDeAlta}`,
+    description:
+      `${propietariaEditar} Crea una inscripción nueva y valida nuevamente el cupo. ${reglasDeAlta} ` +
+      "Si el alumno ya tuvo algún pago confirmado, la inscripción queda ACTIVA y el alumno, ACTIVO. Si nunca " +
+      "pagó, la inscripción queda PREINSCRIPTA (con su reserva de cupo) y el alumno, INACTIVO: el primer pago le da el alta.",
     request: {
       params: inscripcionIdParamSchema,
       body: cuerpoJson(reactivarAlumnoSchema),
