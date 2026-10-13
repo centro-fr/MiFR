@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { LogoFr } from "@/components/marca/logo-fr";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   DropdownMenu,
@@ -211,7 +212,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
 
   return (
     <SidebarGroup>
-      <SidebarMenu aria-label="Administración">
+      <SidebarMenu aria-label="Menú principal">
         {items.map((item, indice) => {
           const entrada = isMobile ? entradaEscalonada(indice) : undefined;
           if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} entrada={entrada} />;
@@ -372,9 +373,11 @@ interface OwnerLayoutProps {
   children: ReactNode;
 }
 
+// Pese al nombre, es el layout de toda la app autenticada: el menú sale de los roles de la sesión.
 export function OwnerLayout({ children }: OwnerLayoutProps) {
   const { pathname } = useLocation();
-  const { items, migas } = useOwnerNavigation(useContadoresMenu());
+  const { roles } = usePermissions();
+  const { items, migas } = useOwnerNavigation(useContadoresMenu(), roles);
   // Solo importa en el primer render: el Provider recuerda el estado después.
   const [abiertoInicial] = useState(leerSidebarAbierto);
 

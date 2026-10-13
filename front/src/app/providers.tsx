@@ -20,7 +20,9 @@ export function Providers() {
         <TooltipProvider delayDuration={300}>
           <RouterProvider router={router} />
         </TooltipProvider>
-        <Toaster position="top-right" duration={4000} />
+        {/* En mobile el toast ocupa todo el ancho: con 64 px arranca debajo de la barra superior
+            (h-14 = 56 px) y no tapa el botón del menú. */}
+        <Toaster position="top-right" duration={4000} mobileOffset={{ top: 64 }} />
       </AuthProvider>
     </QueryClientProvider>
   );

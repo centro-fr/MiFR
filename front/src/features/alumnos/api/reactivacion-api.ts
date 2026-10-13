@@ -60,6 +60,13 @@ export async function obtenerInscripcionAnterior(idAlumno: number): Promise<Insc
 }
 
 // El back crea una inscripción activa y vuelve a validar el cupo: sin lugar responde 409.
-export async function reactivarAlumno(idAlumno: number, cuerpo: ReactivarAlumnoBody): Promise<void> {
-  await apiClient.post(`/alumnos/${idAlumno}/reactivar`, cuerpo);
+// Quien ya pagó alguna vez vuelve con la inscripción ACTIVA; quien nunca pagó, PREINSCRIPTA, y queda
+// activo recién con el primer pago (US-07).
+const inscripcionReactivadaSchema = z.object({ estado: z.enum(["PREINSCRIPTA", "ACTIVA"]) });
+
+export type EstadoAlReactivar = z.infer<typeof inscripcionReactivadaSchema>["estado"];
+
+export async function reactivarAlumno(idAlumno: number, cuerpo: ReactivarAlumnoBody): Promise<EstadoAlReactivar> {
+  const { data } = await apiClient.post(`/alumnos/${idAlumno}/reactivar`, cuerpo);
+  return inscripcionReactivadaSchema.parse(data).estado;
 }

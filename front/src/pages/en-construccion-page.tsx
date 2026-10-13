@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Construction, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Construction, House } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { homePathForRoles } from "@/types/auth";
 
 interface EnConstruccionPageProps {
   /** Nombre de la sección pendiente (ej: "Alumnos"). Se muestra como contexto. */
@@ -11,13 +13,14 @@ interface EnConstruccionPageProps {
 
 export function EnConstruccionPage({ seccion }: EnConstruccionPageProps) {
   const navigate = useNavigate();
+  const { roles } = usePermissions();
 
   function volverAtras() {
     void navigate(-1);
   }
 
-  function irAlDashboard() {
-    void navigate("/app/dashboard", { replace: true });
+  function irAlInicio() {
+    void navigate(homePathForRoles(roles), { replace: true });
   }
 
   return (
@@ -56,11 +59,11 @@ export function EnConstruccionPage({ seccion }: EnConstruccionPageProps) {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Button
               type="button"
-              onClick={irAlDashboard}
+              onClick={irAlInicio}
               className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&_svg]:size-5"
             >
-              <LayoutDashboard aria-hidden="true" className="h-5 w-5" />
-              Volver al Dashboard
+              <House aria-hidden="true" className="h-5 w-5" />
+              Volver al inicio
             </Button>
             <Button
               type="button"

@@ -4,8 +4,8 @@ import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-ro
 import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
 import { SessionSplash } from "@/components/guards/session-splash";
-import { EnConstruccionPage } from "@/pages/en-construccion-page";
-import { NotFoundPage, StudentHomePage, TeacherHomePage } from "@/pages/placeholders";
+import { rolesConAcceso } from "@/components/layout/owner-navigation";
+import { NotFoundPage } from "@/pages/placeholders";
 
 /**
  * Importa la página recién al navegar a su ruta: cada una queda en su propio chunk
@@ -21,6 +21,29 @@ function paginaPerezosa<Modulo extends Record<string, unknown>>(
 // Mientras baja el chunk de la primera ruta se muestra el splash de sesión, no una pantalla en blanco.
 const carga = { hydrateFallbackElement: <SessionSplash /> };
 
+/**
+ * Guardia de una sección de /app: entra solo un rol cuyo menú la ofrece (owner-navigation.ts) y,
+ * si se pide, con el permiso puntual de la matriz. Las subrutas (ficha, alta, edición) la heredan.
+ */
+function guardiaDeSeccion(path: string, permission?: string) {
+  const roles = rolesConAcceso(`/app/${path}`);
+  // Con roles vacíos PermissionGuard dejaría pasar a cualquiera: una sección sin menú es un error.
+  if (roles.length === 0) throw new Error(`La sección /app/${path} no está en el menú de ningún rol`);
+  return (
+    <PermissionGuard roles={roles} permission={permission}>
+      <Outlet />
+    </PermissionGuard>
+  );
+}
+
+// Como paginaPerezosa, pero la página recibe el nombre de la sección.
+function paginaEnConstruccion(seccion: string): NonNullable<RouteObject["lazy"]> {
+  return async () => {
+    const { EnConstruccionPage } = await import("@/pages/en-construccion-page");
+    return { element: <EnConstruccionPage seccion={seccion} /> };
+  };
+}
+
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
@@ -29,6 +52,14 @@ const SECCIONES_EN_CONSTRUCCION = [
   { path: "honorarios", seccion: "Honorarios" },
   { path: "notificaciones", seccion: "Notificaciones" },
   { path: "reportes", seccion: "Reportes" },
+  // Menú de la profesora (MENUS.md).
+  { path: "mis-clases", seccion: "Mis clases" },
+  { path: "cobros", seccion: "Cobros" },
+  // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
+  { path: "mi-plan", seccion: "Mi plan" },
+  { path: "progreso", seccion: "Progreso" },
+  { path: "comunidad", seccion: "Comunidad" },
+  { path: "perfil", seccion: "Perfil" },
 ];
 
 export const router = createBrowserRouter([
@@ -52,7 +83,8 @@ export const router = createBrowserRouter([
     children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/auth/pages/login-page"), "LoginPage") }],
   },
   {
-    // Layout sin ruta propia: exige sesión a todo lo que cuelga de /app.
+    // Layout sin ruta propia: exige sesión a todo lo que cuelga de /app. Cada sección, además,
+    // exige un rol cuyo menú la ofrezca: entrar por URL a la de otro rol muestra "Sin acceso".
     path: "/app",
     element: (
       <ProtectedRoute>
@@ -63,22 +95,39 @@ export const router = createBrowserRouter([
     ...carga,
     children: [
       { index: true, element: <NotFoundPage /> },
-      { path: "dashboard", lazy: paginaPerezosa(() => import("@/pages/owner-dashboard-page"), "OwnerDashboardPage") },
-      { path: "hoy", element: <TeacherHomePage /> },
-      { path: "inicio", element: <StudentHomePage /> },
+      {
+        path: "dashboard",
+        element: guardiaDeSeccion("dashboard"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/pages/owner-dashboard-page"), "OwnerDashboardPage") },
+        ],
+      },
+      {
+        path: "hoy",
+        element: guardiaDeSeccion("hoy"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "TeacherHomePage") }],
+      },
+      {
+        path: "inicio",
+        element: guardiaDeSeccion("inicio"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
+      },
       {
         path: "actividades",
-        lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage"),
+        element: guardiaDeSeccion("actividades", "ACTIVIDADES_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage") },
+        ],
       },
-      { path: "horarios", lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") },
+      {
+        path: "horarios",
+        element: guardiaDeSeccion("horarios", "HORARIOS_VER"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") }],
+      },
       {
         // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
         path: "alumnos",
-        element: (
-          <PermissionGuard permission="ALUMNOS_VER">
-            <Outlet />
-          </PermissionGuard>
-        ),
+        element: guardiaDeSeccion("alumnos", "ALUMNOS_VER"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
           // Ficha del alumno: datos y edición (US-09), plan y horarios, baja y reactivación (US-08).
@@ -88,11 +137,7 @@ export const router = createBrowserRouter([
       {
         // Alta definitiva (US-07): pre-inscripciones que esperan su primer pago. Actor: la propietaria.
         path: "alumnos/pendientes",
-        element: (
-          <PermissionGuard roles={["PROPIETARIA"]} permission="ALUMNOS_VER">
-            <Outlet />
-          </PermissionGuard>
-        ),
+        element: guardiaDeSeccion("alumnos/pendientes", "ALUMNOS_VER"),
         children: [
           {
             index: true,
@@ -101,20 +146,14 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // US-11: planes vigentes. Los ve quien tiene PLANES_VER; crearlos y editarlos, la propietaria.
+        // US-11: planes vigentes. Verlos pide PLANES_VER; crearlos y editarlos, además, PLANES_EDITAR.
         path: "planes",
+        element: guardiaDeSeccion("planes", "PLANES_VER"),
         children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") },
           {
             element: (
-              <PermissionGuard permission="PLANES_VER">
-                <Outlet />
-              </PermissionGuard>
-            ),
-            children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") }],
-          },
-          {
-            element: (
-              <PermissionGuard roles={["PROPIETARIA"]} permission="PLANES_EDITAR">
+              <PermissionGuard permission="PLANES_EDITAR">
                 <Outlet />
               </PermissionGuard>
             ),
@@ -127,11 +166,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "seguridad/permisos",
-        element: (
-          <PermissionGuard roles={["PROPIETARIA"]} permission="SEGURIDAD_MATRIZ_VER">
-            <Outlet />
-          </PermissionGuard>
-        ),
+        element: guardiaDeSeccion("seguridad/permisos", "SEGURIDAD_MATRIZ_VER"),
         children: [
           {
             index: true,
@@ -141,7 +176,8 @@ export const router = createBrowserRouter([
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({
         path,
-        element: <EnConstruccionPage seccion={seccion} />,
+        element: guardiaDeSeccion(path),
+        children: [{ index: true, lazy: paginaEnConstruccion(seccion) }],
       })),
     ],
   },

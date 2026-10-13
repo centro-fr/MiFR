@@ -12,6 +12,7 @@ import {
   PLAN_PRECIOS_SEMILLA,
   PLANES_SEMILLA,
   inscripcionesSemilla,
+  pagosSemilla,
   type InscripcionMock,
   type PagoMock,
   type PlanMock,
@@ -54,6 +55,10 @@ interface BaseMock {
   idUsuarioSesion: number | null;
 }
 
+// La base vive en memoria y se reinicia al recargar, pero el token de sesión no: sin esto,
+// recargar estando como alumno devolvería la sesión a la propietaria.
+const CLAVE_USUARIO_MOCK = "mifr:mock-usuario-sesion";
+
 export const db: BaseMock = {
   usuarios: structuredClone(USUARIOS_SEMILLA),
   actividades: structuredClone(ACTIVIDADES_SEMILLA),
@@ -68,11 +73,38 @@ export const db: BaseMock = {
   planes: structuredClone(PLANES_SEMILLA),
   planPrecios: structuredClone(PLAN_PRECIOS_SEMILLA),
   inscripciones: inscripcionesSemilla(),
-  pagos: [],
+  pagos: pagosSemilla(),
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
-  idUsuarioSesion: ID_USUARIO_SESION_INICIAL,
+  idUsuarioSesion: leerUsuarioGuardado() ?? ID_USUARIO_SESION_INICIAL,
 };
+
+function leerUsuarioGuardado(): number | null {
+  try {
+    const guardado = Number(window.sessionStorage.getItem(CLAVE_USUARIO_MOCK));
+    return Number.isInteger(guardado) && guardado > 0 ? guardado : null;
+  } catch {
+    return null;
+  }
+}
+
+export function abrirSesionMock(idUsuario: number): void {
+  db.idUsuarioSesion = idUsuario;
+  try {
+    window.sessionStorage.setItem(CLAVE_USUARIO_MOCK, String(idUsuario));
+  } catch {
+    // Sin almacenamiento: la sesión mock vive solo hasta la próxima recarga.
+  }
+}
+
+export function cerrarSesionMock(): void {
+  db.idUsuarioSesion = null;
+  try {
+    window.sessionStorage.removeItem(CLAVE_USUARIO_MOCK);
+  } catch {
+    // Sin almacenamiento: nada que limpiar.
+  }
+}
 
 export function siguienteId(ids: number[]): number {
   return Math.max(0, ...ids) + 1;

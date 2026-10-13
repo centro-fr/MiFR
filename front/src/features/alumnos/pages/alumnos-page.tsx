@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import type { FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
@@ -379,6 +380,10 @@ export function AlumnosPage() {
                           {alumno.profesora ?? "A definir"}
                         </p>
                       </div>
+                      <div className="min-w-0">
+                        <p className="text-slate-600 dark:text-slate-300">Cuota</p>
+                        <BadgeSituacionCuota situacion={alumno.situacion_cuota} className="mt-0.5" />
+                      </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-600">
                       <span className="min-w-0 break-all text-sm text-slate-600 dark:text-slate-400">
@@ -404,6 +409,9 @@ export function AlumnosPage() {
                       </th>
                       <th scope="col" className="px-4 py-4">
                         Estado
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Cuota
                       </th>
                       <th scope="col" className="px-4 py-4">
                         Plan
@@ -432,9 +440,12 @@ export function AlumnosPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <Badge className={cn("min-h-7 border px-2 text-sm", colorEstado(alumno.estado))}>
+                          <Badge variant="outline" className={cn("min-h-7 border px-2 text-sm", colorEstado(alumno.estado))}>
                             {etiquetaEstado(alumno.estado)}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-4">
+                          <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
                         </td>
                         <td className="px-4 py-4 font-medium text-slate-800 dark:text-slate-100">
                           {alumno.plan ?? "Sin plan"}

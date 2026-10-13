@@ -36,7 +36,7 @@ export function PermissionGuard({ roles, permission, children }: PermissionGuard
         </span>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Sin acceso</h1>
         <p className="max-w-[320px] text-sm leading-relaxed text-muted-foreground">
-          No tenés permisos para ver esta sección. Solo la propietaria puede acceder.
+          No tenés permisos para ver esta sección. Desde tu inicio vas a encontrar las que te corresponden.
         </p>
         <Link
           to={homePathForRoles(user.roles)}

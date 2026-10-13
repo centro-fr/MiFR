@@ -106,8 +106,10 @@ export function ModalPreinscripcion({
     <Dialog open={open} onOpenChange={cerrarModal}>
       <DialogContent
         className="w-[96vw] sm:w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        // Con un clic afuera se cierra y vuelve al listado, salvo mientras se guarda la pre-inscripción.
+        onInteractOutside={(e) => {
+          if (enviando) e.preventDefault();
+        }}
       >
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
