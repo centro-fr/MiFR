@@ -14,6 +14,8 @@ import { ActividadService } from "../../modules/gestion-servicio-entrenamiento/a
 import { ParametrosSistemaRepository } from "../../modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.repository.js";
 import { ParametrosSistemaService } from "../../modules/gestion-servicio-entrenamiento/parametros-sistema/parametros-sistema.service.js";
 import { PlanRepository } from "../../modules/gestion-servicio-entrenamiento/plan/plan.repository.js";
+import { PromocionRepository } from "../../modules/gestion-servicio-entrenamiento/promocion/promocion.repository.js";
+import { PromocionService } from "../../modules/gestion-servicio-entrenamiento/promocion/promocion.service.js";
 import { PlanService } from "../../modules/gestion-servicio-entrenamiento/plan/plan.service.js";
 import { RolRepository } from "../../modules/gestion-usuarios/rol/rol.repository.js";
 import { RolService } from "../../modules/gestion-usuarios/rol/rol.service.js";
@@ -43,6 +45,7 @@ export function armarCuotasYPagos(
   const planService = new PlanService(
     new PlanRepository(prisma),
     new ActividadService(new ActividadRepository(prisma)),
+    new PromocionService(new PromocionRepository(prisma)),
   );
   const cuotaService = new CuotaService(
     new CuotaRepository(prisma),

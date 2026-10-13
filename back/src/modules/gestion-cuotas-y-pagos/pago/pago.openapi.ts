@@ -9,13 +9,18 @@ import {
 } from "../../../shared/openapi/registro.js";
 import {
   aprobarTransferenciaSchema,
+  efectivoPendienteQuerySchema,
   informarTransferenciaSchema,
   listarTransferenciasQuerySchema,
   pagoIdParamSchema,
   rechazarTransferenciaSchema,
   registrarEfectivoSchema,
   registrarTransferenciaRecibidaSchema,
+  rendicionesQuerySchema,
+  rendirLoteSchema,
+  rendirPagoSchema,
 } from "./pago.schemas.js";
+import { TOPE_DETALLE_EFECTIVO } from "./pago.service.js";
 
 const pagoSchema = z
   .object({
@@ -61,11 +66,81 @@ const comprobanteSchema = z
     monto: z.number(),
     alumno: nombreSchema.extend({ dni: z.string().nullable() }),
     plan: z.string(),
-    cuota: z.object({ numero: z.number().int(), vencimiento: fechaSchema }),
+    cuota: z.object({
+      numero: z.number().int(),
+      vencimiento: fechaSchema,
+      monto: z.number().openapi({ description: "Lo que había que cobrar ese día, ya con el descuento" }),
+    }),
+    precio_lista: z
+      .number()
+      .nullable()
+      .openapi({ description: "El precio del plan el día del cobro (US-12)" }),
+    descuento: z.number().openapi({ description: "Lo que descontó la promoción; 0 si no tuvo (US-13)" }),
+    promocion: z.object({ codigo: z.string(), nombre: z.string() }).nullable(),
     registrado_por: nombreSchema,
     profesora_cobra: nombreSchema.nullable(),
   })
   .openapi("Comprobante");
+
+const cobroEnEfectivoSchema = z
+  .object({
+    id_pago: z.number().int(),
+    monto: z.number(),
+    fecha_pago: fechaSchema,
+    fecha_rendicion: fechaSchema.nullable(),
+    alumno: alumnoSchema,
+    plan: z.string(),
+    cuota: z.object({ numero: z.number().int(), vencimiento: fechaSchema }),
+    profesora: nombreSchema.extend({ id_profesora: z.number().int() }),
+  })
+  .openapi("CobroEnEfectivo");
+
+const cobroSinRendirSchema = cobroEnEfectivoSchema
+  .omit({ fecha_rendicion: true })
+  .extend({
+    dias_sin_rendir: z.number().int().openapi({ description: "Días de Argentina desde el cobro hasta hoy" }),
+  })
+  .openapi("CobroSinRendir");
+
+const totalDeProfesoraSchema = nombreSchema.extend({
+  id_profesora: z.number().int(),
+  cantidad: z.number().int(),
+  total: z.number(),
+});
+
+const efectivoPendienteSchema = z
+  .object({
+    cantidad: z.number().int(),
+    total: z.number(),
+    profesoras: z.array(totalDeProfesoraSchema.extend({ cobros: z.array(cobroSinRendirSchema) })),
+    detalle_completo: z.boolean().openapi({
+      description: `false si había más de ${TOPE_DETALLE_EFECTIVO} cobros: el detalle trae los más viejos y los totales son completos`,
+    }),
+  })
+  .openapi("EfectivoPendiente");
+
+const resultadoRendicionSchema = z
+  .object({
+    rendidos: z.array(z.number().int()),
+    cantidad: z.number().int(),
+    total: z.number(),
+    salteados: z.array(
+      z.object({
+        id_pago: z.number().int(),
+        motivo: z.enum(["NO_EXISTE", "YA_RENDIDO", "NO_ES_EFECTIVO_DE_PROFESORA"]),
+      }),
+    ),
+  })
+  .openapi("ResultadoRendicion");
+
+const paginaRendicionesSchema = z
+  .object({
+    datos: z.array(cobroEnEfectivoSchema),
+    total: z.number().int(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+  })
+  .openapi("PaginaRendiciones");
 
 const montoDistinto =
   "Si el monto no es el precio vigente del plan responde 409 `MONTO_DISTINTO` con el esperado; para " +
@@ -221,6 +296,83 @@ export function registrarDocumentacionPagos(registro: OpenAPIRegistry): void {
     responses: {
       200: respuestaJson("Comprobante", comprobanteSchema),
       ...respuestasDeError(400, 401, 403, 404, 409),
+    },
+  });
+
+  const propietariaRinde =
+    "Solo la propietaria: rol `PROPIETARIA` y el permiso `PAGOS_RENDICION_VER`. Se rinde el efectivo CONFIRMADO " +
+    "que cobró una profesora; lo que cobra la propietaria nace rendido y no aparece.";
+
+  registro.registerPath({
+    method: "get",
+    path: "/pagos/efectivo-pendiente",
+    tags,
+    security,
+    summary: "Efectivo pendiente de rendición (US-19)",
+    description:
+      `${propietariaRinde} Agrupado por profesora, también las dadas de baja, con la cantidad y el total de cada ` +
+      "una y en general. Cada cobro trae el alumno, el plan, la cuota y los días que lleva sin rendir. Filtros " +
+      "por profesora y por los días de Argentina del cobro (`desde` y `hasta`, inclusive).",
+    request: { query: efectivoPendienteQuerySchema },
+    responses: {
+      200: respuestaJson("Efectivo pendiente", efectivoPendienteSchema),
+      ...respuestasDeError(400, 401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/pagos/rendiciones",
+    tags,
+    security,
+    summary: "Historial de lo rendido (US-19)",
+    description:
+      `${propietariaRinde} De la rendición más nueva a la más vieja, con los filtros del pendiente: \`desde\` y ` +
+      "`hasta` se aplican a la fecha de la rendición. Paginado con `limit` (máximo 100) y `offset`.",
+    request: { query: rendicionesQuerySchema },
+    responses: {
+      200: respuestaJson("Página de rendiciones", paginaRendicionesSchema),
+      ...respuestasDeError(400, 401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "post",
+    path: "/pagos/{id}/rendir",
+    tags,
+    security,
+    summary: "Rendir un cobro en efectivo (US-19)",
+    description:
+      `${propietariaRinde} Marca el cobro como rendido con la fecha de hoy. Ya rendido, o que no es efectivo ` +
+      "de una profesora, responde 409. Quién rindió y las observaciones quedan en la auditoría.",
+    request: {
+      params: pagoIdParamSchema,
+      body: cuerpoJson(
+        rendirPagoSchema.openapi("RendirCobro", { example: { observaciones: "Entregó en mano" } }),
+      ),
+    },
+    responses: {
+      200: respuestaJson("Resultado de la rendición", resultadoRendicionSchema),
+      ...respuestasDeError(400, 401, 403, 404, 409),
+    },
+  });
+
+  registro.registerPath({
+    method: "post",
+    path: "/pagos/rendir",
+    tags,
+    security,
+    summary: "Rendir varios cobros en efectivo (US-19)",
+    description:
+      `${propietariaRinde} Rinde todo lo pendiente de una profesora (\`id_profesora\`) o una lista de cobros ` +
+      "(`ids_pagos`, hasta 100), en una sola operación. Los que no se pueden rendir se saltean y la respuesta " +
+      "informa cuáles y por qué.",
+    request: {
+      body: cuerpoJson(rendirLoteSchema.openapi("RendirCobros", { example: { id_profesora: 3 } })),
+    },
+    responses: {
+      200: respuestaJson("Resultado de la rendición", resultadoRendicionSchema),
+      ...respuestasDeError(400, 401, 403),
     },
   });
 }
