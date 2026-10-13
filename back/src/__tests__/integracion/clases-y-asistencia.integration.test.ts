@@ -25,6 +25,13 @@ const AHORA = new Date("2026-10-12T18:00:00Z");
 // 21:00 de Argentina, cuando termina la clase.
 const FIN_DE_CLASE = new Date("2026-10-13T00:00:00Z");
 const UN_MINUTO = 60_000;
+// La fecha_alta de un horario la pone la base con el reloj real, que no se simula: sin fijarla, desde
+// el 13/10/2026 el horario nacería después del lunes simulado y su clase no se materializaría.
+const ALTA_DE_LOS_HORARIOS = new Date("2026-01-01T00:00:00Z");
+
+function crearHorarioDelEscenario(input: Omit<Parameters<typeof crearHorarioDePrueba>[1], "fecha_alta">) {
+  return crearHorarioDePrueba(prisma, { ...input, fecha_alta: ALTA_DE_LOS_HORARIOS });
+}
 
 interface Escenario {
   idHorario: number;
@@ -56,7 +63,7 @@ async function armarEscenario(): Promise<Escenario> {
   const idLucia = datos.idProfesora.get(LUCIA)!;
   const idActividad = datos.idActividad.get("FUNCIONAL")!;
   const plan = await crearPlan(prisma, { nombre: "Plan de asistencia" });
-  const { id_horario: idHorario } = await crearHorarioDePrueba(prisma, {
+  const { id_horario: idHorario } = await crearHorarioDelEscenario({
     id_actividad: idActividad,
     id_profesora: idLucia,
     dia_semana: 1,
@@ -64,7 +71,7 @@ async function armarEscenario(): Promise<Escenario> {
     hora_fin: "21:00",
     cupo_maximo: 10,
   });
-  const { id_horario: idOtroHorario } = await crearHorarioDePrueba(prisma, {
+  const { id_horario: idOtroHorario } = await crearHorarioDelEscenario({
     id_actividad: idActividad,
     id_profesora: idLucia,
     dia_semana: 3,
@@ -216,7 +223,7 @@ describe("PI-47: las clases del día y su lista de asistencia", () => {
     expect(await prisma.clases.count({ where: { id_horario: escenario.idHorario } })).toBe(1);
     expect(await prisma.clases.count({ where: { id_horario: escenario.idOtroHorario } })).toBe(0);
 
-    const { id_horario: idHorarioDeCarla } = await crearHorarioDePrueba(prisma, {
+    const { id_horario: idHorarioDeCarla } = await crearHorarioDelEscenario({
       id_actividad: (await prisma.horarios.findUniqueOrThrow({ where: { id_horario: escenario.idHorario } }))
         .id_actividad,
       id_profesora: (await prisma.profesoras.findFirstOrThrow({ where: { usuario: { email: CARLA } } }))
@@ -380,7 +387,7 @@ describe("PI-50: cierre automático al terminar la clase", () => {
     const conMarca = await prisma.clases.create({
       data: { id_horario: escenario.idHorario, id_prof_dictante: escenario.idLucia, fecha_clase: HOY },
     });
-    const { id_horario: idOtro } = await crearHorarioDePrueba(prisma, {
+    const { id_horario: idOtro } = await crearHorarioDelEscenario({
       id_actividad: (await prisma.horarios.findUniqueOrThrow({ where: { id_horario: escenario.idHorario } }))
         .id_actividad,
       id_profesora: escenario.idLucia,
