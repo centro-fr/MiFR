@@ -183,7 +183,12 @@ describe("GestionCuotasYPagosService", () => {
     ["listarTransferencias", [{ estado: "PENDIENTE" }], "listarTransferencias", "transferencias"],
     ["listarMisTransferencias", [solicitante], "listarMisTransferencias", "mis transferencias"],
     ["obtenerComprobante", [7, solicitante], "obtenerComprobante", "comprobante"],
-    ["listarEfectivoPendiente", [{ id_profesora: 3 }], "efectivoPendiente", "pendiente"],
+    [
+      "listarEfectivoPendiente",
+      [{ id_profesora: 3 }, { limit: 10, offset: 0 }],
+      "efectivoPendiente",
+      "pendiente",
+    ],
     ["listarRendiciones", [{}, { limit: 10, offset: 0 }], "listarRendiciones", "rendiciones"],
     ["rendirCobro", [7], "rendir", "rendido"],
     ["rendirCobros", [{ id_profesora: 3 }], "rendirLote", "lote"],

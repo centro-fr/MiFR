@@ -319,14 +319,17 @@ describe("PagoRepository: rendición del efectivo (US-19)", () => {
     });
   });
 
-  it("listarSinRendir trae los más viejos primero, con un extremo abierto y hasta el tope", async () => {
+  it("listarSinRendir pagina los más viejos primero, con un extremo abierto", async () => {
     prismaRendicion.pagos.findMany.mockResolvedValue([filaCobro]);
 
-    await expect(repositorio.listarSinRendir({ fin: FIN }, 501)).resolves.toEqual([cobro]);
+    await expect(repositorio.listarSinRendir({ fin: FIN }, { limit: 10, offset: 20 })).resolves.toEqual([
+      cobro,
+    ]);
     expect(prismaRendicion.pagos.findMany.mock.calls[0][0]).toMatchObject({
       where: { ...EFECTIVO_DE_PROFESORA, rendido: false, fecha_pago: { lt: FIN } },
       orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
-      take: 501,
+      take: 10,
+      skip: 20,
     });
   });
 

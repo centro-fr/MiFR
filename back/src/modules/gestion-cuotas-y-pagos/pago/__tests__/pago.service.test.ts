@@ -9,7 +9,7 @@ import type { Solicitante } from "../../../../shared/utils/solicitante.types.js"
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { CuotaACobrar } from "../../cuota/cuota.types.js";
 import type { PagoRepository } from "../pago.repository.js";
-import { PagoService, TOPE_DETALLE_EFECTIVO } from "../pago.service.js";
+import { PagoService } from "../pago.service.js";
 
 const AHORA = new Date("2026-10-09T15:00:00Z");
 const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
@@ -462,51 +462,33 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
   afterEach(() => vi.useRealTimers());
 
   describe("efectivoPendiente", () => {
-    it("agrupa el detalle por profesora, con los días de Argentina sin rendir y los totales completos", async () => {
+    it("trae los totales completos y una página de cobros con los días de Argentina sin rendir", async () => {
       repositorio.listarSinRendir.mockResolvedValue([
         // 22:00 del 10/10 en Argentina: lleva dos días, aunque en UTC ya fuera el 11.
         cobroDe(7, 3, new Date("2026-10-11T01:00:00Z")),
         cobroDe(8, 4, new Date("2026-10-12T15:00:00Z")),
       ]);
 
-      const pendiente = await servicio.efectivoPendiente({
-        id_profesora: 3,
-        desde: new Date("2026-10-01T00:00:00Z"),
-      });
-
-      expect(repositorio.totalesSinRendir).toHaveBeenCalledWith({
-        id_profesora: 3,
-        inicio: new Date("2026-10-01T03:00:00Z"),
-        fin: undefined,
-      });
-      expect(repositorio.listarSinRendir).toHaveBeenCalledWith(expect.anything(), TOPE_DETALLE_EFECTIVO + 1);
-      expect(pendiente.cantidad).toBe(3);
-      expect(pendiente.total).toBe(75000.3);
-      expect(pendiente.detalle_completo).toBe(true);
-      expect(
-        pendiente.profesoras.map(({ id_profesora, cobros }) => [
-          id_profesora,
-          cobros.map(({ id_pago }) => id_pago),
-        ]),
-      ).toEqual([
-        [3, [7]],
-        [4, [8]],
-      ]);
-      expect(pendiente.profesoras[0]!.cobros[0]).toMatchObject({ dias_sin_rendir: 2 });
-      expect(pendiente.profesoras[0]!.cobros[0]).not.toHaveProperty("fecha_rendicion");
-    });
-
-    it("con más cobros que el tope, el detalle se corta y lo informa", async () => {
-      repositorio.listarSinRendir.mockResolvedValue(
-        Array.from({ length: TOPE_DETALLE_EFECTIVO + 1 }, (_, indice) =>
-          cobroDe(indice + 1, 3, AHORA_RENDICION),
-        ),
+      const pendiente = await servicio.efectivoPendiente(
+        { id_profesora: 3, desde: new Date("2026-10-01T00:00:00Z") },
+        { limit: 2, offset: 4 },
       );
 
-      const pendiente = await servicio.efectivoPendiente();
-
-      expect(pendiente.detalle_completo).toBe(false);
-      expect(pendiente.profesoras[0]!.cobros).toHaveLength(TOPE_DETALLE_EFECTIVO);
+      const filtro = { id_profesora: 3, inicio: new Date("2026-10-01T03:00:00Z"), fin: undefined };
+      expect(repositorio.totalesSinRendir).toHaveBeenCalledWith(filtro);
+      expect(repositorio.listarSinRendir).toHaveBeenCalledWith(filtro, { limit: 2, offset: 4 });
+      expect(pendiente).toMatchObject({
+        cantidad: 3,
+        total: 75000.3,
+        profesoras: totales,
+        limit: 2,
+        offset: 4,
+      });
+      expect(pendiente.cobros.map(({ id_pago, dias_sin_rendir }) => [id_pago, dias_sin_rendir])).toEqual([
+        [7, 2],
+        [8, 0],
+      ]);
+      expect(pendiente.cobros[0]).not.toHaveProperty("fecha_rendicion");
     });
   });
 
@@ -519,7 +501,7 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
       profesoras: totales,
       mas_antiguo: { id_pago: 7, dias_sin_rendir: 2 },
     });
-    expect(repositorio.listarSinRendir).toHaveBeenCalledWith({}, 1);
+    expect(repositorio.listarSinRendir).toHaveBeenCalledWith({}, { limit: 1, offset: 0 });
 
     repositorio.totalesSinRendir.mockResolvedValue([]);
     repositorio.listarSinRendir.mockResolvedValueOnce([]);

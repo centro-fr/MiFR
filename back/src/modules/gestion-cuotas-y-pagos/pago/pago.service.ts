@@ -43,8 +43,6 @@ import type {
 const MS_POR_HORA = 3_600_000;
 const MS_POR_DIA = 24 * MS_POR_HORA;
 const HORAS_PARA_REVISAR = 24;
-// El detalle del efectivo sin rendir llega hasta acá; los totales son siempre completos.
-export const TOPE_DETALLE_EFECTIVO = 500;
 
 function enInstantes({ id_profesora, desde, hasta }: FiltroEfectivo): FiltroEfectivoEnInstantes {
   return { id_profesora, ...rangoDeDiasArgentinos(desde, hasta) };
@@ -179,22 +177,22 @@ export class PagoService implements IInfoPagos {
     });
   }
 
-  // US-19: lo que cada profesora tiene que rendir, con los totales completos y el detalle hasta el tope.
-  async efectivoPendiente(filtro: FiltroEfectivo = {}): Promise<EfectivoPendiente> {
+  // US-19: lo que cada profesora tiene que rendir: los totales completos y una página del detalle.
+  async efectivoPendiente(
+    filtro: FiltroEfectivo,
+    pagina: { limit: number; offset: number },
+  ): Promise<EfectivoPendiente> {
     const enRango = enInstantes(filtro);
     const [totales, cobros] = await Promise.all([
       this.repositorio.totalesSinRendir(enRango),
-      this.repositorio.listarSinRendir(enRango, TOPE_DETALLE_EFECTIVO + 1),
+      this.repositorio.listarSinRendir(enRango, pagina),
     ]);
     const hoy = fechaActualArgentina();
-    const detalle = cobros.slice(0, TOPE_DETALLE_EFECTIVO).map((cobro) => conDiasSinRendir(cobro, hoy));
     return {
       ...sumar(totales),
-      profesoras: totales.map((total) => ({
-        ...total,
-        cobros: detalle.filter(({ profesora }) => profesora.id_profesora === total.id_profesora),
-      })),
-      detalle_completo: cobros.length <= TOPE_DETALLE_EFECTIVO,
+      profesoras: totales,
+      cobros: cobros.map((cobro) => conDiasSinRendir(cobro, hoy)),
+      ...pagina,
     };
   }
 
@@ -202,7 +200,7 @@ export class PagoService implements IInfoPagos {
   async resumenEfectivoPendiente(): Promise<ResumenEfectivoPendiente> {
     const [totales, [masAntiguo]] = await Promise.all([
       this.repositorio.totalesSinRendir({}),
-      this.repositorio.listarSinRendir({}, 1),
+      this.repositorio.listarSinRendir({}, { limit: 1, offset: 0 }),
     ]);
     return {
       ...sumar(totales),
