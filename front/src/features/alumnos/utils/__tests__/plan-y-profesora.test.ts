@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   clasesRequeridasDelPlan,
-  horariosDelPlan,
   profesorasDelPlan,
   agruparHorariosPorActividad,
 } from "../plan-y-profesora";
