@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/api/client";
-import { aAlumnoDetalle, darDeBajaAlumno, obtenerAlumno } from "@/features/alumnos/api/alumnos-api";
-import { fichaAlumnoApiSchema, type FichaAlumnoApi } from "@/features/alumnos/schemas/alumno";
+import { aAlumnoDetalle, darDeBajaAlumno, obtenerAlumno } from "../alumnos-api";
+import { fichaAlumnoApiSchema, type FichaAlumnoApi } from "../../schemas/alumno";
 
 vi.mock("@/api/client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
 

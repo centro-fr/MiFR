@@ -51,8 +51,6 @@ export const HorariosPage: React.FC = () => {
   // Estado responsive de filtros en mobile (el menú lateral lo provee OwnerLayout)
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  // Filtro por modalidad (Grupal / Personalizada)
-  const [filtroTipo, setFiltroTipo] = useState<string>('todas');
   const [selectedMobileDay, setSelectedMobileDay] = useState<DiaSemana>('LUNES');
 
   // Modales
@@ -65,24 +63,18 @@ export const HorariosPage: React.FC = () => {
 
   // Saber si hay filtros activos
   const isFilterActive =
-    filtroActividad !== 'TODAS' || filtroProfesora !== 'TODAS' || filtroTipo !== 'todas';
+    filtroActividad !== 'TODAS' || filtroProfesora !== 'TODAS';
 
   const activeFiltersCount =
     (filtroActividad !== 'TODAS' ? 1 : 0) +
-    (filtroProfesora !== 'TODAS' ? 1 : 0) +
-    (filtroTipo !== 'todas' ? 1 : 0);
+    (filtroProfesora !== 'TODAS' ? 1 : 0);
 
   // Filtrado reactivo de horarios
-  const horariosMostrados = horarios.filter((h) => {
-    if (filtroTipo === 'grupal' && h.actividadTipo !== 'GRUPAL') return false;
-    if (filtroTipo === 'personalizada' && h.actividadTipo !== 'PERSONALIZADA') return false;
-    return true;
-  });
+  const horariosMostrados = horarios;
 
   const resetFilters = () => {
     setFiltroActividad('TODAS');
     setFiltroProfesora('TODAS');
-    setFiltroTipo('todas');
     toast.success('Filtros restablecidos');
   };
 
@@ -91,7 +83,6 @@ export const HorariosPage: React.FC = () => {
     if (isFilterActive) {
       setFiltroActividad('TODAS');
       setFiltroProfesora('TODAS');
-      setFiltroTipo('todas');
     }
     setHorarioEnEdicion(null);
     setDiaSugerido(dia);
@@ -299,20 +290,6 @@ export const HorariosPage: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* Modalidad */}
-            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-              <SelectTrigger
-                aria-label="Filtrar por modalidad"
-                className="w-full min-h-[44px] rounded-xl border-border bg-slate-50 dark:bg-white/5 px-3.5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 md:w-auto"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas las modalidades</SelectItem>
-                <SelectItem value="grupal">Solo Grupales</SelectItem>
-                <SelectItem value="personalizada">Solo Personalizadas</SelectItem>
-              </SelectContent>
-            </Select>
 
             {isFilterActive && (
               <Button

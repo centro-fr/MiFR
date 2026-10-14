@@ -20,7 +20,7 @@ El 95 % de los alumnos usa el celular: todo se piensa y se mide para un **celula
 | Cascada de ítems (stagger) | ≤ 15 ms entre ítems y hasta 6 ítems |
 | Cuadro más lento durante una animación | ≤ 50 ms (a 60 FPS cada cuadro dura 16,7 ms) |
 | Tarea larga al navegar o abrir algo (CPU 4x) | < 100 ms |
-| JS + CSS inicial (gzip) | Hoy ~225 kB; techo 250 kB. Nada nuevo al bundle inicial sin justificarlo |
+| JS + CSS inicial (gzip) | Hoy ~191 kB (el layout con el menú se carga recién al entrar a `/app`); techo 250 kB. Nada nuevo al bundle inicial sin justificarlo |
 | Carga (Core Web Vitals) | LCP ≤ 2,5 s, CLS ≤ 0,1 |
 
 ---

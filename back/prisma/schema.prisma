@@ -365,7 +365,7 @@ model clases {
   @@index([id_prof_dictante], map: "IXFK_clases_profesoras")
 }
 
-// La suplente es la dictante de la clase (clases.id_prof_dictante); acá queda la titular que faltó (US-24).
+// La suplente es la dictante de la clase; acá queda la titular que faltó (US-24).
 model suplencias {
   id_clase            Int
   id_prof_ausente     Int

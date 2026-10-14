@@ -1,6 +1,7 @@
 import { setupWorker } from "msw/browser";
 import { actividadesHandlers } from "@/mocks/handlers/actividades";
 import { alumnosHandlers } from "@/mocks/handlers/alumnos";
+import { asistenciaHandlers } from "@/mocks/handlers/asistencia";
 import { authHandlers } from "@/mocks/handlers/auth";
 import { horariosHandlers } from "@/mocks/handlers/horarios";
 import { inscripcionesHandlers } from "@/mocks/handlers/inscripciones";
@@ -12,6 +13,7 @@ import { seguridadHandlers } from "@/mocks/handlers/seguridad";
 
 export const worker = setupWorker(
   ...authHandlers,
+  ...asistenciaHandlers,
   ...seguridadHandlers,
   ...actividadesHandlers,
   ...personasHandlers,

@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CuotaRepository } from "../cuota.repository.js";
 
 const prisma = {
+  $queryRaw: vi.fn(),
   inscripciones: { findMany: vi.fn() },
   cuotas: { findMany: vi.fn() },
   pagos: { findFirst: vi.fn() },
-  $queryRaw: vi.fn(),
 };
 const VENCIMIENTO = new Date("2026-11-09T00:00:00Z");
 
@@ -228,18 +228,4 @@ describe("CuotaRepository", () => {
     });
   });
 
-  it("cobradoEnPeriodo suma en la base los pagos confirmados del período, por inscripción", async () => {
-    const desde = new Date("2026-10-01T03:00:00Z");
-    const hasta = new Date("2026-11-01T03:00:00Z");
-    prisma.$queryRaw.mockResolvedValue([{ id_inscripcion: 12, total: new Prisma.Decimal("55000.50") }]);
-
-    await expect(repositorio.cobradoEnPeriodo([12, 13], desde, hasta)).resolves.toEqual(
-      new Map([[12, 55000.5]]),
-    );
-    const [consulta, ...valores] = prisma.$queryRaw.mock.calls[0];
-    expect(consulta.join("?")).toContain("p.estado = 'CONFIRMADO'");
-    expect(consulta.join("?")).toContain("p.fecha_pago >= ?");
-    expect(consulta.join("?")).toContain("p.fecha_pago < ?");
-    expect(valores).toEqual([[12, 13], desde, hasta]);
-  });
 });

@@ -4,15 +4,16 @@ import { fireEvent, render, screen, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { QueryObserverSuccessResult } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
-import { AlumnosPage } from "@/features/alumnos/pages/alumnos-page";
-import type { RespuestaAlumnos } from "@/features/alumnos/schemas/alumno";
+import { useAlumnos } from "../../hooks/use-alumnos";
+import { AlumnosPage } from "../alumnos-page";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import type { RespuestaAlumnos } from "../../schemas/alumno";
 
 vi.mock("@/components/layout/owner-layout", () => ({
   OwnerLayout: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("@/features/alumnos/hooks/use-alumnos", () => ({
+vi.mock("../../hooks/use-alumnos", () => ({
   useAlumnos: vi.fn(),
 }));
 
@@ -28,7 +29,18 @@ vi.mock("@/features/horarios/api/horarios-api", () => ({
   listarProfesoras: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
+  usePermissions: vi.fn(() => ({
+    hasRole: vi.fn().mockReturnValue(false),
+    hasAnyRole: vi.fn().mockReturnValue(false),
+    hasPermission: vi.fn().mockReturnValue(true),
+    roles: [],
+    permisos: [],
+  })),
+}));
+
 const consultaMock = vi.mocked(useAlumnos);
+const permissionsMock = vi.mocked(usePermissions);
 const items = [
   {
     id_alumno: 1,
@@ -38,6 +50,7 @@ const items = [
     estado: "ACTIVO" as const,
     plan: "Funcional mensual",
     profesora: "Lucía Gómez",
+    situacion_cuota: null,
   },
 ];
 
@@ -71,7 +84,7 @@ function crearResultado(data: RespuestaAlumnos): QueryObserverSuccessResult<Resp
   };
 }
 
-function establecerConsulta(data: RespuestaAlumnos = { items, total: 30, limit: 25, offset: 0 }) {
+function establecerConsulta(data: RespuestaAlumnos = { items, total: 30, limit: 10, offset: 0 }) {
   consultaMock.mockReturnValue(crearResultado(data));
 }
 
@@ -113,20 +126,20 @@ describe("AlumnosPage", () => {
       screen.getAllByRole("link", { name: /Ver ficha/ }).every((link) => link.getAttribute("href") === "/app/alumnos/1"),
     ).toBe(true);
 
-    fireEvent.change(screen.getAllByLabelText("Estado")[0], { target: { value: "ACTIVO" } });
+    fireEvent.click(screen.getAllByLabelText(/Incluir dados de baja/)[0]);
     expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ estado: "ACTIVO", offset: 0, limit: 25 }),
+      expect.objectContaining({ incluir_bajas: true, offset: 0, limit: 10 }),
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
     expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ estado: "ACTIVO", offset: 25 }),
+      expect.objectContaining({ incluir_bajas: true, offset: 10 }),
     );
   });
 
   it("debouncea la búsqueda y permite limpiar filtros cuando no hay resultados", async () => {
     vi.useFakeTimers();
-    establecerConsulta({ items: [], total: 0, limit: 25, offset: 0 });
+    establecerConsulta({ items: [], total: 0, limit: 10, offset: 0 });
     renderListado();
 
     const busqueda = screen.getByLabelText("Buscar por nombre, apellido o DNI del alumno o de su tutor");
@@ -141,5 +154,18 @@ describe("AlumnosPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Limpiar búsqueda y filtros" }));
     expect(busqueda).toHaveValue("");
+  });
+
+  it("oculta el selector de profesora cuando el usuario es únicamente profesora", () => {
+    permissionsMock.mockReturnValue({
+      hasRole: (rol) => rol === "PROFESORA",
+      hasAnyRole: (buscados) => buscados.includes("PROFESORA"),
+      hasPermission: vi.fn().mockReturnValue(true),
+      roles: ["PROFESORA"],
+      permisos: [],
+    });
+
+    renderListado();
+    expect(screen.queryByLabelText("Profesora")).not.toBeInTheDocument();
   });
 });

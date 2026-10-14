@@ -12,6 +12,9 @@ export const actividadApiSchema = z.object({
   modalidad: modalidadActividadSchema,
   cupo_maximo: z.number().int().nullable(),
   activo: z.boolean(),
+  // US-05: la pre-inscripción en esta actividad exige peso y talla. El back siempre lo manda;
+  // sin el dato (datos de prueba anteriores al campo) se toma como que no las pide.
+  requiere_medidas: z.boolean().optional(),
 });
 
 export type ActividadApi = z.infer<typeof actividadApiSchema>;

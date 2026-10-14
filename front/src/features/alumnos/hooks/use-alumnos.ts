@@ -3,11 +3,11 @@ import { isAxiosError } from "axios";
 import {
   actualizarAlumno,
   darDeBajaAlumno,
-  listarAlumnos,
+  listarAlumnosRecientesPrimero,
   obtenerAlumno,
   type FiltrosAlumnos,
 } from "@/features/alumnos/api/alumnos-api";
-import type { ActualizarAlumnoBody } from "@/features/alumnos/schemas/alumno";
+import type { ActualizarAlumnoBody, RespuestaAlumnos } from "@/features/alumnos/schemas/alumno";
 import type { MotivoBaja } from "@/types/alumno";
 
 // Todo lo de alumnos cuelga de esta clave: una baja, un alta o una edición refrescan el listado,
@@ -18,10 +18,15 @@ export function fichaAlumnoQueryKey(id: number) {
   return [...ALUMNOS_QUERY_KEY, id, "ficha"] as const;
 }
 
-export function useAlumnos(filtros: FiltrosAlumnos) {
+/**
+ * Listado del más reciente al más antiguo. Se pide completo una vez por combinación de filtros y la
+ * página se recorta acá: cambiar de página no vuelve a consultar al back.
+ */
+export function useAlumnos({ limit, offset, ...filtros }: FiltrosAlumnos) {
   return useQuery({
     queryKey: [...ALUMNOS_QUERY_KEY, "listado", filtros],
-    queryFn: () => listarAlumnos(filtros),
+    queryFn: () => listarAlumnosRecientesPrimero(filtros),
+    select: (todos): RespuestaAlumnos => ({ items: todos.slice(offset, offset + limit), total: todos.length, limit, offset }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   });

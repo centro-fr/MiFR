@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DesktopAuthPanel } from "@/features/auth/components/desktop-auth-panel";
 import { GisOfficialOverlay } from "@/features/auth/components/gis-official-overlay";
@@ -15,7 +14,7 @@ import { homePathForRoles, type AuthErrorCode } from "@/types/auth";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
-// Requiere LOGIN_DESARROLLO=true en el back: sin eso la ruta no existe y el login falla.
+// Contra el back real requiere LOGIN_DESARROLLO=true en el back; con mocks muestra el selector de usuarios.
 const LOGIN_DESARROLLO = import.meta.env.VITE_LOGIN_DESARROLLO === "true";
 
 function useLoginFlow() {
@@ -33,8 +32,8 @@ function useLoginFlow() {
       return;
     }
     try {
+      // Sin toast de bienvenida: llegar al inicio, con el nombre en el menú, ya confirma el ingreso.
       const user = await loginMutation.mutateAsync(credencial);
-      toast.success(`Bienvenido, ${user.nombre}`);
       navigate(homePathForRoles(user.roles), { replace: true });
     } catch (error) {
       setErrorCode(mapLoginError(error));
@@ -95,6 +94,23 @@ function LoginLayout({ flow, onLogin, overlay }: { flow: Flow; onLogin: () => vo
   );
 }
 
+// Solo se pide con VITE_USE_MOCKS: así el selector de usuarios de prueba no entra al build real.
+const LoginMocksPanel = lazy(() => import("@/features/auth/components/login-mocks-panel"));
+
+// Con mocks se elige un perfil de la semilla, sin depender de la configuración del login de desarrollo.
+function MockUserPickerPage() {
+  const flow = useLoginFlow();
+  return (
+    <Suspense fallback={null}>
+      <LoginMocksPanel
+        errorCode={flow.errorCode}
+        isLoading={flow.isLoading}
+        onSelect={(email) => void flow.startLogin(() => Promise.resolve({ email }))}
+      />
+    </Suspense>
+  );
+}
+
 function MockLoginPage() {
   const flow = useLoginFlow();
   return (
@@ -130,6 +146,7 @@ function LoginDesarrolloPage() {
 }
 
 function VarianteDeLogin() {
+  if (USE_MOCKS && LOGIN_DESARROLLO) return <MockUserPickerPage />;
   if (USE_MOCKS) return <MockLoginPage />;
   if (LOGIN_DESARROLLO) return <LoginDesarrolloPage />;
   if (!GOOGLE_CLIENT_ID) return <LoginSinConfigurar />;

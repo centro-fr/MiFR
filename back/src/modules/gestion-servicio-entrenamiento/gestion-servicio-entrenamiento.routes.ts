@@ -16,8 +16,8 @@ export function createGestionServicioEntrenamientoRoutes(
   router.use("/actividades", createActividadRoutes(logica, acceso));
   router.use("/horarios", createHorarioRoutes(logica, acceso));
   router.use("/planes", createPlanRoutes(logica, acceso));
-  router.use("/promociones", createPromocionRoutes(logica, acceso));
   router.use("/parametros", createParametrosSistemaRoutes(logica, acceso));
+  router.use("/promociones", createPromocionRoutes(logica, acceso));
 
   return router;
 }

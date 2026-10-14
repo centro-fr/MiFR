@@ -13,6 +13,8 @@ import {
   type InscripcionVigenteApi,
   type PaginaAlumnosApi,
   type RespuestaAlumnos,
+  type SituacionCuota,
+  type SituacionCuotaApi,
 } from "@/features/alumnos/schemas/alumno";
 import { horaDesdeApi } from "@/features/horarios/utils/cronograma";
 import type { CrearAlumnoPayload, MotivoBaja } from "@/types/alumno";
@@ -59,7 +61,16 @@ function parametrosDeListado({ busqueda, estado, incluir_bajas, ...resto }: Filt
   return parametros;
 }
 
-function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
+function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | null {
+  return (
+    situacion && {
+      ...situacion,
+      fecha_vencimiento: situacion.fecha_vencimiento === null ? null : aFechaCalendario(situacion.fecha_vencimiento),
+    }
+  );
+}
+
+function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion, situacion_cuota }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
@@ -68,6 +79,7 @@ function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion }: PaginaAlumn
     estado: ESTADO_EN_PANTALLA[estado],
     plan: inscripcion?.nombre_plan ?? null,
     profesora: inscripcion?.nombre_profesora ?? null,
+    situacion_cuota: aSituacionCuota(situacion_cuota),
   };
 }
 
@@ -75,6 +87,39 @@ export async function listarAlumnos(filtros: FiltrosAlumnos): Promise<RespuestaA
   const { data } = await apiClient.get("/alumnos", { params: parametrosDeListado(filtros) });
   const pagina = paginaAlumnosApiSchema.parse(data);
   return { items: pagina.datos.map(aAlumnoResumen), total: pagina.total, limit: pagina.limit, offset: pagina.offset };
+}
+
+// El máximo que acepta el back por consulta (LIMITE_MAXIMO de esquemas-paginacion.ts).
+const ALUMNOS_POR_CONSULTA = 100;
+
+type AlumnoEnListadoApi = PaginaAlumnosApi["datos"][number];
+
+async function pedirPaginaDeAlumnos(filtros: FiltrosDelListado, offset: number): Promise<PaginaAlumnosApi> {
+  const { data } = await apiClient.get("/alumnos", {
+    params: parametrosDeListado({ ...filtros, limit: ALUMNOS_POR_CONSULTA, offset }),
+  });
+  return paginaAlumnosApiSchema.parse(data);
+}
+
+function porAltaMasReciente(a: AlumnoEnListadoApi, b: AlumnoEnListadoApi): number {
+  return b.fecha_alta.localeCompare(a.fecha_alta) || b.id_alumno - a.id_alumno;
+}
+
+export type FiltrosDelListado = Omit<FiltrosAlumnos, "limit" | "offset">;
+
+/**
+ * Todos los alumnos que cumplen los filtros, del alta más reciente a la más antigua: el que se
+ * acaba de pre-inscribir queda primero. El back ordena por apellido y pagina, así que reordenar
+ * una sola página no alcanza (el nuevo puede caer en otra): se piden todas y la pantalla pagina.
+ */
+export async function listarAlumnosRecientesPrimero(filtros: FiltrosDelListado): Promise<AlumnoResumen[]> {
+  const primera = await pedirPaginaDeAlumnos(filtros, 0);
+  const offsets = [];
+  for (let offset = ALUMNOS_POR_CONSULTA; offset < primera.total; offset += ALUMNOS_POR_CONSULTA) offsets.push(offset);
+  const resto = await Promise.all(offsets.map((offset) => pedirPaginaDeAlumnos(filtros, offset)));
+  // Si alguien se da de alta entre una consulta y otra, el corrimiento podría repetir una fila.
+  const sinRepetir = new Map([primera, ...resto].flatMap(({ datos }) => datos).map((alumno) => [alumno.id_alumno, alumno]));
+  return [...sinRepetir.values()].sort(porAltaMasReciente).map(aAlumnoResumen);
 }
 
 // Las columnas DATE viajan como medianoche UTC ("1996-04-24T00:00:00.000Z"): se queda solo la
@@ -105,6 +150,7 @@ function aInscripcion(inscripcion: InscripcionVigenteApi): InscripcionDeAlumno {
     })),
     fecha_inicio: aFechaCalendario(inscripcion.fecha_inicio),
     reserva: inscripcion.reserva && { vence: aFechaCalendario(inscripcion.reserva.vence), vencida: inscripcion.reserva.vencida },
+    situacion_cuota: aSituacionCuota(inscripcion.situacion_cuota),
   };
 }
 
@@ -134,6 +180,7 @@ export function aAlumnoDetalle(api: FichaAlumnoApi): AlumnoDetalle {
     fecha_baja: api.fecha_baja,
     // El back las ordena de la más reciente a la más vieja (fecha_inicio desc).
     inscripcion: api.inscripciones[0] ? aInscripcion(api.inscripciones[0]) : null,
+    inscripciones_de_la_baja: api.inscripciones_de_la_baja.map(aInscripcion),
   };
 }
 

@@ -9,6 +9,8 @@ export interface CrearInscripcionPayload {
   fecha_inicio?: string;
   fecha_fin_estimado?: string | null;
   observaciones?: string | null;
+  /** US-05: obligatorias si alguna actividad de los horarios las requiere. */
+  medidas?: { peso_kg: number; talla_cm: number };
 }
 
 export interface Inscripcion {

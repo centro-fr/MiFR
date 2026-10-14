@@ -23,7 +23,6 @@ export interface EntornoDeIntegracion {
   prisma: PrismaClient;
   // El alta definitiva sin pasar por un cobro, para los tests que solo necesitan una inscripción activa.
   infoInscripciones: IInfoInscripciones;
-  // Las clases suplidas que lee la liquidación (US-23), que todavía no tiene endpoint.
   infoClases: IInfoClases;
   // El cierre automático de la asistencia (US-21), para correrlo con la hora que pide cada caso.
   cierreAsistencia: CierreAsistenciaService;

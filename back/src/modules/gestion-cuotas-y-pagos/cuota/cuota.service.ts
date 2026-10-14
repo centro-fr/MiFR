@@ -1,6 +1,6 @@
 import { ConflictError } from "../../../shared/errors/app-error.js";
-import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
+import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { ICalculoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/interface/i-calculo-habilitacion.js";
 import type { ICalculoVencimiento } from "../../calculos-del-negocio/calculador-vencimiento-cuota/interface/i-calculo-vencimiento.js";
 import type { InscripcionACobrar } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -13,8 +13,8 @@ import type {
   CuotaDelHistorial,
   CuotaParaAviso,
   HabilitacionDeInscripcion,
-  SituacionDeCuotas,
   SituacionParaAviso,
+  SituacionDeCuotas,
   TipoAvisoCuota,
 } from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
@@ -149,11 +149,10 @@ export class CuotaService implements IInfoCuotas {
     return this.repositorio.tuvoPagoConfirmado(idAlumno);
   }
 
-  // Los días son de Argentina y fecha_pago es un TIMESTAMP en UTC.
   async cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>> {
     if (idsInscripciones.length === 0) return new Map();
     const { inicio, fin } = rangoDeDiasArgentinos(desde, hasta);
-    const cobrado = await this.repositorio.cobradoEnPeriodo(idsInscripciones, inicio as Date, fin as Date);
+    const cobrado = await this.repositorio.cobradoEnPeriodo(idsInscripciones, inicio, fin);
     return new Map(idsInscripciones.map((id) => [id, cobrado.get(id) ?? 0]));
   }
 
@@ -165,8 +164,6 @@ export class CuotaService implements IInfoCuotas {
     });
   }
 
-  // El estado sale del mismo cálculo que la ficha y la lista de asistencia, así el aviso nunca dice
-  // algo distinto de lo que ve la propietaria.
   private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {
     const vencimiento = vencimientoConfirmado(situacion);
     if (vencimiento === null || tienePagoPendiente(situacion)) return null;
@@ -184,7 +181,8 @@ export class CuotaService implements IInfoCuotas {
     const cuota = situacion.cuotas.find(
       (candidata) =>
         estaConfirmada(candidata) && candidata.fecha_vencimiento.getTime() === vencimiento.getTime(),
-    ) as CuotaDeLaSituacion;
+    );
+    if (!cuota) return null;
     return {
       tipo,
       id_cuota: cuota.id_cuota,
@@ -202,7 +200,8 @@ function tipoDeAviso(
   diasPrevios: number,
 ): TipoAvisoCuota | null {
   if (estado === "VENCIDA") return "CUOTA_VENCIDA";
-  if (estado === "AL_DIA" && diasRestantes !== null && diasRestantes <= diasPrevios)
+  if (estado === "AL_DIA" && diasRestantes !== null && diasRestantes <= diasPrevios) {
     return "CUOTA_POR_VENCER";
+  }
   return null;
 }

@@ -71,8 +71,6 @@ export interface ILogicaClasesYAsistencia {
   cancelarClase(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos>;
 }
 
-// La parte que usa el router de /suplencias (US-24). Quién registra llega como id de usuario: las
-// suplencias son solo de la propietaria, así que no hay alcance que acotar.
 export interface ILogicaSuplencias {
   listarSuplencias(filtro: ListarSuplenciasQuery): Promise<SuplenciaConDatos[]>;
   registrarSuplencia(input: RegistrarSuplenciaInput, idUsuario: number): Promise<SuplenciaRegistrada>;
@@ -81,7 +79,6 @@ export interface ILogicaSuplencias {
     input: CambiarSuplenciaInput,
     idUsuario: number,
   ): Promise<SuplenciaConDatos>;
-  // Devuelve la suplencia borrada, para que quede en la auditoría.
   eliminarSuplencia(idClase: number): Promise<SuplenciaConDatos>;
 }
 

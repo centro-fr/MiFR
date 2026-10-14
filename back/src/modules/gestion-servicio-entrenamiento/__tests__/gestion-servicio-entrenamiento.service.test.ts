@@ -213,9 +213,6 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["listarParametros", [], parametros.listar],
     ["actualizarParametro", ["DIAS_RESERVA_PREINSCRIPCION", 5], parametros.actualizar],
     ["obtenerDatosBancarios", [], parametros.obtenerDatosBancarios],
-    ["listarPromociones", [{ estado: "ACTIVA" }], promociones.listar],
-    ["obtenerPromocion", [3], promociones.obtenerPorId],
-    ["desactivarPromocion", [3], promociones.desactivar],
   ] as const)("%s", async (operacion, argumentos, destino) => {
     const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
 

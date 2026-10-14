@@ -1,9 +1,18 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { AxiosError, AxiosHeaders } from "axios";
 import { describe, expect, it, vi } from "vitest";
-import { ModalConfirmarAlta } from "@/features/alumnos/components/alta-definitiva/modal-confirmar-alta";
-import { crearPendiente } from "@/features/alumnos/__tests__/pendiente-de-prueba";
+import { ModalConfirmarAlta } from "../alta-definitiva/modal-confirmar-alta";
+import { crearPendiente } from "../../__tests__/pendiente-de-prueba";
 import type { FormaPrimerPago } from "@/types/alta-definitiva";
+
+let mockEsPropietaria = true;
+
+vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    hasRole: (rol: string) => (rol === "PROPIETARIA" ? mockEsPropietaria : !mockEsPropietaria),
+    hasPermission: () => true,
+  }),
+}));
 
 // jsdom no trae ResizeObserver y el RadioGroup de Radix lo usa para medir.
 vi.stubGlobal("ResizeObserver", class {
@@ -25,7 +34,7 @@ function campo(nombre: RegExp) {
 }
 
 function enviar() {
-  fireEvent.click(screen.getByRole("button", { name: "Registrar y dar de alta" }));
+  fireEvent.click(screen.getByRole("button", { name: /Registrar y dar de alta|Informar transferencia/ }));
 }
 
 describe("ModalConfirmarAlta", () => {
@@ -51,14 +60,21 @@ describe("ModalConfirmarAlta", () => {
     expect(campo(/Titular de la cuenta/)).toBeInTheDocument();
   });
 
-  it("no deja registrar una transferencia sin fecha y hora", () => {
+  it("registra una transferencia con la fecha y hora automática", () => {
     const { onConfirm } = renderizar();
     fireEvent.click(screen.getByRole("radio", { name: /Transferencia/ }));
 
     enviar();
 
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(campo(/Fecha y hora/)).toHaveAccessibleDescription(/Ingresá cuándo/);
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        formaPago: "TRANSFERENCIA",
+        cuerpo: expect.objectContaining({
+          id_inscripcion: 1,
+          monto: 25000,
+        }),
+      }),
+    );
   });
 
   it("pide confirmar un monto distinto del precio antes de registrarlo", () => {
@@ -94,5 +110,23 @@ describe("ModalConfirmarAlta", () => {
     renderizar({ formas: ["EFECTIVO"] });
 
     expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("permite a una profesora informar una transferencia y ajusta textos acordemente", () => {
+    mockEsPropietaria = false;
+    const { onConfirm } = renderizar({ formas: ["EFECTIVO", "TRANSFERENCIA"] });
+
+    fireEvent.click(screen.getByRole("radio", { name: /Transferencia/ }));
+
+    expect(screen.getByText("Queda pendiente de confirmación por la propietaria.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Informar transferencia" })).toBeInTheDocument();
+
+    enviar();
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        formaPago: "TRANSFERENCIA",
+      }),
+    );
+    mockEsPropietaria = true;
   });
 });

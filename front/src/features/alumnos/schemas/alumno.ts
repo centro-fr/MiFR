@@ -44,6 +44,33 @@ const precioApiSchema = z
 
 const nombreApiSchema = z.object({ nombre: z.string(), apellido: z.string() });
 
+export const estadoCuotaSchema = z.enum([
+  "AL_DIA",
+  "POR_VENCER",
+  "VENCIDA",
+  "CLASE_SUELTA_VIGENTE",
+  "CLASE_SUELTA_VENCIDA",
+  "PENDIENTE_DE_PAGO",
+]);
+
+export type EstadoCuota = z.infer<typeof estadoCuotaSchema>;
+
+// SituacionCuota del back (US-18): no se guarda, se calcula en cada consulta. En una inscripción
+// dada de baja, al día de la baja.
+const situacionCuotaApiSchema = z.object({
+  estado: estadoCuotaSchema,
+  fecha_vencimiento: z.string().nullable(),
+  dias_restantes: z.number().int().nullable(),
+  puede_asistir: z.boolean(),
+  tiene_pago_pendiente: z.boolean(),
+});
+
+export type SituacionCuotaApi = z.infer<typeof situacionCuotaApiSchema>;
+
+// El default tolera un back anterior a la situación de cuota: sin él, la ficha y el listado dejarían
+// de cargar en vez de solo no mostrarla.
+const situacionCuotaOpcionalSchema = situacionCuotaApiSchema.nullable().default(null);
+
 // Inscripcion del back, solo con lo que muestra la ficha.
 const inscripcionVigenteApiSchema = z.object({
   id_inscripcion: z.number().int(),
@@ -67,12 +94,17 @@ const inscripcionVigenteApiSchema = z.object({
     }),
   ),
   reserva: z.object({ vence: z.string(), vencida: z.boolean() }).nullable(),
+  situacion_cuota: situacionCuotaOpcionalSchema,
 });
 
 export type InscripcionVigenteApi = z.infer<typeof inscripcionVigenteApiSchema>;
 
-// FichaAlumno del back: el alumno con sus inscripciones vigentes (pre-inscriptas o activas).
-export const fichaAlumnoApiSchema = alumnoApiSchema.extend({ inscripciones: z.array(inscripcionVigenteApiSchema) });
+// FichaAlumno del back: el alumno con sus inscripciones vigentes (pre-inscriptas o activas) y, si
+// está de baja, las que cerró su última baja, con lo que debía ese día (US-08).
+export const fichaAlumnoApiSchema = alumnoApiSchema.extend({
+  inscripciones: z.array(inscripcionVigenteApiSchema),
+  inscripciones_de_la_baja: z.array(inscripcionVigenteApiSchema).default([]),
+});
 
 export type FichaAlumnoApi = z.infer<typeof fichaAlumnoApiSchema>;
 
@@ -90,6 +122,7 @@ export const paginaAlumnosApiSchema = z.object({
           nombre_profesora: z.string(),
         })
         .nullable(),
+      situacion_cuota: situacionCuotaOpcionalSchema,
     }),
   ),
   total: z.number().int(),
@@ -104,6 +137,17 @@ export type PaginaAlumnosApi = z.infer<typeof paginaAlumnosApiSchema>;
 /** Como se muestra el estado: INACTIVO es la pre-inscripción que espera el primer pago. */
 export type EstadoAlumno = "ACTIVO" | "PENDIENTE" | "BAJA";
 
+export interface SituacionCuota {
+  estado: EstadoCuota;
+  /** Fecha de calendario "AAAA-MM-DD"; null si todavía no pagó ninguna cuota. */
+  fecha_vencimiento: string | null;
+  /** 0 el día del vencimiento, negativo si ya venció (días de atraso). */
+  dias_restantes: number | null;
+  puede_asistir: boolean;
+  /** Hay una transferencia informada que la propietaria todavía no revisó. */
+  tiene_pago_pendiente: boolean;
+}
+
 export interface AlumnoResumen {
   id_alumno: number;
   nombre_completo: string;
@@ -112,6 +156,8 @@ export interface AlumnoResumen {
   estado: EstadoAlumno;
   plan: string | null;
   profesora: string | null;
+  /** La de su inscripción vigente; null si no tiene una. */
+  situacion_cuota: SituacionCuota | null;
 }
 
 export interface RespuestaAlumnos {
@@ -152,6 +198,7 @@ export interface InscripcionDeAlumno {
   fecha_inicio: string;
   /** Solo en las pre-inscripciones: hasta qué día guardan el lugar sin el primer pago (US-07). */
   reserva: { vence: string; vencida: boolean } | null;
+  situacion_cuota: SituacionCuota | null;
 }
 
 export interface AlumnoDetalle {
@@ -171,6 +218,8 @@ export interface AlumnoDetalle {
   fecha_baja: string | null;
   /** La inscripción vigente más reciente; null si no tiene (por ejemplo, dado de baja). */
   inscripcion: InscripcionDeAlumno | null;
+  /** Solo si está de baja: las inscripciones que cerró su última baja, con la cuota a ese día. */
+  inscripciones_de_la_baja: InscripcionDeAlumno[];
 }
 
 // ---------- Formulario de edición (US-09) ----------

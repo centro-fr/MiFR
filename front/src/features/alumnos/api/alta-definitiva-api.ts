@@ -79,6 +79,20 @@ export async function registrarTransferenciaRecibida(cuerpo: RegistrarTransferen
   await apiClient.post("/pagos/transferencia-recibida", cuerpo);
 }
 
+export interface InformarTransferenciaPrimerPagoBody {
+  id_inscripcion: number;
+  monto: number;
+  fecha_hora_transferencia: string;
+  titular_cuenta_origen?: string;
+  observaciones?: string;
+}
+
+// Cuando la profesora informa la transferencia de una primera cuota, queda PENDIENTE
+// hasta que la propietaria la revise y confirme para dar el alta definitiva.
+export async function informarTransferenciaPrimerPago(cuerpo: InformarTransferenciaPrimerPagoBody): Promise<void> {
+  await apiClient.post("/pagos/transferencia", cuerpo);
+}
+
 /** 409 MONTO_DISTINTO: el monto no es el precio vigente y hay que confirmarlo. */
 export function esMontoDistinto(error: unknown): boolean {
   if (!isAxiosError(error) || error.response?.status !== 409) return false;

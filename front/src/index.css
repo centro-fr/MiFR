@@ -313,6 +313,13 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
   }
+  /* Tailwind v4 dejó los botones con la flecha del navegador: se vuelve a la manito para que
+     lo clickeable se distinga. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
 }
 
 /* Mientras cambia el tema (theme-store) no corre ninguna transición: los colores pasan de golpe

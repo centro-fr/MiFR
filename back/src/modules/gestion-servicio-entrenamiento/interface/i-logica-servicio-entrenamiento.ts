@@ -5,13 +5,13 @@ import type { FiltroHorario, HorarioConAdvertencia, HorarioRespuesta } from "../
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "../plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "../plan/plan.types.js";
 import type { ActualizarParametroInput } from "../parametros-sistema/parametros-sistema.schemas.js";
-import type { ActualizarPromocionInput, CrearPromocionInput } from "../promocion/promocion.schemas.js";
-import type { FiltroPromociones, Promocion } from "../promocion/promocion.types.js";
 import type {
   ClaveParametro,
   DatosBancarios,
   Parametro,
 } from "../parametros-sistema/parametros-sistema.types.js";
+import type { ActualizarPromocionInput, CrearPromocionInput } from "../promocion/promocion.schemas.js";
+import type { FiltroPromociones, Promocion } from "../promocion/promocion.types.js";
 
 // Las partes de ILogicaServicioEntrenamiento, una por componente: cada controller depende solo
 // de la suya. No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
@@ -46,8 +46,6 @@ export interface ILogicaPlanes {
   registrarPrecioPlan(id: number, input: RegistrarPrecioInput): Promise<PrecioPlan>;
 }
 
-// US-13: las promociones. Que los planes existan y que un monto fijo no supere su precio lo cruza la
-// fachada con Plan.
 export interface ILogicaPromociones {
   listarPromociones(filtro: FiltroPromociones): Promise<Promocion[]>;
   obtenerPromocion(id: number): Promise<Promocion>;

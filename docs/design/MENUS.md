@@ -17,7 +17,7 @@ Este documento define **qué ve cada rol en el menú de navegación** de MiFR, t
 | **Propietaria** | Administra el centro (acceso total) |
 | **Público** | Visitante sin login |
 
-Una misma persona puede tener más de un rol (ej: propietaria que también dicta clases). En ese caso, **se unen los menús** de ambos roles.
+Una misma persona puede tener más de un rol (ej: propietaria que también dicta clases). Ver [Roles múltiples](#-roles-múltiples).
 
 ---
 
@@ -62,10 +62,10 @@ Acceso a opciones secundarias (esquina superior derecha):
 
 | # | Ítem | Ícono | Pantalla que abre |
 | --- | ------ | ------- | ------------------- |
-| 1 | **Hoy** | reloj/calendario | Clases del día (US-20) |
+| 1 | **Hoy** | reloj/calendario | Clases del día (US-20 y US-21) |
 | 2 | **Mis clases** | libro/lista | Historial de clases y asistencias |
 | 3 | **Alumnos** | usuarios | Alumnos a su cargo (US-10) |
-| 4 | **Cobros** | dinero | Registro de cobro en efectivo (US-15) |
+| 4 | **Cobros** | dinero | Cobro de la cuota de sus alumnos, en efectivo o por transferencia (US-15, US-16) |
 | 5 | **Perfil** | usuario | Datos personales |
 
 ### Desktop (sidebar, 5 ítems + secundarios)
@@ -98,26 +98,52 @@ Acceso a opciones secundarias (esquina superior derecha):
 
 ## 👑 Propietaria / Dueño
 
-### Desktop (sidebar, 11 ítems)
+### Desktop (sidebar, 11 ítems en secciones)
 
-| # | Ítem | Ícono | Pantalla que abre |
-| --- | ------ | ------- | ------------------- |
-| 1 | **Dashboard** | home | Resumen general (KPIs, alertas) |
-| 2 | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
-| 3 | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
-| 4 | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
-| 5 | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
-| 6 | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
-| 7 | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
-| 8 | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
-| 9 | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
-| 10 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
-| 11 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
+Los ítems se agrupan por tema: cada sección tiene un **título** y una **línea** la separa de la anterior. Dashboard va arriba, sin título. Con el menú contraído el título se oculta y queda la línea.
 
-<<<<<<< Updated upstream
+| Sección | Ítem | Ícono | Pantalla que abre |
+| ------ | ------ | ------- | ------------------- |
+| — | **Dashboard** | home | Resumen general (KPIs, alertas) |
+| **Control Alumnos** | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
+| | **Asistencia** | check | Asistencia, inactivos, historial (US-22) |
+| | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
+| **Gestión** | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
+| | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
+| | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
+| **Administración** | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
+| | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
+| | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
+| | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
+| **Otros roles** | **Profesora** | pizarra | Solo si además dicta clases (ver [Roles múltiples](#-roles-múltiples)) |
+
+La sección sale del campo `seccion` de cada ítem en `owner-navigation.ts`: un ítem nuevo se suma a una sección existente con solo indicarla.
+
+### Grupos con pantalla propia
+
+Cada grupo desplegable tiene además su **pantalla de grupo**: muestra sus sub-opciones como tarjetas (ícono, nombre, descripción y contador), como otra forma de llegar a ellas además del menú.
+
+- Tocar el **nombre del grupo** en el menú abre su pantalla (y lo despliega); la **flecha** solo despliega o pliega, sin navegar.
+- En la miga de pan, el grupo es un enlace a su pantalla: "Inicio / Alumnos / Listado".
+- Con el menú contraído, el menú flotante del grupo empieza con un acceso a su pantalla.
+- La pantalla sale del mismo menú (`owner-navigation.ts`): una sub-opción nueva aparece sola en las dos.
+
+| Grupo | Pantalla | Sub-opciones |
+| ------ | ------ | ------------------- |
+| **Alumnos** | `/app/alumnos` | Listado (`/app/alumnos/listado`; la ficha `/app/alumnos/:id` lo mantiene marcado) · Pendientes de alta (US-07, con contador) |
+| **Cobros y Cuotas** | `/app/pagos` | Estado de cuotas (US-15: cobro en efectivo o por transferencia) → `/app/pagos/cuotas` · Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
+| **Profesora** (rol extra) | `/app/profesora` | Hoy · Mis clases |
+
+**Transferencias (decisión de la dueña):** el alumno ya no las informa desde la app. Le avisa a la propietaria o a su profesora, que la informan desde **Estado de cuotas** (o **Cobros**, la profesora: solo de sus alumnos) eligiendo "Transferencia" al cobrar. Queda pendiente de verificación en **Transferencias pendientes**.
+
+Las demás pantallas de Cobros y Cuotas (rendiciones, cuotas vencidas) se suman como sub-opciones cuando se implementen.
+
+> La profesora no tiene el grupo Alumnos: su ítem "Alumnos" va directo al listado, y si entra a `/app/alumnos` se la redirige ahí. Igual con `/app/profesora`, que la lleva a "Hoy".
+
 ### Actividades y Horarios (ítems independientes)
 
 "Actividades" y "Horarios" se presentan como dos accesos directos independientes en el menú (no forman un grupo desplegable):
+
 | Ítem | Ícono | Pantalla que abre |
 | ------ | ------- | ------------------- |
 | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
@@ -130,23 +156,16 @@ Reglas:
 - En sidebar colapsado (desktop), cada ítem muestra su propio ícono individual con tooltip.
 - En mobile (drawer), ambos figuran como ítems independientes de primer nivel.
 
-### Mobile (drawer lateral desde la izquierda)
-
-Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos directos independientes), en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
-=======
 > Antes "Actividades" y "Horarios" eran sub-ítems de un grupo desplegable "Actividades y Horarios".
 > Se separaron en dos ítems de primer nivel para llegar a cada pantalla con un solo toque.
 
-2. Alumnos
-3. Cobros y Cuotas
-4. Actividades
-5. Horarios
-6. Planes y Precios
-7. Asistencia
-8. Reportes
-9. Honorarios
-10. Notificaciones
-11. Configuración
+### Mobile (drawer lateral desde la izquierda)
+
+Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos directos independientes), en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
+
+### Orden
+
+El orden es el de la tabla de Desktop: primero lo del día a día (alumnos y su asistencia), después lo que se configura de vez en cuando (clases y planes), los cobros y honorarios y, al final, la administración.
 
 ---
 
@@ -203,9 +222,17 @@ Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos direct
 
 Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 
-- Se **unen los ítems** de ambos menús.
-- El menú muestra todos los ítems de propietaria + todos los de profesora.
-- El usuario puede cambiar entre "vistas" si se define un selector de rol.
+- **El menú del rol de más alcance va completo** (Propietaria > Profesora > Alumno/Tutor).
+- **Cada rol extra se suma como un ítem desplegable con su nombre**, solo con las pantallas propias de ese rol. Lo que el menú principal ya cubre no se repite, y Perfil tampoco entra, porque es de la persona y no de un rol.
+
+| Rol extra | Sub-opciones del desplegable |
+| ----- | ------------- |
+| **Profesora** | Hoy, Mis clases (alumnos y cobros ya están en el menú de la propietaria) |
+| **Alumno / Tutor** | Inicio, Mi plan, Progreso, Comunidad |
+
+Ejemplo: la propietaria que dicta clases ve sus 11 ítems y, al final, bajo el título **Otros roles**, **Profesora** con Hoy y Mis clases.
+
+Cada rol entra solo a las pantallas de su menú: abrir por URL la de otro rol muestra "Sin acceso".
 
 ---
 
@@ -245,4 +272,4 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 
 ---
 
-Última actualización: 9/10/2026
+Última actualización: 14/10/2026

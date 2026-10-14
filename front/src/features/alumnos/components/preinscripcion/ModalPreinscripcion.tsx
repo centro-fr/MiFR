@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, Banknote, Check, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,10 +12,11 @@ import { Paso1DatosPersonales } from "./Paso1DatosPersonales";
 import { Paso2PlanYProfesora } from "./Paso2PlanYProfesora";
 import { Paso3SeleccionHorarios } from "./Paso3SeleccionHorarios";
 import { Paso4ResumenConfirmacion } from "./Paso4ResumenConfirmacion";
+import { CamposMedidas } from "./CamposMedidas";
 import { useQuery } from "@tanstack/react-query";
 import { usePlanes } from "../../hooks/use-planes";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
-import { usePreinscripcion } from "../../hooks/use-preinscripcion";
+import { usePreinscripcion, type ResultadoPreinscripcion } from "../../hooks/use-preinscripcion";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
@@ -25,7 +27,12 @@ interface ModalPreinscripcionProps {
   planes?: PlanApiRespuesta[];
   profesoras?: ProfesoraDatos[];
   horarios?: HorarioApi[];
-  onExito?: () => void;
+  onExito?: (resultado: ResultadoPreinscripcion) => void;
+  /**
+   * Ofrecer "Confirmar y cobrar ahora": quien puede registrar el primer cobro lo hace sin pasar
+   * por Pendientes de alta. Es opcional porque el alumno puede abonar otro día.
+   */
+  puedeCobrarAhora?: boolean;
 }
 
 export function ModalPreinscripcion({
@@ -35,7 +42,10 @@ export function ModalPreinscripcion({
   profesoras: profesorasProp,
   horarios: horariosProp,
   onExito,
+  puedeCobrarAhora = false,
 }: ModalPreinscripcionProps) {
+  // Qué botón se tocó, para mostrar el "Registrando..." en ese y no en el otro.
+  const [cobroPedido, setCobroPedido] = useState(false);
   const { data: planesQuery = [] } = usePlanes();
   const { data: profesorasQuery = [] } = useQuery({
     queryKey: ["profesoras"],
@@ -58,6 +68,7 @@ export function ModalPreinscripcion({
     setPaso,
     datosAlumno,
     setDatosAlumno,
+    revisarCampo,
     erroresPaso1,
     edadCalculada,
     menorDeEdad,
@@ -67,12 +78,15 @@ export function ModalPreinscripcion({
     planSeleccionado,
     idProfesora,
     setIdProfesora,
+    profesorasCompatibles,
+    actividadQuePideMedidas,
+    medidas,
+    setMedidas,
+    erroresMedidas,
     idsHorarios,
     toggleHorario,
     clasesRequeridas,
     horariosDisponibles,
-    sinCargo,
-    setSinCargo,
     fechaInicio,
     setFechaInicio,
     observacionesInscripcion,
@@ -86,9 +100,9 @@ export function ModalPreinscripcion({
     planes,
     profesoras,
     horarios,
-    onExito: () => {
+    onExito: (resultado) => {
       onOpenChange(false);
-      onExito?.();
+      onExito?.(resultado);
     },
   });
 
@@ -106,8 +120,10 @@ export function ModalPreinscripcion({
     <Dialog open={open} onOpenChange={cerrarModal}>
       <DialogContent
         className="w-[96vw] sm:w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        // Con un clic afuera se cierra y vuelve al listado, salvo mientras se guarda la pre-inscripción.
+        onInteractOutside={(e) => {
+          if (enviando) e.preventDefault();
+        }}
       >
         <DialogHeader className="pb-2">
           <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
@@ -128,6 +144,7 @@ export function ModalPreinscripcion({
               datos={datosAlumno}
               onChange={setDatosAlumno}
               errores={erroresPaso1}
+              onRevisarCampo={revisarCampo}
               edadCalculada={edadCalculada}
               menorDeEdad={menorDeEdad}
             />
@@ -137,25 +154,29 @@ export function ModalPreinscripcion({
             <Paso2PlanYProfesora
               planes={planes}
               profesoras={profesoras}
+              profesorasCompatibles={profesorasCompatibles}
               idPlanSeleccionado={idPlan}
               onSeleccionarPlan={(id) => setIdPlan(id)}
               idProfesoraSeleccionada={idProfesora}
               onSeleccionarProfesora={(id) => setIdProfesora(id)}
               esSoloProfesora={esSoloProfesora}
-              sinCargo={sinCargo}
-              onToggleSinCargo={setSinCargo}
               fechaInicio={fechaInicio}
               onChangeFechaInicio={setFechaInicio}
             />
           )}
 
           {paso === 3 && (
-            <Paso3SeleccionHorarios
-              horarios={horariosDisponibles}
-              idsSeleccionados={idsHorarios}
-              onToggleHorario={toggleHorario}
-              clasesRequeridas={clasesRequeridas}
-            />
+            <div className="space-y-5">
+              <Paso3SeleccionHorarios
+                horarios={horariosDisponibles}
+                idsSeleccionados={idsHorarios}
+                onToggleHorario={toggleHorario}
+                clasesRequeridas={clasesRequeridas}
+              />
+              {actividadQuePideMedidas && (
+                <CamposMedidas actividad={actividadQuePideMedidas} medidas={medidas} onChange={setMedidas} errores={erroresMedidas} />
+              )}
+            </div>
           )}
 
           {paso === 4 && (
@@ -166,8 +187,8 @@ export function ModalPreinscripcion({
               plan={planSeleccionado}
               profesora={profesoraSeleccionada}
               horariosSeleccionados={horariosSeleccionadosCompletos}
-              sinCargo={sinCargo}
               fechaInicio={fechaInicio}
+              medidas={actividadQuePideMedidas ? medidas : null}
               observacionesInscripcion={observacionesInscripcion}
               onChangeObservacionesInscripcion={setObservacionesInscripcion}
             />
@@ -209,27 +230,74 @@ export function ModalPreinscripcion({
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={confirmarPreinscripcion}
-              disabled={enviando}
-              className="min-h-[44px] px-4 sm:px-5 rounded-xl gap-1.5 ml-auto font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20 transition-colors"
-            >
-              {enviando ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Registrando...
-                </>
-              ) : (
-                <>
-                  <Check className="size-4" />
-                  Confirmar Pre-inscripción
-                </>
-              )}
-            </Button>
+            <BotonesDeConfirmacion
+              enviando={enviando}
+              cobroPedido={cobroPedido}
+              ofrecerCobro={puedeCobrarAhora}
+              onConfirmar={(cobrarAhora) => {
+                setCobroPedido(cobrarAhora);
+                void confirmarPreinscripcion({ cobrarAhora });
+              }}
+            />
           )}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Registrando() {
+  return (
+    <>
+      <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+      Registrando...
+    </>
+  );
+}
+
+interface BotonesDeConfirmacionProps {
+  enviando: boolean;
+  cobroPedido: boolean;
+  ofrecerCobro: boolean;
+  onConfirmar: (cobrarAhora: boolean) => void;
+}
+
+function BotonesDeConfirmacion({ enviando, cobroPedido, ofrecerCobro, onConfirmar }: BotonesDeConfirmacionProps) {
+  return (
+    <div className="ml-auto flex flex-wrap justify-end gap-2">
+      {ofrecerCobro && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onConfirmar(true)}
+          disabled={enviando}
+          className="min-h-[44px] px-4 sm:px-5 rounded-xl gap-1.5 font-bold text-xs sm:text-sm border-primary/40 text-primary hover:bg-primary/5 hover:text-primary"
+        >
+          {enviando && cobroPedido ? (
+            <Registrando />
+          ) : (
+            <>
+              <Banknote aria-hidden="true" className="size-4" />
+              Confirmar y cobrar ahora
+            </>
+          )}
+        </Button>
+      )}
+      <Button
+        type="button"
+        onClick={() => onConfirmar(false)}
+        disabled={enviando}
+        className="min-h-[44px] px-4 sm:px-5 rounded-xl gap-1.5 font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20 transition-colors"
+      >
+        {enviando && !cobroPedido ? (
+          <Registrando />
+        ) : (
+          <>
+            <Check aria-hidden="true" className="size-4" />
+            Confirmar Pre-inscripción
+          </>
+        )}
+      </Button>
+    </div>
   );
 }

@@ -3,9 +3,12 @@ import { z } from "zod";
 import { bajaAlumnoBodySchema, type AlumnoApi } from "@/features/alumnos/schemas/alumno";
 import { db, siguienteId } from "@/mocks/db";
 import type { AlumnoMock, UsuarioPersonaMock } from "@/mocks/data/alumnos";
+import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
 import { inscripcionConDatos } from "@/mocks/handlers/serializar";
+import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
+import { precioVigenteDePlan } from "@/mocks/precios";
 import { normalizarParaBuscar } from "@/utils/texto";
 
 // Mock de /alumnos (alumno.routes.ts) y de POST /alumnos/:id/baja y /reactivar (inscripcion.routes.ts),
@@ -31,7 +34,8 @@ function alumnoDe(alumno: AlumnoMock): AlumnoApi {
   };
 }
 
-// AlumnoEnListado del back: el resumen de su inscripción vigente más reciente, o null.
+// AlumnoEnListado del back: el resumen de su inscripción vigente más reciente y su situación de
+// cuota, o null.
 function alumnoEnListado(alumno: AlumnoMock) {
   const [vigente] = vigentesDe(alumno.id_alumno);
   const resumen = vigente && inscripcionConDatos(vigente);
@@ -49,12 +53,27 @@ function alumnoEnListado(alumno: AlumnoMock) {
           ids_horarios: resumen.horarios.map((h) => h.id_horario),
         }
       : null,
+    situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
   };
 }
 
-// FichaAlumno del back: el alumno con sus inscripciones vigentes.
+function conSituacion(inscripcion: InscripcionMock) {
+  return { ...inscripcionConDatos(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) };
+}
+
+// Las que cerró la última baja: el back da de baja al alumno y a sus inscripciones en el mismo momento.
+function inscripcionesDeLaBaja(alumno: AlumnoMock): InscripcionMock[] {
+  if (alumno.estado !== "BAJA") return [];
+  return db.inscripciones.filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "BAJA" && i.fecha_baja === alumno.fecha_baja);
+}
+
+// FichaAlumno del back: el alumno con sus inscripciones vigentes y las de su última baja.
 function fichaDe(alumno: AlumnoMock) {
-  return { ...alumnoDe(alumno), inscripciones: vigentesDe(alumno.id_alumno).map(inscripcionConDatos) };
+  return {
+    ...alumnoDe(alumno),
+    inscripciones: vigentesDe(alumno.id_alumno).map(conSituacion),
+    inscripciones_de_la_baja: inscripcionesDeLaBaja(alumno).map(conSituacion),
+  };
 }
 
 function buscarAlumno(id: number) {
@@ -97,12 +116,25 @@ function coincideInscripcion(alumno: AlumnoMock, query: URLSearchParams): boolea
   );
 }
 
-function filtrarAlumnos(query: URLSearchParams): AlumnoMock[] {
+function idProfesoraDeLaSesion(request: Request): number | null {
+  const sesion = usuarioDeLaSesion(request);
+  if (!sesion) return null;
+  const prof = db.profesoras.find((p) => p.id_usuario === sesion.id_usuario);
+  return prof?.id_profesora ?? null;
+}
+
+function esAlumnoDeLaProfesora(alumno: AlumnoMock, idProf: number | null): boolean {
+  if (idProf === null) return false;
+  return vigentesDe(alumno.id_alumno).some((i) => i.id_profesora === idProf);
+}
+
+function filtrarAlumnos(query: URLSearchParams, idProfACargo?: number | null): AlumnoMock[] {
   const dni = query.get("dni");
   return db.alumnos
     .filter((a) => coincideEstado(a, query.get("estado"), query.get("incluirBajas") === "true"))
     .filter((a) => coincideBusqueda(a, query.get("busqueda")))
     .filter((a) => !dni || datosPersonales(a.id_usuario).dni === dni)
+    .filter((a) => (idProfACargo === undefined ? true : esAlumnoDeLaProfesora(a, idProfACargo)))
     .filter((a) => coincideInscripcion(a, query))
     .sort((a, b) => {
       const [pa, pb] = [datosPersonales(a.id_usuario), datosPersonales(b.id_usuario)];
@@ -297,12 +329,100 @@ export const alumnosHandlers = [
       return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
     }
 
-    const filtrados = filtrarAlumnos(query);
+    const idProfACargo = esSoloProfesora(request) ? idProfesoraDeLaSesion(request) : undefined;
+    const filtrados = filtrarAlumnos(query, idProfACargo);
     return HttpResponse.json({
       datos: filtrados.slice(offset, offset + limit).map(alumnoEnListado),
       total: filtrados.length,
       limit,
       offset,
+    });
+  }),
+
+  // US-16 y US-29: Datos del plan actual, cuota y datos bancarios para el alumno en sesión.
+  http.get("*/api/v1/alumnos/mi-plan", async ({ request }) => {
+    await delay(300);
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
+
+    const persona = db.usuariosPersonas.find(
+      (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
+    );
+    const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+
+    let alumno = db.alumnos.find(
+      (a) =>
+        idsCandidatos.includes(a.id_usuario) ||
+        (a.id_usuario_responsable !== null && idsCandidatos.includes(a.id_usuario_responsable)),
+    );
+
+    // Para testing o demostración con la sesión inicial de propietaria, fallback al primer alumno con plan
+    if (!alumno) {
+      alumno = db.alumnos.find((a) => a.estado !== "BAJA") ?? db.alumnos[0];
+    }
+
+    if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno asociado");
+
+    const personaAlumno = datosPersonales(alumno.id_usuario);
+    const [vigente] = vigentesDe(alumno.id_alumno);
+    const inscripcionDatos = vigente ? inscripcionConDatos(vigente) : null;
+    const situacion = vigente ? situacionCuotaDe(vigente) : null;
+
+    // Verificar si hay transferencias pendientes
+    const transferenciaPendiente = vigente
+      ? db.pagos.find(
+          (p) =>
+            p.id_inscripcion === vigente.id_inscripcion &&
+            p.forma_pago === "TRANSFERENCIA" &&
+            p.estado === "PENDIENTE",
+        ) ?? null
+      : null;
+
+    const datosBancarios = {
+      banco: "Banco Santander Río",
+      cbu: "0720123488000012345678",
+      alias: "MIFR.CENTRO.FIT",
+      titular: "MiFR Entrenamiento Integral S.R.L.",
+      cuit: "30-71234567-9",
+    };
+
+    return HttpResponse.json({
+      alumno: {
+        id_alumno: alumno.id_alumno,
+        nombre: personaAlumno.nombre,
+        apellido: personaAlumno.apellido,
+        dni: personaAlumno.dni,
+      },
+      inscripcion: inscripcionDatos
+        ? {
+            id_inscripcion: inscripcionDatos.id_inscripcion,
+            id_plan: inscripcionDatos.id_plan,
+            nombre_plan: inscripcionDatos.plan.nombre,
+            estado: inscripcionDatos.estado,
+            precio: precioVigenteDePlan(inscripcionDatos.id_plan)?.precio ?? 25000,
+            clases_por_semana: inscripcionDatos.plan.clases_por_semana,
+            nombre_profesora: `${inscripcionDatos.profesora.usuario.nombre} ${inscripcionDatos.profesora.usuario.apellido}`,
+          }
+        : null,
+      situacion_cuota: situacion
+        ? {
+            estado: situacion.estado,
+            fecha_vencimiento: situacion.fecha_vencimiento,
+            dias_restantes: situacion.dias_restantes,
+            puede_asistir: situacion.puede_asistir,
+            monto: precioVigenteDePlan(inscripcionDatos?.id_plan ?? 1)?.precio ?? 25000,
+            tiene_transferencia_pendiente: transferenciaPendiente !== null,
+            transferencia_pendiente: transferenciaPendiente
+              ? {
+                  id_pago: transferenciaPendiente.id_pago,
+                  monto: transferenciaPendiente.monto,
+                  fecha_hora_transferencia: transferenciaPendiente.fecha_hora_transferencia,
+                  fecha_pago: transferenciaPendiente.fecha_pago,
+                }
+              : null,
+          }
+        : null,
+      datos_bancarios: datosBancarios,
     });
   }),
 
@@ -315,6 +435,12 @@ export const alumnosHandlers = [
     if (id === null) return idInvalido();
     const alumno = buscarAlumno(id);
     if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+    if (esSoloProfesora(request)) {
+      const idProf = idProfesoraDeLaSesion(request);
+      if (!esAlumnoDeLaProfesora(alumno, idProf)) {
+        return errorApi(403, "FORBIDDEN", "Solo puede ver y editar a los alumnos que tiene a cargo");
+      }
+    }
     return HttpResponse.json(fichaDe(alumno));
   }),
 
@@ -349,8 +475,14 @@ export const alumnosHandlers = [
     const alumno = buscarAlumno(id);
     if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
     const cambios = cuerpo.data;
-    if (esSoloProfesora(request) && Object.keys(cambios).some((campo) => !CAMPOS_DE_LA_PROFESORA.includes(campo))) {
-      return errorApi(403, "FORBIDDEN", "La profesora solo modifica el contacto y las observaciones");
+    if (esSoloProfesora(request)) {
+      const idProf = idProfesoraDeLaSesion(request);
+      if (!esAlumnoDeLaProfesora(alumno, idProf)) {
+        return errorApi(403, "FORBIDDEN", "Solo puede ver y editar a los alumnos que tiene a cargo");
+      }
+      if (Object.keys(cambios).some((campo) => !CAMPOS_DE_LA_PROFESORA.includes(campo))) {
+        return errorApi(403, "FORBIDDEN", "La profesora solo modifica el contacto y las observaciones");
+      }
     }
 
     const usuario = datosPersonales(alumno.id_usuario);
@@ -391,7 +523,7 @@ export const alumnosHandlers = [
     return HttpResponse.json({ mensaje: "Alumno dado de baja" });
   }),
 
-  // Reactivación (US-08): solo la propietaria. Crea una inscripción activa nueva (la de la baja
+  // Reactivación (US-08): solo la propietaria. Crea una inscripción nueva, activa si ya pagó alguna vez (la de la baja
   // queda en el historial) y vuelve a validar el cupo.
   http.post("*/api/v1/alumnos/:id/reactivar", async ({ request, params }) => {
     await delay(500);
@@ -409,9 +541,11 @@ export const alumnosHandlers = [
     const error = errorDeHorarios(cuerpo.data);
     if (error) return error;
 
-    const inscripcion = guardarInscripcion(id, cuerpo.data, "ACTIVA");
-    Object.assign(alumno, { estado: "ACTIVO", fecha_baja: null });
-    datosPersonales(alumno.id_usuario).estado = "ACTIVO";
+    // Quien nunca pagó vuelve pre-inscripto y sin acceso hasta su primer pago (US-07).
+    const yaPago = tuvoPagoConfirmado(id);
+    const inscripcion = guardarInscripcion(id, cuerpo.data, yaPago ? "ACTIVA" : "PREINSCRIPTA");
+    Object.assign(alumno, { estado: yaPago ? "ACTIVO" : "INACTIVO", fecha_baja: null });
+    if (yaPago) datosPersonales(alumno.id_usuario).estado = "ACTIVO";
     return HttpResponse.json(inscripcionConDatos(inscripcion), { status: 201 });
   }),
 ];

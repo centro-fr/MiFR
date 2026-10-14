@@ -1,12 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
 import { BadgeCheck } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { esMontoDistinto } from "@/features/alumnos/api/alta-definitiva-api";
 import {
   aCuerpoPrimerPago,
@@ -18,58 +15,24 @@ import {
   type PrimerPagoFormValues,
 } from "@/features/alumnos/schemas/primer-pago";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import {
+  BotonesDeCobro,
+  CLASE_INPUT,
+  Campo,
+  CampoTitularCuenta,
+  FechaHoraAutomatica,
+  SelectorFormaDeCobro,
+  type EtiquetasFormaDeCobro,
+} from "@/features/cobros/components/campos-cobro";
 import { formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
-
-const ETIQUETA_FORMA: Record<FormaPrimerPago, { titulo: string; detalle: string }> = {
-  EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
-  TRANSFERENCIA: { titulo: "Transferencia", detalle: "Ya la viste acreditada en tu cuenta." },
-};
 
 type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 
 function erroresDe(issues: { path: (string | number)[]; message: string }[]): Errores {
   return Object.fromEntries(issues.map((issue) => [issue.path[0], issue.message]));
 }
-
-interface CampoProps {
-  id: string;
-  etiqueta: string;
-  error?: string;
-  ayuda?: string;
-  obligatorio?: boolean;
-  children: (describedBy: string | undefined) => ReactNode;
-}
-
-function Campo({ id, etiqueta, error, ayuda, obligatorio = false, children }: CampoProps) {
-  const describedBy = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id} className="text-sm font-bold text-slate-800 dark:text-slate-200">
-        {etiqueta}
-        {obligatorio && (
-          <>
-            <span className="text-rose-600" aria-hidden="true"> *</span>
-            <span className="sr-only"> (obligatorio)</span>
-          </>
-        )}
-      </Label>
-      {children(describedBy)}
-      {ayuda && (
-        <p id={`${id}-ayuda`} className="text-xs text-muted-foreground">
-          {ayuda}
-        </p>
-      )}
-      {error && (
-        <p id={`${id}-error`} className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-const CLASE_INPUT = "rounded-xl border-slate-200 bg-white dark:border-white/15 dark:bg-transparent";
 
 function ResumenPreInscripcion({ pendiente }: { pendiente: PreInscripcionPendiente }) {
   return (
@@ -95,35 +58,6 @@ function AvisoReservaVencida({ vence }: { vence: string }) {
         registrar el cobro hasta elegir otro.
       </AlertDescription>
     </Alert>
-  );
-}
-
-interface SelectorFormaProps {
-  formas: FormaPrimerPago[];
-  valor: FormaPrimerPago;
-  onChange: (forma: FormaPrimerPago) => void;
-}
-
-function SelectorFormaPago({ formas, valor, onChange }: SelectorFormaProps) {
-  return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">¿Cómo abonó la primera cuota?</legend>
-      <RadioGroup value={valor} onValueChange={(v) => onChange(v as FormaPrimerPago)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {formas.map((forma) => (
-          <Label
-            key={forma}
-            htmlFor={`forma-pago-${forma}`}
-            className="flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-pink-50 dark:border-white/15 dark:has-data-[state=checked]:bg-primary/15"
-          >
-            <RadioGroupItem id={`forma-pago-${forma}`} value={forma} className="mt-0.5" />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{ETIQUETA_FORMA[forma].titulo}</span>
-              <span className="text-xs font-medium text-muted-foreground">{ETIQUETA_FORMA[forma].detalle}</span>
-            </span>
-          </Label>
-        ))}
-      </RadioGroup>
-    </fieldset>
   );
 }
 
@@ -169,39 +103,12 @@ interface CamposTransferenciaProps {
 function CamposTransferencia({ valores, errores, onChange }: CamposTransferenciaProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Campo id="fecha-hora-transferencia" etiqueta="Fecha y hora" error={errores.fechaHoraTransferencia} obligatorio>
-        {(describedBy) => (
-          <Input
-            id="fecha-hora-transferencia"
-            type="datetime-local"
-            value={valores.fechaHoraTransferencia}
-            max={fechaHoraParaInput(new Date())}
-            onChange={(evento) => onChange({ fechaHoraTransferencia: evento.target.value })}
-            aria-invalid={errores.fechaHoraTransferencia !== undefined}
-            aria-describedby={describedBy}
-            className={CLASE_INPUT}
-          />
-        )}
-      </Campo>
-      <Campo
-        id="titular-cuenta"
-        etiqueta="Titular de la cuenta"
-        ayuda="Opcional: ayuda a encontrarla en el extracto."
+      <FechaHoraAutomatica error={errores.fechaHoraTransferencia} />
+      <CampoTitularCuenta
+        valor={valores.titularCuentaOrigen}
         error={errores.titularCuentaOrigen}
-      >
-        {(describedBy) => (
-          <Input
-            id="titular-cuenta"
-            value={valores.titularCuentaOrigen}
-            maxLength={80}
-            autoComplete="off"
-            onChange={(evento) => onChange({ titularCuentaOrigen: evento.target.value })}
-            aria-invalid={errores.titularCuentaOrigen !== undefined}
-            aria-describedby={describedBy}
-            className={CLASE_INPUT}
-          />
-        )}
-      </Campo>
+        onChange={(titularCuentaOrigen) => onChange({ titularCuentaOrigen })}
+      />
     </div>
   );
 }
@@ -219,11 +126,23 @@ interface Props {
 // US-07: el alta definitiva es la consecuencia de registrar el primer pago. El back la hace
 // en la misma transacción del cobro y no deja activar a nadie sin un pago confirmado.
 export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onClose, onConfirm }: Props) {
+  const { hasRole } = usePermissions();
+  const esPropietaria = hasRole("PROPIETARIA");
   const [valores, setValores] = useState(() => valoresInicialesPrimerPago(pendiente.precio, formas[0]));
   const [errores, setErrores] = useState<Errores>({});
   const backInformoMontoDistinto = esMontoDistinto(error);
   const contexto = { precio: pendiente.precio, backInformoMontoDistinto };
   const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
+
+  const etiquetasForma: EtiquetasFormaDeCobro = {
+    EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
+    TRANSFERENCIA: {
+      titulo: "Transferencia",
+      detalle: esPropietaria ? "Ya la viste acreditada en tu cuenta." : "Queda pendiente de confirmación por la propietaria.",
+    },
+  };
+
+  const esTransferenciaProfesora = valores.formaPago === "TRANSFERENCIA" && !esPropietaria;
 
   const cambiar = (cambios: Partial<PrimerPagoFormValues>) => {
     setValores((actuales) => ({ ...actuales, ...cambios }));
@@ -232,7 +151,10 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
 
   const confirmar = (evento: FormEvent) => {
     evento.preventDefault();
-    const resultado = crearPrimerPagoSchema({ ...contexto, ahora: new Date() }).safeParse(valores);
+    // La transferencia queda con el momento de la confirmación, en minutos: así nunca es futura.
+    const aRegistrar =
+      valores.formaPago === "TRANSFERENCIA" ? { ...valores, fechaHoraTransferencia: fechaHoraParaInput(new Date()) } : valores;
+    const resultado = crearPrimerPagoSchema({ ...contexto, ahora: new Date() }).safeParse(aRegistrar);
     if (!resultado.success) {
       setErrores(erroresDe(resultado.error.issues));
       return;
@@ -263,13 +185,21 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </span>
             <DialogTitle className="text-base font-extrabold text-dark dark:text-white">Confirmar alta de {nombre}</DialogTitle>
             <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió.
+              {esTransferenciaProfesora
+                ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
+                : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
             </DialogDescription>
           </div>
 
           <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
-          <SelectorFormaPago formas={formas} valor={valores.formaPago} onChange={(formaPago) => cambiar({ formaPago })} />
+          <SelectorFormaDeCobro
+            formas={formas}
+            valor={valores.formaPago}
+            onChange={(formaPago) => cambiar({ formaPago })}
+            leyenda="¿Cómo abonó la primera cuota?"
+            etiquetas={etiquetasForma}
+          />
 
           <Campo id="monto-primer-pago" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>
             {(describedBy) => (
@@ -302,20 +232,12 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </Alert>
           )}
 
-          <div className="flex flex-row items-center justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={confirmando}
-              onClick={onClose}
-              className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={confirmando} className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark">
-              {confirmando ? "Registrando..." : "Registrar y dar de alta"}
-            </Button>
-          </div>
+          <BotonesDeCobro
+            onCancelar={onClose}
+            enviando={confirmando}
+            texto={esTransferenciaProfesora ? "Informar transferencia" : "Registrar y dar de alta"}
+            textoEnviando={esTransferenciaProfesora ? "Informando..." : "Registrando..."}
+          />
         </form>
       </DialogContent>
     </Dialog>

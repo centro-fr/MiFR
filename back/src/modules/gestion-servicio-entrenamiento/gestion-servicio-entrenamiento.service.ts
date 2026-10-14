@@ -13,10 +13,10 @@ import type { PlanService } from "./plan/plan.service.js";
 import type { ActualizarPlanInput, CrearPlanInput, RegistrarPrecioInput } from "./plan/plan.schemas.js";
 import type { FiltroPlan, Plan, PrecioPlan } from "./plan/plan.types.js";
 import type { ParametrosSistemaService } from "./parametros-sistema/parametros-sistema.service.js";
+import type { ActualizarParametroInput } from "./parametros-sistema/parametros-sistema.schemas.js";
 import type { PromocionService } from "./promocion/promocion.service.js";
 import type { ActualizarPromocionInput, CrearPromocionInput } from "./promocion/promocion.schemas.js";
 import type { FiltroPromociones, Promocion, TipoDescuento } from "./promocion/promocion.types.js";
-import type { ActualizarParametroInput } from "./parametros-sistema/parametros-sistema.schemas.js";
 import type {
   ClaveParametro,
   DatosBancarios,
@@ -198,9 +198,6 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.parametros.obtenerDatosBancarios();
   }
 
-  // US-13: Promocion no conoce a Plan (es Plan el que la usa), así que el subsistema cruza los dos.
-  // Los planes tienen que estar vigentes, y un monto fijo tiene que ser menor que el precio de cada uno
-  // al empezar la promoción: igual o mayor dejaría la cuota en 0, y un pago tiene que ser mayor a 0.
   private async validarPlanesDePromocion(datos: {
     ids_planes: number[];
     tipo_descuento: TipoDescuento;
@@ -217,8 +214,9 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     );
     datos.ids_planes.forEach((id, indice) => {
       const precio = precios[indice];
-      if (!precio)
+      if (!precio) {
         throw new ValidationError(`El plan ${id} no tiene un precio vigente al empezar la promoción`);
+      }
       if (datos.valor >= precio.precio) {
         throw new ValidationError(
           `El descuento tiene que ser menor que el precio del plan ${id} (${precio.precio})`,

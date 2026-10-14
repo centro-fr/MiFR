@@ -38,6 +38,27 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
   persona(104, "Valentina", "Herrera", { dni: "39222333", email: "valentina.herrera@example.com", telefono: "351 666-7788", fecha_nacimiento: "1998-03-25", direccion: "Ituzaingó 789" }, "ACTIVO"),
   persona(105, "Camila", "Pérez", { dni: "35123456", email: "camila.perez@example.com", telefono: "11 5555-0101", fecha_nacimiento: "1992-04-18", direccion: "Av. San Martín 123" }, "ACTIVO"),
   persona(106, "Micaela", "García", { dni: "32987654", email: "micaela.garcia@example.com", telefono: "11 5555-0401", fecha_nacimiento: "1990-01-15" }),
+
+  // 5 Alumnos con Cuota Vencida
+  persona(111, "Franco", "Navarro", { dni: "39456123", email: "franco.navarro@example.com", telefono: "11 4455-1201", fecha_nacimiento: "1998-05-15", direccion: "Belgrano 101" }, "ACTIVO"),
+  persona(112, "Lucía", "Benítez", { dni: "41234567", email: "lucia.benitez@example.com", telefono: "11 4455-1202", fecha_nacimiento: "1999-07-20", direccion: "Mitre 202" }, "ACTIVO"),
+  persona(113, "Martín", "Morales", { dni: "38789012", email: "martin.morales@example.com", telefono: "11 4455-1203", fecha_nacimiento: "1996-03-12", direccion: "Rivadavia 303" }, "ACTIVO"),
+  persona(114, "Rocío", "Castro", { dni: "40567890", email: "rocio.castro@example.com", telefono: "11 4455-1204", fecha_nacimiento: "1997-11-05", direccion: "Sarmiento 404" }, "ACTIVO"),
+  persona(115, "Emiliano", "Sosa", { dni: "42345678", email: "emiliano.sosa@example.com", telefono: "11 4455-1205", fecha_nacimiento: "2000-09-18", direccion: "Urquiza 505" }, "ACTIVO"),
+
+  // 5 Alumnos con Cuota Por Vencer
+  persona(116, "Tomás", "Herrera", { dni: "37890123", email: "tomas.herrera@example.com", telefono: "11 4455-1206", fecha_nacimiento: "1995-02-28", direccion: "Lavalle 606" }, "ACTIVO"),
+  persona(117, "Julieta", "Domínguez", { dni: "43123456", email: "julieta.dominguez@example.com", telefono: "11 4455-1207", fecha_nacimiento: "2001-04-14", direccion: "Moreno 707" }, "ACTIVO"),
+  persona(118, "Agustín", "Giménez", { dni: "39901234", email: "agustin.gimenez@example.com", telefono: "11 4455-1208", fecha_nacimiento: "1998-10-30", direccion: "Alberdi 808" }, "ACTIVO"),
+  persona(119, "Florencia", "Ortiz", { dni: "41678901", email: "florencia.ortiz@example.com", telefono: "11 4455-1209", fecha_nacimiento: "1999-12-08", direccion: "Castelli 909" }, "ACTIVO"),
+  persona(120, "Lucas", "Romero", { dni: "40234567", email: "lucas.romero@example.com", telefono: "11 4455-1210", fecha_nacimiento: "1997-06-22", direccion: "Paso 1010" }, "ACTIVO"),
+
+  // 5 Alumnos con Cuota Al Día
+  persona(121, "Santiago", "Medina", { dni: "38456789", email: "santiago.medina@example.com", telefono: "11 4455-1211", fecha_nacimiento: "1996-01-19", direccion: "Güemes 1111" }, "ACTIVO"),
+  persona(122, "Micaela", "Ríos", { dni: "42789012", email: "micaela.rios@example.com", telefono: "11 4455-1212", fecha_nacimiento: "2000-08-03", direccion: "Laprida 1212" }, "ACTIVO"),
+  persona(123, "Nicolás", "Vega", { dni: "40123789", email: "nicolas.vega@example.com", telefono: "11 4455-1213", fecha_nacimiento: "1997-05-25", direccion: "Gorriti 1313" }, "ACTIVO"),
+  persona(124, "Daiana", "Silva", { dni: "39345678", email: "daiana.silva@example.com", telefono: "11 4455-1214", fecha_nacimiento: "1998-09-11", direccion: "Arenales 1414" }, "ACTIVO"),
+  persona(125, "Gonzalo", "Fernández", { dni: "41890123", email: "gonzalo.fernandez@example.com", telefono: "11 4455-1215", fecha_nacimiento: "1999-03-07", direccion: "Juncal 1515" }, "ACTIVO"),
 ];
 
 type DatosPersona = Partial<Omit<UsuarioPersonaMock, "id_usuario" | "nombre" | "apellido" | "estado">> & { fecha_nacimiento: string };
@@ -113,4 +134,25 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
     fecha_alta: "2024-06-01T12:00:00.000Z",
     fecha_baja: "2026-09-01T12:00:00.000Z",
   }),
+
+  // 5 Alumnos con Cuota Vencida
+  alumno(11, 111, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(12, 112, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(13, 113, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(14, 114, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(15, 115, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+
+  // 5 Alumnos con Cuota Por Vencer
+  alumno(16, 116, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(17, 117, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(18, 118, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(19, 119, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(20, 120, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+
+  // 5 Alumnos con Cuota Al Día
+  alumno(21, 121, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(22, 122, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(23, 123, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(24, 124, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(25, 125, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
 ];

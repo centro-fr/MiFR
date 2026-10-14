@@ -56,9 +56,8 @@ export interface PiezasDeInfraestructura {
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
-// tests de integración dan el alta definitiva sin pasar por un cobro; IInfoClases, con la que prueban
-// las clases suplidas que lee la liquidación (US-23) mientras no tiene endpoint; y el cierre automático
-// de la asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
+// tests de integración dan el alta definitiva sin pasar por un cobro; y el cierre automático de la
+// asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;

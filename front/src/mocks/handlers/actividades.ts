@@ -32,6 +32,18 @@ function validarCupoActividad(modalidad: ActividadApi["modalidad"], cupo: number
   return null;
 }
 
+// Un plan vigente exclusivo quedaría ofrecido sin horarios donde inscribir (US-11).
+function errorPlanesExclusivos(idActividad: number): string | null {
+  const nombres = db.planes
+    .filter((plan) => plan.id_actividad_exclusiva === idActividad && plan.fecha_baja === null)
+    .map((plan) => plan.nombre);
+  if (nombres.length === 0) return null;
+  return (
+    `La actividad tiene planes vigentes que son solo de ella (${nombres.join(", ")}): ` +
+    "dalos de baja o pasalos a otra actividad antes de darla de baja"
+  );
+}
+
 export const actividadesHandlers = [
   http.get("*/api/v1/actividades", async ({ request }) => {
     await delay(300);
@@ -121,6 +133,12 @@ export const actividadesHandlers = [
     const id = idDeRuta(params.id);
     if (!id) return idInvalido();
 
+    const actividad = buscarActividad(id);
+    if (!actividad) return errorApi(404, "NOT_FOUND", "Actividad no encontrada");
+    if (!actividad.activo) return errorApi(409, "CONFLICT", "La actividad ya está dada de baja");
+
+    const errorPlanes = errorPlanesExclusivos(id);
+    if (errorPlanes) return errorApi(409, "CONFLICT", errorPlanes);
     if (db.horarios.some((horario) => horario.id_actividad === id && horario.fecha_baja === null)) {
       return errorApi(
         409,
@@ -128,9 +146,6 @@ export const actividadesHandlers = [
         "La actividad tiene horarios activos: hay que darlos de baja antes que la actividad",
       );
     }
-    const actividad = buscarActividad(id);
-    if (!actividad) return errorApi(404, "NOT_FOUND", "Actividad no encontrada");
-    if (!actividad.activo) return errorApi(409, "CONFLICT", "La actividad ya está dada de baja");
 
     actividad.activo = false;
     return HttpResponse.json(actividad);

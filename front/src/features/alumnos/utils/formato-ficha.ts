@@ -7,9 +7,13 @@ const FORMATO_FECHA = new Intl.DateTimeFormat("es-AR", {
   timeZone: "UTC",
 });
 
-/** "1996-04-24" → "24/04/1996". Se formatea en UTC porque es una fecha sin hora. */
+/** "1996-04-24" o timestamp ISO "2026-10-15T00:00:00.000Z" → "24/04/1996". Se formatea en UTC porque es una fecha sin hora. */
 export function formatearFecha(fechaCalendario: string): string {
-  return FORMATO_FECHA.format(new Date(`${fechaCalendario}T00:00:00Z`));
+  if (!fechaCalendario) return "";
+  const soloFecha = fechaCalendario.includes("T") ? fechaCalendario.slice(0, 10) : fechaCalendario;
+  const fecha = new Date(`${soloFecha}T00:00:00Z`);
+  if (isNaN(fecha.getTime())) return fechaCalendario;
+  return FORMATO_FECHA.format(fecha);
 }
 
 /** Timestamp ISO → "15/03/2023" en el huso horario de quien mira. */

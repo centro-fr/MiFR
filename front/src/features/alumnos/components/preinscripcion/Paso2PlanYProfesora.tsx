@@ -1,9 +1,9 @@
-import { Check, Dumbbell, Sparkles, User, Calendar } from "lucide-react";
+import { Check, Dumbbell, User, Calendar } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { fechaActualArgentina } from "@/utils/fecha";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import {
   Select,
   SelectContent,
@@ -17,13 +17,13 @@ import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 interface Paso2PlanYProfesoraProps {
   planes: PlanApiRespuesta[];
   profesoras: ProfesoraDatos[];
+  /** Las que tienen horarios suficientes para el plan elegido: son las únicas que se ofrecen. */
+  profesorasCompatibles: ProfesoraDatos[];
   idPlanSeleccionado: number | null;
   onSeleccionarPlan: (idPlan: number) => void;
   idProfesoraSeleccionada: number | null;
   onSeleccionarProfesora: (idProfesora: number) => void;
   esSoloProfesora: boolean;
-  sinCargo: boolean;
-  onToggleSinCargo: (sinCargo: boolean) => void;
   fechaInicio: string;
   onChangeFechaInicio: (fecha: string) => void;
 }
@@ -31,16 +31,20 @@ interface Paso2PlanYProfesoraProps {
 export function Paso2PlanYProfesora({
   planes,
   profesoras,
+  profesorasCompatibles,
   idPlanSeleccionado,
   onSeleccionarPlan,
   idProfesoraSeleccionada,
   onSeleccionarProfesora,
   esSoloProfesora,
-  sinCargo,
-  onToggleSinCargo,
   fechaInicio,
   onChangeFechaInicio,
 }: Paso2PlanYProfesoraProps) {
+  const sinPlan = idPlanSeleccionado === null;
+  const sinProfesorasParaElPlan = !sinPlan && profesorasCompatibles.length === 0;
+  const profesoraLogueadaSinHorarios =
+    esSoloProfesora && !sinPlan && !profesorasCompatibles.some((p) => Number(p.id) === idProfesoraSeleccionada);
+
   return (
     <div className="space-y-6">
       {/* 1. Selección de Plan */}
@@ -117,19 +121,19 @@ export function Paso2PlanYProfesora({
         </div>
       </div>
 
-      {/* 2. Asignación de Profesora */}
+      {/* 2. Asignación de Profesora y Actividad */}
       <div className="pt-2 border-t border-border/40 space-y-4">
         <div className="flex items-center gap-2 mb-1">
           <User className="size-4 text-primary" />
           <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-            Profesora a Cargo <span className="text-destructive">*</span>
+            Profesora <span className="text-destructive">*</span>
           </h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="selector-profesora" className="text-xs font-medium">
-              Profesora Asignada
+              Profesora Asignada <span className="text-destructive">*</span>
             </Label>
             {esSoloProfesora ? (
               <div className="flex items-center gap-2.5 p-2 rounded-xl border border-border/80 bg-muted/40 min-h-[42px]">
@@ -151,12 +155,21 @@ export function Paso2PlanYProfesora({
               <Select
                 value={idProfesoraSeleccionada ? String(idProfesoraSeleccionada) : ""}
                 onValueChange={(val) => onSeleccionarProfesora(Number(val))}
+                disabled={sinPlan || sinProfesorasParaElPlan}
               >
-                <SelectTrigger id="selector-profesora" className="w-full">
-                  <SelectValue placeholder="Seleccioná una profesora" />
+                <SelectTrigger id="selector-profesora" className="w-full" aria-describedby="ayuda-profesora">
+                  <SelectValue
+                    placeholder={
+                      sinPlan
+                        ? "Primero elegí un plan"
+                        : sinProfesorasParaElPlan
+                          ? "Ninguna profesora da este plan"
+                          : "Seleccioná una profesora"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {profesoras.map((prof) => (
+                  {profesorasCompatibles.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
                       {prof.nombre} {prof.apellido}
                     </SelectItem>
@@ -164,11 +177,11 @@ export function Paso2PlanYProfesora({
                 </SelectContent>
               </Select>
             )}
-            {esSoloProfesora && (
-              <p className="text-[11px] text-muted-foreground">
-                Asignada automáticamente a tu perfil.
-              </p>
-            )}
+            <AyudaProfesora
+              esSoloProfesora={esSoloProfesora}
+              sinProfesorasParaElPlan={sinProfesorasParaElPlan}
+              profesoraLogueadaSinHorarios={profesoraLogueadaSinHorarios}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -176,33 +189,46 @@ export function Paso2PlanYProfesora({
               <Calendar className="size-3.5 text-muted-foreground" />
               Fecha de Inicio Estimada
             </Label>
-            <Input
+            <CampoFecha
               id="fecha-inicio"
-              type="date"
+              etiquetaCalendario="Abrir calendario para la fecha de inicio"
+              // El back no acepta un inicio anterior a hoy.
+              min={fechaActualArgentina()}
               value={fechaInicio}
-              onChange={(e) => onChangeFechaInicio(e.target.value)}
+              onChange={onChangeFechaInicio}
             />
           </div>
-        </div>
-
-        {/* Sin cargo toggle */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/40">
-          <div className="space-y-0.5">
-            <Label htmlFor="sin-cargo-toggle" className="text-xs font-semibold cursor-pointer flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-500" />
-              Inscripción sin cargo / Becada
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Exime la generación de cuota para el primer período.
-            </p>
-          </div>
-          <Switch
-            id="sin-cargo-toggle"
-            checked={sinCargo}
-            onCheckedChange={onToggleSinCargo}
-          />
         </div>
       </div>
     </div>
   );
 };
+
+// Explica por qué la lista de profesoras es la que es: sin esto, que falte una parece un error.
+function AyudaProfesora({
+  esSoloProfesora,
+  sinProfesorasParaElPlan,
+  profesoraLogueadaSinHorarios,
+}: {
+  esSoloProfesora: boolean;
+  sinProfesorasParaElPlan: boolean;
+  profesoraLogueadaSinHorarios: boolean;
+}) {
+  const aviso = profesoraLogueadaSinHorarios
+    ? "No tenés horarios suficientes para este plan. Elegí otro plan o pedile a la propietaria que lo cargue."
+    : sinProfesorasParaElPlan
+      ? "Ninguna profesora tiene horarios suficientes para este plan. Elegí otro plan."
+      : null;
+  if (aviso) {
+    return (
+      <p id="ayuda-profesora" className="text-[11px] text-amber-600 dark:text-amber-400">
+        {aviso}
+      </p>
+    );
+  }
+  return (
+    <p id="ayuda-profesora" className="text-[11px] text-muted-foreground">
+      {esSoloProfesora ? "Asignada automáticamente a tu perfil." : "Solo aparecen las profesoras con horarios para el plan elegido."}
+    </p>
+  );
+}

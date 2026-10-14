@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -20,13 +20,17 @@ import { Input } from "@/components/ui/input";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import type { FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
+import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
+import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { cn } from "@/utils/cn";
 
-const TAMANO_PAGINA = 25;
+const TAMANO_PAGINA = 10;
 type FiltrosDeLaPantalla = Omit<FiltrosAlumnos, "busqueda" | "limit" | "offset">;
 
 const FILTROS_INICIALES: FiltrosDeLaPantalla = {
@@ -60,7 +64,6 @@ function useOpcionesDeFiltros() {
 function hayFiltrosActivos(busqueda: string, filtros: FiltrosDeLaPantalla): boolean {
   return (
     busqueda.trim() !== "" ||
-    filtros.estado !== "TODOS" ||
     filtros.id_plan !== "" ||
     filtros.id_profesora !== "" ||
     filtros.id_actividad !== "" ||
@@ -128,12 +131,23 @@ function Filtro({
   );
 }
 
+// Solo se carga si alguien elige "Confirmar y cobrar ahora": el resto de las visitas no lo paga.
+const CobroInmediato = lazy(() =>
+  import("@/features/alumnos/components/alta-definitiva/cobro-inmediato").then((m) => ({ default: m.CobroInmediato })),
+);
+
 export function AlumnosPage() {
+  const { hasRole } = usePermissions();
+  const esProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
   const [busqueda, setBusqueda] = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [filtros, setFiltros] = useState<FiltrosDeLaPantalla>(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(0);
   const [modalPreinscripcionAbierto, setModalPreinscripcionAbierto] = useState(false);
+  const puedeCobrar = useFormasDePrimerPago().length > 0;
+  // Pre-inscripción recién creada con "Confirmar y cobrar ahora": se abre su registro del primer cobro.
+  const [idInscripcionACobrar, setIdInscripcionACobrar] = useState<number | null>(null);
+  const terminarCobro = useCallback(() => setIdInscripcionACobrar(null), []);
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
@@ -153,6 +167,11 @@ export function AlumnosPage() {
   const rangoInicio = respuesta && respuesta.total > 0 ? respuesta.offset + 1 : 0;
   const rangoFin = Math.min((respuesta?.offset ?? 0) + TAMANO_PAGINA, respuesta?.total ?? 0);
 
+  function alPreinscribir({ idInscripcion, cobrarAhora }: ResultadoPreinscripcion) {
+    void consulta.refetch();
+    if (cobrarAhora) setIdInscripcionACobrar(idInscripcion);
+  }
+
   function cambiarFiltro(nombre: keyof FiltrosDeLaPantalla, valor: string | boolean) {
     setPagina(0);
     setFiltros((anteriores) => ({ ...anteriores, [nombre]: valor }));
@@ -162,30 +181,21 @@ export function AlumnosPage() {
     return (
       <>
         <Filtro
-          id={`${prefijo}-filtro-estado`}
-          etiqueta="Estado"
-          valor={filtros.estado}
-          opciones={[
-            { id: "TODOS", etiqueta: "Activos y pendientes" },
-            { id: "ACTIVO", etiqueta: "Activo" },
-            { id: "PENDIENTE", etiqueta: "Pendiente de alta" },
-          ]}
-          onChange={(valor) => cambiarFiltro("estado", valor)}
-        />
-        <Filtro
           id={`${prefijo}-filtro-plan`}
           etiqueta="Plan"
           valor={filtros.id_plan}
           opciones={[{ id: "", etiqueta: "Todos los planes" }, ...opciones.planes]}
           onChange={(valor) => cambiarFiltro("id_plan", valor)}
         />
-        <Filtro
-          id={`${prefijo}-filtro-profesora`}
-          etiqueta="Profesora"
-          valor={filtros.id_profesora}
-          opciones={[{ id: "", etiqueta: "Todas las profesoras" }, ...opciones.profesoras]}
-          onChange={(valor) => cambiarFiltro("id_profesora", valor)}
-        />
+        {!esProfesora && (
+          <Filtro
+            id={`${prefijo}-filtro-profesora`}
+            etiqueta="Profesora"
+            valor={filtros.id_profesora}
+            opciones={[{ id: "", etiqueta: "Todas las profesoras" }, ...opciones.profesoras]}
+            onChange={(valor) => cambiarFiltro("id_profesora", valor)}
+          />
+        )}
         <Filtro
           id={`${prefijo}-filtro-actividad`}
           etiqueta="Actividad"
@@ -277,7 +287,10 @@ export function AlumnosPage() {
         </details>
         <section
           aria-label="Filtros de alumnos"
-          className="mb-5 hidden grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:grid lg:grid-cols-3 2xl:grid-cols-5 dark:border-slate-600 dark:bg-slate-800"
+          className={cn(
+            "mb-5 hidden grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:grid dark:border-slate-600 dark:bg-slate-800",
+            esProfesora ? "lg:grid-cols-3" : "lg:grid-cols-4",
+          )}
         >
           {controlesFiltros("desktop")}
         </section>
@@ -379,6 +392,10 @@ export function AlumnosPage() {
                           {alumno.profesora ?? "A definir"}
                         </p>
                       </div>
+                      <div className="min-w-0">
+                        <p className="text-slate-600 dark:text-slate-300">Cuota</p>
+                        <BadgeSituacionCuota situacion={alumno.situacion_cuota} className="mt-0.5" />
+                      </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-600">
                       <span className="min-w-0 break-all text-sm text-slate-600 dark:text-slate-400">
@@ -404,6 +421,9 @@ export function AlumnosPage() {
                       </th>
                       <th scope="col" className="px-4 py-4">
                         Estado
+                      </th>
+                      <th scope="col" className="px-4 py-4">
+                        Cuota
                       </th>
                       <th scope="col" className="px-4 py-4">
                         Plan
@@ -432,9 +452,12 @@ export function AlumnosPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <Badge className={cn("min-h-7 border px-2 text-sm", colorEstado(alumno.estado))}>
+                          <Badge variant="outline" className={cn("min-h-7 border px-2 text-sm", colorEstado(alumno.estado))}>
                             {etiquetaEstado(alumno.estado)}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-4">
+                          <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
                         </td>
                         <td className="px-4 py-4 font-medium text-slate-800 dark:text-slate-100">
                           {alumno.plan ?? "Sin plan"}
@@ -499,8 +522,14 @@ export function AlumnosPage() {
           <ModalPreinscripcion
             open={modalPreinscripcionAbierto}
             onOpenChange={setModalPreinscripcionAbierto}
-            onExito={() => consulta.refetch()}
+            onExito={alPreinscribir}
+            puedeCobrarAhora={puedeCobrar}
           />
+        )}
+        {idInscripcionACobrar !== null && (
+          <Suspense fallback={null}>
+            <CobroInmediato idInscripcion={idInscripcionACobrar} onTerminar={terminarCobro} />
+          </Suspense>
         )}
       </div>
     </OwnerLayout>
