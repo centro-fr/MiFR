@@ -101,7 +101,6 @@ export function usePreinscripcion({
   const [idProfesoraElegida, setIdProfesora] = useState<number | null>(null);
   const idProfesora = esSoloProfesora ? idProfesoraInicial : idProfesoraElegida;
   const [idsHorarios, setIdsHorarios] = useState<number[]>([]);
-  const [sinCargo, setSinCargo] = useState<boolean>(false);
   const [fechaInicio, setFechaInicio] = useState<string>(fechaActualArgentina);
   const [medidas, setMedidas] = useState<MedidasCorporalesForm>(MEDIDAS_VACIAS);
   const [erroresMedidas, setErroresMedidas] = useState<Partial<Record<keyof MedidasCorporalesForm, string>>>({});
@@ -119,7 +118,7 @@ export function usePreinscripcion({
 
   const clasesRequeridas = clasesRequeridasDelPlan(planSeleccionado);
 
-  // Solo las profesoras que pueden dar el plan elegido: las demás dejarían trabado el paso 3.
+  // Solo las profesoras que pueden dar el plan elegido en una misma actividad: las demás dejarían trabado el paso 3.
   const profesorasCompatibles = useMemo(
     () => profesorasDelPlan(profesoras, horarios, planSeleccionado),
     [profesoras, horarios, planSeleccionado],
@@ -141,12 +140,21 @@ export function usePreinscripcion({
     [horarios, planSeleccionado, idProfesora],
   );
 
-  // Manejo de horarios seleccionados (toggle)
+  // Manejo de horarios seleccionados (toggle) restringido a una única actividad
   const toggleHorario = useCallback(
     (idHorario: number) => {
+      const horarioClickeado = horarios.find((h) => h.id_horario === idHorario);
+      if (!horarioClickeado) return;
+
       setIdsHorarios((actuales) => {
         if (actuales.includes(idHorario)) {
           return actuales.filter((id) => id !== idHorario);
+        }
+        // Validar que no se mezclen actividades
+        const primerHorario = horarios.find((h) => actuales.includes(h.id_horario));
+        if (primerHorario && primerHorario.id_actividad !== horarioClickeado.id_actividad) {
+          toast.warning(`Todas las clases deben ser de la misma actividad (${primerHorario.actividad.nombre}).`);
+          return actuales;
         }
         if (actuales.length >= clasesRequeridas) {
           toast.warning(`Este plan incluye ${clasesRequeridas} clase(s) por semana.`);
@@ -155,7 +163,7 @@ export function usePreinscripcion({
         return [...actuales, idHorario];
       });
     },
-    [clasesRequeridas],
+    [horarios, clasesRequeridas],
   );
 
   // Validaciones para navegación
@@ -240,6 +248,11 @@ export function usePreinscripcion({
       toast.error(`Debes seleccionar exactamente ${clasesRequeridas} horario(s) para este plan.`);
       return false;
     }
+    const horariosElegidos = horarios.filter((h) => idsHorarios.includes(h.id_horario));
+    if (new Set(horariosElegidos.map((h) => h.id_actividad)).size > 1) {
+      toast.error("Todos los horarios deben pertenecer a la misma actividad.");
+      return false;
+    }
     if (actividadQuePideMedidas) {
       const resultado = medidasCorporalesSchema.safeParse(medidas);
       if (!resultado.success) {
@@ -250,7 +263,7 @@ export function usePreinscripcion({
       }
     }
     return true;
-  }, [idsHorarios.length, clasesRequeridas, actividadQuePideMedidas, medidas]);
+  }, [idsHorarios, clasesRequeridas, horarios, actividadQuePideMedidas, medidas]);
 
   const avanzarPaso = useCallback(() => {
     if (paso === 1) {
@@ -273,7 +286,6 @@ export function usePreinscripcion({
     setIdPlan(null);
     setIdProfesora(null);
     setIdsHorarios([]);
-    setSinCargo(false);
     setObservacionesInscripcion("");
     setFechaInicio(fechaActualArgentina());
     setMedidas(MEDIDAS_VACIAS);
@@ -331,7 +343,7 @@ export function usePreinscripcion({
         id_plan: idPlan,
         id_profesora: idProfesora,
         ids_horarios: idsHorarios,
-        sin_cargo: sinCargo,
+        sin_cargo: false,
         fecha_inicio: fechaInicio,
         observaciones: observacionesInscripcion.trim() || null,
         // Ya validadas en el paso 3. Solo viajan si alguna actividad las pide.
@@ -358,7 +370,6 @@ export function usePreinscripcion({
     clasesRequeridas,
     datosAlumno,
     menorDeEdad,
-    sinCargo,
     fechaInicio,
     actividadQuePideMedidas,
     medidas,
@@ -392,8 +403,6 @@ export function usePreinscripcion({
     toggleHorario,
     clasesRequeridas,
     horariosDisponibles,
-    sinCargo,
-    setSinCargo,
     fechaInicio,
     setFechaInicio,
     observacionesInscripcion,

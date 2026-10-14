@@ -61,10 +61,9 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
-// MENUS.md: secciones por tema, para que lo relacionado quede junto (antes eran 11 ítems sueltos).
-const SECCION_ALUMNOS = "Alumnos y asistencia";
-const SECCION_CLASES = "Clases y planes";
-const SECCION_COBROS = "Cobros y honorarios";
+// MENUS.md: secciones por tema, para que lo relacionado quede junto.
+const SECCION_CONTROL_ALUMNOS = "Control Alumnos";
+const SECCION_CLASES = "Gestión";
 const SECCION_ADMINISTRACION = "Administración";
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
@@ -74,7 +73,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   {
     etiqueta: "Alumnos",
     icono: Users,
-    seccion: SECCION_ALUMNOS,
+    seccion: SECCION_CONTROL_ALUMNOS,
     to: "/app/alumnos",
     descripcion: "Listado, fichas y pre-inscripciones de los alumnos del centro.",
     hijos: [
@@ -96,18 +95,13 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     ],
   },
   // US-20 a US-22: asistencia de los alumnos a las clases.
-  { etiqueta: "Asistencia", icono: ClipboardCheck, seccion: SECCION_ALUMNOS, to: "/app/asistencia" },
-  // US-03: disciplinas y cupos.
-  { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
-  // US-04: cronograma semanal con profesoras asignadas.
-  { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
-  { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
+  { etiqueta: "Asistencia", icono: ClipboardCheck, seccion: SECCION_CONTROL_ALUMNOS, to: "/app/asistencia" },
   // Glosario: nunca "pago" en la UI. Cobro = efectivo de profesora, transferencia = aviso del alumno.
   // MENUS.md: agrupa US-15 a US-19; por ahora solo está la revisión de transferencias.
   {
     etiqueta: "Cobros y Cuotas",
     icono: Banknote,
-    seccion: SECCION_COBROS,
+    seccion: SECCION_CONTROL_ALUMNOS,
     to: "/app/pagos",
     descripcion: "Transferencias, cobros en efectivo y cuotas de los alumnos.",
     hijos: [
@@ -127,8 +121,13 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
       },
     ],
   },
+  // US-03: disciplinas y cupos.
+  { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
+  // US-04: cronograma semanal con profesoras asignadas.
+  { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
+  { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
   // US-23 y US-24: lo que se les paga a las profesoras.
-  { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_COBROS, to: "/app/honorarios" },
+  { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_ADMINISTRACION, to: "/app/honorarios" },
   { etiqueta: "Reportes", icono: BarChart3, seccion: SECCION_ADMINISTRACION, to: "/app/reportes" },
   { etiqueta: "Notificaciones", icono: Bell, seccion: SECCION_ADMINISTRACION, to: "/app/notificaciones" },
   { etiqueta: "Configuración", icono: Settings, seccion: SECCION_ADMINISTRACION, to: "/app/seguridad/permisos" },

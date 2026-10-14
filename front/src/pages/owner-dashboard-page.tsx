@@ -1,5 +1,17 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, Settings, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Banknote,
+  CalendarDays,
+  ClipboardCheck,
+  Dumbbell,
+  Settings,
+  ShieldCheck,
+  Tag,
+  UserCheck,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,14 +28,56 @@ const ETIQUETAS_ROL: Record<RoleCode, string> = {
 const ACCESOS = [
   {
     to: "/app/actividades",
-    titulo: "Actividades y Horarios",
-    descripcion: "Ver clases, horarios y cupos del centro.",
+    titulo: "Actividades",
+    descripcion: "Disciplinas, modalidades y cupos del centro.",
+    icono: Dumbbell,
+  },
+  {
+    to: "/app/horarios",
+    titulo: "Horarios",
+    descripcion: "Cronograma semanal de clases con profesoras.",
     icono: CalendarDays,
   },
   {
+    to: "/app/alumnos/listado",
+    titulo: "Alumnos",
+    descripcion: "Listado completo de alumnos y fichas personales.",
+    icono: Users,
+  },
+  {
+    to: "/app/alumnos/pendientes",
+    titulo: "Pendientes de alta",
+    descripcion: "Confirmar el alta de quienes abonan su primera cuota.",
+    icono: UserCheck,
+  },
+  {
+    to: "/app/pagos/cuotas",
+    titulo: "Estado de cuotas",
+    descripcion: "Supervisar vencimientos de cuotas y registrar cobros.",
+    icono: Banknote,
+  },
+  {
+    to: "/app/pagos/transferencias",
+    titulo: "Transferencias pendientes",
+    descripcion: "Verificar en el extracto y conciliar transferencias.",
+    icono: ArrowLeftRight,
+  },
+  {
+    to: "/app/asistencia",
+    titulo: "Asistencia",
+    descripcion: "Control diario de asistencia de alumnos a clases.",
+    icono: ClipboardCheck,
+  },
+  {
+    to: "/app/planes",
+    titulo: "Planes y Precios",
+    descripcion: "Configuración de planes, valores y promociones.",
+    icono: Tag,
+  },
+  {
     to: "/app/seguridad/permisos",
-    titulo: "Definición de Permisos por Rol",
-    descripcion: "Consultar y editar la matriz de permisos.",
+    titulo: "Definición de Permisos",
+    descripcion: "Consultar y editar la matriz de permisos por rol.",
     icono: Settings,
   },
 ];
@@ -96,7 +150,7 @@ export function OwnerDashboardPage() {
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Accesos directos
           </h2>
-          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ACCESOS.map(({ to, titulo, descripcion, icono: Icono }) => (
               <Link
                 key={to}
@@ -109,7 +163,7 @@ export function OwnerDashboardPage() {
                 >
                   <Icono className="h-5 w-5" />
                 </span>
-                <span>
+                <span className="min-w-0">
                   <span className="block text-base font-bold text-slate-900 dark:text-white">{titulo}</span>
                   <span className="block text-sm text-muted-foreground">{descripcion}</span>
                 </span>

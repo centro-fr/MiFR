@@ -62,7 +62,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 
 | # | Ítem | Ícono | Pantalla que abre |
 | --- | ------ | ------- | ------------------- |
-| 1 | **Hoy** | reloj/calendario | Clases del día (US-20) |
+| 1 | **Hoy** | reloj/calendario | Clases del día (US-20 y US-21) |
 | 2 | **Mis clases** | libro/lista | Historial de clases y asistencias |
 | 3 | **Alumnos** | usuarios | Alumnos a su cargo (US-10) |
 | 4 | **Cobros** | dinero | Cobro de la cuota de sus alumnos, en efectivo o por transferencia (US-15, US-16) |
@@ -105,14 +105,14 @@ Los ítems se agrupan por tema: cada sección tiene un **título** y una **líne
 | Sección | Ítem | Ícono | Pantalla que abre |
 | ------ | ------ | ------- | ------------------- |
 | — | **Dashboard** | home | Resumen general (KPIs, alertas) |
-| **Alumnos y asistencia** | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
-| | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
-| **Clases y planes** | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
+| **Control Alumnos** | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
+| | **Asistencia** | check | Asistencia, inactivos, historial (US-22) |
+| | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
+| **Gestión** | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
 | | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
 | | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
-| **Cobros y honorarios** | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
-| | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
-| **Administración** | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
+| **Administración** | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
+| | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
 | | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
 | | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
 | **Otros roles** | **Profesora** | pizarra | Solo si además dicta clases (ver [Roles múltiples](#-roles-múltiples)) |

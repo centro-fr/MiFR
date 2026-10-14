@@ -190,9 +190,18 @@ function useResolucion(alResolver: () => void) {
   const confirmarRechazo = (motivo: string) => {
     if (!modal) return;
     const { id, alumno } = modal.transferencia;
+    const esPrimeraCuota = queryClient.getQueryData<AlumnoDetalle>(fichaAlumnoQueryKey(alumno.id))?.inscripcion?.estado === "PREINSCRIPTA";
     rechazar.mutate(
       { id, motivo },
-      { onSuccess: () => terminar("Transferencia rechazada", `${alumno.nombre} ${alumno.apellido} va a ver el motivo en sus transferencias.`) },
+      {
+        onSuccess: () =>
+          terminar(
+            "Transferencia rechazada",
+            esPrimeraCuota
+              ? `${alumno.nombre} ${alumno.apellido} vuelve a quedar pendiente de cobro en Pendientes de alta.`
+              : `${alumno.nombre} ${alumno.apellido} va a ver el motivo en sus transferencias.`,
+          ),
+      },
     );
   };
 

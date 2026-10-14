@@ -10,8 +10,12 @@ const ESTADOS: Record<EstadoVisibleClase, { etiqueta: string; clase: string }> =
     etiqueta: "En curso",
     clase: "border-pink-200 bg-pink-50 text-primary-dark dark:border-primary/40 dark:bg-primary/15 dark:text-pink-200",
   },
+  PROGRAMADA: {
+    etiqueta: "Programada",
+    clase: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300",
+  },
   ABIERTA: {
-    etiqueta: "Abierta",
+    etiqueta: "En curso",
     clase: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
   },
   CERRADA: {

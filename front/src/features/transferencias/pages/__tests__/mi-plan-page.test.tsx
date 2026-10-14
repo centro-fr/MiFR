@@ -113,15 +113,12 @@ describe("MiPlanPage (US-16)", () => {
     expect(screen.getAllByText("Verificada").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("abre el modal para informar transferencia al hacer clic en el botón principal", () => {
+  it("muestra la indicación para avisar a la propietaria o profesora tras transferir", () => {
     renderMiPlanPage();
 
-    const botonInformar = screen.getByRole("button", { name: /\+ Informar transferencia/i });
-    fireEvent.click(botonInformar);
-
-    expect(screen.getByRole("heading", { name: "Informar transferencia" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Monto transferido/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Fecha y hora de la operación/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/avisale a la propietaria o a tu profesora/i),
+    ).toBeInTheDocument();
   });
 
   it("muestra la alerta destacada cuando hay una transferencia en estado PENDIENTE", () => {

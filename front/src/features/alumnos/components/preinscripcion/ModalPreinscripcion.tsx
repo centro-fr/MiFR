@@ -87,8 +87,6 @@ export function ModalPreinscripcion({
     toggleHorario,
     clasesRequeridas,
     horariosDisponibles,
-    sinCargo,
-    setSinCargo,
     fechaInicio,
     setFechaInicio,
     observacionesInscripcion,
@@ -162,8 +160,6 @@ export function ModalPreinscripcion({
               idProfesoraSeleccionada={idProfesora}
               onSeleccionarProfesora={(id) => setIdProfesora(id)}
               esSoloProfesora={esSoloProfesora}
-              sinCargo={sinCargo}
-              onToggleSinCargo={setSinCargo}
               fechaInicio={fechaInicio}
               onChangeFechaInicio={setFechaInicio}
             />
@@ -191,7 +187,6 @@ export function ModalPreinscripcion({
               plan={planSeleccionado}
               profesora={profesoraSeleccionada}
               horariosSeleccionados={horariosSeleccionadosCompletos}
-              sinCargo={sinCargo}
               fechaInicio={fechaInicio}
               medidas={actividadQuePideMedidas ? medidas : null}
               observacionesInscripcion={observacionesInscripcion}
@@ -238,8 +233,7 @@ export function ModalPreinscripcion({
             <BotonesDeConfirmacion
               enviando={enviando}
               cobroPedido={cobroPedido}
-              // Sin cargo no hay primera cuota que cobrar.
-              ofrecerCobro={puedeCobrarAhora && !sinCargo}
+              ofrecerCobro={puedeCobrarAhora}
               onConfirmar={(cobrarAhora) => {
                 setCobroPedido(cobrarAhora);
                 void confirmarPreinscripcion({ cobrarAhora });

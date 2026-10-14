@@ -25,12 +25,8 @@ import {
   type EtiquetasFormaDeCobro,
 } from "@/features/cobros/components/campos-cobro";
 import { formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
-
-const ETIQUETA_FORMA: EtiquetasFormaDeCobro = {
-  EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
-  TRANSFERENCIA: { titulo: "Transferencia", detalle: "Ya la viste acreditada en tu cuenta." },
-};
 
 type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 
@@ -130,11 +126,23 @@ interface Props {
 // US-07: el alta definitiva es la consecuencia de registrar el primer pago. El back la hace
 // en la misma transacción del cobro y no deja activar a nadie sin un pago confirmado.
 export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onClose, onConfirm }: Props) {
+  const { hasRole } = usePermissions();
+  const esPropietaria = hasRole("PROPIETARIA");
   const [valores, setValores] = useState(() => valoresInicialesPrimerPago(pendiente.precio, formas[0]));
   const [errores, setErrores] = useState<Errores>({});
   const backInformoMontoDistinto = esMontoDistinto(error);
   const contexto = { precio: pendiente.precio, backInformoMontoDistinto };
   const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
+
+  const etiquetasForma: EtiquetasFormaDeCobro = {
+    EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
+    TRANSFERENCIA: {
+      titulo: "Transferencia",
+      detalle: esPropietaria ? "Ya la viste acreditada en tu cuenta." : "Queda pendiente de confirmación por la propietaria.",
+    },
+  };
+
+  const esTransferenciaProfesora = valores.formaPago === "TRANSFERENCIA" && !esPropietaria;
 
   const cambiar = (cambios: Partial<PrimerPagoFormValues>) => {
     setValores((actuales) => ({ ...actuales, ...cambios }));
@@ -177,7 +185,9 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </span>
             <DialogTitle className="text-base font-extrabold text-dark dark:text-white">Confirmar alta de {nombre}</DialogTitle>
             <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió.
+              {esTransferenciaProfesora
+                ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
+                : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
             </DialogDescription>
           </div>
 
@@ -188,7 +198,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             valor={valores.formaPago}
             onChange={(formaPago) => cambiar({ formaPago })}
             leyenda="¿Cómo abonó la primera cuota?"
-            etiquetas={ETIQUETA_FORMA}
+            etiquetas={etiquetasForma}
           />
 
           <Campo id="monto-primer-pago" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>
@@ -222,7 +232,12 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </Alert>
           )}
 
-          <BotonesDeCobro onCancelar={onClose} enviando={confirmando} texto="Registrar y dar de alta" textoEnviando="Registrando..." />
+          <BotonesDeCobro
+            onCancelar={onClose}
+            enviando={confirmando}
+            texto={esTransferenciaProfesora ? "Informar transferencia" : "Registrar y dar de alta"}
+            textoEnviando={esTransferenciaProfesora ? "Informando..." : "Registrando..."}
+          />
         </form>
       </DialogContent>
     </Dialog>

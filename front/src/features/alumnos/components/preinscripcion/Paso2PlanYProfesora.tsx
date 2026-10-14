@@ -1,10 +1,9 @@
-import { Check, Dumbbell, Sparkles, User, Calendar } from "lucide-react";
+import { Check, Dumbbell, User, Calendar } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -25,8 +24,6 @@ interface Paso2PlanYProfesoraProps {
   idProfesoraSeleccionada: number | null;
   onSeleccionarProfesora: (idProfesora: number) => void;
   esSoloProfesora: boolean;
-  sinCargo: boolean;
-  onToggleSinCargo: (sinCargo: boolean) => void;
   fechaInicio: string;
   onChangeFechaInicio: (fecha: string) => void;
 }
@@ -40,8 +37,6 @@ export function Paso2PlanYProfesora({
   idProfesoraSeleccionada,
   onSeleccionarProfesora,
   esSoloProfesora,
-  sinCargo,
-  onToggleSinCargo,
   fechaInicio,
   onChangeFechaInicio,
 }: Paso2PlanYProfesoraProps) {
@@ -203,24 +198,6 @@ export function Paso2PlanYProfesora({
               onChange={onChangeFechaInicio}
             />
           </div>
-        </div>
-
-        {/* Sin cargo toggle */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/40">
-          <div className="space-y-0.5">
-            <Label htmlFor="sin-cargo-toggle" className="text-xs font-semibold cursor-pointer flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-500" />
-              Inscripción sin cargo / Becada
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Exime la generación de cuota para el primer período.
-            </p>
-          </div>
-          <Switch
-            id="sin-cargo-toggle"
-            checked={sinCargo}
-            onCheckedChange={onToggleSinCargo}
-          />
         </div>
       </div>
     </div>

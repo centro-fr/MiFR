@@ -5,6 +5,7 @@ import { listarPreInscripcionesPendientes } from "@/features/alumnos/api/alta-de
 import { ModalConfirmarAlta } from "@/features/alumnos/components/alta-definitiva/modal-confirmar-alta";
 import { PENDIENTES_DE_ALTA_QUERY_KEY, useConfirmarAltaDefinitiva } from "@/features/alumnos/hooks/use-alta-definitiva";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 
 interface CobroInmediatoProps {
   /** La pre-inscripción recién creada con "Confirmar y cobrar ahora". */
@@ -18,6 +19,8 @@ interface CobroInmediatoProps {
  * datos que Pendientes de alta. Si se cierra sin cobrar, la pre-inscripción queda pendiente ahí.
  */
 export function CobroInmediato({ idInscripcion, onTerminar }: CobroInmediatoProps) {
+  const { hasRole } = usePermissions();
+  const esPropietaria = hasRole("PROPIETARIA");
   const formas = useFormasDePrimerPago();
   const confirmarAlta = useConfirmarAltaDefinitiva();
   // La lista en caché es de antes de pre-inscribir: se vuelve a pedir y se espera a la nueva.
@@ -49,7 +52,11 @@ export function CobroInmediato({ idInscripcion, onTerminar }: CobroInmediatoProp
       onConfirm={(pago) =>
         confirmarAlta.mutate(pago, {
           onSuccess: () => {
-            toast.success(`${pendiente.nombre} ${pendiente.apellido} quedó activo`);
+            if (pago.formaPago === "TRANSFERENCIA" && !esPropietaria) {
+              toast.success("Transferencia informada. Quedó pendiente de confirmación por la propietaria.");
+            } else {
+              toast.success(`${pendiente.nombre} ${pendiente.apellido} quedó activo`);
+            }
             onTerminar();
           },
         })

@@ -7,6 +7,8 @@ export function useFormasDePrimerPago(): FormaPrimerPago[] {
   const { hasRole, hasPermission } = usePermissions();
   const formas: FormaPrimerPago[] = [];
   if (hasPermission("PAGOS_REGISTRAR")) formas.push("EFECTIVO");
-  if (hasRole("PROPIETARIA") && hasPermission("PAGOS_CONFIRMAR")) formas.push("TRANSFERENCIA");
+  if ((hasRole("PROPIETARIA") && hasPermission("PAGOS_CONFIRMAR")) || hasRole("PROFESORA")) {
+    formas.push("TRANSFERENCIA");
+  }
   return formas;
 }

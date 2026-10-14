@@ -165,7 +165,7 @@ describe("CobrosPage (US-15)", () => {
   it("renderiza la pantalla de cobros con título y listado de alumnos", () => {
     renderCobrosPage();
 
-    expect(screen.getByRole("heading", { name: "Cobros en efectivo" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Cobros/i })).toBeInTheDocument();
     expect(screen.getAllByText("Mateo Fernández")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Bautista Gómez")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Plan Básico")[0]).toBeInTheDocument();

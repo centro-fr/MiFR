@@ -51,7 +51,7 @@ const ETIQUETAS_ROL: Record<RoleCode, string> = {
 
 /** Ítem activo en rosa de marca; el resto de estados (hover, foco) los resuelve el Sidebar. */
 const CLASES_ITEM =
-  "h-11 pointer-fine:h-9 [&>svg]:size-5 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground";
+  "h-11 pointer-fine:h-9 [&>svg]:size-5 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden";
 
 function leerSidebarAbierto(): boolean {
   try {
@@ -292,12 +292,12 @@ function SeccionMenu({ seccion, contraido, isMobile, alNavegar }: PropsSeccion) 
   const idTitulo = useId();
   return (
     <SidebarGroup className="py-1">
-      {seccion.titulo && (
+      {seccion.titulo && !contraido && (
         <SidebarGroupLabel id={idTitulo} className="text-xs font-bold tracking-wide uppercase">
           {seccion.titulo}
         </SidebarGroupLabel>
       )}
-      <SidebarMenu aria-labelledby={seccion.titulo ? idTitulo : undefined}>
+      <SidebarMenu aria-labelledby={seccion.titulo && !contraido ? idTitulo : undefined}>
         {seccion.items.map((item, indice) => {
           const entrada = isMobile ? entradaEscalonada(seccion.desde + indice) : undefined;
           if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} entrada={entrada} />;
@@ -322,7 +322,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
       {agruparPorSeccion(items).map((seccion, indice) => (
         <Fragment key={seccion.titulo ?? "sin-seccion"}>
           {/* La línea separa temas; contraído, el título se oculta y la línea es lo que los distingue. */}
-          {indice > 0 && <SidebarSeparator />}
+          {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none" />}
           <SeccionMenu seccion={seccion} contraido={contraido} isMobile={isMobile} alNavegar={alNavegar} />
         </Fragment>
       ))}
@@ -346,7 +346,10 @@ function BotonColapsarMenu() {
           aria-expanded={!contraido}
           tooltip={`${etiqueta} (Ctrl+B)`}
           aria-label={etiqueta}
-          className={cn(CLASES_ITEM, "w-fit text-sidebar-foreground/70 hover:text-sidebar-foreground")}
+          className={cn(
+            CLASES_ITEM,
+            "w-fit text-sidebar-foreground/70 hover:text-sidebar-foreground group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center!",
+          )}
         >
           <Icono aria-hidden="true" />
         </SidebarMenuButton>
@@ -369,10 +372,10 @@ function BloqueUsuario() {
   };
 
   return (
-    <SidebarFooter className="border-t border-sidebar-border">
+    <SidebarFooter className="border-t border-sidebar-border group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center">
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2.5 px-0.5 py-1">
+          <div className="flex items-center gap-2.5 px-0.5 py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sm font-bold">
               {iniciales}
             </div>
@@ -401,8 +404,8 @@ function BloqueUsuario() {
 function MenuLateral({ items }: { items: ItemConEstado[] }) {
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5">
+      <SidebarHeader className="h-14 flex flex-row items-center border-b border-sidebar-border px-3.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
+        <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
           <LogoMarca />
           <span className="truncate text-sm font-extrabold group-data-[collapsible=icon]:hidden">MiFR Centro</span>
         </div>
@@ -410,7 +413,7 @@ function MenuLateral({ items }: { items: ItemConEstado[] }) {
       <SidebarContent>
         <NavegacionPrincipal items={items} />
       </SidebarContent>
-      <SidebarGroup className="py-0">
+      <SidebarGroup className="py-0 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:py-0">
         <BotonColapsarMenu />
       </SidebarGroup>
       <BloqueUsuario />

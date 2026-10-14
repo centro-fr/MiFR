@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, CircleAlert, Loader2, LockKeyhole, Users } from "lucide-react";
+import { ArrowLeft, Check, CircleAlert, Clock, Loader2, LockKeyhole, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -20,7 +20,14 @@ import type {
   ClaseApi,
   InscriptoConAsistenciaApi,
 } from "@/features/asistencia/schemas/asistencia";
-import { fechaLarga, fechaYHoraCorta, rangoHorario } from "@/features/asistencia/utils/formato-clase";
+import {
+  fechaLarga,
+  fechaYHoraCorta,
+  rangoHorario,
+  puedeTomarAsistencia,
+  estadoMomentoClase,
+} from "@/features/asistencia/utils/formato-clase";
+import { fechaActualArgentina } from "@/utils/fecha";
 
 interface Props {
   datos: AsistenciaDeClaseApi;
@@ -238,12 +245,15 @@ export function RegistroAsistencia({
 }: Props) {
   const { clase, inscriptos } = datos;
   const sinMarcar = inscriptos.filter((inscripto) => inscripto.asistencia === "sin_marcar").length;
-  const puedeEditar = clase.estado === "PROGRAMADA" || (clase.estado === "DICTADA" && propietaria);
+  const fechaHoy = fechaActualArgentina();
+  const esHoy = clase.fecha_clase.slice(0, 10) === fechaHoy;
+  const momento = estadoMomentoClase(clase);
+  const puedeEditar = puedeTomarAsistencia(clase, esHoy, propietaria);
   const cancelada = clase.estado === "CANCELADA";
   const hora = rangoHorario(clase);
 
   return (
-    <section className="mx-auto w-full max-w-7xl space-y-5">
+    <div className="space-y-6 min-w-0">
       <Link
         to={volver}
         className="inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
@@ -255,7 +265,7 @@ export function RegistroAsistencia({
       <header className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
               {clase.horario.actividad.nombre}
             </h1>
             <Badge variant="outline">{clase.horario.actividad.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"}</Badge>
@@ -288,6 +298,17 @@ export function RegistroAsistencia({
           <AlertDescription>
             Asistencia cerrada{clase.fecha_cierre_asist ? ` el ${fechaYHoraCorta(clase.fecha_cierre_asist)}` : ""}. Los inscriptos que seguían sin marcar quedaron registrados como ausentes.
             {propietaria && " Podés corregir marcas individuales; cada cambio queda registrado por el sistema."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!puedeEditar && !propietaria && !cancelada && clase.estado === "PROGRAMADA" && (
+        <Alert className="rounded-xl border-blue-200 bg-blue-50/70 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+          <Clock aria-hidden="true" className="size-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription>
+            {momento === "ANTES"
+              ? `La toma de asistencia se abrirá durante el horario de la clase (de ${hora}). La lista de inscriptos se encuentra en modo de solo lectura.`
+              : `El horario de la clase ha finalizado (de ${hora}). La lista de inscriptos se encuentra en modo de solo lectura.`}
           </AlertDescription>
         </Alert>
       )}
@@ -400,6 +421,6 @@ export function RegistroAsistencia({
           <ConfirmarCierre abiertos={sinMarcar} guardando={guardando} alConfirmar={alCerrar} />
         </footer>
       )}
-    </section>
+    </div>
   );
 }

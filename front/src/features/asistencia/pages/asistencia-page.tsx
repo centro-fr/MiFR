@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { ClasesDelDia } from "@/features/asistencia/components/clases-del-dia";
 import { RegistroAsistencia } from "@/features/asistencia/components/registro-asistencia";
@@ -50,6 +52,35 @@ function VistaAsistencia({ propietaria }: VistaProps) {
   const cerrar = useCerrarAsistencia();
   const profesoras = useNombresDeProfesoras(propietaria && id === undefined);
 
+  // Consulta de profesoras para asociar a la usuaria multi-rol con su id_profesora
+  const { data: listaProfesoras } = useQuery({
+    queryKey: PROFESORAS_QUERY_KEY,
+    queryFn: listarProfesoras,
+    staleTime: 5 * 60_000,
+    enabled: !propietaria && id === undefined,
+  });
+
+  const idProfesoraActual = useMemo(() => {
+    if (!user || !listaProfesoras || listaProfesoras.length === 0) return null;
+    const prof = listaProfesoras.find(
+      (p) =>
+        p.nombre.trim().toLowerCase() === user.nombre.trim().toLowerCase() &&
+        p.apellido.trim().toLowerCase() === user.apellido.trim().toLowerCase(),
+    );
+    return prof ? Number(prof.id) : null;
+  }, [user, listaProfesoras]);
+
+  const clasesFiltradas = useMemo(() => {
+    const todas = consultaClases.data ?? [];
+    if (propietaria) return todas;
+    // En el menú de profesora ("Hoy"), la usuaria (incluso si es Propietaria)
+    // solo debe visualizar sus propias clases asignadas para tomar asistencia.
+    if (idProfesoraActual !== null) {
+      return todas.filter((c) => c.id_prof_dictante === idProfesoraActual);
+    }
+    return todas;
+  }, [consultaClases.data, propietaria, idProfesoraActual]);
+
   const informarError = (error: unknown, mensaje: string) => {
     const detalle = mensajeDeErrorApi(error, mensaje);
     toast.error(detalle);
@@ -93,58 +124,65 @@ function VistaAsistencia({ propietaria }: VistaProps) {
 
   return (
     <OwnerLayout>
-      {id ? (
-        consultaAsistencia.isPending ? (
-          <div role="status" className="mx-auto flex min-h-64 w-full max-w-7xl items-center justify-center">
-            <span className="text-sm font-semibold text-muted-foreground">Cargando la lista de inscriptos…</span>
-          </div>
-        ) : consultaAsistencia.isError && !consultaAsistencia.data ? (
-          <section className="mx-auto flex w-full max-w-7xl flex-col items-start gap-4">
-            <p role="alert" className="text-sm font-semibold text-destructive">
-              {mensajeDeErrorApi(consultaAsistencia.error, "No se pudo cargar la asistencia.")}
-            </p>
-            <button
-              type="button"
-              onClick={() => void consultaAsistencia.refetch()}
-              className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
+      <div className="space-y-6 min-w-0">
+        {id ? (
+          consultaAsistencia.isPending ? (
+            <div
+              role="status"
+              className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
             >
-              Reintentar
-            </button>
-          </section>
-        ) : consultaAsistencia.data ? (
-          <RegistroAsistencia
-            datos={consultaAsistencia.data}
-            volver={volver}
-            propietaria={Boolean(user?.roles.includes("PROPIETARIA"))}
-            guardando={marcar.isPending || marcarTodos.isPending || cerrar.isPending}
+              <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
+              Cargando la lista de inscriptos…
+            </div>
+          ) : consultaAsistencia.isError && !consultaAsistencia.data ? (
+            <div className="flex flex-col items-start gap-4">
+              <p role="alert" className="text-sm font-semibold text-destructive">
+                {mensajeDeErrorApi(consultaAsistencia.error, "No se pudo cargar la asistencia.")}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void consultaAsistencia.refetch()}
+                className="min-h-[44px] rounded-xl px-4 text-sm font-bold"
+              >
+                Reintentar
+              </Button>
+            </div>
+          ) : consultaAsistencia.data ? (
+            <RegistroAsistencia
+              datos={consultaAsistencia.data}
+              volver={volver}
+              propietaria={Boolean(user?.roles.includes("PROPIETARIA"))}
+              guardando={marcar.isPending || marcarTodos.isPending || cerrar.isPending}
+              error={
+                consultaAsistencia.isError
+                  ? mensajeDeErrorApi(consultaAsistencia.error, "No se pudo actualizar la asistencia.")
+                  : null
+              }
+              alMarcar={marcarAlumno}
+              alMarcarTodos={marcarInscriptosPresentes}
+              alCerrar={cerrarVentana}
+              reintentar={() => void consultaAsistencia.refetch()}
+            />
+          ) : null
+        ) : (
+          <ClasesDelDia
+            clases={clasesFiltradas}
+            baseRuta={rutaBase}
+            fecha={fechaSeleccionada}
             error={
-              consultaAsistencia.isError
-                ? mensajeDeErrorApi(consultaAsistencia.error, "No se pudo actualizar la asistencia.")
+              consultaClases.isError
+                ? mensajeDeErrorApi(consultaClases.error, "No se pudieron cargar las clases.")
                 : null
             }
-            alMarcar={marcarAlumno}
-            alMarcarTodos={marcarInscriptosPresentes}
-            alCerrar={cerrarVentana}
-            reintentar={() => void consultaAsistencia.refetch()}
+            cargando={consultaClases.isPending}
+            propietaria={propietaria}
+            profesoras={profesoras}
+            onFechaChange={propietaria ? cambiarFecha : undefined}
+            onReintentar={() => void consultaClases.refetch()}
           />
-        ) : null
-      ) : (
-        <ClasesDelDia
-          clases={consultaClases.data ?? []}
-          baseRuta={rutaBase}
-          fecha={fechaSeleccionada}
-          error={
-            consultaClases.isError
-              ? mensajeDeErrorApi(consultaClases.error, "No se pudieron cargar las clases.")
-              : null
-          }
-          cargando={consultaClases.isPending}
-          propietaria={propietaria}
-          profesoras={profesoras}
-          onFechaChange={propietaria ? cambiarFecha : undefined}
-          onReintentar={() => void consultaClases.refetch()}
-        />
-      )}
+        )}
+      </div>
     </OwnerLayout>
   );
 }

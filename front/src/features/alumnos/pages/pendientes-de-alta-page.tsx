@@ -13,6 +13,7 @@ import { useConfirmarAltaDefinitiva, usePreInscripcionesPendientes } from "@/fea
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import type { CuerpoPrimerPago } from "@/features/alumnos/schemas/primer-pago";
 import { FILTROS_INICIALES, filtrarPendientes, planesDe } from "@/features/alumnos/utils/pendientes-de-alta";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { PreInscripcionPendiente } from "@/types/alta-definitiva";
 import { cn } from "@/utils/cn";
 
@@ -77,6 +78,8 @@ function ReglaDeNegocio() {
 }
 
 function useConfirmacion() {
+  const { hasRole } = usePermissions();
+  const esPropietaria = hasRole("PROPIETARIA");
   const confirmarAlta = useConfirmarAltaDefinitiva();
   const [seleccionada, setSeleccionada] = useState<PreInscripcionPendiente | null>(null);
 
@@ -91,7 +94,11 @@ function useConfirmacion() {
     confirmarAlta.mutate(pago, {
       onSuccess: () => {
         setSeleccionada(null);
-        toast.success(`${nombre} ${apellido} quedó activo`);
+        if (pago.formaPago === "TRANSFERENCIA" && !esPropietaria) {
+          toast.success("Transferencia informada. Quedó pendiente de confirmación por la propietaria.");
+        } else {
+          toast.success(`${nombre} ${apellido} quedó activo`);
+        }
       },
     });
   };

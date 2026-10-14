@@ -15,7 +15,6 @@ interface Paso4ResumenConfirmacionProps {
   plan: PlanApiRespuesta | null;
   profesora: ProfesoraDatos | null;
   horariosSeleccionados: HorarioApi[];
-  sinCargo: boolean;
   fechaInicio: string;
   /** Solo si alguna actividad elegida las pide. */
   medidas: MedidasCorporalesForm | null;
@@ -40,7 +39,6 @@ export function Paso4ResumenConfirmacion({
   plan,
   profesora,
   horariosSeleccionados,
-  sinCargo,
   fechaInicio,
   medidas,
   observacionesInscripcion,
@@ -138,7 +136,7 @@ export function Paso4ResumenConfirmacion({
             <div className="flex items-center justify-between">
               <p className="font-semibold text-sm">{plan?.nombre}</p>
               <span className="font-bold text-sm text-primary">
-                {sinCargo ? "Sin cargo" : `$${plan?.precio_vigente?.precio?.toLocaleString("es-AR") || "—"}`}
+                ${plan?.precio_vigente?.precio?.toLocaleString("es-AR") || "—"}
               </span>
             </div>
             <p className="text-muted-foreground">
