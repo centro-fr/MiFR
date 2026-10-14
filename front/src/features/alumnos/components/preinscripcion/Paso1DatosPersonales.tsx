@@ -1,15 +1,37 @@
 import { ShieldAlert, HeartPulse, User } from "lucide-react";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { esMenorDeEdad, obtenerLimitesFechaNacimiento } from "../../utils/edad";
+import { cn } from "@/utils/cn";
 import type { AlumnoFormData } from "../../schemas/alumno.schema";
+
+const CLASE_CON_ERROR = "border-destructive focus-visible:ring-destructive";
+const MAXIMO_DIGITOS_DNI = 8;
+
+// Los "." de "tutor.email" no sirven en un id.
+const idDelError = (campo: string) => `error-${campo.replace(".", "-")}`;
+
+// Se escribe o se pega "38.123.456": se guardan solo los dígitos, que es lo que pide el back.
+const soloDigitosDeDni = (valor: string) => valor.replace(/\D/g, "").slice(0, MAXIMO_DIGITOS_DNI);
+
+function MensajeError({ campo, errores }: { campo: string; errores: Record<string, string> }) {
+  if (!errores[campo]) return null;
+  return (
+    <p id={idDelError(campo)} className="text-xs text-destructive">
+      {errores[campo]}
+    </p>
+  );
+}
 
 interface Paso1DatosPersonalesProps {
   datos: AlumnoFormData;
   onChange: (nuevosDatos: AlumnoFormData) => void;
   errores: Record<string, string>;
+  /** Al salir de un campo: avisa si quedó mal completado. */
+  onRevisarCampo: (campo: string) => void;
   edadCalculada: number | null;
   menorDeEdad: boolean;
 }
@@ -18,10 +40,20 @@ export function Paso1DatosPersonales({
   datos,
   onChange,
   errores,
+  onRevisarCampo,
   edadCalculada,
   menorDeEdad,
 }: Paso1DatosPersonalesProps) {
   const limitesFecha = obtenerLimitesFechaNacimiento();
+
+  // Lo que comparte cada campo validado: marca en rojo, error anunciado por el lector de pantalla
+  // y revisión al salir.
+  const propsDeCampo = (campo: string, className?: string) => ({
+    onBlur: () => onRevisarCampo(campo),
+    "aria-invalid": errores[campo] ? true : undefined,
+    "aria-describedby": errores[campo] ? idDelError(campo) : undefined,
+    className: cn(className, errores[campo] && CLASE_CON_ERROR),
+  });
 
   const actualizarCampo = <K extends keyof AlumnoFormData>(campo: K, valor: AlumnoFormData[K]) => {
     onChange({
@@ -71,9 +103,9 @@ export function Paso1DatosPersonales({
             placeholder="Nombre"
             value={datos.tutor?.nombre || ""}
             onChange={(e) => actualizarTutor("nombre", e.target.value)}
-            className={errores["tutor.nombre"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            {...propsDeCampo("tutor.nombre")}
           />
-          {errores["tutor.nombre"] && <p className="text-xs text-destructive">{errores["tutor.nombre"]}</p>}
+          <MensajeError campo="tutor.nombre" errores={errores} />
         </div>
 
         <div className="space-y-1.5">
@@ -85,9 +117,9 @@ export function Paso1DatosPersonales({
             placeholder="Apellido"
             value={datos.tutor?.apellido || ""}
             onChange={(e) => actualizarTutor("apellido", e.target.value)}
-            className={errores["tutor.apellido"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            {...propsDeCampo("tutor.apellido")}
           />
-          {errores["tutor.apellido"] && <p className="text-xs text-destructive">{errores["tutor.apellido"]}</p>}
+          <MensajeError campo="tutor.apellido" errores={errores} />
         </div>
 
         <div className="space-y-1.5">
@@ -100,9 +132,9 @@ export function Paso1DatosPersonales({
             placeholder="tutor@ejemplo.com"
             value={datos.tutor?.email || ""}
             onChange={(e) => actualizarTutor("email", e.target.value)}
-            className={errores["tutor.email"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            {...propsDeCampo("tutor.email")}
           />
-          {errores["tutor.email"] && <p className="text-xs text-destructive">{errores["tutor.email"]}</p>}
+          <MensajeError campo="tutor.email" errores={errores} />
         </div>
 
         <div className="space-y-1.5">
@@ -111,30 +143,29 @@ export function Paso1DatosPersonales({
           </Label>
           <Input
             id="tutor-telefono"
+            type="tel"
             placeholder="Ej: 3515556677"
             value={datos.tutor?.telefono || ""}
             onChange={(e) => actualizarTutor("telefono", e.target.value)}
-            className={errores["tutor.telefono"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            {...propsDeCampo("tutor.telefono")}
           />
-          {errores["tutor.telefono"] && <p className="text-xs text-destructive">{errores["tutor.telefono"]}</p>}
+          <MensajeError campo="tutor.telefono" errores={errores} />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="tutor-fecha-nac" className="text-xs font-medium">
             Fecha Nac. Tutor <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <CampoFecha
             id="tutor-fecha-nac"
-            type="date"
+            etiquetaCalendario="Abrir calendario para la fecha de nacimiento del tutor"
             min={limitesFecha.min}
             max={limitesFecha.max}
             value={datos.tutor?.fecha_nacimiento || ""}
-            onChange={(e) => actualizarTutor("fecha_nacimiento", e.target.value)}
-            className={errores["tutor.fecha_nacimiento"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            onChange={(valor) => actualizarTutor("fecha_nacimiento", valor)}
+            {...propsDeCampo("tutor.fecha_nacimiento")}
           />
-          {errores["tutor.fecha_nacimiento"] && (
-            <p className="text-xs text-destructive">{errores["tutor.fecha_nacimiento"]}</p>
-          )}
+          <MensajeError campo="tutor.fecha_nacimiento" errores={errores} />
         </div>
 
         <div className="space-y-1.5">
@@ -143,12 +174,13 @@ export function Paso1DatosPersonales({
           </Label>
           <Input
             id="tutor-dni"
-            placeholder="Opcional"
+            inputMode="numeric"
+            placeholder="Opcional, sin puntos"
             value={datos.tutor?.dni || ""}
-            onChange={(e) => actualizarTutor("dni", e.target.value)}
-            className={errores["tutor.dni"] ? "border-destructive focus-visible:ring-destructive" : ""}
+            onChange={(e) => actualizarTutor("dni", soloDigitosDeDni(e.target.value))}
+            {...propsDeCampo("tutor.dni")}
           />
-          {errores["tutor.dni"] && <p className="text-xs text-destructive">{errores["tutor.dni"]}</p>}
+          <MensajeError campo="tutor.dni" errores={errores} />
         </div>
       </div>
     </div>
@@ -156,9 +188,6 @@ export function Paso1DatosPersonales({
 
   return (
     <div className="space-y-6">
-      {/* Si es menor de edad, los datos del tutor salen PRIMEROS */}
-      {seccionTutor}
-
       {/* Datos básicos del Alumno */}
       <div>
         <div className="flex items-center gap-2 mb-3">
@@ -178,9 +207,9 @@ export function Paso1DatosPersonales({
               placeholder="Ej: Lucía"
               value={datos.nombre}
               onChange={(e) => actualizarCampo("nombre", e.target.value)}
-              className={errores.nombre ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("nombre")}
             />
-            {errores.nombre && <p className="text-xs text-destructive">{errores.nombre}</p>}
+            <MensajeError campo="nombre" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
@@ -192,23 +221,22 @@ export function Paso1DatosPersonales({
               placeholder="Ej: Gómez"
               value={datos.apellido}
               onChange={(e) => actualizarCampo("apellido", e.target.value)}
-              className={errores.apellido ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("apellido")}
             />
-            {errores.apellido && <p className="text-xs text-destructive">{errores.apellido}</p>}
+            <MensajeError campo="apellido" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="alumno-fecha-nac" className="text-xs font-medium">
               Fecha de Nacimiento <span className="text-destructive">*</span>
             </Label>
-            <Input
+            <CampoFecha
               id="alumno-fecha-nac"
-              type="date"
+              etiquetaCalendario="Abrir calendario para la fecha de nacimiento"
               min={limitesFecha.min}
               max={limitesFecha.max}
               value={datos.fecha_nacimiento}
-              onChange={(e) => {
-                const nuevaFecha = e.target.value;
+              onChange={(nuevaFecha) => {
                 const esMenor = esMenorDeEdad(nuevaFecha);
                 onChange({
                   ...datos,
@@ -216,9 +244,9 @@ export function Paso1DatosPersonales({
                   email: esMenor ? "" : datos.email,
                 });
               }}
-              className={errores.fecha_nacimiento ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("fecha_nacimiento")}
             />
-            {errores.fecha_nacimiento && <p className="text-xs text-destructive">{errores.fecha_nacimiento}</p>}
+            <MensajeError campo="fecha_nacimiento" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
@@ -232,15 +260,10 @@ export function Paso1DatosPersonales({
               placeholder={menorDeEdad ? "Bloqueado" : "lucia@example.com"}
               value={menorDeEdad ? "" : (datos.email || "")}
               onChange={(e) => actualizarCampo("email", e.target.value)}
-              className={
-                errores.email
-                  ? "border-destructive focus-visible:ring-destructive"
-                  : menorDeEdad
-                    ? "bg-muted/50 cursor-not-allowed opacity-75 text-muted-foreground"
-                    : ""
-              }
+              autoComplete="off"
+              {...propsDeCampo("email", menorDeEdad ? "bg-muted/50 cursor-not-allowed opacity-75 text-muted-foreground" : undefined)}
             />
-            {errores.email && <p className="text-xs text-destructive">{errores.email}</p>}
+            <MensajeError campo="email" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
@@ -249,12 +272,13 @@ export function Paso1DatosPersonales({
             </Label>
             <Input
               id="alumno-telefono"
+              type="tel"
               placeholder={menorDeEdad ? "Opcional" : "Ej: 3514123456"}
               value={datos.telefono || ""}
               onChange={(e) => actualizarCampo("telefono", e.target.value)}
-              className={errores.telefono ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("telefono")}
             />
-            {errores.telefono && <p className="text-xs text-destructive">{errores.telefono}</p>}
+            <MensajeError campo="telefono" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
@@ -263,12 +287,13 @@ export function Paso1DatosPersonales({
             </Label>
             <Input
               id="alumno-dni"
-              placeholder="..."
+              inputMode="numeric"
+              placeholder="Ej: 38123456 (sin puntos)"
               value={datos.dni || ""}
-              onChange={(e) => actualizarCampo("dni", e.target.value)}
-              className={errores.dni ? "border-destructive focus-visible:ring-destructive" : ""}
+              onChange={(e) => actualizarCampo("dni", soloDigitosDeDni(e.target.value))}
+              {...propsDeCampo("dni")}
             />
-            {errores.dni && <p className="text-xs text-destructive">{errores.dni}</p>}
+            <MensajeError campo="dni" errores={errores} />
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
@@ -280,14 +305,18 @@ export function Paso1DatosPersonales({
               placeholder="Calle, número, barrio o departamento (opcional)"
               value={datos.direccion || ""}
               onChange={(e) => actualizarCampo("direccion", e.target.value)}
-              className={errores.direccion ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("direccion")}
             />
-            {errores.direccion && <p className="text-xs text-destructive">{errores.direccion}</p>}
+            <MensajeError campo="direccion" errores={errores} />
           </div>
         </div>
       </div>
 
-      {/* 3. Apto Médico y Observaciones */}
+      {/* El tutor aparece recién al cargar una fecha de nacimiento de menor: debajo del alumno, que
+          es lo que lo hace necesario, y no arriba empujando el formulario que se está completando. */}
+      {seccionTutor}
+
+      {/* Apto Médico y Observaciones */}
       <div className="pt-2 border-t border-border/40 space-y-4">
         <div className="flex items-center gap-2 mb-1">
           <HeartPulse className="size-4 text-primary" />
@@ -316,14 +345,18 @@ export function Paso1DatosPersonales({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="fecha-apto" className="text-xs font-medium">
-                Fecha de Emisión del Apto
+                Fecha de Emisión del Apto <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <CampoFecha
                 id="fecha-apto"
-                type="date"
+                etiquetaCalendario="Abrir calendario para la fecha de emisión del apto médico"
+                min={datos.fecha_nacimiento || undefined}
+                max={limitesFecha.max}
                 value={datos.fecha_apto_medico || ""}
-                onChange={(e) => actualizarCampo("fecha_apto_medico", e.target.value)}
+                onChange={(valor) => actualizarCampo("fecha_apto_medico", valor)}
+                {...propsDeCampo("fecha_apto_medico")}
               />
+              <MensajeError campo="fecha_apto_medico" errores={errores} />
             </div>
           </div>
         )}
@@ -338,7 +371,9 @@ export function Paso1DatosPersonales({
               placeholder="Ej: Carlos Gómez (Hermano)"
               value={datos.cont_emerg_nombre || ""}
               onChange={(e) => actualizarCampo("cont_emerg_nombre", e.target.value)}
+              {...propsDeCampo("cont_emerg_nombre")}
             />
+            <MensajeError campo="cont_emerg_nombre" errores={errores} />
           </div>
 
           <div className="space-y-1.5">
@@ -347,14 +382,13 @@ export function Paso1DatosPersonales({
             </Label>
             <Input
               id="cont-emerg-telefono"
+              type="tel"
               placeholder="Ej: 3514789012"
               value={datos.cont_emerg_telefono || ""}
               onChange={(e) => actualizarCampo("cont_emerg_telefono", e.target.value)}
-              className={errores.cont_emerg_telefono ? "border-destructive focus-visible:ring-destructive" : ""}
+              {...propsDeCampo("cont_emerg_telefono")}
             />
-            {errores.cont_emerg_telefono && (
-              <p className="text-xs text-destructive">{errores.cont_emerg_telefono}</p>
-            )}
+            <MensajeError campo="cont_emerg_telefono" errores={errores} />
           </div>
         </div>
 
@@ -366,9 +400,12 @@ export function Paso1DatosPersonales({
             id="observaciones"
             rows={2}
             placeholder="Lesiones previas, patologías, recomendaciones de entrenamiento..."
+            maxLength={500}
             value={datos.observaciones || ""}
             onChange={(e) => actualizarCampo("observaciones", e.target.value)}
+            {...propsDeCampo("observaciones")}
           />
+          <MensajeError campo="observaciones" errores={errores} />
         </div>
       </div>
     </div>

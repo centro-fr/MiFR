@@ -1,4 +1,4 @@
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { Fragment, useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -17,6 +17,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
@@ -27,6 +28,7 @@ import {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -261,16 +263,43 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
   );
 }
 
-function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
-  const { state, isMobile, setOpenMobile } = useSidebar();
-  const contraido = state === "collapsed" && !isMobile;
-  const alNavegar = () => setOpenMobile(false);
+interface SeccionDelMenu {
+  titulo?: string;
+  items: ItemConEstado[];
+  /** Posición del primer ítem en todo el menú: la cascada del drawer sigue sin cortes entre secciones. */
+  desde: number;
+}
 
+// Agrupa los ítems seguidos que comparten sección; el orden lo define owner-navigation.ts.
+function agruparPorSeccion(items: ItemConEstado[]): SeccionDelMenu[] {
+  const secciones: SeccionDelMenu[] = [];
+  items.forEach((item, indice) => {
+    const ultima = secciones.at(-1);
+    if (ultima && ultima.titulo === item.seccion) ultima.items.push(item);
+    else secciones.push({ titulo: item.seccion, items: [item], desde: indice });
+  });
+  return secciones;
+}
+
+interface PropsSeccion {
+  seccion: SeccionDelMenu;
+  contraido: boolean;
+  isMobile: boolean;
+  alNavegar: () => void;
+}
+
+function SeccionMenu({ seccion, contraido, isMobile, alNavegar }: PropsSeccion) {
+  const idTitulo = useId();
   return (
-    <SidebarGroup>
-      <SidebarMenu aria-label="Menú principal">
-        {items.map((item, indice) => {
-          const entrada = isMobile ? entradaEscalonada(indice) : undefined;
+    <SidebarGroup className="py-1">
+      {seccion.titulo && (
+        <SidebarGroupLabel id={idTitulo} className="text-xs font-bold tracking-wide uppercase">
+          {seccion.titulo}
+        </SidebarGroupLabel>
+      )}
+      <SidebarMenu aria-labelledby={seccion.titulo ? idTitulo : undefined}>
+        {seccion.items.map((item, indice) => {
+          const entrada = isMobile ? entradaEscalonada(seccion.desde + indice) : undefined;
           if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} entrada={entrada} />;
           return contraido ? (
             <GrupoContraido key={item.etiqueta} item={item} />
@@ -280,6 +309,24 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
         })}
       </SidebarMenu>
     </SidebarGroup>
+  );
+}
+
+function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
+  const { state, isMobile, setOpenMobile } = useSidebar();
+  const contraido = state === "collapsed" && !isMobile;
+  const alNavegar = () => setOpenMobile(false);
+
+  return (
+    <nav aria-label="Menú principal" className="py-1">
+      {agruparPorSeccion(items).map((seccion, indice) => (
+        <Fragment key={seccion.titulo ?? "sin-seccion"}>
+          {/* La línea separa temas; contraído, el título se oculta y la línea es lo que los distingue. */}
+          {indice > 0 && <SidebarSeparator />}
+          <SeccionMenu seccion={seccion} contraido={contraido} isMobile={isMobile} alNavegar={alNavegar} />
+        </Fragment>
+      ))}
+    </nav>
   );
 }
 

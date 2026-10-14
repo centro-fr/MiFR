@@ -108,6 +108,7 @@ export const ACTIVIDADES_SEMILLA: ActividadApi[] = [
     modalidad: "PERSONALIZADA",
     cupo_maximo: 4,
     activo: true,
+    requiere_medidas: true,
   },
   {
     id_actividad: 6,

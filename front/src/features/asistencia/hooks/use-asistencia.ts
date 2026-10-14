@@ -7,20 +7,11 @@ import {
   marcarTodosPresentes,
   obtenerAsistenciaDeClase,
 } from "@/features/asistencia/api/asistencia-api";
+import { fechaActualArgentina } from "@/utils/fecha";
 
 export const ASISTENCIA_QUERY_KEY = ["asistencia-clase"] as const;
 export const CLASES_ASISTENCIA_QUERY_KEY = ["clases-asistencia"] as const;
 
-export function fechaActualArgentina(): string {
-  const partes = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Argentina/Buenos_Aires",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const parte = (tipo: "year" | "month" | "day") => partes.find((item) => item.type === tipo)?.value ?? "";
-  return `${parte("year")}-${parte("month")}-${parte("day")}`;
-}
 
 export function useClasesAsistencia(fecha?: string, habilitada = true) {
   const fechaConsulta = fecha ?? fechaActualArgentina();

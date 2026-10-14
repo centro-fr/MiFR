@@ -45,6 +45,11 @@ export interface SubItemMenu {
 export interface ItemMenu {
   etiqueta: string;
   icono: typeof LayoutDashboard;
+  /**
+   * Título de la sección del menú en la que va el ítem. Los ítems seguidos con la misma sección se
+   * muestran juntos bajo ese título; sin sección, van arriba de todo sin título (ej: Dashboard).
+   */
+  seccion?: string;
   /** En un grupo, su pantalla: muestra las sub-opciones como tarjetas (otra forma de llegar a ellas). */
   to?: string;
   activo?: boolean;
@@ -56,6 +61,12 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
+// MENUS.md: secciones por tema, para que lo relacionado quede junto (antes eran 11 ítems sueltos).
+const SECCION_ALUMNOS = "Alumnos y asistencia";
+const SECCION_CLASES = "Clases y planes";
+const SECCION_COBROS = "Cobros y honorarios";
+const SECCION_ADMINISTRACION = "Administración";
+
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
   // MENUS.md: Alumnos agrupa listado, ficha, pre-inscripciones y bajas. La ficha y la baja (US-08)
@@ -63,6 +74,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   {
     etiqueta: "Alumnos",
     icono: Users,
+    seccion: SECCION_ALUMNOS,
     to: "/app/alumnos",
     descripcion: "Listado, fichas y pre-inscripciones de los alumnos del centro.",
     hijos: [
@@ -83,16 +95,19 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
       },
     ],
   },
+  // US-20 a US-22: asistencia de los alumnos a las clases.
+  { etiqueta: "Asistencia", icono: ClipboardCheck, seccion: SECCION_ALUMNOS, to: "/app/asistencia" },
   // US-03: disciplinas y cupos.
-  { etiqueta: "Actividades", icono: Dumbbell, to: "/app/actividades" },
+  { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
   // US-04: cronograma semanal con profesoras asignadas.
-  { etiqueta: "Horarios", icono: CalendarDays, to: "/app/horarios" },
-  { etiqueta: "Planes y Precios", icono: Tag, to: "/app/planes" },
+  { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
+  { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
   // Glosario: nunca "pago" en la UI. Cobro = efectivo de profesora, transferencia = aviso del alumno.
   // MENUS.md: agrupa US-15 a US-19; por ahora solo está la revisión de transferencias.
   {
     etiqueta: "Cobros y Cuotas",
     icono: Banknote,
+    seccion: SECCION_COBROS,
     to: "/app/pagos",
     descripcion: "Transferencias, cobros en efectivo y cuotas de los alumnos.",
     hijos: [
@@ -112,11 +127,11 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
       },
     ],
   },
-  { etiqueta: "Asistencia", icono: ClipboardCheck, to: "/app/asistencia" },
-  { etiqueta: "Honorarios", icono: Receipt, to: "/app/honorarios" },
-  { etiqueta: "Notificaciones", icono: Bell, to: "/app/notificaciones" },
-  { etiqueta: "Reportes", icono: BarChart3, to: "/app/reportes" },
-  { etiqueta: "Configuración", icono: Settings, to: "/app/seguridad/permisos" },
+  // US-23 y US-24: lo que se les paga a las profesoras.
+  { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_COBROS, to: "/app/honorarios" },
+  { etiqueta: "Reportes", icono: BarChart3, seccion: SECCION_ADMINISTRACION, to: "/app/reportes" },
+  { etiqueta: "Notificaciones", icono: Bell, seccion: SECCION_ADMINISTRACION, to: "/app/notificaciones" },
+  { etiqueta: "Configuración", icono: Settings, seccion: SECCION_ADMINISTRACION, to: "/app/seguridad/permisos" },
 ];
 
 const PERFIL: ItemMenu = { etiqueta: "Perfil", icono: UserRound, to: "/app/perfil" };
@@ -179,6 +194,8 @@ const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to"
   TUTOR: { etiqueta: "Tutor", icono: GraduationCap, items: PANEL_ALUMNO },
 };
 
+const SECCION_OTROS_ROLES = "Otros roles";
+
 // Las pantallas propias de un rol plegadas en un solo grupo desplegable, como sub-opciones.
 function grupoDelRol(rol: RoleCode): ItemMenu {
   const { items, ...grupo } = GRUPO_DEL_ROL[rol];
@@ -186,7 +203,8 @@ function grupoDelRol(rol: RoleCode): ItemMenu {
     (item): SubItemMenu[] =>
       item.hijos ?? (item.to ? [{ etiqueta: item.etiqueta, to: item.to, icono: item.icono, descripcion: item.descripcion }] : []),
   );
-  return { ...grupo, hijos };
+  // Con su propio título al final: así se ve que no es parte del menú del rol principal.
+  return { ...grupo, seccion: SECCION_OTROS_ROLES, hijos };
 }
 
 /**

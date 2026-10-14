@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { fechaActualArgentina } from "@/features/asistencia/hooks/use-asistencia";
+import { fechaActualArgentina } from "@/utils/fecha";
 import type { ClaseDelDiaApi } from "@/features/asistencia/schemas/asistencia";
 
 interface Props {

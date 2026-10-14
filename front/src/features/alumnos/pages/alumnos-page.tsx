@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -22,6 +22,8 @@ import type { FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
+import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
+import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
@@ -129,6 +131,11 @@ function Filtro({
   );
 }
 
+// Solo se carga si alguien elige "Confirmar y cobrar ahora": el resto de las visitas no lo paga.
+const CobroInmediato = lazy(() =>
+  import("@/features/alumnos/components/alta-definitiva/cobro-inmediato").then((m) => ({ default: m.CobroInmediato })),
+);
+
 export function AlumnosPage() {
   const { hasRole } = usePermissions();
   const esProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
@@ -137,6 +144,10 @@ export function AlumnosPage() {
   const [filtros, setFiltros] = useState<FiltrosDeLaPantalla>(FILTROS_INICIALES);
   const [pagina, setPagina] = useState(0);
   const [modalPreinscripcionAbierto, setModalPreinscripcionAbierto] = useState(false);
+  const puedeCobrar = useFormasDePrimerPago().length > 0;
+  // Pre-inscripción recién creada con "Confirmar y cobrar ahora": se abre su registro del primer cobro.
+  const [idInscripcionACobrar, setIdInscripcionACobrar] = useState<number | null>(null);
+  const terminarCobro = useCallback(() => setIdInscripcionACobrar(null), []);
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
@@ -155,6 +166,11 @@ export function AlumnosPage() {
   const paginas = Math.max(1, Math.ceil((respuesta?.total ?? 0) / TAMANO_PAGINA));
   const rangoInicio = respuesta && respuesta.total > 0 ? respuesta.offset + 1 : 0;
   const rangoFin = Math.min((respuesta?.offset ?? 0) + TAMANO_PAGINA, respuesta?.total ?? 0);
+
+  function alPreinscribir({ idInscripcion, cobrarAhora }: ResultadoPreinscripcion) {
+    void consulta.refetch();
+    if (cobrarAhora) setIdInscripcionACobrar(idInscripcion);
+  }
 
   function cambiarFiltro(nombre: keyof FiltrosDeLaPantalla, valor: string | boolean) {
     setPagina(0);
@@ -506,8 +522,14 @@ export function AlumnosPage() {
           <ModalPreinscripcion
             open={modalPreinscripcionAbierto}
             onOpenChange={setModalPreinscripcionAbierto}
-            onExito={() => consulta.refetch()}
+            onExito={alPreinscribir}
+            puedeCobrarAhora={puedeCobrar}
           />
+        )}
+        {idInscripcionACobrar !== null && (
+          <Suspense fallback={null}>
+            <CobroInmediato idInscripcion={idInscripcionACobrar} onTerminar={terminarCobro} />
+          </Suspense>
         )}
       </div>
     </OwnerLayout>

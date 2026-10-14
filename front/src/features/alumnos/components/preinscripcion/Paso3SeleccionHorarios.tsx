@@ -69,7 +69,7 @@ export function Paso3SeleccionHorarios({
           <div>
             <p className="text-sm font-medium text-foreground">No hay horarios disponibles</p>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-              No se encontraron clases vigentes para la profesora o actividad seleccionada.
+              No se encontraron clases vigentes de la profesora para el plan elegido.
             </p>
           </div>
         </div>

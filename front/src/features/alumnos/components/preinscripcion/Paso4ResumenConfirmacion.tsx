@@ -6,6 +6,7 @@ import type { AlumnoFormData } from "../../schemas/alumno.schema";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
+import type { MedidasCorporalesForm } from "../../schemas/medidas-corporales";
 
 interface Paso4ResumenConfirmacionProps {
   datosAlumno: AlumnoFormData;
@@ -13,10 +14,11 @@ interface Paso4ResumenConfirmacionProps {
   edadCalculada: number | null;
   plan: PlanApiRespuesta | null;
   profesora: ProfesoraDatos | null;
-  actividad?: { id_actividad: number; nombre: string } | null;
   horariosSeleccionados: HorarioApi[];
   sinCargo: boolean;
   fechaInicio: string;
+  /** Solo si alguna actividad elegida las pide. */
+  medidas: MedidasCorporalesForm | null;
   observacionesInscripcion: string;
   onChangeObservacionesInscripcion: (val: string) => void;
 }
@@ -37,13 +39,15 @@ export function Paso4ResumenConfirmacion({
   edadCalculada,
   plan,
   profesora,
-  actividad,
   horariosSeleccionados,
   sinCargo,
   fechaInicio,
+  medidas,
   observacionesInscripcion,
   onChangeObservacionesInscripcion,
 }: Paso4ResumenConfirmacionProps) {
+  const actividades = [...new Set(horariosSeleccionados.map((h) => h.actividad.nombre))];
+
   return (
     <div className="space-y-6">
       {/* Aviso de Pre-inscripción PENDIENTE */}
@@ -140,14 +144,20 @@ export function Paso4ResumenConfirmacion({
             <p className="text-muted-foreground">
               <strong>Profesora:</strong> {profesora ? `${profesora.nombre} ${profesora.apellido}` : "—"}
             </p>
-            {actividad && (
+            {/* Un plan Multi-actividad puede combinar varias: salen de los horarios elegidos. */}
+            {actividades.length > 0 && (
               <p className="text-muted-foreground">
-                <strong>Actividad:</strong> {actividad.nombre}
+                <strong>{actividades.length === 1 ? "Actividad" : "Actividades"}:</strong> {actividades.join(", ")}
               </p>
             )}
             <p className="text-muted-foreground">
               <strong>Fecha inicio:</strong> {fechaInicio}
             </p>
+            {medidas && (
+              <p className="text-muted-foreground">
+                <strong>Peso y talla:</strong> {medidas.peso_kg} kg · {medidas.talla_cm} cm
+              </p>
+            )}
             <p className="text-muted-foreground">
               <strong>Modalidad:</strong> {plan?.tipo === "CLASE_SUELTA" ? "Pase individual" : `${plan?.clases_por_semana} clases semanales`}
             </p>

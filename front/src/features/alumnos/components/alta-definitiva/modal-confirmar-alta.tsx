@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Clock } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -38,22 +38,27 @@ interface CampoProps {
   error?: string;
   ayuda?: string;
   obligatorio?: boolean;
+  /** Atajo para completar el campo, a la derecha de la etiqueta (ej: "Usar ahora"). */
+  accion?: ReactNode;
   children: (describedBy: string | undefined) => ReactNode;
 }
 
-function Campo({ id, etiqueta, error, ayuda, obligatorio = false, children }: CampoProps) {
+function Campo({ id, etiqueta, error, ayuda, obligatorio = false, accion, children }: CampoProps) {
   const describedBy = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id} className="text-sm font-bold text-slate-800 dark:text-slate-200">
-        {etiqueta}
-        {obligatorio && (
-          <>
-            <span className="text-rose-600" aria-hidden="true"> *</span>
-            <span className="sr-only"> (obligatorio)</span>
-          </>
-        )}
-      </Label>
+      <div className="flex min-h-6 items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-sm font-bold text-slate-800 dark:text-slate-200">
+          {etiqueta}
+          {obligatorio && (
+            <>
+              <span className="text-rose-600" aria-hidden="true"> *</span>
+              <span className="sr-only"> (obligatorio)</span>
+            </>
+          )}
+        </Label>
+        {accion}
+      </div>
       {children(describedBy)}
       {ayuda && (
         <p id={`${id}-ayuda`} className="text-xs text-muted-foreground">
@@ -166,10 +171,36 @@ interface CamposTransferenciaProps {
   onChange: (cambios: Partial<PrimerPagoFormValues>) => void;
 }
 
+/**
+ * Completa la fecha y hora con el momento actual (hora argentina): lo más común es registrar la
+ * transferencia apenas se la ve acreditada, y cargar día, mes, año, hora y minutos a mano es lento.
+ */
+function BotonUsarAhora({ onUsar }: { onUsar: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onUsar}
+      // El after amplía el área táctil a 44 px sin agrandar la fila de la etiqueta.
+      className="relative inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold text-primary transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 hover:bg-pink-50 hover:text-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-pink-300 dark:hover:bg-primary/15 dark:hover:text-pink-200"
+    >
+      <Clock aria-hidden="true" className="size-3.5" />
+      Usar ahora
+      {/* Completa el nombre sin reemplazar el texto visible: quien usa control por voz dice "Usar ahora". */}
+      <span className="sr-only"> (fecha y hora actual)</span>
+    </button>
+  );
+}
+
 function CamposTransferencia({ valores, errores, onChange }: CamposTransferenciaProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Campo id="fecha-hora-transferencia" etiqueta="Fecha y hora" error={errores.fechaHoraTransferencia} obligatorio>
+      <Campo
+        id="fecha-hora-transferencia"
+        etiqueta="Fecha y hora"
+        error={errores.fechaHoraTransferencia}
+        obligatorio
+        accion={<BotonUsarAhora onUsar={() => onChange({ fechaHoraTransferencia: fechaHoraParaInput(new Date()) })} />}
+      >
         {(describedBy) => (
           <Input
             id="fecha-hora-transferencia"

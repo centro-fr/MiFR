@@ -98,21 +98,26 @@ Acceso a opciones secundarias (esquina superior derecha):
 
 ## 👑 Propietaria / Dueño
 
-### Desktop (sidebar, 11 ítems)
+### Desktop (sidebar, 11 ítems en secciones)
 
-| # | Ítem | Ícono | Pantalla que abre |
-| --- | ------ | ------- | ------------------- |
-| 1 | **Dashboard** | home | Resumen general (KPIs, alertas) |
-| 2 | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
-| 3 | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
-| 4 | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
-| 5 | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
-| 6 | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
-| 7 | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
-| 8 | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
-| 9 | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
-| 10 | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
-| 11 | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
+Los ítems se agrupan por tema: cada sección tiene un **título** y una **línea** la separa de la anterior. Dashboard va arriba, sin título. Con el menú contraído el título se oculta y queda la línea.
+
+| Sección | Ítem | Ícono | Pantalla que abre |
+| ------ | ------ | ------- | ------------------- |
+| — | **Dashboard** | home | Resumen general (KPIs, alertas) |
+| **Alumnos y asistencia** | **Alumnos** | usuarios | Listado, ficha, pre-inscripciones, bajas |
+| | **Asistencia** | check | Asistencia, inactivos, historial (US-20 a US-22) |
+| **Clases y planes** | **Actividades** | mancuerna | Disciplinas y cupos (US-03) → `/app/actividades` |
+| | **Horarios** | calendario | Cronograma semanal con profesoras (US-04) → `/app/horarios` |
+| | **Planes y Precios** | etiqueta | Planes, precios, promociones (US-11, US-12, US-13) |
+| **Cobros y honorarios** | **Cobros y Cuotas** | dinero | Transferencias, cobros, cuotas vencidas (US-15 a US-19) |
+| | **Honorarios** | informe | Informe mensual, suplencias (US-23, US-24) |
+| **Administración** | **Reportes** | gráfico | Informes y estadísticas (US-33 a US-37) |
+| | **Notificaciones** | campana | Configuración, resumen diario (US-25, US-26) |
+| | **Configuración** | engranaje | Permisos, roles, datos del centro (US-02) |
+| **Otros roles** | **Profesora** | pizarra | Solo si además dicta clases (ver [Roles múltiples](#-roles-múltiples)) |
+
+La sección sale del campo `seccion` de cada ítem en `owner-navigation.ts`: un ítem nuevo se suma a una sección existente con solo indicarla.
 
 ### Grupos con pantalla propia
 
@@ -156,19 +161,9 @@ Reglas:
 
 Mismos 11 ítems que desktop (con "Actividades" y "Horarios" como accesos directos independientes), en un drawer que se abre con el botón hamburguesa (esquina superior izquierda).
 
-### Orden de prioridad visual (más usados arriba)
+### Orden
 
-1. Dashboard
-2. Alumnos
-3. Cobros y Cuotas
-4. Actividades
-5. Horarios
-6. Planes y Precios
-7. Asistencia
-8. Reportes
-9. Honorarios
-10. Notificaciones
-11. Configuración
+El orden es el de la tabla de Desktop: primero lo del día a día (alumnos y su asistencia), después lo que se configura de vez en cuando (clases y planes), los cobros y honorarios y, al final, la administración.
 
 ---
 
@@ -233,7 +228,7 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 | **Profesora** | Hoy, Mis clases (alumnos y cobros ya están en el menú de la propietaria) |
 | **Alumno / Tutor** | Inicio, Mi plan, Progreso, Comunidad |
 
-Ejemplo: la propietaria que dicta clases ve sus 11 ítems y, al final, **Profesora** con Hoy y Mis clases.
+Ejemplo: la propietaria que dicta clases ve sus 11 ítems y, al final, bajo el título **Otros roles**, **Profesora** con Hoy y Mis clases.
 
 Cada rol entra solo a las pantallas de su menú: abrir por URL la de otro rol muestra "Sin acceso".
 
@@ -275,4 +270,4 @@ Cada rol entra solo a las pantallas de su menú: abrir por URL la de otro rol mu
 
 ---
 
-Última actualización: 9/10/2026
+Última actualización: 13/10/2026

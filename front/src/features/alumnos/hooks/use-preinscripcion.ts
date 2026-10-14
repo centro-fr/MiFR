@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { calcularEdad, esMenorDeEdad } from "../utils/edad";
+import { fechaActualArgentina } from "@/utils/fecha";
+import { MEDIDAS_VACIAS, medidasCorporalesSchema, type MedidasCorporalesForm } from "../schemas/medidas-corporales";
+import { clasesRequeridasDelPlan, horariosDelPlan, profesorasDelPlan } from "../utils/plan-y-profesora";
 import { alumnoFormSchema, type AlumnoFormData } from "../schemas/alumno.schema";
 import { crearAlumno } from "../api/alumnos-api";
 import { crearInscripcion } from "../api/inscripciones-api";
@@ -12,6 +15,21 @@ import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 
 export type PasoPreinscripcion = 1 | 2 | 3 | 4;
+
+function erroresDelPaso1(datos: AlumnoFormData): Record<string, string> {
+  const resultado = alumnoFormSchema.safeParse(datos);
+  if (resultado.success) return {};
+  const errores: Record<string, string> = {};
+  // El primer error de cada campo es el más básico ("obligatorio" antes que "formato inválido").
+  for (const issue of resultado.error.issues) errores[issue.path.join(".")] ??= issue.message;
+  return errores;
+}
+
+// Campo con notación de puntos ("tutor.email"), igual que las claves de los errores.
+function valorDelCampo(datos: AlumnoFormData, campo: string): string {
+  const valor = campo.split(".").reduce<unknown>((actual, clave) => (actual as Record<string, unknown> | undefined)?.[clave], datos);
+  return typeof valor === "string" ? valor.trim() : "";
+}
 
 export const VALOR_INICIAL_ALUMNO: AlumnoFormData = {
   nombre: "",
@@ -36,11 +54,17 @@ export const VALOR_INICIAL_ALUMNO: AlumnoFormData = {
   },
 };
 
+export interface ResultadoPreinscripcion {
+  idInscripcion: number;
+  /** Se confirmó con "cobrar ahora": sigue el registro del primer cobro (US-07). */
+  cobrarAhora: boolean;
+}
+
 interface UsePreinscripcionProps {
   planes: PlanApiRespuesta[];
   profesoras: ProfesoraDatos[];
   horarios: HorarioApi[];
-  onExito?: () => void;
+  onExito?: (resultado: ResultadoPreinscripcion) => void;
 }
 
 export function usePreinscripcion({
@@ -76,10 +100,11 @@ export function usePreinscripcion({
   // Una profesora solo pre-inscribe a su nombre (el back responde 403 si no): para ella no se elige.
   const [idProfesoraElegida, setIdProfesora] = useState<number | null>(null);
   const idProfesora = esSoloProfesora ? idProfesoraInicial : idProfesoraElegida;
-  const [idActividad, setIdActividad] = useState<number | null>(null);
   const [idsHorarios, setIdsHorarios] = useState<number[]>([]);
   const [sinCargo, setSinCargo] = useState<boolean>(false);
-  const [fechaInicio, setFechaInicio] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [fechaInicio, setFechaInicio] = useState<string>(fechaActualArgentina);
+  const [medidas, setMedidas] = useState<MedidasCorporalesForm>(MEDIDAS_VACIAS);
+  const [erroresMedidas, setErroresMedidas] = useState<Partial<Record<keyof MedidasCorporalesForm, string>>>({});
   const [observacionesInscripcion, setObservacionesInscripcion] = useState<string>("");
 
   // Estado de envío
@@ -92,64 +117,29 @@ export function usePreinscripcion({
   // Plan y Profesora seleccionados
   const planSeleccionado = useMemo(() => planes.find((p) => p.id_plan === idPlan) ?? null, [planes, idPlan]);
 
-  const clasesRequeridas = useMemo(() => {
-    if (!planSeleccionado) return 0;
-    if (planSeleccionado.tipo === "CLASE_SUELTA") return 1;
-    return planSeleccionado.clases_por_semana ?? 1;
-  }, [planSeleccionado]);
+  const clasesRequeridas = clasesRequeridasDelPlan(planSeleccionado);
 
-  // Actividades que da la profesora elegida (respetando exclusividad si el plan la tiene)
-  const actividadesDisponibles = useMemo(() => {
-    if (!idProfesora) return [];
-    const mapa = new Map<number, { id_actividad: number; nombre: string }>();
-    horarios.forEach((h) => {
-      if (h.id_profesora === idProfesora && h.actividad) {
-        if (planSeleccionado?.id_actividad_exclusiva) {
-          if (h.id_actividad === planSeleccionado.id_actividad_exclusiva) {
-            mapa.set(h.id_actividad, {
-              id_actividad: h.id_actividad,
-              nombre: h.actividad.nombre,
-            });
-          }
-        } else {
-          mapa.set(h.id_actividad, {
-            id_actividad: h.id_actividad,
-            nombre: h.actividad.nombre,
-          });
-        }
-      }
-    });
-    return Array.from(mapa.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-  }, [horarios, idProfesora, planSeleccionado]);
-
-  // Actividad efectiva: auto-seleccionada por plan exclusivo o única disponible, o elegida por el usuario
-  const idActividadEfectivo = useMemo(() => {
-    if (planSeleccionado?.id_actividad_exclusiva) {
-      return planSeleccionado.id_actividad_exclusiva;
-    }
-    if (actividadesDisponibles.length === 1) {
-      return actividadesDisponibles[0].id_actividad;
-    }
-    if (idActividad && actividadesDisponibles.some((a) => a.id_actividad === idActividad)) {
-      return idActividad;
-    }
-    return null;
-  }, [planSeleccionado, actividadesDisponibles, idActividad]);
-
-  const actividadSeleccionada = useMemo(
-    () => actividadesDisponibles.find((a) => a.id_actividad === idActividadEfectivo) ?? null,
-    [actividadesDisponibles, idActividadEfectivo],
+  // Solo las profesoras que pueden dar el plan elegido: las demás dejarían trabado el paso 3.
+  const profesorasCompatibles = useMemo(
+    () => profesorasDelPlan(profesoras, horarios, planSeleccionado),
+    [profesoras, horarios, planSeleccionado],
   );
 
-  // Horarios filtrados exclusivamente para la profesora y actividad elegidas
-  const horariosDisponibles = useMemo(() => {
-    if (!idProfesora || !idActividadEfectivo) return [];
-    return horarios.filter((h) => {
-      if (h.id_profesora !== idProfesora) return false;
-      if (h.id_actividad !== idActividadEfectivo) return false;
-      return true;
-    });
-  }, [horarios, idProfesora, idActividadEfectivo]);
+  // US-05: si alguna actividad de los horarios elegidos pide peso y talla, se piden antes de confirmar.
+  const actividadQuePideMedidas = useMemo(
+    () => horarios.find((h) => idsHorarios.includes(h.id_horario) && h.actividad.requiere_medidas)?.actividad.nombre ?? null,
+    [horarios, idsHorarios],
+  );
+
+  const actualizarMedidas = useCallback((nuevas: MedidasCorporalesForm) => {
+    setMedidas(nuevas);
+    setErroresMedidas({});
+  }, []);
+
+  const horariosDisponibles = useMemo(
+    () => horariosDelPlan(horarios, planSeleccionado, idProfesora),
+    [horarios, planSeleccionado, idProfesora],
+  );
 
   // Manejo de horarios seleccionados (toggle)
   const toggleHorario = useCallback(
@@ -170,40 +160,53 @@ export function usePreinscripcion({
 
   // Validaciones para navegación
   const validarPaso1 = useCallback((): boolean => {
-    const resultado = alumnoFormSchema.safeParse(datosAlumno);
-    if (!resultado.success) {
-      const mapaErrores: Record<string, string> = {};
-      resultado.error.issues.forEach((issue) => {
-        const campo = issue.path.join(".");
-        mapaErrores[campo] = issue.message;
-      });
-      setErroresPaso1(mapaErrores);
+    const mapaErrores = erroresDelPaso1(datosAlumno);
+    setErroresPaso1(mapaErrores);
+    if (Object.keys(mapaErrores).length > 0) {
       toast.error("Por favor revisá los campos con errores.");
       return false;
     }
-    setErroresPaso1({});
     return true;
   }, [datosAlumno]);
+
+  // Un error marcado se actualiza mientras se escribe: desaparece apenas el campo queda bien. Los
+  // campos sin error no se tocan, para no marcar en rojo lo que todavía no terminaron de completar.
+  const actualizarDatosAlumno = useCallback((nuevosDatos: AlumnoFormData) => {
+    setDatosAlumno(nuevosDatos);
+    setErroresPaso1((previos) => {
+      if (Object.keys(previos).length === 0) return previos;
+      const actuales = erroresDelPaso1(nuevosDatos);
+      return Object.fromEntries(Object.keys(previos).flatMap((campo) => (actuales[campo] ? [[campo, actuales[campo]]] : [])));
+    });
+  }, []);
+
+  // Al salir de un campo completado se avisa si está mal. Los vacíos obligatorios se avisan al
+  // tocar "Continuar": recorrer el formulario con Tab no lo llena de rojo.
+  const revisarCampo = useCallback(
+    (campo: string) => {
+      if (!valorDelCampo(datosAlumno, campo)) return;
+      const error = erroresDelPaso1(datosAlumno)[campo];
+      setErroresPaso1((previos) => (error ? { ...previos, [campo]: error } : previos));
+    },
+    [datosAlumno],
+  );
 
   const seleccionarPlan = useCallback(
     (id: number) => {
       setIdPlan(id);
       setIdsHorarios([]);
-      const nuevoPlan = planes.find((p) => p.id_plan === id);
-      if (nuevoPlan?.id_actividad_exclusiva) {
-        setIdActividad(nuevoPlan.id_actividad_exclusiva);
-      }
+      // Si la profesora elegida no puede dar el plan nuevo, se la deselecciona en lugar de dejar
+      // una combinación que el back rechazaría.
+      const nuevoPlan = planes.find((p) => p.id_plan === id) ?? null;
+      setIdProfesora((actual) =>
+        actual !== null && profesorasDelPlan(profesoras, horarios, nuevoPlan).some((p) => Number(p.id) === actual) ? actual : null,
+      );
     },
-    [planes],
+    [planes, profesoras, horarios],
   );
 
   const seleccionarProfesora = useCallback((id: number) => {
     setIdProfesora(id);
-    setIdsHorarios([]);
-  }, []);
-
-  const seleccionarActividad = useCallback((id: number) => {
-    setIdActividad(id);
     setIdsHorarios([]);
   }, []);
 
@@ -216,20 +219,38 @@ export function usePreinscripcion({
       toast.error("Debes seleccionar una profesora.");
       return false;
     }
-    if (!idActividadEfectivo) {
-      toast.error("Debes seleccionar una actividad.");
+    // La profesora logueada no se elige: puede que no tenga horarios para este plan.
+    if (!profesorasCompatibles.some((p) => Number(p.id) === idProfesora)) {
+      toast.error("La profesora no tiene horarios suficientes para este plan.");
+      return false;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
+      toast.error("Ingresá una fecha de inicio válida (dd/mm/aaaa).");
+      return false;
+    }
+    if (fechaInicio < fechaActualArgentina()) {
+      toast.error("La fecha de inicio no puede ser anterior a hoy.");
       return false;
     }
     return true;
-  }, [idPlan, idProfesora, idActividadEfectivo]);
+  }, [idPlan, idProfesora, profesorasCompatibles, fechaInicio]);
 
   const validarPaso3 = useCallback((): boolean => {
     if (idsHorarios.length !== clasesRequeridas) {
       toast.error(`Debes seleccionar exactamente ${clasesRequeridas} horario(s) para este plan.`);
       return false;
     }
+    if (actividadQuePideMedidas) {
+      const resultado = medidasCorporalesSchema.safeParse(medidas);
+      if (!resultado.success) {
+        const { fieldErrors } = resultado.error.flatten();
+        setErroresMedidas({ peso_kg: fieldErrors.peso_kg?.[0], talla_cm: fieldErrors.talla_cm?.[0] });
+        toast.error(`${actividadQuePideMedidas} pide el peso y la talla del alumno.`);
+        return false;
+      }
+    }
     return true;
-  }, [idsHorarios.length, clasesRequeridas]);
+  }, [idsHorarios.length, clasesRequeridas, actividadQuePideMedidas, medidas]);
 
   const avanzarPaso = useCallback(() => {
     if (paso === 1) {
@@ -251,15 +272,17 @@ export function usePreinscripcion({
     setErroresPaso1({});
     setIdPlan(null);
     setIdProfesora(null);
-    setIdActividad(null);
     setIdsHorarios([]);
     setSinCargo(false);
     setObservacionesInscripcion("");
+    setFechaInicio(fechaActualArgentina());
+    setMedidas(MEDIDAS_VACIAS);
+    setErroresMedidas({});
   }, []);
 
   // Confirmar y guardar la pre-inscripción
-  const confirmarPreinscripcion = useCallback(async () => {
-    if (!idPlan || !idProfesora || !idActividadEfectivo || idsHorarios.length !== clasesRequeridas) {
+  const confirmarPreinscripcion = useCallback(async ({ cobrarAhora = false }: { cobrarAhora?: boolean } = {}) => {
+    if (!idPlan || !idProfesora || idsHorarios.length !== clasesRequeridas) {
       toast.error("Faltan datos requeridos para completar la pre-inscripción.");
       return;
     }
@@ -279,7 +302,8 @@ export function usePreinscripcion({
         cont_emerg_nombre: datosAlumno.cont_emerg_nombre?.trim() || null,
         cont_emerg_telefono: datosAlumno.cont_emerg_telefono?.trim() || null,
         apto_medico: datosAlumno.apto_medico,
-        fecha_apto_medico: datosAlumno.fecha_apto_medico?.trim() || null,
+        // Si desmarcaron el apto, la fecha que habían cargado queda oculta y no se envía.
+        fecha_apto_medico: (datosAlumno.apto_medico && datosAlumno.fecha_apto_medico?.trim()) || null,
         observaciones: datosAlumno.observaciones?.trim() || null,
         tutor:
           menorDeEdad &&
@@ -302,7 +326,7 @@ export function usePreinscripcion({
       const alumnoCreado = await crearAlumno(payloadAlumno);
 
       // 2. Crear la Pre-inscripción
-      await crearInscripcion({
+      const inscripcion = await crearInscripcion({
         id_alumno: alumnoCreado.id_alumno,
         id_plan: idPlan,
         id_profesora: idProfesora,
@@ -310,12 +334,18 @@ export function usePreinscripcion({
         sin_cargo: sinCargo,
         fecha_inicio: fechaInicio,
         observaciones: observacionesInscripcion.trim() || null,
+        // Ya validadas en el paso 3. Solo viajan si alguna actividad las pide.
+        medidas: actividadQuePideMedidas ? medidasCorporalesSchema.parse(medidas) : undefined,
       });
 
       await invalidarAlumnos();
-      toast.success("¡Pre-inscripción registrada con éxito! El alumno queda en estado PENDIENTE.");
+      toast.success(
+        cobrarAhora
+          ? "Pre-inscripción registrada. Ahora registrá el cobro de la primera cuota."
+          : "¡Pre-inscripción registrada con éxito! El alumno queda en estado PENDIENTE.",
+      );
       reiniciar();
-      onExito?.();
+      onExito?.({ idInscripcion: inscripcion.id_inscripcion, cobrarAhora });
     } catch (err) {
       toast.error(mensajeDeErrorApi(err, "No se pudo registrar la pre-inscripción"));
     } finally {
@@ -324,13 +354,14 @@ export function usePreinscripcion({
   }, [
     idPlan,
     idProfesora,
-    idActividadEfectivo,
     idsHorarios,
     clasesRequeridas,
     datosAlumno,
     menorDeEdad,
     sinCargo,
     fechaInicio,
+    actividadQuePideMedidas,
+    medidas,
     observacionesInscripcion,
     invalidarAlumnos,
     reiniciar,
@@ -341,7 +372,8 @@ export function usePreinscripcion({
     paso,
     setPaso,
     datosAlumno,
-    setDatosAlumno,
+    setDatosAlumno: actualizarDatosAlumno,
+    revisarCampo,
     erroresPaso1,
     edadCalculada,
     menorDeEdad,
@@ -351,10 +383,11 @@ export function usePreinscripcion({
     planSeleccionado,
     idProfesora,
     setIdProfesora: seleccionarProfesora,
-    idActividad: idActividadEfectivo,
-    setIdActividad: seleccionarActividad,
-    actividadesDisponibles,
-    actividadSeleccionada,
+    profesorasCompatibles,
+    actividadQuePideMedidas,
+    medidas,
+    setMedidas: actualizarMedidas,
+    erroresMedidas,
     idsHorarios,
     toggleHorario,
     clasesRequeridas,

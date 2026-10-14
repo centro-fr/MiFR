@@ -4,8 +4,8 @@ import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { ClasesDelDia } from "@/features/asistencia/components/clases-del-dia";
 import { RegistroAsistencia } from "@/features/asistencia/components/registro-asistencia";
+import { fechaActualArgentina } from "@/utils/fecha";
 import {
-  fechaActualArgentina,
   useAsistenciaDeClase,
   useCerrarAsistencia,
   useClasesAsistencia,

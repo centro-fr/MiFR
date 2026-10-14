@@ -1,8 +1,9 @@
 import { Check, Dumbbell, Sparkles, User, Calendar } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { fechaActualArgentina } from "@/utils/fecha";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -17,13 +18,12 @@ import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 interface Paso2PlanYProfesoraProps {
   planes: PlanApiRespuesta[];
   profesoras: ProfesoraDatos[];
+  /** Las que tienen horarios suficientes para el plan elegido: son las únicas que se ofrecen. */
+  profesorasCompatibles: ProfesoraDatos[];
   idPlanSeleccionado: number | null;
   onSeleccionarPlan: (idPlan: number) => void;
   idProfesoraSeleccionada: number | null;
   onSeleccionarProfesora: (idProfesora: number) => void;
-  actividadesDisponibles: { id_actividad: number; nombre: string }[];
-  idActividadSeleccionada: number | null;
-  onSeleccionarActividad: (idActividad: number) => void;
   esSoloProfesora: boolean;
   sinCargo: boolean;
   onToggleSinCargo: (sinCargo: boolean) => void;
@@ -34,19 +34,22 @@ interface Paso2PlanYProfesoraProps {
 export function Paso2PlanYProfesora({
   planes,
   profesoras,
+  profesorasCompatibles,
   idPlanSeleccionado,
   onSeleccionarPlan,
   idProfesoraSeleccionada,
   onSeleccionarProfesora,
-  actividadesDisponibles,
-  idActividadSeleccionada,
-  onSeleccionarActividad,
   esSoloProfesora,
   sinCargo,
   onToggleSinCargo,
   fechaInicio,
   onChangeFechaInicio,
 }: Paso2PlanYProfesoraProps) {
+  const sinPlan = idPlanSeleccionado === null;
+  const sinProfesorasParaElPlan = !sinPlan && profesorasCompatibles.length === 0;
+  const profesoraLogueadaSinHorarios =
+    esSoloProfesora && !sinPlan && !profesorasCompatibles.some((p) => Number(p.id) === idProfesoraSeleccionada);
+
   return (
     <div className="space-y-6">
       {/* 1. Selección de Plan */}
@@ -128,7 +131,7 @@ export function Paso2PlanYProfesora({
         <div className="flex items-center gap-2 mb-1">
           <User className="size-4 text-primary" />
           <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-            Profesora y Actividad <span className="text-destructive">*</span>
+            Profesora <span className="text-destructive">*</span>
           </h3>
         </div>
 
@@ -157,12 +160,21 @@ export function Paso2PlanYProfesora({
               <Select
                 value={idProfesoraSeleccionada ? String(idProfesoraSeleccionada) : ""}
                 onValueChange={(val) => onSeleccionarProfesora(Number(val))}
+                disabled={sinPlan || sinProfesorasParaElPlan}
               >
-                <SelectTrigger id="selector-profesora" className="w-full">
-                  <SelectValue placeholder="Seleccioná una profesora" />
+                <SelectTrigger id="selector-profesora" className="w-full" aria-describedby="ayuda-profesora">
+                  <SelectValue
+                    placeholder={
+                      sinPlan
+                        ? "Primero elegí un plan"
+                        : sinProfesorasParaElPlan
+                          ? "Ninguna profesora da este plan"
+                          : "Seleccioná una profesora"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {profesoras.map((prof) => (
+                  {profesorasCompatibles.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
                       {prof.nombre} {prof.apellido}
                     </SelectItem>
@@ -170,11 +182,11 @@ export function Paso2PlanYProfesora({
                 </SelectContent>
               </Select>
             )}
-            {esSoloProfesora && (
-              <p className="text-[11px] text-muted-foreground">
-                Asignada automáticamente a tu perfil.
-              </p>
-            )}
+            <AyudaProfesora
+              esSoloProfesora={esSoloProfesora}
+              sinProfesorasParaElPlan={sinProfesorasParaElPlan}
+              profesoraLogueadaSinHorarios={profesoraLogueadaSinHorarios}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -182,53 +194,14 @@ export function Paso2PlanYProfesora({
               <Calendar className="size-3.5 text-muted-foreground" />
               Fecha de Inicio Estimada
             </Label>
-            <Input
+            <CampoFecha
               id="fecha-inicio"
-              type="date"
+              etiquetaCalendario="Abrir calendario para la fecha de inicio"
+              // El back no acepta un inicio anterior a hoy.
+              min={fechaActualArgentina()}
               value={fechaInicio}
-              onChange={(e) => onChangeFechaInicio(e.target.value)}
+              onChange={onChangeFechaInicio}
             />
-          </div>
-
-          {/* Selector de Actividad que imparte la profesora */}
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="selector-actividad" className="text-xs font-medium flex items-center gap-1">
-              <Dumbbell className="size-3.5 text-primary" />
-              Actividad que imparte <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={idActividadSeleccionada ? String(idActividadSeleccionada) : ""}
-              onValueChange={(val) => onSeleccionarActividad(Number(val))}
-              disabled={!idProfesoraSeleccionada || actividadesDisponibles.length === 0}
-            >
-              <SelectTrigger id="selector-actividad" className="w-full">
-                <SelectValue
-                  placeholder={
-                    !idProfesoraSeleccionada
-                      ? "Primero seleccioná una profesora"
-                      : actividadesDisponibles.length === 0
-                        ? "La profesora no tiene horarios ni actividades cargadas"
-                        : "Seleccioná la actividad que realizará el alumno"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {actividadesDisponibles.map((act) => (
-                  <SelectItem key={act.id_actividad} value={String(act.id_actividad)}>
-                    {act.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {idProfesoraSeleccionada && actividadesDisponibles.length === 0 ? (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                Esta profesora no posee horarios configurados para actividades.
-              </p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                Los horarios disponibles en el siguiente paso corresponderán únicamente a esta actividad.
-              </p>
-            )}
           </div>
         </div>
 
@@ -253,3 +226,32 @@ export function Paso2PlanYProfesora({
     </div>
   );
 };
+
+// Explica por qué la lista de profesoras es la que es: sin esto, que falte una parece un error.
+function AyudaProfesora({
+  esSoloProfesora,
+  sinProfesorasParaElPlan,
+  profesoraLogueadaSinHorarios,
+}: {
+  esSoloProfesora: boolean;
+  sinProfesorasParaElPlan: boolean;
+  profesoraLogueadaSinHorarios: boolean;
+}) {
+  const aviso = profesoraLogueadaSinHorarios
+    ? "No tenés horarios suficientes para este plan. Elegí otro plan o pedile a la propietaria que lo cargue."
+    : sinProfesorasParaElPlan
+      ? "Ninguna profesora tiene horarios suficientes para este plan. Elegí otro plan."
+      : null;
+  if (aviso) {
+    return (
+      <p id="ayuda-profesora" className="text-[11px] text-amber-600 dark:text-amber-400">
+        {aviso}
+      </p>
+    );
+  }
+  return (
+    <p id="ayuda-profesora" className="text-[11px] text-muted-foreground">
+      {esSoloProfesora ? "Asignada automáticamente a tu perfil." : "Solo aparecen las profesoras con horarios para el plan elegido."}
+    </p>
+  );
+}
