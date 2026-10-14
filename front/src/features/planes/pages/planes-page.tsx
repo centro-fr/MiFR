@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Loader2, Tag } from "lucide-react";
+import { AlertCircle, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FiltrosPlanesBar } from "@/features/planes/components/filtros-planes";
-import { ListaPlanes } from "@/features/planes/components/lista-planes";
+import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
 import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import {
@@ -77,17 +77,7 @@ function ContenidoPlanes() {
   const visibles = useMemo(() => filtrarPlanes(planes ?? [], filtros), [planes, filtros]);
   const actividades = useMemo(() => actividadesDeLosPlanes(planes ?? []), [planes]);
 
-  if (isPending) {
-    return (
-      <div
-        role="status"
-        className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-      >
-        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
-        Cargando planes…
-      </div>
-    );
-  }
+  if (isPending) return <ListaPlanesCargando />;
 
   if (isError) {
     return (
@@ -162,7 +152,8 @@ export function PlanesPage() {
   const { data: planes } = usePlanes();
   return (
     <OwnerLayout>
-      <div className="space-y-6">
+      {/* Ancho máximo de la guía del front (1200-1280 px): las tarjetas no se estiran en pantallas grandes. */}
+      <div className="mx-auto w-full max-w-7xl space-y-6">
         <Encabezado vigentes={planes?.filter(estaVigente).length} />
         <ContenidoPlanes />
       </div>

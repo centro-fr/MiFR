@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatosBancariosCard } from "../components/datos-bancarios-card";
 import { ListaMisTransferencias } from "../components/lista-mis-transferencias";
-import { ModalInformarTransferencia } from "../components/modal-informar-transferencia";
 import { ResumenPlanCuota } from "../components/resumen-plan-cuota";
 import { useMiPlan, useMisTransferencias } from "../hooks/use-transferencias";
-import type { TransferenciaApi } from "../schemas/transferencia";
 
 export function MiPlanPage() {
   const { data: planData, isLoading: cargandoPlan, isError: errorPlan, refetch: reintentarPlan } = useMiPlan();
@@ -16,19 +13,6 @@ export function MiPlanPage() {
     data: transferencias = [],
     isLoading: cargandoTransferencias,
   } = useMisTransferencias();
-
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [transferenciaAReintentar, setTransferenciaAReintentar] = useState<TransferenciaApi | null>(null);
-
-  function handleAbrirNuevo() {
-    setTransferenciaAReintentar(null);
-    setModalAbierto(true);
-  }
-
-  function handleReintentar(transferencia: TransferenciaApi) {
-    setTransferenciaAReintentar(transferencia);
-    setModalAbierto(true);
-  }
 
   const cargando = cargandoPlan || cargandoTransferencias;
 
@@ -66,8 +50,6 @@ export function MiPlanPage() {
   }
 
   const conteoTransferencias = transferencias.length;
-  const montoPlan = planData.situacion_cuota?.monto ?? planData.inscripcion?.precio ?? 0;
-  const idInscripcion = planData.inscripcion?.id_inscripcion ?? 0;
 
   return (
     <OwnerLayout>
@@ -93,7 +75,7 @@ export function MiPlanPage() {
         {/* BLOQUE PRINCIPAL: DETALLE DEL PLAN Y DATOS BANCARIOS */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Izquierda: Resumen del plan y cuota */}
-          <ResumenPlanCuota planData={planData} onAbrirModal={handleAbrirNuevo} />
+          <ResumenPlanCuota planData={planData} />
 
           {/* Derecha: Datos bancarios con copiado rápido */}
           <DatosBancariosCard datos={planData.datos_bancarios} />
@@ -107,27 +89,13 @@ export function MiPlanPage() {
                 Historial de pagos
               </h2>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Registro de tus pagos en efectivo y transferencias bancarias informadas.
+                Los cobros en efectivo y las transferencias que registró el centro.
               </p>
             </div>
           </div>
 
-          <ListaMisTransferencias
-            transferencias={transferencias}
-            onReintentar={handleReintentar}
-          />
+          <ListaMisTransferencias transferencias={transferencias} />
         </div>
-
-        {/* MODAL PARA INFORMAR TRANSFERENCIA */}
-        {modalAbierto && (
-          <ModalInformarTransferencia
-            open={modalAbierto}
-            onOpenChange={setModalAbierto}
-            idInscripcion={idInscripcion}
-            montoSugerido={transferenciaAReintentar ? transferenciaAReintentar.monto : montoPlan}
-            nombrePlan={planData.inscripcion?.nombre_plan ?? "Plan"}
-          />
-        )}
       </div>
     </OwnerLayout>
   );

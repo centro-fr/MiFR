@@ -61,7 +61,7 @@ function Encabezado({ pendientes, actualizando, onActualizar }: { pendientes?: n
           )}
         </div>
         <p className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">
-          Verificá cada transferencia en tu extracto bancario y aprobala o rechazala dentro de las 24 h desde que el alumno la informó.
+          Verificá cada transferencia en tu extracto bancario y aprobala o rechazala dentro de las 24 h desde que se informó.
         </p>
       </div>
       <Button

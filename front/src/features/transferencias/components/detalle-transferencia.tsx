@@ -175,7 +175,6 @@ function DatosTransferencia({ transferencia }: { transferencia: Transferencia })
       </Dato>
       <Dato etiqueta="Fecha de transferencia">
         {transferencia.realizadaEl ? formatearFechaHora(transferencia.realizadaEl) : "Sin informar"}
-        <Secundario>Informada por el alumno</Secundario>
       </Dato>
       <Dato etiqueta="Carga del aviso">
         {formatearFechaHora(transferencia.cargadaEl)}

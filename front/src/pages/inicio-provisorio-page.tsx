@@ -33,7 +33,7 @@ export function StudentHomePage() {
             Panel de inicio
           </h1>
           <p className="max-w-prose text-sm text-muted-foreground mt-1">
-            Bienvenido/a al portal del alumno. Consultá el estado de tu cuota o informá transferencias bancarias realizadas.
+            Bienvenido/a al portal del alumno. Consultá el estado de tu cuota y los datos para transferir.
           </p>
         </div>
 
@@ -43,14 +43,14 @@ export function StudentHomePage() {
               Mi plan y cuotas
             </h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Consultá el CBU/Alias del centro e informá tus transferencias bancarias realizadas.
+              Consultá el estado de tu cuota y el CBU/Alias del centro para transferir.
             </p>
             <div className="mt-4">
               <Link
                 to="/app/mi-plan"
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary px-4 text-sm font-extrabold text-white shadow-md shadow-primary/20 hover:bg-primary-dark transition-colors"
               >
-                Informar transferencia
+                Ver mi plan
               </Link>
             </div>
           </div>

@@ -66,6 +66,8 @@ const SECCIONES_EN_CONSTRUCCION = [
   { path: "mis-clases", seccion: "Mis clases" },
   { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
+  // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
+  // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
   { path: "mi-plan", seccion: "Mi plan" },
   { path: "progreso", seccion: "Progreso" },
   { path: "comunidad", seccion: "Comunidad" },
@@ -250,14 +252,6 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
-        ],
-      },
-      {
-        // US-16: Mi plan y transferencias bancarias. Actor: Alumno o Tutor.
-        path: "mi-plan",
-        element: guardiaDeSeccion("mi-plan"),
-        children: [
-          { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
         ],
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({

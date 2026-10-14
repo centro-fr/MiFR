@@ -20,6 +20,7 @@ import type {
   ClaseApi,
   InscriptoConAsistenciaApi,
 } from "@/features/asistencia/schemas/asistencia";
+import { fechaLarga, fechaYHoraCorta, rangoHorario } from "@/features/asistencia/utils/formato-clase";
 
 interface Props {
   datos: AsistenciaDeClaseApi;
@@ -46,30 +47,6 @@ function etiquetaEstadoClase(estado: ClaseApi["estado"]): string {
   if (estado === "DICTADA") return "Asistencia cerrada";
   if (estado === "CANCELADA") return "Clase cancelada";
   return "Asistencia abierta";
-}
-
-function fechaYHora(fecha: string): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "America/Argentina/Buenos_Aires",
-  }).format(new Date(fecha));
-}
-
-function fechaDeClase(fecha: string): string {
-  const mediodiaUtc = new Date(`${fecha.slice(0, 10)}T12:00:00.000Z`);
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "full",
-    timeZone: "America/Argentina/Buenos_Aires",
-  }).format(mediodiaUtc);
-}
-
-function horaVisible(hora: string): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  }).format(new Date(hora));
 }
 
 function EstadoCuota({ inscripto }: { inscripto: InscriptoConAsistenciaApi }) {
@@ -263,7 +240,7 @@ export function RegistroAsistencia({
   const sinMarcar = inscriptos.filter((inscripto) => inscripto.asistencia === "sin_marcar").length;
   const puedeEditar = clase.estado === "PROGRAMADA" || (clase.estado === "DICTADA" && propietaria);
   const cancelada = clase.estado === "CANCELADA";
-  const hora = `${horaVisible(clase.horario.hora_inicio)}–${horaVisible(clase.horario.hora_fin)}`;
+  const hora = rangoHorario(clase);
 
   return (
     <section className="mx-auto w-full max-w-7xl space-y-5">
@@ -284,7 +261,7 @@ export function RegistroAsistencia({
             <Badge variant="outline">{clase.horario.actividad.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"}</Badge>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            {fechaDeClase(clase.fecha_clase)} · {hora}
+            <span className="inline-block first-letter:uppercase">{fechaLarga(clase.fecha_clase)}</span> · {hora}
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
             <Users aria-hidden="true" className="size-4" />
@@ -309,7 +286,7 @@ export function RegistroAsistencia({
         <Alert className="rounded-xl">
           <LockKeyhole aria-hidden="true" />
           <AlertDescription>
-            Asistencia cerrada{clase.fecha_cierre_asist ? ` el ${fechaYHora(clase.fecha_cierre_asist)}` : ""}. Los inscriptos que seguían sin marcar quedaron registrados como ausentes.
+            Asistencia cerrada{clase.fecha_cierre_asist ? ` el ${fechaYHoraCorta(clase.fecha_cierre_asist)}` : ""}. Los inscriptos que seguían sin marcar quedaron registrados como ausentes.
             {propietaria && " Podés corregir marcas individuales; cada cambio queda registrado por el sistema."}
           </AlertDescription>
         </Alert>

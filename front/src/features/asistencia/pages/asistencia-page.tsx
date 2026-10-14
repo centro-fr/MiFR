@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
@@ -13,6 +15,8 @@ import {
   useMarcarTodosPresentes,
 } from "@/features/asistencia/hooks/use-asistencia";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { listarProfesoras } from "@/features/horarios/api/horarios-api";
+import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 
 interface VistaProps {
   propietaria: boolean;
@@ -22,6 +26,13 @@ function fechaConsultaDe(valor: string | null, hoy: string): string {
   if (!valor || !/^\d{4}-\d{2}-\d{2}$/.test(valor) || valor > hoy) return hoy;
   const fecha = new Date(`${valor}T00:00:00.000Z`);
   return Number.isFinite(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor ? valor : hoy;
+}
+
+// Quién dicta cada clase, por id: la clase solo trae el id de la profesora. Es la misma consulta
+// (y la misma caché) que usan Horarios y el filtro de Alumnos.
+function useNombresDeProfesoras(habilitada: boolean): ReadonlyMap<number, string> {
+  const { data } = useQuery({ queryKey: PROFESORAS_QUERY_KEY, queryFn: listarProfesoras, staleTime: 5 * 60_000, enabled: habilitada });
+  return useMemo(() => new Map((data ?? []).map((p) => [Number(p.id), `${p.nombre} ${p.apellido}`])), [data]);
 }
 
 function VistaAsistencia({ propietaria }: VistaProps) {
@@ -37,6 +48,7 @@ function VistaAsistencia({ propietaria }: VistaProps) {
   const marcar = useMarcarAsistencia();
   const marcarTodos = useMarcarTodosPresentes();
   const cerrar = useCerrarAsistencia();
+  const profesoras = useNombresDeProfesoras(propietaria && id === undefined);
 
   const informarError = (error: unknown, mensaje: string) => {
     const detalle = mensajeDeErrorApi(error, mensaje);
@@ -128,6 +140,7 @@ function VistaAsistencia({ propietaria }: VistaProps) {
           }
           cargando={consultaClases.isPending}
           propietaria={propietaria}
+          profesoras={profesoras}
           onFechaChange={propietaria ? cambiarFecha : undefined}
           onReintentar={() => void consultaClases.refetch()}
         />

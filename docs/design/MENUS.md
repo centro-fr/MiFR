@@ -65,7 +65,7 @@ Acceso a opciones secundarias (esquina superior derecha):
 | 1 | **Hoy** | reloj/calendario | Clases del día (US-20) |
 | 2 | **Mis clases** | libro/lista | Historial de clases y asistencias |
 | 3 | **Alumnos** | usuarios | Alumnos a su cargo (US-10) |
-| 4 | **Cobros** | dinero | Registro de cobro en efectivo (US-15) |
+| 4 | **Cobros** | dinero | Cobro de la cuota de sus alumnos, en efectivo o por transferencia (US-15, US-16) |
 | 5 | **Perfil** | usuario | Datos personales |
 
 ### Desktop (sidebar, 5 ítems + secundarios)
@@ -131,8 +131,10 @@ Cada grupo desplegable tiene además su **pantalla de grupo**: muestra sus sub-o
 | Grupo | Pantalla | Sub-opciones |
 | ------ | ------ | ------------------- |
 | **Alumnos** | `/app/alumnos` | Listado (`/app/alumnos/listado`; la ficha `/app/alumnos/:id` lo mantiene marcado) · Pendientes de alta (US-07, con contador) |
-| **Cobros y Cuotas** | `/app/pagos` | Estado de cuotas (US-15) → `/app/pagos/cuotas` · Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
+| **Cobros y Cuotas** | `/app/pagos` | Estado de cuotas (US-15: cobro en efectivo o por transferencia) → `/app/pagos/cuotas` · Transferencias pendientes (US-17, con contador) → `/app/pagos/transferencias` |
 | **Profesora** (rol extra) | `/app/profesora` | Hoy · Mis clases |
+
+**Transferencias (decisión de la dueña):** el alumno ya no las informa desde la app. Le avisa a la propietaria o a su profesora, que la informan desde **Estado de cuotas** (o **Cobros**, la profesora: solo de sus alumnos) eligiendo "Transferencia" al cobrar. Queda pendiente de verificación en **Transferencias pendientes**.
 
 Las demás pantallas de Cobros y Cuotas (rendiciones, cuotas vencidas) se suman como sub-opciones cuando se implementen.
 
@@ -270,4 +272,4 @@ Cada rol entra solo a las pantallas de su menú: abrir por URL la de otro rol mu
 
 ---
 
-Última actualización: 13/10/2026
+Última actualización: 14/10/2026

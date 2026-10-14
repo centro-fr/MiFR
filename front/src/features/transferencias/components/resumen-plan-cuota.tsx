@@ -1,6 +1,5 @@
 import { AlertCircle, Calendar, CheckCircle2, Clock, Dumbbell, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatearPrecio } from "@/utils/moneda";
 import { formatearFechaCobro } from "@/features/cobros/utils/formato-cobros";
@@ -8,10 +7,9 @@ import type { MiPlanRespuesta } from "../schemas/transferencia";
 
 interface Props {
   planData: MiPlanRespuesta;
-  onAbrirModal: () => void;
 }
 
-export function ResumenPlanCuota({ planData, onAbrirModal }: Props) {
+export function ResumenPlanCuota({ planData }: Props) {
   const { inscripcion, situacion_cuota } = planData;
 
   const tieneTransferenciaPendiente = situacion_cuota?.tiene_transferencia_pendiente ?? false;
@@ -64,7 +62,7 @@ export function ResumenPlanCuota({ planData, onAbrirModal }: Props) {
               </Badge>
             </div>
             <p className="mt-1 text-xs text-amber-800/90 dark:text-amber-300/90">
-              Informaste una transferencia bancaria el{" "}
+              Hay una transferencia del{" "}
               <strong>
                 {formatearFechaCobro(transferenciaPendiente.fecha_hora_transferencia ?? transferenciaPendiente.fecha_pago)}
               </strong>
@@ -122,21 +120,13 @@ export function ResumenPlanCuota({ planData, onAbrirModal }: Props) {
 
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <span className="whitespace-nowrap text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Importe de la cuota
               </span>
               <p className="text-2xl font-black text-pink-700 dark:text-pink-400">
                 {formatearPrecio(situacion_cuota?.monto ?? inscripcion?.precio ?? 0)}
               </p>
             </div>
-
-            <Button
-              type="button"
-              onClick={onAbrirModal}
-              className="mt-1 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-md shadow-primary/20 transition-transform hover:bg-primary-dark active:scale-95"
-            >
-              + Informar transferencia
-            </Button>
           </div>
         </div>
       </Card>

@@ -1,6 +1,5 @@
-import { AlertTriangle, CheckCircle2, Clock, RotateCcw, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatearPrecio } from "@/utils/moneda";
 import { formatearFechaCobro } from "@/features/cobros/utils/formato-cobros";
@@ -8,10 +7,9 @@ import type { TransferenciaApi } from "../schemas/transferencia";
 
 interface Props {
   transferencias: TransferenciaApi[];
-  onReintentar: (transferencia: TransferenciaApi) => void;
 }
 
-export function ListaMisTransferencias({ transferencias, onReintentar }: Props) {
+export function ListaMisTransferencias({ transferencias }: Props) {
   if (transferencias.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-800 dark:bg-slate-900/50">
@@ -22,7 +20,7 @@ export function ListaMisTransferencias({ transferencias, onReintentar }: Props) 
           No tenés pagos registrados
         </h3>
         <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
-          Cuando informes una transferencia bancaria o se registre un pago en efectivo, aparecerá en este historial.
+          Cuando el centro registre un cobro en efectivo o una transferencia tuya, va a aparecer en este historial.
         </p>
       </Card>
     );
@@ -140,16 +138,7 @@ export function ListaMisTransferencias({ transferencias, onReintentar }: Props) 
                   Motivo del rechazo:
                 </div>
                 <p className="mt-0.5">{item.motivo_rechazo ?? "No figura en el extracto bancario"}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onReintentar(item)}
-                  className="mt-2 min-h-[36px] w-full gap-1.5 border-rose-300 bg-white font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                >
-                  <RotateCcw className="size-3.5" />
-                  Volver a informar
-                </Button>
+                <p className="mt-1.5 font-semibold">Consultalo con la propietaria o con tu profesora.</p>
               </div>
             )}
           </Card>
@@ -179,9 +168,6 @@ export function ListaMisTransferencias({ transferencias, onReintentar }: Props) 
                 </th>
                 <th scope="col" className="px-5 py-3.5">
                   Estado
-                </th>
-                <th scope="col" className="px-5 py-3.5 text-right">
-                  Acción
                 </th>
               </tr>
             </thead>
@@ -217,20 +203,6 @@ export function ListaMisTransferencias({ transferencias, onReintentar }: Props) 
                         </p>
                       )}
                     </div>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    {item.estado === "RECHAZADO" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onReintentar(item)}
-                        className="min-h-[36px] gap-1 rounded-lg border-rose-200 bg-white font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                      >
-                        <RotateCcw className="size-3.5" />
-                        Reintentar
-                      </Button>
-                    )}
                   </td>
                 </tr>
               ))}

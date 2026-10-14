@@ -11,12 +11,12 @@ import { z } from "zod";
 const MONTO_MAXIMO = 99_999_999.99;
 const FORMATO_MONTO = /^\d{1,8}(?:[.,]\d{1,2})?$/;
 
-export const registrarCobroEfectivoFormSchema = z.object({
-  idInscripcion: z.number().int().positive("La inscripción es obligatoria"),
-  monto: z
+/** Monto escrito en el formulario ("25000" o "25000,50"), con las reglas del back. */
+export function montoDeCobroSchema(mensajeSiFalta: string) {
+  return z
     .string()
     .trim()
-    .min(1, "Ingresá el monto cobrado")
+    .min(1, mensajeSiFalta)
     .regex(FORMATO_MONTO, "Ingresá un monto válido (ej: 25000 o 25000,50)")
     .refine((val) => {
       const num = Number(val.replace(",", "."));
@@ -25,7 +25,17 @@ export const registrarCobroEfectivoFormSchema = z.object({
     .refine((val) => {
       const num = Number(val.replace(",", "."));
       return num <= MONTO_MAXIMO;
-    }, "El monto no puede superar $ 99.999.999,99"),
+    }, "El monto no puede superar $ 99.999.999,99");
+}
+
+/** "25000,50" → 25000.5. */
+export function montoComoNumero(monto: string): number {
+  return Number(monto.trim().replace(",", "."));
+}
+
+export const registrarCobroEfectivoFormSchema = z.object({
+  idInscripcion: z.number().int().positive("La inscripción es obligatoria"),
+  monto: montoDeCobroSchema("Ingresá el monto cobrado"),
   confirmarMontoDistinto: z.boolean().default(false),
   observaciones: z.string().trim().max(255, "Máximo 255 caracteres").optional(),
 });

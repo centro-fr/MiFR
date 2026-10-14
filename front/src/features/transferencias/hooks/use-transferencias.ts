@@ -39,14 +39,21 @@ export function useMisTransferencias() {
   });
 }
 
+/**
+ * Informa una transferencia que queda pendiente de verificación. Desde que la dueña lo decidió, la
+ * informan la propietaria o la profesora desde Estado de cuotas (ya no el alumno): se refrescan el
+ * listado de cuotas y las transferencias pendientes, que también cuentan en el menú.
+ */
 export function useInformarTransferencia() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (datos: InformarTransferenciaFormData) => informarTransferencia(datos),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MI_PLAN_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: MIS_TRANSFERENCIAS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: ALUMNOS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: TRANSFERENCIAS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: MI_PLAN_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: MIS_TRANSFERENCIAS_QUERY_KEY });
     },
   });
 }

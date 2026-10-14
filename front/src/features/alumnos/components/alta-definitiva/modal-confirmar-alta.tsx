@@ -1,12 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { BadgeCheck, Clock } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { BadgeCheck } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { esMontoDistinto } from "@/features/alumnos/api/alta-definitiva-api";
 import {
   aCuerpoPrimerPago,
@@ -18,10 +15,19 @@ import {
   type PrimerPagoFormValues,
 } from "@/features/alumnos/schemas/primer-pago";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import {
+  BotonesDeCobro,
+  CLASE_INPUT,
+  Campo,
+  CampoTitularCuenta,
+  FechaHoraAutomatica,
+  SelectorFormaDeCobro,
+  type EtiquetasFormaDeCobro,
+} from "@/features/cobros/components/campos-cobro";
 import { formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
 
-const ETIQUETA_FORMA: Record<FormaPrimerPago, { titulo: string; detalle: string }> = {
+const ETIQUETA_FORMA: EtiquetasFormaDeCobro = {
   EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
   TRANSFERENCIA: { titulo: "Transferencia", detalle: "Ya la viste acreditada en tu cuenta." },
 };
@@ -31,50 +37,6 @@ type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 function erroresDe(issues: { path: (string | number)[]; message: string }[]): Errores {
   return Object.fromEntries(issues.map((issue) => [issue.path[0], issue.message]));
 }
-
-interface CampoProps {
-  id: string;
-  etiqueta: string;
-  error?: string;
-  ayuda?: string;
-  obligatorio?: boolean;
-  /** Atajo para completar el campo, a la derecha de la etiqueta (ej: "Usar ahora"). */
-  accion?: ReactNode;
-  children: (describedBy: string | undefined) => ReactNode;
-}
-
-function Campo({ id, etiqueta, error, ayuda, obligatorio = false, accion, children }: CampoProps) {
-  const describedBy = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex min-h-6 items-center justify-between gap-2">
-        <Label htmlFor={id} className="text-sm font-bold text-slate-800 dark:text-slate-200">
-          {etiqueta}
-          {obligatorio && (
-            <>
-              <span className="text-rose-600" aria-hidden="true"> *</span>
-              <span className="sr-only"> (obligatorio)</span>
-            </>
-          )}
-        </Label>
-        {accion}
-      </div>
-      {children(describedBy)}
-      {ayuda && (
-        <p id={`${id}-ayuda`} className="text-xs text-muted-foreground">
-          {ayuda}
-        </p>
-      )}
-      {error && (
-        <p id={`${id}-error`} className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-const CLASE_INPUT = "rounded-xl border-slate-200 bg-white dark:border-white/15 dark:bg-transparent";
 
 function ResumenPreInscripcion({ pendiente }: { pendiente: PreInscripcionPendiente }) {
   return (
@@ -100,35 +62,6 @@ function AvisoReservaVencida({ vence }: { vence: string }) {
         registrar el cobro hasta elegir otro.
       </AlertDescription>
     </Alert>
-  );
-}
-
-interface SelectorFormaProps {
-  formas: FormaPrimerPago[];
-  valor: FormaPrimerPago;
-  onChange: (forma: FormaPrimerPago) => void;
-}
-
-function SelectorFormaPago({ formas, valor, onChange }: SelectorFormaProps) {
-  return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">¿Cómo abonó la primera cuota?</legend>
-      <RadioGroup value={valor} onValueChange={(v) => onChange(v as FormaPrimerPago)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {formas.map((forma) => (
-          <Label
-            key={forma}
-            htmlFor={`forma-pago-${forma}`}
-            className="flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-pink-50 dark:border-white/15 dark:has-data-[state=checked]:bg-primary/15"
-          >
-            <RadioGroupItem id={`forma-pago-${forma}`} value={forma} className="mt-0.5" />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{ETIQUETA_FORMA[forma].titulo}</span>
-              <span className="text-xs font-medium text-muted-foreground">{ETIQUETA_FORMA[forma].detalle}</span>
-            </span>
-          </Label>
-        ))}
-      </RadioGroup>
-    </fieldset>
   );
 }
 
@@ -171,68 +104,15 @@ interface CamposTransferenciaProps {
   onChange: (cambios: Partial<PrimerPagoFormValues>) => void;
 }
 
-/**
- * Completa la fecha y hora con el momento actual (hora argentina): lo más común es registrar la
- * transferencia apenas se la ve acreditada, y cargar día, mes, año, hora y minutos a mano es lento.
- */
-function BotonUsarAhora({ onUsar }: { onUsar: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onUsar}
-      // El after amplía el área táctil a 44 px sin agrandar la fila de la etiqueta.
-      className="relative inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold text-primary transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 hover:bg-pink-50 hover:text-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-pink-300 dark:hover:bg-primary/15 dark:hover:text-pink-200"
-    >
-      <Clock aria-hidden="true" className="size-3.5" />
-      Usar ahora
-      {/* Completa el nombre sin reemplazar el texto visible: quien usa control por voz dice "Usar ahora". */}
-      <span className="sr-only"> (fecha y hora actual)</span>
-    </button>
-  );
-}
-
 function CamposTransferencia({ valores, errores, onChange }: CamposTransferenciaProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <Campo
-        id="fecha-hora-transferencia"
-        etiqueta="Fecha y hora"
-        error={errores.fechaHoraTransferencia}
-        obligatorio
-        accion={<BotonUsarAhora onUsar={() => onChange({ fechaHoraTransferencia: fechaHoraParaInput(new Date()) })} />}
-      >
-        {(describedBy) => (
-          <Input
-            id="fecha-hora-transferencia"
-            type="datetime-local"
-            value={valores.fechaHoraTransferencia}
-            max={fechaHoraParaInput(new Date())}
-            onChange={(evento) => onChange({ fechaHoraTransferencia: evento.target.value })}
-            aria-invalid={errores.fechaHoraTransferencia !== undefined}
-            aria-describedby={describedBy}
-            className={CLASE_INPUT}
-          />
-        )}
-      </Campo>
-      <Campo
-        id="titular-cuenta"
-        etiqueta="Titular de la cuenta"
-        ayuda="Opcional: ayuda a encontrarla en el extracto."
+      <FechaHoraAutomatica error={errores.fechaHoraTransferencia} />
+      <CampoTitularCuenta
+        valor={valores.titularCuentaOrigen}
         error={errores.titularCuentaOrigen}
-      >
-        {(describedBy) => (
-          <Input
-            id="titular-cuenta"
-            value={valores.titularCuentaOrigen}
-            maxLength={80}
-            autoComplete="off"
-            onChange={(evento) => onChange({ titularCuentaOrigen: evento.target.value })}
-            aria-invalid={errores.titularCuentaOrigen !== undefined}
-            aria-describedby={describedBy}
-            className={CLASE_INPUT}
-          />
-        )}
-      </Campo>
+        onChange={(titularCuentaOrigen) => onChange({ titularCuentaOrigen })}
+      />
     </div>
   );
 }
@@ -263,7 +143,10 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
 
   const confirmar = (evento: FormEvent) => {
     evento.preventDefault();
-    const resultado = crearPrimerPagoSchema({ ...contexto, ahora: new Date() }).safeParse(valores);
+    // La transferencia queda con el momento de la confirmación, en minutos: así nunca es futura.
+    const aRegistrar =
+      valores.formaPago === "TRANSFERENCIA" ? { ...valores, fechaHoraTransferencia: fechaHoraParaInput(new Date()) } : valores;
+    const resultado = crearPrimerPagoSchema({ ...contexto, ahora: new Date() }).safeParse(aRegistrar);
     if (!resultado.success) {
       setErrores(erroresDe(resultado.error.issues));
       return;
@@ -300,7 +183,13 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
 
           <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
-          <SelectorFormaPago formas={formas} valor={valores.formaPago} onChange={(formaPago) => cambiar({ formaPago })} />
+          <SelectorFormaDeCobro
+            formas={formas}
+            valor={valores.formaPago}
+            onChange={(formaPago) => cambiar({ formaPago })}
+            leyenda="¿Cómo abonó la primera cuota?"
+            etiquetas={ETIQUETA_FORMA}
+          />
 
           <Campo id="monto-primer-pago" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>
             {(describedBy) => (
@@ -333,20 +222,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </Alert>
           )}
 
-          <div className="flex flex-row items-center justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={confirmando}
-              onClick={onClose}
-              className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={confirmando} className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark">
-              {confirmando ? "Registrando..." : "Registrar y dar de alta"}
-            </Button>
-          </div>
+          <BotonesDeCobro onCancelar={onClose} enviando={confirmando} texto="Registrar y dar de alta" textoEnviando="Registrando..." />
         </form>
       </DialogContent>
     </Dialog>

@@ -20,10 +20,10 @@ import { paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { listarPlanes } from "@/features/planes/api/planes-api";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import {
-  ModalCobroEfectivo,
+  ModalRegistrarCobro,
   type DatosAlumnoCobro,
   type DatosInscripcionCobro,
-} from "@/features/cobros/components/modal-cobro-efectivo";
+} from "@/features/cobros/components/modal-registrar-cobro";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { detalleVencimiento } from "@/features/alumnos/utils/situacion-cuota";
@@ -180,7 +180,14 @@ export function CobrosPage() {
     void recargarAlumnos();
   }
 
-  const tituloPagina = esProfesora ? "Cobros en efectivo" : "Estado de cuotas";
+  // La transferencia queda pendiente de verificación: no hay comprobante hasta que se apruebe.
+  function handleTransferenciaInformada() {
+    setAlumnoSeleccionado(null);
+    void recargarAlumnos();
+  }
+
+  // Misma pantalla para las dos: la profesora la ve como "Cobros", que es su opción del menú.
+  const tituloPagina = esProfesora ? "Cobros" : "Estado de cuotas";
 
   return (
     <OwnerLayout>
@@ -201,8 +208,8 @@ export function CobrosPage() {
             </div>
             <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
               {esProfesora
-                ? "Registrá cobros presenciales de cuotas en efectivo y emití comprobantes digitales para tus alumnos."
-                : "Gestión de cobros en efectivo, comprobantes digitales y situación de cuotas de alumnos."}
+                ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
+                : "Situación de las cuotas y registro de cobros, en efectivo o por transferencia."}
             </p>
           </div>
         </div>
@@ -394,6 +401,7 @@ export function CobrosPage() {
 
                       <Button
                         type="button"
+                        variant={alumno.situacion_cuota?.estado === "AL_DIA" ? "outline" : "default"}
                         onClick={() => abrirCobro(alumno)}
                         aria-label={`Cobrar a ${nombreCompleto}`}
                         className={cn(
@@ -498,6 +506,7 @@ export function CobrosPage() {
 
                               <Button
                                 type="button"
+                                variant={alumno.situacion_cuota?.estado === "AL_DIA" ? "outline" : "default"}
                                 onClick={() => abrirCobro(alumno)}
                                 aria-label={`Cobrar a ${nombreCompleto}`}
                                 className={cn(
@@ -525,12 +534,13 @@ export function CobrosPage() {
 
         {/* Modal para registrar cobro */}
         {alumnoSeleccionado && (
-          <ModalCobroEfectivo
+          <ModalRegistrarCobro
             abierto={Boolean(alumnoSeleccionado)}
             onClose={() => setAlumnoSeleccionado(null)}
             alumno={alumnoSeleccionado.alumno}
             inscripcion={alumnoSeleccionado.inscripcion}
             onExito={handleCobroExitoso}
+            onTransferenciaInformada={handleTransferenciaInformada}
           />
         )}
 

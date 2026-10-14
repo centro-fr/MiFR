@@ -342,11 +342,14 @@ export const pagosHandlers = [
     return HttpResponse.json(pago, { status: 201 });
   }),
 
-  // US-16: Informar una transferencia (Alumno o Tutor).
+  // Contrato propuesto al back (decisión de la dueña): la transferencia ya no la informa el alumno,
+  // sino la propietaria o la profesora a cargo de la inscripción, desde Estado de cuotas. Queda
+  // pendiente de verificación hasta que la propietaria la apruebe (US-17).
   http.post("*/api/v1/pagos/transferencia", async ({ request }) => {
     await delay(500);
-    const usuario = usuarioDeLaSesion(request);
-    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
+    const denegado = verificarAcceso(request, { permiso: "PAGOS_REGISTRAR" });
+    if (denegado) return denegado;
+    const usuario = usuarioDeLaSesion(request)!;
 
     const cuerpo = await leerCuerpo(request, informarTransferenciaSchema);
     if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
@@ -360,18 +363,12 @@ export const pagosHandlers = [
       return errorApi(409, "CONFLICT", "El alumno está dado de baja");
     }
 
-    // Verificar pertenencia salvo si es la propietaria probando el flujo
-    const persona = db.usuariosPersonas.find(
-      (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
-    );
-    const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
-    const esPropietaria = usuario.roles.includes("PROPIETARIA");
-    if (
-      !esPropietaria &&
-      !idsCandidatos.includes(alumno.id_usuario) &&
-      (alumno.id_usuario_responsable === null || !idsCandidatos.includes(alumno.id_usuario_responsable))
-    ) {
-      return errorApi(403, "FORBIDDEN", "Solo podés informar transferencias tuyas o de un menor a tu cargo");
+    // Como el cobro en efectivo: una profesora solo informa la de un alumno a su cargo.
+    if (!usuario.roles.includes("PROPIETARIA")) {
+      const profesora = db.profesoras.find((p) => p.id_usuario === usuario.id_usuario);
+      if (profesora?.id_profesora !== inscripcion.id_profesora) {
+        return errorApi(403, "FORBIDDEN", "Solo la profesora a cargo de la inscripción o la propietaria informan la transferencia");
+      }
     }
 
     // US-17 / US-16: verificar que no esté repetida el mismo día por el mismo monto
