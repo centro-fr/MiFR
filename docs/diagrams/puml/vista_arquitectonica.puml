@@ -428,6 +428,9 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     interface "IInfoInscripciones" as R_RE_InfoInscripciones
     interface "IInfoAsistencia"    as R_RE_InfoAsistencia
     interface "IInfoParametros"    as R_RE_InfoParametros
+    interface "IInfoInscripciones" as R_RE_InfoInscripcionesDet
+    interface "IInfoAlumnos"       as R_RE_InfoAlumnosDet
+    interface "IInfoCuotas"        as R_RE_InfoCuotasDet
 
     GeneradorInformes   -right-( R_RE_InfoAlumnos
     GeneradorInformes   -right-( R_RE_InfoHorarios
@@ -435,6 +438,9 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     GeneradorInformes   -down-( R_RE_InfoInscripciones
     DetectorInactividad -up-( R_RE_InfoAsistencia
     DetectorInactividad -left-( R_RE_InfoParametros
+    DetectorInactividad -down-( R_RE_InfoInscripcionesDet
+    DetectorInactividad -down-( R_RE_InfoAlumnosDet
+    DetectorInactividad -down-( R_RE_InfoCuotasDet
     GeneradorInformes ..> DetectorInactividad
   }
   interface "ILogicaInformes" as I_LogicaInformes

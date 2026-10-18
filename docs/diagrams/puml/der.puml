@@ -297,6 +297,13 @@ package "INSCRIPCIONES Y CLASES" {
       <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>NULL si lo registro el cierre automatico</size></color>
       observaciones : VARCHAR(255)
   }
+  entity "seguimientos_inactividad" as seguimientos_inactividad <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * estado : ENUM <color:#000000><<CONTACTADO|GESTIONADO|IGNORADO>></color>
+    * fecha_registro : TIMESTAMP <color:#6B7280><size:11>deja de valer si el alumno asiste despues</size></color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color>
+  }
 }
 
 package "CUOTAS Y PAGOS" {
@@ -440,6 +447,8 @@ clases ||--o{ asistencias : "id_clase"
 alumnos ||--o{ asistencias : "id_alumno"
 inscripciones ||--o{ asistencias : "id_inscripcion"
 usuarios |o--o{ asistencias : "id_usuario_registra"
+inscripciones ||--o| seguimientos_inactividad : "id_inscripcion"
+usuarios ||--o{ seguimientos_inactividad : "id_usuario_registra"
 
 ' cuotas y pagos
 inscripciones ||--o{ cuotas : "id_inscripcion"

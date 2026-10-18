@@ -231,7 +231,8 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 
 ### Pendiente (US-22)
 
-- [ ] Agregar al `.puml` y a EA que `DetectorInactividad` requiere `IInfoInscripciones`, `IInfoCuotas` e `IInfoAlumnos` (regla dura 2).
+- [x] Agregar al `.puml` que `DetectorInactividad` requiere `IInfoInscripciones`, `IInfoCuotas` e `IInfoAlumnos` (regla dura 2).
+- [ ] Reflejarlo en el `.eap` de Enterprise Architect, junto con `seguimientos_inactividad`, y regenerar el `.jpg` y el `.pdf`.
 - [ ] Subsistema `src/modules/reportes/` con `ILogicaInformes`, su fachada y el componente `detector-inactividad/`. Montarlo en `app.ts`, `openapi.ts` y `composicion.ts`.
 - [ ] `GET /api/v1/informes/alumnos-inactivos`: alumno, teléfono y email (o los del tutor si es menor), profesora, plan, inasistencias consecutivas y fecha de la última asistencia. Filtros por profesora, plan y mínimo de inasistencias. Solo la propietaria (`REPORTES_COBRANZA_VER`, ver decisiones).
 - [ ] `IInfoAsistencia.ultimasDeInscripciones(idsInscripcion, cantidad)`: las últimas N asistencias registradas de cada inscripción en una sola consulta (sin N+1).
