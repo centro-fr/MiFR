@@ -1,4 +1,9 @@
-import type { FiltroTransferencias, PaginaTransferencias, ResumenEfectivoPendiente } from "../pago.types.js";
+import type {
+  FiltroTransferencias,
+  PaginaTransferencias,
+  ResumenEfectivoPendiente,
+  ResumenTransferenciasPendientes,
+} from "../pago.types.js";
 
 // Interfaz provista por Pago (GestionCuotasYPagos) en la vista arquitectónica. La requiere
 // ResumenDiarioPropietaria (GestionNotificaciones) para el resumen del día (US-26): las
@@ -7,6 +12,9 @@ export interface IInfoPagos {
   // Una página, ordenada por antigüedad, con las horas desde la carga y la marca de las que pasaron las
   // 24 horas, y el total de las que cumplen el filtro.
   listarTransferencias(filtro: FiltroTransferencias): Promise<PaginaTransferencias>;
+  // US-26: cantidad y total de las que esperan revisión, cuántas pasaron o están por pasar las 24
+  // horas, y las más viejas.
+  resumenTransferenciasPendientes(): Promise<ResumenTransferenciasPendientes>;
   // US-19: cantidad y total, por profesora y en general, y el cobro sin rendir más viejo.
   resumenEfectivoPendiente(): Promise<ResumenEfectivoPendiente>;
 }
