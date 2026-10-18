@@ -35,12 +35,20 @@ function tienePagoPendiente(situacion: SituacionDeCuotas): boolean {
   return situacion.cuotas.some(({ estados_pagos }) => estados_pagos.includes("PENDIENTE"));
 }
 
-// Hasta cuándo está cubierto: el vencimiento más lejano entre las cuotas con un pago confirmado.
-function vencimientoConfirmado(situacion: SituacionDeCuotas): Date | null {
-  const confirmadas = situacion.cuotas
+// La cuota que cubre hasta más lejos entre las que tienen un pago confirmado.
+function cuotaVigente(situacion: SituacionDeCuotas): CuotaDeLaSituacion | null {
+  return situacion.cuotas
     .filter(estaConfirmada)
-    .map(({ fecha_vencimiento }) => fecha_vencimiento);
-  return confirmadas.length > 0 ? new Date(Math.max(...confirmadas.map(Number))) : null;
+    .reduce<CuotaDeLaSituacion | null>(
+      (vigente, cuota) =>
+        vigente === null || cuota.fecha_vencimiento > vigente.fecha_vencimiento ? cuota : vigente,
+      null,
+    );
+}
+
+// Hasta cuándo está cubierto.
+function vencimientoConfirmado(situacion: SituacionDeCuotas): Date | null {
+  return cuotaVigente(situacion)?.fecha_vencimiento ?? null;
 }
 
 // La última cuota se reusa si no tiene pagos confirmados ni pendientes, como la que queda después
@@ -165,8 +173,9 @@ export class CuotaService implements IInfoCuotas {
   }
 
   private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {
-    const vencimiento = vencimientoConfirmado(situacion);
-    if (vencimiento === null || tienePagoPendiente(situacion)) return null;
+    const cuota = cuotaVigente(situacion);
+    if (cuota === null || tienePagoPendiente(situacion)) return null;
+    const vencimiento = cuota.fecha_vencimiento;
     const { estado, diasRestantes } = this.habilitaciones.calcular({
       tipoPlan: situacion.tipo_plan,
       vencimiento,
@@ -177,12 +186,6 @@ export class CuotaService implements IInfoCuotas {
     });
     const tipo = tipoDeAviso(estado, diasRestantes, diasPrevios);
     if (tipo === null) return null;
-
-    const cuota = situacion.cuotas.find(
-      (candidata) =>
-        estaConfirmada(candidata) && candidata.fecha_vencimiento.getTime() === vencimiento.getTime(),
-    );
-    if (!cuota) return null;
     return {
       tipo,
       id_cuota: cuota.id_cuota,
