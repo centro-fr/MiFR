@@ -73,9 +73,10 @@ Como propietaria, quiero crear y editar los planes vigentes definiendo su tipo, 
 
 - El plan **no se asocia a una profesora**: la profesora a cargo se elige al inscribir al alumno (US-05).
 - La **actividad exclusiva es opcional**:
-  - Sin actividad, el alumno puede elegir horarios de cualquier actividad (ej: un pase libre).
+  - Sin actividad, el alumno elige la actividad al inscribirse; el plan sirve para cualquiera.
   - Con actividad, al inscribir solo se aceptan horarios de esa actividad (ej: Kids, Particular).
   - Solo se puede elegir una actividad activa.
+- Cada inscripción corresponde a **una sola actividad** (Estudio Inicial): todos sus horarios son de la misma actividad, también en un plan sin actividad exclusiva o de frecuencia libre. No se combinan disciplinas, por ejemplo un día de Funcional y uno de Pilates.
 - Al inscribir, todos los horarios del alumno deben ser de **una misma profesora**. Si el plan es "solo con la profesora a cargo", además esa profesora tiene que ser la que está a cargo de la inscripción.
 - En los planes `MENSUAL` la frecuencia es un entero de 1 a 7 o libre; al inscribir no se pueden elegir más horarios que esa frecuencia (libre no tiene tope).
 - Un plan `CLASE_SUELTA` no lleva frecuencia semanal y sus días de gracia son 0.
@@ -101,7 +102,8 @@ Como propietaria, quiero crear y editar los planes vigentes definiendo su tipo, 
 
 ## 9. Casos borde / Errores
 
-- Plan sin actividad exclusiva → se guarda: sirve para cualquier actividad
+- Plan sin actividad exclusiva → se guarda: sirve para cualquier actividad, pero cada inscripción elige una sola
+- Inscripción con horarios de distintas actividades → se rechaza: "Todos los horarios deben pertenecer a una misma actividad"
 - Actividad exclusiva dada de baja → no se puede elegir
 - Actividad dada de baja con planes vigentes exclusivos → no se permite la baja de la actividad (ver US-03)
 - Profesora dada de baja → no afecta al plan (no la guarda); afecta a sus horarios e inscripciones (ver US-04)
