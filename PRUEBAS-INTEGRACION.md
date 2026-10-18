@@ -815,16 +815,16 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **US:** US-07, US-16, US-17 · **Precondición:** escenario de demostración cargado (Valentina Herrera al día en el Intermedio, a $30.000, con su primera cuota pagada; Sofía Medina pre-inscripta en el Básico, sin cuotas).
 
-1. Valentina informa una transferencia de $30.000 hecha hace una hora (`POST /pagos/transferencia`) y consulta las suyas (`GET /pagos/mis-transferencias`).
+1. Carla, la profesora a cargo de Valentina, informa una transferencia de $30.000 hecha hace una hora (`POST /pagos/transferencia`) y Valentina consulta las suyas (`GET /pagos/mis-transferencias`). Antes, Valentina y Lucía (que no está a cargo) intentan informarla.
 2. Marina consulta las pendientes (`GET /pagos/transferencias?estado=PENDIENTE`); Lucía intenta lo mismo. Marina intenta cobrarle a Valentina en efectivo.
-3. Con la base reiniciada y la transferencia informada, Marina la rechaza sin motivo y después con el motivo "No figura en el extracto"; intenta aprobarla. Valentina la vuelve a informar.
+3. Con la base reiniciada y la transferencia informada, Marina la rechaza sin motivo y después con el motivo "No figura en el extracto"; intenta aprobarla. Carla la vuelve a informar.
 4. Con la base reiniciada y la transferencia informada, Marina la aprueba. Después carga como recibida una transferencia de $25.000 de Sofía (`POST /pagos/transferencia-recibida`).
-5. Con la base reiniciada, Valentina informa una transferencia y Marina carga la de Sofía. Marina lista las transferencias de las más nuevas a las más viejas (`orden=desc`), las de primera cuota (`tipo=PRIMERA_CUOTA`), las cargadas hoy (`desde` y `hasta`), las de enero de 2026 y con un tipo desconocido.
-6. Con la base reiniciada y el vencimiento de la primera cuota de Valentina movido a ayer, Valentina informa una transferencia y Marina lista las de cuota vencida y las de renovación.
+5. Con la base reiniciada, Carla informa una transferencia de Valentina y Marina carga la de Sofía. Marina lista las transferencias de las más nuevas a las más viejas (`orden=desc`), las de primera cuota (`tipo=PRIMERA_CUOTA`), las cargadas hoy (`desde` y `hasta`), las de enero de 2026 y con un tipo desconocido.
+6. Con la base reiniciada y el vencimiento de la primera cuota de Valentina movido a ayer, Carla informa una transferencia y Marina lista las de cuota vencida y las de renovación.
 
-**Resultado esperado:** en el paso 1 la transferencia queda `PENDIENTE` en una cuota 2 nueva y Valentina la ve en su listado. En el paso 2 Marina la ve, sin superar las 24 horas; Lucía recibe 403 y el cobro en efectivo, 409, sin guardar nada. En el paso 3 el rechazo sin motivo responde 400; con motivo, 200 y `RECHAZADO`; la aprobación de una rechazada, 409. La transferencia nueva se carga en la misma cuota 2, sin saltear números. En el paso 4 la aprobación responde 200, con el pago `CONFIRMADO` y Marina como quien la revisó; la transferencia recibida responde 201 `CONFIRMADO` y da el alta de Sofía (inscripción `ACTIVA` y alumna `ACTIVO`). En el paso 5 el listado responde `{ datos, total, limit, offset }` con total 2: primero la de Sofía (plan Básico, monto esperado $25.000, `PRIMERA_CUOTA`) y después la de Valentina (Intermedio, $30.000, `RENOVACION`). El filtro por tipo trae solo la de Sofía, con total 1; las de hoy son 2, las de enero ninguna, y el tipo desconocido responde 400. En el paso 6 la de Valentina es `CUOTA_VENCIDA` y no hay renovaciones.
+**Resultado esperado:** en el paso 1 Valentina y Lucía reciben 403 sin guardar nada (desde el 18/10/2026 el alumno ya no informa transferencias). La de Carla queda `PENDIENTE` en una cuota 2 nueva, registrada por Carla y sin profesora que la rinda, Marina la ve en las pendientes y Valentina la ve en su listado. En el paso 2 Marina la ve, sin superar las 24 horas; Lucía recibe 403 y el cobro en efectivo, 409, sin guardar nada. En el paso 3 el rechazo sin motivo responde 400; con motivo, 200 y `RECHAZADO`; la aprobación de una rechazada, 409. La transferencia nueva se carga en la misma cuota 2, sin saltear números. En el paso 4 la aprobación responde 200, con el pago `CONFIRMADO` y Marina como quien la revisó; la transferencia recibida responde 201 `CONFIRMADO` y da el alta de Sofía (inscripción `ACTIVA` y alumna `ACTIVO`). En el paso 5 el listado responde `{ datos, total, limit, offset }` con total 2: primero la de Sofía (plan Básico, monto esperado $25.000, `PRIMERA_CUOTA`) y después la de Valentina (Intermedio, $30.000, `RENOVACION`). El filtro por tipo trae solo la de Sofía, con total 1; las de hoy son 2, las de enero ninguna, y el tipo desconocido responde 400. En el paso 6 la de Valentina es `CUOTA_VENCIDA` y no hay renovaciones.
 
-**Automatizado:** Sí (H-12 a H-14, H-20 y H-21).
+**Automatizado:** Sí (H-12 a H-14 y H-20 a H-22).
 
 #### PI-44 — Reactivar a quien nunca pagó
 
@@ -1004,7 +1004,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-209 tests en once archivos:
+210 tests en once archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1015,7 +1015,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 37 (G-01 a G-37) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 21 (H-01 a H-21) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 22 (H-01 a H-22) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
@@ -1102,6 +1102,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-19        | La propietaria ve el historial de cuotas con todos sus pagos, también el rechazado; la profesora a cargo recibe la ficha sin el historial                        | PI-52 |
 | H-20        | El listado de transferencias trae el plan, el monto esperado y el tipo (primera cuota y renovación), con el filtro por tipo y por días de carga, el orden y el total | PI-43 |
 | H-21        | La transferencia cargada después del vencimiento de la cuota anterior es de una cuota vencida                                                                    | PI-43 |
+| H-22        | La transferencia la informa la profesora a cargo y queda pendiente para la propietaria; el alumno y otra profesora reciben 403 sin guardar nada                      | PI-43 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
@@ -1236,6 +1237,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La pre-inscripción en un solo pedido no verifica a nombre de quién pre-inscribe la profesora | G-37 y dos unitarios del service                                                                        |
 | La pre-inscripción en un solo pedido no exige las medidas que pide la actividad         | G-35 y un unitario del service                                                                             |
 | Una profesora elige un tutor existente al pre-inscribir en un solo pedido               | G-37 y un unitario de Alumno                                                                               |
+| Informar una transferencia sin comprobar que la profesora está a cargo                 | H-22 y un unitario de la fachada                                                                           |
+| `POST /pagos/transferencia` sin `acceso.permiso("PAGOS_REGISTRAR")`                     | Cuatro unitarios de las rutas. Ningún test de integración, porque el service igual rechaza a quien no es profesora a cargo ni propietaria |
 | La primera cuota no se reconoce como tal                                                | H-20 y dos unitarios del service                                                                           |
 | El filtro por tipo deja las que no coinciden                                            | H-20, H-21 y un unitario del service                                                                       |
 
@@ -1284,6 +1287,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Puntos abiertos de asistencia: pre-inscriptos, días anteriores, observaciones y clase cancelada (PI-47, PI-48, PI-55, PI-56) | 202 | 202 aprobados | 149,6 s | J-01, J-02, J-05 y J-08 se adaptaron: el pre-inscripto ya no está en la clase. Pasaron también los 1534 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas. La primera corrida falló en J-16: la clase cancelada se releía dentro de la transacción y salía sin cancelar; se relee al confirmar |
 | 18/10/2026 | Listado de transferencias con plan, monto esperado y tipo (PI-43)     | 219 | 219 aprobados | 230,6 s | `GET /pagos/transferencias` responde `{ datos, total, limit, offset }` y suma los filtros `tipo`, `desde`, `hasta` y `orden`; H-12 se adaptó a la respuesta nueva. Pasaron también los 1791 tests unitarios; los archivos de pagos quedan con cobertura del 100 %. Chequeo de tipos y build correctos. Las 3 fallas provocadas fueron detectadas |
 | 18/10/2026 | Alumno y pre-inscripción en un solo pedido (PI-64)                    | 224 | 224 aprobados | 216,6 s | Pasaron también los 1816 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos y build correctos. Las 4 fallas provocadas fueron detectadas |
+| 18/10/2026 | La profesora a cargo informa las transferencias (PI-43)              | 225 | 225 aprobados | 216,3 s | Los tests de PI-43, PI-45 y PI-52 que informaban con Valentina pasan a informar con Carla. Pasaron también los 1815 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos, formato y build correctos. De las 2 fallas provocadas, una la detecta H-22 y la otra solo los unitarios de las rutas |
 
 ### 8.2 Resultado por caso
 
@@ -1304,7 +1308,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-41         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan G-28 a G-31 (punto a confirmar de PI-41 cerrado)                           |
 | PI-06         | 11/10/2026 | Francisco Andrade | Aprobado           | Pasan B-10 a B-13 y B-16 a B-18 (defecto D-19)                                   |
 | PI-42         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-10 y H-11 por la API; sin defectos                                       |
-| PI-43         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan H-12 a H-14, H-20 y H-21 por la API; sin defectos                          |
+| PI-43         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan H-12 a H-14 y H-20 a H-22 por la API; sin defectos                         |
 | PI-22         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan G-06 a G-08; G-07 paga la primera cuota antes de la baja (defecto D-20)     |
 | PI-44         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasa G-32 (defecto D-20)                                                         |
 | PI-45         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan H-15 y H-16; sin defectos                                                  |
@@ -1432,3 +1436,4 @@ Los defectos se numeran D-01, D-02…
 |   2.20  | 12/10/2026 | Casos PI-55 (corrección de días anteriores) y PI-56 (clase cancelada) y tests J-13 a J-17; PI-47 y PI-48 sin el pre-inscripto en la clase y con las observaciones; se cierran los cuatro puntos de asistencia de la sección 9; US-20 y US-21 quedan automatizadas sin pendientes | Francisco Andrade |
 |   2.21  | 18/10/2026 | PI-43 suma el plan, el monto esperado y el tipo de cada transferencia, con los filtros por tipo y por días de carga y el orden (pasos 5 y 6); tests H-20 y H-21, y H-12 adaptado a la respuesta paginada | Francisco Andrade |
 |   2.22  | 18/10/2026 | Caso PI-64 (el alumno y su pre-inscripción en un solo pedido, `POST /preinscripciones`) y tests G-33 a G-37; US-05 suma el caso | Francisco Andrade |
+|   2.23  | 18/10/2026 | PI-43: la transferencia la informa la profesora a cargo o la propietaria, y el alumno recibe 403; test H-22 y los tests que informaban con Valentina pasan a Carla | Francisco Andrade |
