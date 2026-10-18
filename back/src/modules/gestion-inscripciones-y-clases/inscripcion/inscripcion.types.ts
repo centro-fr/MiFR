@@ -118,3 +118,18 @@ export interface InscripcionACargo {
   fecha_inicio: Date;
   fecha_baja: Date | null;
 }
+
+export interface FiltroInscripcionesParaInactividad {
+  id_inscripcion?: number;
+  id_profesora?: number;
+  id_plan?: number;
+}
+
+// US-22: una inscripción que puede tener una racha de inasistencias, con lo que muestra el listado de
+// inactivos.
+export interface InscripcionParaInactividad {
+  id_inscripcion: number;
+  id_alumno: number;
+  plan: { id_plan: number; nombre: string };
+  profesora: { id_profesora: number; nombre: string; apellido: string };
+}

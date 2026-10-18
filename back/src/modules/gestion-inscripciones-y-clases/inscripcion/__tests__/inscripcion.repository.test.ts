@@ -260,6 +260,38 @@ describe("InscripcionRepository", () => {
       });
     });
 
+    it("listarParaInactividad trae las activas de plan mensual de alumnos no dados de baja, con los filtros", async () => {
+      prisma.inscripciones.findMany.mockResolvedValue([
+        {
+          id_inscripcion: 12,
+          id_alumno: 5,
+          plan: { id_plan: 2, nombre: "Intermedio" },
+          profesora: { id_profesora: 3, usuario: { nombre: "Lucía", apellido: "Gómez" } },
+        },
+      ]);
+
+      await expect(repositorio.listarParaInactividad({ id_profesora: 3 })).resolves.toEqual([
+        {
+          id_inscripcion: 12,
+          id_alumno: 5,
+          plan: { id_plan: 2, nombre: "Intermedio" },
+          profesora: { id_profesora: 3, nombre: "Lucía", apellido: "Gómez" },
+        },
+      ]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
+        estado: "ACTIVA",
+        plan: { tipo: "MENSUAL" },
+        alumno: { estado: { not: "BAJA" } },
+        id_profesora: 3,
+      });
+
+      await repositorio.listarParaInactividad({ id_inscripcion: 12, id_plan: 2 });
+      expect(prisma.inscripciones.findMany.mock.calls[1][0].where).toMatchObject({
+        id_inscripcion: 12,
+        id_plan: 2,
+      });
+    });
+
     const INSCRIPTOS_DEL_HORARIO_8 = {
       id_horario: 8,
       fecha_desde: { lte: DIA },

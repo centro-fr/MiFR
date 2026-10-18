@@ -1,8 +1,10 @@
 import type {
   FiltroAlumnosPorInscripcion,
+  FiltroInscripcionesParaInactividad,
   InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscripcionParaInactividad,
   InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "../inscripcion.types.js";
@@ -40,4 +42,7 @@ export interface IInfoInscripciones {
   // de Argentina). El DER no guarda cuándo se activó una inscripción, así que una BAJA puede ser una
   // pre-inscripción que nunca se pagó: quien liquida lo distingue con lo cobrado (IInfoCuotas).
   aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]>;
+  // US-22: las ACTIVA de plan mensual de alumnos no dados de baja. La clase suelta no tiene racha semanal
+  // y una pre-inscripción todavía no asiste.
+  listarParaInactividad(filtro: FiltroInscripcionesParaInactividad): Promise<InscripcionParaInactividad[]>;
 }

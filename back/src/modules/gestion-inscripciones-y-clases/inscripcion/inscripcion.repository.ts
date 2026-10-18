@@ -13,8 +13,10 @@ import {
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
+  type FiltroInscripcionesParaInactividad,
   type InscripcionACargo,
   type InscripcionGuardada,
+  type InscripcionParaInactividad,
   type InscriptoDeHorario,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
@@ -632,6 +634,35 @@ export class InscripcionRepository {
       },
       orderBy: [{ id_profesora: "asc" }, { id_inscripcion: "asc" }],
     });
+  }
+
+  // Sin tope: crece con los alumnos activos, no con el historial. Quien lista pagina después de calcular
+  // las rachas, que no están en la base.
+  async listarParaInactividad(
+    filtro: FiltroInscripcionesParaInactividad,
+  ): Promise<InscripcionParaInactividad[]> {
+    const nombre = { select: { nombre: true, apellido: true } } as const;
+    const filas = await this.prisma.inscripciones.findMany({
+      where: {
+        estado: "ACTIVA",
+        plan: { tipo: "MENSUAL" },
+        alumno: { estado: { not: "BAJA" } },
+        ...(filtro.id_inscripcion === undefined ? {} : { id_inscripcion: filtro.id_inscripcion }),
+        ...(filtro.id_profesora === undefined ? {} : { id_profesora: filtro.id_profesora }),
+        ...(filtro.id_plan === undefined ? {} : { id_plan: filtro.id_plan }),
+      },
+      select: {
+        id_inscripcion: true,
+        id_alumno: true,
+        plan: { select: { id_plan: true, nombre: true } },
+        profesora: { select: { id_profesora: true, usuario: nombre } },
+      },
+      orderBy: { id_inscripcion: "asc" },
+    });
+    return filas.map(({ profesora, ...inscripcion }) => ({
+      ...inscripcion,
+      profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
+    }));
   }
 
   private async agregarHorarios(
