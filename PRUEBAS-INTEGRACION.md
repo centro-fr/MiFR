@@ -181,7 +181,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38, PI-46        | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39, PI-53 | Sí, alumno, inscripción, horarios, cupos, peso y talla y reserva que vence               |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39, PI-53, PI-64 | Sí, alumno, inscripción, horarios, cupos, peso y talla, reserva que vence y el alta en un solo pedido |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44, PI-45                      | Sí                                                                                     |
@@ -279,8 +279,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-54         | Los datos bancarios para transferir los ven el alumno y su tutor   | US-16               | Servicios          | Comunes                                                    | Sí           |
 | PI-55         | La propietaria corrige las clases de un día anterior                | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-56         | La propietaria cancela una clase                                    | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
+| PI-64         | El alumno y su pre-inscripción en un solo pedido                    | US-05, US-06        | Servicios          | Demostración, `crearAlumno`                                | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad.
 
 ### 6.2 Detalle
 
@@ -987,9 +988,23 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (J-16 y J-17).
 
+#### PI-64 — El alumno y su pre-inscripción en un solo pedido
+
+**US:** US-05, US-06 · **Precondición:** escenario de demostración cargado; sesión de Marina (propietaria) y de Lucía (profesora). Un horario de Funcional con cupo 1 ya ocupado por otro alumno.
+
+1. Marina da de alta y pre-inscribe en el Básico con Lucía a un adulto nuevo (`POST /preinscripciones`).
+2. Marina intenta lo mismo con una menor y su tutora nueva en el horario lleno; después reintenta en un horario con lugar.
+3. Marina pre-inscribe a un adulto en el Personalizado 2 días con Carla sin peso ni talla, y después con ellos.
+4. Marina pre-inscribe a un adulto con un DNI que ya tiene otro alumno.
+5. Lucía pre-inscribe a un adulto a nombre de Carla, a una menor eligiendo como tutora una cuenta existente por su id, y después a un adulto a su propio nombre.
+
+**Resultado esperado:** en el paso 1 responde 201 con `id_alumno` e `id_inscripcion`; el alumno y su usuario quedan `INACTIVO` y la inscripción `PREINSCRIPTA` en el horario elegido. En el paso 2 el horario lleno responde 409 "No hay cupo disponible" y la base queda igual: ni la menor ni la tutora existen. El reintento responde 201 y la menor queda con la tutora como responsable. En el paso 3, sin medidas responde 400 sin guardar nada; con medidas, 201 y una medición inicial del alumno nuevo. En el paso 4 responde 409 `ALUMNO_EXISTENTE` con el id del alumno existente, sin guardar nada. En el paso 5, a nombre de otra profesora y con la tutora existente responde 403 sin guardar nada; a su nombre, 201.
+
+**Automatizado:** Sí (G-33 a G-37).
+
 ## 7. Tests automatizados
 
-204 tests en once archivos:
+209 tests en once archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -999,7 +1014,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 32 (G-01 a G-32) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44 |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 37 (G-01 a G-37) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 21 (H-01 a H-21) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
@@ -1063,6 +1078,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-30        | El detalle con otro motivo o de más de 200 caracteres responde 400 `VALIDATION_ERROR` y no da de baja nada                                                                   | PI-41 |
 | G-31        | La base rechaza un detalle sin el motivo `OTRO` aunque se saltee la API (`ck_inscripciones_x2`)                                                                              | PI-41 |
 | G-32        | Quien nunca pagó vuelve de la baja pre-inscripto, inactivo y sin rol; el primer pago le da el alta, el rol y el acceso                                                    | PI-44 |
+| G-33        | La pre-inscripción en un solo pedido crea el alumno inactivo y su inscripción PREINSCRIPTA                                                                                | PI-64 |
+| G-34        | Sin cupo responde 409 sin guardar el alumno ni el tutor; el reintento en otro horario funciona                                                                            | PI-64 |
+| G-35        | Sin las medidas que pide la actividad no guarda nada; con ellas guarda la medición inicial del alumno nuevo                                                               | PI-64 |
+| G-36        | Un DNI ya registrado responde 409 `ALUMNO_EXISTENTE` sin crear la inscripción                                                                                            | PI-64 |
+| G-37        | Una profesora pre-inscribe a su nombre; a nombre de otra o eligiendo un tutor existente responde 403 sin guardar nada                                                    | PI-64 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
@@ -1212,6 +1232,10 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Los candidatos se piden sin el uno de más que delata el tope                            | Dos unitarios de la fachada                                                                                |
 | La ficha busca al alumno antes de comprobar si la profesora lo tiene a cargo            | E-15 y un unitario de la fachada                                                                           |
 | La transferencia cargada el mismo día del vencimiento anterior cuenta como cuota vencida | Un unitario del service (el borde de las 23:00 de Argentina)                                               |
+| La pre-inscripción en un solo pedido crea el alumno fuera de la unidad de trabajo        | G-34                                                                                                       |
+| La pre-inscripción en un solo pedido no verifica a nombre de quién pre-inscribe la profesora | G-37 y dos unitarios del service                                                                        |
+| La pre-inscripción en un solo pedido no exige las medidas que pide la actividad         | G-35 y un unitario del service                                                                             |
+| Una profesora elige un tutor existente al pre-inscribir en un solo pedido               | G-37 y un unitario de Alumno                                                                               |
 | La primera cuota no se reconoce como tal                                                | H-20 y dos unitarios del service                                                                           |
 | El filtro por tipo deja las que no coinciden                                            | H-20, H-21 y un unitario del service                                                                       |
 
@@ -1259,6 +1283,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 12/10/2026 | Parámetros del sistema integrados con dev (PI-53, PI-54)               | 197 | 197 aprobados | 151,0 s | Primera corrida de los parámetros junto con clases y asistencia, el filtro por estado de cuota y Vitest 5. Pasaron también los 1501 tests unitarios, con cobertura del 100 %; build, chequeo de tipos y formato correctos. De 3 fallas provocadas, 2 las detectan K-18 y K-04 a K-08; la tercera (las rutas de edición sin `acceso.rol("PROPIETARIA")`) solo la detectan los unitarios de las rutas, porque `PARAMETROS_EDITAR` es exclusivo de la propietaria y ningún otro rol lo tiene en la base |
 | 12/10/2026 | Puntos abiertos de asistencia: pre-inscriptos, días anteriores, observaciones y clase cancelada (PI-47, PI-48, PI-55, PI-56) | 202 | 202 aprobados | 149,6 s | J-01, J-02, J-05 y J-08 se adaptaron: el pre-inscripto ya no está en la clase. Pasaron también los 1534 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas. La primera corrida falló en J-16: la clase cancelada se releía dentro de la transacción y salía sin cancelar; se relee al confirmar |
 | 18/10/2026 | Listado de transferencias con plan, monto esperado y tipo (PI-43)     | 219 | 219 aprobados | 230,6 s | `GET /pagos/transferencias` responde `{ datos, total, limit, offset }` y suma los filtros `tipo`, `desde`, `hasta` y `orden`; H-12 se adaptó a la respuesta nueva. Pasaron también los 1791 tests unitarios; los archivos de pagos quedan con cobertura del 100 %. Chequeo de tipos y build correctos. Las 3 fallas provocadas fueron detectadas |
+| 18/10/2026 | Alumno y pre-inscripción en un solo pedido (PI-64)                    | 224 | 224 aprobados | 216,6 s | Pasaron también los 1816 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos y build correctos. Las 4 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1296,6 +1321,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-47, PI-48  | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-01 a J-07 y J-13 sin el pre-inscripto en la clase y con las observaciones |
 | PI-55         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-14 y J-15; sin defectos                                                  |
 | PI-56         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-16 y J-17; sin defectos                                                  |
+| PI-64         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan G-33 a G-37; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1405,3 +1431,4 @@ Los defectos se numeran D-01, D-02…
 |   2.19  | 12/10/2026 | Corrida de los parámetros integrados con dev y verificación de que sus tests detectan fallas | Francisco Andrade |
 |   2.20  | 12/10/2026 | Casos PI-55 (corrección de días anteriores) y PI-56 (clase cancelada) y tests J-13 a J-17; PI-47 y PI-48 sin el pre-inscripto en la clase y con las observaciones; se cierran los cuatro puntos de asistencia de la sección 9; US-20 y US-21 quedan automatizadas sin pendientes | Francisco Andrade |
 |   2.21  | 18/10/2026 | PI-43 suma el plan, el monto esperado y el tipo de cada transferencia, con los filtros por tipo y por días de carga y el orden (pasos 5 y 6); tests H-20 y H-21, y H-12 adaptado a la respuesta paginada | Francisco Andrade |
+|   2.22  | 18/10/2026 | Caso PI-64 (el alumno y su pre-inscripción en un solo pedido, `POST /preinscripciones`) y tests G-33 a G-37; US-05 suma el caso | Francisco Andrade |
