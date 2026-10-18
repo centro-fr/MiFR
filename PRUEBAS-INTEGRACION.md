@@ -482,10 +482,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 2. Lucía da de alta a otro alumno.
 3. Marina intenta dar de alta un alumno con un DNI que ya es de otro alumno.
 4. Marina intenta dar de alta un alumno con el email de otro usuario, y otro mayor de edad sin email.
+5. Marina intenta dar de alta a Ana sin DNI, sin el nombre o sin el teléfono del contacto de emergencia, y a un menor con un tutor nuevo sin DNI.
+6. Se inserta en la base un alumno sin contacto de emergencia, sin pasar por la API.
 
-**Resultado esperado:** el paso 1 responde 201; en la base el alumno y su usuario quedan `INACTIVO` y sin roles, y el login de Ana responde 403 hasta que se confirme su primer pago. El paso 2 responde 201: la matriz inicial le da a la profesora `ALUMNOS_EDITAR`. El paso 3 responde 409 con el código `ALUMNO_EXISTENTE` y el id del alumno que ya existe, para que el front ofrezca abrir su ficha. En el paso 4 el email repetido responde 409 y el mayor sin email 400. Ninguno de los rechazos deja usuarios ni alumnos nuevos.
+**Resultado esperado:** el paso 1 responde 201; en la base el alumno y su usuario quedan `INACTIVO` y sin roles, y el login de Ana responde 403 hasta que se confirme su primer pago. El paso 2 responde 201: la matriz inicial le da a la profesora `ALUMNOS_EDITAR`. El paso 3 responde 409 con el código `ALUMNO_EXISTENTE` y el id del alumno que ya existe, para que el front ofrezca abrir su ficha. En el paso 4 el email repetido responde 409 y el mayor sin email 400. En el paso 5 cada alta incompleta responde 400 (desde el 18/10/2026 el DNI y el contacto de emergencia son obligatorios). En el paso 6 Postgres rechaza la fila con `not_null_violation` (23502). Ninguno de los rechazos deja usuarios ni alumnos nuevos.
 
-**Automatizado:** Sí (E-01 a E-04).
+**Automatizado:** Sí (E-01 a E-04, E-24 y E-25).
 
 #### PI-16 — Alumno menor con tutor
 
@@ -1018,7 +1020,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-214 tests en doce archivos:
+216 tests en doce archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1026,7 +1028,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 21 (B-01 a B-21) | PI-04, PI-05, PI-06, PI-46        |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
-|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 23 (E-01 a E-23) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
+|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 25 (E-01 a E-25) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 38 (G-01 a G-38) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 22 (H-01 a H-22) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
@@ -1073,6 +1075,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-15 a E-17 | La profesora lista, abre y edita solo a sus alumnos, solo contacto y observaciones, y ve solo sus inscripciones; un alumno que no existe le responde igual que uno ajeno; la base no cambia con los rechazos | PI-25 |
 | E-18 a E-20 | Filtros por plan, profesora y actividad; alumno sin inscripción con `inscripcion: null`; ficha con la inscripción vigente, su plan, profesora y horarios; el alumno activo de la demostración inicia sesión | PI-26 |
 | E-21 a E-23 | La profesora no elige un tutor por id (403); un tutor con DNI y email de la misma cuenta se reusa y la profesora ve solo su nombre; DNI de una cuenta y email de otra (409) | PI-31 |
+| E-24        | El alta sin DNI, sin contacto de emergencia o con un tutor nuevo sin DNI responde 400 sin guardar nada | PI-15 |
+| E-25        | La base rechaza un alumno sin contacto de emergencia aunque no pase por la API (23502) | PI-15 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
 | G-01 a G-03 | Inscripción preinscripta, precio vigente, filtros, validación de reglas, duplicados y cupo                                                                                   | PI-20 |
 | G-04, G-05  | Alta definitiva idempotente, rol `ALUMNO`, login, revalidación de cupo y activación ausente de la API (404)                                                                   | PI-21 |
@@ -1262,6 +1266,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Toda inscripción traída cuenta como vencida, también en los días de gracia             | M-02 (después de sumarle una cuota en la gracia; la primera versión no lo detectaba) y dos unitarios de Cuota |
 | Las transferencias por superar las 24 horas incluyen las que ya las pasaron             | M-01 y un unitario de Pago                                                                                 |
 | `GET /resumen-diario` sin `acceso.rol("PROPIETARIA")`                                   | M-03 y un unitario de las rutas                                                                            |
+| El alta acepta un alumno sin DNI                                                         | E-24 y un unitario de los schemas                                                                          |
+| El alta acepta un alumno sin contacto de emergencia                                      | E-24 y dos unitarios de los schemas                                                                        |
+| El tutor nuevo se acepta sin DNI                                                          | E-24 y un unitario de los schemas                                                                          |
 | La primera cuota no se reconoce como tal                                                | H-20 y dos unitarios del service                                                                           |
 | El filtro por tipo deja las que no coinciden                                            | H-20, H-21 y un unitario del service                                                                       |
 
@@ -1313,6 +1320,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 18/10/2026 | La profesora a cargo informa las transferencias (PI-43)              | 225 | 225 aprobados | 216,3 s | Los tests de PI-43, PI-45 y PI-52 que informaban con Valentina pasan a informar con Carla. Pasaron también los 1815 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos, formato y build correctos. De las 2 fallas provocadas, una la detecta H-22 y la otra solo los unitarios de las rutas |
 | 18/10/2026 | Una sola actividad por inscripción (PI-20)                            | 226 | 226 aprobados | 213,6 s | Pasaron también los 1818 tests unitarios; el archivo del cambio queda con cobertura del 100 %. Chequeo de tipos, formato y build correctos. La falla provocada fue detectada |
 | 18/10/2026 | Resumen diario de la propietaria (PI-65)                              | 229 | 229 aprobados | 231,6 s | Pasaron también los 1842 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas, una después de sumarle a M-02 una cuota en los días de gracia |
+| 18/10/2026 | DNI y contacto de emergencia obligatorios en el alta (PI-15)          | 231 | 231 aprobados | 260,9 s | La migración `contacto_emergencia_obligatorio` se aplicó sobre la base de prueba. 17 tests de PI-15 a PI-17, PI-31 y PI-64 se adaptaron: mandaban altas sin DNI o sin contacto. Pasaron también los 1851 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1353,6 +1361,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-56         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-16 y J-17; sin defectos                                                  |
 | PI-64         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan G-33 a G-37; sin defectos                                                  |
 | PI-65         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan M-01 a M-03; sin defectos                                                  |
+| PI-15         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan E-01 a E-04, E-24 y E-25; sin defectos                                     |
 
 ### 8.3 Defectos
 
@@ -1466,3 +1475,4 @@ Los defectos se numeran D-01, D-02…
 |   2.23  | 18/10/2026 | PI-43: la transferencia la informa la profesora a cargo o la propietaria, y el alumno recibe 403; test H-22 y los tests que informaban con Valentina pasan a Carla | Francisco Andrade |
 |   2.24  | 18/10/2026 | PI-20 suma el paso 5 (una inscripción no combina actividades, US-11) y el test G-38 | Francisco Andrade |
 |   2.25  | 18/10/2026 | Caso PI-65 (el resumen diario de la propietaria, `GET /resumen-diario`) y archivo M con M-01 a M-03; US-26 queda parcial hasta la notificación diaria. La letra L queda para los tests de suplencias (PI-60 a PI-63), que todavía no están en la tabla | Francisco Andrade |
+|   2.26  | 18/10/2026 | PI-15 suma los pasos 5 y 6 (DNI y contacto de emergencia obligatorios en el alta) y los tests E-24 y E-25; PI-16, PI-17, PI-31 y PI-64 mandan ahora altas completas | Francisco Andrade |
