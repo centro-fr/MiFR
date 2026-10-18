@@ -379,9 +379,9 @@ package "NOTIFICACIONES E INSIGNIAS" {
   entity "notificaciones" as notificaciones <<Notificaciones>> {
     * <color:#DAA520><&key></color> id_notificacion : SERIAL <color:#DAA520>PK</color>
     --
-    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>
-    * tipo : ENUM <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|RESUMEN_DIARIO|BIENVENIDA|CLASE_CANCELADA>></color>
-      <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>solo avisos de cuota</size></color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color>
+    * <color:#9CA3AF><&link-intact></color> tipo : ENUM <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|RESUMEN_DIARIO|BIENVENIDA|CLASE_CANCELADA>></color> <color:#9CA3AF>UK(1)</color>
+      <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color> <color:#6B7280><size:11>solo avisos de cuota; un aviso de cada tipo por cuota</size></color>
     * mensaje : VARCHAR(1000)
     * fecha_generacion : TIMESTAMP
       fecha_envio : TIMESTAMP
