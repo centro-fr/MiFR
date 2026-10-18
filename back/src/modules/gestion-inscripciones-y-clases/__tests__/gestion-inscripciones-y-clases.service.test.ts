@@ -33,6 +33,7 @@ const vencida = {
 describe("GestionInscripcionesYClasesService", () => {
   const inscripciones = {
     crear: vi.fn().mockResolvedValue("inscripciones.crear"),
+    preinscribir: vi.fn().mockResolvedValue("inscripciones.preinscribir"),
     listar: vi.fn().mockResolvedValue("inscripciones.listar"),
     obtenerPara: vi.fn().mockResolvedValue("inscripciones.obtenerPara"),
     darDeBajaAlumno: vi.fn().mockResolvedValue("inscripciones.darDeBajaAlumno"),
@@ -73,6 +74,7 @@ describe("GestionInscripcionesYClasesService", () => {
 
   it.each([
     ["crearInscripcion", [{ id_alumno: 5, ...cambios }, solicitante], "crear"],
+    ["preinscribir", [{ alumno: { nombre: "Tomás" }, inscripcion: cambios }, solicitante], "preinscribir"],
     ["listarInscripciones", [{ id_plan: 1 }, solicitante], "listar"],
     ["obtenerInscripcion", [12, solicitante], "obtenerPara"],
     ["darDeBajaAlumno", [5, { motivo_baja: "ABANDONO" }], "darDeBajaAlumno"],

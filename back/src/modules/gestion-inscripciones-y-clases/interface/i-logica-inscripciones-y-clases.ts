@@ -3,10 +3,15 @@ import type {
   CambiarPlanInput,
   CrearInscripcionInput,
   DarDeBajaAlumnoInput,
+  PreinscribirInput,
   ReactivarAlumnoInput,
 } from "../inscripcion/inscripcion.schemas.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
-import type { FiltroInscripciones, InscripcionConDatos } from "../inscripcion/inscripcion.types.js";
+import type {
+  FiltroInscripciones,
+  InscripcionConDatos,
+  Preinscripcion,
+} from "../inscripcion/inscripcion.types.js";
 import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { InscriptoConAsistencia, MarcarAsistenciaInput } from "../asistencia/asistencia.types.js";
 import type { ClaseConDatos } from "../clase/clase.types.js";
@@ -21,6 +26,8 @@ import type { SuplenciaConDatos, SuplenciaRegistrada } from "../suplencia/suplen
 // interfaz nueva del diagrama.
 export interface ILogicaInscripciones {
   crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos>;
+  // US-05: el alumno nuevo y su pre-inscripción, todo o nada.
+  preinscribir(input: PreinscribirInput, solicitante: Solicitante): Promise<Preinscripcion>;
   listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]>;
   obtenerInscripcion(id: number, solicitante: Solicitante): Promise<InscripcionConDatos>;
   darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput): Promise<void>;

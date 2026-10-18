@@ -17,6 +17,7 @@ const PROPIETARIA = { idUsuario: 1, esPropietaria: true };
 function crearLogicaMock() {
   return {
     crearInscripcion: vi.fn().mockResolvedValue(inscripcion),
+    preinscribir: vi.fn().mockResolvedValue({ id_alumno: 5, id_inscripcion: 12 }),
     listarInscripciones: vi.fn().mockResolvedValue([inscripcion]),
     obtenerInscripcion: vi.fn().mockResolvedValue(inscripcion),
     darDeBajaAlumno: vi.fn().mockResolvedValue(undefined),
@@ -72,6 +73,56 @@ describe("rutas de inscripciones", () => {
       { id_plan: 1, estado: "ACTIVA", limit: 100, offset: 0 },
       { idUsuario: 2, esPropietaria: false },
     );
+  });
+
+  describe("POST /preinscripciones", () => {
+    const alumno = {
+      nombre: "Tomás",
+      apellido: "Pérez",
+      email: "tomas.perez@gmail.com",
+      fecha_nacimiento: "1998-04-12",
+    };
+
+    it("con ALUMNOS_EDITAR crea alumno y pre-inscripción, y le pasa a la lógica quién pide", async () => {
+      const respuesta = await como("profesora", "post", "/preinscripciones").send({
+        alumno,
+        inscripcion: planYHorarios,
+      });
+
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body).toEqual({ id_alumno: 5, id_inscripcion: 12 });
+      expect(autorizacion.tienePermiso).toHaveBeenCalledWith(2, "ALUMNOS_EDITAR");
+      expect(logica.preinscribir).toHaveBeenCalledWith(
+        {
+          alumno: expect.objectContaining({ nombre: "Tomás", apto_medico: false }),
+          inscripcion: { ...planYHorarios, sin_cargo: false },
+        },
+        { idUsuario: 2, esPropietaria: false },
+      );
+    });
+
+    it("sin el permiso responde 403 y sin sesión 401", async () => {
+      vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
+
+      expect(
+        (await como("profesora", "post", "/preinscripciones").send({ alumno, inscripcion: planYHorarios }))
+          .status,
+      ).toBe(403);
+      expect((await request(app).post("/api/v1/preinscripciones").send({})).status).toBe(401);
+      expect(logica.preinscribir).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["sin alumno", { inscripcion: planYHorarios }],
+      ["sin inscripción", { alumno }],
+      ["con un alumno inválido", { alumno: { ...alumno, nombre: "123" }, inscripcion: planYHorarios }],
+      ["con una inscripción sin horarios", { alumno, inscripcion: { ...planYHorarios, ids_horarios: [] } }],
+    ])("%s responde 400", async (_caso, cuerpo) => {
+      const respuesta = await como("propietaria", "post", "/preinscripciones").send(cuerpo);
+
+      expect(respuesta.status).toBe(400);
+      expect(logica.preinscribir).not.toHaveBeenCalled();
+    });
   });
 
   it("obtiene una inscripción por id", async () => {

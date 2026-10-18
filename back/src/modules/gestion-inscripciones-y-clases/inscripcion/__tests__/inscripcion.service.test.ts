@@ -14,7 +14,11 @@ import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/hora
 import type { IInfoParametros } from "../../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoPlanes } from "../../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type { InscripcionRepository } from "../inscripcion.repository.js";
-import type { CrearInscripcionInput, ReactivarAlumnoInput } from "../inscripcion.schemas.js";
+import type {
+  CrearInscripcionInput,
+  PreinscribirInput,
+  ReactivarAlumnoInput,
+} from "../inscripcion.schemas.js";
 import { InscripcionService } from "../inscripcion.service.js";
 import type { InscripcionGuardada } from "../inscripcion.types.js";
 
@@ -103,6 +107,7 @@ function crearMocks() {
       activar: vi.fn(),
       darDeBaja: vi.fn(),
       reactivar: vi.fn(),
+      crear: vi.fn().mockResolvedValue({ id_alumno: 5 }),
     },
     planes: {
       buscarPorId: vi.fn().mockResolvedValue(plan),
@@ -680,6 +685,100 @@ describe("InscripcionService", () => {
       await expect(servicio.crear(alta, PROPIETARIA)).resolves.toMatchObject({
         reserva: { vence: new Date("2026-10-12T00:00:00Z"), vencida: false },
       });
+    });
+  });
+
+  describe("preinscribir", () => {
+    const alumnoNuevo = { nombre: "Tomás", apellido: "Pérez" } as PreinscribirInput["alumno"];
+    const { id_alumno: _, ...inscripcionNueva } = alta;
+    const pedido: PreinscribirInput = { alumno: alumnoNuevo, inscripcion: inscripcionNueva };
+
+    it("crea el alumno y su pre-inscripción dentro de la misma unidad, y devuelve los dos ids", async () => {
+      const dentroDeLaUnidad: string[] = [];
+      mocks.unidadDeTrabajo.ejecutar.mockImplementation(async (operacion: () => Promise<unknown>) => {
+        dentroDeLaUnidad.push("inicio");
+        const resultado = await operacion();
+        dentroDeLaUnidad.push("fin");
+        return resultado;
+      });
+      mocks.alumnos.crear.mockImplementation(async () => {
+        dentroDeLaUnidad.push("alumno");
+        return { id_alumno: 5 };
+      });
+      mocks.repositorio.crear.mockImplementation(async () => {
+        dentroDeLaUnidad.push("inscripcion");
+        return { resultado: "ok", inscripcion: preinscripta };
+      });
+
+      await expect(servicio.preinscribir(pedido, PROPIETARIA)).resolves.toEqual({
+        id_alumno: 5,
+        id_inscripcion: 12,
+      });
+      expect(dentroDeLaUnidad).toEqual(["inicio", "alumno", "inscripcion", "fin"]);
+      expect(mocks.alumnos.crear).toHaveBeenCalledWith(alumnoNuevo, PROPIETARIA);
+      expect(mocks.alumnos.buscarPorId).not.toHaveBeenCalled();
+      expect(mocks.repositorio.crear).toHaveBeenCalledWith(
+        expect.objectContaining({ id_alumno: 5, estado: "PREINSCRIPTA", id_plan_precio: 15 }),
+        [8],
+        HOY,
+        INICIO_RESERVAS,
+      );
+    });
+
+    it("guarda las medidas como la medición inicial del alumno nuevo", async () => {
+      mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]);
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 9 });
+
+      await servicio.preinscribir({ ...pedido, inscripcion: { ...inscripcionNueva, medidas } }, PROPIETARIA);
+
+      expect(mocks.progreso.registrarMedicionInicial).toHaveBeenCalledWith({
+        idAlumno: 9,
+        idProfesora: 3,
+        pesoKg: 62.5,
+        tallaCm: 168,
+      });
+    });
+
+    it("sin cupo lanza ConflictError después de crear el alumno, para que la unidad lo deshaga", async () => {
+      mocks.repositorio.crear.mockResolvedValue({ resultado: "sin-cupo" });
+
+      await expect(servicio.preinscribir(pedido, PROPIETARIA)).rejects.toThrow("No hay cupo disponible");
+      expect(mocks.alumnos.crear).toHaveBeenCalled();
+      expect(mocks.progreso.registrarMedicionInicial).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["sin precio vigente", () => mocks.planes.precioVigente.mockResolvedValue(null), ConflictError],
+      [
+        "sin las medidas que pide la actividad",
+        () => mocks.horarios.buscarPorIds.mockResolvedValue([horarioQuePideMedidas]),
+        ValidationError,
+      ],
+    ])("%s no crea nada", async (_caso, preparar, error) => {
+      preparar();
+
+      await expect(servicio.preinscribir(pedido, PROPIETARIA)).rejects.toThrow(error);
+      expect(mocks.unidadDeTrabajo.ejecutar).not.toHaveBeenCalled();
+      expect(mocks.alumnos.crear).not.toHaveBeenCalled();
+    });
+
+    it("una profesora pre-inscribe a su nombre un alumno nuevo, sin buscar otras inscripciones", async () => {
+      await servicio.preinscribir(pedido, PROFESORA);
+
+      expect(mocks.profesores.buscarPorUsuario).toHaveBeenCalledWith(2);
+      expect(mocks.repositorio.listarVigentesPorAlumno).not.toHaveBeenCalled();
+      expect(mocks.alumnos.crear).toHaveBeenCalledWith(alumnoNuevo, PROFESORA);
+    });
+
+    it.each([
+      ["a nombre de otra profesora", { id_profesora: 4 }],
+      ["sin cargo", { sin_cargo: true }],
+    ])("una profesora no pre-inscribe %s: ForbiddenError sin crear nada", async (_caso, cambios) => {
+      await expect(
+        servicio.preinscribir({ ...pedido, inscripcion: { ...inscripcionNueva, ...cambios } }, PROFESORA),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mocks.planes.buscarPorId).not.toHaveBeenCalled();
+      expect(mocks.alumnos.crear).not.toHaveBeenCalled();
     });
   });
 });

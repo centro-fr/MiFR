@@ -14,6 +14,7 @@ import {
   darDeBajaAlumnoSchema,
   inscripcionIdParamSchema,
   listarInscripcionesQuerySchema,
+  preinscribirSchema,
   reactivarAlumnoSchema,
 } from "./inscripcion.schemas.js";
 
@@ -181,6 +182,42 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
       ),
     },
     responses: { 201: respuestas, ...respuestasDeError(400, 401, 403, 404, 409) },
+  });
+
+  registro.registerPath({
+    method: "post",
+    path: "/preinscripciones",
+    tags,
+    security,
+    summary: "Dar de alta un alumno y pre-inscribirlo (US-05)",
+    description:
+      "Requiere el permiso `ALUMNOS_EDITAR`. Hace en un solo pedido lo de `POST /alumnos` y `POST /inscripciones`, " +
+      "con las mismas reglas y los mismos errores; si cualquier parte falla (sin cupo, sin precio, medidas que " +
+      "faltan, DNI o email repetidos, un corte), no se guarda nada. Una profesora solo pre-inscribe a su propio " +
+      `nombre, sin cargo no, y carga un tutor nuevo con sus datos: elegir una cuenta existente es de la propietaria (403). ${reglasDeAlta}`,
+    request: {
+      body: cuerpoJson(
+        preinscribirSchema.openapi("Preinscribir", {
+          example: {
+            alumno: {
+              nombre: "Tomás",
+              apellido: "Pérez",
+              email: "tomas.perez@gmail.com",
+              fecha_nacimiento: "1998-04-12",
+              dni: "40111222",
+            },
+            inscripcion: { id_plan: 1, id_profesora: 1, ids_horarios: [1, 2] },
+          },
+        }),
+      ),
+    },
+    responses: {
+      201: respuestaJson(
+        "Alumno y pre-inscripción creados",
+        z.object({ id_alumno: z.number().int(), id_inscripcion: z.number().int() }).openapi("Preinscripcion"),
+      ),
+      ...respuestasDeError(400, 401, 403, 404, 409),
+    },
   });
 
   registro.registerPath({

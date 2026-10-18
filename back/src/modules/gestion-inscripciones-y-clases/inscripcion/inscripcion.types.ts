@@ -44,6 +44,11 @@ export interface ReservaDeCupo {
 // reserva es null salvo en las PREINSCRIPTA: una inscripción activa o dada de baja no reserva nada.
 export type InscripcionConDatos = InscripcionGuardada & { reserva: ReservaDeCupo | null };
 
+export interface Preinscripcion {
+  id_alumno: number;
+  id_inscripcion: number;
+}
+
 // Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
 // informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las
 // respuestas de inscripciones.

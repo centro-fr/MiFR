@@ -6,6 +6,7 @@ async function operacionNoConfigurada(): Promise<never> {
 
 export const logicaInscripcionesNoConfigurada = {
   crearInscripcion: operacionNoConfigurada,
+  preinscribir: operacionNoConfigurada,
   listarInscripciones: operacionNoConfigurada,
   obtenerInscripcion: operacionNoConfigurada,
   darDeBajaAlumno: operacionNoConfigurada,
