@@ -1,5 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { GestionNotificacionesService } from "./modules/gestion-notificaciones/gestion-notificaciones.service.js";
+import { NotificacionRepository } from "./modules/gestion-notificaciones/notificacion/notificacion.repository.js";
+import { NotificacionService } from "./modules/gestion-notificaciones/notificacion/notificacion.service.js";
+import { PlanificadorNotificacionesService } from "./modules/gestion-notificaciones/planificador-notificaciones/planificador-notificaciones.service.js";
 import { ResumenDiarioPropietariaService } from "./modules/gestion-notificaciones/resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 import type { AppDependencies } from "./app.js";
 import { GestionUsuariosService } from "./modules/gestion-usuarios/gestion-usuarios.service.js";
@@ -58,13 +61,15 @@ export interface PiezasDeInfraestructura {
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
-// tests de integración dan el alta definitiva sin pasar por un cobro; y el cierre automático de la
-// asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
+// tests de integración dan el alta definitiva sin pasar por un cobro; y los dos procesos que index.ts
+// corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
+// (US-21) y los avisos de cuota (US-25).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
   infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
+  planificadorNotificaciones: PlanificadorNotificacionesService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -138,6 +143,12 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     unidadDeTrabajo,
     new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
+  const notificacionService = new NotificacionService(new NotificacionRepository(prisma));
+  const planificadorNotificaciones = new PlanificadorNotificacionesService(
+    cuotaService,
+    parametrosService,
+    notificacionService,
+  );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
     horarioService,
@@ -155,6 +166,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionCuotasYPagos,
       gestionNotificaciones: new GestionNotificacionesService(
         new ResumenDiarioPropietariaService(pagoService, cuotaService),
+        notificacionService,
+        planificadorNotificaciones,
       ),
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
@@ -163,5 +176,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     infoInscripciones: inscripcionService,
     infoClases: claseService,
     cierreAsistencia,
+    planificadorNotificaciones,
   };
 }
