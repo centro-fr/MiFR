@@ -346,16 +346,28 @@ describe("CuotaService: los contratos del Sprint 4", () => {
       ]);
     });
 
-    it("con 0 días de gracia avisa la vencida al día siguiente del vencimiento, como la ficha", async () => {
+    it("con 0 días de gracia avisa la vencida el mismo día del vencimiento (US-25)", async () => {
       repositorio.situacionParaAvisos.mockResolvedValue([
         paraAviso([cuota(1, [PAGO], dia("2026-10-12"))], 0),
       ]);
 
+      const elDiaAnterior = await servicio.paraAvisoDeVencimiento(dia("2026-10-11"), 3);
       const elMismoDia = await servicio.paraAvisoDeVencimiento(dia("2026-10-12"), 3);
       const alSiguiente = await servicio.paraAvisoDeVencimiento(dia("2026-10-13"), 3);
 
-      expect(elMismoDia.map(({ tipo }) => tipo)).toEqual(["CUOTA_POR_VENCER"]);
+      expect(elDiaAnterior.map(({ tipo }) => tipo)).toEqual(["CUOTA_POR_VENCER"]);
+      expect(elMismoDia.map(({ tipo }) => tipo)).toEqual(["CUOTA_VENCIDA"]);
       expect(alSiguiente.map(({ tipo }) => tipo)).toEqual(["CUOTA_VENCIDA"]);
+    });
+
+    it("con días de gracia el día del vencimiento todavía avisa por vencer", async () => {
+      repositorio.situacionParaAvisos.mockResolvedValue([
+        paraAviso([cuota(1, [PAGO], dia("2026-10-12"))], 5),
+      ]);
+
+      const elMismoDia = await servicio.paraAvisoDeVencimiento(dia("2026-10-12"), 3);
+
+      expect(elMismoDia.map(({ tipo }) => tipo)).toEqual(["CUOTA_POR_VENCER"]);
     });
 
     it("si renovó, avisa por la última cuota paga y no por la anterior", async () => {

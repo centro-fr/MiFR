@@ -280,7 +280,8 @@ export class CuotaService implements IInfoCuotas {
       vencidosPuedenAsistir: true,
       hoy: fecha,
     });
-    const tipo = tipoDeAviso(estado, diasRestantes, diasPrevios);
+    // Con una cuota paga siempre hay vencimiento, y con vencimiento siempre hay días restantes.
+    const tipo = tipoDeAviso(estado, diasRestantes as number, diasPrevios, situacion.dias_gracia);
     if (tipo === null) return null;
     return {
       tipo,
@@ -293,14 +294,15 @@ export class CuotaService implements IInfoCuotas {
   }
 }
 
+// Sin días de gracia el aviso de vencida sale el mismo día del vencimiento (US-25), aunque la
+// habilitación lo dé AL_DIA hasta terminar ese día: al siguiente ya no puede asistir sin renovar.
 function tipoDeAviso(
   estado: EstadoHabilitacion,
-  diasRestantes: number | null,
+  diasRestantes: number,
   diasPrevios: number,
+  diasGracia: number,
 ): TipoAvisoCuota | null {
-  if (estado === "VENCIDA") return "CUOTA_VENCIDA";
-  if (estado === "AL_DIA" && diasRestantes !== null && diasRestantes <= diasPrevios) {
-    return "CUOTA_POR_VENCER";
-  }
+  if (estado === "VENCIDA" || (diasGracia === 0 && diasRestantes === 0)) return "CUOTA_VENCIDA";
+  if (estado === "AL_DIA" && diasRestantes <= diasPrevios) return "CUOTA_POR_VENCER";
   return null;
 }
