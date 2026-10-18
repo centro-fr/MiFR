@@ -353,6 +353,27 @@ describe("InscripcionService", () => {
       );
     });
 
+    it("rechaza horarios de dos actividades, aunque el plan no tenga actividad exclusiva", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue({ ...plan, clases_por_semana: null });
+      mocks.horarios.buscarPorIds.mockResolvedValue([
+        horario,
+        { ...horario, id_horario: 9, id_actividad: 6 },
+      ]);
+
+      await expect(servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA)).rejects.toThrow(
+        new ValidationError("Todos los horarios deben pertenecer a una misma actividad"),
+      );
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("acepta varios horarios de la misma actividad", async () => {
+      mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9 }]);
+
+      await servicio.crear({ ...alta, ids_horarios: [8, 9] }, PROPIETARIA);
+
+      expect(mocks.repositorio.crear).toHaveBeenCalled();
+    });
+
     it("con profesora única exige que los horarios sean de la profesora a cargo", async () => {
       mocks.planes.buscarPorId.mockResolvedValue({ ...plan, profesora_unica: true });
 
@@ -600,6 +621,15 @@ describe("InscripcionService", () => {
         INICIO_RESERVAS,
       );
     });
+  });
+
+  it("actualizarHorarios rechaza horarios de dos actividades sin tocar la inscripción", async () => {
+    mocks.horarios.buscarPorIds.mockResolvedValue([horario, { ...horario, id_horario: 9, id_actividad: 6 }]);
+
+    await expect(servicio.actualizarHorarios(12, { ids_horarios: [8, 9] })).rejects.toThrow(
+      "misma actividad",
+    );
+    expect(mocks.repositorio.actualizarHorarios).not.toHaveBeenCalled();
   });
 
   describe("IInfoInscripciones", () => {

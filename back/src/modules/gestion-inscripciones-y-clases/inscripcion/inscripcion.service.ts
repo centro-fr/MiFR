@@ -453,6 +453,11 @@ export class InscripcionService implements IInfoInscripciones {
     if (new Set(horarios.map(({ id_profesora }) => id_profesora)).size > 1) {
       throw new ValidationError("Todos los horarios deben pertenecer a una misma profesora");
     }
+    // Cada inscripción es de una sola actividad (Estudio Inicial, US-11), también en un plan sin
+    // actividad exclusiva: no se combinan disciplinas.
+    if (new Set(horarios.map(({ id_actividad }) => id_actividad)).size > 1) {
+      throw new ValidationError("Todos los horarios deben pertenecer a una misma actividad");
+    }
     if (plan.profesora_unica && horarios.some(({ id_profesora: asignada }) => asignada !== idProfesora)) {
       throw new ValidationError("El plan exige que los horarios sean de la profesora a cargo");
     }

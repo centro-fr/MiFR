@@ -178,6 +178,25 @@ describe("PI-20: preinscripción y cupos", () => {
     expect(horarioCarla.id_horario).not.toBe(funcionales[0].id_horario);
     expect(await prisma.inscripciones.count()).toBe(inscripcionesDeDemo);
   });
+
+  it("rechaza con 400 horarios de dos actividades de la misma profesora, aunque el plan no tenga actividad exclusiva", async () => {
+    const alumno = await crearAlumno(prisma);
+    const [funcional] = await horariosFuncionales();
+    const hiit = await crearHorarioDePrueba(prisma, {
+      id_actividad: datosDemo.idActividad.get("HIIT")!,
+      id_profesora: datosDemo.idProfesora.get(LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "11:00",
+      hora_fin: "12:00",
+    });
+    const cantidadAntes = await prisma.inscripciones.count();
+
+    const respuesta = await inscribir(alumno.id_alumno, [funcional.id_horario, hiit.id_horario]);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.message).toBe("Todos los horarios deben pertenecer a una misma actividad");
+    expect(await prisma.inscripciones.count()).toBe(cantidadAntes);
+  });
 });
 
 describe("PI-21: activación", () => {
