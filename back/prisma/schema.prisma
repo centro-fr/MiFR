@@ -43,12 +43,13 @@ model usuarios {
 
   roles                   usuario_roles[]
   profesora               profesoras?
-  alumno                  alumnos?        @relation("alumno_usuario")
-  tutelados               alumnos[]       @relation("alumno_responsable")
-  pagos_registrados       pagos[]         @relation("pago_usuario_registra")
-  pagos_confirmados       pagos[]         @relation("pago_usuario_confirma")
+  alumno                  alumnos?         @relation("alumno_usuario")
+  tutelados               alumnos[]        @relation("alumno_responsable")
+  pagos_registrados       pagos[]          @relation("pago_usuario_registra")
+  pagos_confirmados       pagos[]          @relation("pago_usuario_confirma")
   asistencias_registradas asistencias[]
   suplencias_registradas  suplencias[]
+  notificaciones          notificaciones[]
 }
 
 model roles {
@@ -423,8 +424,9 @@ model cuotas {
   // >= 0
   monto             Decimal  @db.Decimal(10, 2)
 
-  inscripcion inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_cuotas_inscripciones")
-  pagos       pagos[]
+  inscripcion    inscripciones    @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_cuotas_inscripciones")
+  pagos          pagos[]
+  notificaciones notificaciones[]
 
   @@unique([id_inscripcion, numero_cuota], map: "UK_cuotas_inscripcion_numero")
   @@index([id_inscripcion], map: "IXFK_cuotas_inscripciones")
@@ -499,4 +501,44 @@ model medidas_corporales {
   @@id([id_registro, id_tipo_medida], map: "PK_medidas_corporales")
   @@index([id_registro], map: "IXFK_medidas_corporales_registros_progreso")
   @@index([id_tipo_medida], map: "IXFK_medidas_corporales_tipos_medida")
+}
+
+// ============================================================
+// NOTIFICACIONES E INSIGNIAS
+// ============================================================
+
+enum tipo_notificacion {
+  CUOTA_POR_VENCER
+  CUOTA_VENCIDA
+  RESUMEN_DIARIO
+  BIENVENIDA
+  CLASE_CANCELADA
+}
+
+enum estado_envio_notificacion {
+  PENDIENTE
+  ENVIADA
+  ERROR
+}
+
+// Los avisos son in-app (arquitectura.md): nacen ENVIADA y solo cambia leida. El único hace que
+// generar dos veces el aviso de una cuota no lo duplique (US-25).
+model notificaciones {
+  id_notificacion  Int                       @id(map: "PK_notificaciones") @default(autoincrement())
+  id_usuario       Int
+  tipo             tipo_notificacion
+  // solo avisos de cuota
+  id_cuota         Int?
+  mensaje          String                    @db.VarChar(1000)
+  fecha_generacion DateTime                  @default(now()) @db.Timestamp(6)
+  fecha_envio      DateTime?                 @db.Timestamp(6)
+  estado_envio     estado_envio_notificacion
+  leida            Boolean                   @default(false)
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_notificaciones_usuarios")
+  cuota   cuotas?  @relation(fields: [id_cuota], references: [id_cuota], onDelete: NoAction, onUpdate: NoAction, map: "FK_notificaciones_cuotas")
+
+  @@unique([id_usuario, id_cuota, tipo], map: "UK_notificaciones_usuario_cuota_tipo")
+  @@index([id_cuota], map: "IXFK_notificaciones_cuotas")
+  @@index([id_usuario], map: "IXFK_notificaciones_usuarios")
 }
