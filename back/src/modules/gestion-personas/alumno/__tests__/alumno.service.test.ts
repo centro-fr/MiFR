@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AlumnoExistenteError,
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from "../../../../shared/errors/app-error.js";
@@ -102,6 +103,9 @@ const altaMenor = {
   tutor: tutorNuevo,
 };
 
+const PROPIETARIA = { idUsuario: 1, esPropietaria: true };
+const PROFESORA = { idUsuario: 2, esPropietaria: false };
+
 describe("esMenorDeEdad", () => {
   it.each([
     ["cumple 18 mañana", "2008-10-09", true],
@@ -149,10 +153,26 @@ describe("AlumnoService", () => {
   });
 
   describe("crear", () => {
+    it("no deja que una profesora elija como tutor una cuenta existente por su id, antes de validar nada", async () => {
+      await expect(servicio.crear({ ...altaMenor, tutor: { id_usuario: 22 } }, PROFESORA)).rejects.toThrow(
+        ForbiddenError,
+      );
+      expect(usuarios.buscarPorDni).not.toHaveBeenCalled();
+      expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("una profesora sí carga un tutor nuevo con sus datos", async () => {
+      repositorio.crear.mockResolvedValue(menorConTutor);
+
+      await servicio.crear(altaMenor, PROFESORA);
+
+      expect(repositorio.crear).toHaveBeenCalled();
+    });
+
     it("da de alta a un mayor sin tutor, separando datos personales y ficha", async () => {
       repositorio.crear.mockResolvedValue(crearAlumno());
 
-      await servicio.crear({ ...altaMayor, observaciones: "Lesión de rodilla" });
+      await servicio.crear({ ...altaMayor, observaciones: "Lesión de rodilla" }, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(
         {
@@ -172,7 +192,7 @@ describe("AlumnoService", () => {
     it("da de alta a un menor con un tutor nuevo", async () => {
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear(altaMenor);
+      await servicio.crear(altaMenor, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         nuevo: tutorNuevo,
@@ -186,7 +206,7 @@ describe("AlumnoService", () => {
       usuarios.buscarPorEmail.mockResolvedValue(usuario(20));
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear(altaMenor);
+      await servicio.crear(altaMenor, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 20,
@@ -198,7 +218,7 @@ describe("AlumnoService", () => {
       usuarios.buscarPorEmail.mockResolvedValue(usuario(21));
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear({ ...altaMenor, tutor: tutorSinDni });
+      await servicio.crear({ ...altaMenor, tutor: tutorSinDni }, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 21,
@@ -229,7 +249,7 @@ describe("AlumnoService", () => {
     ])("no reutiliza un tutor existente si %s", async (_caso, preparar) => {
       preparar();
 
-      await expect(servicio.crear(altaMenor)).rejects.toThrow(
+      await expect(servicio.crear(altaMenor, PROPIETARIA)).rejects.toThrow(
         "El DNI y el email del tutor corresponden a cuentas distintas",
       );
       expect(repositorio.crear).not.toHaveBeenCalled();
@@ -239,7 +259,7 @@ describe("AlumnoService", () => {
       usuarios.buscarPorEmail.mockResolvedValue({ ...usuario(21), dni: null });
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear(altaMenor);
+      await servicio.crear(altaMenor, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 21,
@@ -250,7 +270,7 @@ describe("AlumnoService", () => {
       usuarios.buscarPorId.mockResolvedValue(usuario(22));
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear({ ...altaMenor, tutor: { id_usuario: 22 } });
+      await servicio.crear({ ...altaMenor, tutor: { id_usuario: 22 } }, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 22,
@@ -268,12 +288,12 @@ describe("AlumnoService", () => {
         { ...altaMenor, tutor: { ...tutorNuevo, dni: "50111222" } },
       ],
     ])("rechaza %s con ValidationError", async (_caso, input) => {
-      await expect(servicio.crear(input)).rejects.toThrow(ValidationError);
+      await expect(servicio.crear(input, PROPIETARIA)).rejects.toThrow(ValidationError);
       expect(repositorio.crear).not.toHaveBeenCalled();
     });
 
     it("rechaza un tutor indicado por id que no existe", async () => {
-      await expect(servicio.crear({ ...altaMenor, tutor: { id_usuario: 99 } })).rejects.toThrow(
+      await expect(servicio.crear({ ...altaMenor, tutor: { id_usuario: 99 } }, PROPIETARIA)).rejects.toThrow(
         ValidationError,
       );
     });
@@ -284,14 +304,14 @@ describe("AlumnoService", () => {
       );
       usuarios.buscarPorEmail.mockResolvedValue(usuario(20, MENOR));
 
-      await expect(servicio.crear(altaMenor)).rejects.toThrow(ValidationError);
+      await expect(servicio.crear(altaMenor, PROPIETARIA)).rejects.toThrow(ValidationError);
     });
 
     it("lanza AlumnoExistenteError si el DNI ya es de un alumno", async () => {
       usuarios.buscarPorDni.mockResolvedValue(usuario(10));
       repositorio.buscarPorIdUsuario.mockResolvedValue(crearAlumno({ id_alumno: 7 }));
 
-      const error = await servicio.crear(altaMayor).catch((e: unknown) => e);
+      const error = await servicio.crear(altaMayor, PROPIETARIA).catch((e: unknown) => e);
 
       expect(error).toBeInstanceOf(AlumnoExistenteError);
       expect((error as AlumnoExistenteError).message).toContain("alumno 7");
@@ -301,13 +321,13 @@ describe("AlumnoService", () => {
       usuarios.buscarPorDni.mockResolvedValue(usuario(10));
       repositorio.buscarPorIdUsuario.mockResolvedValue(null);
 
-      await expect(servicio.crear(altaMayor)).rejects.toThrow(ConflictError);
+      await expect(servicio.crear(altaMayor, PROPIETARIA)).rejects.toThrow(ConflictError);
     });
 
     it("lanza ConflictError si el email ya es de otro usuario", async () => {
       usuarios.buscarPorEmail.mockResolvedValue(usuario(11));
 
-      await expect(servicio.crear(altaMayor)).rejects.toThrow(ConflictError);
+      await expect(servicio.crear(altaMayor, PROPIETARIA)).rejects.toThrow(ConflictError);
     });
   });
 

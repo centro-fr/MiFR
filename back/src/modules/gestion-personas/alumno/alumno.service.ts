@@ -1,10 +1,12 @@
 import {
   AlumnoExistenteError,
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type {
@@ -65,7 +67,14 @@ export class AlumnoService implements IInfoAlumnos {
     private readonly autorizacion: IAutorizacion,
   ) {}
 
-  async crear(input: CrearAlumnoInput): Promise<Alumno> {
+  // Elegir como tutor una cuenta existente le abre a quien carga los datos de esa persona: por eso
+  // es de la propietaria. Se verifica antes que los datos, para no contarle nada a quien no puede.
+  async crear(input: CrearAlumnoInput, solicitante: Solicitante): Promise<Alumno> {
+    if (!solicitante.esPropietaria && input.tutor && "id_usuario" in input.tutor) {
+      throw new ForbiddenError(
+        "Una profesora carga los datos del tutor; elegir una cuenta existente es de la propietaria",
+      );
+    }
     const menor = esMenorDeEdad(input.fecha_nacimiento, fechaActualArgentina());
     if (menor) {
       if (!input.tutor) throw new ValidationError("Un alumno menor de 18 años necesita un tutor");

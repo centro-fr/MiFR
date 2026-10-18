@@ -435,19 +435,15 @@ describe("GestionPersonasService", () => {
       });
     });
 
-    it("no deja que una profesora elija como tutor una cuenta existente por su id", async () => {
-      await expect(
-        servicio.crearAlumno({ nombre: "Ana", tutor: { id_usuario: 1 } } as never, PROFESORA),
-      ).rejects.toThrow(ForbiddenError);
-      expect(mocks.alumnos.crear).not.toHaveBeenCalled();
-    });
+    it("pasa al componente quién pide, que decide si puede elegir un tutor existente", async () => {
+      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: null });
 
-    it("la propietaria sí elige una cuenta existente como tutor", async () => {
-      mocks.alumnos.crear.mockResolvedValue({ id_alumno: 4, responsable: tutor });
+      await servicio.crearAlumno({ nombre: "Ana", tutor: { id_usuario: 20 } } as never, PROFESORA);
 
-      await servicio.crearAlumno({ nombre: "Ana", tutor: { id_usuario: 20 } } as never, PROPIETARIA);
-
-      expect(mocks.alumnos.crear).toHaveBeenCalled();
+      expect(mocks.alumnos.crear).toHaveBeenCalledWith(
+        { nombre: "Ana", tutor: { id_usuario: 20 } },
+        PROFESORA,
+      );
     });
   });
 });
