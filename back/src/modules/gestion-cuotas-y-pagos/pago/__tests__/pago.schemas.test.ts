@@ -90,12 +90,43 @@ describe("schemas de pagos", () => {
       expect(listarTransferenciasQuerySchema.parse({ estado: "PENDIENTE", id_alumno: "5" })).toEqual({
         estado: "PENDIENTE",
         id_alumno: 5,
+        orden: "asc",
         limit: 100,
         offset: 0,
       });
       expect(listarTransferenciasQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
       expect(listarTransferenciasQuerySchema.safeParse({ estado: "VENCIDA" }).success).toBe(false);
       expect(listarTransferenciasQuerySchema.safeParse({ id_alumno: "-0" }).success).toBe(false);
+    });
+
+    it("la query acepta tipo, orden y el rango de días de carga", () => {
+      expect(
+        listarTransferenciasQuerySchema.parse({
+          tipo: "CUOTA_VENCIDA",
+          orden: "desc",
+          desde: "2026-10-01",
+          hasta: "2026-10-01",
+        }),
+      ).toEqual({
+        tipo: "CUOTA_VENCIDA",
+        orden: "desc",
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-01T00:00:00Z"),
+        limit: 100,
+        offset: 0,
+      });
+    });
+
+    it.each([
+      { tipo: "RENOVACIÓN" },
+      { tipo: "" },
+      { orden: "ASC" },
+      { orden: "fecha" },
+      { desde: "2026-02-30" },
+      { hasta: "10/10/2026" },
+      { desde: "2026-10-02", hasta: "2026-10-01" },
+    ])("la query rechaza %o", (query) => {
+      expect(listarTransferenciasQuerySchema.safeParse(query).success).toBe(false);
     });
   });
 });

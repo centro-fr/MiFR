@@ -1,5 +1,6 @@
 import type { estado_pago, forma_pago, pagos } from "@prisma/client";
 import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
+import type { TipoPlan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
 
 export type FormaPago = forma_pago;
 export type EstadoPago = estado_pago;
@@ -30,16 +31,55 @@ export interface AlumnoDelPago {
 
 export type TransferenciaConAlumno = Pago & { alumno: AlumnoDelPago };
 
+// US-17: qué se pagaba al informar la transferencia. Se deriva de la cuota, no se guarda.
+export type TipoTransferencia = "PRIMERA_CUOTA" | "RENOVACION" | "CUOTA_VENCIDA";
+
+// Lo que trae el repositorio para revisar una transferencia: el plan y la cuota que paga, y el
+// vencimiento de la cuota anterior, del que sale el tipo.
+export type TransferenciaParaRevisar = TransferenciaConAlumno & {
+  plan: string;
+  tipo_plan: TipoPlan;
+  numero_cuota: number;
+  monto_esperado: number;
+  vencimiento_anterior: Date | null;
+};
+
 // US-17: la propietaria ve las transferencias por antigüedad y las que pasaron las 24 horas sin
-// revisar quedan marcadas ("vencidas en verificación"), aunque siguen pendientes.
+// revisar quedan marcadas ("vencidas en verificación"), aunque siguen pendientes. El plan, el monto
+// esperado y el tipo son los del momento en que se informó, no la situación actual del alumno.
 export type TransferenciaEnRevision = TransferenciaConAlumno & {
+  plan: string;
+  monto_esperado: number;
+  tipo: TipoTransferencia;
   horas_desde_la_carga: number;
   supera_24_horas: boolean;
 };
 
-export interface FiltroTransferencias extends Partial<Paginacion> {
+export type OrdenTransferencias = "asc" | "desc";
+
+// desde y hasta son días de Argentina, inclusive, sobre la fecha de carga.
+export interface FiltroTransferencias extends Paginacion {
   estado?: EstadoPago;
   id_alumno?: number;
+  tipo?: TipoTransferencia;
+  desde?: Date;
+  hasta?: Date;
+  orden: OrdenTransferencias;
+}
+
+// El mismo filtro, ya en instantes reales para comparar contra un TIMESTAMP.
+export interface FiltroTransferenciasEnInstantes {
+  estado?: EstadoPago;
+  id_alumno?: number;
+  inicio?: Date;
+  fin?: Date;
+}
+
+export interface PaginaTransferencias {
+  datos: TransferenciaEnRevision[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 interface NombreCompleto {

@@ -30,7 +30,7 @@ function crearLogicaMock() {
     registrarTransferenciaRecibida: vi.fn().mockResolvedValue(pago),
     aprobarTransferencia: vi.fn().mockResolvedValue(pago),
     rechazarTransferencia: vi.fn().mockResolvedValue({ ...pago, estado: "RECHAZADO" }),
-    listarTransferencias: vi.fn().mockResolvedValue([]),
+    listarTransferencias: vi.fn().mockResolvedValue({ datos: [], total: 0, limit: 100, offset: 0 }),
     listarMisTransferencias: vi.fn().mockResolvedValue([]),
     obtenerComprobante: vi.fn().mockResolvedValue({ numero: 7 }),
     listarEfectivoPendiente: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, profesoras: [] }),
@@ -149,6 +149,7 @@ describe("rutas de pagos", () => {
       expect(logica.listarTransferencias).toHaveBeenCalledWith({
         estado: "PENDIENTE",
         id_alumno: 5,
+        orden: "asc",
         limit: 100,
         offset: 0,
       });
@@ -157,6 +158,28 @@ describe("rutas de pagos", () => {
         { confirmar_monto_distinto: true },
         { idUsuario: 1, esPropietaria: true },
       );
+    });
+
+    it("lista por tipo, orden y días de carga, y rechaza un rango invertido con 400", async () => {
+      const respuesta = await como(
+        "propietaria",
+        "get",
+        "/transferencias?tipo=RENOVACION&orden=desc&desde=2026-10-01&hasta=2026-10-10",
+      );
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body).toEqual({ datos: [], total: 0, limit: 100, offset: 0 });
+      expect(logica.listarTransferencias).toHaveBeenCalledWith({
+        tipo: "RENOVACION",
+        orden: "desc",
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-10T00:00:00Z"),
+        limit: 100,
+        offset: 0,
+      });
+
+      const invertido = await como("propietaria", "get", "/transferencias?desde=2026-10-10&hasta=2026-10-01");
+      expect(invertido.status).toBe(400);
     });
 
     it("aprueba un pedido sin cuerpo, como lo manda el front en el caso normal", async () => {

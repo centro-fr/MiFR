@@ -50,6 +50,15 @@ const transferenciaSchema = pagoSchema.extend({ alumno: alumnoSchema }).openapi(
 
 const transferenciaEnRevisionSchema = transferenciaSchema
   .extend({
+    plan: z.string().openapi({ description: "El plan de la cuota que paga" }),
+    monto_esperado: z
+      .number()
+      .openapi({ description: "El monto de la cuota, con el descuento si tuvo promoción" }),
+    tipo: z.enum(["PRIMERA_CUOTA", "RENOVACION", "CUOTA_VENCIDA"]).openapi({
+      description:
+        "PRIMERA_CUOTA: la que da el alta. CUOTA_VENCIDA: se cargó después del vencimiento de la cuota " +
+        "anterior. RENOVACION: el resto. Es el del momento de la carga, no la situación actual del alumno",
+    }),
     horas_desde_la_carga: z.number().int(),
     supera_24_horas: z.boolean().openapi({ description: "Pendiente desde hace 24 horas o más (US-17)" }),
   })
@@ -243,12 +252,24 @@ export function registrarDocumentacionPagos(registro: OpenAPIRegistry): void {
     security,
     summary: "Transferencias para revisar (US-17)",
     description:
-      `${propietariaConfirma} Ordenadas por antigüedad, con las horas desde que se cargaron y la marca de las ` +
-      "pendientes que pasaron las 24 horas. Filtros por estado y alumno. Paginado con `limit` (por defecto y " +
-      "como máximo 100) y `offset`.",
+      `${propietariaConfirma} Por fecha de carga, las más viejas primero (\`orden=desc\` para las más nuevas), ` +
+      "con las horas desde que se cargaron y la marca de las pendientes que pasaron las 24 horas. Filtros por " +
+      "estado, alumno, tipo y días de carga (`desde` y `hasta`, inclusive). Paginado con `limit` (por defecto y " +
+      "como máximo 100) y `offset`; `total` es la cantidad de las que coinciden. El filtro por tipo se calcula " +
+      "sobre las que cumplen los otros filtros: si son más de 500 responde 400.",
     request: { query: listarTransferenciasQuerySchema },
     responses: {
-      200: respuestaJson("Transferencias", z.array(transferenciaEnRevisionSchema)),
+      200: respuestaJson(
+        "Transferencias",
+        z
+          .object({
+            datos: z.array(transferenciaEnRevisionSchema),
+            total: z.number().int(),
+            limit: z.number().int(),
+            offset: z.number().int(),
+          })
+          .openapi("PaginaTransferencias"),
+      ),
       ...respuestasDeError(400, 401, 403),
     },
   });

@@ -8,13 +8,15 @@ import type {
   DatosDePago,
   EstadoPago,
   FiltroEfectivoEnInstantes,
-  FiltroTransferencias,
+  FiltroTransferenciasEnInstantes,
   MotivoSinRendir,
+  OrdenTransferencias,
   Pago,
   PagoConCuota,
   PagoParaComprobante,
   TotalDeProfesora,
   TransferenciaConAlumno,
+  TransferenciaParaRevisar,
 } from "./pago.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
 
@@ -33,6 +35,37 @@ const CON_ALUMNO = {
 } satisfies Prisma.pagosInclude;
 
 type FilaConAlumno = Prisma.pagosGetPayload<{ include: typeof CON_ALUMNO }>;
+
+// US-17: lo que necesita la propietaria para revisar una transferencia. Propio del listado, para no
+// sumarle el plan y la cuota a mis-transferencias (seguridad.md, regla 9).
+const PARA_REVISAR = {
+  cuota: {
+    select: {
+      id_inscripcion: true,
+      numero_cuota: true,
+      monto: true,
+      inscripcion: {
+        select: {
+          plan: { select: { nombre: true, tipo: true } },
+          alumno: { select: { id_alumno: true, usuario: { select: { nombre: true, apellido: true } } } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.pagosInclude;
+
+function transferenciasDelFiltro(filtro: FiltroTransferenciasEnInstantes): Prisma.pagosWhereInput {
+  return {
+    forma_pago: "TRANSFERENCIA",
+    ...(filtro.estado === undefined ? {} : { estado: filtro.estado }),
+    ...(filtro.id_alumno === undefined ? {} : { cuota: { inscripcion: { id_alumno: filtro.id_alumno } } }),
+    ...(filtro.inicio || filtro.fin
+      ? {
+          fecha_pago: { ...(filtro.inicio && { gte: filtro.inicio }), ...(filtro.fin && { lt: filtro.fin }) },
+        }
+      : {}),
+  };
+}
 
 // US-19: lo único que se rinde es el efectivo confirmado que cobró una profesora. Lo que cobra la
 // propietaria nace rendido.
@@ -160,21 +193,48 @@ export class PagoRepository {
     });
   }
 
-  async listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaConAlumno[]> {
+  // US-17: una página de las transferencias, con el plan y la cuota que pagan y el vencimiento de la
+  // cuota anterior de la misma inscripción, en dos consultas.
+  async listarParaRevisar(
+    filtro: FiltroTransferenciasEnInstantes,
+    orden: OrdenTransferencias,
+    pagina: { limit: number; offset: number },
+  ): Promise<TransferenciaParaRevisar[]> {
     const filas = await this.prisma.pagos.findMany({
-      where: {
-        forma_pago: "TRANSFERENCIA",
-        ...(filtro.estado === undefined ? {} : { estado: filtro.estado }),
-        ...(filtro.id_alumno === undefined
-          ? {}
-          : { cuota: { inscripcion: { id_alumno: filtro.id_alumno } } }),
-      },
-      include: CON_ALUMNO,
-      orderBy: [{ fecha_pago: "asc" }, { id_pago: "asc" }],
-      take: filtro.limit ?? LIMITE_MAXIMO,
-      skip: filtro.offset ?? 0,
+      where: transferenciasDelFiltro(filtro),
+      include: PARA_REVISAR,
+      orderBy: [{ fecha_pago: orden }, { id_pago: orden }],
+      take: pagina.limit,
+      skip: pagina.offset,
     });
-    return filas.map(conAlumno);
+    const anteriores = filas.flatMap(({ cuota }) =>
+      cuota.numero_cuota > 1
+        ? [{ id_inscripcion: cuota.id_inscripcion, numero_cuota: cuota.numero_cuota - 1 }]
+        : [],
+    );
+    const vencimientos =
+      anteriores.length === 0
+        ? []
+        : await this.prisma.cuotas.findMany({
+            where: { OR: anteriores },
+            select: { id_inscripcion: true, numero_cuota: true, fecha_vencimiento: true },
+          });
+    const vencimientoDe = new Map(
+      vencimientos.map((cuota) => [`${cuota.id_inscripcion}:${cuota.numero_cuota}`, cuota.fecha_vencimiento]),
+    );
+    return filas.map(({ cuota, ...fila }) => ({
+      ...aPago(fila),
+      alumno: { id_alumno: cuota.inscripcion.alumno.id_alumno, ...cuota.inscripcion.alumno.usuario },
+      plan: cuota.inscripcion.plan.nombre,
+      tipo_plan: cuota.inscripcion.plan.tipo,
+      numero_cuota: cuota.numero_cuota,
+      monto_esperado: cuota.monto.toNumber(),
+      vencimiento_anterior: vencimientoDe.get(`${cuota.id_inscripcion}:${cuota.numero_cuota - 1}`) ?? null,
+    }));
+  }
+
+  contarTransferencias(filtro: FiltroTransferenciasEnInstantes): Promise<number> {
+    return this.prisma.pagos.count({ where: transferenciasDelFiltro(filtro) });
   }
 
   // Las del alumno que tiene ese usuario y las de los menores a cargo de ese usuario como tutor.

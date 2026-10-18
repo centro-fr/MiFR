@@ -19,10 +19,10 @@ import type {
   FiltroEfectivo,
   FiltroTransferencias,
   PaginaRendiciones,
+  PaginaTransferencias,
   Pago,
   ResultadoRendicion,
   TransferenciaConAlumno,
-  TransferenciaEnRevision,
 } from "./pago/pago.types.js";
 
 // Realiza ILogicaCuotasPagos coordinando Cuota (qué cuota se cobra y el alta definitiva) y Pago
@@ -86,7 +86,7 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     return this.pagos.rechazar(id, input, solicitante);
   }
 
-  listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaEnRevision[]> {
+  listarTransferencias(filtro: FiltroTransferencias): Promise<PaginaTransferencias> {
     return this.pagos.listarTransferencias(filtro);
   }
 

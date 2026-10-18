@@ -3,6 +3,7 @@ import {
   ForbiddenError,
   MontoDistintoError,
   NotFoundError,
+  ValidationError,
 } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
@@ -31,13 +32,16 @@ import type {
   FiltroTransferencias,
   MotivoSinRendir,
   PaginaRendiciones,
+  PaginaTransferencias,
   Pago,
   PagoConCuota,
   PagoParaComprobante,
   ResultadoRendicion,
   ResumenEfectivoPendiente,
   TransferenciaConAlumno,
+  TipoTransferencia,
   TransferenciaEnRevision,
+  TransferenciaParaRevisar,
 } from "./pago.types.js";
 
 const MS_POR_HORA = 3_600_000;
@@ -52,6 +56,32 @@ function enInstantes({ id_profesora, desde, hasta }: FiltroEfectivo): FiltroEfec
 function conDiasSinRendir({ fecha_rendicion: _, ...cobro }: CobroEnEfectivo, hoy: Date): CobroSinRendir {
   const dias = Math.round((hoy.getTime() - fechaActualArgentina(cobro.fecha_pago).getTime()) / MS_POR_DIA);
   return { ...cobro, dias_sin_rendir: dias };
+}
+
+export const TOPE_FILTRO_TIPO_TRANSFERENCIA = 500;
+
+// US-17: la primera cuota da el alta. Las siguientes de un mensual se pagaron vencidas si se
+// cargaron después del vencimiento de la anterior: el mismo criterio con el que Cuota decide desde
+// cuándo cubre la nueva. Una clase suelta no se paga por adelantado, así que siempre renueva.
+function tipoDe(transferencia: TransferenciaParaRevisar): TipoTransferencia {
+  if (transferencia.numero_cuota === 1) return "PRIMERA_CUOTA";
+  const { tipo_plan, vencimiento_anterior, fecha_pago } = transferencia;
+  const vencida =
+    tipo_plan === "MENSUAL" &&
+    vencimiento_anterior !== null &&
+    fechaActualArgentina(fecha_pago) > vencimiento_anterior;
+  return vencida ? "CUOTA_VENCIDA" : "RENOVACION";
+}
+
+function enRevision(transferencia: TransferenciaParaRevisar, ahora: number): TransferenciaEnRevision {
+  const { tipo_plan: _, numero_cuota: __, vencimiento_anterior: ___, ...datos } = transferencia;
+  const horas = Math.floor((ahora - transferencia.fecha_pago.getTime()) / MS_POR_HORA);
+  return {
+    ...datos,
+    tipo: tipoDe(transferencia),
+    horas_desde_la_carga: horas,
+    supera_24_horas: transferencia.estado === "PENDIENTE" && horas >= HORAS_PARA_REVISAR,
+  };
 }
 
 function verificarMonto(monto: number, esperado: number, confirmado: boolean): void {
@@ -164,17 +194,44 @@ export class PagoService implements IInfoPagos {
     return this.resolver(id, "RECHAZADO", solicitante, input.motivo_rechazo);
   }
 
-  async listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaEnRevision[]> {
+  // Sin tipo se pagina en la base. El tipo se calcula y no se guarda: con ese filtro se calcula para
+  // las que cumplen los otros filtros y se pagina en memoria, con tope, como el estado de cuota de
+  // los alumnos.
+  async listarTransferencias({
+    tipo,
+    orden,
+    limit,
+    offset,
+    desde,
+    hasta,
+    ...resto
+  }: FiltroTransferencias): Promise<PaginaTransferencias> {
+    const filtro = { ...resto, ...rangoDeDiasArgentinos(desde, hasta) };
     const ahora = Date.now();
-    const transferencias = await this.repositorio.listarTransferencias(filtro);
-    return transferencias.map((transferencia) => {
-      const horas = Math.floor((ahora - transferencia.fecha_pago.getTime()) / MS_POR_HORA);
-      return {
-        ...transferencia,
-        horas_desde_la_carga: horas,
-        supera_24_horas: transferencia.estado === "PENDIENTE" && horas >= HORAS_PARA_REVISAR,
-      };
+    if (tipo === undefined) {
+      const [transferencias, total] = await Promise.all([
+        this.repositorio.listarParaRevisar(filtro, orden, { limit, offset }),
+        this.repositorio.contarTransferencias(filtro),
+      ]);
+      return { datos: transferencias.map((t) => enRevision(t, ahora)), total, limit, offset };
+    }
+
+    const candidatas = await this.repositorio.listarParaRevisar(filtro, orden, {
+      limit: TOPE_FILTRO_TIPO_TRANSFERENCIA + 1,
+      offset: 0,
     });
+    if (candidatas.length > TOPE_FILTRO_TIPO_TRANSFERENCIA) {
+      throw new ValidationError(
+        `Hay más de ${TOPE_FILTRO_TIPO_TRANSFERENCIA} transferencias para filtrar por tipo: acote la búsqueda con otro filtro`,
+      );
+    }
+    const coinciden = candidatas.filter((transferencia) => tipoDe(transferencia) === tipo);
+    return {
+      datos: coinciden.slice(offset, offset + limit).map((t) => enRevision(t, ahora)),
+      total: coinciden.length,
+      limit,
+      offset,
+    };
   }
 
   // US-19: lo que cada profesora tiene que rendir: los totales completos y una página del detalle.

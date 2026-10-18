@@ -360,7 +360,8 @@ describe("PI-43: la transferencia informada y su revisión por la API", () => {
     const mias = await pedir("get", "/pagos/mis-transferencias", EMAIL_VALENTINA);
     expect(mias.body.map(({ id_pago }: { id_pago: number }) => id_pago)).toEqual([informada.body.id_pago]);
     const enRevision = await pedir("get", "/pagos/transferencias?estado=PENDIENTE", EMAIL_MULTIROL_DEMO);
-    expect(enRevision.body).toEqual([
+    expect(enRevision.body).toMatchObject({ total: 1, limit: 100, offset: 0 });
+    expect(enRevision.body.datos).toEqual([
       expect.objectContaining({ id_pago: informada.body.id_pago, supera_24_horas: false }),
     ]);
     expect((await pedir("get", "/pagos/transferencias", EMAIL_LUCIA)).status).toBe(403);
@@ -417,6 +418,64 @@ describe("PI-43: la transferencia informada y su revisión por la API", () => {
       estado: "ACTIVA",
       alumno: { estado: "ACTIVO" },
     });
+  });
+
+  function transferencias(query: string) {
+    return pedir("get", `/pagos/transferencias?${query}`, EMAIL_MULTIROL_DEMO);
+  }
+
+  it("el listado trae el plan, el monto esperado y el tipo de cada una, con filtros, orden y total", async () => {
+    const { body: renovacion } = await informar();
+    const { body: primera } = await pedir("post", "/pagos/transferencia-recibida", EMAIL_MULTIROL_DEMO, {
+      id_inscripcion: idInscripcion,
+      monto: 25000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    });
+
+    const todas = await transferencias("orden=desc");
+    expect(todas.status).toBe(200);
+    expect(todas.body.total).toBe(2);
+    expect(todas.body.datos).toEqual([
+      expect.objectContaining({
+        id_pago: primera.id_pago,
+        plan: "Básico",
+        monto_esperado: 25000,
+        tipo: "PRIMERA_CUOTA",
+      }),
+      expect.objectContaining({
+        id_pago: renovacion.id_pago,
+        plan: "Intermedio",
+        monto_esperado: 30000,
+        tipo: "RENOVACION",
+      }),
+    ]);
+
+    const primeras = await transferencias("tipo=PRIMERA_CUOTA");
+    expect(primeras.body).toMatchObject({ total: 1, datos: [{ id_pago: primera.id_pago }] });
+    const hoy = fechaActualArgentina().toISOString().slice(0, 10);
+    expect((await transferencias(`desde=${hoy}&hasta=${hoy}`)).body.total).toBe(2);
+    expect((await transferencias("desde=2026-01-01&hasta=2026-01-31")).body).toMatchObject({
+      total: 0,
+      datos: [],
+    });
+    expect((await transferencias("tipo=OTRO")).status).toBe(400);
+  });
+
+  it("la transferencia cargada después del vencimiento de la cuota anterior es de una cuota vencida", async () => {
+    const ayer = new Date(fechaActualArgentina().getTime() - UN_DIA_EN_MS);
+    await prisma.cuotas.updateMany({
+      where: { id_inscripcion: idInscripcionValentina, numero_cuota: 1 },
+      data: { fecha_vencimiento: ayer },
+    });
+    const { body: pago } = await informar();
+
+    const vencidas = await transferencias("tipo=CUOTA_VENCIDA");
+
+    expect(vencidas.body).toMatchObject({
+      total: 1,
+      datos: [{ id_pago: pago.id_pago, tipo: "CUOTA_VENCIDA" }],
+    });
+    expect((await transferencias("tipo=RENOVACION")).body.total).toBe(0);
   });
 });
 

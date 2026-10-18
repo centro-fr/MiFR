@@ -13,10 +13,10 @@ import type {
   FiltroEfectivo,
   FiltroTransferencias,
   PaginaRendiciones,
+  PaginaTransferencias,
   Pago,
   ResultadoRendicion,
   TransferenciaConAlumno,
-  TransferenciaEnRevision,
 } from "../pago/pago.types.js";
 
 // La parte de ILogicaCuotasPagos que usa el controller de Pago. No es una interfaz nueva del
@@ -34,7 +34,7 @@ export interface ILogicaPagos {
     input: RechazarTransferenciaInput,
     solicitante: Solicitante,
   ): Promise<Pago>;
-  listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaEnRevision[]>;
+  listarTransferencias(filtro: FiltroTransferencias): Promise<PaginaTransferencias>;
   listarMisTransferencias(solicitante: Solicitante): Promise<TransferenciaConAlumno[]>;
   obtenerComprobante(id: number, solicitante: Solicitante): Promise<Comprobante>;
   // US-19: la rendición del efectivo que cobraron las profesoras. Solo la propietaria.
