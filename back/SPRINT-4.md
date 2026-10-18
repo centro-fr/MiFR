@@ -9,7 +9,7 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 | US-26 | Resumen diario para la propietaria | En curso: `GET /resumen-diario` hecho; falta la notificación diaria | Francisco |
 | US-22 | Detección de alumnos inactivos con cuota al día | Pendiente | Nicolas |
 | US-24 | Registro de suplencias entre profesoras | Hecho (falta EA y la regla del período liquidado) | Nicolas |
-| US-25 | Aviso automático de vencimiento de cuota | Pendiente | Nicolas |
+| US-25 | Aviso automático de vencimiento de cuota | Hecho (falta EA) | Nicolas |
 | US-23 | Informe mensual automático de honorarios | Pendiente | Rosario |
 
 Fuentes: `docs/specs/04-*/US-13`, `docs/specs/05-*/US-19`, `docs/specs/06-*/US-22`, `docs/specs/07-*` y `docs/specs/08-*`, `docs/sdd/04-*`, `docs/sdd/05-*` a `docs/sdd/08-*`, y el DER. Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
@@ -89,7 +89,7 @@ Cómo trabajar en paralelo sin bloquearse:
    - [x] `IInfoClases.listarSuplidasEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): cada clase suplida con fecha, horario, horas, suplente (`id_prof_suplente`) y ausente (`id_prof_ausente`), sin las canceladas. Hecha con US-24.
    - [x] `IInfoInscripciones.aCargoEnPeriodo(desde, hasta)` (Nicolas implementa, usa Rosario): las inscripciones que estuvieron `ACTIVA` en algún día del período, con profesora, plan, `sin_cargo`, alta y baja. Hecha el 18/10/2026 (PI-66). Trae las `ACTIVA` y las `BAJA` que empezaron hasta `hasta` y no se dieron de baja antes de `desde` (días de Argentina). El DER no guarda cuándo se activó una inscripción, así que una `BAJA` puede ser una pre-inscripción que nunca se pagó: la liquidación la distingue con lo cobrado (`IInfoCuotas`). Hay que revisarlo con Rosario.
    - [x] `IInfoCuotas.cobradoEnPeriodo(idsInscripcion, desde, hasta)` y `IInfoCuotas.paraAvisoDeVencimiento(fecha, diasPrevios)` (Francisco implementa; usan Rosario y Nicolas). Implementados, no solo los tipos (13/10/2026, PI-57). `cobradoEnPeriodo` devuelve un `Map` con todas las inscripciones pedidas (0 si no hubo cobros) y toma la fecha del pago. `paraAvisoDeVencimiento` devuelve el `tipo` del aviso, la cuota, el plan y el alumno con su tutor; quién lo recibe lo decide quien registra la notificación. Con 0 días de gracia avisa la vencida al día siguiente del vencimiento, como la ficha (`ICalculoHabilitacion`), y no el mismo día: hay que revisarlo con la regla de US-25.
-   - `gestion-notificaciones/notificacion/`: tipos y firma de `registrar` (Nicolas implementa, usa Francisco para el resumen diario).
+   - [x] `gestion-notificaciones/notificacion/`: tipos y firma de `registrar` (Nicolas implementa, usa Francisco para el resumen diario). Hecha con US-25: `IRegistroNotificaciones.registrar(notificaciones)` en `notificacion/interface/i-registro-notificaciones.ts`, con `NuevaNotificacion` (`id_usuario`, `tipo`, `id_cuota`, `mensaje`) en `notificacion.types.ts`. Guarda `ENVIADA`, ignora los repetidos por el único y devuelve cuántas guardó. El "uno por día" del resumen sigue siendo de quien lo registra, dentro de su bloqueo.
    - [x] `IInfoPlanes.promocionVigente(idPlan, fecha)` (Francisco implementa y usa en `Inscripcion` y `Cuota`). Se sumó `IInfoPlanes.precioACobrar(idPlan, fecha, idPromocion)`, que es lo que usa `Cuota`.
    Si al implementar hace falta cambiar un contrato, se acuerda entre quien lo provee y quien lo usa, y se sube a `dev` antes que el resto.
 2. **Regla dura 2:** cada uno agrega al `.puml` y a EA las dependencias que le faltan al diagrama (las marcadas arriba) en el primer commit de su parte, antes de codificarla.
@@ -179,7 +179,7 @@ Lo que hay que saber:
   - [x] Bloque 1, transferencias pendientes: cantidad, monto total, las que pasaron las 24 horas y las que llevan 12 o más, y las 5 más viejas (`IInfoPagos.resumenTransferenciasPendientes`).
   - [x] Bloque 2, efectivo sin rendir: cantidad, monto total, detalle por profesora y el más antiguo (`IInfoPagos.resumenEfectivoPendiente`).
   - [x] Bloque 3, cuotas vencidas: cantidad de alumnos, monto estimado (precio de hoy de cada plan, con su promoción) y detalle por profesora y plan, y las 5 más atrasadas (`IInfoCuotas.resumenCuotasVencidas`, una consulta; el precio, una vez por plan y promoción). Cuentan las mensuales activas no bonificadas en estado `VENCIDA`: los días de gracia no cuentan.
-- [ ] Una vez al día, a partir de `HORA_RESUMEN_DIARIO`, el proceso registra una notificación `RESUMEN_DIARIO` para cada propietaria con el texto del resumen, o "Todo al día" si no hay pendientes.
+- [ ] Una vez al día, a partir de `HORA_RESUMEN_DIARIO`, el proceso registra una notificación `RESUMEN_DIARIO` para cada propietaria (ya se puede: `Notificacion` está hecha, con `IRegistroNotificaciones`) con el texto del resumen, o "Todo al día" si no hay pendientes.
 - [ ] **Reglas**:
   - [ ] Un solo resumen por propietaria y por día: correr dos veces no lo duplica.
   - [x] Si falla un bloque, el resumen sale igual con los otros: el bloque llega en null y figura en `bloques_con_error`; el error queda en el log (`shared/utils/registro-errores.ts`).
@@ -253,19 +253,19 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 
 - [x] Agregar al `.puml` que `PlanificadorNotificaciones` requiere `IInfoCuotas` y que `Notificacion` provee `IRegistroNotificaciones` (la usan el planificador y el resumen diario, como `IInfoPromociones` en `Plan`), y al DER (`.puml` y comentario del `.sql`) el único `(id_usuario, id_cuota, tipo)` (regla dura 2). Corregida la sección de notificaciones de `.claude/rules/arquitectura.md` (ver decisiones).
 - [ ] Reflejar lo mismo en el `.eap` de Enterprise Architect y regenerar el `.jpg` y el `.pdf` (regla dura 2).
-- [ ] Modelo `notificaciones` en Prisma + migración (`ck_notificaciones_tipo`, `ck_notificaciones_estado_envio` y el único nuevo).
-- [ ] Subsistema `src/modules/gestion-notificaciones/` con `ILogicaNotificaciones`, su fachada y los componentes `notificacion/` y `planificador-notificaciones/`. Montarlo en `app.ts`, `openapi.ts` y `composicion.ts`.
-- [ ] `Notificacion.registrar(...)`: la usan el planificador y el resumen diario (Francisco). Subirla a `dev` antes que el planificador.
-- [ ] `GET /api/v1/notificaciones/mias` (paginado, no leídas primero), `POST /api/v1/notificaciones/:id/leida` y `POST /api/v1/notificaciones/leidas` (todas). Cada uno ve solo las suyas (404 si no es el destinatario).
-- [ ] El planificador genera `CUOTA_POR_VENCER` al entrar en los `DIAS_AVISO_VENCIMIENTO` previos y `CUOTA_VENCIDA` al vencer, con el `id_cuota`.
+- [x] Modelo `notificaciones` en Prisma + migraciones `agregar_notificaciones` y `agregar_checks_notificaciones` (`ck_notificaciones_tipo`, `ck_notificaciones_estado_envio` y el único `UK_notificaciones_usuario_cuota_tipo`).
+- [x] Componentes `notificacion/` y `planificador-notificaciones/` sobre el subsistema que armó Francisco; sus operaciones son la parte `ILogicaNotificacionesPropias` de `ILogicaNotificaciones`. Cableados en `composicion.ts` e `index.ts`.
+- [x] `Notificacion.registrar(...)` (`IRegistroNotificaciones`): la usan el planificador y el resumen diario (Francisco).
+- [x] `GET /api/v1/notificaciones/mias` (paginado, no leídas primero, con `total` y `no_leidas`), `POST /api/v1/notificaciones/:id/leida` y `POST /api/v1/notificaciones/leidas` (todas). Solo piden sesión: cada uno ve y marca solo las suyas (404 si no es el destinatario).
+- [x] El planificador genera `CUOTA_POR_VENCER` al entrar en los `DIAS_AVISO_VENCIMIENTO` previos y `CUOTA_VENCIDA` al vencer, con el `id_cuota`. `DIAS_AVISO_VENCIMIENTO` (`ENTERO`, 3, de 0 a 30) se sumó al catálogo de parámetros con su validación.
 - [ ] **Reglas**:
-  - [ ] Un aviso de cada tipo por cuota: correr dos veces no lo duplica (lo garantiza el único de la base, no el código).
-  - [ ] Al día sin vencimiento cercano, dado de baja, o con una transferencia pendiente → sin aviso.
-  - [ ] Si renovó (hay una cuota posterior paga), no se avisa más por la anterior.
-  - [ ] Menor de edad → el aviso va al tutor (`IInfoUsuarios`).
-  - [ ] Días de gracia 0 → el aviso de vencida sale el mismo día del vencimiento.
-- [ ] Mismo enfoque de ejecución que el cierre de la asistencia (ver decisiones).
-- [ ] Tests del service (rango de días, menor, pendiente, renovación, idempotencia) y de integración.
+  - [x] Un aviso de cada tipo por cuota: correr dos veces no lo duplica (lo garantiza el único de la base, no el código).
+  - [x] Al día sin vencimiento cercano, dado de baja, o con una transferencia pendiente → sin aviso. En los días de gracia tampoco: el de vencida sale al superarlos.
+  - [x] Si renovó (hay una cuota posterior paga), no se avisa más por la anterior.
+  - [x] Menor de edad → el aviso va al tutor. Lo resuelve el planificador con el `id_usuario_responsable` que ya trae `IInfoCuotas`, sin consultar `IInfoUsuarios`: un alumno que cumple 18 conserva el tutor hasta que se edita su ficha, y puede no tener cuenta propia.
+  - [x] Días de gracia 0 → el aviso de vencida sale el mismo día del vencimiento. Se cambió en `Cuota` (`paraAvisoDeVencimiento`), que avisaba al día siguiente: revisarlo con Francisco.
+- [x] Mismo enfoque de ejecución que el cierre de la asistencia (ver decisiones): un intervalo de una hora en `index.ts` y, además, al consultar `/notificaciones/mias`. Genera a lo sumo una vez por día y por proceso; si falla, lo reintenta en la próxima.
+- [x] Tests del service (rango de días, menor, pendiente, renovación, idempotencia) y de integración: PI-67 y PI-68 (N-01 a N-06).
 
 ## Pendientes del Sprint 3
 

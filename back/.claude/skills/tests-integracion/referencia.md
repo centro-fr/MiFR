@@ -51,7 +51,7 @@ back/
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + cierreAsistencia (cierre automático con la hora que pida el test)
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + cierreAsistencia (cierre automático con la hora que pida el test) + planificadorNotificaciones (avisos de cuota con el día que pida el test)
       fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...), crearInscripcionDePrueba(...)
 ```
 
@@ -84,6 +84,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | J | `src/__tests__/integracion/clases-y-asistencia.integration.test.ts` | Clases del día, lista y toma de asistencia con observaciones, cierre con el botón y cierre automático, corrección de días anteriores y clase cancelada (con el reloj fijo en un lunes) | J-17 |
 | K | `src/__tests__/integracion/parametros.integration.test.ts` | Los parámetros del sistema por la API: listado y edición de la propietaria con la validación de tipo y rango, los datos bancarios para el alumno y el tutor, y quién no puede verlos ni editarlos | K-18 |
 | M | `src/__tests__/integracion/resumen-diario.integration.test.ts` | El resumen diario de la propietaria: los tres bloques, sin novedades y quién lo ve. La L queda para `suplencias.integration.test.ts` | M-03 |
+| N | `src/__tests__/integracion/notificaciones.integration.test.ts` | Los avisos de vencimiento de cuota (con el planificador y el día de hoy) y las notificaciones propias por la API (con el reloj fijo en un día propio) | N-06 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 
