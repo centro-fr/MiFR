@@ -24,6 +24,11 @@ function crearMocks() {
       marcarPresentes: vi.fn(),
       tieneMarcasManuales: vi.fn(),
       completarAusentes: vi.fn().mockResolvedValue(2),
+      rachasDeInasistencia: vi.fn().mockResolvedValue(new Map()),
+      buscarSeguimientos: vi.fn().mockResolvedValue(new Map()),
+      ultimasPresenciasRegistradas: vi.fn().mockResolvedValue(new Map()),
+      registrarSeguimiento: vi.fn().mockResolvedValue({ id_inscripcion: 50 }),
+      quitarSeguimiento: vi.fn().mockResolvedValue(true),
     },
     clases: {
       obtenerPara: vi.fn().mockResolvedValue(clase),
@@ -168,5 +173,57 @@ describe("AsistenciaService", () => {
 
     expect(mocks.inscripciones.listarParaAsistencia).toHaveBeenCalledWith(4, FECHA_CLASE);
     expect(mocks.repositorio.completarAusentes).toHaveBeenCalledWith(20, [ana, beto, caro], AHORA);
+  });
+
+  describe("detección de inactivos (US-22)", () => {
+    const MARCA = new Date("2026-10-15T12:00:00Z");
+    const ANTES = new Date("2026-10-14T21:00:00Z");
+    const DESPUES = new Date("2026-10-16T21:00:00Z");
+
+    it("rachasDeInasistencia, registrarSeguimiento y quitarSeguimiento pasan al repositorio", async () => {
+      await expect(servicio.rachasDeInasistencia([50])).resolves.toEqual(new Map());
+      expect(mocks.repositorio.rachasDeInasistencia).toHaveBeenCalledWith([50]);
+      await expect(servicio.registrarSeguimiento(50, "CONTACTADO", 1)).resolves.toEqual({
+        id_inscripcion: 50,
+      });
+      expect(mocks.repositorio.registrarSeguimiento).toHaveBeenCalledWith(
+        50,
+        "CONTACTADO",
+        1,
+        expect.any(Date),
+      );
+      await expect(servicio.quitarSeguimiento(50)).resolves.toBe(true);
+      expect(mocks.repositorio.quitarSeguimiento).toHaveBeenCalledWith(50);
+    });
+
+    it("seguimientosVigentes deja la marca sin presencias o con la última antes de marcar, y descarta la que tiene una presencia después", async () => {
+      const marca = { estado: "GESTIONADO", fecha_registro: MARCA };
+      mocks.repositorio.buscarSeguimientos.mockResolvedValue(
+        new Map([
+          [50, marca],
+          [60, marca],
+          [70, marca],
+        ]),
+      );
+      mocks.repositorio.ultimasPresenciasRegistradas.mockResolvedValue(
+        new Map([
+          [60, ANTES],
+          [70, DESPUES],
+        ]),
+      );
+
+      await expect(servicio.seguimientosVigentes([50, 60, 70, 80])).resolves.toEqual(
+        new Map([
+          [50, marca],
+          [60, marca],
+        ]),
+      );
+      expect(mocks.repositorio.ultimasPresenciasRegistradas).toHaveBeenCalledWith([50, 60, 70, 80]);
+    });
+
+    it("seguimientosVigentes no consulta la base sin inscripciones", async () => {
+      await expect(servicio.seguimientosVigentes([])).resolves.toEqual(new Map());
+      expect(mocks.repositorio.buscarSeguimientos).not.toHaveBeenCalled();
+    });
   });
 });

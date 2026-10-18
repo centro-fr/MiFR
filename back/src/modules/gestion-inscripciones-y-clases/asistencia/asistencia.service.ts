@@ -8,8 +8,12 @@ import type { AsistenciaRepository } from "./asistencia.repository.js";
 import type {
   Asistencia,
   EstadoAsistencia,
+  EstadoSeguimientoInactividad,
   InscriptoConAsistencia,
+  MarcaDeSeguimiento,
   MarcarAsistenciaInput,
+  RachaDeInasistencia,
+  SeguimientoInactividad,
 } from "./asistencia.types.js";
 import type { IInfoAsistencia } from "./interface/i-info-asistencia.js";
 
@@ -88,5 +92,37 @@ export class AsistenciaService implements IInfoAsistencia {
 
   private marcaDe(idClase: number, solicitante: Solicitante) {
     return { idClase, idUsuario: solicitante.idUsuario, fechaRegistro: new Date() };
+  }
+
+  rachasDeInasistencia(idsInscripciones: number[]): Promise<Map<number, RachaDeInasistencia>> {
+    return this.repositorio.rachasDeInasistencia(idsInscripciones);
+  }
+
+  // La marca es sobre una racha (US-22): si el alumno volvió a asistir después, la racha se cortó y la
+  // marca ya no dice nada de la próxima.
+  async seguimientosVigentes(idsInscripciones: number[]): Promise<Map<number, MarcaDeSeguimiento>> {
+    if (idsInscripciones.length === 0) return new Map();
+    const [marcas, presencias] = await Promise.all([
+      this.repositorio.buscarSeguimientos(idsInscripciones),
+      this.repositorio.ultimasPresenciasRegistradas(idsInscripciones),
+    ]);
+    return new Map(
+      [...marcas].filter(([idInscripcion, { fecha_registro }]) => {
+        const ultimaPresencia = presencias.get(idInscripcion);
+        return ultimaPresencia === undefined || ultimaPresencia <= fecha_registro;
+      }),
+    );
+  }
+
+  registrarSeguimiento(
+    idInscripcion: number,
+    estado: EstadoSeguimientoInactividad,
+    idUsuario: number,
+  ): Promise<SeguimientoInactividad> {
+    return this.repositorio.registrarSeguimiento(idInscripcion, estado, idUsuario, new Date());
+  }
+
+  quitarSeguimiento(idInscripcion: number): Promise<boolean> {
+    return this.repositorio.quitarSeguimiento(idInscripcion);
   }
 }
