@@ -13,11 +13,13 @@ import {
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
+  type InscripcionACargo,
   type InscripcionGuardada,
   type InscriptoDeHorario,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
+import { rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 
 const ESTADOS_VIGENTES = ["PREINSCRIPTA", "ACTIVA"] as const;
 
@@ -608,6 +610,28 @@ export class InscripcionRepository {
   async contarLugaresOcupados(idsHorarios: number[], inicioReservas: Date): Promise<Map<number, number>> {
     if (idsHorarios.length === 0) return new Map();
     return contarLugaresOcupados(this.prisma, idsHorarios, inicioReservas);
+  }
+
+  // Sin tope: crece con las inscripciones de un mes, no con el historial.
+  aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]> {
+    return this.prisma.inscripciones.findMany({
+      where: {
+        estado: { in: ["ACTIVA", "BAJA"] },
+        fecha_inicio: { lte: hasta },
+        OR: [{ fecha_baja: null }, { fecha_baja: { gte: rangoDeDiasArgentinos(desde).inicio } }],
+      },
+      select: {
+        id_inscripcion: true,
+        id_alumno: true,
+        id_profesora: true,
+        id_plan: true,
+        sin_cargo: true,
+        estado: true,
+        fecha_inicio: true,
+        fecha_baja: true,
+      },
+      orderBy: [{ id_profesora: "asc" }, { id_inscripcion: "asc" }],
+    });
   }
 
   private async agregarHorarios(

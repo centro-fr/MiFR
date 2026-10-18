@@ -245,6 +245,21 @@ describe("InscripcionRepository", () => {
       });
     });
 
+    it("aCargoEnPeriodo trae las activas y las bajas que se cruzan con el período, sin las pre-inscriptas", async () => {
+      const fila = { id_inscripcion: 12, estado: "ACTIVA" };
+      prisma.inscripciones.findMany.mockResolvedValue([fila]);
+
+      await expect(
+        repositorio.aCargoEnPeriodo(new Date("2026-10-01T00:00:00Z"), new Date("2026-10-31T00:00:00Z")),
+      ).resolves.toEqual([fila]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
+        estado: { in: ["ACTIVA", "BAJA"] },
+        fecha_inicio: { lte: new Date("2026-10-31T00:00:00Z") },
+        // Una baja del 01/10 a las 00:30 de Argentina ya es del período: 03:30 UTC.
+        OR: [{ fecha_baja: null }, { fecha_baja: { gte: new Date("2026-10-01T03:00:00Z") } }],
+      });
+    });
+
     const INSCRIPTOS_DEL_HORARIO_8 = {
       id_horario: 8,
       fecha_desde: { lte: DIA },

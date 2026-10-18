@@ -104,3 +104,17 @@ export interface InscriptoDeHorario {
   id_alumno: number;
   alumno: { usuario: { nombre: string; apellido: string } };
 }
+
+// Una inscripción que estuvo a cargo de su profesora en algún día de un período, para la liquidación
+// de honorarios (US-23). fecha_baja es el instante de la baja; null si sigue activa.
+export interface InscripcionACargo {
+  id_inscripcion: number;
+  id_alumno: number;
+  id_profesora: number;
+  id_plan: number;
+  sin_cargo: boolean;
+  // ACTIVA o BAJA: una PREINSCRIPTA nunca estuvo a cargo.
+  estado: EstadoInscripcion;
+  fecha_inicio: Date;
+  fecha_baja: Date | null;
+}
