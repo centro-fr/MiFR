@@ -6,6 +6,7 @@ import { construirSistema } from "../../composicion.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoClases } from "../../modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
+import type { PlanificadorNotificacionesService } from "../../modules/gestion-notificaciones/planificador-notificaciones/planificador-notificaciones.service.js";
 import type { IAutenticacionGoogleAuth } from "../../modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
 import { JwtService } from "../../modules/gestion-usuarios/sesion/jwt.service.js";
 import { crearPrismaDePrueba } from "./base-de-prueba.js";
@@ -26,17 +27,20 @@ export interface EntornoDeIntegracion {
   infoClases: IInfoClases;
   // El cierre automático de la asistencia (US-21), para correrlo con la hora que pide cada caso.
   cierreAsistencia: CierreAsistenciaService;
+  // Los avisos de cuota (US-25), para generarlos con el día que pide cada caso.
+  planificadorNotificaciones: PlanificadorNotificacionesService;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
 
 export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
-  const { dependencias, infoInscripciones, infoClases, cierreAsistencia } = construirSistema({
-    prisma,
-    googleAuth: googleSimulado,
-    jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
-  });
+  const { dependencias, infoInscripciones, infoClases, cierreAsistencia, planificadorNotificaciones } =
+    construirSistema({
+      prisma,
+      googleAuth: googleSimulado,
+      jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
+    });
   const app = createApp(dependencias);
 
   // La sesión se abre por el endpoint real de login, así el token es el mismo que recibe el front.
@@ -56,6 +60,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     infoInscripciones,
     infoClases,
     cierreAsistencia,
+    planificadorNotificaciones,
     iniciarSesion,
     cerrar: () => prisma.$disconnect(),
   };

@@ -30,9 +30,12 @@ import type {
   FiltroAlumnosPorInscripcion,
   EstadoInscripcion,
   FiltroInscripciones,
+  FiltroInscripcionesParaInactividad,
+  InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
   InscripcionGuardada,
+  InscripcionParaInactividad,
   InscriptoDeHorario,
   Preinscripcion,
   ResumenInscripcionAlumno,
@@ -363,6 +366,14 @@ export class InscripcionService implements IInfoInscripciones {
 
   contarInscriptosParaAsistencia(idsHorarios: number[], fecha: Date): Promise<Map<number, number>> {
     return this.repositorio.contarInscriptosParaAsistencia(idsHorarios, fecha);
+  }
+
+  aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]> {
+    return this.repositorio.aCargoEnPeriodo(desde, hasta);
+  }
+
+  listarParaInactividad(filtro: FiltroInscripcionesParaInactividad): Promise<InscripcionParaInactividad[]> {
+    return this.repositorio.listarParaInactividad(filtro);
   }
 
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {

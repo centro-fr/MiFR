@@ -1,4 +1,5 @@
 import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
+import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import request from "supertest";
 import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
 import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
@@ -51,6 +52,7 @@ describe("rutas de inscripciones", () => {
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
       difusionPublica: logicaDifusionPublicaNoConfigurada,
       gestionNotificaciones: logicaNotificacionesNoConfigurada,
+      reportes: logicaInformesNoConfigurada,
       autenticacion,
       autorizacion,
     });

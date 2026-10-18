@@ -9,6 +9,8 @@ import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripcione
 import { createGestionInscripcionesYClasesRoutes } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.routes.js";
 import type { ILogicaNotificaciones } from "./modules/gestion-notificaciones/interface/i-logica-notificaciones.js";
 import { createGestionNotificacionesRoutes } from "./modules/gestion-notificaciones/gestion-notificaciones.routes.js";
+import type { ILogicaInformes } from "./modules/reportes/interface/i-logica-informes.js";
+import { createReportesRoutes } from "./modules/reportes/reportes.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
@@ -30,6 +32,7 @@ export interface AppDependencies {
   gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   gestionCuotasYPagos: ILogicaCuotasPagos;
   gestionNotificaciones: ILogicaNotificaciones;
+  reportes: ILogicaInformes;
   difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
@@ -73,6 +76,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
   api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
   api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
+  api.use(createReportesRoutes(deps.reportes, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

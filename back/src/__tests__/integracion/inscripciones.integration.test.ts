@@ -4,11 +4,12 @@ import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
-import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
+import { crearAlumno, crearHorarioDePrueba, crearInscripcionDePrueba, crearPlan } from "./fabricas.js";
 
 // Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 y PI-44: preinscripción (con peso y talla si la
 // actividad los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
-// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios.
+// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios. PI-66: las inscripciones a
+// cargo de cada profesora en un período, para la liquidación de honorarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -1077,5 +1078,56 @@ describe("PI-64: el alumno y su pre-inscripción en un solo pedido", () => {
 
     const propia = await preinscribir(tokenLucia, ADULTO, [horario.id_horario]);
     expect(propia.status).toBe(201);
+  });
+});
+
+describe("PI-66: inscripciones a cargo en un período", () => {
+  it("aCargoEnPeriodo trae las activas y las bajas del mes, con el borde de la baja en hora argentina", async () => {
+    const plan = await crearPlan(prisma);
+    const idProfesora = datosDemo.idProfesora.get(LUCIA)!;
+    const [horario] = await horariosFuncionales();
+    const inscribirDePrueba = async (estado: "PREINSCRIPTA" | "ACTIVA" | "BAJA", fecha_inicio: Date) => {
+      const { id_alumno } = await crearAlumno(prisma);
+      const { id_inscripcion } = await crearInscripcionDePrueba(prisma, {
+        id_alumno,
+        plan,
+        id_profesora: idProfesora,
+        id_horario: horario.id_horario,
+        estado,
+        fecha_inicio,
+      });
+      return id_inscripcion;
+    };
+    const darDeBajaEl = (id_inscripcion: number, fecha_baja: Date) =>
+      prisma.inscripciones.update({ where: { id_inscripcion }, data: { fecha_baja } });
+
+    const activa = await inscribirDePrueba("ACTIVA", new Date("2026-09-15T00:00:00Z"));
+    await inscribirDePrueba("PREINSCRIPTA", new Date("2026-10-05T00:00:00Z"));
+    await inscribirDePrueba("ACTIVA", new Date("2026-11-01T00:00:00Z"));
+    const bajaDelUnoDeOctubre = await inscribirDePrueba("BAJA", new Date("2026-09-01T00:00:00Z"));
+    // 00:30 del 01/10 en Argentina.
+    await darDeBajaEl(bajaDelUnoDeOctubre, new Date("2026-10-01T03:30:00Z"));
+    const bajaDeSeptiembre = await inscribirDePrueba("BAJA", new Date("2026-09-01T00:00:00Z"));
+    // 23:30 del 30/09 en Argentina, que en UTC ya es octubre.
+    await darDeBajaEl(bajaDeSeptiembre, new Date("2026-10-01T02:30:00Z"));
+
+    const aCargo = await infoInscripciones.aCargoEnPeriodo(
+      new Date("2026-10-01T00:00:00Z"),
+      new Date("2026-10-31T00:00:00Z"),
+    );
+
+    expect(aCargo.filter(({ id_plan }) => id_plan === plan.id_plan)).toEqual([
+      expect.objectContaining({
+        id_inscripcion: activa,
+        estado: "ACTIVA",
+        fecha_baja: null,
+        sin_cargo: false,
+      }),
+      expect.objectContaining({
+        id_inscripcion: bajaDelUnoDeOctubre,
+        estado: "BAJA",
+        id_profesora: idProfesora,
+      }),
+    ]);
   });
 });
