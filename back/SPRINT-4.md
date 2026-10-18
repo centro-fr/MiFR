@@ -7,7 +7,7 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 | US-13 | Alta de descuentos y promociones temporales | Hecho (falta EA) | Francisco |
 | US-19 | Control de efectivo pendiente de rendición | Hecho | Francisco |
 | US-26 | Resumen diario para la propietaria | En curso: `GET /resumen-diario` hecho; falta la notificación diaria | Francisco |
-| US-22 | Detección de alumnos inactivos con cuota al día | Pendiente | Nicolas |
+| US-22 | Detección de alumnos inactivos con cuota al día | Hecho (falta EA y el escenario de demostración) | Nicolas |
 | US-24 | Registro de suplencias entre profesoras | Hecho (falta EA y la regla del período liquidado) | Nicolas |
 | US-25 | Aviso automático de vencimiento de cuota | Hecho (falta EA) | Nicolas |
 | US-23 | Informe mensual automático de honorarios | Pendiente | Rosario |
@@ -229,22 +229,28 @@ El DER ya resuelve quién dicta: la suplente pasa a ser `clases.id_prof_dictante
 
 Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, calcula al consultar.
 
-### Pendiente (US-22)
+### Hecho (US-22)
 
 - [x] Agregar al `.puml` que `DetectorInactividad` requiere `IInfoInscripciones`, `IInfoCuotas` e `IInfoAlumnos` (regla dura 2).
-- [ ] Reflejarlo en el `.eap` de Enterprise Architect, junto con `seguimientos_inactividad`, y regenerar el `.jpg` y el `.pdf`.
-- [ ] Subsistema `src/modules/reportes/` con `ILogicaInformes`, su fachada y el componente `detector-inactividad/`. Montarlo en `app.ts`, `openapi.ts` y `composicion.ts`.
-- [ ] `GET /api/v1/informes/alumnos-inactivos`: alumno, teléfono y email (o los del tutor si es menor), profesora, plan, inasistencias consecutivas y fecha de la última asistencia. Filtros por profesora, plan y mínimo de inasistencias. Solo la propietaria (`REPORTES_COBRANZA_VER`, ver decisiones).
-- [ ] `IInfoAsistencia.ultimasDeInscripciones(idsInscripcion, cantidad)`: las últimas N asistencias registradas de cada inscripción en una sola consulta (sin N+1).
-- [ ] **Reglas**:
-  - [ ] Inactivo = las últimas `INASISTENCIAS_CONSECUTIVAS_INACTIVO` asistencias registradas son ausentes. Una asistencia corta la racha.
-  - [ ] Solo inscripciones `ACTIVA` con cuota al día (`IInfoCuotas`, en lote): los vencidos y los `PENDIENTE_DE_PAGO` no aparecen.
-  - [ ] Clase suelta y alumnos sin historial suficiente → no aplica. Dados de baja → no aparecen.
-  - [ ] Se cuentan solo clases cerradas: una clase abierta todavía puede cambiar.
-  - [ ] Cada fila trae su estado de gestión (`PENDIENTE` si no tiene una marca vigente). Los `IGNORADO` no aparecen, salvo con un filtro explícito.
-- [ ] Seguimiento de la gestión (ver decisiones): agregar `seguimientos_inactividad` a `der.puml`, al `.sql` y a EA (regla dura 2); modelo en Prisma + migración; `IInfoAsistencia` lee y guarda la marca.
-- [ ] `PUT /api/v1/informes/alumnos-inactivos/:idInscripcion/seguimiento` (`estado`) y `DELETE` para quitar la marca. Solo la propietaria, con el mismo permiso del listado.
-- [ ] Tests parametrizados de la racha (consecutivas, cortadas por una asistencia, menos clases que el umbral), de la marca que vence al volver a asistir y de integración.
+- [x] Subsistema `src/modules/reportes/` con `ILogicaInformes` (la parte `ILogicaAlumnosInactivos`), su fachada `ReportesService` y el componente `detector-inactividad/`. Montado en `app.ts`, `openapi.ts` y `composicion.ts`.
+- [x] `GET /api/v1/informes/alumnos-inactivos`: alumno con su teléfono y email, el tutor con los suyos si tiene, profesora, plan, estado de cuota, inasistencias consecutivas, fecha de la última asistencia y la gestión. Filtros por profesora, plan, mínimo de inasistencias y estado de gestión; paginado en memoria (`limit` hasta 100), con el `umbral` usado. Solo la propietaria: rol `PROPIETARIA` + `REPORTES_COBRANZA_VER`.
+- [x] `IInfoAsistencia.rachasDeInasistencia(idsInscripcion)` en lugar de `ultimasDeInscripciones(ids, cantidad)`: una sola consulta que cuenta, por inscripción, las ausencias en clases cerradas desde la última asistencia, y trae la fecha de esa asistencia. Con las últimas N el listado no podía mostrar ni filtrar una racha más larga que el umbral.
+- [x] `INASISTENCIAS_CONSECUTIVAS_INACTIVO` (`ENTERO`, 3, de 1 a 30) sumado al catálogo de parámetros con su validación.
+- [x] **Reglas**:
+  - [x] Inactivo = las últimas `INASISTENCIAS_CONSECUTIVAS_INACTIVO` asistencias registradas son ausentes. Una asistencia corta la racha. El filtro de mínimo solo sube el umbral.
+  - [x] Solo inscripciones `ACTIVA` con cuota al día (`IInfoCuotas`, en lote, solo para las que superan el umbral): `AL_DIA` y `POR_VENCER`; los vencidos y los `PENDIENTE_DE_PAGO` no aparecen.
+  - [x] Clase suelta y alumnos sin historial suficiente → no aplica. Dados de baja → no aparecen.
+  - [x] Se cuentan solo clases cerradas (`DICTADA`): una clase abierta todavía puede cambiar.
+  - [x] Cada fila trae su estado de gestión (`PENDIENTE` si no tiene una marca vigente). Los `IGNORADO` no aparecen, salvo con un filtro explícito.
+  - [x] Orden: más inasistencias primero; a igual racha, la última asistencia más vieja (sin asistencias, primero).
+- [x] Seguimiento de la gestión (ver decisiones): `seguimientos_inactividad` en `der.puml` y en el `.sql`; modelo en Prisma + migraciones `agregar_seguimientos_inactividad` y `agregar_checks_seguimientos_inactividad`; `IInfoAsistencia` lee y guarda la marca. La marca vence si el alumno tiene una presencia registrada después de ella.
+- [x] `PUT /api/v1/informes/alumnos-inactivos/:idInscripcion/seguimiento` (`estado`: `CONTACTADO`, `GESTIONADO` o `IGNORADO`) y `DELETE` para quitar la marca (204; 404 si no había). Solo la propietaria, con el mismo permiso del listado. Solo se marca una inscripción activa de plan mensual: otra responde 404.
+- [x] Tests parametrizados de la racha (consecutivas, cortadas por una asistencia, menos clases que el umbral), de la marca que vence al volver a asistir y de integración: PI-69 y PI-70 (O-01 a O-07).
+
+### Pendiente (US-22)
+
+- [ ] Reflejar en el `.eap` de Enterprise Architect las dependencias de `DetectorInactividad` y `seguimientos_inactividad`, y regenerar el `.jpg` y el `.pdf` (regla dura 2).
+- [ ] Sumar al escenario de demostración clases cerradas con un alumno inactivo, para que el front lo vea sin cargarlo a mano.
 
 ## US-25 – Aviso automático de vencimiento de cuota
 
