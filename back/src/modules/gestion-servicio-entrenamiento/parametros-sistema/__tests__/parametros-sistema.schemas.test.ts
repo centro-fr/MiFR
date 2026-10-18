@@ -67,7 +67,7 @@ describe("valorDelParametro", () => {
     },
   );
 
-  it.each(["MINUTOS_CIERRE_ASISTENCIA", "DIAS_RESERVA_PREINSCRIPCION"] as const)(
+  it.each(["MINUTOS_CIERRE_ASISTENCIA", "DIAS_RESERVA_PREINSCRIPCION", "DIAS_AVISO_VENCIMIENTO"] as const)(
     "%s rechaza negativos, -0, decimales y textos",
     (clave) => {
       for (const valor of [-1, -0, 1.5, "3", true, null]) {
@@ -81,6 +81,8 @@ describe("valorDelParametro", () => {
     ["MINUTOS_CIERRE_ASISTENCIA", 1440, "1440"],
     ["DIAS_RESERVA_PREINSCRIPCION", 0, "0"],
     ["DIAS_RESERVA_PREINSCRIPCION", 365, "365"],
+    ["DIAS_AVISO_VENCIMIENTO", 0, "0"],
+    ["DIAS_AVISO_VENCIMIENTO", 30, "30"],
   ] as const)("%s acepta %j y lo guarda como %j", (clave, valor, guardado) => {
     expect(valorDelParametro(clave, valor)).toBe(guardado);
   });
@@ -88,6 +90,7 @@ describe("valorDelParametro", () => {
   it.each([
     ["MINUTOS_CIERRE_ASISTENCIA", 1441],
     ["DIAS_RESERVA_PREINSCRIPCION", 366],
+    ["DIAS_AVISO_VENCIMIENTO", 31],
   ] as const)("%s rechaza %j, por encima del tope", (clave, valor) => {
     expect(() => valorDelParametro(clave, valor)).toThrow();
   });

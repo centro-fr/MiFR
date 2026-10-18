@@ -34,4 +34,9 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
     descripcion:
       "Días después del inicio en los que una pre-inscripción sin pagar guarda su lugar; después, el cupo se libera",
   },
+  DIAS_AVISO_VENCIMIENTO: {
+    tipo_dato: "ENTERO",
+    valor_inicial: "3",
+    descripcion: "Días antes del vencimiento de la cuota en los que el alumno o su tutor reciben el aviso",
+  },
 };
