@@ -15,6 +15,9 @@ describe("preinscribirSchema", () => {
     apellido: "Pérez",
     email: "Tomas@Gmail.com",
     fecha_nacimiento: "1998-04-12",
+    dni: "40111222",
+    cont_emerg_nombre: "Laura Pérez",
+    cont_emerg_telefono: "3794 112233",
   };
   const { id_alumno: _, ...inscripcion } = alta;
 
@@ -25,6 +28,9 @@ describe("preinscribirSchema", () => {
         apellido: "Pérez",
         email: "tomas@gmail.com",
         fecha_nacimiento: new Date("1998-04-12T00:00:00Z"),
+        dni: "40111222",
+        cont_emerg_nombre: "Laura Pérez",
+        cont_emerg_telefono: "3794 112233",
         apto_medico: false,
       },
       inscripcion: { ...inscripcion, sin_cargo: false },

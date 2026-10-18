@@ -85,6 +85,9 @@ describe("rutas de inscripciones", () => {
       apellido: "Pérez",
       email: "tomas.perez@gmail.com",
       fecha_nacimiento: "1998-04-12",
+      dni: "40111222",
+      cont_emerg_nombre: "Laura Pérez",
+      cont_emerg_telefono: "3794 112233",
     };
 
     it("con ALUMNOS_EDITAR crea alumno y pre-inscripción, y le pasa a la lógica quién pide", async () => {

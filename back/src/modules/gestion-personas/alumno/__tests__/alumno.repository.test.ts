@@ -56,6 +56,8 @@ function sqlDeLaLlamada(numero: number): Prisma.Sql {
   return Prisma.sql(partes, ...valores);
 }
 
+const CONTACTO = { cont_emerg_nombre: "Laura Pérez", cont_emerg_telefono: "3794 112233" };
+
 describe("AlumnoRepository", () => {
   let repositorio: AlumnoRepository;
 
@@ -66,11 +68,12 @@ describe("AlumnoRepository", () => {
 
   describe("crear", () => {
     it("crea el usuario del alumno y el alumno, los dos INACTIVO, sin tutor", async () => {
-      await repositorio.crear(usuarioNuevo, { apto_medico: false }, null);
+      await repositorio.crear(usuarioNuevo, { ...CONTACTO, apto_medico: false }, null);
 
       expect(transaccion.usuarios.create).not.toHaveBeenCalled();
       expect(transaccion.alumnos.create).toHaveBeenCalledWith({
         data: {
+          ...CONTACTO,
           apto_medico: false,
           estado: "INACTIVO",
           responsable: undefined,
@@ -83,7 +86,7 @@ describe("AlumnoRepository", () => {
     it("da de alta al tutor nuevo como usuario INACTIVO en la misma transacción", async () => {
       transaccion.usuarios.create.mockResolvedValue({ id_usuario: 20 });
 
-      await repositorio.crear(usuarioNuevo, {}, { nuevo: tutorNuevo });
+      await repositorio.crear(usuarioNuevo, CONTACTO, { nuevo: tutorNuevo });
 
       expect(transaccion.usuarios.create).toHaveBeenCalledWith({
         data: { ...tutorNuevo, estado: "INACTIVO" },
@@ -96,7 +99,7 @@ describe("AlumnoRepository", () => {
     });
 
     it("conecta un tutor que ya existía sin crearlo", async () => {
-      await repositorio.crear(usuarioNuevo, {}, { id_usuario: 21 });
+      await repositorio.crear(usuarioNuevo, CONTACTO, { id_usuario: 21 });
 
       expect(transaccion.usuarios.create).not.toHaveBeenCalled();
       expect(transaccion.alumnos.create).toHaveBeenCalledWith(

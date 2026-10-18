@@ -195,8 +195,8 @@ CREATE TABLE alumnos
 	id_alumno serial NOT NULL,
 	id_usuario integer NOT NULL,
 	id_usuario_responsable integer NULL,	-- tutor; obligatorio si es menor
-	cont_emerg_nombre varchar(80) NULL,
-	cont_emerg_telefono varchar(20) NULL,
+	cont_emerg_nombre varchar(80) NOT NULL,
+	cont_emerg_telefono varchar(20) NOT NULL,
 	apto_medico boolean NOT NULL,	-- default false
 	fecha_apto_medico date NULL,
 	observaciones varchar(500) NULL,

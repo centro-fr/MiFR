@@ -264,8 +264,8 @@ model alumnos {
   id_usuario             Int           @unique(map: "UK_alumnos_id_usuario")
   // tutor; obligatorio si es menor
   id_usuario_responsable Int?
-  cont_emerg_nombre      String?       @db.VarChar(80)
-  cont_emerg_telefono    String?       @db.VarChar(20)
+  cont_emerg_nombre      String        @db.VarChar(80)
+  cont_emerg_telefono    String        @db.VarChar(20)
   apto_medico            Boolean       @default(false)
   fecha_apto_medico      DateTime?     @db.Date
   observaciones          String?       @db.VarChar(500)

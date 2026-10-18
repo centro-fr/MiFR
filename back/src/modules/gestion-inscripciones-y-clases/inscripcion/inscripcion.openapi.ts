@@ -205,6 +205,8 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
               email: "tomas.perez@gmail.com",
               fecha_nacimiento: "1998-04-12",
               dni: "40111222",
+              cont_emerg_nombre: "Laura Pérez",
+              cont_emerg_telefono: "3794 112233",
             },
             inscripcion: { id_plan: 1, id_profesora: 1, ids_horarios: [1, 2] },
           },

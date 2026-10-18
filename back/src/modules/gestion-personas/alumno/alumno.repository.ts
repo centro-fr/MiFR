@@ -30,8 +30,8 @@ export interface DatosUsuarioAlumno {
 }
 
 export interface DatosFichaAlumno {
-  cont_emerg_nombre?: string | null;
-  cont_emerg_telefono?: string | null;
+  cont_emerg_nombre?: string;
+  cont_emerg_telefono?: string;
   apto_medico?: boolean;
   fecha_apto_medico?: Date | null;
   observaciones?: string | null;
@@ -84,7 +84,7 @@ export class AlumnoRepository {
 
   crear(
     usuario: DatosUsuarioAlumno & { nombre: string; apellido: string; fecha_nacimiento: Date },
-    ficha: DatosFichaAlumno,
+    ficha: DatosFichaAlumno & { cont_emerg_nombre: string; cont_emerg_telefono: string },
     tutor: TutorResuelto | null,
   ): Promise<Alumno> {
     return enTransaccion(this.prisma, async (transaccion) => {
