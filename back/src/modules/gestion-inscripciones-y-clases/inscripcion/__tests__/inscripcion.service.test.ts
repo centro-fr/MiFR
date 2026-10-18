@@ -739,6 +739,13 @@ describe("InscripcionService", () => {
       });
     });
 
+    it("si el alumno no se puede crear, propaga el error sin crear la inscripción", async () => {
+      mocks.alumnos.crear.mockRejectedValue(new ConflictError("Ya existe un usuario con ese email"));
+
+      await expect(servicio.preinscribir(pedido, PROPIETARIA)).rejects.toThrow("Ya existe un usuario");
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
     it("sin cupo lanza ConflictError después de crear el alumno, para que la unidad lo deshaga", async () => {
       mocks.repositorio.crear.mockResolvedValue({ resultado: "sin-cupo" });
 

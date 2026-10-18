@@ -1032,7 +1032,7 @@ describe("PI-64: el alumno y su pre-inscripción en un solo pedido", () => {
     expect(await contarFilas()).toEqual(antes);
   });
 
-  it("una profesora pre-inscribe a su nombre; a nombre de otra responde 403 sin guardar nada", async () => {
+  it("una profesora pre-inscribe a su nombre; a nombre de otra o con un tutor existente responde 403 sin guardar nada", async () => {
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
     const [horario] = await horariosFuncionales();
     const antes = await contarFilas();
@@ -1041,6 +1041,15 @@ describe("PI-64: el alumno y su pre-inscripción en un solo pedido", () => {
       id_profesora: datosDemo.idProfesora.get(CARLA),
     });
     expect(deOtra.status).toBe(403);
+    expect(await contarFilas()).toEqual(antes);
+
+    const tutora = await prisma.usuarios.findUniqueOrThrow({ where: { email: EMAIL_MULTIROL_DEMO } });
+    const conTutorExistente = await preinscribir(
+      tokenLucia,
+      { ...MENOR_CON_TUTOR, tutor: { id_usuario: tutora.id_usuario } },
+      [horario.id_horario],
+    );
+    expect(conTutorExistente.status).toBe(403);
     expect(await contarFilas()).toEqual(antes);
 
     const propia = await preinscribir(tokenLucia, ADULTO, [horario.id_horario]);
