@@ -48,7 +48,8 @@ const alumnoSchema = z.object({ id_alumno: z.number().int(), nombre: z.string(),
 
 const transferenciaSchema = pagoSchema.extend({ alumno: alumnoSchema }).openapi("Transferencia");
 
-const transferenciaEnRevisionSchema = transferenciaSchema
+// También lo muestra el resumen diario de la propietaria (US-26).
+export const transferenciaEnRevisionSchema = transferenciaSchema
   .extend({
     plan: z.string().openapi({ description: "El plan de la cuota que paga" }),
     monto_esperado: z
@@ -103,14 +104,16 @@ const cobroEnEfectivoSchema = z
   })
   .openapi("CobroEnEfectivo");
 
-const cobroSinRendirSchema = cobroEnEfectivoSchema
+// También lo muestra el resumen diario de la propietaria (US-26).
+export const cobroSinRendirSchema = cobroEnEfectivoSchema
   .omit({ fecha_rendicion: true })
   .extend({
     dias_sin_rendir: z.number().int().openapi({ description: "Días de Argentina desde el cobro hasta hoy" }),
   })
   .openapi("CobroSinRendir");
 
-const totalDeProfesoraSchema = nombreSchema.extend({
+// También lo muestra el resumen diario de la propietaria (US-26).
+export const totalDeProfesoraSchema = nombreSchema.extend({
   id_profesora: z.number().int(),
   cantidad: z.number().int(),
   total: z.number(),

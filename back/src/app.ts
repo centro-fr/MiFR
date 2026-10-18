@@ -7,6 +7,8 @@ import type { ILogicaCuotasPagos } from "./modules/gestion-cuotas-y-pagos/interf
 import { createGestionCuotasYPagosRoutes } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
 import { createGestionInscripcionesYClasesRoutes } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.routes.js";
+import type { ILogicaNotificaciones } from "./modules/gestion-notificaciones/interface/i-logica-notificaciones.js";
+import { createGestionNotificacionesRoutes } from "./modules/gestion-notificaciones/gestion-notificaciones.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
@@ -27,6 +29,7 @@ export interface AppDependencies {
   gestionServicioEntrenamiento: ILogicaServicioEntrenamiento;
   gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   gestionCuotasYPagos: ILogicaCuotasPagos;
+  gestionNotificaciones: ILogicaNotificaciones;
   difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
@@ -69,6 +72,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   // montado antes bloquearía las rutas de alumnos que GestionPersonas abre a otros roles.
   api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
   api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
+  api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

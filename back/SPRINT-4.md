@@ -6,7 +6,7 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 | --- | --- | --- | --- |
 | US-13 | Alta de descuentos y promociones temporales | Hecho (falta EA) | Francisco |
 | US-19 | Control de efectivo pendiente de rendición | Hecho | Francisco |
-| US-26 | Resumen diario para la propietaria | Pendiente | Francisco |
+| US-26 | Resumen diario para la propietaria | En curso: `GET /resumen-diario` hecho; falta la notificación diaria | Francisco |
 | US-22 | Detección de alumnos inactivos con cuota al día | Pendiente | Nicolas |
 | US-24 | Registro de suplencias entre profesoras | Hecho (falta EA y la regla del período liquidado) | Nicolas |
 | US-25 | Aviso automático de vencimiento de cuota | Pendiente | Nicolas |
@@ -174,17 +174,17 @@ Lo que hay que saber:
 ### Pendiente (US-26)
 
 - [ ] Agregar al `.puml` y a EA que `ResumenDiarioPropietaria` requiere `IInfoParametros` (regla dura 2).
-- [ ] Componente `gestion-notificaciones/resumen-diario-propietaria/` (`<<process>>`).
-- [ ] `GET /api/v1/resumen-diario`: la vista consolidada del día, calculada al pedirla. Solo la propietaria.
-  - [ ] Bloque 1, transferencias pendientes: cantidad, monto total y las que pasaron o están por pasar las 24 horas (`IInfoPagos`).
-  - [ ] Bloque 2, efectivo sin rendir: cantidad, monto total, detalle por profesora y el más antiguo (`IInfoPagos`).
-  - [ ] Bloque 3, cuotas vencidas: cantidad de alumnos, monto estimado (precio vigente de cada plan) y detalle por profesora y plan (`IInfoCuotas`, en una consulta por lote, sin N+1).
+- [x] Componente `gestion-notificaciones/resumen-diario-propietaria/` (`<<process>>`). Es el primero del subsistema: armé la carpeta, `ILogicaNotificaciones` (con la parte `ILogicaResumenDiario`), la fachada, el router y el OpenAPI. `Notificacion` se suma sobre esa estructura.
+- [x] `GET /api/v1/resumen-diario`: la vista consolidada del día, calculada al pedirla. Solo la propietaria (`acceso.rol("PROPIETARIA")`).
+  - [x] Bloque 1, transferencias pendientes: cantidad, monto total, las que pasaron las 24 horas y las que llevan 12 o más, y las 5 más viejas (`IInfoPagos.resumenTransferenciasPendientes`).
+  - [x] Bloque 2, efectivo sin rendir: cantidad, monto total, detalle por profesora y el más antiguo (`IInfoPagos.resumenEfectivoPendiente`).
+  - [x] Bloque 3, cuotas vencidas: cantidad de alumnos, monto estimado (precio de hoy de cada plan, con su promoción) y detalle por profesora y plan, y las 5 más atrasadas (`IInfoCuotas.resumenCuotasVencidas`, una consulta; el precio, una vez por plan y promoción). Cuentan las mensuales activas no bonificadas en estado `VENCIDA`: los días de gracia no cuentan.
 - [ ] Una vez al día, a partir de `HORA_RESUMEN_DIARIO`, el proceso registra una notificación `RESUMEN_DIARIO` para cada propietaria con el texto del resumen, o "Todo al día" si no hay pendientes.
 - [ ] **Reglas**:
   - [ ] Un solo resumen por propietaria y por día: correr dos veces no lo duplica.
-  - [ ] Si falla un bloque, el resumen sale igual con los otros y una nota; el error queda en el log.
+  - [x] Si falla un bloque, el resumen sale igual con los otros: el bloque llega en null y figura en `bloques_con_error`; el error queda en el log (`shared/utils/registro-errores.ts`).
   - [ ] Mismo enfoque de ejecución que el cierre de la asistencia (ver decisiones).
-- [ ] Tests del service (los tres bloques, sin novedades, bloque que falla) y de integración.
+- [x] Tests del service (los tres bloques, sin novedades, bloque que falla) y de integración (PI-65).
 
 ## Lo que quedaba de US-10 (del Sprint 3)
 

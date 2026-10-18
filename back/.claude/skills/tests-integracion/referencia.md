@@ -83,6 +83,7 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | I | `src/shared/db/__tests__/parametros-iniciales.integration.test.ts` | Carga de los parámetros del sistema | I-04 |
 | J | `src/__tests__/integracion/clases-y-asistencia.integration.test.ts` | Clases del día, lista y toma de asistencia con observaciones, cierre con el botón y cierre automático, corrección de días anteriores y clase cancelada (con el reloj fijo en un lunes) | J-17 |
 | K | `src/__tests__/integracion/parametros.integration.test.ts` | Los parámetros del sistema por la API: listado y edición de la propietaria con la validación de tipo y rango, los datos bancarios para el alumno y el tutor, y quién no puede verlos ni editarlos | K-18 |
+| M | `src/__tests__/integracion/resumen-diario.integration.test.ts` | El resumen diario de la propietaria: los tres bloques, sin novedades y quién lo ve. La L queda para `suplencias.integration.test.ts` | M-03 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 
