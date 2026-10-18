@@ -41,15 +41,16 @@ model usuarios {
   fecha_alta          DateTime       @default(now()) @db.Timestamp(6)
   fecha_actualizacion DateTime       @updatedAt @db.Timestamp(6)
 
-  roles                   usuario_roles[]
-  profesora               profesoras?
-  alumno                  alumnos?         @relation("alumno_usuario")
-  tutelados               alumnos[]        @relation("alumno_responsable")
-  pagos_registrados       pagos[]          @relation("pago_usuario_registra")
-  pagos_confirmados       pagos[]          @relation("pago_usuario_confirma")
-  asistencias_registradas asistencias[]
-  suplencias_registradas  suplencias[]
-  notificaciones          notificaciones[]
+  roles                    usuario_roles[]
+  profesora                profesoras?
+  alumno                   alumnos?                   @relation("alumno_usuario")
+  tutelados                alumnos[]                  @relation("alumno_responsable")
+  pagos_registrados        pagos[]                    @relation("pago_usuario_registra")
+  pagos_confirmados        pagos[]                    @relation("pago_usuario_confirma")
+  asistencias_registradas  asistencias[]
+  suplencias_registradas   suplencias[]
+  notificaciones           notificaciones[]
+  seguimientos_inactividad seguimientos_inactividad[]
 }
 
 model roles {
@@ -311,14 +312,15 @@ model inscripciones {
   fecha_alta         DateTime           @default(now()) @db.Timestamp(6)
   fecha_baja         DateTime?          @db.Timestamp(6)
 
-  alumno      alumnos                @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_alumnos")
-  plan        planes                 @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_planes")
-  plan_precio plan_precios           @relation(fields: [id_plan_precio], references: [id_plan_precio], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_plan_precios")
-  profesora   profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_profesoras")
-  promocion   promociones?           @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_promociones")
+  alumno      alumnos                   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_alumnos")
+  plan        planes                    @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_planes")
+  plan_precio plan_precios              @relation(fields: [id_plan_precio], references: [id_plan_precio], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_plan_precios")
+  profesora   profesoras                @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_profesoras")
+  promocion   promociones?              @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_promociones")
   horarios    inscripcion_horarios[]
   cuotas      cuotas[]
   asistencias asistencias[]
+  seguimiento seguimientos_inactividad?
 
   @@index([id_alumno], map: "IXFK_inscripciones_alumnos")
   @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
@@ -399,6 +401,26 @@ model asistencias {
   @@index([id_alumno], map: "IXFK_asistencias_alumnos")
   @@index([id_inscripcion], map: "IXFK_asistencias_inscripciones")
   @@index([id_usuario_registra], map: "IXFK_asistencias_usuarios")
+}
+
+enum estado_seguimiento_inactividad {
+  CONTACTADO
+  GESTIONADO
+  IGNORADO
+}
+
+// US-22: la gestión de la propietaria sobre un alumno inactivo, una marca por inscripción que se pisa al
+// volver a marcar. Deja de valer sola si el alumno asiste después de fecha_registro.
+model seguimientos_inactividad {
+  id_inscripcion      Int                            @id(map: "PK_seguimientos_inactividad")
+  estado              estado_seguimiento_inactividad
+  fecha_registro      DateTime                       @default(now()) @db.Timestamp(6)
+  id_usuario_registra Int
+
+  inscripcion      inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_seguimientos_inactividad_inscripciones")
+  usuario_registra usuarios      @relation(fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_seguimientos_inactividad_usuarios")
+
+  @@index([id_usuario_registra], map: "IXFK_seguimientos_inactividad_usuarios")
 }
 
 enum forma_pago {
