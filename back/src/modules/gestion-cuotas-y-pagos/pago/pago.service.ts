@@ -124,9 +124,9 @@ export class PagoService implements IInfoPagos {
     };
   }
 
-  // US-16: la informa el alumno o el tutor del menor, y queda pendiente hasta que la revise la
-  // propietaria. El monto distinto se acepta acá y se confirma al aprobarla.
-  // Quién paga se verifica antes con verificarTitular.
+  // US-16: la informa la profesora a cargo o la propietaria, y queda pendiente hasta que la propietaria
+  // la vea en su cuenta. El monto distinto se acepta acá y se confirma al aprobarla.
+  // Quién la informa se verifica antes con profesoraQueCobra.
   async prepararTransferencia(
     cuota: CuotaACobrar,
     input: InformarTransferenciaInput,
@@ -134,17 +134,6 @@ export class PagoService implements IInfoPagos {
   ): Promise<DatosDePago> {
     await this.verificarQueNoEstaRepetida(cuota.inscripcion.alumno.id_alumno, input);
     return this.datosDeTransferencia(input, solicitante, "PENDIENTE");
-  }
-
-  // US-16: una transferencia la informa el alumno o el tutor del menor.
-  verificarTitular(inscripcion: InscripcionACobrar, solicitante: Solicitante): void {
-    const { alumno } = inscripcion;
-    if (
-      solicitante.idUsuario !== alumno.id_usuario &&
-      solicitante.idUsuario !== alumno.id_usuario_responsable
-    ) {
-      throw new ForbiddenError("Solo podés informar transferencias tuyas o de un menor a tu cargo");
-    }
   }
 
   // La carga la propietaria cuando ya vio el ingreso en su cuenta: así paga la primera cuota un

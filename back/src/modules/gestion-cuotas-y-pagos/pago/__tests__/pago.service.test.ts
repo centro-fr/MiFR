@@ -161,19 +161,6 @@ describe("PagoService", () => {
       });
     });
 
-    it.each([
-      ["la alumna", ALUMNA],
-      ["la tutora", TUTORA],
-    ])("verificarTitular deja pasar a %s", (_caso, solicitante) => {
-      expect(() => servicio.verificarTitular(cuota.inscripcion, solicitante)).not.toThrow();
-    });
-
-    it("verificarTitular rechaza a cualquier otro", () => {
-      expect(() =>
-        servicio.verificarTitular(cuota.inscripcion, { idUsuario: 99, esPropietaria: false }),
-      ).toThrow(ForbiddenError);
-    });
-
     it("la misma transferencia (alumno, monto y día de Argentina) no se informa dos veces", async () => {
       // 23:00 del 8 en Argentina: otro día, no se repite.
       mocks.repositorio.fechasDeTransferenciasIguales.mockResolvedValueOnce([

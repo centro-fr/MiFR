@@ -200,7 +200,8 @@ export function registrarDocumentacionPagos(registro: OpenAPIRegistry): void {
     security,
     summary: "Informar una transferencia (US-16)",
     description:
-      "Rol ALUMNO o TUTOR: el alumno informa las suyas y el tutor las de sus menores (si no, 403). Queda " +
+      "Requiere el permiso `PAGOS_REGISTRAR`: la informa la profesora a cargo de la inscripción o la propietaria " +
+      "(con otra inscripción, 403; el alumno y el tutor no la informan). Queda " +
       `PENDIENTE hasta que la revise la propietaria y no cambia la habilitación. ${cuotaQueSeCobra} La misma ` +
       "transferencia (alumno, monto y día) informada dos veces responde 409. Sin comprobante adjunto.",
     request: {

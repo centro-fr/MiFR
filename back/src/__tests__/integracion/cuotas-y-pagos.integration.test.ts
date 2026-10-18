@@ -283,6 +283,8 @@ async function pedir(metodo: "get" | "post", ruta: string, email: string, cuerpo
 const EMAIL_LUCIA = "lucia.gomez@example.com";
 const EMAIL_SOFIA = "sofia.medina@example.com";
 const EMAIL_VALENTINA = "valentina.herrera@example.com";
+// US-16: la profesora a cargo de Valentina, que informa sus transferencias.
+const EMAIL_CARLA = "carla.ruiz@example.com";
 const HACE_UNA_HORA = () => new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
 describe("PI-42: el cobro en efectivo por la API", () => {
@@ -337,7 +339,7 @@ describe("PI-43: la transferencia informada y su revisión por la API", () => {
   });
 
   function informar(monto = 30000) {
-    return pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+    return pedir("post", "/pagos/transferencia", EMAIL_CARLA, {
       id_inscripcion: idInscripcionValentina,
       monto,
       fecha_hora_transferencia: HACE_UNA_HORA(),
@@ -374,6 +376,33 @@ describe("PI-43: la transferencia informada y su revisión por la API", () => {
     expect(await pagosDeValentina()).toEqual([
       { numero_cuota: 1, pagos: [{ estado: "CONFIRMADO" }] },
       { numero_cuota: 2, pagos: [{ estado: "PENDIENTE" }] },
+    ]);
+  });
+
+  it("la informa la profesora a cargo; el alumno y otra profesora reciben 403 sin guardar nada", async () => {
+    const cuerpo = {
+      id_inscripcion: idInscripcionValentina,
+      monto: 30000,
+      fecha_hora_transferencia: HACE_UNA_HORA(),
+    };
+    const antes = await pagosDeValentina();
+
+    expect((await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, cuerpo)).status).toBe(403);
+    expect((await pedir("post", "/pagos/transferencia", EMAIL_LUCIA, cuerpo)).status).toBe(403);
+    expect(await pagosDeValentina()).toEqual(antes);
+
+    const informada = await pedir("post", "/pagos/transferencia", EMAIL_CARLA, cuerpo);
+    expect(informada.status).toBe(201);
+    const carla = await prisma.usuarios.findUniqueOrThrow({ where: { email: EMAIL_CARLA } });
+    expect(informada.body).toMatchObject({
+      forma_pago: "TRANSFERENCIA",
+      estado: "PENDIENTE",
+      id_usuario_registra: carla.id_usuario,
+      id_profesora_cobra: null,
+    });
+    const enRevision = await pedir("get", "/pagos/transferencias?estado=PENDIENTE", EMAIL_MULTIROL_DEMO);
+    expect(enRevision.body.datos.map(({ id_pago }: { id_pago: number }) => id_pago)).toEqual([
+      informada.body.id_pago,
     ]);
   });
 
@@ -534,7 +563,7 @@ describe("PI-45: la situación de cuota en la ficha y el listado de alumnos", ()
       tiene_pago_pendiente: false,
     });
 
-    await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+    await pedir("post", "/pagos/transferencia", EMAIL_CARLA, {
       id_inscripcion: idInscripcionValentina,
       monto: 30000,
       fecha_hora_transferencia: HACE_UNA_HORA(),
@@ -623,7 +652,7 @@ describe("PI-51: el filtro del listado de alumnos por estado de cuota", () => {
 describe("PI-52: el historial de cuotas y pagos en la ficha", () => {
   it("la propietaria ve las cuotas con todos sus pagos, también el rechazado; la profesora a cargo no ve el historial", async () => {
     const idAlumnoValentina = datos.idAlumno.get(DNI_VALENTINA)!;
-    const informada = await pedir("post", "/pagos/transferencia", EMAIL_VALENTINA, {
+    const informada = await pedir("post", "/pagos/transferencia", EMAIL_CARLA, {
       id_inscripcion: datos.idInscripcion.get(DNI_VALENTINA)!,
       monto: 30000,
       fecha_hora_transferencia: HACE_UNA_HORA(),

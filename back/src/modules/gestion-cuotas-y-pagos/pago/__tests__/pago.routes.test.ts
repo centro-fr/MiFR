@@ -106,19 +106,25 @@ describe("rutas de pagos", () => {
   });
 
   describe("transferencias (US-16)", () => {
-    it.each(["alumna", "tutora"])("la %s informa una transferencia", async (quien) => {
+    it.each([
+      ["profesora", false],
+      ["propietaria", true],
+    ] as const)("la %s informa una transferencia con PAGOS_REGISTRAR", async (quien, esPropietaria) => {
       const respuesta = await como(quien, "post", "/transferencia").send(transferencia);
 
       expect(respuesta.status).toBe(201);
+      expect(autorizacion.tienePermiso).toHaveBeenCalledWith(ROLES[quien].usuarioId, "PAGOS_REGISTRAR");
       expect(logica.informarTransferencia).toHaveBeenCalledWith(
         expect.objectContaining({ fecha_hora_transferencia: new Date("2026-10-01T13:30:00Z") }),
-        { idUsuario: ROLES[quien].usuarioId, esPropietaria: false },
+        { idUsuario: ROLES[quien].usuarioId, esPropietaria },
       );
     });
 
-    it("la propietaria y la profesora no informan transferencias como alumnas", async () => {
-      expect((await como("propietaria", "post", "/transferencia").send(transferencia)).status).toBe(403);
-      expect((await como("profesora", "post", "/transferencia").send(transferencia)).status).toBe(403);
+    it.each(["alumna", "tutora"])("la %s, sin PAGOS_REGISTRAR, recibe 403 al informar", async (quien) => {
+      vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
+
+      expect((await como(quien, "post", "/transferencia").send(transferencia)).status).toBe(403);
+      expect(logica.informarTransferencia).not.toHaveBeenCalled();
     });
 
     it("la alumna ve sus transferencias", async () => {
