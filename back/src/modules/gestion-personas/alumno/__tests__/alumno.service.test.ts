@@ -52,8 +52,8 @@ function crearAlumno(datos: Partial<Alumno> = {}): Alumno {
     id_alumno: 1,
     id_usuario: 10,
     id_usuario_responsable: null,
-    cont_emerg_nombre: null,
-    cont_emerg_telefono: null,
+    cont_emerg_nombre: "Laura Pérez",
+    cont_emerg_telefono: "3794 112233",
     apto_medico: false,
     fecha_apto_medico: null,
     observaciones: null,
@@ -91,6 +91,8 @@ const altaMayor = {
   dni: "40111222",
   email: "ana@example.com",
   fecha_nacimiento: MAYOR,
+  cont_emerg_nombre: "Jorge López",
+  cont_emerg_telefono: "3794 401122",
   apto_medico: false,
 };
 
@@ -99,6 +101,8 @@ const altaMenor = {
   apellido: "Pérez",
   dni: "50111222",
   fecha_nacimiento: MENOR,
+  cont_emerg_nombre: "Laura Pérez",
+  cont_emerg_telefono: "3794 112233",
   apto_medico: false,
   tutor: tutorNuevo,
 };
@@ -184,7 +188,12 @@ describe("AlumnoService", () => {
           fecha_nacimiento: MAYOR,
           direccion: undefined,
         },
-        { apto_medico: false, observaciones: "Lesión de rodilla" },
+        {
+          cont_emerg_nombre: "Jorge López",
+          cont_emerg_telefono: "3794 401122",
+          apto_medico: false,
+          observaciones: "Lesión de rodilla",
+        },
         null,
       );
     });
@@ -213,12 +222,11 @@ describe("AlumnoService", () => {
       });
     });
 
-    it("reutiliza un tutor que ya existe con ese email si no trae DNI", async () => {
-      const { dni: _dni, ...tutorSinDni } = tutorNuevo;
+    it("reutiliza un tutor que ya existe con ese email y sin DNI cargado", async () => {
       usuarios.buscarPorEmail.mockResolvedValue(usuario(21));
       repositorio.crear.mockResolvedValue(menorConTutor);
 
-      await servicio.crear({ ...altaMenor, tutor: tutorSinDni }, PROPIETARIA);
+      await servicio.crear(altaMenor, PROPIETARIA);
 
       expect(repositorio.crear).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         id_usuario: 21,

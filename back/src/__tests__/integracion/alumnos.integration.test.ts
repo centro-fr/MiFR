@@ -15,12 +15,15 @@ const LUCIA = "lucia.gomez@example.com";
 const MAYOR = "1995-04-20";
 const MENOR = "2016-05-10";
 
+// El contacto de emergencia es obligatorio en el alta.
+const CONTACTO = { cont_emerg_nombre: "Jorge López", cont_emerg_telefono: "3794 401122" };
 const ANA = {
   nombre: "Ana",
   apellido: "López",
   dni: "40111222",
   email: "ana@example.com",
   fecha_nacimiento: MAYOR,
+  ...CONTACTO,
 };
 const TUTORA = {
   nombre: "Laura",
@@ -30,7 +33,14 @@ const TUTORA = {
   email: "laura.perez@example.com",
   fecha_nacimiento: "1985-03-02",
 };
-const TOMAS = { nombre: "Tomás", apellido: "Pérez", dni: "50111222", fecha_nacimiento: MENOR, tutor: TUTORA };
+const TOMAS = {
+  nombre: "Tomás",
+  apellido: "Pérez",
+  dni: "50111222",
+  fecha_nacimiento: MENOR,
+  ...CONTACTO,
+  tutor: TUTORA,
+};
 
 const CARLA = "carla.ruiz@example.com";
 const DNI_SOFIA = "38111222";
@@ -62,6 +72,29 @@ beforeEach(async () => {
 afterAll(() => entorno.cerrar());
 
 describe("PI-15: pre-inscripción de un alumno mayor", () => {
+  it("sin DNI o sin contacto de emergencia responde 400 sin guardar nada", async () => {
+    const antes = await contarFilas();
+
+    for (const faltante of ["dni", "cont_emerg_nombre", "cont_emerg_telefono"] as const) {
+      const { [faltante]: _, ...incompleto } = ANA;
+      expect((await comoMarina("post", "/alumnos").send(incompleto)).status).toBe(400);
+    }
+    const { dni: _dni, ...tutoraSinDni } = TUTORA;
+    expect((await comoMarina("post", "/alumnos").send({ ...TOMAS, tutor: tutoraSinDni })).status).toBe(400);
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  // 23502 es not_null_violation: lo frena la columna, no la validación de la API.
+  it("la base rechaza un alumno sin contacto de emergencia aunque no pase por la API", async () => {
+    const usuario = await prisma.usuarios.create({
+      data: { nombre: "Sin", apellido: "Contacto", fecha_nacimiento: new Date(MAYOR), estado: "INACTIVO" },
+    });
+
+    await expect(
+      prisma.$executeRaw`INSERT INTO alumnos (id_usuario, apto_medico, estado) VALUES (${usuario.id_usuario}, false, 'INACTIVO')`,
+    ).rejects.toThrow(/23502/);
+  });
+
   it("queda inactivo, sin roles y sin poder entrar hasta el primer pago", async () => {
     const respuesta = await comoMarina("post", "/alumnos").send(ANA);
 
@@ -387,7 +420,13 @@ describe("PI-31: el tutor en el alta de un menor", () => {
     email: "paula.romero@example.com",
     fecha_nacimiento: "1984-06-21",
   };
-  const MENOR_NUEVO = { nombre: "Lola", apellido: "Romero", fecha_nacimiento: MENOR };
+  const MENOR_NUEVO = {
+    nombre: "Lola",
+    apellido: "Romero",
+    dni: "50777888",
+    fecha_nacimiento: MENOR,
+    ...CONTACTO,
+  };
 
   it("una profesora no elige como tutor una cuenta existente por su id", async () => {
     const tokenLucia = await entorno.iniciarSesion(LUCIA);

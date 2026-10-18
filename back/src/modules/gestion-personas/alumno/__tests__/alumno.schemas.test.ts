@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { actualizarAlumnoSchema, crearAlumnoSchema, listarAlumnoQuerySchema } from "../alumno.schemas.js";
 
-const mayor = { nombre: "Ana", apellido: "López", email: "ANA@example.com", fecha_nacimiento: "1995-04-20" };
+const mayor = {
+  nombre: "Ana",
+  apellido: "López",
+  email: "ANA@example.com",
+  fecha_nacimiento: "1995-04-20",
+  dni: "40111222",
+  cont_emerg_nombre: "Jorge López",
+  cont_emerg_telefono: "3794 401122",
+};
 const tutor = {
   nombre: "Laura",
   apellido: "Pérez",
+  dni: "30111222",
   telefono: "3794 112233",
   email: "laura@example.com",
   fecha_nacimiento: "1985-03-02",
@@ -16,10 +25,22 @@ describe("crearAlumnoSchema", () => {
   });
 
   it("guarda como null los textos opcionales vacíos", () => {
-    expect(crearAlumnoSchema.parse({ ...mayor, telefono: "", cont_emerg_nombre: "  " })).toMatchObject({
+    expect(crearAlumnoSchema.parse({ ...mayor, telefono: "", direccion: "  " })).toMatchObject({
       telefono: null,
-      cont_emerg_nombre: null,
+      direccion: null,
     });
+  });
+
+  it.each([
+    ["sin DNI", { dni: undefined }],
+    ["sin nombre del contacto de emergencia", { cont_emerg_nombre: undefined }],
+    ["sin teléfono del contacto de emergencia", { cont_emerg_telefono: undefined }],
+    ["con el contacto de emergencia vacío", { cont_emerg_nombre: "  " }],
+    ["con el teléfono de emergencia vacío", { cont_emerg_telefono: "" }],
+    ["con el contacto de emergencia en null", { cont_emerg_nombre: null }],
+    ["con un contacto de emergencia de más de 80 caracteres", { cont_emerg_nombre: "a".repeat(81) }],
+  ])("rechaza un alta %s", (_caso, cambios) => {
+    expect(crearAlumnoSchema.safeParse({ ...mayor, ...cambios }).success).toBe(false);
   });
 
   it("acepta el tutor por id_usuario o con sus datos completos", () => {
@@ -29,6 +50,7 @@ describe("crearAlumnoSchema", () => {
 
   it.each([
     ["sin email", { ...tutor, email: undefined }],
+    ["sin DNI", { ...tutor, dni: undefined }],
     ["con un campo que no existe", { ...tutor, parentesco: "madre" }],
     ["con id y datos a la vez", { id_usuario: 3, nombre: "Laura" }],
     ["sin fecha de nacimiento", { ...tutor, fecha_nacimiento: undefined }],
@@ -54,6 +76,20 @@ describe("crearAlumnoSchema", () => {
 describe("actualizarAlumnoSchema", () => {
   it("rechaza un cuerpo vacío", () => {
     expect(actualizarAlumnoSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("no deja vaciar el contacto de emergencia", () => {
+    for (const cambio of [
+      { cont_emerg_nombre: "" },
+      { cont_emerg_nombre: null },
+      { cont_emerg_telefono: "" },
+      { cont_emerg_telefono: null },
+    ]) {
+      expect(actualizarAlumnoSchema.safeParse(cambio).success).toBe(false);
+    }
+    expect(actualizarAlumnoSchema.parse({ cont_emerg_telefono: "3794 409988" })).toEqual({
+      cont_emerg_telefono: "3794 409988",
+    });
   });
 
   it("deja afuera lo que no es del alumno, como el estado", () => {
