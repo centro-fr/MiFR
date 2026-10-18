@@ -132,6 +132,17 @@ export interface EfectivoPendiente {
   offset: number;
 }
 
+// US-26: las transferencias que esperan revisión. Los totales son de todas; el detalle, de las más
+// viejas. supera_24_horas son las que ya pasaron el plazo de revisión; por_superar_24_horas, las que
+// llevan 12 horas o más y todavía no.
+export interface ResumenTransferenciasPendientes {
+  cantidad: number;
+  total: number;
+  supera_24_horas: number;
+  por_superar_24_horas: number;
+  mas_antiguas: TransferenciaEnRevision[];
+}
+
 // US-26: el resumen del efectivo sin rendir, sin el detalle de cada cobro.
 export interface ResumenEfectivoPendiente {
   cantidad: number;

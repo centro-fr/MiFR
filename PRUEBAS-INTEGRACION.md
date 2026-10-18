@@ -202,7 +202,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas)                | Parcial: los contratos de `IInfoCuotas` e `IInfoClases`; el informe, cuando exista |
 | US-24 | Registro de suplencias entre profesoras                   |   4    | PI-60 a PI-63                                                 | Sí; no editar una suplencia de un período liquidado queda para US-23 (sección 9)       |
 | US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar)                                | Parcial: el contrato de `IInfoCuotas`; los avisos, cuando existan                      |
-| US-26 | Resumen diario para la propietaria                        |   4    |                                                               |                                                                                        |
+| US-26 | Resumen diario para la propietaria                        |   4    | PI-65                                                         | Parcial: los tres bloques por la API (`GET /resumen-diario`); la notificación diaria `RESUMEN_DIARIO` espera a `Notificacion` (US-25) |
 | US-27 | Carga de rutina y evolución física                        |   5    |                                                               |                                                                                        |
 | US-28 | Consulta de rutina y progreso físico                      |   5    |                                                               |                                                                                        |
 | US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                               |                                                                                        |
@@ -280,6 +280,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-55         | La propietaria corrige las clases de un día anterior                | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-56         | La propietaria cancela una clase                                    | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-64         | El alumno y su pre-inscripción en un solo pedido                    | US-05, US-06        | Servicios          | Demostración, `crearAlumno`                                | Sí           |
+| PI-65         | El resumen diario de la propietaria                                 | US-26               | Servicios          | Demostración                                               | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad.
 
@@ -1003,9 +1004,21 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (G-33 a G-37).
 
+#### PI-65 — El resumen diario de la propietaria
+
+**US:** US-26 · **Precondición:** escenario de demostración cargado (Valentina Herrera en el Intermedio, a $30.000 y con 5 días de gracia, con su primera cuota cobrada en efectivo por Carla y sin rendir).
+
+1. Con la primera cuota de Valentina vencida hace 10 días, Carla informa una transferencia de $30.000, que se carga hace 25 horas. Marina pide el resumen (`GET /resumen-diario`).
+2. Con la base reiniciada, Marina rinde el efectivo de Carla, la cuota de Valentina pasa a vencida hace 2 días (dentro de la gracia) y pide el resumen.
+3. Lucía pide el resumen; después, un pedido sin sesión.
+
+**Resultado esperado:** en el paso 1 responde 200 con la fecha de hoy en Argentina, sin bloques con error y con novedades: una transferencia pendiente de $30.000 que pasó las 24 horas, con su plan; un cobro en efectivo de Carla por $30.000; y una cuota vencida, de una alumna, con 10 días de atraso y $30.000 estimados al precio de hoy, en el detalle de Carla y del Intermedio. En el paso 2 los tres bloques están en cero y el resumen sale "sin novedades": la cuota en los días de gracia no cuenta. En el paso 3, Lucía recibe 403 y sin sesión, 401.
+
+**Automatizado:** Sí (M-01 a M-03).
+
 ## 7. Tests automatizados
 
-211 tests en once archivos:
+214 tests en doce archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1020,6 +1033,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
+|    M    | `back/src/__tests__/integracion/resumen-diario.integration.test.ts`             | 3 (M-01 a M-03)  | PI-65                             |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -1135,6 +1149,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | K-14        | Sin sesión, las tres rutas responden 401                                                                                                                                      | PI-53 |
 | K-15 a K-17 | La profesora, el alumno y el tutor no listan ni editan los parámetros, y el valor no cambia                                                                                   | PI-53 |
 | K-18        | La profesora no ve los datos bancarios                                                                                                                                        | PI-53 |
+| M-01        | El resumen junta la transferencia pendiente que pasó las 24 horas, el efectivo sin rendir y la cuota vencida, con el monto estimado al precio de hoy | PI-65 |
+| M-02        | Con todo resuelto el resumen sale sin novedades; una cuota en los días de gracia no cuenta como vencida | PI-65 |
+| M-03        | Solo la propietaria ve el resumen: una profesora recibe 403 y sin sesión 401 | PI-65 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -1242,6 +1259,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Informar una transferencia sin comprobar que la profesora está a cargo                 | H-22 y un unitario de la fachada                                                                           |
 | `POST /pagos/transferencia` sin `acceso.permiso("PAGOS_REGISTRAR")`                     | Cuatro unitarios de las rutas. Ningún test de integración, porque el service igual rechaza a quien no es profesora a cargo ni propietaria |
 | Los horarios de distintas actividades pasan si son de la misma profesora                | G-38 y dos unitarios del service                                                                           |
+| Toda inscripción traída cuenta como vencida, también en los días de gracia             | M-02 (después de sumarle una cuota en la gracia; la primera versión no lo detectaba) y dos unitarios de Cuota |
+| Las transferencias por superar las 24 horas incluyen las que ya las pasaron             | M-01 y un unitario de Pago                                                                                 |
+| `GET /resumen-diario` sin `acceso.rol("PROPIETARIA")`                                   | M-03 y un unitario de las rutas                                                                            |
 | La primera cuota no se reconoce como tal                                                | H-20 y dos unitarios del service                                                                           |
 | El filtro por tipo deja las que no coinciden                                            | H-20, H-21 y un unitario del service                                                                       |
 
@@ -1292,6 +1312,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 18/10/2026 | Alumno y pre-inscripción en un solo pedido (PI-64)                    | 224 | 224 aprobados | 216,6 s | Pasaron también los 1816 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos y build correctos. Las 4 fallas provocadas fueron detectadas |
 | 18/10/2026 | La profesora a cargo informa las transferencias (PI-43)              | 225 | 225 aprobados | 216,3 s | Los tests de PI-43, PI-45 y PI-52 que informaban con Valentina pasan a informar con Carla. Pasaron también los 1815 tests unitarios; los archivos del cambio quedan con cobertura del 100 %. Chequeo de tipos, formato y build correctos. De las 2 fallas provocadas, una la detecta H-22 y la otra solo los unitarios de las rutas |
 | 18/10/2026 | Una sola actividad por inscripción (PI-20)                            | 226 | 226 aprobados | 213,6 s | Pasaron también los 1818 tests unitarios; el archivo del cambio queda con cobertura del 100 %. Chequeo de tipos, formato y build correctos. La falla provocada fue detectada |
+| 18/10/2026 | Resumen diario de la propietaria (PI-65)                              | 229 | 229 aprobados | 231,6 s | Pasaron también los 1842 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas, una después de sumarle a M-02 una cuota en los días de gracia |
 
 ### 8.2 Resultado por caso
 
@@ -1331,6 +1352,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-55         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-14 y J-15; sin defectos                                                  |
 | PI-56         | 12/10/2026 | Francisco Andrade | Aprobado           | Pasan J-16 y J-17; sin defectos                                                  |
 | PI-64         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan G-33 a G-37; sin defectos                                                  |
+| PI-65         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan M-01 a M-03; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1443,3 +1465,4 @@ Los defectos se numeran D-01, D-02…
 |   2.22  | 18/10/2026 | Caso PI-64 (el alumno y su pre-inscripción en un solo pedido, `POST /preinscripciones`) y tests G-33 a G-37; US-05 suma el caso | Francisco Andrade |
 |   2.23  | 18/10/2026 | PI-43: la transferencia la informa la profesora a cargo o la propietaria, y el alumno recibe 403; test H-22 y los tests que informaban con Valentina pasan a Carla | Francisco Andrade |
 |   2.24  | 18/10/2026 | PI-20 suma el paso 5 (una inscripción no combina actividades, US-11) y el test G-38 | Francisco Andrade |
+|   2.25  | 18/10/2026 | Caso PI-65 (el resumen diario de la propietaria, `GET /resumen-diario`) y archivo M con M-01 a M-03; US-26 queda parcial hasta la notificación diaria. La letra L queda para los tests de suplencias (PI-60 a PI-63), que todavía no están en la tabla | Francisco Andrade |

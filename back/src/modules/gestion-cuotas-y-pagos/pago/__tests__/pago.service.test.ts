@@ -54,6 +54,7 @@ function crearMocks() {
       resolver: vi.fn().mockResolvedValue({ id_pago: 7 }),
       listarParaRevisar: vi.fn().mockResolvedValue([]),
       contarTransferencias: vi.fn().mockResolvedValue(0),
+      totalesPendientes: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, antesDe24: 0, antesDe12: 0 }),
       listarTransferenciasDeUsuario: vi.fn().mockResolvedValue([]),
       buscarParaComprobante: vi.fn(),
     },
@@ -402,6 +403,38 @@ describe("PagoService", () => {
 
       await expect(pedido).rejects.toThrow(ValidationError);
       await expect(pedido).rejects.toThrow("acote la búsqueda");
+    });
+
+    it("resumenTransferenciasPendientes da los totales, las alertas y las 5 más viejas con sus horas", async () => {
+      mocks.repositorio.totalesPendientes.mockResolvedValue({
+        cantidad: 7,
+        total: 210000,
+        antesDe24: 2,
+        antesDe12: 5,
+      });
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([
+        paraRevisar({ id_pago: 1, fecha_pago: new Date("2026-10-08T14:00:00Z") }),
+      ]);
+
+      const resumen = await servicio.resumenTransferenciasPendientes();
+
+      expect(resumen).toMatchObject({
+        cantidad: 7,
+        total: 210000,
+        supera_24_horas: 2,
+        por_superar_24_horas: 3,
+      });
+      expect(resumen.mas_antiguas).toEqual([
+        expect.objectContaining({ id_pago: 1, horas_desde_la_carga: 25, supera_24_horas: true }),
+      ]);
+      expect(mocks.repositorio.totalesPendientes).toHaveBeenCalledWith(
+        new Date("2026-10-08T15:00:00Z"),
+        new Date("2026-10-09T03:00:00Z"),
+      );
+      expect(mocks.repositorio.listarParaRevisar).toHaveBeenCalledWith({ estado: "PENDIENTE" }, "asc", {
+        limit: 5,
+        offset: 0,
+      });
     });
 
     it("listarMisTransferencias busca por el usuario que pide", async () => {
