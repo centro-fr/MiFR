@@ -13,7 +13,15 @@ import type { IAutenticacion } from "../../../gestion-usuarios/sesion/interface/
 import type { ILogicaPersonas } from "../../interface/i-logica-personas.js";
 
 const alumno = { id_alumno: 1, estado: "INACTIVO" };
-const alta = { nombre: "Ana", apellido: "López", email: "ana@example.com", fecha_nacimiento: "1995-04-20" };
+const alta = {
+  nombre: "Ana",
+  apellido: "López",
+  email: "ana@example.com",
+  fecha_nacimiento: "1995-04-20",
+  dni: "40111222",
+  cont_emerg_nombre: "Jorge López",
+  cont_emerg_telefono: "3794 401122",
+};
 
 function crearLogicaMock() {
   return {

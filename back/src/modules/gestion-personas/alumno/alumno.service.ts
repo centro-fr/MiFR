@@ -39,9 +39,14 @@ export function esMenorDeEdad(fechaNacimiento: Date, hoy: Date): boolean {
   return cumpleMayoria > hoy;
 }
 
-function separarDatos(input: CrearAlumnoInput | ActualizarAlumnoInput): {
+type CamposDeUsuario =
+  "nombre" | "apellido" | "dni" | "email" | "telefono" | "fecha_nacimiento" | "direccion";
+
+function separarDatos<T extends CrearAlumnoInput | ActualizarAlumnoInput>(
+  input: T,
+): {
   usuario: DatosUsuarioAlumno;
-  ficha: DatosFichaAlumno;
+  ficha: Omit<T, CamposDeUsuario | "tutor">;
 } {
   const {
     nombre,
@@ -222,17 +227,15 @@ export class AlumnoService implements IInfoAlumnos {
       return { id_usuario: existente.id_usuario };
     }
 
-    this.validarTutor(tutor.fecha_nacimiento, tutor.dni !== undefined && tutor.dni === dniAlumno);
-    const porDni = tutor.dni ? await this.usuarios.buscarPorDni(tutor.dni) : null;
+    this.validarTutor(tutor.fecha_nacimiento, tutor.dni === dniAlumno);
+    const porDni = await this.usuarios.buscarPorDni(tutor.dni);
     const porEmail = await this.usuarios.buscarPorEmail(tutor.email);
     const existente = porDni ?? porEmail;
     if (!existente) return { nuevo: tutor };
 
     // Se reusa solo si el DNI y el email cargados son de la misma cuenta: si no, con el DNI de otra
     // persona quedaría a cargo del menor una cuenta que no es la del tutor que se quiso cargar.
-    const sonLaMismaCuenta = porDni
-      ? porDni.id_usuario === porEmail?.id_usuario
-      : !(tutor.dni && porEmail?.dni);
+    const sonLaMismaCuenta = porDni ? porDni.id_usuario === porEmail?.id_usuario : !porEmail?.dni;
     if (!sonLaMismaCuenta) {
       throw new ConflictError("El DNI y el email del tutor corresponden a cuentas distintas");
     }

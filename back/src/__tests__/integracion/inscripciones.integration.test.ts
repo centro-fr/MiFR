@@ -929,12 +929,16 @@ describe("PI-64: el alumno y su pre-inscripción en un solo pedido", () => {
     email: "tomas.perez@example.com",
     dni: "40111222",
     fecha_nacimiento: "1998-04-12",
+    cont_emerg_nombre: "Laura Pérez",
+    cont_emerg_telefono: "3794 112233",
   };
   const MENOR_CON_TUTOR = {
     nombre: "Juana",
     apellido: "Sosa",
     dni: "50111222",
     fecha_nacimiento: "2014-03-02",
+    cont_emerg_nombre: "Laura Sosa",
+    cont_emerg_telefono: "3794 112233",
     tutor: {
       nombre: "Laura",
       apellido: "Sosa",

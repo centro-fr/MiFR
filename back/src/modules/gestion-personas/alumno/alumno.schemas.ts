@@ -9,7 +9,11 @@ import {
   nombreSchema,
   telefonoSchema,
 } from "../../../shared/utils/esquemas-persona.js";
-import { textoBusquedaSchema, textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
+import {
+  textoBusquedaSchema,
+  textoOpcionalSchema,
+  textoSchema,
+} from "../../../shared/utils/esquemas-texto.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import { paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 
@@ -32,12 +36,13 @@ const fecha_apto_medico = z
   });
 
 // El tutor se elige entre los usuarios que ya existen o se da de alta con sus datos. Es quien va a
-// entrar al sistema, así que el email es obligatorio. El parentesco no se guarda: el DER no lo tiene.
+// entrar al sistema, así que el email es obligatorio, y el DNI lo identifica para reusarlo con otro
+// menor. El parentesco no se guarda: el DER no lo tiene.
 const tutorNuevoSchema = z
   .object({
     nombre: nombreSchema,
     apellido: nombreSchema,
-    dni: dniSchema.optional(),
+    dni: dniSchema,
     telefono: telefonoSchema,
     email: emailSchema,
     fecha_nacimiento: fechaNacimientoSchema,
@@ -48,12 +53,19 @@ const tutorSchema = z.union([z.object({ id_usuario: idSchema }).strict(), tutorN
   errorMap: () => ({ message: "El tutor se indica con su id_usuario o con sus datos completos" }),
 });
 
+// El DNI y el contacto de emergencia son obligatorios en el alta y no se pueden vaciar al editar: el
+// DNI identifica a la persona y el contacto es a quién llamar si pasa algo en una clase.
+const contactoDeEmergencia = {
+  cont_emerg_nombre: textoSchema(80),
+  cont_emerg_telefono: telefonoSchema,
+};
+
 const datosDelAlumno = {
   dni: dniSchema.optional(),
   telefono: opcionalAnulable(telefonoSchema).optional(),
   direccion: opcionalAnulable(direccionSchema).optional(),
-  cont_emerg_nombre: textoOpcionalSchema(80).optional(),
-  cont_emerg_telefono: opcionalAnulable(telefonoSchema).optional(),
+  cont_emerg_nombre: contactoDeEmergencia.cont_emerg_nombre.optional(),
+  cont_emerg_telefono: contactoDeEmergencia.cont_emerg_telefono.optional(),
   apto_medico: z.boolean(),
   fecha_apto_medico: opcionalAnulable(fecha_apto_medico).optional(),
   // Se carga en un textarea, por eso admite saltos de línea.
@@ -68,6 +80,8 @@ export const crearAlumnoSchema = z.object({
   email: emailSchema.optional(),
   fecha_nacimiento: fechaNacimientoSchema,
   ...datosDelAlumno,
+  dni: dniSchema,
+  ...contactoDeEmergencia,
   apto_medico: datosDelAlumno.apto_medico.default(false),
   tutor: tutorSchema.optional(),
 });

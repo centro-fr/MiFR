@@ -190,8 +190,8 @@ package "PERSONAS DEL NEGOCIO" {
     --
     * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
       <color:#9CA3AF><&link-intact></color> id_usuario_responsable : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>tutor; obligatorio si es menor</size></color>
-      cont_emerg_nombre : VARCHAR(80)
-      cont_emerg_telefono : VARCHAR(20)
+    * cont_emerg_nombre : VARCHAR(80)
+    * cont_emerg_telefono : VARCHAR(20)
     * apto_medico : BOOLEAN <color:#6B7280><size:11>default false</size></color>
       fecha_apto_medico : DATE
       observaciones : VARCHAR(500)
