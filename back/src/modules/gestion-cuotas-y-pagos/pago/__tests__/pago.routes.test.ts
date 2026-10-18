@@ -1,3 +1,4 @@
+import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -51,6 +52,7 @@ function crearApp(logica: ReturnType<typeof crearLogicaMock>, autorizacion: IAut
     gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
     gestionCuotasYPagos: logica as unknown as ILogicaCuotasPagos,
     difusionPublica: logicaDifusionPublicaNoConfigurada,
+    gestionNotificaciones: logicaNotificacionesNoConfigurada,
     autenticacion,
     autorizacion,
   });

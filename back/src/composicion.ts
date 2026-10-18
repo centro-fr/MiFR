@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import { GestionNotificacionesService } from "./modules/gestion-notificaciones/gestion-notificaciones.service.js";
+import { ResumenDiarioPropietariaService } from "./modules/gestion-notificaciones/resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 import type { AppDependencies } from "./app.js";
 import { GestionUsuariosService } from "./modules/gestion-usuarios/gestion-usuarios.service.js";
 import type { IAutenticacionGoogleAuth } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
@@ -112,11 +114,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new CalculadorHabilitacion(),
     parametrosService,
   );
-  const gestionCuotasYPagos = new GestionCuotasYPagosService(
-    cuotaService,
-    new PagoService(new PagoRepository(prisma), profesorService),
-    unidadDeTrabajo,
-  );
+  const pagoService = new PagoService(new PagoRepository(prisma), profesorService);
+  const gestionCuotasYPagos = new GestionCuotasYPagosService(cuotaService, pagoService, unidadDeTrabajo);
   const claseService = new ClaseService(new ClaseRepository(prisma), horarioService, profesorService);
   const asistenciaService = new AsistenciaService(
     new AsistenciaRepository(prisma),
@@ -154,6 +153,9 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionServicioEntrenamiento,
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
+      gestionNotificaciones: new GestionNotificacionesService(
+        new ResumenDiarioPropietariaService(pagoService, cuotaService),
+      ),
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,
