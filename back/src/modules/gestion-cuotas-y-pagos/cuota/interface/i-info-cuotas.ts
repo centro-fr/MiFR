@@ -1,8 +1,4 @@
-import type {
-  CuotaDelHistorial,
-  CuotaParaAviso,
-  HabilitacionDeInscripcion,
-} from "../cuota.types.js";
+import type { CuotaDelHistorial, CuotaParaAviso, HabilitacionDeInscripcion } from "../cuota.types.js";
 
 // Interfaz provista por Cuota (GestionCuotasYPagos) para que otros subsistemas sepan si un alumno
 // está al día: la lista de asistencia (US-20) y el listado y la ficha de alumnos (US-10). Cuota
