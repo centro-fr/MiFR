@@ -59,7 +59,12 @@ describe("GestionInscripcionesYClasesService", () => {
   };
   const cierre = { procesarCierresAutomaticos: vi.fn(), cerrarManualmente: vi.fn() };
   const unidadDeTrabajo = { ejecutar: vi.fn(<T>(operacion: () => Promise<T>) => operacion()) };
-  const suplencias = {} as SuplenciaService;
+  const suplencias = {
+    listar: vi.fn().mockResolvedValue("suplencias.listar"),
+    registrar: vi.fn().mockResolvedValue("suplencias.registrar"),
+    cambiar: vi.fn().mockResolvedValue("suplencias.cambiar"),
+    eliminar: vi.fn().mockResolvedValue("suplencias.eliminar"),
+  };
   const gestion = new GestionInscripcionesYClasesService(
     inscripciones as unknown as InscripcionService,
     cuotas as unknown as IInfoCuotas,
@@ -67,7 +72,7 @@ describe("GestionInscripcionesYClasesService", () => {
     asistencias as unknown as AsistenciaService,
     cierre as unknown as CierreAsistenciaService,
     unidadDeTrabajo as unknown as IUnidadDeTrabajo,
-    suplencias,
+    suplencias as unknown as SuplenciaService,
   );
 
   beforeEach(() => vi.clearAllMocks());
@@ -85,6 +90,18 @@ describe("GestionInscripcionesYClasesService", () => {
 
     await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`inscripciones.${destino}`);
     expect(inscripciones[destino]).toHaveBeenCalledWith(...argumentos);
+  });
+
+  it.each([
+    ["listarSuplencias", [{ id_profesora: 3 }], "listar"],
+    ["registrarSuplencia", [{ id_clase: 40, id_profesora_suplente: 4 }, 1], "registrar"],
+    ["cambiarSuplencia", [40, { id_profesora_suplente: 5 }, 1], "cambiar"],
+    ["eliminarSuplencia", [40], "eliminar"],
+  ] as const)("%s se delega en Suplencia", async (metodo, argumentos, destino) => {
+    const llamar = gestion[metodo] as (...args: unknown[]) => Promise<unknown>;
+
+    await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`suplencias.${destino}`);
+    expect(suplencias[destino]).toHaveBeenCalledWith(...argumentos);
   });
 
   it.each([
