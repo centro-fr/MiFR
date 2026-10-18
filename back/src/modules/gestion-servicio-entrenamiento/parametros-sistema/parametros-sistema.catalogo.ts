@@ -39,4 +39,9 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
     valor_inicial: "3",
     descripcion: "Días antes del vencimiento de la cuota en los que el alumno o su tutor reciben el aviso",
   },
+  INASISTENCIAS_CONSECUTIVAS_INACTIVO: {
+    tipo_dato: "ENTERO",
+    valor_inicial: "3",
+    descripcion: "Inasistencias seguidas desde las que un alumno con la cuota al día figura como inactivo",
+  },
 };

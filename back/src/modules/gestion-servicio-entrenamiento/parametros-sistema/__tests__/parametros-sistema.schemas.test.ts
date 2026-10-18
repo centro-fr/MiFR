@@ -67,14 +67,16 @@ describe("valorDelParametro", () => {
     },
   );
 
-  it.each(["MINUTOS_CIERRE_ASISTENCIA", "DIAS_RESERVA_PREINSCRIPCION", "DIAS_AVISO_VENCIMIENTO"] as const)(
-    "%s rechaza negativos, -0, decimales y textos",
-    (clave) => {
-      for (const valor of [-1, -0, 1.5, "3", true, null]) {
-        expect(() => valorDelParametro(clave, valor)).toThrow();
-      }
-    },
-  );
+  it.each([
+    "MINUTOS_CIERRE_ASISTENCIA",
+    "DIAS_RESERVA_PREINSCRIPCION",
+    "DIAS_AVISO_VENCIMIENTO",
+    "INASISTENCIAS_CONSECUTIVAS_INACTIVO",
+  ] as const)("%s rechaza negativos, -0, decimales y textos", (clave) => {
+    for (const valor of [-1, -0, 1.5, "3", true, null]) {
+      expect(() => valorDelParametro(clave, valor)).toThrow();
+    }
+  });
 
   it.each([
     ["MINUTOS_CIERRE_ASISTENCIA", 0, "0"],
@@ -83,6 +85,8 @@ describe("valorDelParametro", () => {
     ["DIAS_RESERVA_PREINSCRIPCION", 365, "365"],
     ["DIAS_AVISO_VENCIMIENTO", 0, "0"],
     ["DIAS_AVISO_VENCIMIENTO", 30, "30"],
+    ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 1, "1"],
+    ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 30, "30"],
   ] as const)("%s acepta %j y lo guarda como %j", (clave, valor, guardado) => {
     expect(valorDelParametro(clave, valor)).toBe(guardado);
   });
@@ -91,7 +95,12 @@ describe("valorDelParametro", () => {
     ["MINUTOS_CIERRE_ASISTENCIA", 1441],
     ["DIAS_RESERVA_PREINSCRIPCION", 366],
     ["DIAS_AVISO_VENCIMIENTO", 31],
+    ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 31],
   ] as const)("%s rechaza %j, por encima del tope", (clave, valor) => {
     expect(() => valorDelParametro(clave, valor)).toThrow();
+  });
+
+  it("INASISTENCIAS_CONSECUTIVAS_INACTIVO rechaza 0: todos los alumnos serían inactivos", () => {
+    expect(() => valorDelParametro("INASISTENCIAS_CONSECUTIVAS_INACTIVO", 0)).toThrow();
   });
 });
