@@ -26,6 +26,10 @@ const VALOR_POR_CLAVE: Record<ClaveParametro, z.ZodType<string | number | boolea
     (valor) => valor > 0,
     "Tiene que ser mayor a 0",
   ),
+  HORA_RESUMEN_DIARIO: z
+    .string()
+    .trim()
+    .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Debe tener formato HH:MM (entre 00:00 y 23:59)"),
 };
 
 export const claveParametroParamSchema = z.object({ clave: z.enum(CLAVES) });

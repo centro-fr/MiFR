@@ -13,6 +13,7 @@ export interface ValoresParametros {
   DIAS_RESERVA_PREINSCRIPCION: number;
   DIAS_AVISO_VENCIMIENTO: number;
   INASISTENCIAS_CONSECUTIVAS_INACTIVO: number;
+  HORA_RESUMEN_DIARIO: string;
 }
 
 export type ClaveParametro = keyof ValoresParametros;
