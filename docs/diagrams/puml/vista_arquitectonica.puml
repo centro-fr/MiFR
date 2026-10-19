@@ -305,6 +305,8 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     PlanificadorNotificaciones -up-( R_GN_InfoCuotas
     ResumenDiarioPropietaria   -up-( R_GN_InfoPagos
     ResumenDiarioPropietaria   -up-( R_GN_InfoCuotas
+    ResumenDiarioPropietaria   -up-( R_GN_InfoParametros
+    ResumenDiarioPropietaria   -( R_GN_InfoUsuarios
     PlanificadorNotificaciones ..> Notificacion
     ResumenDiarioPropietaria   ..> Notificacion
     Notificacion -[hidden]down-> PlanificadorNotificaciones
