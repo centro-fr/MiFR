@@ -5,11 +5,25 @@ import type {
   FiltroAlumnosInactivos,
   PaginaAlumnosInactivos,
 } from "./detector-inactividad/detector-inactividad.types.js";
+import type { GeneradorInformesService } from "./generador-informes/generador-informes.service.js";
+import type {
+  EstadisticasInscripciones,
+  EstadisticasPlanes,
+  FiltroCobranza,
+  FiltroCuotasVencidas,
+  FiltroInscripciones,
+  FiltroPlanes,
+  InformeCobranza,
+  InformeCuotasVencidas,
+} from "./generador-informes/generador-informes.types.js";
 import type { ILogicaInformes } from "./interface/i-logica-informes.js";
 
-// Realiza ILogicaInformes pasando cada operación a su componente.
+// Realiza ILogicaInformes pasando cada operación a su componente (DetectorInactividad o GeneradorInformes).
 export class ReportesService implements ILogicaInformes {
-  constructor(private readonly detectorInactividad: DetectorInactividadService) {}
+  constructor(
+    private readonly detectorInactividad: DetectorInactividadService,
+    private readonly generadorInformes: GeneradorInformesService,
+  ) {}
 
   listarAlumnosInactivos(filtro: FiltroAlumnosInactivos): Promise<PaginaAlumnosInactivos> {
     return this.detectorInactividad.listar(filtro);
@@ -25,5 +39,21 @@ export class ReportesService implements ILogicaInformes {
 
   quitarSeguimientoInactividad(idInscripcion: number): Promise<void> {
     return this.detectorInactividad.quitarSeguimiento(idInscripcion);
+  }
+
+  informeCuotasVencidas(filtro: FiltroCuotasVencidas): Promise<InformeCuotasVencidas> {
+    return this.generadorInformes.informeCuotasVencidas(filtro);
+  }
+
+  informeCobranza(filtro: FiltroCobranza): Promise<InformeCobranza> {
+    return this.generadorInformes.informeCobranza(filtro);
+  }
+
+  estadisticasPlanes(filtro: FiltroPlanes): Promise<EstadisticasPlanes> {
+    return this.generadorInformes.estadisticasPlanes(filtro);
+  }
+
+  estadisticasInscripciones(filtro: FiltroInscripciones): Promise<EstadisticasInscripciones> {
+    return this.generadorInformes.estadisticasInscripciones(filtro);
   }
 }

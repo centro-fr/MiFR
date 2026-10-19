@@ -14,12 +14,7 @@ export class NotificacionService implements IRegistroNotificaciones {
     return this.repositorio.registrar(notificaciones, new Date());
   }
 
-  registrarResumenDiario(
-    idUsuario: number,
-    mensaje: string,
-    ahora: Date,
-    fechaDia: Date,
-  ): Promise<boolean> {
+  registrarResumenDiario(idUsuario: number, mensaje: string, ahora: Date, fechaDia: Date): Promise<boolean> {
     return this.repositorio.registrarResumenDiario(idUsuario, mensaje, ahora, fechaDia);
   }
 

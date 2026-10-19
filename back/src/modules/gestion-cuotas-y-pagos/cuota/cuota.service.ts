@@ -12,12 +12,14 @@ import type {
   CuotaACobrar,
   CuotaDelHistorial,
   CuotaParaAviso,
+  CuotaVencidaDetallada,
   CuotaVencidaEnResumen,
   HabilitacionDeInscripcion,
   ResumenCuotasVencidas,
-  SituacionParaAviso,
-  SituacionParaResumen,
   SituacionDeCuotas,
+  SituacionParaAviso,
+  SituacionParaInforme,
+  SituacionParaResumen,
   TipoAvisoCuota,
 } from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
@@ -266,6 +268,46 @@ export class CuotaService implements IInfoCuotas {
         monto_estimado: precios.get(claveDePrecio(situacion)) as number | null,
       })),
     );
+  }
+
+  // US-34: listado completo de cuotas vencidas hoy con datos de contacto del alumno y monto exigible.
+  async cuotasVencidasDetalladas(hoy: Date): Promise<CuotaVencidaDetallada[]> {
+    const situaciones = await this.repositorio.situacionParaInforme(hoy);
+    const vencidas = situaciones.flatMap((situacion) => {
+      const vencimiento = vencimientoConfirmado(situacion) as Date;
+      const { estado, diasRestantes } = this.habilitaciones.calcular({
+        tipoPlan: situacion.tipo_plan,
+        vencimiento,
+        diasGracia: situacion.dias_gracia,
+        tienePagoPendiente: tienePagoPendiente(situacion),
+        vencidosPuedenAsistir: true,
+        hoy,
+      });
+      return estado === "VENCIDA"
+        ? [{ situacion, vencimiento, diasVencida: -(diasRestantes as number) }]
+        : [];
+    });
+
+    const claveDePrecio = ({ id_plan, id_promocion }: SituacionParaInforme) => `${id_plan}:${id_promocion}`;
+    const combinaciones = new Map(vencidas.map(({ situacion }) => [claveDePrecio(situacion), situacion]));
+    const precios = new Map(
+      await Promise.all(
+        [...combinaciones].map(
+          async ([clave, { id_plan, id_promocion }]) =>
+            [clave, (await this.planes.precioACobrar(id_plan, hoy, id_promocion))?.monto ?? 0] as const,
+        ),
+      ),
+    );
+
+    return vencidas.map(({ situacion, vencimiento, diasVencida }) => ({
+      id_inscripcion: situacion.id_inscripcion,
+      alumno: situacion.alumno,
+      plan: { id_plan: situacion.id_plan, nombre: situacion.nombre_plan },
+      profesora: situacion.profesora,
+      fecha_vencimiento: vencimiento,
+      dias_vencida: diasVencida,
+      monto_adeudado: precios.get(claveDePrecio(situacion)) ?? 0,
+    }));
   }
 
   private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {

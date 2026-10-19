@@ -46,6 +46,31 @@ export interface SituacionParaResumen extends SituacionDeCuotas {
   alumno: { id_alumno: number } & NombreCompleto;
 }
 
+// US-34: situación detallada con contacto para el informe de cuotas vencidas.
+export interface SituacionParaInforme extends SituacionDeCuotas {
+  id_plan: number;
+  id_promocion: number | null;
+  nombre_plan: string;
+  profesora: { id_profesora: number } & NombreCompleto;
+  alumno: {
+    id_alumno: number;
+    nombre: string;
+    apellido: string;
+    telefono: string | null;
+    email: string | null;
+  };
+}
+
+export interface CuotaVencidaDetallada {
+  id_inscripcion: number;
+  alumno: SituacionParaInforme["alumno"];
+  plan: { id_plan: number; nombre: string };
+  profesora: SituacionParaInforme["profesora"];
+  fecha_vencimiento: Date;
+  dias_vencida: number;
+  monto_adeudado: number;
+}
+
 export interface CuotaVencidaEnResumen {
   id_inscripcion: number;
   alumno: SituacionParaResumen["alumno"];

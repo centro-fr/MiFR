@@ -206,3 +206,51 @@ export type PagoParaComprobante = Pago & {
   // El precio de lista del plan el día en que se generó la cuota; null si ese día no tenía.
   precio_lista: number | null;
 };
+
+export interface FiltroCobranzaRepositorio {
+  inicio: Date;
+  fin: Date;
+  forma_pago?: FormaPago;
+  id_profesora?: number;
+}
+
+export interface FiltroCobranzaService {
+  desde: Date;
+  hasta: Date;
+  forma_pago?: FormaPago;
+  id_profesora?: number;
+}
+
+export interface ItemCobranza {
+  id_pago: number;
+  id_cuota: number;
+  monto: number;
+  forma_pago: FormaPago;
+  fecha_pago: Date;
+  alumno: {
+    id_alumno: number;
+    nombre: string;
+    apellido: string;
+  };
+  plan: {
+    id_plan: number;
+    nombre: string;
+  };
+  profesora_cobra: {
+    id_profesora: number;
+    nombre: string;
+    apellido: string;
+  } | null;
+}
+
+export interface TotalFormaPagoCobranza {
+  forma_pago: FormaPago;
+  total: number;
+  cantidad: number;
+}
+
+export interface ResultadoCobranza {
+  pagos: ItemCobranza[];
+  total: number;
+  totalesPorForma: TotalFormaPagoCobranza[];
+}

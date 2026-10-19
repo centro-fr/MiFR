@@ -11,4 +11,6 @@ export interface IInfoPlanes {
   // US-13: lo que se cobra ese día, con el descuento de la promoción de la inscripción si sigue
   // vigente. null si el plan no tiene precio ese día.
   precioACobrar(idPlan: number, fecha: Date, idPromocion: number | null): Promise<PrecioACobrar | null>;
+  // US-36: los planes no dados de baja, opcionalmente filtrados por actividad exclusiva.
+  listarVigentes(filtro?: { id_actividad_exclusiva?: number }): Promise<Plan[]>;
 }

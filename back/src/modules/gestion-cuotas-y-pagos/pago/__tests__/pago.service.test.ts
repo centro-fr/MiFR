@@ -57,6 +57,7 @@ function crearMocks() {
       totalesPendientes: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, antesDe24: 0, antesDe12: 0 }),
       listarTransferenciasDeUsuario: vi.fn().mockResolvedValue([]),
       buscarParaComprobante: vi.fn(),
+      obtenerCobranza: vi.fn(),
     },
     profesoras: { buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }) },
   };
@@ -592,6 +593,7 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
       idsSinRendirDeProfesora: vi.fn(),
       rendir: vi.fn(),
       motivosSinRendir: vi.fn(),
+      obtenerCobranza: vi.fn(),
     };
     servicio = new PagoService(repositorio as unknown as PagoRepository, {} as IInfoProfesores);
   });
@@ -730,6 +732,30 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
       repositorio.motivosSinRendir.mockResolvedValue(new Map([[7, motivo]]));
 
       await expect(servicio.rendir(7)).rejects.toBeInstanceOf(error);
+    });
+  });
+
+  describe("obtenerCobranza", () => {
+    it("convierte fechas con rangoDeDiasArgentinos y delega al repositorio", async () => {
+      const desde = new Date("2026-10-01T00:00:00Z");
+      const hasta = new Date("2026-10-15T00:00:00Z");
+      const esperado = { pagos: [], total: 0, totalesPorForma: [] };
+      repositorio.obtenerCobranza.mockResolvedValue(esperado);
+
+      const paginacion = { limit: 20, offset: 0 };
+      const resultado = await servicio.obtenerCobranza(
+        { desde, hasta, forma_pago: "EFECTIVO", id_profesora: 3 },
+        paginacion,
+      );
+
+      expect(resultado).toBe(esperado);
+      expect(repositorio.obtenerCobranza).toHaveBeenCalledWith(
+        expect.objectContaining({
+          forma_pago: "EFECTIVO",
+          id_profesora: 3,
+        }),
+        paginacion,
+      );
     });
   });
 });

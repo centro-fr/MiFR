@@ -7,6 +7,7 @@ import type {
   CuotaAGuardar,
   DatosDePago,
   EstadoPago,
+  FiltroCobranzaRepositorio,
   FiltroEfectivoEnInstantes,
   FiltroTransferenciasEnInstantes,
   MotivoSinRendir,
@@ -14,6 +15,7 @@ import type {
   Pago,
   PagoConCuota,
   PagoParaComprobante,
+  ResultadoCobranza,
   TotalDeProfesora,
   TransferenciaConAlumno,
   TransferenciaParaRevisar,
@@ -451,5 +453,88 @@ export class PagoRepository {
     const clave = { id_inscripcion: cuota.idInscripcion, numero_cuota: cuota.numeroCuota };
     if (await transaccion.cuotas.findUnique({ where: { id_inscripcion_numero_cuota: clave } })) return null;
     return (await transaccion.cuotas.create({ data: { ...clave, ...datos } })).id_cuota;
+  }
+
+  async obtenerCobranza(
+    filtro: FiltroCobranzaRepositorio,
+    paginacion: { limit: number; offset: number },
+  ): Promise<ResultadoCobranza> {
+    const where: Prisma.pagosWhereInput = {
+      estado: "CONFIRMADO",
+      fecha_pago: { gte: filtro.inicio, lt: filtro.fin },
+      ...(filtro.forma_pago ? { forma_pago: filtro.forma_pago } : {}),
+      ...(filtro.id_profesora ? { id_profesora_cobra: filtro.id_profesora } : {}),
+    };
+
+    const [filas, total, agrupados] = await Promise.all([
+      this.prisma.pagos.findMany({
+        where,
+        select: {
+          id_pago: true,
+          id_cuota: true,
+          monto: true,
+          forma_pago: true,
+          fecha_pago: true,
+          profesora_cobra: {
+            select: {
+              id_profesora: true,
+              usuario: { select: { nombre: true, apellido: true } },
+            },
+          },
+          cuota: {
+            select: {
+              inscripcion: {
+                select: {
+                  plan: { select: { id_plan: true, nombre: true } },
+                  alumno: {
+                    select: {
+                      id_alumno: true,
+                      usuario: { select: { nombre: true, apellido: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ fecha_pago: "desc" }, { id_pago: "desc" }],
+        take: paginacion.limit,
+        skip: paginacion.offset,
+      }),
+      this.prisma.pagos.count({ where }),
+      this.prisma.pagos.groupBy({
+        by: ["forma_pago"],
+        where,
+        _sum: { monto: true },
+        _count: { id_pago: true },
+      }),
+    ]);
+
+    const pagos = filas.map((f) => ({
+      id_pago: f.id_pago,
+      id_cuota: f.id_cuota,
+      monto: Number(f.monto),
+      forma_pago: f.forma_pago,
+      fecha_pago: f.fecha_pago,
+      alumno: {
+        id_alumno: f.cuota.inscripcion.alumno.id_alumno,
+        ...f.cuota.inscripcion.alumno.usuario,
+      },
+      plan: f.cuota.inscripcion.plan,
+      profesora_cobra: f.profesora_cobra
+        ? {
+            id_profesora: f.profesora_cobra.id_profesora,
+            ...f.profesora_cobra.usuario,
+          }
+        : null,
+    }));
+
+    const totalesPorForma = agrupados.map((g) => ({
+      forma_pago: g.forma_pago,
+      total: Number(g._sum.monto ?? 0),
+      cantidad: g._count.id_pago,
+    }));
+
+    return { pagos, total, totalesPorForma };
   }
 }

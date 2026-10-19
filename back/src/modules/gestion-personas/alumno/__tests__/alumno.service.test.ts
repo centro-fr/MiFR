@@ -29,6 +29,7 @@ function crearRepositorioMock() {
     activar: vi.fn(),
     darDeBaja: vi.fn(),
     reactivar: vi.fn(),
+    contarAltasPorMes: vi.fn(),
   };
 }
 
@@ -547,6 +548,23 @@ describe("AlumnoService", () => {
       repositorio.buscarPorId.mockResolvedValue(crearAlumno({ estado: "ACTIVO" }));
 
       await expect(servicio.reactivar(1, "ACTIVO")).rejects.toThrow(ConflictError);
+    });
+  });
+
+  describe("contarAltasPorMes", () => {
+    it("delega al repositorio con el filtro", async () => {
+      const esperado = [{ anio: 2026, mes: 10, total: 12 }];
+      repositorio.contarAltasPorMes.mockResolvedValue(esperado);
+
+      const filtro = {
+        inicio: new Date("2026-01-01T03:00:00Z"),
+        fin: new Date("2027-01-01T03:00:00Z"),
+        id_plan: 2,
+      };
+      const resultado = await servicio.contarAltasPorMes(filtro);
+
+      expect(resultado).toBe(esperado);
+      expect(repositorio.contarAltasPorMes).toHaveBeenCalledWith(filtro);
     });
   });
 });

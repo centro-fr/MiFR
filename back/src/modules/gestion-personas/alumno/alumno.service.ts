@@ -18,7 +18,9 @@ import type {
 import type { ActualizarAlumnoInput, CrearAlumnoInput, TutorInput } from "./alumno.schemas.js";
 import type {
   Alumno,
+  ConteoAltasMes,
   EstadoAlReactivar,
+  FiltroAltasPorMes,
   FiltroAlumno,
   PaginaAlumnos,
   TutorResuelto,
@@ -193,6 +195,11 @@ export class AlumnoService implements IInfoAlumnos {
     const alumno = await this.obtenerPorId(id);
     if (alumno.estado !== "BAJA") throw new ConflictError("Solo se reactiva un alumno dado de baja");
     return this.repositorio.reactivar(alumno, estado);
+  }
+
+  // US-35: cuenta altas definitivas agrupadas por año y mes.
+  contarAltasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
+    return this.repositorio.contarAltasPorMes(filtro);
   }
 
   // El DNI ya registrado en un alumno tiene su propio código, para que el front ofrezca abrir esa

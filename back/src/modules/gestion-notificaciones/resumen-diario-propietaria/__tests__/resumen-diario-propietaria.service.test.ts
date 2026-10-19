@@ -153,16 +153,15 @@ describe("ResumenDiarioPropietariaService", () => {
     it("genera 'Todo al día' cuando no hay pendientes", async () => {
       mocks.pagos.resumenTransferenciasPendientes.mockResolvedValue({ ...transferencias, cantidad: 0 });
       mocks.pagos.resumenEfectivoPendiente.mockResolvedValue({ ...efectivo, cantidad: 0 });
-      mocks.cuotas.resumenCuotasVencidas.mockResolvedValue({ ...cuotasVencidas, cantidad_alumnos: 0, cantidad: 0 });
+      mocks.cuotas.resumenCuotasVencidas.mockResolvedValue({
+        ...cuotasVencidas,
+        cantidad_alumnos: 0,
+        cantidad: 0,
+      });
 
       await expect(servicio.generarResumenDiario()).resolves.toBe(1);
 
-      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledWith(
-        1,
-        "Todo al día",
-        AHORA,
-        HOY,
-      );
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledWith(1, "Todo al día", AHORA, HOY);
     });
 
     it("no duplica en el mismo día si se vuelve a llamar", async () => {
@@ -175,10 +174,7 @@ describe("ResumenDiarioPropietariaService", () => {
     });
 
     it("registra para múltiples propietarias activas", async () => {
-      mocks.usuarios.listarPropietariasActivas.mockResolvedValue([
-        { id_usuario: 1 },
-        { id_usuario: 2 },
-      ]);
+      mocks.usuarios.listarPropietariasActivas.mockResolvedValue([{ id_usuario: 1 }, { id_usuario: 2 }]);
 
       await expect(servicio.generarResumenDiario()).resolves.toBe(2);
       expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledTimes(2);

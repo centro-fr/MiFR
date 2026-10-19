@@ -4,6 +4,7 @@ import { NotificacionRepository } from "./modules/gestion-notificaciones/notific
 import { NotificacionService } from "./modules/gestion-notificaciones/notificacion/notificacion.service.js";
 import { PlanificadorNotificacionesService } from "./modules/gestion-notificaciones/planificador-notificaciones/planificador-notificaciones.service.js";
 import { DetectorInactividadService } from "./modules/reportes/detector-inactividad/detector-inactividad.service.js";
+import { GeneradorInformesService } from "./modules/reportes/generador-informes/generador-informes.service.js";
 import { ReportesService } from "./modules/reportes/reportes.service.js";
 import { ResumenDiarioPropietariaService } from "./modules/gestion-notificaciones/resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 import type { AppDependencies } from "./app.js";
@@ -187,6 +188,13 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
           cuotaService,
           alumnoService,
           parametrosService,
+        ),
+        new GeneradorInformesService(
+          cuotaService,
+          pagoService,
+          planService,
+          inscripcionService,
+          alumnoService,
         ),
       ),
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),

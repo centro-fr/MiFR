@@ -293,4 +293,28 @@ describe("AlumnoRepository", () => {
       });
     });
   });
+
+  describe("contarAltasPorMes", () => {
+    it("ejecuta la consulta con agrupamiento por anio y mes y mapea los resultados", async () => {
+      prisma.$queryRaw.mockResolvedValue([
+        { anio: 2026, mes: 9, total: 10 },
+        { anio: 2026, mes: 10, total: 15 },
+      ]);
+
+      const inicio = new Date("2026-01-01T03:00:00Z");
+      const fin = new Date("2027-01-01T03:00:00Z");
+      const resultado = await repositorio.contarAltasPorMes({
+        inicio,
+        fin,
+        id_plan: 2,
+        id_profesora: 3,
+      });
+
+      expect(resultado).toEqual([
+        { anio: 2026, mes: 9, total: 10 },
+        { anio: 2026, mes: 10, total: 15 },
+      ]);
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+    });
+  });
 });

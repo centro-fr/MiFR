@@ -53,3 +53,16 @@ export interface DatosTutorNuevo {
   email: string;
   fecha_nacimiento: Date;
 }
+
+export interface FiltroAltasPorMes {
+  inicio: Date;
+  fin: Date;
+  id_plan?: number;
+  id_profesora?: number;
+}
+
+export interface ConteoAltasMes {
+  anio: number;
+  mes: number;
+  total: number;
+}

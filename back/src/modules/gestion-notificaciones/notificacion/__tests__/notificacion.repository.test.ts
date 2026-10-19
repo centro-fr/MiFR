@@ -54,9 +54,7 @@ describe("NotificacionRepository", () => {
     prisma.notificaciones.count.mockReset().mockResolvedValue(0);
     const hoy = new Date("2026-10-18T00:00:00Z");
 
-    await expect(
-      repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy),
-    ).resolves.toBe(true);
+    await expect(repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy)).resolves.toBe(true);
 
     expect(prisma.$executeRaw).toHaveBeenCalled();
     expect(prisma.notificaciones.create).toHaveBeenCalledWith({
@@ -77,9 +75,7 @@ describe("NotificacionRepository", () => {
     prisma.notificaciones.count.mockReset().mockResolvedValue(1);
     const hoy = new Date("2026-10-18T00:00:00Z");
 
-    await expect(
-      repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy),
-    ).resolves.toBe(false);
+    await expect(repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy)).resolves.toBe(false);
 
     expect(prisma.notificaciones.create).not.toHaveBeenCalled();
   });

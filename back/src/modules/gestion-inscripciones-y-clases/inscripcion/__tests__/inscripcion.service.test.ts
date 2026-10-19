@@ -103,6 +103,7 @@ function crearMocks() {
       buscarParaAsistencia: vi.fn().mockResolvedValue(null),
       contarInscriptosParaAsistencia: vi.fn().mockResolvedValue(new Map([[8, 2]])),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map([[8, 1]])),
+      contarActivasPorPlan: vi.fn().mockResolvedValue(new Map([[1, 5]])),
     },
     alumnos: {
       buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO" }),
@@ -822,6 +823,16 @@ describe("InscripcionService", () => {
       ).rejects.toThrow(ForbiddenError);
       expect(mocks.planes.buscarPorId).not.toHaveBeenCalled();
       expect(mocks.alumnos.crear).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("contarActivasPorPlan", () => {
+    it("delega al repositorio con el filtro", async () => {
+      const filtro = { id_profesora: 3, id_actividad: 2 };
+      const resultado = await servicio.contarActivasPorPlan(filtro);
+
+      expect(resultado).toEqual(new Map([[1, 5]]));
+      expect(mocks.repositorio.contarActivasPorPlan).toHaveBeenCalledWith(filtro);
     });
   });
 });

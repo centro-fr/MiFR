@@ -31,7 +31,7 @@ const transaccion = {
 };
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
-  inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+  inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), groupBy: vi.fn() },
   inscripcion_horarios: { groupBy: vi.fn() },
 };
 
@@ -709,6 +709,37 @@ describe("InscripcionRepository", () => {
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripcion_horarios.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("contarActivasPorPlan", () => {
+    it("agrupa y cuenta inscripciones activas por plan con filtros opcionales", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([
+        { id_plan: 1, _count: { id_inscripcion: 5 } },
+        { id_plan: 2, _count: { id_inscripcion: 8 } },
+      ]);
+
+      const resultado = await repositorio.contarActivasPorPlan({
+        id_profesora: 3,
+        id_actividad: 2,
+      });
+
+      expect(resultado).toEqual(
+        new Map([
+          [1, 5],
+          [2, 8],
+        ]),
+      );
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["id_plan"],
+        where: {
+          estado: "ACTIVA",
+          alumno: { estado: { not: "BAJA" } },
+          id_profesora: 3,
+          plan: { id_actividad_exclusiva: 2 },
+        },
+        _count: { id_inscripcion: true },
+      });
     });
   });
 });

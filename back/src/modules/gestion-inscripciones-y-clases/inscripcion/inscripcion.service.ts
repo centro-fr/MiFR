@@ -376,6 +376,13 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.listarParaInactividad(filtro);
   }
 
+  contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>> {
+    return this.repositorio.contarActivasPorPlan(filtro);
+  }
+
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {
     const plazo = await this.plazoDeReserva();
     return this.repositorio.contarLugaresOcupados(idsHorarios, inicioDeReservasVigentes(plazo));

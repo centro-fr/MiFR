@@ -1,6 +1,13 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { enTransaccion } from "../../../shared/db/transaccion.js";
-import type { Alumno, EstadoAlReactivar, FiltroAlumno, TutorResuelto } from "./alumno.types.js";
+import type {
+  Alumno,
+  ConteoAltasMes,
+  EstadoAlReactivar,
+  FiltroAltasPorMes,
+  FiltroAlumno,
+  TutorResuelto,
+} from "./alumno.types.js";
 
 const DATOS_PERSONALES = {
   id_usuario: true,
@@ -202,5 +209,44 @@ export class AlumnoRepository {
       data: { estado, fecha_baja: fechaBaja, usuario: { update: { estado: estadoUsuario } } },
       include: CON_DATOS,
     });
+  }
+
+  // US-35: cuenta altas definitivas (alumnos que pasaron a ACTIVO/BAJA) agrupadas por año y mes.
+  async contarAltasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
+    const condicionesInscripcion: Prisma.Sql[] = [];
+    if (filtro.id_plan !== undefined) {
+      condicionesInscripcion.push(Prisma.sql`i.id_plan = ${filtro.id_plan}`);
+    }
+    if (filtro.id_profesora !== undefined) {
+      condicionesInscripcion.push(Prisma.sql`i.id_profesora = ${filtro.id_profesora}`);
+    }
+
+    const filtroInscripcion =
+      condicionesInscripcion.length > 0
+        ? Prisma.sql`AND EXISTS (
+            SELECT 1 FROM inscripciones i
+            WHERE i.id_alumno = a.id_alumno
+              AND ${Prisma.join(condicionesInscripcion, " AND ")}
+          )`
+        : Prisma.empty;
+
+    const filas = await this.prisma.$queryRaw<{ anio: number; mes: number; total: bigint | number }[]>`
+      SELECT
+        EXTRACT(YEAR FROM a.fecha_alta AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS anio,
+        EXTRACT(MONTH FROM a.fecha_alta AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS mes,
+        COUNT(a.id_alumno)::int AS total
+      FROM alumnos a
+      WHERE a.estado != 'INACTIVO'
+        AND a.fecha_alta >= ${filtro.inicio}
+        AND a.fecha_alta < ${filtro.fin}
+        ${filtroInscripcion}
+      GROUP BY anio, mes
+      ORDER BY anio ASC, mes ASC`;
+
+    return filas.map((f) => ({
+      anio: f.anio,
+      mes: f.mes,
+      total: Number(f.total),
+    }));
   }
 }

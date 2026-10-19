@@ -1,6 +1,7 @@
 import type {
   CuotaDelHistorial,
   CuotaParaAviso,
+  CuotaVencidaDetallada,
   HabilitacionDeInscripcion,
   ResumenCuotasVencidas,
 } from "../cuota.types.js";
@@ -29,4 +30,7 @@ export interface IInfoCuotas {
   // US-26: las inscripciones mensuales activas con la cuota vencida hoy, con lo que se estima que
   // deben al precio vigente. Para el resumen diario de la propietaria.
   resumenCuotasVencidas(hoy: Date): Promise<ResumenCuotasVencidas>;
+
+  // US-34: listado completo de cuotas vencidas hoy con datos de contacto del alumno y monto exigible.
+  cuotasVencidasDetalladas(hoy: Date): Promise<CuotaVencidaDetallada[]>;
 }

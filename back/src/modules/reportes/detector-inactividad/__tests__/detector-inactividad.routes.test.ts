@@ -23,6 +23,10 @@ describe("rutas de alumnos inactivos", () => {
         .fn()
         .mockResolvedValue({ id_inscripcion: 12, estado: "CONTACTADO" }),
       quitarSeguimientoInactividad: vi.fn().mockResolvedValue(undefined),
+      informeCuotasVencidas: vi.fn(),
+      informeCobranza: vi.fn(),
+      estadisticasPlanes: vi.fn(),
+      estadisticasInscripciones: vi.fn(),
     };
     const autenticacion = {
       validarSesion: async (token: string) => ROLES[token],

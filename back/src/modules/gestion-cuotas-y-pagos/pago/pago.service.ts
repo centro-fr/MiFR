@@ -27,6 +27,7 @@ import type {
   DatosDePago,
   EfectivoPendiente,
   EstadoPago,
+  FiltroCobranzaService,
   FiltroEfectivo,
   FiltroEfectivoEnInstantes,
   FiltroTransferencias,
@@ -36,6 +37,7 @@ import type {
   Pago,
   PagoConCuota,
   PagoParaComprobante,
+  ResultadoCobranza,
   ResultadoRendicion,
   ResumenEfectivoPendiente,
   ResumenTransferenciasPendientes,
@@ -44,6 +46,7 @@ import type {
   TransferenciaEnRevision,
   TransferenciaParaRevisar,
 } from "./pago.types.js";
+import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 
 const MS_POR_HORA = 3_600_000;
 const MS_POR_DIA = 24 * MS_POR_HORA;
@@ -279,6 +282,22 @@ export class PagoService implements IInfoPagos {
       profesoras: totales,
       mas_antiguo: masAntiguo ? conDiasSinRendir(masAntiguo, fechaActualArgentina()) : null,
     };
+  }
+
+  async obtenerCobranza(
+    { desde, hasta, forma_pago, id_profesora }: FiltroCobranzaService,
+    paginacion: Paginacion,
+  ): Promise<ResultadoCobranza> {
+    const { inicio, fin } = rangoDeDiasArgentinos(desde, hasta);
+    return this.repositorio.obtenerCobranza(
+      {
+        inicio,
+        fin,
+        forma_pago,
+        id_profesora,
+      },
+      paginacion,
+    );
   }
 
   async listarRendiciones(

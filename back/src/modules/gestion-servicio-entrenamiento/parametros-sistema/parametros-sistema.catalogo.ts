@@ -47,6 +47,7 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
   HORA_RESUMEN_DIARIO: {
     tipo_dato: "TEXTO",
     valor_inicial: "20:00",
-    descripcion: "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
+    descripcion:
+      "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
   },
 };

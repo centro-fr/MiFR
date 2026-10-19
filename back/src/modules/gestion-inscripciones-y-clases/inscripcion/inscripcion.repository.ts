@@ -688,4 +688,24 @@ export class InscripcionRepository {
       }
     }
   }
+
+  // US-36: cantidad de inscripciones activas agrupadas por plan de alumnos no dados de baja.
+  async contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>> {
+    const agrupados = await this.prisma.inscripciones.groupBy({
+      by: ["id_plan"],
+      where: {
+        estado: "ACTIVA",
+        alumno: { estado: { not: "BAJA" } },
+        ...(filtro?.id_profesora !== undefined ? { id_profesora: filtro.id_profesora } : {}),
+        ...(filtro?.id_actividad !== undefined
+          ? { plan: { id_actividad_exclusiva: filtro.id_actividad } }
+          : {}),
+      },
+      _count: { id_inscripcion: true },
+    });
+    return new Map(agrupados.map((g) => [g.id_plan, g._count.id_inscripcion]));
+  }
 }

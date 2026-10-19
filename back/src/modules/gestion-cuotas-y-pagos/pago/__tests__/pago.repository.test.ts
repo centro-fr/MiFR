@@ -506,4 +506,70 @@ describe("PagoRepository: rendición del efectivo (US-19)", () => {
       ]),
     );
   });
+
+  describe("obtenerCobranza", () => {
+    it("consulta pagos confirmados paginados y totales agrupados por forma de pago", async () => {
+      const fechaPago = new Date("2026-10-10T12:00:00Z");
+      prismaRendicion.pagos.findMany.mockResolvedValue([
+        {
+          id_pago: 10,
+          id_cuota: 5,
+          monto: decimal(25000),
+          forma_pago: "EFECTIVO",
+          fecha_pago: fechaPago,
+          profesora_cobra: {
+            id_profesora: 3,
+            usuario: { nombre: "Carla", apellido: "Ruiz" },
+          },
+          cuota: {
+            inscripcion: {
+              plan: { id_plan: 2, nombre: "Intermedio" },
+              alumno: {
+                id_alumno: 4,
+                usuario: { nombre: "Ana", apellido: "López" },
+              },
+            },
+          },
+        },
+      ]);
+      prismaRendicion.pagos.count.mockResolvedValue(1);
+      prismaRendicion.pagos.groupBy.mockResolvedValue([
+        { forma_pago: "EFECTIVO", _sum: { monto: decimal(25000) }, _count: { id_pago: 1 } },
+      ]);
+
+      const resultado = await repositorio.obtenerCobranza(
+        { inicio: INICIO, fin: FIN, forma_pago: "EFECTIVO", id_profesora: 3 },
+        { limit: 10, offset: 0 },
+      );
+
+      expect(resultado).toEqual({
+        total: 1,
+        pagos: [
+          {
+            id_pago: 10,
+            id_cuota: 5,
+            monto: 25000,
+            forma_pago: "EFECTIVO",
+            fecha_pago: fechaPago,
+            alumno: { id_alumno: 4, nombre: "Ana", apellido: "López" },
+            plan: { id_plan: 2, nombre: "Intermedio" },
+            profesora_cobra: { id_profesora: 3, nombre: "Carla", apellido: "Ruiz" },
+          },
+        ],
+        totalesPorForma: [
+          {
+            forma_pago: "EFECTIVO",
+            total: 25000,
+            cantidad: 1,
+          },
+        ],
+      });
+      expect(prismaRendicion.pagos.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 10,
+          skip: 0,
+        }),
+      );
+    });
+  });
 });

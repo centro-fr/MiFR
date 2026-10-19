@@ -45,4 +45,9 @@ export interface IInfoInscripciones {
   // US-22: las ACTIVA de plan mensual de alumnos no dados de baja. La clase suelta no tiene racha semanal
   // y una pre-inscripción todavía no asiste.
   listarParaInactividad(filtro: FiltroInscripcionesParaInactividad): Promise<InscripcionParaInactividad[]>;
+  // US-36: cantidad de inscripciones activas agrupadas por plan de alumnos no dados de baja.
+  contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>>;
 }

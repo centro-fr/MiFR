@@ -1,6 +1,9 @@
+import type { Paginacion } from "../../../../shared/utils/esquemas-paginacion.js";
 import type {
+  FiltroCobranzaService,
   FiltroTransferencias,
   PaginaTransferencias,
+  ResultadoCobranza,
   ResumenEfectivoPendiente,
   ResumenTransferenciasPendientes,
 } from "../pago.types.js";
@@ -17,4 +20,6 @@ export interface IInfoPagos {
   resumenTransferenciasPendientes(): Promise<ResumenTransferenciasPendientes>;
   // US-19: cantidad y total, por profesora y en general, y el cobro sin rendir más viejo.
   resumenEfectivoPendiente(): Promise<ResumenEfectivoPendiente>;
+  // Informe de cobranza por período: pagos CONFIRMADOS agrupados por forma de pago con detalle paginado.
+  obtenerCobranza(filtro: FiltroCobranzaService, paginacion: Paginacion): Promise<ResultadoCobranza>;
 }

@@ -8,4 +8,8 @@ export const logicaInformesNoConfigurada = {
   listarAlumnosInactivos: operacionNoConfigurada,
   registrarSeguimientoInactividad: operacionNoConfigurada,
   quitarSeguimientoInactividad: operacionNoConfigurada,
+  informeCuotasVencidas: operacionNoConfigurada,
+  informeCobranza: operacionNoConfigurada,
+  estadisticasPlanes: operacionNoConfigurada,
+  estadisticasInscripciones: operacionNoConfigurada,
 } satisfies ILogicaInformes;

@@ -4,6 +4,7 @@ import type {
   CuotaDelHistorial,
   SituacionDeCuotas,
   SituacionParaAviso,
+  SituacionParaInforme,
   SituacionParaResumen,
 } from "./cuota.types.js";
 
@@ -128,6 +129,54 @@ export class CuotaRepository {
       nombre_plan: plan.nombre,
       profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
       alumno: { id_alumno: alumno.id_alumno, ...alumno.usuario },
+      cuotas: conEstadosDePagos(cuotas),
+    }));
+  }
+
+  // US-34: igual que situacionParaResumen, pero incluye teléfono y email del alumno (o tutor responsable)
+  // para la gestión de cobranza y contacto directo.
+  async situacionParaInforme(hoy: Date): Promise<SituacionParaInforme[]> {
+    const nombre = { select: { nombre: true, apellido: true } } as const;
+    const contacto = { select: { nombre: true, apellido: true, telefono: true, email: true } } as const;
+    const filas = await this.prisma.inscripciones.findMany({
+      where: {
+        estado: "ACTIVA",
+        sin_cargo: false,
+        alumno: { estado: { not: "BAJA" } },
+        plan: { tipo: "MENSUAL" },
+        cuotas: { some: { fecha_vencimiento: { lt: hoy }, pagos: { some: { estado: "CONFIRMADO" } } } },
+      },
+      select: {
+        id_inscripcion: true,
+        id_plan: true,
+        id_promocion: true,
+        fecha_baja: true,
+        plan: { select: { tipo: true, dias_gracia: true, nombre: true } },
+        profesora: { select: { id_profesora: true, usuario: nombre } },
+        alumno: {
+          select: {
+            id_alumno: true,
+            usuario: contacto,
+            responsable: contacto,
+          },
+        },
+        cuotas: CUOTAS_CON_PAGOS,
+      },
+      orderBy: { id_inscripcion: "asc" },
+    });
+    return filas.map(({ plan, profesora, alumno, cuotas, ...fila }) => ({
+      ...fila,
+      tipo_plan: plan.tipo,
+      dias_gracia: plan.dias_gracia,
+      nombre_plan: plan.nombre,
+      profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
+      alumno: {
+        id_alumno: alumno.id_alumno,
+        nombre: alumno.usuario.nombre,
+        apellido: alumno.usuario.apellido,
+        telefono: alumno.usuario.telefono ?? alumno.responsable?.telefono ?? null,
+        email: alumno.usuario.email ?? alumno.responsable?.email ?? null,
+      },
       cuotas: conEstadosDePagos(cuotas),
     }));
   }
