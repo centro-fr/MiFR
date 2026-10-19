@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "pnpm --filter front dev",
     "dev:front": "pnpm --filter front dev",
-    "dev:back": "pnpm --filter back dev"
+    "dev:back": "pnpm --filter back dev",
+    "test": "pnpm --filter front test",
+    "test:front": "pnpm --filter front test",
+    "test:back": "pnpm --filter back test"
   },
   "keywords": [],
   "author": "",
