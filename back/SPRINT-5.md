@@ -11,10 +11,10 @@ Sprint 5: **Cierre de funcionalidades pendientes**. Este documento reúne el alc
 | US-31 | Insignias y racha de asistencia | Pendiente | Nicolas |
 | US-33 | Informe de asistencia | Pendiente | Nicolas |
 | US-37 | Ocupación de horarios | Pendiente | Nicolas |
-| US-34 | Informe de cuotas vencidas | En curso | Francisco |
-| — | Informe de cobranza por período | En curso | Francisco |
-| US-36 | Estadísticas de planes | En curso | Francisco |
-| US-35 | Estadísticas de inscriptos por mes | En curso | Francisco |
+| US-34 | Informe de cuotas vencidas | Hecho | Francisco |
+| — | Informe de cobranza por período | Hecho | Francisco |
+| US-36 | Estadísticas de planes | Hecho | Francisco |
+| US-35 | Estadísticas de inscriptos por mes | Hecho | Francisco |
 
 Fuentes: `SPRINT-4.md`, `agregado-insignias.md`, `honorarios-pendientes.md`, `docs/sdd/07-honorarios/tasks.md`, `docs/sdd/09-rutina-y-progreso/tasks.md`, `docs/sdd/10-portal-del-alumno/tasks.md`, `docs/sdd/12-reportes-y-fidelizacion/tasks.md` y las historias US-23, US-27, US-28, US-30, US-31 y US-33 a US-37. Si una tarea del SDD contradice una regla confirmada en este sprint o el DER, resolver la diferencia antes de migrar.
 
@@ -63,13 +63,13 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 ## Reportes (US-33 a US-37 y requisitos agregados)
 
 - [ ] Implementar el informe de asistencia de US-33 con período y filtros combinables por alumno, profesora y actividad; excluir clases canceladas e incluir inasistencias automáticas.
-- [ ] Implementar el informe de cuotas vencidas de US-34; excluir cuotas dentro del período de gracia y devolver deuda exigible y días de mora.
-- [ ] Implementar `GET /reportes/inscripciones?desde&hasta`, usando `alumnos.fecha_alta` y `fecha_baja`; contar altas definitivas y no reactivaciones.
-- [ ] Implementar `GET /reportes/planes`, con inscripciones activas por plan y `plan_precios` vigente.
+- [x] Implementar el informe de cuotas vencidas de US-34; excluir cuotas dentro del período de gracia y devolver deuda exigible y días de mora.
+- [x] Implementar `GET /reportes/inscripciones?desde&hasta`, usando `alumnos.fecha_alta` y `fecha_baja`; contar altas definitivas y no reactivaciones.
+- [x] Implementar `GET /reportes/planes`, con inscripciones activas por plan y `plan_precios` vigente.
 - [ ] Implementar `GET /reportes/ocupacion`, con inscriptos activos por horario, cupo del horario o de la actividad y porcentaje de ocupación.
-- [ ] Implementar `GET /reportes/cobranza?desde&hasta`, mostrando cuotas del período y pagos `CONFIRMADOS` agrupados por forma de pago.
-- [ ] Proteger los reportes administrativos con permisos exclusivos de propietaria y probar denegaciones para otros roles.
-- [ ] Documentar filtros, respuestas y permisos en OpenAPI; agregar pruebas de consultas, límites de fechas, datos vacíos y agregaciones.
+- [x] Implementar `GET /reportes/cobranza?desde&hasta`, mostrando cuotas del período y pagos `CONFIRMADOS` agrupados por forma de pago.
+- [x] Proteger los reportes administrativos con permisos exclusivos de propietaria y probar denegaciones para otros roles.
+- [x] Documentar filtros, respuestas y permisos en OpenAPI; agregar pruebas de consultas, límites de fechas, datos vacíos y agregaciones.
 
 ## Criterios de cierre
 
