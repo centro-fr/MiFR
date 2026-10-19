@@ -144,6 +144,17 @@ describe("UsuarioRepository", () => {
     });
   });
 
+  it("listarPropietariasActivas lista usuarios ACTIVOS con el rol PROPIETARIA e incluye roles", async () => {
+    const lista = [{ id_usuario: 1, roles: [] }];
+    prisma.usuarios.findMany.mockResolvedValue(lista);
+
+    await expect(repositorio.listarPropietariasActivas()).resolves.toEqual(lista);
+    expect(prisma.usuarios.findMany).toHaveBeenCalledWith({
+      where: { estado: "ACTIVO", roles: { some: { rol: { codigo: "PROPIETARIA" } } } },
+      ...CON_ROLES,
+    });
+  });
+
   it("eliminar borra primero sus usuario_roles y después el usuario, en una transacción (FK NO ACTION)", async () => {
     vi.mocked(prisma.usuario_roles.deleteMany).mockReturnValue("borrar-roles" as never);
     vi.mocked(prisma.usuarios.delete).mockReturnValue("borrar-usuario" as never);

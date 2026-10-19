@@ -47,6 +47,7 @@ function crearUsuariosMock() {
     identificarPorGoogle: vi.fn(),
     buscarPorEmail: vi.fn(),
     buscarPorDni: vi.fn(),
+    listarPropietariasActivas: vi.fn(),
   };
 }
 

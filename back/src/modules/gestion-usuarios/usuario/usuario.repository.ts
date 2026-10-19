@@ -58,6 +58,13 @@ export class UsuarioRepository {
     });
   }
 
+  listarPropietariasActivas(): Promise<UsuarioConRoles[]> {
+    return this.prisma.usuarios.findMany({
+      where: { estado: "ACTIVO", roles: { some: { rol: { codigo: "PROPIETARIA" } } } },
+      ...CON_ROLES,
+    });
+  }
+
   // La FK de usuario_roles es ON DELETE NO ACTION (DER): primero se quitan sus roles.
   // Devuelve false si otra tabla (profesoras, y más adelante alumnos o pagos) todavía apunta al
   // usuario: las FK son NO ACTION y Postgres rechaza el borrado con el código P2003 de Prisma.

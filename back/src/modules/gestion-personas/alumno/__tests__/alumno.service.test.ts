@@ -143,6 +143,7 @@ describe("AlumnoService", () => {
       identificarPorGoogle: vi.fn(),
       buscarPorEmail: vi.fn().mockResolvedValue(null),
       buscarPorDni: vi.fn().mockResolvedValue(null),
+      listarPropietariasActivas: vi.fn().mockResolvedValue([]),
     };
     autorizacion = { tieneRol: vi.fn().mockReturnValue(false), asignarRol: vi.fn() };
     servicio = new AlumnoService(
