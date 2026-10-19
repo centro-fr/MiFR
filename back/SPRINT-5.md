@@ -1,20 +1,20 @@
 # Sprint 5 – Backend
 
-Sprint 5: **Cierre de funcionalidades pendientes**. Este documento reúne el alcance backend que quedó pendiente del Sprint 4 y las historias marcadas para el Sprint 5. Los responsables quedan por asignar.
+Sprint 5: **Cierre de funcionalidades pendientes**. Este documento reúne el alcance backend que quedó pendiente del Sprint 4 y las historias marcadas para el Sprint 5, dividido en tres partes equilibradas para trabajar en paralelo sin dependencias cruzadas:
 
 | US | Historia / alcance | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-23 | Informe y liquidación mensual de honorarios | Pendiente; regla de cálculo por actualizar | Por asignar |
-| US-27 | Carga de rutinas y evolución física | Pendiente | Por asignar |
-| US-28 | Consulta de rutina y progreso por alumno/tutor | Pendiente | Por asignar |
-| US-30 | Ranking de asistencia | Pendiente | Por asignar |
-| US-31 | Insignias y racha de asistencia | Pendiente | Por asignar |
-| US-33 | Informe de asistencia | Pendiente | Por asignar |
-| US-34 | Informe de cuotas vencidas | Pendiente | Por asignar |
-| US-35 | Estadísticas de inscriptos por mes | Pendiente | Por asignar |
-| US-36 | Estadísticas de planes | Pendiente | Por asignar |
-| US-37 | Ocupación de horarios | Pendiente | Por asignar |
-| — | Informe de cobranza por período | Requisito agregado; US por vincular | Por asignar |
+| US-23 | Informe y liquidación mensual de honorarios | Pendiente; regla de cálculo por actualizar | Rosario |
+| US-27 | Carga de rutinas y evolución física | Pendiente | Rosario |
+| US-28 | Consulta de rutina y progreso por alumno/tutor | Pendiente | Rosario |
+| US-30 | Ranking de asistencia | Pendiente | Nicolas |
+| US-31 | Insignias y racha de asistencia | Pendiente | Nicolas |
+| US-33 | Informe de asistencia | Pendiente | Nicolas |
+| US-37 | Ocupación de horarios | Pendiente | Nicolas |
+| US-34 | Informe de cuotas vencidas | En curso | Francisco |
+| — | Informe de cobranza por período | En curso | Francisco |
+| US-36 | Estadísticas de planes | En curso | Francisco |
+| US-35 | Estadísticas de inscriptos por mes | En curso | Francisco |
 
 Fuentes: `SPRINT-4.md`, `agregado-insignias.md`, `honorarios-pendientes.md`, `docs/sdd/07-honorarios/tasks.md`, `docs/sdd/09-rutina-y-progreso/tasks.md`, `docs/sdd/10-portal-del-alumno/tasks.md`, `docs/sdd/12-reportes-y-fidelizacion/tasks.md` y las historias US-23, US-27, US-28, US-30, US-31 y US-33 a US-37. Si una tarea del SDD contradice una regla confirmada en este sprint o el DER, resolver la diferencia antes de migrar.
 
@@ -22,11 +22,11 @@ Fuentes: `SPRINT-4.md`, `agregado-insignias.md`, `honorarios-pendientes.md`, `do
 
 Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo los que todavía falten.
 
-- [ ] Completar US-23 según la regla y las decisiones de [honorarios-pendientes.md](honorarios-pendientes.md).
-- [ ] Validar `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los parámetros enteros con valores no negativos.
-- [ ] Completar la notificación diaria del resumen de la propietaria (US-26); el endpoint `GET /resumen-diario` ya está implementado.
+- [ ] Completar US-23 según la regla y las decisiones de [honorarios-pendientes.md](honorarios-pendientes.md) (Rosario).
+- [x] Validar `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los parámetros enteros con valores no negativos (Francisco).
+- [x] Completar la notificación diaria del resumen de la propietaria (US-26); el endpoint `GET /resumen-diario` ya está implementado (Francisco).
 - [ ] Reflejar en Enterprise Architect y regenerar los entregables de las dependencias pendientes de US-13, US-20, US-22, US-24, US-25 y US-26.
-- [ ] Resolver la regla de suplencias en períodos liquidados de US-24 antes de cerrar esa historia.
+- [ ] Resolver la regla de suplencias en períodos liquidados de US-24 antes de cerrar esa historia (Nicolas).
 - [ ] Cerrar los casos de integración y demostración pendientes que se arrastren de SPRINT-3.md y SPRINT-4.md.
 
 ## Honorarios (US-23)
