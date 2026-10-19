@@ -7,7 +7,7 @@ import type { ResumenDiarioPropietariaService } from "../resumen-diario-propieta
 const PAGINACION = { limit: 20, offset: 0 };
 
 describe("GestionNotificacionesService", () => {
-  let resumenDiario: { obtener: ReturnType<typeof vi.fn> };
+  let resumenDiario: { obtener: ReturnType<typeof vi.fn>; generarResumenDiario: ReturnType<typeof vi.fn> };
   let notificaciones: Record<
     "listarDeUsuario" | "marcarLeida" | "marcarTodasLeidas",
     ReturnType<typeof vi.fn>
@@ -16,7 +16,10 @@ describe("GestionNotificacionesService", () => {
   let gestion: GestionNotificacionesService;
 
   beforeEach(() => {
-    resumenDiario = { obtener: vi.fn().mockResolvedValue("resumen") };
+    resumenDiario = {
+      obtener: vi.fn().mockResolvedValue("resumen"),
+      generarResumenDiario: vi.fn().mockResolvedValue(0),
+    };
     notificaciones = {
       listarDeUsuario: vi.fn().mockResolvedValue("pagina"),
       marcarLeida: vi.fn().mockResolvedValue("leida"),
@@ -30,9 +33,23 @@ describe("GestionNotificacionesService", () => {
     );
   });
 
-  it("obtenerResumenDiario se delega en ResumenDiarioPropietaria", async () => {
+  it("obtenerResumenDiario intenta generar el resumen diario antes de obtenerlo", async () => {
+    await expect(gestion.obtenerResumenDiario()).resolves.toBe("resumen");
+    expect(resumenDiario.generarResumenDiario).toHaveBeenCalledWith();
+    expect(resumenDiario.obtener).toHaveBeenCalledWith();
+    expect(resumenDiario.generarResumenDiario.mock.invocationCallOrder[0]).toBeLessThan(
+      resumenDiario.obtener.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("obtenerResumenDiario obtiene igual si generarResumenDiario falla, y deja el error en el log", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    resumenDiario.generarResumenDiario.mockRejectedValue(new Error("error generación"));
+
     await expect(gestion.obtenerResumenDiario()).resolves.toBe("resumen");
     expect(resumenDiario.obtener).toHaveBeenCalledWith();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("RESUMEN_DIARIO_GENERACION"), expect.any(Error));
+    log.mockRestore();
   });
 
   it("listarNotificacionesPropias genera los avisos del día antes de listar las del usuario", async () => {

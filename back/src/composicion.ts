@@ -72,6 +72,7 @@ export interface Sistema {
   infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
   planificadorNotificaciones: PlanificadorNotificacionesService;
+  resumenDiario: ResumenDiarioPropietariaService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -159,6 +160,14 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     cuotaService,
   );
 
+  const resumenDiario = new ResumenDiarioPropietariaService(
+    pagoService,
+    cuotaService,
+    parametrosService,
+    usuarioService,
+    notificacionService,
+  );
+
   return {
     dependencias: {
       gestionUsuarios,
@@ -167,7 +176,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
       gestionNotificaciones: new GestionNotificacionesService(
-        new ResumenDiarioPropietariaService(pagoService, cuotaService),
+        resumenDiario,
         notificacionService,
         planificadorNotificaciones,
       ),
@@ -188,5 +197,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     infoClases: claseService,
     cierreAsistencia,
     planificadorNotificaciones,
+    resumenDiario,
   };
 }

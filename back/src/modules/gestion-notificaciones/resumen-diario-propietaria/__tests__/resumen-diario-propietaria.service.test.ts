@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IInfoCuotas } from "../../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoPagos } from "../../../gestion-cuotas-y-pagos/pago/interface/i-info-pagos.js";
+import type { IInfoParametros } from "../../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
+import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
+import type { IRegistroNotificaciones } from "../../notificacion/interface/i-registro-notificaciones.js";
 import { ResumenDiarioPropietariaService } from "../resumen-diario-propietaria.service.js";
 
-// 01:00 UTC del 17/10: en Argentina todavía es el 16.
+// 01:00 UTC del 17/10: en Argentina son las 22:00 del 16 (posterior a 20:00).
 const AHORA = new Date("2026-10-17T01:00:00Z");
 const HOY = new Date("2026-10-16T00:00:00Z");
 
@@ -32,6 +35,15 @@ function crearMocks() {
       resumenEfectivoPendiente: vi.fn().mockResolvedValue(efectivo),
     },
     cuotas: { resumenCuotasVencidas: vi.fn().mockResolvedValue(cuotasVencidas) },
+    parametros: {
+      obtener: vi.fn().mockResolvedValue("20:00"),
+    },
+    usuarios: {
+      listarPropietariasActivas: vi.fn().mockResolvedValue([{ id_usuario: 1 }]),
+    },
+    notificaciones: {
+      registrarResumenDiario: vi.fn().mockResolvedValue(true),
+    },
   };
 }
 
@@ -48,6 +60,9 @@ describe("ResumenDiarioPropietariaService", () => {
     servicio = new ResumenDiarioPropietariaService(
       mocks.pagos as unknown as IInfoPagos,
       mocks.cuotas as unknown as IInfoCuotas,
+      mocks.parametros as unknown as IInfoParametros,
+      mocks.usuarios as unknown as IInfoUsuarios,
+      mocks.notificaciones as unknown as IRegistroNotificaciones,
     );
   });
 
@@ -105,6 +120,74 @@ describe("ResumenDiarioPropietariaService", () => {
     await expect(servicio.obtener()).resolves.toMatchObject({
       sin_novedades: false,
       bloques_con_error: ["cuotas_vencidas"],
+    });
+  });
+
+  describe("generarResumenDiario", () => {
+    it("no genera si la hora actual de Argentina es anterior a HORA_RESUMEN_DIARIO", async () => {
+      // 18:00 UTC = 15:00 en Argentina, menor que 20:00
+      vi.setSystemTime(new Date("2026-10-16T18:00:00Z"));
+
+      await expect(servicio.generarResumenDiario()).resolves.toBe(0);
+      expect(mocks.notificaciones.registrarResumenDiario).not.toHaveBeenCalled();
+    });
+
+    it("no genera si no hay propietarias activas", async () => {
+      mocks.usuarios.listarPropietariasActivas.mockResolvedValue([]);
+
+      await expect(servicio.generarResumenDiario()).resolves.toBe(0);
+      expect(mocks.notificaciones.registrarResumenDiario).not.toHaveBeenCalled();
+    });
+
+    it("genera y registra la notificación diaria con los pendientes", async () => {
+      await expect(servicio.generarResumenDiario()).resolves.toBe(1);
+
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledWith(
+        1,
+        "Resumen diario: 2 transferencias por confirmar ($60000), 3 cobros en efectivo sin rendir ($75000), 1 alumno con cuotas vencidas ($30000).",
+        AHORA,
+        HOY,
+      );
+    });
+
+    it("genera 'Todo al día' cuando no hay pendientes", async () => {
+      mocks.pagos.resumenTransferenciasPendientes.mockResolvedValue({ ...transferencias, cantidad: 0 });
+      mocks.pagos.resumenEfectivoPendiente.mockResolvedValue({ ...efectivo, cantidad: 0 });
+      mocks.cuotas.resumenCuotasVencidas.mockResolvedValue({ ...cuotasVencidas, cantidad_alumnos: 0, cantidad: 0 });
+
+      await expect(servicio.generarResumenDiario()).resolves.toBe(1);
+
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledWith(
+        1,
+        "Todo al día",
+        AHORA,
+        HOY,
+      );
+    });
+
+    it("no duplica en el mismo día si se vuelve a llamar", async () => {
+      await expect(servicio.generarResumenDiario()).resolves.toBe(1);
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledTimes(1);
+
+      // Segunda llamada el mismo día
+      await expect(servicio.generarResumenDiario()).resolves.toBe(0);
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledTimes(1);
+    });
+
+    it("registra para múltiples propietarias activas", async () => {
+      mocks.usuarios.listarPropietariasActivas.mockResolvedValue([
+        { id_usuario: 1 },
+        { id_usuario: 2 },
+      ]);
+
+      await expect(servicio.generarResumenDiario()).resolves.toBe(2);
+      expect(mocks.notificaciones.registrarResumenDiario).toHaveBeenCalledTimes(2);
+    });
+
+    it("si ya existía en la base para una propietaria, no suma a las guardadas", async () => {
+      mocks.notificaciones.registrarResumenDiario.mockResolvedValue(false);
+
+      await expect(servicio.generarResumenDiario()).resolves.toBe(0);
     });
   });
 });

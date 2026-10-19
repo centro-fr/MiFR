@@ -14,6 +14,15 @@ export class NotificacionService implements IRegistroNotificaciones {
     return this.repositorio.registrar(notificaciones, new Date());
   }
 
+  registrarResumenDiario(
+    idUsuario: number,
+    mensaje: string,
+    ahora: Date,
+    fechaDia: Date,
+  ): Promise<boolean> {
+    return this.repositorio.registrarResumenDiario(idUsuario, mensaje, ahora, fechaDia);
+  }
+
   async listarDeUsuario(idUsuario: number, paginacion: Paginacion): Promise<PaginaNotificaciones> {
     return { ...(await this.repositorio.listarDeUsuario(idUsuario, paginacion)), ...paginacion };
   }

@@ -16,9 +16,11 @@ const SELECCION = {
 describe("NotificacionRepository", () => {
   let prisma: {
     notificaciones: Record<
-      "createMany" | "findMany" | "count" | "updateMany" | "findUnique",
+      "createMany" | "findMany" | "count" | "updateMany" | "findUnique" | "create",
       ReturnType<typeof vi.fn>
     >;
+    $transaction: ReturnType<typeof vi.fn>;
+    $executeRaw: ReturnType<typeof vi.fn>;
   };
   let repositorio: NotificacionRepository;
 
@@ -30,7 +32,10 @@ describe("NotificacionRepository", () => {
         count: vi.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(2),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUnique: vi.fn().mockResolvedValue({ id_notificacion: 3 }),
+        create: vi.fn().mockResolvedValue({ id_notificacion: 1 }),
       },
+      $transaction: vi.fn().mockImplementation((fn) => fn(prisma)),
+      $executeRaw: vi.fn().mockResolvedValue(undefined),
     };
     repositorio = new NotificacionRepository(prisma as unknown as PrismaClient);
   });
@@ -43,6 +48,40 @@ describe("NotificacionRepository", () => {
       ],
       skipDuplicates: true,
     });
+  });
+
+  it("registrarResumenDiario guarda si no existe y devuelve true", async () => {
+    prisma.notificaciones.count.mockReset().mockResolvedValue(0);
+    const hoy = new Date("2026-10-18T00:00:00Z");
+
+    await expect(
+      repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy),
+    ).resolves.toBe(true);
+
+    expect(prisma.$executeRaw).toHaveBeenCalled();
+    expect(prisma.notificaciones.create).toHaveBeenCalledWith({
+      data: {
+        id_usuario: 7,
+        tipo: "RESUMEN_DIARIO",
+        id_cuota: null,
+        mensaje: "Resumen del día",
+        fecha_generacion: AHORA,
+        fecha_envio: AHORA,
+        estado_envio: "ENVIADA",
+        leida: false,
+      },
+    });
+  });
+
+  it("registrarResumenDiario no guarda si ya existe y devuelve false", async () => {
+    prisma.notificaciones.count.mockReset().mockResolvedValue(1);
+    const hoy = new Date("2026-10-18T00:00:00Z");
+
+    await expect(
+      repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy),
+    ).resolves.toBe(false);
+
+    expect(prisma.notificaciones.create).not.toHaveBeenCalled();
   });
 
   it("registrar sin notificaciones no consulta la base", async () => {

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { clienteEnCurso } from "../../../shared/db/transaccion.js";
+import { clienteEnCurso, enTransaccion } from "../../../shared/db/transaccion.js";
 import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 import type { NotificacionPropia, NuevaNotificacion } from "./notificacion.types.js";
 
@@ -30,6 +30,47 @@ export class NotificacionRepository {
       skipDuplicates: true,
     });
     return count;
+  }
+
+  // US-26: El resumen diario no tiene cuota, así que su "uno por día" se controla dentro del bloqueo
+  // en que se inserta (seguridad.md, regla 7; arquitectura.md). Devuelve true si se insertó, false si ya existía.
+  async registrarResumenDiario(
+    idUsuario: number,
+    mensaje: string,
+    ahora: Date,
+    fechaDia: Date,
+  ): Promise<boolean> {
+    const finDia = new Date(fechaDia.getTime() + 24 * 60 * 60_000);
+    const clave = `resumen-diario:${idUsuario}:${fechaDia.toISOString().slice(0, 10)}`;
+
+    return enTransaccion(this.prisma, async (transaccion) => {
+      await transaccion.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
+      const count = await transaccion.notificaciones.count({
+        where: {
+          id_usuario: idUsuario,
+          tipo: "RESUMEN_DIARIO",
+          fecha_generacion: {
+            gte: fechaDia,
+            lt: finDia,
+          },
+        },
+      });
+      if (count > 0) return false;
+
+      await transaccion.notificaciones.create({
+        data: {
+          id_usuario: idUsuario,
+          tipo: "RESUMEN_DIARIO",
+          id_cuota: null,
+          mensaje,
+          fecha_generacion: ahora,
+          fecha_envio: ahora,
+          estado_envio: "ENVIADA",
+          leida: false,
+        },
+      });
+      return true;
+    });
   }
 
   // Las no leídas primero y, dentro de cada grupo, de la más nueva a la más vieja.

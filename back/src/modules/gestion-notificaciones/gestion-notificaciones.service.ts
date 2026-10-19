@@ -15,7 +15,12 @@ export class GestionNotificacionesService implements ILogicaNotificaciones {
     private readonly planificador: PlanificadorNotificacionesService,
   ) {}
 
-  obtenerResumenDiario(): Promise<ResumenDiario> {
+  async obtenerResumenDiario(): Promise<ResumenDiario> {
+    try {
+      await this.resumenDiario.generarResumenDiario();
+    } catch (error) {
+      registrarError("RESUMEN_DIARIO_GENERACION", error);
+    }
     return this.resumenDiario.obtener();
   }
 
