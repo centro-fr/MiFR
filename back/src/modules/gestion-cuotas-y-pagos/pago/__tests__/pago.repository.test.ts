@@ -571,5 +571,70 @@ describe("PagoRepository: rendición del efectivo (US-19)", () => {
         }),
       );
     });
+
+    it("consulta sin filtros de forma de pago ni profesora, maneja profesora_cobra nulo y sumatoria nula", async () => {
+      const fechaPago = new Date("2026-10-10T12:00:00Z");
+      prismaRendicion.pagos.findMany.mockResolvedValue([
+        {
+          id_pago: 11,
+          id_cuota: 6,
+          monto: decimal(15000),
+          forma_pago: "TRANSFERENCIA",
+          fecha_pago: fechaPago,
+          profesora_cobra: null,
+          cuota: {
+            inscripcion: {
+              plan: { id_plan: 1, nombre: "Básico" },
+              alumno: {
+                id_alumno: 5,
+                usuario: { nombre: "Juan", apellido: "Pérez" },
+              },
+            },
+          },
+        },
+      ]);
+      prismaRendicion.pagos.count.mockResolvedValue(1);
+      prismaRendicion.pagos.groupBy.mockResolvedValue([
+        { forma_pago: "TRANSFERENCIA", _sum: { monto: null }, _count: { id_pago: 1 } },
+      ]);
+
+      const resultado = await repositorio.obtenerCobranza(
+        { inicio: INICIO, fin: FIN },
+        { limit: 20, offset: 5 },
+      );
+
+      expect(resultado).toEqual({
+        total: 1,
+        pagos: [
+          {
+            id_pago: 11,
+            id_cuota: 6,
+            monto: 15000,
+            forma_pago: "TRANSFERENCIA",
+            fecha_pago: fechaPago,
+            alumno: { id_alumno: 5, nombre: "Juan", apellido: "Pérez" },
+            plan: { id_plan: 1, nombre: "Básico" },
+            profesora_cobra: null,
+          },
+        ],
+        totalesPorForma: [
+          {
+            forma_pago: "TRANSFERENCIA",
+            total: 0,
+            cantidad: 1,
+          },
+        ],
+      });
+      expect(prismaRendicion.pagos.findMany).toHaveBeenCalledWith({
+        where: {
+          estado: "CONFIRMADO",
+          fecha_pago: { gte: INICIO, lt: FIN },
+        },
+        select: expect.any(Object),
+        orderBy: [{ fecha_pago: "desc" }, { id_pago: "desc" }],
+        take: 20,
+        skip: 5,
+      });
+    });
   });
 });

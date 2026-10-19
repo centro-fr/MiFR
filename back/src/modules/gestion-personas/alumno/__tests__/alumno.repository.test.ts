@@ -316,5 +316,27 @@ describe("AlumnoRepository", () => {
       ]);
       expect(prisma.$queryRaw).toHaveBeenCalled();
     });
+
+    it("ejecuta la consulta sin filtros de inscripción cuando id_plan e id_profesora son undefined", async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      const inicio = new Date("2026-01-01T03:00:00Z");
+      const fin = new Date("2027-01-01T03:00:00Z");
+      const resultado = await repositorio.contarAltasPorMes({ inicio, fin });
+
+      expect(resultado).toEqual([]);
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+    });
+
+    it("ejecuta la consulta con solo id_profesora", async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      const inicio = new Date("2026-01-01T03:00:00Z");
+      const fin = new Date("2027-01-01T03:00:00Z");
+      const resultado = await repositorio.contarAltasPorMes({ inicio, fin, id_profesora: 5 });
+
+      expect(resultado).toEqual([]);
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+    });
   });
 });

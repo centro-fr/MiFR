@@ -82,7 +82,7 @@ export class ResumenDiarioPropietariaService {
   }
 }
 
-function armarMensajeResumen(resumen: ResumenDiario): string {
+export function armarMensajeResumen(resumen: ResumenDiario): string {
   if (resumen.sin_novedades) {
     return "Todo al día";
   }

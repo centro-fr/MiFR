@@ -741,5 +741,21 @@ describe("InscripcionRepository", () => {
         _count: { id_inscripcion: true },
       });
     });
+
+    it("agrupa y cuenta sin filtros opcionales", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([{ id_plan: 1, _count: { id_inscripcion: 3 } }]);
+
+      const resultado = await repositorio.contarActivasPorPlan();
+
+      expect(resultado).toEqual(new Map([[1, 3]]));
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["id_plan"],
+        where: {
+          estado: "ACTIVA",
+          alumno: { estado: { not: "BAJA" } },
+        },
+        _count: { id_inscripcion: true },
+      });
+    });
   });
 });

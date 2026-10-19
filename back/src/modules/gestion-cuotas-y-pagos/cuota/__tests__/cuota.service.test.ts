@@ -567,14 +567,24 @@ describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
     expect(planes.precioACobrar).not.toHaveBeenCalled();
   });
 
-  it("cuotasVencidasDetalladas devuelve el listado completo con contacto y monto adeudado", async () => {
+  it("cuotasVencidasDetalladas devuelve el listado completo con contacto y monto adeudado (o cero si no tiene precio)", async () => {
+    planes.precioACobrar.mockImplementation(async (idPlan: number) => {
+      if (idPlan === 2) return { precio_lista: 30000, descuento: 0, monto: 30000 };
+      return null;
+    });
+
     repositorio.situacionParaInforme.mockResolvedValue([
       vencidaParaInforme(1, 4, "2026-10-01"),
+      {
+        ...vencidaParaInforme(3, 6, "2026-10-02"),
+        id_plan: 1,
+        nombre_plan: "Básico",
+      },
       vencidaParaInforme(2, 5, "2026-10-15"), // no vencida (en gracia)
     ]);
 
     const resultado = await servicio.cuotasVencidasDetalladas(HOY_RESUMEN);
-    expect(resultado).toHaveLength(1);
+    expect(resultado).toHaveLength(2);
     expect(resultado[0]).toEqual({
       id_inscripcion: 1,
       alumno: { id_alumno: 4, nombre: "Alumno 4", apellido: "Pérez", telefono: "123", email: "a@b.com" },
@@ -583,6 +593,15 @@ describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
       fecha_vencimiento: new Date("2026-10-01T00:00:00.000Z"),
       dias_vencida: 15,
       monto_adeudado: 30000,
+    });
+    expect(resultado[1]).toEqual({
+      id_inscripcion: 3,
+      alumno: { id_alumno: 6, nombre: "Alumno 6", apellido: "Pérez", telefono: "123", email: "a@b.com" },
+      plan: { id_plan: 1, nombre: "Básico" },
+      profesora: LUCIA,
+      fecha_vencimiento: new Date("2026-10-02T00:00:00.000Z"),
+      dias_vencida: 14,
+      monto_adeudado: 0,
     });
   });
 });

@@ -292,10 +292,10 @@ export class CuotaService implements IInfoCuotas {
     const combinaciones = new Map(vencidas.map(({ situacion }) => [claveDePrecio(situacion), situacion]));
     const precios = new Map(
       await Promise.all(
-        [...combinaciones].map(
-          async ([clave, { id_plan, id_promocion }]) =>
-            [clave, (await this.planes.precioACobrar(id_plan, hoy, id_promocion))?.monto ?? 0] as const,
-        ),
+        [...combinaciones].map(async ([clave, { id_plan, id_promocion }]) => {
+          const precio = await this.planes.precioACobrar(id_plan, hoy, id_promocion);
+          return [clave, precio !== null ? precio.monto : 0] as const;
+        }),
       ),
     );
 
@@ -306,7 +306,7 @@ export class CuotaService implements IInfoCuotas {
       profesora: situacion.profesora,
       fecha_vencimiento: vencimiento,
       dias_vencida: diasVencida,
-      monto_adeudado: precios.get(claveDePrecio(situacion)) ?? 0,
+      monto_adeudado: precios.get(claveDePrecio(situacion)) as number,
     }));
   }
 

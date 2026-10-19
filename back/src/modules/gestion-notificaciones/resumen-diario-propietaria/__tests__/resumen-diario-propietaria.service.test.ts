@@ -4,7 +4,10 @@ import type { IInfoPagos } from "../../../gestion-cuotas-y-pagos/pago/interface/
 import type { IInfoParametros } from "../../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { IRegistroNotificaciones } from "../../notificacion/interface/i-registro-notificaciones.js";
-import { ResumenDiarioPropietariaService } from "../resumen-diario-propietaria.service.js";
+import {
+  armarMensajeResumen,
+  ResumenDiarioPropietariaService,
+} from "../resumen-diario-propietaria.service.js";
 
 // 01:00 UTC del 17/10: en Argentina son las 22:00 del 16 (posterior a 20:00).
 const AHORA = new Date("2026-10-17T01:00:00Z");
@@ -184,6 +187,100 @@ describe("ResumenDiarioPropietariaService", () => {
       mocks.notificaciones.registrarResumenDiario.mockResolvedValue(false);
 
       await expect(servicio.generarResumenDiario()).resolves.toBe(0);
+    });
+  });
+
+  describe("armarMensajeResumen", () => {
+    it("devuelve 'Todo al día' cuando sin_novedades es true", () => {
+      expect(
+        armarMensajeResumen({
+          fecha: HOY,
+          sin_novedades: true,
+          bloques_con_error: [],
+          transferencias: null,
+          efectivo: null,
+          cuotas_vencidas: null,
+        }),
+      ).toBe("Todo al día");
+    });
+
+    it("devuelve 'Todo al día' cuando sin_novedades es false pero las partes quedan vacías", () => {
+      expect(
+        armarMensajeResumen({
+          fecha: HOY,
+          sin_novedades: false,
+          bloques_con_error: ["transferencias"],
+          transferencias: null,
+          efectivo: { cantidad: 0, total: 0, profesoras: [], mas_antiguo: null },
+          cuotas_vencidas: {
+            cantidad: 0,
+            cantidad_alumnos: 0,
+            monto_estimado: 0,
+            sin_precio: 0,
+            por_profesora: [],
+            por_plan: [],
+            mas_atrasadas: [],
+          },
+        }),
+      ).toBe("Todo al día");
+    });
+
+    it("formatea en singular con una sola unidad en cada bloque", () => {
+      expect(
+        armarMensajeResumen({
+          fecha: HOY,
+          sin_novedades: false,
+          bloques_con_error: [],
+          transferencias: {
+            cantidad: 1,
+            total: 20000,
+            supera_24_horas: 0,
+            por_superar_24_horas: 0,
+            mas_antiguas: [],
+          },
+          efectivo: { cantidad: 1, total: 15000, profesoras: [], mas_antiguo: null },
+          cuotas_vencidas: {
+            cantidad: 1,
+            cantidad_alumnos: 1,
+            monto_estimado: 10000,
+            sin_precio: 0,
+            por_profesora: [],
+            por_plan: [],
+            mas_atrasadas: [],
+          },
+        }),
+      ).toBe(
+        "Resumen diario: 1 transferencia por confirmar ($20000), 1 cobro en efectivo sin rendir ($15000), 1 alumno con cuotas vencidas ($10000).",
+      );
+    });
+
+    it("formatea en plural con más de una unidad en cada bloque", () => {
+      expect(
+        armarMensajeResumen({
+          fecha: HOY,
+          sin_novedades: false,
+          bloques_con_error: [],
+          transferencias: {
+            cantidad: 3,
+            total: 60000,
+            supera_24_horas: 0,
+            por_superar_24_horas: 0,
+            mas_antiguas: [],
+          },
+          efectivo: { cantidad: 2, total: 30000, profesoras: [], mas_antiguo: null },
+          cuotas_vencidas: {
+            cantidad: 4,
+            cantidad_alumnos: 4,
+            monto_estimado: 50000,
+            sin_precio: 0,
+            por_profesora: [],
+            por_plan: [],
+            mas_atrasadas: [],
+          },
+        }),
+      ).toBe(
+        "Resumen diario: 3 transferencias por confirmar ($60000), 2 cobros en efectivo sin rendir ($30000), 4 alumnos con cuotas vencidas ($50000).",
+      );
     });
   });
 });

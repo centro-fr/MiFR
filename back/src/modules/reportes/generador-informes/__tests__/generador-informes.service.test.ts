@@ -51,7 +51,7 @@ describe("GeneradorInformesService", () => {
       });
     });
 
-    it("filtra por fechas, profesora, plan y calcula agregaciones y paginación", async () => {
+    it("filtra por fechas, profesora, alumno, plan y calcula agregaciones y paginación con desempate por monto", async () => {
       const mockVencidas = [
         {
           id_inscripcion: 1,
@@ -71,7 +71,7 @@ describe("GeneradorInformesService", () => {
         {
           id_inscripcion: 2,
           alumno: {
-            id_alumno: 10, // mismo alumno, otra cuota/inscripcion
+            id_alumno: 10,
             nombre: "Juan",
             apellido: "Pérez",
             telefono: "1111",
@@ -93,38 +93,108 @@ describe("GeneradorInformesService", () => {
             email: "maria@test.com",
           },
           plan: { id_plan: 3, nombre: "Plan B" },
+          profesora: { id_profesora: 1, nombre: "Ana", apellido: "García" },
+          fecha_vencimiento: new Date("2026-09-15T00:00:00Z"),
+          dias_vencida: 15,
+          monto_adeudado: 50000,
+        },
+        {
+          id_inscripcion: 4,
+          alumno: {
+            id_alumno: 12,
+            nombre: "Carlos",
+            apellido: "Sosa",
+            telefono: null,
+            email: null,
+          },
+          plan: { id_plan: 2, nombre: "Plan A" },
           profesora: { id_profesora: 2, nombre: "Carla", apellido: "Díaz" },
-          fecha_vencimiento: new Date("2026-08-01T00:00:00Z"),
+          fecha_vencimiento: new Date("2026-09-20T00:00:00Z"),
           dias_vencida: 45,
           monto_adeudado: 25000,
         },
       ];
       cuotas.cuotasVencidasDetalladas.mockResolvedValue(mockVencidas);
 
-      // Filtro por profesora 1
       const resultado = await servicio.informeCuotasVencidas({
         id_profesora: 1,
         desde: new Date("2026-09-01T00:00:00Z"),
         hasta: new Date("2026-09-30T00:00:00Z"),
-        limit: 1,
+        limit: 10,
         offset: 0,
       });
 
-      expect(resultado.total).toBe(2);
-      expect(resultado.datos.length).toBe(1);
-      expect(resultado.datos[0].id_inscripcion).toBe(1); // Ordenado por más días vencida (20 > 15)
-      expect(resultado.resumen.total_alumnos_vencidos).toBe(1); // Solo Juan Pérez (id 10)
-      expect(resultado.resumen.monto_total_adeudado).toBe(50000);
+      expect(resultado.total).toBe(3);
+      expect(resultado.datos.length).toBe(3);
+      expect(resultado.datos[0].id_inscripcion).toBe(1);
+      expect(resultado.datos[1].id_inscripcion).toBe(3);
+      expect(resultado.datos[2].id_inscripcion).toBe(2);
+      expect(resultado.resumen.total_alumnos_vencidos).toBe(2);
+      expect(resultado.resumen.monto_total_adeudado).toBe(100000);
       expect(resultado.resumen.promedio_deuda_alumno).toBe(50000);
       expect(resultado.por_profesora).toEqual([
         {
           id_profesora: 1,
           nombre: "Ana",
           apellido: "García",
-          cantidad_alumnos: 1,
-          monto_total: 50000,
+          cantidad_alumnos: 2,
+          monto_total: 100000,
         },
       ]);
+    });
+
+    it("filtra específicamente por id_alumno e id_plan y excluye cuotas fuera de rango de fechas", async () => {
+      const mockVencidas = [
+        {
+          id_inscripcion: 1,
+          alumno: { id_alumno: 10, nombre: "Juan", apellido: "Pérez", telefono: null, email: null },
+          plan: { id_plan: 2, nombre: "Plan A" },
+          profesora: { id_profesora: 1, nombre: "Ana", apellido: "García" },
+          fecha_vencimiento: new Date("2026-09-10T00:00:00Z"),
+          dias_vencida: 20,
+          monto_adeudado: 30000,
+        },
+        {
+          id_inscripcion: 2,
+          alumno: { id_alumno: 20, nombre: "Otro", apellido: "Alumno", telefono: null, email: null },
+          plan: { id_plan: 3, nombre: "Plan B" },
+          profesora: { id_profesora: 1, nombre: "Ana", apellido: "García" },
+          fecha_vencimiento: new Date("2026-09-10T00:00:00Z"),
+          dias_vencida: 50,
+          monto_adeudado: 30000,
+        },
+      ];
+      cuotas.cuotasVencidasDetalladas.mockResolvedValue(mockVencidas);
+
+      const porAlumno = await servicio.informeCuotasVencidas({
+        id_alumno: 10,
+        limit: 10,
+        offset: 0,
+      });
+      expect(porAlumno.total).toBe(1);
+      expect(porAlumno.datos[0].id_inscripcion).toBe(1);
+
+      const porPlan = await servicio.informeCuotasVencidas({
+        id_plan: 2,
+        limit: 10,
+        offset: 0,
+      });
+      expect(porPlan.total).toBe(1);
+      expect(porPlan.datos[0].id_inscripcion).toBe(1);
+
+      const porFechaHasta = await servicio.informeCuotasVencidas({
+        hasta: new Date("2026-09-01T00:00:00Z"),
+        limit: 10,
+        offset: 0,
+      });
+      expect(porFechaHasta.total).toBe(0);
+
+      const porFechaDesde = await servicio.informeCuotasVencidas({
+        desde: new Date("2026-10-01T00:00:00Z"),
+        limit: 10,
+        offset: 0,
+      });
+      expect(porFechaDesde.total).toBe(0);
     });
   });
 
@@ -167,12 +237,42 @@ describe("GeneradorInformesService", () => {
       ]);
       expect(resultado.datos[0].fecha_pago).toBe("2026-10-10T12:00:00.000Z");
     });
+
+    it("utiliza fechas por defecto y maneja recaudación vacía con porcentajes en cero", async () => {
+      pagos.obtenerCobranza.mockResolvedValue({
+        pagos: [],
+        total: 0,
+        totalesPorForma: [{ forma_pago: "EFECTIVO", total: 0, cantidad: 0 }],
+      });
+
+      const resultado = await servicio.informeCobranza({ limit: 10, offset: 0 });
+
+      expect(resultado.total).toBe(0);
+      expect(resultado.resumen.total_cobrado).toBe(0);
+      expect(resultado.resumen.total_efectivo).toBe(0);
+      expect(resultado.resumen.total_transferencia).toBe(0);
+      expect(resultado.por_forma_pago).toEqual([
+        { forma_pago: "EFECTIVO", total: 0, cantidad: 0, porcentaje: 0 },
+      ]);
+      expect(pagos.obtenerCobranza).toHaveBeenCalledWith(
+        expect.objectContaining({
+          desde: expect.any(Date),
+          hasta: expect.any(Date),
+        }),
+        { limit: 10, offset: 0 },
+      );
+    });
   });
 
   describe("estadisticasPlanes (US-36)", () => {
     it("computa alumnos activos por plan, porcentajes e ingreso estimado mensual", async () => {
       planes.listarVigentes.mockResolvedValue([
-        { id_plan: 1, nombre: "Plan Pase Libre", tipo: "MENSUAL", actividad_exclusiva: null },
+        {
+          id_plan: 1,
+          nombre: "Plan Pase Libre",
+          tipo: "MENSUAL",
+          actividad_exclusiva: { id_actividad: 3, nombre: "Crossfit" },
+        },
         { id_plan: 2, nombre: "Plan 2 Días", tipo: "MENSUAL", actividad_exclusiva: null },
         { id_plan: 3, nombre: "Plan Sin Alumnos", tipo: "MENSUAL", actividad_exclusiva: null },
       ]);
@@ -190,7 +290,13 @@ describe("GeneradorInformesService", () => {
         return null;
       });
 
-      const resultado = await servicio.estadisticasPlanes({});
+      const resultado = await servicio.estadisticasPlanes({ id_actividad: 3, id_profesora: 2 });
+
+      expect(planes.listarVigentes).toHaveBeenCalledWith({ id_actividad_exclusiva: 3 });
+      expect(inscripciones.contarActivasPorPlan).toHaveBeenCalledWith({
+        id_actividad: 3,
+        id_profesora: 2,
+      });
 
       expect(resultado.resumen.total_alumnos_activos).toBe(40);
       expect(resultado.resumen.ingreso_estimado_total).toBe(30 * 30000 + 10 * 20000);
@@ -200,7 +306,7 @@ describe("GeneradorInformesService", () => {
         id_plan: 1,
         nombre: "Plan Pase Libre",
         tipo: "MENSUAL",
-        actividad_exclusiva: null,
+        actividad_exclusiva: { id_actividad: 3, nombre: "Crossfit" },
         cantidad_alumnos: 30,
         porcentaje: 75,
         precio_vigente: 30000,
@@ -218,7 +324,6 @@ describe("GeneradorInformesService", () => {
         ingreso_estimado: 200000,
       });
 
-      // Plan sin alumnos aparece con 0
       expect(resultado.planes[2]).toEqual({
         id_plan: 3,
         nombre: "Plan Sin Alumnos",
@@ -229,6 +334,23 @@ describe("GeneradorInformesService", () => {
         precio_vigente: null,
         ingreso_estimado: 0,
       });
+    });
+
+    it("desempata por nombre y maneja total de alumnos en cero", async () => {
+      planes.listarVigentes.mockResolvedValue([
+        { id_plan: 1, nombre: "Plan Z", tipo: "MENSUAL", actividad_exclusiva: null },
+        { id_plan: 2, nombre: "Plan A", tipo: "MENSUAL", actividad_exclusiva: null },
+      ]);
+      inscripciones.contarActivasPorPlan.mockResolvedValue(new Map());
+      planes.precioVigente.mockResolvedValue(null);
+
+      const resultado = await servicio.estadisticasPlanes({});
+
+      expect(resultado.resumen.total_alumnos_activos).toBe(0);
+      expect(resultado.planes[0].nombre).toBe("Plan A");
+      expect(resultado.planes[1].nombre).toBe("Plan Z");
+      expect(resultado.planes[0].porcentaje).toBe(0);
+      expect(resultado.planes[1].porcentaje).toBe(0);
     });
   });
 
@@ -255,30 +377,69 @@ describe("GeneradorInformesService", () => {
       });
 
       expect(resultado.meses).toHaveLength(3);
-      expect(resultado.meses[0]).toEqual({
-        mes: 1,
-        anio: 2026,
-        nombre_mes: "Enero",
-        cantidad: 10,
-        diferencia_mes_anterior: null,
-        porcentaje_variacion: null,
+      expect(resultado.meses[0].diferencia_mes_anterior).toBeNull();
+      expect(resultado.meses[1].diferencia_mes_anterior).toBe(5);
+      expect(resultado.meses[1].porcentaje_variacion).toBe(50);
+      expect(resultado.meses[2].diferencia_mes_anterior).toBe(-10);
+      expect(resultado.meses[2].porcentaje_variacion).toBe(-66.67);
+    });
+
+    it("soporta filtrado solo por anio y conserva anioSeleccionado cuando se envian desde, hasta y anio", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([{ anio: 2025, mes: 6, total: 20 }]);
+
+      const porAnio = await servicio.estadisticasInscripciones({ anio: 2025 });
+      expect(porAnio.periodo.anio).toBe(2025);
+      expect(porAnio.periodo.desde).toBe("2025-01-01");
+      expect(porAnio.periodo.hasta).toBe("2025-12-31");
+
+      const conTodo = await servicio.estadisticasInscripciones({
+        desde: new Date("2025-01-01T00:00:00Z"),
+        hasta: new Date("2025-06-30T00:00:00Z"),
+        anio: 2025,
       });
-      expect(resultado.meses[1]).toEqual({
-        mes: 2,
-        anio: 2026,
-        nombre_mes: "Febrero",
-        cantidad: 15,
-        diferencia_mes_anterior: 5,
-        porcentaje_variacion: 50,
+      expect(conTodo.periodo.anio).toBe(2025);
+    });
+
+    it("utiliza anio actual por defecto cuando no se especifican filtros", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([]);
+
+      const resultado = await servicio.estadisticasInscripciones({});
+
+      expect(resultado.periodo.anio).toBe(new Date().getUTCFullYear());
+      expect(resultado.resumen.total_altas).toBe(0);
+      expect(resultado.resumen.promedio_mensual).toBe(0);
+      expect(resultado.resumen.mes_pico).toBeNull();
+    });
+
+    it("avanza de anio al cruzar de diciembre a enero en rangos multianuales", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([
+        { anio: 2025, mes: 12, total: 5 },
+        { anio: 2026, mes: 1, total: 8 },
+      ]);
+
+      const resultado = await servicio.estadisticasInscripciones({
+        desde: new Date("2025-11-01T00:00:00Z"),
+        hasta: new Date("2026-02-01T00:00:00Z"),
       });
-      expect(resultado.meses[2]).toEqual({
-        mes: 3,
-        anio: 2026,
-        nombre_mes: "Marzo",
-        cantidad: 5,
-        diferencia_mes_anterior: -10,
-        porcentaje_variacion: -66.67,
+
+      expect(resultado.meses).toHaveLength(4);
+      expect(resultado.meses[0]).toMatchObject({ anio: 2025, mes: 11, cantidad: 0 });
+      expect(resultado.meses[1]).toMatchObject({ anio: 2025, mes: 12, cantidad: 5 });
+      expect(resultado.meses[2]).toMatchObject({ anio: 2026, mes: 1, cantidad: 8 });
+      expect(resultado.meses[3]).toMatchObject({ anio: 2026, mes: 2, cantidad: 0 });
+      expect(resultado.meses[1].porcentaje_variacion).toBeNull(); // mes anterior tenía 0
+    });
+
+    it("devuelve promedio 0 si el rango no genera meses", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([]);
+
+      const resultado = await servicio.estadisticasInscripciones({
+        desde: new Date("2026-05-01T00:00:00Z"),
+        hasta: new Date("2026-04-01T00:00:00Z"),
       });
+
+      expect(resultado.meses).toHaveLength(0);
+      expect(resultado.resumen.promedio_mensual).toBe(0);
     });
   });
 });
