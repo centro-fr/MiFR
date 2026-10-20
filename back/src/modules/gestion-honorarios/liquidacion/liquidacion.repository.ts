@@ -105,7 +105,13 @@ export class LiquidacionRepository {
           });
         } else {
           await transaccion.liquidaciones.create({
-            data: { id_profesora, ...periodo, monto_total, estado: "BORRADOR", detalles: { create: detalles } },
+            data: {
+              id_profesora,
+              ...periodo,
+              monto_total,
+              estado: "BORRADOR",
+              detalles: { create: detalles },
+            },
           });
         }
       }

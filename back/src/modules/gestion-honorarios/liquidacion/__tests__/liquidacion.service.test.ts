@@ -87,8 +87,18 @@ describe("LiquidacionService", () => {
         inscripcion(3, "BAJA", 11),
       ]);
       cuotas.cobradoEnPeriodo
-        .mockResolvedValueOnce(new Map([[2, 5000], [3, 0]]))
-        .mockResolvedValueOnce(new Map([[1, 8000], [2, 5000]]));
+        .mockResolvedValueOnce(
+          new Map([
+            [2, 5000],
+            [3, 0],
+          ]),
+        )
+        .mockResolvedValueOnce(
+          new Map([
+            [1, 8000],
+            [2, 5000],
+          ]),
+        );
       profesoras.listar.mockResolvedValue([{ id_profesora: 10 }, { id_profesora: 11 }]);
       const advertencia = {
         id_profesora: 10,
@@ -100,11 +110,28 @@ describe("LiquidacionService", () => {
       };
       calculador.calcular.mockReturnValue({
         detalles: [
-          { id_profesora: 10, concepto: "ALUMNO_A_CARGO", id_tarifa: 3, id_inscripcion: 1, id_clase: null, monto: 7000 },
-          { id_profesora: 12, concepto: "DESCUENTO_AUSENCIA", id_tarifa: 4, id_inscripcion: null, id_clase: 9, monto: -500 },
+          {
+            id_profesora: 10,
+            concepto: "ALUMNO_A_CARGO",
+            id_tarifa: 3,
+            id_inscripcion: 1,
+            id_clase: null,
+            monto: 7000,
+          },
+          {
+            id_profesora: 12,
+            concepto: "DESCUENTO_AUSENCIA",
+            id_tarifa: 4,
+            id_inscripcion: null,
+            id_clase: 9,
+            monto: -500,
+          },
         ],
         advertencias: [advertencia],
-        totalesPorProfesora: new Map([[10, 7000], [12, -500]]),
+        totalesPorProfesora: new Map([
+          [10, 7000],
+          [12, -500],
+        ]),
       });
       repositorio.guardarBorradores.mockResolvedValue({
         liquidaciones: [liquidacion(10, 7000), liquidacion(11, 0), liquidacion(12, -500)],
@@ -119,7 +146,10 @@ describe("LiquidacionService", () => {
       expect(calculador.calcular).toHaveBeenCalledWith({
         finDelPeriodo: PERIODO.hasta,
         inscripciones: [inscripcion(1, "ACTIVA"), inscripcion(2, "BAJA")],
-        cobradoEnElPeriodo: new Map([[1, 8000], [2, 5000]]),
+        cobradoEnElPeriodo: new Map([
+          [1, 8000],
+          [2, 5000],
+        ]),
         suplencias: [],
         tarifas: [],
       });
@@ -127,13 +157,17 @@ describe("LiquidacionService", () => {
         {
           id_profesora: 10,
           monto_total: 7000,
-          detalles: [{ concepto: "ALUMNO_A_CARGO", id_tarifa: 3, id_inscripcion: 1, id_clase: null, monto: 7000 }],
+          detalles: [
+            { concepto: "ALUMNO_A_CARGO", id_tarifa: 3, id_inscripcion: 1, id_clase: null, monto: 7000 },
+          ],
         },
         { id_profesora: 11, monto_total: 0, detalles: [] },
         {
           id_profesora: 12,
           monto_total: -500,
-          detalles: [{ concepto: "DESCUENTO_AUSENCIA", id_tarifa: 4, id_inscripcion: null, id_clase: 9, monto: -500 }],
+          detalles: [
+            { concepto: "DESCUENTO_AUSENCIA", id_tarifa: 4, id_inscripcion: null, id_clase: 9, monto: -500 },
+          ],
         },
       ]);
       expect(resultado).toEqual({
@@ -228,9 +262,7 @@ describe("LiquidacionService", () => {
     ["pagar", "pagar", "CERRADA", "PAGADA"],
   ])("%s", (_nombre, operacion, desde, hacia) => {
     it(`pasa de ${desde} a ${hacia} y devuelve la liquidación actualizada`, async () => {
-      repositorio.buscarPorId
-        .mockResolvedValueOnce(detallada(desde))
-        .mockResolvedValueOnce(detallada(hacia));
+      repositorio.buscarPorId.mockResolvedValueOnce(detallada(desde)).mockResolvedValueOnce(detallada(hacia));
       repositorio.transicionar.mockResolvedValue(true);
 
       const resultado = await service[operacion](10);

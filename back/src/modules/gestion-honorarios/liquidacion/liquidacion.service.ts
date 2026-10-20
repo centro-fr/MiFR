@@ -74,7 +74,10 @@ export class LiquidacionService {
 
     // Cada profesora activa tiene su liquidación, aunque sea en 0; también la que se dio de baja
     // pero tuvo movimientos en el mes.
-    const ids = new Set([...profesoras.map(({ id_profesora }) => id_profesora), ...totalesPorProfesora.keys()]);
+    const ids = new Set([
+      ...profesoras.map(({ id_profesora }) => id_profesora),
+      ...totalesPorProfesora.keys(),
+    ]);
     const borradores = [...ids].map((idProfesora) => ({
       id_profesora: idProfesora,
       monto_total: totalesPorProfesora.get(idProfesora) ?? 0,

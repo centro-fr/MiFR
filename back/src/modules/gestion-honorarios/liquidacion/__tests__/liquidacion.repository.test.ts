@@ -39,9 +39,7 @@ function borrador(idProfesora: number, monto: number): BorradorLiquidacion {
   return {
     id_profesora: idProfesora,
     monto_total: monto,
-    detalles: [
-      { concepto: "ALUMNO_A_CARGO", id_tarifa: 3, id_inscripcion: 5, id_clase: null, monto },
-    ],
+    detalles: [{ concepto: "ALUMNO_A_CARGO", id_tarifa: 3, id_inscripcion: 5, id_clase: null, monto }],
   };
 }
 

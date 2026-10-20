@@ -6,10 +6,7 @@ import type {
   ResultadoGeneracion,
   ResumenLiquidaciones,
 } from "./liquidacion/liquidacion.types.js";
-import type {
-  CerrarTarifaInput,
-  RegistrarTarifaInput,
-} from "./tarifa-honorario/tarifa-honorario.schemas.js";
+import type { CerrarTarifaInput, RegistrarTarifaInput } from "./tarifa-honorario/tarifa-honorario.schemas.js";
 import type { TarifaHonorarioService } from "./tarifa-honorario/tarifa-honorario.service.js";
 import type { FiltroTarifa, TarifaHonorario } from "./tarifa-honorario/tarifa-honorario.types.js";
 

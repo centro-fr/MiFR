@@ -175,7 +175,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     notificacionService,
   );
 
-    const tarifaHonorarioService = new TarifaHonorarioService(
+  const tarifaHonorarioService = new TarifaHonorarioService(
     new TarifaHonorarioRepository(prisma),
     profesorService,
     planService,

@@ -169,7 +169,7 @@ describe("rutas de liquidaciones", () => {
     );
   });
 
-    it.each<[string, "get" | "post", string, object?]>([
+  it.each<[string, "get" | "post", string, object?]>([
     ["POST sin período", "post", "/liquidaciones", {}],
     ["POST con un período mal escrito", "post", "/liquidaciones", { periodo: "2026-13" }],
     ["GET sin período", "get", "/liquidaciones"],

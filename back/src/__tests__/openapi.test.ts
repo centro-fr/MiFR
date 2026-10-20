@@ -102,7 +102,7 @@ const OPERACIONES_ESPERADAS = [
   "get /tarifas-honorario",
   "post /tarifas-honorario",
   "post /tarifas-honorario/{id}/cerrar",
-    "post /liquidaciones",
+  "post /liquidaciones",
   "get /liquidaciones",
   "get /liquidaciones/{id}",
   "post /liquidaciones/{id}/cerrar",
