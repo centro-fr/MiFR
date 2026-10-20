@@ -33,7 +33,8 @@ function desdeAsistenciasDictadas(filtro: FiltroAsistenciasDictadas, uniones: Pr
   if (filtro.id_profesora !== undefined) {
     condiciones.push(Prisma.sql`c.id_prof_dictante = ${filtro.id_profesora}`);
   }
-  if (filtro.id_actividad !== undefined) condiciones.push(Prisma.sql`h.id_actividad = ${filtro.id_actividad}`);
+  if (filtro.id_actividad !== undefined)
+    condiciones.push(Prisma.sql`h.id_actividad = ${filtro.id_actividad}`);
   return Prisma.sql`
     FROM asistencias a
     JOIN clases c ON c.id_clase = a.id_clase
