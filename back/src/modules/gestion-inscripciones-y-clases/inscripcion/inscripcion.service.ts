@@ -20,6 +20,7 @@ import type {
   CambiarPlanInput,
   CrearInscripcionInput,
   DarDeBajaAlumnoInput,
+  PreinscribirInput,
   ReactivarAlumnoInput,
 } from "./inscripcion.schemas.js";
 import type { InscripcionRepository } from "./inscripcion.repository.js";
@@ -29,10 +30,14 @@ import type {
   FiltroAlumnosPorInscripcion,
   EstadoInscripcion,
   FiltroInscripciones,
+  FiltroInscripcionesParaInactividad,
+  InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
   InscripcionGuardada,
+  InscripcionParaInactividad,
   InscriptoDeHorario,
+  Preinscripcion,
   ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 
@@ -60,14 +65,16 @@ type DatosPreparados = Omit<DatosDeInscripcion, "ids_horarios" | "fecha_inicio">
   id_promocion: number | null;
 };
 
-interface InscripcionPreparada {
-  datos: DatosPreparados;
+interface InscripcionPreparada<Datos = DatosPreparados> {
+  datos: Datos;
   horarios: HorarioRespuesta[];
 }
 
+type Medidas = CrearInscripcionInput["medidas"];
+
 // US-05: si alguna actividad de los horarios elegidos pide peso y talla, la pre-inscripción sin ellos
 // no se guarda. Si llegan sin que nadie los pida, se guardan igual.
-function verificarMedidas(horarios: HorarioRespuesta[], medidas: CrearInscripcionInput["medidas"]): void {
+function verificarMedidas(horarios: HorarioRespuesta[], medidas: Medidas): void {
   const queLasPide = horarios.find(({ actividad }) => actividad.requiere_medidas);
   if (queLasPide && !medidas) {
     throw new ValidationError(`${queLasPide.actividad.nombre} pide el peso y la talla para pre-inscribir`);
@@ -109,7 +116,8 @@ export class InscripcionService implements IInfoInscripciones {
 
   // La inscripción y la medición inicial van juntas: sin cupo no queda una medición suelta.
   async crear(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
-    if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input, solicitante);
+    if (!solicitante.esPropietaria)
+      await this.verificarQuePuedePreinscribir(input, solicitante, input.id_alumno);
     const { medidas, ...datosDeInscripcion } = input;
     const { datos, horarios } = await this.prepararInscripcion({
       ...datosDeInscripcion,
@@ -118,32 +126,68 @@ export class InscripcionService implements IInfoInscripciones {
     verificarMedidas(horarios, medidas);
     const plazo = await this.plazoDeReserva();
 
-    return this.unidadDeTrabajo.ejecutar(async () => {
-      const resultado = await this.repositorio.crear(
-        datos,
-        input.ids_horarios,
-        plazo.hoy,
-        inicioDeReservasVigentes(plazo),
-      );
-      const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
-      if (medidas) {
-        await this.progreso.registrarMedicionInicial({
-          idAlumno: datos.id_alumno,
-          idProfesora: datos.id_profesora,
-          pesoKg: medidas.peso_kg,
-          tallaCm: medidas.talla_cm,
-        });
-      }
-      return inscripcion;
+    return this.unidadDeTrabajo.ejecutar(() =>
+      this.guardarPreinscripcion(datos, input.ids_horarios, medidas, plazo),
+    );
+  }
+
+  // US-05: el alumno nuevo, su inscripción y la medición inicial quedan todos o ninguno. Todo lo que
+  // se puede validar sin el alumno se valida antes de escribir; el cupo y la identidad se vuelven a
+  // comprobar al guardar, dentro de la unidad.
+  async preinscribir(input: PreinscribirInput, solicitante: Solicitante): Promise<Preinscripcion> {
+    if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input.inscripcion, solicitante);
+    const { medidas, ...datosDeInscripcion } = input.inscripcion;
+    const { datos, horarios } = await this.prepararPlanYHorarios({
+      ...datosDeInscripcion,
+      estado: "PREINSCRIPTA",
     });
+    verificarMedidas(horarios, medidas);
+    const plazo = await this.plazoDeReserva();
+
+    return this.unidadDeTrabajo.ejecutar(async () => {
+      const alumno = await this.alumnos.crear(input.alumno, solicitante);
+      const inscripcion = await this.guardarPreinscripcion(
+        { ...datos, id_alumno: alumno.id_alumno },
+        datosDeInscripcion.ids_horarios,
+        medidas,
+        plazo,
+      );
+      return { id_alumno: alumno.id_alumno, id_inscripcion: inscripcion.id_inscripcion };
+    });
+  }
+
+  private async guardarPreinscripcion(
+    datos: DatosPreparados,
+    idsHorarios: number[],
+    medidas: Medidas,
+    plazo: PlazoDeReserva,
+  ): Promise<InscripcionConDatos> {
+    const resultado = await this.repositorio.crear(
+      datos,
+      idsHorarios,
+      plazo.hoy,
+      inicioDeReservasVigentes(plazo),
+    );
+    const inscripcion = conReserva(this.resolverResultado(resultado), plazo);
+    if (medidas) {
+      await this.progreso.registrarMedicionInicial({
+        idAlumno: datos.id_alumno,
+        idProfesora: datos.id_profesora,
+        pesoKg: medidas.peso_kg,
+        tallaCm: medidas.talla_cm,
+      });
+    }
+    return inscripcion;
   }
 
   // Una inscripción vigente deja al alumno "a cargo" de la profesora, que desde ahí ve y edita su ficha
   // (US-10). Por eso una profesora solo preinscribe a su nombre, alumnos que no están con otra profesora,
   // y sin bonificar: si no, con preinscribirse alcanzaba para ver los datos de cualquier alumno.
+  // Sin idAlumno es un alumno nuevo, que todavía no está con ninguna profesora.
   private async verificarQuePuedePreinscribir(
-    input: CrearInscripcionInput,
+    input: Pick<CrearInscripcionInput, "id_profesora" | "sin_cargo">,
     solicitante: Solicitante,
+    idAlumno?: number,
   ): Promise<void> {
     const profesora = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
     if (profesora?.id_profesora !== input.id_profesora) {
@@ -151,7 +195,8 @@ export class InscripcionService implements IInfoInscripciones {
     }
     if (input.sin_cargo) throw new ForbiddenError("Solo la propietaria puede dar una inscripción sin cargo");
 
-    const vigentes = await this.repositorio.listarVigentesPorAlumno(input.id_alumno);
+    if (idAlumno === undefined) return;
+    const vigentes = await this.repositorio.listarVigentesPorAlumno(idAlumno);
     if (vigentes.some((vigente) => vigente.id_profesora !== profesora.id_profesora)) {
       throw new ForbiddenError("El alumno está a cargo de otra profesora: lo inscribe la propietaria");
     }
@@ -323,6 +368,21 @@ export class InscripcionService implements IInfoInscripciones {
     return this.repositorio.contarInscriptosParaAsistencia(idsHorarios, fecha);
   }
 
+  aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]> {
+    return this.repositorio.aCargoEnPeriodo(desde, hasta);
+  }
+
+  listarParaInactividad(filtro: FiltroInscripcionesParaInactividad): Promise<InscripcionParaInactividad[]> {
+    return this.repositorio.listarParaInactividad(filtro);
+  }
+
+  contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>> {
+    return this.repositorio.contarActivasPorPlan(filtro);
+  }
+
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {
     const plazo = await this.plazoDeReserva();
     return this.repositorio.contarLugaresOcupados(idsHorarios, inicioDeReservasVigentes(plazo));
@@ -356,7 +416,13 @@ export class InscripcionService implements IInfoInscripciones {
     if (!alumno || (alumno.estado === "BAJA" && !permitirAlumnoDeBaja)) {
       throw new NotFoundError("Alumno inexistente o dado de baja");
     }
+    const { datos, horarios } = await this.prepararPlanYHorarios(input);
+    return { datos: { ...datos, id_alumno: input.id_alumno }, horarios };
+  }
 
+  private async prepararPlanYHorarios(
+    input: Omit<DatosDeInscripcion, "id_alumno">,
+  ): Promise<InscripcionPreparada<Omit<DatosPreparados, "id_alumno">>> {
     const plan = await this.planes.buscarPorId(input.id_plan);
     if (!plan || plan.fecha_baja) throw new ConflictError("El plan no existe o está dado de baja");
     const hoy = fechaActualArgentina();
@@ -404,6 +470,11 @@ export class InscripcionService implements IInfoInscripciones {
     }
     if (new Set(horarios.map(({ id_profesora }) => id_profesora)).size > 1) {
       throw new ValidationError("Todos los horarios deben pertenecer a una misma profesora");
+    }
+    // Cada inscripción es de una sola actividad (Estudio Inicial, US-11), también en un plan sin
+    // actividad exclusiva: no se combinan disciplinas.
+    if (new Set(horarios.map(({ id_actividad }) => id_actividad)).size > 1) {
+      throw new ValidationError("Todos los horarios deben pertenecer a una misma actividad");
     }
     if (plan.profesora_unica && horarios.some(({ id_profesora: asignada }) => asignada !== idProfesora)) {
       throw new ValidationError("El plan exige que los horarios sean de la profesora a cargo");

@@ -7,6 +7,7 @@ import type {
   CrearInscripcionInput,
   DarDeBajaAlumnoInput,
   ListarInscripcionesQuery,
+  PreinscribirInput,
   ReactivarAlumnoInput,
 } from "./inscripcion.schemas.js";
 
@@ -25,6 +26,10 @@ export function createInscripcionController(logica: ILogicaInscripciones) {
       res
         .status(201)
         .json(await logica.crearInscripcion(req.body as CrearInscripcionInput, solicitanteDe(req)));
+    },
+
+    async preinscribir(req: Request, res: Response) {
+      res.status(201).json(await logica.preinscribir(req.body as PreinscribirInput, solicitanteDe(req)));
     },
 
     async obtener(req: Request, res: Response) {

@@ -190,8 +190,8 @@ package "PERSONAS DEL NEGOCIO" {
     --
     * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
       <color:#9CA3AF><&link-intact></color> id_usuario_responsable : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>tutor; obligatorio si es menor</size></color>
-      cont_emerg_nombre : VARCHAR(80)
-      cont_emerg_telefono : VARCHAR(20)
+    * cont_emerg_nombre : VARCHAR(80)
+    * cont_emerg_telefono : VARCHAR(20)
     * apto_medico : BOOLEAN <color:#6B7280><size:11>default false</size></color>
       fecha_apto_medico : DATE
       observaciones : VARCHAR(500)
@@ -297,6 +297,13 @@ package "INSCRIPCIONES Y CLASES" {
       <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>NULL si lo registro el cierre automatico</size></color>
       observaciones : VARCHAR(255)
   }
+  entity "seguimientos_inactividad" as seguimientos_inactividad <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_inscripcion : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    --
+    * estado : ENUM <color:#000000><<CONTACTADO|GESTIONADO|IGNORADO>></color>
+    * fecha_registro : TIMESTAMP <color:#6B7280><size:11>deja de valer si el alumno asiste despues</size></color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario_registra : INTEGER <color:#9CA3AF>FK</color>
+  }
 }
 
 package "CUOTAS Y PAGOS" {
@@ -379,9 +386,9 @@ package "NOTIFICACIONES E INSIGNIAS" {
   entity "notificaciones" as notificaciones <<Notificaciones>> {
     * <color:#DAA520><&key></color> id_notificacion : SERIAL <color:#DAA520>PK</color>
     --
-    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>
-    * tipo : ENUM <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|RESUMEN_DIARIO|BIENVENIDA|CLASE_CANCELADA>></color>
-      <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>solo avisos de cuota</size></color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color>
+    * <color:#9CA3AF><&link-intact></color> tipo : ENUM <color:#000000><<CUOTA_POR_VENCER|CUOTA_VENCIDA|RESUMEN_DIARIO|BIENVENIDA|CLASE_CANCELADA>></color> <color:#9CA3AF>UK(1)</color>
+      <color:#9CA3AF><&link-intact></color> id_cuota : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK(1)</color> <color:#6B7280><size:11>solo avisos de cuota; un aviso de cada tipo por cuota</size></color>
     * mensaje : VARCHAR(1000)
     * fecha_generacion : TIMESTAMP
       fecha_envio : TIMESTAMP
@@ -440,6 +447,8 @@ clases ||--o{ asistencias : "id_clase"
 alumnos ||--o{ asistencias : "id_alumno"
 inscripciones ||--o{ asistencias : "id_inscripcion"
 usuarios |o--o{ asistencias : "id_usuario_registra"
+inscripciones ||--o| seguimientos_inactividad : "id_inscripcion"
+usuarios ||--o{ seguimientos_inactividad : "id_usuario_registra"
 
 ' cuotas y pagos
 inscripciones ||--o{ cuotas : "id_inscripcion"

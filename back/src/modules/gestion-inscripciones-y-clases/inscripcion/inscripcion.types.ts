@@ -44,6 +44,11 @@ export interface ReservaDeCupo {
 // reserva es null salvo en las PREINSCRIPTA: una inscripción activa o dada de baja no reserva nada.
 export type InscripcionConDatos = InscripcionGuardada & { reserva: ReservaDeCupo | null };
 
+export interface Preinscripcion {
+  id_alumno: number;
+  id_inscripcion: number;
+}
+
 // Lo que necesita el cobro: la inscripción y quiénes son el alumno y su tutor, los únicos que pueden
 // informar sus pagos (US-16). Va aparte de INCLUIR_DATOS_INSCRIPCION para no mandar esos ids en las
 // respuestas de inscripciones.
@@ -98,4 +103,33 @@ export interface InscriptoDeHorario {
   id_inscripcion: number;
   id_alumno: number;
   alumno: { usuario: { nombre: string; apellido: string } };
+}
+
+// Una inscripción que estuvo a cargo de su profesora en algún día de un período, para la liquidación
+// de honorarios (US-23). fecha_baja es el instante de la baja; null si sigue activa.
+export interface InscripcionACargo {
+  id_inscripcion: number;
+  id_alumno: number;
+  id_profesora: number;
+  id_plan: number;
+  sin_cargo: boolean;
+  // ACTIVA o BAJA: una PREINSCRIPTA nunca estuvo a cargo.
+  estado: EstadoInscripcion;
+  fecha_inicio: Date;
+  fecha_baja: Date | null;
+}
+
+export interface FiltroInscripcionesParaInactividad {
+  id_inscripcion?: number;
+  id_profesora?: number;
+  id_plan?: number;
+}
+
+// US-22: una inscripción que puede tener una racha de inasistencias, con lo que muestra el listado de
+// inactivos.
+export interface InscripcionParaInactividad {
+  id_inscripcion: number;
+  id_alumno: number;
+  plan: { id_plan: number; nombre: string };
+  profesora: { id_profesora: number; nombre: string; apellido: string };
 }

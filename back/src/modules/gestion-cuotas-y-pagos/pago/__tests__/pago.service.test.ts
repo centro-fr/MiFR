@@ -4,12 +4,14 @@ import {
   ForbiddenError,
   MontoDistintoError,
   NotFoundError,
+  ValidationError,
 } from "../../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../../shared/utils/solicitante.types.js";
 import type { IInfoProfesores } from "../../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { CuotaACobrar } from "../../cuota/cuota.types.js";
 import type { PagoRepository } from "../pago.repository.js";
-import { PagoService } from "../pago.service.js";
+import { PagoService, TOPE_FILTRO_TIPO_TRANSFERENCIA } from "../pago.service.js";
+import type { TransferenciaParaRevisar } from "../pago.types.js";
 
 const AHORA = new Date("2026-10-09T15:00:00Z");
 const PROPIETARIA: Solicitante = { idUsuario: 1, esPropietaria: true };
@@ -50,9 +52,12 @@ function crearMocks() {
       fechasDeTransferenciasIguales: vi.fn().mockResolvedValue([]),
       buscarConCuota: vi.fn().mockResolvedValue(pendiente),
       resolver: vi.fn().mockResolvedValue({ id_pago: 7 }),
-      listarTransferencias: vi.fn(),
+      listarParaRevisar: vi.fn().mockResolvedValue([]),
+      contarTransferencias: vi.fn().mockResolvedValue(0),
+      totalesPendientes: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, antesDe24: 0, antesDe12: 0 }),
       listarTransferenciasDeUsuario: vi.fn().mockResolvedValue([]),
       buscarParaComprobante: vi.fn(),
+      obtenerCobranza: vi.fn(),
     },
     profesoras: { buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: 3 }) },
   };
@@ -156,19 +161,6 @@ describe("PagoService", () => {
         titular_cuenta_origen: null,
         observaciones: null,
       });
-    });
-
-    it.each([
-      ["la alumna", ALUMNA],
-      ["la tutora", TUTORA],
-    ])("verificarTitular deja pasar a %s", (_caso, solicitante) => {
-      expect(() => servicio.verificarTitular(cuota.inscripcion, solicitante)).not.toThrow();
-    });
-
-    it("verificarTitular rechaza a cualquier otro", () => {
-      expect(() =>
-        servicio.verificarTitular(cuota.inscripcion, { idUsuario: 99, esPropietaria: false }),
-      ).toThrow(ForbiddenError);
     });
 
     it("la misma transferencia (alumno, monto y día de Argentina) no se informa dos veces", async () => {
@@ -278,17 +270,35 @@ describe("PagoService", () => {
       await expect(servicio.confirmar(7, PROPIETARIA)).rejects.toThrow("ya fue resuelta");
     });
 
-    it("listarTransferencias marca las pendientes que pasaron las 24 horas", async () => {
-      mocks.repositorio.listarTransferencias.mockResolvedValue([
-        { id_pago: 1, estado: "PENDIENTE", fecha_pago: new Date("2026-10-08T14:00:00Z") },
-        { id_pago: 2, estado: "PENDIENTE", fecha_pago: new Date("2026-10-08T16:00:00Z") },
-        { id_pago: 3, estado: "CONFIRMADO", fecha_pago: new Date("2026-10-01T15:00:00Z") },
-      ]);
+    const VENCIO_EL_9 = new Date("2026-10-09T00:00:00Z");
+    function paraRevisar(datos: Partial<TransferenciaParaRevisar>): TransferenciaParaRevisar {
+      return {
+        id_pago: 1,
+        estado: "PENDIENTE",
+        fecha_pago: new Date("2026-10-08T15:00:00Z"),
+        alumno: { id_alumno: 5, nombre: "Valentina", apellido: "Herrera" },
+        plan: "Intermedio",
+        tipo_plan: "MENSUAL",
+        numero_cuota: 2,
+        monto_esperado: 28000,
+        vencimiento_anterior: VENCIO_EL_9,
+        ...datos,
+      } as TransferenciaParaRevisar;
+    }
+    const SIN_FILTROS = { orden: "asc", limit: 100, offset: 0 } as const;
 
-      const transferencias = await servicio.listarTransferencias({ estado: "PENDIENTE" });
+    it("listarTransferencias marca las pendientes que pasaron las 24 horas y pagina en la base", async () => {
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([
+        paraRevisar({ id_pago: 1, fecha_pago: new Date("2026-10-08T14:00:00Z") }),
+        paraRevisar({ id_pago: 2, fecha_pago: new Date("2026-10-08T16:00:00Z") }),
+        paraRevisar({ id_pago: 3, estado: "CONFIRMADO", fecha_pago: new Date("2026-10-01T15:00:00Z") }),
+      ]);
+      mocks.repositorio.contarTransferencias.mockResolvedValue(37);
+
+      const pagina = await servicio.listarTransferencias({ ...SIN_FILTROS, estado: "PENDIENTE", limit: 3 });
 
       expect(
-        transferencias.map(({ horas_desde_la_carga, supera_24_horas }) => [
+        pagina.datos.map(({ horas_desde_la_carga, supera_24_horas }) => [
           horas_desde_la_carga,
           supera_24_horas,
         ]),
@@ -297,7 +307,135 @@ describe("PagoService", () => {
         [23, false],
         [192, false],
       ]);
-      expect(mocks.repositorio.listarTransferencias).toHaveBeenCalledWith({ estado: "PENDIENTE" });
+      expect(pagina).toMatchObject({ total: 37, limit: 3, offset: 0 });
+      expect(mocks.repositorio.listarParaRevisar).toHaveBeenCalledWith({ estado: "PENDIENTE" }, "asc", {
+        limit: 3,
+        offset: 0,
+      });
+      expect(mocks.repositorio.contarTransferencias).toHaveBeenCalledWith({ estado: "PENDIENTE" });
+    });
+
+    it("listarTransferencias responde el plan, el monto esperado y el tipo, sin los datos internos", async () => {
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([paraRevisar({ numero_cuota: 1 })]);
+
+      const { datos } = await servicio.listarTransferencias(SIN_FILTROS);
+
+      expect(datos).toEqual([
+        {
+          id_pago: 1,
+          estado: "PENDIENTE",
+          fecha_pago: new Date("2026-10-08T15:00:00Z"),
+          alumno: { id_alumno: 5, nombre: "Valentina", apellido: "Herrera" },
+          plan: "Intermedio",
+          monto_esperado: 28000,
+          tipo: "PRIMERA_CUOTA",
+          horas_desde_la_carga: 24,
+          supera_24_horas: true,
+        },
+      ]);
+    });
+
+    it("listarTransferencias calcula el tipo con el día de Argentina en que se cargó", async () => {
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([
+        // 23:00 del 9 en Argentina: el día del vencimiento todavía está cubierto.
+        paraRevisar({ fecha_pago: new Date("2026-10-10T02:00:00Z") }),
+        // 00:00 del 10 en Argentina.
+        paraRevisar({ fecha_pago: new Date("2026-10-10T03:00:00Z") }),
+        paraRevisar({ tipo_plan: "CLASE_SUELTA", fecha_pago: new Date("2026-10-20T15:00:00Z") }),
+        paraRevisar({ vencimiento_anterior: null, fecha_pago: new Date("2026-10-20T15:00:00Z") }),
+      ]);
+
+      const { datos } = await servicio.listarTransferencias(SIN_FILTROS);
+
+      expect(datos.map(({ tipo }) => tipo)).toEqual([
+        "RENOVACION",
+        "CUOTA_VENCIDA",
+        "RENOVACION",
+        "RENOVACION",
+      ]);
+    });
+
+    it("listarTransferencias convierte los días desde y hasta en instantes de Argentina", async () => {
+      await servicio.listarTransferencias({
+        ...SIN_FILTROS,
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-10T00:00:00Z"),
+        orden: "desc",
+      });
+
+      expect(mocks.repositorio.listarParaRevisar).toHaveBeenCalledWith(
+        { inicio: new Date("2026-10-01T03:00:00Z"), fin: new Date("2026-10-11T03:00:00Z") },
+        "desc",
+        { limit: 100, offset: 0 },
+      );
+    });
+
+    it("listarTransferencias por tipo calcula sobre las que cumplen los otros filtros y pagina en memoria", async () => {
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([
+        paraRevisar({ id_pago: 1, numero_cuota: 1 }),
+        paraRevisar({ id_pago: 2, fecha_pago: new Date("2026-10-10T15:00:00Z") }),
+        paraRevisar({ id_pago: 3, numero_cuota: 1 }),
+        paraRevisar({ id_pago: 4, numero_cuota: 1 }),
+      ]);
+
+      const pagina = await servicio.listarTransferencias({
+        ...SIN_FILTROS,
+        id_alumno: 5,
+        tipo: "PRIMERA_CUOTA",
+        limit: 1,
+        offset: 1,
+      });
+
+      expect(pagina).toMatchObject({ total: 3, limit: 1, offset: 1 });
+      expect(pagina.datos.map(({ id_pago }) => id_pago)).toEqual([3]);
+      expect(mocks.repositorio.listarParaRevisar).toHaveBeenCalledWith({ id_alumno: 5 }, "asc", {
+        limit: TOPE_FILTRO_TIPO_TRANSFERENCIA + 1,
+        offset: 0,
+      });
+      expect(mocks.repositorio.contarTransferencias).not.toHaveBeenCalled();
+    });
+
+    it("listarTransferencias por tipo lanza ValidationError si hay más de 500 para calcular", async () => {
+      mocks.repositorio.listarParaRevisar.mockResolvedValue(
+        Array.from({ length: TOPE_FILTRO_TIPO_TRANSFERENCIA + 1 }, (_, i) => paraRevisar({ id_pago: i + 1 })),
+      );
+
+      const pedido = servicio.listarTransferencias({ ...SIN_FILTROS, tipo: "RENOVACION" });
+
+      await expect(pedido).rejects.toThrow(ValidationError);
+      await expect(pedido).rejects.toThrow("acote la búsqueda");
+    });
+
+    it("resumenTransferenciasPendientes da los totales, las alertas y las 5 más viejas con sus horas", async () => {
+      mocks.repositorio.totalesPendientes.mockResolvedValue({
+        cantidad: 7,
+        total: 210000,
+        antesDe24: 2,
+        antesDe12: 5,
+      });
+      mocks.repositorio.listarParaRevisar.mockResolvedValue([
+        paraRevisar({ id_pago: 1, fecha_pago: new Date("2026-10-08T14:00:00Z") }),
+      ]);
+
+      const resumen = await servicio.resumenTransferenciasPendientes();
+
+      expect(resumen).toMatchObject({
+        cantidad: 7,
+        total: 210000,
+        supera_24_horas: 2,
+        por_superar_24_horas: 3,
+      });
+      expect(resumen.mas_antiguas).toEqual([
+        expect.objectContaining({ id_pago: 1, horas_desde_la_carga: 25, supera_24_horas: true }),
+      ]);
+      expect(mocks.repositorio.totalesPendientes).toHaveBeenCalledWith(
+        new Date("2026-10-08T15:00:00Z"),
+        new Date("2026-10-09T03:00:00Z"),
+      );
+      expect(mocks.repositorio.listarParaRevisar).toHaveBeenCalledWith({ estado: "PENDIENTE" }, "asc", {
+        limit: 5,
+        offset: 0,
+      });
     });
 
     it("listarMisTransferencias busca por el usuario que pide", async () => {
@@ -455,6 +593,7 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
       idsSinRendirDeProfesora: vi.fn(),
       rendir: vi.fn(),
       motivosSinRendir: vi.fn(),
+      obtenerCobranza: vi.fn(),
     };
     servicio = new PagoService(repositorio as unknown as PagoRepository, {} as IInfoProfesores);
   });
@@ -593,6 +732,30 @@ describe("PagoService: rendición del efectivo (US-19)", () => {
       repositorio.motivosSinRendir.mockResolvedValue(new Map([[7, motivo]]));
 
       await expect(servicio.rendir(7)).rejects.toBeInstanceOf(error);
+    });
+  });
+
+  describe("obtenerCobranza", () => {
+    it("convierte fechas con rangoDeDiasArgentinos y delega al repositorio", async () => {
+      const desde = new Date("2026-10-01T00:00:00Z");
+      const hasta = new Date("2026-10-15T00:00:00Z");
+      const esperado = { pagos: [], total: 0, totalesPorForma: [] };
+      repositorio.obtenerCobranza.mockResolvedValue(esperado);
+
+      const paginacion = { limit: 20, offset: 0 };
+      const resultado = await servicio.obtenerCobranza(
+        { desde, hasta, forma_pago: "EFECTIVO", id_profesora: 3 },
+        paginacion,
+      );
+
+      expect(resultado).toBe(esperado);
+      expect(repositorio.obtenerCobranza).toHaveBeenCalledWith(
+        expect.objectContaining({
+          forma_pago: "EFECTIVO",
+          id_profesora: 3,
+        }),
+        paginacion,
+      );
     });
   });
 });

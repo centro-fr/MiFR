@@ -7,7 +7,7 @@ import { GestionCuotasYPagosService } from "../gestion-cuotas-y-pagos.service.js
 import type { PagoService } from "../pago/pago.service.js";
 
 const solicitante: Solicitante = { idUsuario: 1, esPropietaria: true };
-const alumna: Solicitante = { idUsuario: 30, esPropietaria: false };
+const profesora: Solicitante = { idUsuario: 2, esPropietaria: false };
 const inscripcion = { id_inscripcion: 12 };
 const cuota = { inscripcion };
 const datos = { estado: "CONFIRMADO" };
@@ -46,7 +46,6 @@ function crearMocks() {
     },
     pagos: {
       profesoraQueCobra: vi.fn(registrar("profesoraQueCobra", 7)),
-      verificarTitular: vi.fn(registrarSincronico("verificarTitular")),
       prepararEfectivo: vi.fn(registrarSincronico("prepararEfectivo", datos)),
       prepararTransferencia: vi.fn(registrar("prepararTransferencia", datos)),
       prepararTransferenciaRecibida: vi.fn(registrar("prepararTransferenciaRecibida", datos)),
@@ -120,25 +119,33 @@ describe("GestionCuotasYPagosService", () => {
     expect(mocks.orden.slice(-2)).toEqual(["abrir transacción", "darAltaDefinitiva"]);
   });
 
-  it("la transferencia que informa el alumno verifica el titular primero y queda pendiente: no da el alta", async () => {
-    await gestion.informarTransferencia(transferencia, alumna);
+  it("la transferencia verifica primero que quien la informa podría cobrarla y queda pendiente: no da el alta", async () => {
+    await gestion.informarTransferencia(transferencia, profesora);
 
     expect(mocks.orden).toEqual([
       "buscarInscripcion",
-      "verificarTitular",
+      "profesoraQueCobra",
       "prepararCobro",
       "prepararTransferencia",
       "guardar",
     ]);
     expect(mocks.unidadDeTrabajo.ejecutar).not.toHaveBeenCalled();
-    expect(mocks.pagos.verificarTitular).toHaveBeenCalledWith(inscripcion, alumna);
+    expect(mocks.pagos.profesoraQueCobra).toHaveBeenCalledWith(inscripcion, profesora);
+  });
+
+  it("una profesora que no está a cargo no informa la transferencia, sin mirar el estado de la inscripción", async () => {
+    mocks.pagos.profesoraQueCobra.mockRejectedValue(new ForbiddenError("no está a cargo"));
+
+    await expect(gestion.informarTransferencia(transferencia, profesora)).rejects.toThrow(ForbiddenError);
+    expect(mocks.cuotas.prepararCobro).not.toHaveBeenCalled();
+    expect(mocks.pagos.guardar).not.toHaveBeenCalled();
   });
 
   it("a quien no es propietaria, una inscripción inexistente le responde igual que una ajena", async () => {
     mocks.cuotas.buscarInscripcion.mockResolvedValue(null);
 
-    await expect(gestion.informarTransferencia(transferencia, alumna)).rejects.toThrow(ForbiddenError);
-    expect(mocks.pagos.verificarTitular).not.toHaveBeenCalled();
+    await expect(gestion.informarTransferencia(transferencia, profesora)).rejects.toThrow(ForbiddenError);
+    expect(mocks.pagos.profesoraQueCobra).not.toHaveBeenCalled();
   });
 
   it("a la propietaria una inscripción inexistente le responde 404", async () => {

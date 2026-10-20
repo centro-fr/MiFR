@@ -152,6 +152,9 @@ DROP TABLE IF EXISTS rutinas CASCADE
 DROP TABLE IF EXISTS suplencias CASCADE
 ;
 
+DROP TABLE IF EXISTS seguimientos_inactividad CASCADE
+;
+
 DROP TABLE IF EXISTS tarifas_honorario CASCADE
 ;
 
@@ -192,8 +195,8 @@ CREATE TABLE alumnos
 	id_alumno serial NOT NULL,
 	id_usuario integer NOT NULL,
 	id_usuario_responsable integer NULL,	-- tutor; obligatorio si es menor
-	cont_emerg_nombre varchar(80) NULL,
-	cont_emerg_telefono varchar(20) NULL,
+	cont_emerg_nombre varchar(80) NOT NULL,
+	cont_emerg_telefono varchar(20) NOT NULL,
 	apto_medico boolean NOT NULL,	-- default false
 	fecha_apto_medico date NULL,
 	observaciones varchar(500) NULL,
@@ -486,6 +489,15 @@ CREATE TABLE rutinas
 )
 ;
 
+CREATE TABLE seguimientos_inactividad
+(
+	id_inscripcion integer NOT NULL,
+	estado varchar(10) NOT NULL,
+	fecha_registro timestamp without time zone NOT NULL,	-- deja de valer si el alumno asiste despues
+	id_usuario_registra integer NOT NULL
+)
+;
+
 CREATE TABLE suplencias
 (
 	id_clase integer NOT NULL,
@@ -770,6 +782,13 @@ CREATE INDEX "IXFK_rutinas_alumnos" ON rutinas (id_alumno ASC)
 ;
 
 CREATE INDEX "IXFK_rutinas_profesoras" ON rutinas (id_profesora ASC)
+;
+
+ALTER TABLE seguimientos_inactividad ADD CONSTRAINT "PK_seguimientos_inactividad"
+	PRIMARY KEY (id_inscripcion)
+;
+
+CREATE INDEX "IXFK_seguimientos_inactividad_usuarios" ON seguimientos_inactividad (id_usuario_registra ASC)
 ;
 
 ALTER TABLE suplencias ADD CONSTRAINT "PK_suplencias"
@@ -1134,7 +1153,7 @@ COMMENT ON COLUMN medidas_corporales.valor
 ;
 
 COMMENT ON TABLE notificaciones
-	IS 'Area de negocio: NOTIFICACIONES E INSIGNIAS Reglas: tipo IN (CUOTA_POR_VENCER,CUOTA_VENCIDA,RESUMEN_DIARIO,BIENVENIDA,CLASE_CANCELADA) | estado_envio IN (PENDIENTE,ENVIADA,ERROR)'
+	IS 'Area de negocio: NOTIFICACIONES E INSIGNIAS Unicidad: UK(id_usuario,id_cuota,tipo) || Reglas: tipo IN (CUOTA_POR_VENCER,CUOTA_VENCIDA,RESUMEN_DIARIO,BIENVENIDA,CLASE_CANCELADA) | estado_envio IN (PENDIENTE,ENVIADA,ERROR)'
 ;
 
 COMMENT ON COLUMN notificaciones.id_cuota
@@ -1301,6 +1320,10 @@ COMMENT ON TABLE suplencias
 	IS 'Area de negocio: INSCRIPCIONES Y CLASES'
 ;
 
+COMMENT ON TABLE seguimientos_inactividad
+	IS 'Area de negocio: INSCRIPCIONES Y CLASES Reglas: estado IN (CONTACTADO,GESTIONADO,IGNORADO)'
+;
+
  
 
  
@@ -1390,6 +1413,14 @@ ALTER TABLE planes ADD CONSTRAINT "FK_planes_actividad_exclusiva"
 	FOREIGN KEY (id_actividad_exclusiva) REFERENCES actividades (id_actividad)
 ;
 
+ALTER TABLE seguimientos_inactividad ADD CONSTRAINT "FK_seguimientos_inactividad_inscripciones"
+	FOREIGN KEY (id_inscripcion) REFERENCES inscripciones (id_inscripcion)
+;
+
+ALTER TABLE seguimientos_inactividad ADD CONSTRAINT "FK_seguimientos_inactividad_usuarios"
+	FOREIGN KEY (id_usuario_registra) REFERENCES usuarios (id_usuario)
+;
+
 ALTER TABLE suplencias ADD CONSTRAINT "FK_suplencias_prof_ausente"
 	FOREIGN KEY (id_prof_ausente) REFERENCES profesoras (id_profesora)
 ;
@@ -1456,6 +1487,7 @@ ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_motivo_baja" CHECK (m
 ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_x1" CHECK (estado <> 'BAJA' OR motivo_baja IS NOT NULL);
 ALTER TABLE inscripciones ADD CONSTRAINT "ck_inscripciones_x2" CHECK (detalle_baja IS NULL OR motivo_baja = 'OTRO');
 ALTER TABLE clases ADD CONSTRAINT "ck_clases_estado" CHECK (estado IN ('PROGRAMADA', 'DICTADA', 'CANCELADA'));
+ALTER TABLE seguimientos_inactividad ADD CONSTRAINT "ck_seguimientos_inactividad_estado" CHECK (estado IN ('CONTACTADO', 'GESTIONADO', 'IGNORADO'));
 ALTER TABLE cuotas ADD CONSTRAINT "ck_cuotas_x1" CHECK (numero_cuota >= 1);
 ALTER TABLE cuotas ADD CONSTRAINT "ck_cuotas_x2" CHECK (monto >= 0);
 ALTER TABLE pagos ADD CONSTRAINT "ck_pagos_forma_pago" CHECK (forma_pago IN ('EFECTIVO', 'TRANSFERENCIA'));

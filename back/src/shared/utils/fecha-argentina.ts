@@ -17,6 +17,18 @@ export function fechaActualArgentina(ahora: Date = new Date()): Date {
   return new Date(`${formateadorDiaArgentino.format(ahora)}T00:00:00Z`);
 }
 
+const formateadorHoraArgentina = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ZONA_HORARIA_ARGENTINA,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+// Devuelve la hora argentina actual en formato HH:MM (24 hs).
+export function horaActualArgentina(ahora: Date = new Date()): string {
+  return formateadorHoraArgentina.format(ahora);
+}
+
 // Argentina está en UTC-3 todo el año: no tiene horario de verano desde 2009.
 const HORAS_DETRAS_DE_UTC = 3;
 

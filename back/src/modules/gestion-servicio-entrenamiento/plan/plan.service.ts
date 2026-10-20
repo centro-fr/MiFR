@@ -34,6 +34,13 @@ export class PlanService implements IInfoPlanes {
     return this.repositorio.listar(filtro);
   }
 
+  listarVigentes(filtro?: { id_actividad_exclusiva?: number }): Promise<Plan[]> {
+    return this.repositorio.listar({
+      incluirBajas: false,
+      id_actividad_exclusiva: filtro?.id_actividad_exclusiva,
+    });
+  }
+
   async obtenerPorId(id: number): Promise<Plan> {
     const plan = await this.repositorio.buscarPorId(id);
     if (!plan) throw new NotFoundError("Plan no encontrado");

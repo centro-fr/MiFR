@@ -45,6 +45,10 @@ export class UsuarioService implements IInfoUsuarios {
     return this.repositorio.buscarPorDni(dni);
   }
 
+  listarPropietariasActivas(): Promise<UsuarioConRoles[]> {
+    return this.repositorio.listarPropietariasActivas();
+  }
+
   // Quien fue dado de alta con su email y sin google_id queda vinculado en su primer login. Una cuenta
   // ya vinculada no se reasigna a otra cuenta de Google con el mismo email: eso se lo quitaría a su dueña.
   async identificarPorGoogle(googleId: string, email: string): Promise<UsuarioConRoles | null> {

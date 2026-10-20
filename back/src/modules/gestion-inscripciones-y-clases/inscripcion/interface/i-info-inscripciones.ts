@@ -1,7 +1,10 @@
 import type {
   FiltroAlumnosPorInscripcion,
+  FiltroInscripcionesParaInactividad,
+  InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscripcionParaInactividad,
   InscriptoDeHorario,
   ResumenInscripcionAlumno,
 } from "../inscripcion.types.js";
@@ -35,4 +38,16 @@ export interface IInfoInscripciones {
   // Lugares ocupados por horario con la regla del cupo: las activas y las pre-inscripciones con la
   // reserva vigente. Es la ocupación que se muestra.
   contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>>;
+  // US-23: las ACTIVA o BAJA que empezaron hasta `hasta` y no se dieron de baja antes de `desde` (días
+  // de Argentina). El DER no guarda cuándo se activó una inscripción, así que una BAJA puede ser una
+  // pre-inscripción que nunca se pagó: quien liquida lo distingue con lo cobrado (IInfoCuotas).
+  aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]>;
+  // US-22: las ACTIVA de plan mensual de alumnos no dados de baja. La clase suelta no tiene racha semanal
+  // y una pre-inscripción todavía no asiste.
+  listarParaInactividad(filtro: FiltroInscripcionesParaInactividad): Promise<InscripcionParaInactividad[]>;
+  // US-36: cantidad de inscripciones activas agrupadas por plan de alumnos no dados de baja.
+  contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>>;
 }

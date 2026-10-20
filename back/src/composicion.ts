@@ -1,4 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
+import { GestionNotificacionesService } from "./modules/gestion-notificaciones/gestion-notificaciones.service.js";
+import { NotificacionRepository } from "./modules/gestion-notificaciones/notificacion/notificacion.repository.js";
+import { NotificacionService } from "./modules/gestion-notificaciones/notificacion/notificacion.service.js";
+import { PlanificadorNotificacionesService } from "./modules/gestion-notificaciones/planificador-notificaciones/planificador-notificaciones.service.js";
+import { DetectorInactividadService } from "./modules/reportes/detector-inactividad/detector-inactividad.service.js";
+import { GeneradorInformesService } from "./modules/reportes/generador-informes/generador-informes.service.js";
+import { ReportesService } from "./modules/reportes/reportes.service.js";
+import { ResumenDiarioPropietariaService } from "./modules/gestion-notificaciones/resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 import type { AppDependencies } from "./app.js";
 import { GestionUsuariosService } from "./modules/gestion-usuarios/gestion-usuarios.service.js";
 import type { IAutenticacionGoogleAuth } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
@@ -56,13 +64,16 @@ export interface PiezasDeInfraestructura {
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
-// tests de integración dan el alta definitiva sin pasar por un cobro; y el cierre automático de la
-// asistencia (US-21), que index.ts corre con un intervalo y los tests con la hora que necesitan.
+// tests de integración dan el alta definitiva sin pasar por un cobro; y los dos procesos que index.ts
+// corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
+// (US-21) y los avisos de cuota (US-25).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
   infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
+  planificadorNotificaciones: PlanificadorNotificacionesService;
+  resumenDiario: ResumenDiarioPropietariaService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -112,11 +123,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new CalculadorHabilitacion(),
     parametrosService,
   );
-  const gestionCuotasYPagos = new GestionCuotasYPagosService(
-    cuotaService,
-    new PagoService(new PagoRepository(prisma), profesorService),
-    unidadDeTrabajo,
-  );
+  const pagoService = new PagoService(new PagoRepository(prisma), profesorService);
+  const gestionCuotasYPagos = new GestionCuotasYPagosService(cuotaService, pagoService, unidadDeTrabajo);
   const claseService = new ClaseService(new ClaseRepository(prisma), horarioService, profesorService);
   const asistenciaService = new AsistenciaService(
     new AsistenciaRepository(prisma),
@@ -139,12 +147,26 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     unidadDeTrabajo,
     new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
+  const notificacionService = new NotificacionService(new NotificacionRepository(prisma));
+  const planificadorNotificaciones = new PlanificadorNotificacionesService(
+    cuotaService,
+    parametrosService,
+    notificacionService,
+  );
   const gestionPersonas = new GestionPersonasService(
     profesorService,
     horarioService,
     alumnoService,
     inscripcionService,
     cuotaService,
+  );
+
+  const resumenDiario = new ResumenDiarioPropietariaService(
+    pagoService,
+    cuotaService,
+    parametrosService,
+    usuarioService,
+    notificacionService,
   );
 
   return {
@@ -154,6 +176,27 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionServicioEntrenamiento,
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
+      gestionNotificaciones: new GestionNotificacionesService(
+        resumenDiario,
+        notificacionService,
+        planificadorNotificaciones,
+      ),
+      reportes: new ReportesService(
+        new DetectorInactividadService(
+          inscripcionService,
+          asistenciaService,
+          cuotaService,
+          alumnoService,
+          parametrosService,
+        ),
+        new GeneradorInformesService(
+          cuotaService,
+          pagoService,
+          planService,
+          inscripcionService,
+          alumnoService,
+        ),
+      ),
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,
@@ -161,5 +204,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     infoInscripciones: inscripcionService,
     infoClases: claseService,
     cierreAsistencia,
+    planificadorNotificaciones,
+    resumenDiario,
   };
 }

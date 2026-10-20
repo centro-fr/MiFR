@@ -26,18 +26,20 @@ export function createPagoRoutes(logica: ILogicaPagos, acceso: ControlDeAcceso):
   const propietariaRinde = [acceso.rol("PROPIETARIA"), acceso.permiso("PAGOS_RENDICION_VER")];
   // Alumno y tutor no tienen permisos: lo suyo se resuelve por pertenencia, en el service.
   const alumnoOTutor = acceso.rol("ALUMNO", "TUTOR");
+  // US-16: la transferencia la informa quien cobra, no el alumno; con qué inscripciones, lo decide el service.
+  const registraPagos = acceso.permiso("PAGOS_REGISTRAR");
 
   router.use(acceso.sesion);
 
   router.post(
     "/efectivo",
-    acceso.permiso("PAGOS_REGISTRAR"),
+    registraPagos,
     validate({ body: registrarEfectivoSchema }),
     controller.registrarEfectivo,
   );
   router.post(
     "/transferencia",
-    alumnoOTutor,
+    registraPagos,
     validate({ body: informarTransferenciaSchema }),
     controller.informarTransferencia,
   );

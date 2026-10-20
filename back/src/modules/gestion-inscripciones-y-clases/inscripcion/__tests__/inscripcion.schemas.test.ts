@@ -3,10 +3,52 @@ import {
   actualizarHorariosSchema,
   crearInscripcionSchema,
   darDeBajaAlumnoSchema,
+  preinscribirSchema,
   listarInscripcionesQuerySchema,
 } from "../inscripcion.schemas.js";
 
 const alta = { id_alumno: 5, id_plan: 1, id_profesora: 3, ids_horarios: [8] };
+
+describe("preinscribirSchema", () => {
+  const alumno = {
+    nombre: "Tomás",
+    apellido: "Pérez",
+    email: "Tomas@Gmail.com",
+    fecha_nacimiento: "1998-04-12",
+    dni: "40111222",
+    cont_emerg_nombre: "Laura Pérez",
+    cont_emerg_telefono: "3794 112233",
+  };
+  const { id_alumno: _, ...inscripcion } = alta;
+
+  it("valida el alumno como POST /alumnos y la inscripción como POST /inscripciones, sin id_alumno", () => {
+    expect(preinscribirSchema.parse({ alumno, inscripcion: { ...inscripcion, id_alumno: 99 } })).toEqual({
+      alumno: {
+        nombre: "Tomás",
+        apellido: "Pérez",
+        email: "tomas@gmail.com",
+        fecha_nacimiento: new Date("1998-04-12T00:00:00Z"),
+        dni: "40111222",
+        cont_emerg_nombre: "Laura Pérez",
+        cont_emerg_telefono: "3794 112233",
+        apto_medico: false,
+      },
+      inscripcion: { ...inscripcion, sin_cargo: false },
+    });
+  });
+
+  it.each([
+    [{ inscripcion }],
+    [{ alumno }],
+    [{ alumno: { ...alumno, email: "no-es-email" }, inscripcion }],
+    [{ alumno: { ...alumno, fecha_nacimiento: "2026-02-30" }, inscripcion }],
+    [{ alumno, inscripcion: { ...inscripcion, ids_horarios: [8, 8] } }],
+    [{ alumno, inscripcion: { ...inscripcion, medidas: { peso_kg: 62.5 } } }],
+    [{ alumno, inscripcion: { ...inscripcion, id_plan: -0 } }],
+  ])("rechaza %o", (cuerpo) => {
+    expect(preinscribirSchema.safeParse(cuerpo).success).toBe(false);
+  });
+});
 
 describe("crearInscripcionSchema", () => {
   it("acepta peso y talla opcionales y rechaza valores fuera de rango, en texto o incompletos", () => {

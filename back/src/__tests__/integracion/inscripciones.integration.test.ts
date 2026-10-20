@@ -4,11 +4,12 @@ import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
-import { crearAlumno, crearHorarioDePrueba, crearPlan } from "./fabricas.js";
+import { crearAlumno, crearHorarioDePrueba, crearInscripcionDePrueba, crearPlan } from "./fabricas.js";
 
 // Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 y PI-44: preinscripción (con peso y talla si la
 // actividad los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
-// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios.
+// reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios. PI-66: las inscripciones a
+// cargo de cada profesora en un período, para la liquidación de honorarios.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -177,6 +178,25 @@ describe("PI-20: preinscripción y cupos", () => {
     expect(excedeClasesSemanales.status).toBe(400);
     expect(horarioCarla.id_horario).not.toBe(funcionales[0].id_horario);
     expect(await prisma.inscripciones.count()).toBe(inscripcionesDeDemo);
+  });
+
+  it("rechaza con 400 horarios de dos actividades de la misma profesora, aunque el plan no tenga actividad exclusiva", async () => {
+    const alumno = await crearAlumno(prisma);
+    const [funcional] = await horariosFuncionales();
+    const hiit = await crearHorarioDePrueba(prisma, {
+      id_actividad: datosDemo.idActividad.get("HIIT")!,
+      id_profesora: datosDemo.idProfesora.get(LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "11:00",
+      hora_fin: "12:00",
+    });
+    const cantidadAntes = await prisma.inscripciones.count();
+
+    const respuesta = await inscribir(alumno.id_alumno, [funcional.id_horario, hiit.id_horario]);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error.message).toBe("Todos los horarios deben pertenecer a una misma actividad");
+    expect(await prisma.inscripciones.count()).toBe(cantidadAntes);
   });
 });
 
@@ -900,5 +920,214 @@ describe("PI-44: reactivar a quien nunca pagó", () => {
       usuario: { estado: "ACTIVO", roles: [{ rol: { codigo: "ALUMNO" } }] },
     });
     expect((await login("sin.pago@example.com")).status).toBe(200);
+  });
+});
+
+describe("PI-64: el alumno y su pre-inscripción en un solo pedido", () => {
+  const ADULTO = {
+    nombre: "Tomás",
+    apellido: "Pérez",
+    email: "tomas.perez@example.com",
+    dni: "40111222",
+    fecha_nacimiento: "1998-04-12",
+    cont_emerg_nombre: "Laura Pérez",
+    cont_emerg_telefono: "3794 112233",
+  };
+  const MENOR_CON_TUTOR = {
+    nombre: "Juana",
+    apellido: "Sosa",
+    dni: "50111222",
+    fecha_nacimiento: "2014-03-02",
+    cont_emerg_nombre: "Laura Sosa",
+    cont_emerg_telefono: "3794 112233",
+    tutor: {
+      nombre: "Laura",
+      apellido: "Sosa",
+      dni: "30999888",
+      telefono: "3794 112233",
+      email: "laura.sosa@example.com",
+      fecha_nacimiento: "1985-03-02",
+    },
+  };
+
+  function preinscribir(token: string, alumno: object, idsHorarios: number[], cambios: object = {}) {
+    return como(token, "post", "/preinscripciones").send({
+      alumno,
+      inscripcion: {
+        id_plan: datosDemo.idPlan.get("Básico"),
+        id_profesora: datosDemo.idProfesora.get(LUCIA),
+        ids_horarios: idsHorarios,
+        ...cambios,
+      },
+    });
+  }
+
+  async function contarFilas() {
+    return {
+      usuarios: await prisma.usuarios.count(),
+      alumnos: await prisma.alumnos.count(),
+      inscripciones: await prisma.inscripciones.count(),
+      registros: await prisma.registros_progreso.count(),
+    };
+  }
+
+  it("crea el alumno inactivo y su pre-inscripción, y devuelve los dos ids", async () => {
+    const [horario] = await horariosFuncionales();
+
+    const respuesta = await preinscribir(tokenMarina, ADULTO, [horario.id_horario]);
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body).toEqual({ id_alumno: expect.any(Number), id_inscripcion: expect.any(Number) });
+    const alumno = await prisma.alumnos.findUniqueOrThrow({
+      where: { id_alumno: respuesta.body.id_alumno },
+      include: { usuario: true },
+    });
+    expect(alumno).toMatchObject({ estado: "INACTIVO", usuario: { dni: "40111222", estado: "INACTIVO" } });
+    expect(await obtenerInscripcion(respuesta.body.id_inscripcion)).toMatchObject({
+      id_alumno: respuesta.body.id_alumno,
+      estado: "PREINSCRIPTA",
+      horarios: [expect.objectContaining({ id_horario: horario.id_horario })],
+    });
+  });
+
+  it("sin cupo responde 409 sin guardar el alumno ni el tutor, y el reintento con otro horario funciona", async () => {
+    const idHorarioLleno = await crearHorarioConCupo(1);
+    const ocupante = await crearAlumno(prisma);
+    expect((await inscribir(ocupante.id_alumno, [idHorarioLleno])).status).toBe(201);
+    const antes = await contarFilas();
+
+    const sinCupo = await preinscribir(tokenMarina, MENOR_CON_TUTOR, [idHorarioLleno]);
+
+    expect(sinCupo.status).toBe(409);
+    expect(sinCupo.body.error.message).toContain("No hay cupo disponible");
+    expect(await contarFilas()).toEqual(antes);
+    expect(await prisma.usuarios.findFirst({ where: { dni: { in: ["50111222", "30999888"] } } })).toBeNull();
+
+    const [horarioConLugar] = await horariosFuncionales();
+    const reintento = await preinscribir(tokenMarina, MENOR_CON_TUTOR, [horarioConLugar.id_horario]);
+    expect(reintento.status).toBe(201);
+    const menor = await prisma.alumnos.findUniqueOrThrow({
+      where: { id_alumno: reintento.body.id_alumno },
+      include: { responsable: true },
+    });
+    expect(menor.responsable).toMatchObject({ dni: "30999888", email: "laura.sosa@example.com" });
+  });
+
+  it("con las medidas que pide la actividad guarda la medición inicial; sin ellas, no guarda nada", async () => {
+    const horario = await prisma.horarios.findFirstOrThrow({
+      where: {
+        id_actividad: datosDemo.idActividad.get("ENTRENAMIENTO_PERS"),
+        id_profesora: datosDemo.idProfesora.get(CARLA),
+        fecha_baja: null,
+      },
+    });
+    const personalizado = {
+      id_plan: datosDemo.idPlan.get("Personalizado 2 días"),
+      id_profesora: datosDemo.idProfesora.get(CARLA),
+    };
+    const antes = await contarFilas();
+
+    const sinMedidas = await preinscribir(tokenMarina, ADULTO, [horario.id_horario], personalizado);
+    expect(sinMedidas.status).toBe(400);
+    expect(await contarFilas()).toEqual(antes);
+
+    const conMedidas = await preinscribir(tokenMarina, ADULTO, [horario.id_horario], {
+      ...personalizado,
+      medidas: { peso_kg: 62.5, talla_cm: 168 },
+    });
+    expect(conMedidas.status).toBe(201);
+    expect(await prisma.registros_progreso.count({ where: { id_alumno: conMedidas.body.id_alumno } })).toBe(
+      1,
+    );
+  });
+
+  it("un DNI ya registrado responde 409 ALUMNO_EXISTENTE sin crear la inscripción", async () => {
+    const existente = await crearAlumno(prisma, { dni: "40111222" });
+    const [horario] = await horariosFuncionales();
+    const antes = await contarFilas();
+
+    const respuesta = await preinscribir(tokenMarina, ADULTO, [horario.id_horario]);
+
+    expect(respuesta.status).toBe(409);
+    expect(respuesta.body.error).toMatchObject({
+      code: "ALUMNO_EXISTENTE",
+      message: expect.stringContaining(`alumno ${existente.id_alumno}`),
+    });
+    expect(await contarFilas()).toEqual(antes);
+  });
+
+  it("una profesora pre-inscribe a su nombre; a nombre de otra o con un tutor existente responde 403 sin guardar nada", async () => {
+    const tokenLucia = await entorno.iniciarSesion(LUCIA);
+    const [horario] = await horariosFuncionales();
+    const antes = await contarFilas();
+
+    const deOtra = await preinscribir(tokenLucia, ADULTO, [horario.id_horario], {
+      id_profesora: datosDemo.idProfesora.get(CARLA),
+    });
+    expect(deOtra.status).toBe(403);
+    expect(await contarFilas()).toEqual(antes);
+
+    const tutora = await prisma.usuarios.findUniqueOrThrow({ where: { email: EMAIL_MULTIROL_DEMO } });
+    const conTutorExistente = await preinscribir(
+      tokenLucia,
+      { ...MENOR_CON_TUTOR, tutor: { id_usuario: tutora.id_usuario } },
+      [horario.id_horario],
+    );
+    expect(conTutorExistente.status).toBe(403);
+    expect(await contarFilas()).toEqual(antes);
+
+    const propia = await preinscribir(tokenLucia, ADULTO, [horario.id_horario]);
+    expect(propia.status).toBe(201);
+  });
+});
+
+describe("PI-66: inscripciones a cargo en un período", () => {
+  it("aCargoEnPeriodo trae las activas y las bajas del mes, con el borde de la baja en hora argentina", async () => {
+    const plan = await crearPlan(prisma);
+    const idProfesora = datosDemo.idProfesora.get(LUCIA)!;
+    const [horario] = await horariosFuncionales();
+    const inscribirDePrueba = async (estado: "PREINSCRIPTA" | "ACTIVA" | "BAJA", fecha_inicio: Date) => {
+      const { id_alumno } = await crearAlumno(prisma);
+      const { id_inscripcion } = await crearInscripcionDePrueba(prisma, {
+        id_alumno,
+        plan,
+        id_profesora: idProfesora,
+        id_horario: horario.id_horario,
+        estado,
+        fecha_inicio,
+      });
+      return id_inscripcion;
+    };
+    const darDeBajaEl = (id_inscripcion: number, fecha_baja: Date) =>
+      prisma.inscripciones.update({ where: { id_inscripcion }, data: { fecha_baja } });
+
+    const activa = await inscribirDePrueba("ACTIVA", new Date("2026-09-15T00:00:00Z"));
+    await inscribirDePrueba("PREINSCRIPTA", new Date("2026-10-05T00:00:00Z"));
+    await inscribirDePrueba("ACTIVA", new Date("2026-11-01T00:00:00Z"));
+    const bajaDelUnoDeOctubre = await inscribirDePrueba("BAJA", new Date("2026-09-01T00:00:00Z"));
+    // 00:30 del 01/10 en Argentina.
+    await darDeBajaEl(bajaDelUnoDeOctubre, new Date("2026-10-01T03:30:00Z"));
+    const bajaDeSeptiembre = await inscribirDePrueba("BAJA", new Date("2026-09-01T00:00:00Z"));
+    // 23:30 del 30/09 en Argentina, que en UTC ya es octubre.
+    await darDeBajaEl(bajaDeSeptiembre, new Date("2026-10-01T02:30:00Z"));
+
+    const aCargo = await infoInscripciones.aCargoEnPeriodo(
+      new Date("2026-10-01T00:00:00Z"),
+      new Date("2026-10-31T00:00:00Z"),
+    );
+
+    expect(aCargo.filter(({ id_plan }) => id_plan === plan.id_plan)).toEqual([
+      expect.objectContaining({
+        id_inscripcion: activa,
+        estado: "ACTIVA",
+        fecha_baja: null,
+        sin_cargo: false,
+      }),
+      expect.objectContaining({
+        id_inscripcion: bajaDelUnoDeOctubre,
+        estado: "BAJA",
+        id_profesora: idProfesora,
+      }),
+    ]);
   });
 });

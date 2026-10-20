@@ -1,3 +1,5 @@
+import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
+import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,7 +32,7 @@ function crearLogicaMock() {
     registrarTransferenciaRecibida: vi.fn().mockResolvedValue(pago),
     aprobarTransferencia: vi.fn().mockResolvedValue(pago),
     rechazarTransferencia: vi.fn().mockResolvedValue({ ...pago, estado: "RECHAZADO" }),
-    listarTransferencias: vi.fn().mockResolvedValue([]),
+    listarTransferencias: vi.fn().mockResolvedValue({ datos: [], total: 0, limit: 100, offset: 0 }),
     listarMisTransferencias: vi.fn().mockResolvedValue([]),
     obtenerComprobante: vi.fn().mockResolvedValue({ numero: 7 }),
     listarEfectivoPendiente: vi.fn().mockResolvedValue({ cantidad: 0, total: 0, profesoras: [] }),
@@ -51,6 +53,8 @@ function crearApp(logica: ReturnType<typeof crearLogicaMock>, autorizacion: IAut
     gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
     gestionCuotasYPagos: logica as unknown as ILogicaCuotasPagos,
     difusionPublica: logicaDifusionPublicaNoConfigurada,
+    gestionNotificaciones: logicaNotificacionesNoConfigurada,
+    reportes: logicaInformesNoConfigurada,
     autenticacion,
     autorizacion,
   });
@@ -106,19 +110,25 @@ describe("rutas de pagos", () => {
   });
 
   describe("transferencias (US-16)", () => {
-    it.each(["alumna", "tutora"])("la %s informa una transferencia", async (quien) => {
+    it.each([
+      ["profesora", false],
+      ["propietaria", true],
+    ] as const)("la %s informa una transferencia con PAGOS_REGISTRAR", async (quien, esPropietaria) => {
       const respuesta = await como(quien, "post", "/transferencia").send(transferencia);
 
       expect(respuesta.status).toBe(201);
+      expect(autorizacion.tienePermiso).toHaveBeenCalledWith(ROLES[quien].usuarioId, "PAGOS_REGISTRAR");
       expect(logica.informarTransferencia).toHaveBeenCalledWith(
         expect.objectContaining({ fecha_hora_transferencia: new Date("2026-10-01T13:30:00Z") }),
-        { idUsuario: ROLES[quien].usuarioId, esPropietaria: false },
+        { idUsuario: ROLES[quien].usuarioId, esPropietaria },
       );
     });
 
-    it("la propietaria y la profesora no informan transferencias como alumnas", async () => {
-      expect((await como("propietaria", "post", "/transferencia").send(transferencia)).status).toBe(403);
-      expect((await como("profesora", "post", "/transferencia").send(transferencia)).status).toBe(403);
+    it.each(["alumna", "tutora"])("la %s, sin PAGOS_REGISTRAR, recibe 403 al informar", async (quien) => {
+      vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
+
+      expect((await como(quien, "post", "/transferencia").send(transferencia)).status).toBe(403);
+      expect(logica.informarTransferencia).not.toHaveBeenCalled();
     });
 
     it("la alumna ve sus transferencias", async () => {
@@ -149,6 +159,7 @@ describe("rutas de pagos", () => {
       expect(logica.listarTransferencias).toHaveBeenCalledWith({
         estado: "PENDIENTE",
         id_alumno: 5,
+        orden: "asc",
         limit: 100,
         offset: 0,
       });
@@ -157,6 +168,28 @@ describe("rutas de pagos", () => {
         { confirmar_monto_distinto: true },
         { idUsuario: 1, esPropietaria: true },
       );
+    });
+
+    it("lista por tipo, orden y días de carga, y rechaza un rango invertido con 400", async () => {
+      const respuesta = await como(
+        "propietaria",
+        "get",
+        "/transferencias?tipo=RENOVACION&orden=desc&desde=2026-10-01&hasta=2026-10-10",
+      );
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body).toEqual({ datos: [], total: 0, limit: 100, offset: 0 });
+      expect(logica.listarTransferencias).toHaveBeenCalledWith({
+        tipo: "RENOVACION",
+        orden: "desc",
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-10T00:00:00Z"),
+        limit: 100,
+        offset: 0,
+      });
+
+      const invertido = await como("propietaria", "get", "/transferencias?desde=2026-10-10&hasta=2026-10-01");
+      expect(invertido.status).toBe(400);
     });
 
     it("aprueba un pedido sin cuerpo, como lo manda el front en el caso normal", async () => {

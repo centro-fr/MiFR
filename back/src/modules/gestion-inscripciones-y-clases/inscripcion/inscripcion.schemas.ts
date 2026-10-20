@@ -4,6 +4,7 @@ import { fechaSchema as fecha } from "../../../shared/utils/esquemas-fecha.js";
 import { medidaCorporalSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
+import { crearAlumnoSchema } from "../../gestion-personas/alumno/alumno.schemas.js";
 
 // El tope es el máximo de clases por semana de un plan (ck_planes_x1): más horarios no entran en
 // ninguno, y sin tope una lista enorme llegaba hasta las consultas de cupo.
@@ -37,6 +38,12 @@ export const crearInscripcionSchema = z.object({
   medidas: medidas.optional(),
 });
 
+// US-05: el alumno nuevo y su pre-inscripción en un solo pedido, para que no quede uno sin la otra.
+export const preinscribirSchema = z.object({
+  alumno: crearAlumnoSchema,
+  inscripcion: crearInscripcionSchema.omit({ id_alumno: true }),
+});
+
 export const reactivarAlumnoSchema = z.object(datosDePlanYHorarios);
 
 export const cambiarPlanSchema = z.object(datosDePlanYHorarios);
@@ -68,6 +75,7 @@ export const inscripcionIdParamSchema = z.object({ id: idDesdeTextoSchema });
 export const alumnoIdParamSchema = z.object({ id: idDesdeTextoSchema });
 
 export type CrearInscripcionInput = z.infer<typeof crearInscripcionSchema>;
+export type PreinscribirInput = z.infer<typeof preinscribirSchema>;
 export type ReactivarAlumnoInput = z.infer<typeof reactivarAlumnoSchema>;
 export type CambiarPlanInput = z.infer<typeof cambiarPlanSchema>;
 export type ActualizarHorariosInput = z.infer<typeof actualizarHorariosSchema>;

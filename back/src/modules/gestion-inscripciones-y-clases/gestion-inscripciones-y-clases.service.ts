@@ -3,6 +3,7 @@ import type {
   CambiarPlanInput,
   CrearInscripcionInput,
   DarDeBajaAlumnoInput,
+  PreinscribirInput,
   ReactivarAlumnoInput,
 } from "./inscripcion/inscripcion.schemas.js";
 import { ConflictError } from "../../shared/errors/app-error.js";
@@ -23,7 +24,11 @@ import type {
   ILogicaInscripcionesYClases,
   SituacionCuotaEnClase,
 } from "./interface/i-logica-inscripciones-y-clases.js";
-import type { FiltroInscripciones, InscripcionConDatos } from "./inscripcion/inscripcion.types.js";
+import type {
+  FiltroInscripciones,
+  InscripcionConDatos,
+  Preinscripcion,
+} from "./inscripcion/inscripcion.types.js";
 import type {
   CambiarSuplenciaInput,
   ListarSuplenciasQuery,
@@ -59,6 +64,10 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
 
   crearInscripcion(input: CrearInscripcionInput, solicitante: Solicitante): Promise<InscripcionConDatos> {
     return this.inscripciones.crear(input, solicitante);
+  }
+
+  preinscribir(input: PreinscribirInput, solicitante: Solicitante): Promise<Preinscripcion> {
+    return this.inscripciones.preinscribir(input, solicitante);
   }
 
   listarInscripciones(filtro: FiltroInscripciones, solicitante: Solicitante): Promise<InscripcionConDatos[]> {

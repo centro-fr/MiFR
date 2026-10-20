@@ -19,10 +19,10 @@ import type {
   FiltroEfectivo,
   FiltroTransferencias,
   PaginaRendiciones,
+  PaginaTransferencias,
   Pago,
   ResultadoRendicion,
   TransferenciaConAlumno,
-  TransferenciaEnRevision,
 } from "./pago/pago.types.js";
 
 // Realiza ILogicaCuotasPagos coordinando Cuota (qué cuota se cobra y el alta definitiva) y Pago
@@ -49,10 +49,13 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     return this.conAltaDefinitiva(inscripcion.id_inscripcion, () => this.pagos.guardar(cuota, datos));
   }
 
-  // Queda pendiente: no da el alta ni cambia la habilitación hasta que la apruebe la propietaria.
+  // Queda pendiente: no da el alta ni cambia la habilitación hasta que la apruebe la propietaria. La
+  // informa quien podría cobrarla en efectivo: una transferencia pendiente frena otros cobros, así que
+  // una profesora no puede dejarla en una inscripción ajena. El dinero va a la cuenta de la propietaria:
+  // no queda nada para rendir.
   async informarTransferencia(input: InformarTransferenciaInput, solicitante: Solicitante): Promise<Pago> {
     const inscripcion = await this.inscripcionACobrar(input.id_inscripcion, solicitante);
-    this.pagos.verificarTitular(inscripcion, solicitante);
+    await this.pagos.profesoraQueCobra(inscripcion, solicitante);
     const cuota = await this.cuotas.prepararCobro(inscripcion);
     const datos = await this.pagos.prepararTransferencia(cuota, input, solicitante);
     return this.pagos.guardar(cuota, datos);
@@ -86,7 +89,7 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     return this.pagos.rechazar(id, input, solicitante);
   }
 
-  listarTransferencias(filtro: FiltroTransferencias): Promise<TransferenciaEnRevision[]> {
+  listarTransferencias(filtro: FiltroTransferencias): Promise<PaginaTransferencias> {
     return this.pagos.listarTransferencias(filtro);
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fechaActualArgentina, instanteArgentino } from "../fecha-argentina.js";
+import { fechaActualArgentina, horaActualArgentina, instanteArgentino } from "../fecha-argentina.js";
 
 describe("fechaActualArgentina", () => {
   it("devuelve el día argentino aunque en UTC ya sea el día siguiente", () => {
@@ -28,6 +28,18 @@ describe("fechaActualArgentina", () => {
 
   it("usa el reloj actual si no recibe fecha", () => {
     expect(fechaActualArgentina()).toBeInstanceOf(Date);
+  });
+});
+
+describe("horaActualArgentina", () => {
+  it("formatea la hora en zona horaria de Argentina (UTC-3)", () => {
+    // 23:30 UTC -> 20:30 Argentina
+    const ahora = new Date("2026-10-18T23:30:00Z");
+    expect(horaActualArgentina(ahora)).toBe("20:30");
+  });
+
+  it("usa el reloj actual si no recibe fecha", () => {
+    expect(horaActualArgentina()).toMatch(/^\d{2}:\d{2}$/);
   });
 });
 

@@ -13,11 +13,15 @@ import {
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroInscripciones,
+  type FiltroInscripcionesParaInactividad,
+  type InscripcionACargo,
   type InscripcionGuardada,
+  type InscripcionParaInactividad,
   type InscriptoDeHorario,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
 import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
+import { rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 
 const ESTADOS_VIGENTES = ["PREINSCRIPTA", "ACTIVA"] as const;
 
@@ -610,6 +614,57 @@ export class InscripcionRepository {
     return contarLugaresOcupados(this.prisma, idsHorarios, inicioReservas);
   }
 
+  // Sin tope: crece con las inscripciones de un mes, no con el historial.
+  aCargoEnPeriodo(desde: Date, hasta: Date): Promise<InscripcionACargo[]> {
+    return this.prisma.inscripciones.findMany({
+      where: {
+        estado: { in: ["ACTIVA", "BAJA"] },
+        fecha_inicio: { lte: hasta },
+        OR: [{ fecha_baja: null }, { fecha_baja: { gte: rangoDeDiasArgentinos(desde).inicio } }],
+      },
+      select: {
+        id_inscripcion: true,
+        id_alumno: true,
+        id_profesora: true,
+        id_plan: true,
+        sin_cargo: true,
+        estado: true,
+        fecha_inicio: true,
+        fecha_baja: true,
+      },
+      orderBy: [{ id_profesora: "asc" }, { id_inscripcion: "asc" }],
+    });
+  }
+
+  // Sin tope: crece con los alumnos activos, no con el historial. Quien lista pagina después de calcular
+  // las rachas, que no están en la base.
+  async listarParaInactividad(
+    filtro: FiltroInscripcionesParaInactividad,
+  ): Promise<InscripcionParaInactividad[]> {
+    const nombre = { select: { nombre: true, apellido: true } } as const;
+    const filas = await this.prisma.inscripciones.findMany({
+      where: {
+        estado: "ACTIVA",
+        plan: { tipo: "MENSUAL" },
+        alumno: { estado: { not: "BAJA" } },
+        ...(filtro.id_inscripcion === undefined ? {} : { id_inscripcion: filtro.id_inscripcion }),
+        ...(filtro.id_profesora === undefined ? {} : { id_profesora: filtro.id_profesora }),
+        ...(filtro.id_plan === undefined ? {} : { id_plan: filtro.id_plan }),
+      },
+      select: {
+        id_inscripcion: true,
+        id_alumno: true,
+        plan: { select: { id_plan: true, nombre: true } },
+        profesora: { select: { id_profesora: true, usuario: nombre } },
+      },
+      orderBy: { id_inscripcion: "asc" },
+    });
+    return filas.map(({ profesora, ...inscripcion }) => ({
+      ...inscripcion,
+      profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
+    }));
+  }
+
   private async agregarHorarios(
     transaccion: Transaccion,
     idInscripcion: number,
@@ -632,5 +687,25 @@ export class InscripcionRepository {
         });
       }
     }
+  }
+
+  // US-36: cantidad de inscripciones activas agrupadas por plan de alumnos no dados de baja.
+  async contarActivasPorPlan(filtro?: {
+    id_profesora?: number;
+    id_actividad?: number;
+  }): Promise<Map<number, number>> {
+    const agrupados = await this.prisma.inscripciones.groupBy({
+      by: ["id_plan"],
+      where: {
+        estado: "ACTIVA",
+        alumno: { estado: { not: "BAJA" } },
+        ...(filtro?.id_profesora !== undefined ? { id_profesora: filtro.id_profesora } : {}),
+        ...(filtro?.id_actividad !== undefined
+          ? { plan: { id_actividad_exclusiva: filtro.id_actividad } }
+          : {}),
+      },
+      _count: { id_inscripcion: true },
+    });
+    return new Map(agrupados.map((g) => [g.id_plan, g._count.id_inscripcion]));
   }
 }

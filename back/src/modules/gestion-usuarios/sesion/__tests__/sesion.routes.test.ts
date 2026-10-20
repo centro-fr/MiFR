@@ -1,3 +1,5 @@
+import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
+import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp as crearAppBase } from "../../../../app.js";
@@ -24,6 +26,8 @@ function createApp(
     | "gestionInscripcionesYClases"
     | "gestionCuotasYPagos"
     | "difusionPublica"
+    | "gestionNotificaciones"
+    | "reportes"
   >,
   opciones?: Parameters<typeof crearAppBase>[1],
 ) {
@@ -35,6 +39,8 @@ function createApp(
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
       difusionPublica: logicaDifusionPublicaNoConfigurada,
+      gestionNotificaciones: logicaNotificacionesNoConfigurada,
+      reportes: logicaInformesNoConfigurada,
     },
     opciones,
   );

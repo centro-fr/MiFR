@@ -332,4 +332,18 @@ describe("PlanService", () => {
       await expect(servicio.precioACobrar(1, HOY, 4)).resolves.toBeNull();
     });
   });
+
+  describe("listarVigentes", () => {
+    it("delega a listar con incluirBajas en false y filtro opcional", async () => {
+      repositorio.listar.mockResolvedValue([planBase]);
+
+      const resultado = await servicio.listarVigentes({ id_actividad_exclusiva: 4 });
+
+      expect(resultado).toEqual([planBase]);
+      expect(repositorio.listar).toHaveBeenCalledWith({
+        incluirBajas: false,
+        id_actividad_exclusiva: 4,
+      });
+    });
+  });
 });

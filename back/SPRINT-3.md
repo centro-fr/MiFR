@@ -167,13 +167,13 @@ Con los calculadores de Rosario integrados (US-18), `composicion.ts` arma `Cuota
 
 ### Hecho (US-16 y US-17)
 
-- [x] `POST /api/v1/pagos/transferencia`: el alumno o su tutor informa monto, fecha y hora de la transferencia y, opcional, el titular de la cuenta. Queda `PENDIENTE`. **Sin comprobante adjunto**.
+- [x] `POST /api/v1/pagos/transferencia`: la profesora a cargo de la inscripción o la propietaria (`PAGOS_REGISTRAR`) informa monto, fecha y hora de la transferencia y, opcional, el titular de la cuenta. Queda `PENDIENTE`. **Sin comprobante adjunto**. **Decidido con Francisco** (18/10/2026): el alumno y el tutor ya no la informan (403); siguen viendo las suyas en `mis-transferencias`. Una profesora no la informa en una inscripción ajena, como el efectivo, porque la pendiente frena los otros cobros.
 - [x] `POST /api/v1/pagos/transferencia-recibida`: la propietaria carga una transferencia que ya vio en su cuenta y queda `CONFIRMADA`. **Decidido con Francisco:** es como paga la primera cuota por transferencia un alumno nuevo, que todavía no puede entrar al sistema (su usuario queda `INACTIVO` hasta el primer pago, US-05).
 - [x] `GET /api/v1/pagos/mis-transferencias`: las del alumno o de los menores a cargo del tutor.
-- [x] `GET /api/v1/pagos/transferencias`: solo la propietaria. Filtros por estado y alumno; ordenadas por antigüedad, con las horas desde la carga y la marca de las que pasaron las 24 horas. El filtro por fecha queda para cuando el front lo pida.
+- [x] `GET /api/v1/pagos/transferencias`: solo la propietaria. Filtros por estado, alumno, tipo y días de carga (`desde`, `hasta`); por antigüedad (`orden=desc` para las más nuevas primero), con las horas desde la carga y la marca de las que pasaron las 24 horas. Cada una trae el plan, el monto esperado (el de la cuota) y el tipo (`PRIMERA_CUOTA`, `RENOVACION` o `CUOTA_VENCIDA`), los del momento en que se cargó. Responde `{ datos, total, limit, offset }`. **Decidido con Francisco** (18/10/2026): el tipo se calcula y no se guarda, así que el filtro por tipo pagina en memoria con un tope de 500, como el estado de cuota de US-10; si son más, responde 400.
 - [x] `POST /api/v1/pagos/:id/aprobar` y `POST /api/v1/pagos/:id/rechazar` (con motivo obligatorio): rol `PROPIETARIA` + `PAGOS_CONFIRMAR`.
 - [x] **Reglas**:
-  - [x] Solo se informa sobre una inscripción propia o de un menor a cargo (si no, 403); alumno dado de baja → 409.
+  - [x] Solo la informa la profesora a cargo de la inscripción o la propietaria (si no, 403); alumno dado de baja → 409.
   - [x] Pendiente: no da el alta ni cambia la habilitación. Mientras haya una pendiente, la inscripción no admite otro pago (409).
   - [x] Aprobada: registra quién y cuándo (`id_usuario_confirma`, `fecha_confirmacion`) y dispara el alta definitiva.
   - [x] Rechazada: `motivo_rechazo` obligatorio (`ck_pagos_x2`); la cuota queda sin pago confirmado y el próximo pago la reusa, sin saltear números.

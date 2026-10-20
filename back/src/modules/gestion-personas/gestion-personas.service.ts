@@ -92,12 +92,7 @@ export class GestionPersonasService implements ILogicaPersonas {
   // propietaria. Y del tutor que resulte solo ve el nombre, porque puede ser una cuenta que ya existía
   // y cuyos datos personales no le corresponde ver.
   async crearAlumno(input: CrearAlumnoInput, solicitante: Solicitante): Promise<AlumnoDadoDeAlta> {
-    if (!solicitante.esPropietaria && input.tutor && "id_usuario" in input.tutor) {
-      throw new ForbiddenError(
-        "Una profesora carga los datos del tutor; elegir una cuenta existente es de la propietaria",
-      );
-    }
-    const alumno = await this.alumnos.crear(input);
+    const alumno = await this.alumnos.crear(input, solicitante);
     if (solicitante.esPropietaria || !alumno.responsable) return alumno;
 
     const { id_usuario, nombre, apellido } = alumno.responsable;

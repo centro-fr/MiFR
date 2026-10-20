@@ -21,7 +21,7 @@ if (!resultado.valida) {
 const { configuracion } = resultado;
 
 const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
-const { dependencias, cierreAsistencia } = construirSistema({
+const { dependencias, cierreAsistencia, planificadorNotificaciones, resumenDiario } = construirSistema({
   prisma,
   googleAuth: new GoogleAutenticacion(
     new OAuth2Client(configuracion.googleClientId),
@@ -39,6 +39,23 @@ setInterval(() => {
     console.error("No se pudieron cerrar las asistencias vencidas", error);
   });
 }, MILISEGUNDOS_ENTRE_CIERRES).unref();
+
+// US-25: con el mismo enfoque, los avisos de cuota también se generan al consultar las notificaciones
+// propias. Corren a lo sumo una vez por día; el intervalo solo hace falta para cambiar de día.
+const MILISEGUNDOS_ENTRE_AVISOS = 60 * 60_000;
+setInterval(() => {
+  planificadorNotificaciones.generarAvisosDelDia().catch((error: unknown) => {
+    console.error("No se pudieron generar los avisos de cuota", error);
+  });
+}, MILISEGUNDOS_ENTRE_AVISOS).unref();
+
+// US-26: con el mismo enfoque, el resumen diario de la propietaria se genera a partir de HORA_RESUMEN_DIARIO
+// y también al consultar /resumen-diario. El intervalo corre cada hora para verificar si llegó el horario.
+setInterval(() => {
+  resumenDiario.generarResumenDiario().catch((error: unknown) => {
+    console.error("No se pudo generar el resumen diario de la propietaria", error);
+  });
+}, MILISEGUNDOS_ENTRE_AVISOS).unref();
 
 function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   const registro = new OpenAPIRegistry();

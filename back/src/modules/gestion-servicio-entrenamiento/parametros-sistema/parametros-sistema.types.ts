@@ -11,6 +11,9 @@ export interface ValoresParametros {
   VENCIDOS_PUEDEN_ASISTIR: boolean;
   MINUTOS_CIERRE_ASISTENCIA: number;
   DIAS_RESERVA_PREINSCRIPCION: number;
+  DIAS_AVISO_VENCIMIENTO: number;
+  INASISTENCIAS_CONSECUTIVAS_INACTIVO: number;
+  HORA_RESUMEN_DIARIO: string;
 }
 
 export type ClaveParametro = keyof ValoresParametros;

@@ -38,8 +38,8 @@ export const alumnoSchema = z
     id_alumno: z.number().int(),
     id_usuario: z.number().int(),
     id_usuario_responsable: z.number().int().nullable(),
-    cont_emerg_nombre: z.string().nullable(),
-    cont_emerg_telefono: z.string().nullable(),
+    cont_emerg_nombre: z.string(),
+    cont_emerg_telefono: z.string(),
     apto_medico: z.boolean(),
     fecha_apto_medico: fechaSchema.nullable(),
     observaciones: z.string().nullable(),
@@ -192,7 +192,8 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     security,
     summary: "Dar de alta un alumno (pre-inscripción)",
     description:
-      "Requiere el permiso `ALUMNOS_EDITAR` (propietaria y profesora). El alumno queda INACTIVO y sin acceso " +
+      "Requiere el permiso `ALUMNOS_EDITAR` (propietaria y profesora). Son obligatorios el `dni` y el contacto de " +
+      "emergencia (`cont_emerg_nombre`, `cont_emerg_telefono`), y el `dni` del tutor nuevo. El alumno queda INACTIVO y sin acceso " +
       `hasta que se confirma el primer pago; la inscripción se carga aparte. ${reglasDeEdad} Responde 409 con ` +
       "el código `ALUMNO_EXISTENTE` si el DNI ya es de un alumno, y 409 `CONFLICT` si el DNI o el email ya son " +
       "de otro usuario. Un tutor cargado con sus datos reusa la cuenta existente solo si el DNI y el email son de " +

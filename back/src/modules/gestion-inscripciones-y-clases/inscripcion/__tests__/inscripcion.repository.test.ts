@@ -31,7 +31,7 @@ const transaccion = {
 };
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
-  inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+  inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), groupBy: vi.fn() },
   inscripcion_horarios: { groupBy: vi.fn() },
 };
 
@@ -242,6 +242,53 @@ describe("InscripcionRepository", () => {
       expect(prisma.inscripcion_horarios.groupBy.mock.calls[0][0].where).toMatchObject({
         id_horario: { in: [8, 9] },
         fecha_hasta: null,
+      });
+    });
+
+    it("aCargoEnPeriodo trae las activas y las bajas que se cruzan con el período, sin las pre-inscriptas", async () => {
+      const fila = { id_inscripcion: 12, estado: "ACTIVA" };
+      prisma.inscripciones.findMany.mockResolvedValue([fila]);
+
+      await expect(
+        repositorio.aCargoEnPeriodo(new Date("2026-10-01T00:00:00Z"), new Date("2026-10-31T00:00:00Z")),
+      ).resolves.toEqual([fila]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
+        estado: { in: ["ACTIVA", "BAJA"] },
+        fecha_inicio: { lte: new Date("2026-10-31T00:00:00Z") },
+        // Una baja del 01/10 a las 00:30 de Argentina ya es del período: 03:30 UTC.
+        OR: [{ fecha_baja: null }, { fecha_baja: { gte: new Date("2026-10-01T03:00:00Z") } }],
+      });
+    });
+
+    it("listarParaInactividad trae las activas de plan mensual de alumnos no dados de baja, con los filtros", async () => {
+      prisma.inscripciones.findMany.mockResolvedValue([
+        {
+          id_inscripcion: 12,
+          id_alumno: 5,
+          plan: { id_plan: 2, nombre: "Intermedio" },
+          profesora: { id_profesora: 3, usuario: { nombre: "Lucía", apellido: "Gómez" } },
+        },
+      ]);
+
+      await expect(repositorio.listarParaInactividad({ id_profesora: 3 })).resolves.toEqual([
+        {
+          id_inscripcion: 12,
+          id_alumno: 5,
+          plan: { id_plan: 2, nombre: "Intermedio" },
+          profesora: { id_profesora: 3, nombre: "Lucía", apellido: "Gómez" },
+        },
+      ]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
+        estado: "ACTIVA",
+        plan: { tipo: "MENSUAL" },
+        alumno: { estado: { not: "BAJA" } },
+        id_profesora: 3,
+      });
+
+      await repositorio.listarParaInactividad({ id_inscripcion: 12, id_plan: 2 });
+      expect(prisma.inscripciones.findMany.mock.calls[1][0].where).toMatchObject({
+        id_inscripcion: 12,
+        id_plan: 2,
       });
     });
 
@@ -662,6 +709,53 @@ describe("InscripcionRepository", () => {
         resultado: "sin-cupo",
       });
       expect(transaccion.inscripcion_horarios.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("contarActivasPorPlan", () => {
+    it("agrupa y cuenta inscripciones activas por plan con filtros opcionales", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([
+        { id_plan: 1, _count: { id_inscripcion: 5 } },
+        { id_plan: 2, _count: { id_inscripcion: 8 } },
+      ]);
+
+      const resultado = await repositorio.contarActivasPorPlan({
+        id_profesora: 3,
+        id_actividad: 2,
+      });
+
+      expect(resultado).toEqual(
+        new Map([
+          [1, 5],
+          [2, 8],
+        ]),
+      );
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["id_plan"],
+        where: {
+          estado: "ACTIVA",
+          alumno: { estado: { not: "BAJA" } },
+          id_profesora: 3,
+          plan: { id_actividad_exclusiva: 2 },
+        },
+        _count: { id_inscripcion: true },
+      });
+    });
+
+    it("agrupa y cuenta sin filtros opcionales", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([{ id_plan: 1, _count: { id_inscripcion: 3 } }]);
+
+      const resultado = await repositorio.contarActivasPorPlan();
+
+      expect(resultado).toEqual(new Map([[1, 3]]));
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["id_plan"],
+        where: {
+          estado: "ACTIVA",
+          alumno: { estado: { not: "BAJA" } },
+        },
+        _count: { id_inscripcion: true },
+      });
     });
   });
 });

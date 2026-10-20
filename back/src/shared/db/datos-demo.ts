@@ -250,6 +250,7 @@ interface PersonaDemo {
 
 interface AlumnoDemo extends PersonaDemo {
   tutor: PersonaDemo | null;
+  contacto_emergencia: { nombre: string; telefono: string };
   // Activo: ya pagó su primera cuota en efectivo, que el escenario carga junto con su inscripción.
   activo: boolean;
 }
@@ -263,6 +264,7 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
     email: "sofia.medina@example.com",
     fecha_nacimiento: new Date("1996-08-14T00:00:00Z"),
     tutor: null,
+    contacto_emergencia: { nombre: "Jorge Medina", telefono: "3794 401122" },
     activo: false,
   },
   {
@@ -278,6 +280,7 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
       email: "paula.romero@example.com",
       fecha_nacimiento: new Date("1984-06-21T00:00:00Z"),
     },
+    contacto_emergencia: { nombre: "Paula Romero", telefono: "3794 402233" },
     activo: false,
   },
   {
@@ -287,6 +290,7 @@ export const ALUMNOS_DEMO: AlumnoDemo[] = [
     email: "valentina.herrera@example.com",
     fecha_nacimiento: new Date("1994-02-11T00:00:00Z"),
     tutor: null,
+    contacto_emergencia: { nombre: "Marcos Herrera", telefono: "3794 403344" },
     activo: true,
   },
 ];
@@ -475,14 +479,20 @@ async function cargarPersona(
 async function cargarAlumnos(prisma: PrismaClient): Promise<Map<string, number>> {
   const idAlumnoPorDni = new Map<string, number>();
   const rolAlumno = await prisma.roles.findUniqueOrThrow({ where: { codigo: "ALUMNO" } });
-  for (const { tutor, activo, ...persona } of ALUMNOS_DEMO) {
+  for (const { tutor, activo, contacto_emergencia, ...persona } of ALUMNOS_DEMO) {
     const estado = activo ? "ACTIVO" : "INACTIVO";
     const idResponsable = tutor ? await cargarPersona(prisma, tutor) : null;
     const idUsuario = await cargarPersona(prisma, persona, estado);
     const alumno = await prisma.alumnos.upsert({
       where: { id_usuario: idUsuario },
       update: {},
-      create: { id_usuario: idUsuario, id_usuario_responsable: idResponsable, estado },
+      create: {
+        id_usuario: idUsuario,
+        id_usuario_responsable: idResponsable,
+        cont_emerg_nombre: contacto_emergencia.nombre,
+        cont_emerg_telefono: contacto_emergencia.telefono,
+        estado,
+      },
     });
     if (activo) {
       await prisma.usuario_roles.createMany({

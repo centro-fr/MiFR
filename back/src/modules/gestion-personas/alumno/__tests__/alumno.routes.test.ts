@@ -1,3 +1,5 @@
+import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
+import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
@@ -12,7 +14,15 @@ import type { IAutenticacion } from "../../../gestion-usuarios/sesion/interface/
 import type { ILogicaPersonas } from "../../interface/i-logica-personas.js";
 
 const alumno = { id_alumno: 1, estado: "INACTIVO" };
-const alta = { nombre: "Ana", apellido: "López", email: "ana@example.com", fecha_nacimiento: "1995-04-20" };
+const alta = {
+  nombre: "Ana",
+  apellido: "López",
+  email: "ana@example.com",
+  fecha_nacimiento: "1995-04-20",
+  dni: "40111222",
+  cont_emerg_nombre: "Jorge López",
+  cont_emerg_telefono: "3794 401122",
+};
 
 function crearLogicaMock() {
   return {
@@ -47,6 +57,8 @@ describe("rutas de alumnos", () => {
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
       difusionPublica: logicaDifusionPublicaNoConfigurada,
+      gestionNotificaciones: logicaNotificacionesNoConfigurada,
+      reportes: logicaInformesNoConfigurada,
       autenticacion,
       autorizacion,
     });

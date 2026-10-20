@@ -113,6 +113,8 @@ export async function crearAlumno(
     data: {
       estado,
       fecha_baja: estado === "BAJA" ? new Date() : null,
+      cont_emerg_nombre: "Contacto De Prueba",
+      cont_emerg_telefono: "3794 400000",
       responsable: id_usuario_responsable ? { connect: { id_usuario: id_usuario_responsable } } : undefined,
       usuario: {
         create: {

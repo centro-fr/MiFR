@@ -1,10 +1,12 @@
 import {
   AlumnoExistenteError,
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/app-error.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
+import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type {
@@ -16,7 +18,9 @@ import type {
 import type { ActualizarAlumnoInput, CrearAlumnoInput, TutorInput } from "./alumno.schemas.js";
 import type {
   Alumno,
+  ConteoAltasMes,
   EstadoAlReactivar,
+  FiltroAltasPorMes,
   FiltroAlumno,
   PaginaAlumnos,
   TutorResuelto,
@@ -37,9 +41,14 @@ export function esMenorDeEdad(fechaNacimiento: Date, hoy: Date): boolean {
   return cumpleMayoria > hoy;
 }
 
-function separarDatos(input: CrearAlumnoInput | ActualizarAlumnoInput): {
+type CamposDeUsuario =
+  "nombre" | "apellido" | "dni" | "email" | "telefono" | "fecha_nacimiento" | "direccion";
+
+function separarDatos<T extends CrearAlumnoInput | ActualizarAlumnoInput>(
+  input: T,
+): {
   usuario: DatosUsuarioAlumno;
-  ficha: DatosFichaAlumno;
+  ficha: Omit<T, CamposDeUsuario | "tutor">;
 } {
   const {
     nombre,
@@ -65,7 +74,14 @@ export class AlumnoService implements IInfoAlumnos {
     private readonly autorizacion: IAutorizacion,
   ) {}
 
-  async crear(input: CrearAlumnoInput): Promise<Alumno> {
+  // Elegir como tutor una cuenta existente le abre a quien carga los datos de esa persona: por eso
+  // es de la propietaria. Se verifica antes que los datos, para no contarle nada a quien no puede.
+  async crear(input: CrearAlumnoInput, solicitante: Solicitante): Promise<Alumno> {
+    if (!solicitante.esPropietaria && input.tutor && "id_usuario" in input.tutor) {
+      throw new ForbiddenError(
+        "Una profesora carga los datos del tutor; elegir una cuenta existente es de la propietaria",
+      );
+    }
     const menor = esMenorDeEdad(input.fecha_nacimiento, fechaActualArgentina());
     if (menor) {
       if (!input.tutor) throw new ValidationError("Un alumno menor de 18 años necesita un tutor");
@@ -181,6 +197,11 @@ export class AlumnoService implements IInfoAlumnos {
     return this.repositorio.reactivar(alumno, estado);
   }
 
+  // US-35: cuenta altas definitivas agrupadas por año y mes.
+  contarAltasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
+    return this.repositorio.contarAltasPorMes(filtro);
+  }
+
   // El DNI ya registrado en un alumno tiene su propio código, para que el front ofrezca abrir esa
   // ficha en lugar de cargarlo dos veces (US-05).
   private async validarIdentidadLibre(dni?: string, email?: string, idUsuarioPropio?: number): Promise<void> {
@@ -213,17 +234,15 @@ export class AlumnoService implements IInfoAlumnos {
       return { id_usuario: existente.id_usuario };
     }
 
-    this.validarTutor(tutor.fecha_nacimiento, tutor.dni !== undefined && tutor.dni === dniAlumno);
-    const porDni = tutor.dni ? await this.usuarios.buscarPorDni(tutor.dni) : null;
+    this.validarTutor(tutor.fecha_nacimiento, tutor.dni === dniAlumno);
+    const porDni = await this.usuarios.buscarPorDni(tutor.dni);
     const porEmail = await this.usuarios.buscarPorEmail(tutor.email);
     const existente = porDni ?? porEmail;
     if (!existente) return { nuevo: tutor };
 
     // Se reusa solo si el DNI y el email cargados son de la misma cuenta: si no, con el DNI de otra
     // persona quedaría a cargo del menor una cuenta que no es la del tutor que se quiso cargar.
-    const sonLaMismaCuenta = porDni
-      ? porDni.id_usuario === porEmail?.id_usuario
-      : !(tutor.dni && porEmail?.dni);
+    const sonLaMismaCuenta = porDni ? porDni.id_usuario === porEmail?.id_usuario : !porEmail?.dni;
     if (!sonLaMismaCuenta) {
       throw new ConflictError("El DNI y el email del tutor corresponden a cuentas distintas");
     }

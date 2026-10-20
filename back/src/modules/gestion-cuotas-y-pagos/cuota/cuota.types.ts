@@ -32,6 +32,72 @@ export interface SituacionParaAviso extends SituacionDeCuotas {
   };
 }
 
+interface NombreCompleto {
+  nombre: string;
+  apellido: string;
+}
+
+// US-26: lo que hace falta para decidir si una inscripción está vencida y estimar lo que debe.
+export interface SituacionParaResumen extends SituacionDeCuotas {
+  id_plan: number;
+  id_promocion: number | null;
+  nombre_plan: string;
+  profesora: { id_profesora: number } & NombreCompleto;
+  alumno: { id_alumno: number } & NombreCompleto;
+}
+
+// US-34: situación detallada con contacto para el informe de cuotas vencidas.
+export interface SituacionParaInforme extends SituacionDeCuotas {
+  id_plan: number;
+  id_promocion: number | null;
+  nombre_plan: string;
+  profesora: { id_profesora: number } & NombreCompleto;
+  alumno: {
+    id_alumno: number;
+    nombre: string;
+    apellido: string;
+    telefono: string | null;
+    email: string | null;
+  };
+}
+
+export interface CuotaVencidaDetallada {
+  id_inscripcion: number;
+  alumno: SituacionParaInforme["alumno"];
+  plan: { id_plan: number; nombre: string };
+  profesora: SituacionParaInforme["profesora"];
+  fecha_vencimiento: Date;
+  dias_vencida: number;
+  monto_adeudado: number;
+}
+
+export interface CuotaVencidaEnResumen {
+  id_inscripcion: number;
+  alumno: SituacionParaResumen["alumno"];
+  plan: { id_plan: number; nombre: string };
+  profesora: SituacionParaResumen["profesora"];
+  fecha_vencimiento: Date;
+  dias_vencida: number;
+  // El precio que rige hoy para su plan y su promoción; null si el plan no tiene precio hoy.
+  monto_estimado: number | null;
+}
+
+interface TotalDeVencidas {
+  cantidad: number;
+  monto_estimado: number;
+}
+
+// US-26: el bloque de cuotas vencidas del resumen diario. Los totales son de todas las inscripciones
+// vencidas; el detalle trae solo las más atrasadas.
+export interface ResumenCuotasVencidas extends TotalDeVencidas {
+  cantidad_alumnos: number;
+  // Las que no suman al monto estimado porque su plan no tiene precio hoy.
+  sin_precio: number;
+  por_profesora: (TotalDeVencidas & SituacionParaResumen["profesora"])[];
+  por_plan: (TotalDeVencidas & { id_plan: number; nombre: string })[];
+  mas_atrasadas: CuotaVencidaEnResumen[];
+}
+
 export type TipoAvisoCuota = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA";
 
 export interface CuotaParaAviso {

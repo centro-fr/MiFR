@@ -47,6 +47,7 @@ function crearRepositorioMock() {
     vincularGoogleId: vi.fn(),
     eliminar: vi.fn(),
     contarPropietariasActivas: vi.fn(),
+    listarPropietariasActivas: vi.fn(),
   };
 }
 
@@ -146,6 +147,27 @@ describe("UsuarioService", () => {
       repositorio.listar.mockResolvedValue([]);
 
       await expect(service.listar()).resolves.toEqual([]);
+    });
+  });
+
+  describe("listarPropietariasActivas", () => {
+    it("devuelve las propietarias activas del repositorio", async () => {
+      const propietarias = [
+        crearUsuario({
+          roles: [
+            {
+              id_usuario: 1,
+              id_rol: 1,
+              fecha_asignacion: new Date(),
+              rol: { id_rol: 1, codigo: "PROPIETARIA", nombre: "Propietaria", descripcion: "" },
+            },
+          ],
+        }),
+      ];
+      repositorio.listarPropietariasActivas.mockResolvedValue(propietarias);
+
+      await expect(service.listarPropietariasActivas()).resolves.toEqual(propietarias);
+      expect(repositorio.listarPropietariasActivas).toHaveBeenCalled();
     });
   });
 

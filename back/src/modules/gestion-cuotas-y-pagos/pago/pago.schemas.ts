@@ -44,11 +44,25 @@ export const aprobarTransferenciaSchema = z.object({ confirmar_monto_distinto })
 // ck_pagos_x2 del DER: el rechazo lleva motivo.
 export const rechazarTransferenciaSchema = z.object({ motivo_rechazo: textoSchema(255) });
 
-export const listarTransferenciasQuerySchema = z.object({
-  estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]).optional(),
-  id_alumno: idDesdeTextoSchema.optional(),
-  ...paginacionSchema(LIMITE_MAXIMO),
-});
+function rangoValido({ desde, hasta }: { desde?: Date; hasta?: Date }): boolean {
+  return !desde || !hasta || desde <= hasta;
+}
+
+const RANGO_INVALIDO = { message: "La fecha desde no puede ser posterior a hasta", path: ["desde"] };
+
+// US-17: por defecto, las más viejas primero, para respetar las 24 horas. desde y hasta son días de
+// Argentina sobre la fecha de carga.
+export const listarTransferenciasQuerySchema = z
+  .object({
+    estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]).optional(),
+    id_alumno: idDesdeTextoSchema.optional(),
+    tipo: z.enum(["PRIMERA_CUOTA", "RENOVACION", "CUOTA_VENCIDA"]).optional(),
+    desde: fechaSchema.optional(),
+    hasta: fechaSchema.optional(),
+    orden: z.enum(["asc", "desc"]).default("asc"),
+    ...paginacionSchema(LIMITE_MAXIMO),
+  })
+  .refine(rangoValido, RANGO_INVALIDO);
 
 export const pagoIdParamSchema = z.object({ id: idDesdeTextoSchema });
 
@@ -57,12 +71,6 @@ const filtroEfectivo = {
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
 };
-
-function rangoValido({ desde, hasta }: { desde?: Date; hasta?: Date }): boolean {
-  return !desde || !hasta || desde <= hasta;
-}
-
-const RANGO_INVALIDO = { message: "La fecha desde no puede ser posterior a hasta", path: ["desde"] };
 
 // US-19: los cobros sin rendir, por la fecha del cobro. El detalle se pagina (máximo 100 por pedido,
 // seguridad.md, regla 8); los totales son siempre completos.
