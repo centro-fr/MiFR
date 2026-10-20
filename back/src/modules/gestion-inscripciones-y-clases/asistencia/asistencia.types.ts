@@ -1,4 +1,9 @@
-import type { asistencias, estado_seguimiento_inactividad, seguimientos_inactividad } from "@prisma/client";
+import type {
+  asistencias,
+  estado_alumno,
+  estado_seguimiento_inactividad,
+  seguimientos_inactividad,
+} from "@prisma/client";
 
 export type Asistencia = asistencias;
 export type SeguimientoInactividad = seguimientos_inactividad;
@@ -29,3 +34,39 @@ export interface RachaDeInasistencia {
 }
 
 export type MarcaDeSeguimiento = Pick<SeguimientoInactividad, "estado" | "fecha_registro">;
+
+// US-30, US-31 y US-33: qué marcas cuentan. Siempre clases cerradas (DICTADA) entre desde y hasta,
+// inclusive: las canceladas no tienen marcas y las abiertas todavía pueden cambiar.
+export interface FiltroAsistenciasDictadas {
+  desde: Date;
+  hasta: Date;
+  id_alumno?: number;
+  // La que dictó la clase: en una suplencia, la suplente (US-24).
+  id_profesora?: number;
+  id_actividad?: number;
+  // Sin esto, los alumnos dados de baja no figuran (US-30, US-33).
+  incluir_bajas?: boolean;
+}
+
+// Las previstas son las marcas, presentes y ausentes: el cierre registra como ausente a cada
+// inscripto sin marcar (US-21).
+export interface AsistenciaDeAlumno {
+  id_alumno: number;
+  id_usuario: number;
+  id_usuario_responsable: number | null;
+  nombre: string;
+  apellido: string;
+  estado: estado_alumno;
+  clases_previstas: number;
+  clases_asistidas: number;
+}
+
+export interface AsistenciaDeProfesora {
+  id_profesora: number;
+  nombre: string;
+  apellido: string;
+  clases_dictadas: number;
+  alumnos: number;
+  clases_previstas: number;
+  clases_asistidas: number;
+}

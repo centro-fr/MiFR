@@ -29,6 +29,9 @@ function crearMocks() {
       ultimasPresenciasRegistradas: vi.fn().mockResolvedValue(new Map()),
       registrarSeguimiento: vi.fn().mockResolvedValue({ id_inscripcion: 50 }),
       quitarSeguimiento: vi.fn().mockResolvedValue(true),
+      resumirPorAlumno: vi.fn().mockResolvedValue([]),
+      resumirPorProfesora: vi.fn().mockResolvedValue([]),
+      historialDeAlumnos: vi.fn().mockResolvedValue(new Map()),
     },
     clases: {
       obtenerPara: vi.fn().mockResolvedValue(clase),
@@ -224,6 +227,30 @@ describe("AsistenciaService", () => {
     it("seguimientosVigentes no consulta la base sin inscripciones", async () => {
       await expect(servicio.seguimientosVigentes([])).resolves.toEqual(new Map());
       expect(mocks.repositorio.buscarSeguimientos).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("resúmenes (US-30, US-31, US-33)", () => {
+    const filtro = { desde: FECHA_CLASE, hasta: FECHA_CLASE, id_actividad: 3 };
+
+    it("resumirPorAlumno y resumirPorProfesora pasan el filtro al repositorio", async () => {
+      const porAlumno = [{ id_alumno: 5 }];
+      const porProfesora = [{ id_profesora: 2 }];
+      mocks.repositorio.resumirPorAlumno.mockResolvedValue(porAlumno);
+      mocks.repositorio.resumirPorProfesora.mockResolvedValue(porProfesora);
+
+      await expect(servicio.resumirPorAlumno(filtro)).resolves.toBe(porAlumno);
+      await expect(servicio.resumirPorProfesora(filtro)).resolves.toBe(porProfesora);
+      expect(mocks.repositorio.resumirPorAlumno).toHaveBeenCalledWith(filtro);
+      expect(mocks.repositorio.resumirPorProfesora).toHaveBeenCalledWith(filtro);
+    });
+
+    it("historialDeAlumnos devuelve las marcas del repositorio", async () => {
+      const historial = new Map([[5, [{ asistio: true, inicio: AHORA }]]]);
+      mocks.repositorio.historialDeAlumnos.mockResolvedValue(historial);
+
+      await expect(servicio.historialDeAlumnos([5])).resolves.toBe(historial);
+      expect(mocks.repositorio.historialDeAlumnos).toHaveBeenCalledWith([5]);
     });
   });
 });

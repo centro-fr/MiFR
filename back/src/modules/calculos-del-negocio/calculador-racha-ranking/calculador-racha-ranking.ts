@@ -1,7 +1,7 @@
 import type {
   CriterioDeLogro,
   FilaParaRanking,
-  MarcaDeAsistencia,
+  MarcaDeHistorial,
   ProximoHito,
   ResumenRacha,
 } from "./calculador-racha-ranking.types.js";
@@ -12,7 +12,7 @@ const compararTexto = new Intl.Collator("es", { sensitivity: "base" }).compare;
 // Cálculo puro: no lee la base ni la hora del servidor. La racha cuenta clases seguidas sin faltar
 // y no se reinicia con el mes (US-31): una inasistencia la lleva a 0.
 export class CalculadorRachaRanking implements ICalculoRachaRanking {
-  resumirRacha(marcas: MarcaDeAsistencia[]): ResumenRacha {
+  resumirRacha(marcas: MarcaDeHistorial[]): ResumenRacha {
     let actual = 0;
     let mejor = 0;
     let inicioActual: Date | null = null;
@@ -31,7 +31,7 @@ export class CalculadorRachaRanking implements ICalculoRachaRanking {
     return { actual, mejor, inicio_actual: inicioActual, clases_asistidas: asistidas };
   }
 
-  cuandoSeAlcanzo(marcas: MarcaDeAsistencia[], criterio: CriterioDeLogro, umbral: number): Date | null {
+  cuandoSeAlcanzo(marcas: MarcaDeHistorial[], criterio: CriterioDeLogro, umbral: number): Date | null {
     let racha = 0;
     let total = 0;
     for (const { asistio, inicio } of marcas) {

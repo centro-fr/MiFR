@@ -1,6 +1,6 @@
 // Una marca de asistencia en una clase dictada. Las canceladas no tienen marcas, así que no cortan
 // ni suman a la racha (US-31); una suplencia es una clase dictada más.
-export interface MarcaDeAsistencia {
+export interface MarcaDeHistorial {
   asistio: boolean;
   // Inicio de la clase: ordena dos clases del mismo día y fecha el logro de una insignia.
   inicio: Date;

@@ -1,7 +1,7 @@
 import type {
   CriterioDeLogro,
   FilaParaRanking,
-  MarcaDeAsistencia,
+  MarcaDeHistorial,
   ProximoHito,
   ResumenRacha,
 } from "../calculador-racha-ranking.types.js";
@@ -10,9 +10,9 @@ import type {
 // usa Insignia para la racha y las insignias (US-31) y el ranking de asistencia (US-30). Las marcas
 // llegan en orden cronológico y solo de clases dictadas: elegir cuáles cuentan es de quien consulta.
 export interface ICalculoRachaRanking {
-  resumirRacha(marcas: MarcaDeAsistencia[]): ResumenRacha;
+  resumirRacha(marcas: MarcaDeHistorial[]): ResumenRacha;
   // El inicio de la clase en que se llegó por primera vez al umbral; null si no se llegó.
-  cuandoSeAlcanzo(marcas: MarcaDeAsistencia[], criterio: CriterioDeLogro, umbral: number): Date | null;
+  cuandoSeAlcanzo(marcas: MarcaDeHistorial[], criterio: CriterioDeLogro, umbral: number): Date | null;
   // Con dos decimales; 0 si no hubo clases previstas.
   porcentaje(asistidas: number, previstas: number): number;
   // Porcentaje descendente, clases asistidas descendente, y apellido y nombre ascendentes (US-30).

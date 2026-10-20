@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CalculadorRachaRanking } from "../calculador-racha-ranking.js";
-import type { FilaParaRanking, MarcaDeAsistencia } from "../calculador-racha-ranking.types.js";
+import type { FilaParaRanking, MarcaDeHistorial } from "../calculador-racha-ranking.types.js";
 
 const calculador = new CalculadorRachaRanking();
 
 // Una marca por día desde el 1/10/2026, en el orden de la cadena: "P" presente, "A" ausente.
-function marcas(secuencia: string): MarcaDeAsistencia[] {
+function marcas(secuencia: string): MarcaDeHistorial[] {
   return [...secuencia].map((letra, indice) => ({
     asistio: letra === "P",
     inicio: new Date(Date.UTC(2026, 9, 1 + indice, 21)),
