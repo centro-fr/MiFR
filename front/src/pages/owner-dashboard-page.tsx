@@ -16,6 +16,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { ResumenDelDia } from "@/features/notificaciones/components/resumen-del-dia";
 import type { RoleCode } from "@/types/auth";
 
 const ETIQUETAS_ROL: Record<RoleCode, string> = {
@@ -99,6 +100,9 @@ export function OwnerDashboardPage() {
             Este es el resumen de tu sesión y los accesos directos a tu centro.
           </p>
         </header>
+
+        {/* US-26: el dashboard es solo de la propietaria (menú de owner-navigation.ts), como el resumen. */}
+        <ResumenDelDia />
 
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           <Card className="rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low">

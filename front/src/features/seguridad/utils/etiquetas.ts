@@ -7,6 +7,7 @@ const MODULOS: Record<string, string> = {
   HORARIOS: "Horarios",
   ALUMNOS: "Alumnos",
   PLANES: "Planes",
+  PARAMETROS: "Parámetros del sistema",
   // Incluye PAGOS_REGISTRAR, el cobro en efectivo de la profesora (US-15).
   PAGOS: "Cobros y transferencias",
   HONORARIOS: "Honorarios",
@@ -26,6 +27,7 @@ const DESCRIPCIONES: Record<string, string> = {
   HORARIOS: "Cronograma y asignación de profesoras",
   ALUMNOS: "Inscripciones y legajos de alumnos",
   PLANES: "Planes, precios y promociones",
+  PARAMETROS: "Datos bancarios, plazos y avisos automáticos",
   PAGOS: "Cobros en efectivo, transferencias y rendición",
   HONORARIOS: "Liquidaciones de profesoras",
   ASISTENCIAS: "Toma de asistencia en clases",

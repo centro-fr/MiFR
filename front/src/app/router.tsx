@@ -59,8 +59,6 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
   { path: "pagos", seccion: "Cobros y Cuotas" },
-  { path: "honorarios", seccion: "Honorarios" },
-  { path: "notificaciones", seccion: "Notificaciones" },
   { path: "reportes", seccion: "Reportes" },
   // Menú de la profesora (MENUS.md).
   { path: "mis-clases", seccion: "Mis clases" },
@@ -234,6 +232,30 @@ export const router = createBrowserRouter([
               },
             ],
           },
+        ],
+      },
+      {
+        // US-23: informe mensual de honorarios. Solo la propietaria: el back exige el mismo permiso.
+        path: "honorarios",
+        element: guardiaDeSeccion("honorarios", "HONORARIOS_VER_TODOS"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/honorarios/pages/honorarios-page"), "HonorariosPage") },
+          // US-24 (otro integrante del front): reemplazar por su pantalla de suplencias.
+          {
+            path: "suplencias",
+            lazy: paginaPerezosa(
+              () => import("@/features/honorarios/pages/suplencias-en-construccion-page"),
+              "SuplenciasEnConstruccionPage",
+            ),
+          },
+        ],
+      },
+      {
+        // US-25 y US-26: días de aviso de la cuota y hora del resumen diario (parámetros del sistema).
+        path: "notificaciones",
+        element: guardiaDeSeccion("notificaciones", "PARAMETROS_EDITAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/notificaciones/pages/notificaciones-page"), "NotificacionesPage") },
         ],
       },
       {

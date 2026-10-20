@@ -29,6 +29,7 @@ export const EXCLUSIVOS_PROPIETARIA = new Set([
   "HONORARIOS_VER_TODOS",
   "HONORARIOS_LIQUIDAR",
   "REPORTES_COBRANZA_VER",
+  "PARAMETROS_EDITAR",
 ]);
 
 function esLectura(codigosDelModulo: string[], codigo: string): boolean {

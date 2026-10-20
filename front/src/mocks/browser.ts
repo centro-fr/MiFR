@@ -3,8 +3,10 @@ import { actividadesHandlers } from "@/mocks/handlers/actividades";
 import { alumnosHandlers } from "@/mocks/handlers/alumnos";
 import { asistenciaHandlers } from "@/mocks/handlers/asistencia";
 import { authHandlers } from "@/mocks/handlers/auth";
+import { honorariosHandlers } from "@/mocks/handlers/honorarios";
 import { horariosHandlers } from "@/mocks/handlers/horarios";
 import { inscripcionesHandlers } from "@/mocks/handlers/inscripciones";
+import { notificacionesHandlers } from "@/mocks/handlers/notificaciones";
 import { pagosHandlers } from "@/mocks/handlers/pagos";
 import { personasHandlers } from "@/mocks/handlers/personas";
 import { planesHandlers } from "@/mocks/handlers/planes";
@@ -23,4 +25,6 @@ export const worker = setupWorker(
   ...planesHandlers,
   ...pagosHandlers,
   ...publicoHandlers,
+  ...honorariosHandlers,
+  ...notificacionesHandlers,
 );

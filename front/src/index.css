@@ -353,3 +353,21 @@ html {
   outline: 2px solid #e91e82;
   outline-offset: 2px;
 }
+
+/* Informe de honorarios para imprimir o guardar como PDF (US-23). En pantalla no se ve; al imprimir
+   se ve solo él: lo demás de <body> (la app, los toasts) se oculta mientras está montado. */
+.informe-impresion {
+  display: none;
+}
+
+@media print {
+  body:has(> .informe-impresion) > :not(.informe-impresion) {
+    display: none !important;
+  }
+  body:has(> .informe-impresion) {
+    background: #fff;
+  }
+  .informe-impresion {
+    display: block;
+  }
+}

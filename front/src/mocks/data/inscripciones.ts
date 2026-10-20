@@ -180,6 +180,19 @@ function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number):
 
 const UNA_HORA_EN_MS = 3_600_000;
 
+// Efectivo que cobró la profesora a cargo y todavía no rindió (US-19): lo muestra el resumen diario
+// (US-26). Como en la base local: $ 30.000 de Valentina Herrera, cobrados hace 7 días.
+function cobroSinRendir(id_pago: number, id_inscripcion: number, monto: number, id_profesora_cobra: number, diasAtras: number): PagoMock {
+  const fecha = new Date(Date.now() - diasAtras * UN_DIA_EN_MS).toISOString();
+  return {
+    ...pagoConfirmado(id_pago, id_inscripcion, monto),
+    fecha_pago: fecha,
+    fecha_confirmacion: fecha,
+    id_profesora_cobra,
+    rendido: false,
+  };
+}
+
 interface DatosTransferencia {
   id_pago: number;
   id_inscripcion: number;
@@ -247,7 +260,7 @@ function transferenciasSemilla(): PagoMock[] {
 // lleva y está vencida, la 4 pagó todos y está al día, y Micaela (5) se fue debiendo (US-08).
 export function pagosSemilla(): PagoMock[] {
   return [
-    pagoConfirmado(1, 3, PRECIOS[1]),
+    cobroSinRendir(1, 3, PRECIOS[1], 1, 7),
     ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
     ...transferenciasSemilla(),
