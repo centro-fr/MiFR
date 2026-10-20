@@ -204,3 +204,59 @@ export async function crearInscripcionDePrueba(
     select: { id_inscripcion: true },
   });
 }
+
+// El alta definitiva le da su rol al alumno o al tutor (US-07); los casos que solo necesitan que pueda
+// entrar al portal se lo dan directo.
+export async function darRol(prisma: PrismaClient, id_usuario: number, codigo: CodigoRol): Promise<void> {
+  const { id_rol } = await prisma.roles.findUniqueOrThrow({ where: { codigo } });
+  await prisma.usuario_roles.create({ data: { id_usuario, id_rol } });
+}
+
+export async function crearProfesora(
+  prisma: PrismaClient,
+): Promise<{ id_profesora: number; id_usuario: number; email: string }> {
+  const { id_usuario, email } = await crearUsuario(prisma, { roles: ["PROFESORA"] });
+  const { id_profesora } = await prisma.profesoras.create({ data: { id_usuario } });
+  return { id_profesora, id_usuario, email };
+}
+
+export async function crearActividad(
+  prisma: PrismaClient,
+  {
+    modalidad = "GRUPAL",
+    cupo_maximo = null,
+  }: { modalidad?: "GRUPAL" | "PERSONALIZADA"; cupo_maximo?: number | null } = {},
+): Promise<{ id_actividad: number }> {
+  const numero = siguienteNumero++;
+  return prisma.actividades.create({
+    data: { codigo: `ACT_${numero}`, nombre: `Actividad ${numero}`, modalidad, cupo_maximo, activo: true },
+    select: { id_actividad: true },
+  });
+}
+
+interface OpcionesClase {
+  id_horario: number;
+  fecha_clase: Date;
+  id_prof_dictante: number;
+  estado?: "PROGRAMADA" | "DICTADA" | "CANCELADA";
+  // Una marca por inscripto; los que no figuran quedan sin marcar. Sin id_usuario_registra, la marca
+  // es como las que deja el cierre de la asistencia.
+  marcas?: { id_alumno: number; id_inscripcion: number; asistio: boolean; id_usuario_registra?: number }[];
+}
+
+// Clase con sus marcas, directo en la base: los casos de racha, ranking e informes (US-22, US-30,
+// US-31, US-33) la usan para cargar el historial de asistencia sin tomarla clase por clase.
+export async function crearClase(
+  prisma: PrismaClient,
+  { id_horario, fecha_clase, id_prof_dictante, estado = "DICTADA", marcas = [] }: OpcionesClase,
+): Promise<{ id_clase: number }> {
+  const { id_clase } = await prisma.clases.create({
+    data: { id_horario, fecha_clase, id_prof_dictante, estado },
+  });
+  if (marcas.length > 0) {
+    await prisma.asistencias.createMany({
+      data: marcas.map((marca) => ({ id_clase, ...marca, fecha_registro: new Date() })),
+    });
+  }
+  return { id_clase };
+}
