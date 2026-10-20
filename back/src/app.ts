@@ -15,6 +15,8 @@ import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-log
 import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import { createGestionServicioEntrenamientoRoutes } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.routes.js";
+import type { ILogicaHonorarios } from "./modules/gestion-honorarios/interface/i-logica-honorarios.js";
+import { createGestionHonorariosRoutes } from "./modules/gestion-honorarios/gestion-honorarios.routes.js";
 import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
 import { createGestionUsuariosRoutes } from "./modules/gestion-usuarios/gestion-usuarios.routes.js";
 import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
@@ -33,6 +35,7 @@ export interface AppDependencies {
   gestionCuotasYPagos: ILogicaCuotasPagos;
   gestionNotificaciones: ILogicaNotificaciones;
   reportes: ILogicaInformes;
+  gestionHonorarios: ILogicaHonorarios;
   difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
@@ -77,6 +80,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
   api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
   api.use(createReportesRoutes(deps.reportes, acceso));
+  api.use(createGestionHonorariosRoutes(deps.gestionHonorarios, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

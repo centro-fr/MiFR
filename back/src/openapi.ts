@@ -5,6 +5,7 @@ import { registrarDocumentacionGestionNotificaciones } from "./modules/gestion-n
 import { registrarDocumentacionGestionInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.openapi.js";
 import { registrarDocumentacionGestionPersonas } from "./modules/gestion-personas/gestion-personas.openapi.js";
 import { registrarDocumentacionGestionServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.openapi.js";
+import { registrarDocumentacionGestionHonorarios } from "./modules/gestion-honorarios/gestion-honorarios.openapi.js";
 import { registrarDocumentacionReportes } from "./modules/reportes/reportes.openapi.js";
 import { registrarDocumentacionGestionUsuarios } from "./modules/gestion-usuarios/gestion-usuarios.openapi.js";
 import { GUIA_DE_PRUEBA } from "./openapi-guia.js";
@@ -33,5 +34,6 @@ export function registrarDocumentacionApi(
   registrarDocumentacionGestionCuotasYPagos(registro);
   registrarDocumentacionGestionNotificaciones(registro);
   registrarDocumentacionReportes(registro);
+  registrarDocumentacionGestionHonorarios(registro);
   registrarDocumentacionDifusionPublica(registro);
 }

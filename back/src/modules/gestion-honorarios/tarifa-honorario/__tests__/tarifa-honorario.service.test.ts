@@ -46,7 +46,11 @@ describe("TarifaHonorarioService", () => {
     vi.setSystemTime(new Date("2026-10-20T15:00:00Z"));
     profesoras.buscarPorId.mockResolvedValue({ id_profesora: 10 });
     planes.buscarPorId.mockResolvedValue({ id_plan: 7 });
-    service = new TarifaHonorarioService(repositorio as unknown as TarifaHonorarioRepository, profesoras, planes);
+    service = new TarifaHonorarioService(
+      repositorio as unknown as TarifaHonorarioRepository,
+      profesoras,
+      planes,
+    );
   });
 
   afterEach(() => {
@@ -91,11 +95,13 @@ describe("TarifaHonorarioService", () => {
     });
 
     it("responde 400 si la vigencia empieza en el pasado", async () => {
-      expect(await estado(service.registrar({ ...NUEVA, fecha_vigencia_desde: fecha("2026-10-19") }))).toBe(400);
+      expect(await estado(service.registrar({ ...NUEVA, fecha_vigencia_desde: fecha("2026-10-19") }))).toBe(
+        400,
+      );
       expect(repositorio.registrar).not.toHaveBeenCalled();
     });
 
-     it("responde 400 si la profesora no existe", async () => {
+    it("responde 400 si la profesora no existe", async () => {
       profesoras.buscarPorId.mockResolvedValue(null);
       expect(await estado(service.registrar(NUEVA))).toBe(400);
       expect(repositorio.registrar).not.toHaveBeenCalled();

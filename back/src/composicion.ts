@@ -19,6 +19,9 @@ import { UsuarioService } from "./modules/gestion-usuarios/usuario/usuario.servi
 import { ActividadRepository } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.repository.js";
 import { ActividadService } from "./modules/gestion-servicio-entrenamiento/actividad/actividad.service.js";
 import { GestionServicioEntrenamientoService } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.service.js";
+import { GestionHonorariosService } from "./modules/gestion-honorarios/gestion-honorarios.service.js";
+import { TarifaHonorarioRepository } from "./modules/gestion-honorarios/tarifa-honorario/tarifa-honorario.repository.js";
+import { TarifaHonorarioService } from "./modules/gestion-honorarios/tarifa-honorario/tarifa-honorario.service.js";
 import { ProfesorRepository } from "./modules/gestion-personas/profesor/profesor.repository.js";
 import { ProfesorService } from "./modules/gestion-personas/profesor/profesor.service.js";
 import { GestionPersonasService } from "./modules/gestion-personas/gestion-personas.service.js";
@@ -56,6 +59,9 @@ import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asis
 import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import { SuplenciaRepository } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.repository.js";
 import { SuplenciaService } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.service.js";
+import { CalculadorHonorarios } from "./modules/calculos-del-negocio/calculador-honorarios/calculador-honorarios.js";
+import { LiquidacionRepository } from "./modules/gestion-honorarios/liquidacion/liquidacion.repository.js";
+import { LiquidacionService } from "./modules/gestion-honorarios/liquidacion/liquidacion.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -169,6 +175,21 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     notificacionService,
   );
 
+    const tarifaHonorarioService = new TarifaHonorarioService(
+    new TarifaHonorarioRepository(prisma),
+    profesorService,
+    planService,
+  );
+  const liquidacionService = new LiquidacionService(
+    new LiquidacionRepository(prisma),
+    tarifaHonorarioService,
+    new CalculadorHonorarios(),
+    inscripcionService,
+    claseService,
+    cuotaService,
+    profesorService,
+  );
+  const gestionHonorarios = new GestionHonorariosService(tarifaHonorarioService, liquidacionService);
   return {
     dependencias: {
       gestionUsuarios,
@@ -197,6 +218,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
           alumnoService,
         ),
       ),
+      gestionHonorarios,
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,

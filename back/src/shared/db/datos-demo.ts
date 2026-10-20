@@ -365,6 +365,7 @@ export async function cargarDatosDemo(
   const idActividad = await cargarActividades(prisma);
   const horariosCreados = await cargarHorarios(prisma, horariosDemo(emailMultirol), idActividad, idProfesora);
   const idPlan = await cargarPlanes(prisma, idActividad);
+  await cargarTarifas(prisma, idProfesora, idPlan);
   const idAlumno = await cargarAlumnos(prisma);
   const idInscripcion = await cargarInscripciones(prisma, { idProfesora, idActividad, idPlan, idAlumno });
   return { idProfesora, idActividad, horariosCreados, idPlan, idAlumno, idInscripcion };
@@ -627,4 +628,66 @@ function unMesDespues(dia: Date): Date {
   const mes = dia.getUTCMonth() + 1;
   const ultimoDiaDelMes = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
   return new Date(Date.UTC(anio, mes, Math.min(dia.getUTCDate(), ultimoDiaDelMes)));
+}
+
+// Los honorarios rigen desde el 01/01/2026, así hoy siempre hay una tarifa vigente.
+const VIGENCIA_TARIFAS_DEMO = new Date("2026-01-01T00:00:00Z");
+
+interface TarifaDemo {
+  id_profesora: number;
+  concepto: "ALUMNO_A_CARGO" | "HORA_SUPLENCIA";
+  id_plan: number | null;
+  tipo_valor: "MONTO_FIJO" | "PORCENTAJE";
+  valor: number;
+}
+
+// Las tarifas no tienen una clave única en el DER: se busca la abierta del mismo alcance antes de
+// crearla, para que volver a correr el script no la duplique.
+async function cargarTarifa(prisma: PrismaClient, tarifa: TarifaDemo): Promise<void> {
+  const { id_profesora, concepto, id_plan } = tarifa;
+  const existente = await prisma.tarifas_honorario.findFirst({
+    where: { id_profesora, concepto, id_plan, fecha_vigencia_hasta: null },
+  });
+  if (!existente) {
+    await prisma.tarifas_honorario.create({
+      data: { ...tarifa, fecha_vigencia_desde: VIGENCIA_TARIFAS_DEMO },
+    });
+  }
+}
+
+// Cada profesora cobra un monto fijo por alumno a cargo y por hora de suplencia. La primera, además,
+// cobra el 10 % de lo cobrado en el plan Intermedio: esa tarifa gana a la de todos los planes.
+async function cargarTarifas(
+  prisma: PrismaClient,
+  idProfesora: Map<string, number>,
+  idPlan: Map<string, number>,
+): Promise<void> {
+  const profesoras = [...idProfesora.values()];
+  for (const id_profesora of profesoras) {
+    await cargarTarifa(prisma, {
+      id_profesora,
+      concepto: "ALUMNO_A_CARGO",
+      id_plan: null,
+      tipo_valor: "MONTO_FIJO",
+      valor: 3000,
+    });
+    await cargarTarifa(prisma, {
+      id_profesora,
+      concepto: "HORA_SUPLENCIA",
+      id_plan: null,
+      tipo_valor: "MONTO_FIJO",
+      valor: 2500,
+    });
+  }
+  const primera = profesoras[0];
+  const intermedio = idPlan.get("Intermedio");
+  if (primera !== undefined && intermedio !== undefined) {
+    await cargarTarifa(prisma, {
+      id_profesora: primera,
+      concepto: "ALUMNO_A_CARGO",
+      id_plan: intermedio,
+      tipo_valor: "PORCENTAJE",
+      valor: 10,
+    });
+  }
 }

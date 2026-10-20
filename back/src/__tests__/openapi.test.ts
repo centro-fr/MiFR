@@ -99,6 +99,14 @@ const OPERACIONES_ESPERADAS = [
   "post /suplencias",
   "patch /suplencias/{idClase}",
   "delete /suplencias/{idClase}",
+  "get /tarifas-honorario",
+  "post /tarifas-honorario",
+  "post /tarifas-honorario/{id}/cerrar",
+    "post /liquidaciones",
+  "get /liquidaciones",
+  "get /liquidaciones/{id}",
+  "post /liquidaciones/{id}/cerrar",
+  "post /liquidaciones/{id}/pagar",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {

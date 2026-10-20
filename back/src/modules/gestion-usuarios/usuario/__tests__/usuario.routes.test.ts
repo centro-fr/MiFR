@@ -1,5 +1,6 @@
 import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
+import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
@@ -26,6 +27,7 @@ function createApp(
     | "difusionPublica"
     | "gestionNotificaciones"
     | "reportes"
+    | "gestionHonorarios"
   >,
 ) {
   return crearAppBase({
@@ -37,6 +39,7 @@ function createApp(
     difusionPublica: logicaDifusionPublicaNoConfigurada,
     gestionNotificaciones: logicaNotificacionesNoConfigurada,
     reportes: logicaInformesNoConfigurada,
+    gestionHonorarios: logicaHonorariosNoConfigurada,
   });
 }
 

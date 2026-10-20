@@ -1,5 +1,6 @@
 import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
+import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
@@ -66,6 +67,7 @@ describe("rutas de parámetros del sistema", () => {
       difusionPublica: logicaDifusionPublicaNoConfigurada,
       gestionNotificaciones: logicaNotificacionesNoConfigurada,
       reportes: logicaInformesNoConfigurada,
+      gestionHonorarios: logicaHonorariosNoConfigurada,
       autenticacion,
       autorizacion,
     });
