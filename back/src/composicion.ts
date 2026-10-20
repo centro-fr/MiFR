@@ -56,6 +56,11 @@ import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asis
 import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import { SuplenciaRepository } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.repository.js";
 import { SuplenciaService } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.service.js";
+import { CalculadorRachaRanking } from "./modules/calculos-del-negocio/calculador-racha-ranking/calculador-racha-ranking.js";
+import { CierreMensualInsigniasService } from "./modules/gestion-insignias/cierre-mensual-insignias/cierre-mensual-insignias.service.js";
+import { GestionInsigniasService } from "./modules/gestion-insignias/gestion-insignias.service.js";
+import { InsigniaRepository } from "./modules/gestion-insignias/insignia/insignia.repository.js";
+import { InsigniaService } from "./modules/gestion-insignias/insignia/insignia.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -64,9 +69,9 @@ export interface PiezasDeInfraestructura {
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
-// tests de integración dan el alta definitiva sin pasar por un cobro; y los dos procesos que index.ts
+// tests de integración dan el alta definitiva sin pasar por un cobro; y los procesos que index.ts
 // corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
-// (US-21) y los avisos de cuota (US-25).
+// (US-21), los avisos de cuota (US-25), el resumen diario (US-26) y el cierre mensual de insignias (US-31).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
@@ -74,6 +79,7 @@ export interface Sistema {
   cierreAsistencia: CierreAsistenciaService;
   planificadorNotificaciones: PlanificadorNotificacionesService;
   resumenDiario: ResumenDiarioPropietariaService;
+  cierreMensualInsignias: CierreMensualInsigniasService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -161,6 +167,15 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     cuotaService,
   );
 
+  const insigniaService = new InsigniaService(
+    new InsigniaRepository(prisma),
+    asistenciaService,
+    alumnoService,
+    parametrosService,
+    new CalculadorRachaRanking(),
+  );
+  const cierreMensualInsignias = new CierreMensualInsigniasService(insigniaService);
+
   const resumenDiario = new ResumenDiarioPropietariaService(
     pagoService,
     cuotaService,
@@ -181,6 +196,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
         notificacionService,
         planificadorNotificaciones,
       ),
+      gestionInsignias: new GestionInsigniasService(insigniaService, cierreMensualInsignias),
       reportes: new ReportesService(
         new DetectorInactividadService(
           inscripcionService,
@@ -208,5 +224,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     cierreAsistencia,
     planificadorNotificaciones,
     resumenDiario,
+    cierreMensualInsignias,
   };
 }

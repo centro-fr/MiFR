@@ -13,8 +13,8 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.ts"],
       // Interfaces y tipos no tienen código ejecutable. El composition root (index.ts y composicion.ts)
-      // y las cargas del catálogo de seguridad, de los parámetros iniciales y de los datos demo hablan con
-      // la base real: los cubren los de integración.
+      // y las cargas del catálogo de seguridad, del de insignias, de los parámetros iniciales y de los datos
+      // demo hablan con la base real: los cubren los de integración.
       exclude: [
         "src/**/__tests__/**",
         "src/**/interface/**",
@@ -22,6 +22,7 @@ export default defineConfig({
         "src/index.ts",
         "src/composicion.ts",
         "src/shared/db/catalogo-seguridad.ts",
+        "src/shared/db/catalogo-insignias.ts",
         "src/shared/db/parametros-iniciales.ts",
         "src/shared/db/datos-demo.ts",
       ],

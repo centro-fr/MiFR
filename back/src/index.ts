@@ -21,14 +21,15 @@ if (!resultado.valida) {
 const { configuracion } = resultado;
 
 const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
-const { dependencias, cierreAsistencia, planificadorNotificaciones, resumenDiario } = construirSistema({
-  prisma,
-  googleAuth: new GoogleAutenticacion(
-    new OAuth2Client(configuracion.googleClientId),
-    configuracion.googleClientId ?? "",
-  ),
-  jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
-});
+const { dependencias, cierreAsistencia, planificadorNotificaciones, resumenDiario, cierreMensualInsignias } =
+  construirSistema({
+    prisma,
+    googleAuth: new GoogleAutenticacion(
+      new OAuth2Client(configuracion.googleClientId),
+      configuracion.googleClientId ?? "",
+    ),
+    jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
+  });
 
 // US-21: Render duerme el proceso sin tráfico, así que esto no es la única vía de cierre; las rutas
 // de clases también cierran las ventanas vencidas al leerlas (decisión de SPRINT-3.md). unref() no
@@ -54,6 +55,14 @@ setInterval(() => {
 setInterval(() => {
   resumenDiario.generarResumenDiario().catch((error: unknown) => {
     console.error("No se pudo generar el resumen diario de la propietaria", error);
+  });
+}, MILISEGUNDOS_ENTRE_AVISOS).unref();
+
+// US-31: con el mismo enfoque, el mes anterior se cierra también al consultar la ficha de insignias o el
+// ranking. Corre a lo sumo una vez por mes; el intervalo solo hace falta para cambiar de mes.
+setInterval(() => {
+  cierreMensualInsignias.cerrarMesAnterior().catch((error: unknown) => {
+    console.error("No se pudo cerrar el mes de las insignias", error);
   });
 }, MILISEGUNDOS_ENTRE_AVISOS).unref();
 

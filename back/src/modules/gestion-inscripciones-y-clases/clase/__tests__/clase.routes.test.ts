@@ -1,4 +1,5 @@
 import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
+import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,6 +50,7 @@ describe("rutas de clases y asistencia", () => {
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
       difusionPublica: logicaDifusionPublicaNoConfigurada,
       gestionNotificaciones: logicaNotificacionesNoConfigurada,
+      gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,
       autenticacion,
       autorizacion,
