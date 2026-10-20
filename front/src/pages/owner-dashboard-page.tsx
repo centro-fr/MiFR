@@ -3,14 +3,12 @@ import {
   ArrowLeftRight,
   Banknote,
   CalendarDays,
-  ClipboardCheck,
   Dumbbell,
-  Settings,
   ShieldCheck,
   Tag,
-  UserCheck,
   UserRound,
   Users,
+  UserX,
 } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +43,6 @@ const ACCESOS = [
     icono: Users,
   },
   {
-    to: "/app/alumnos/pendientes",
-    titulo: "Pendientes de alta",
-    descripcion: "Confirmar el alta de quienes abonan su primera cuota.",
-    icono: UserCheck,
-  },
-  {
     to: "/app/pagos/cuotas",
     titulo: "Estado de cuotas",
     descripcion: "Supervisar vencimientos de cuotas y registrar cobros.",
@@ -63,22 +55,16 @@ const ACCESOS = [
     icono: ArrowLeftRight,
   },
   {
-    to: "/app/asistencia",
-    titulo: "Asistencia",
-    descripcion: "Control diario de asistencia de alumnos a clases.",
-    icono: ClipboardCheck,
+    to: "/app/ausentes",
+    titulo: "Ausentes",
+    descripcion: "Detección y seguimiento de alumnos ausentes.",
+    icono: UserX,
   },
   {
     to: "/app/planes",
     titulo: "Planes y Precios",
     descripcion: "Configuración de planes, valores y promociones.",
     icono: Tag,
-  },
-  {
-    to: "/app/seguridad/permisos",
-    titulo: "Definición de Permisos",
-    descripcion: "Consultar y editar la matriz de permisos por rol.",
-    icono: Settings,
   },
 ];
 

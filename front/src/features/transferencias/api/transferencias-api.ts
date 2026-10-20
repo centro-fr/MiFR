@@ -57,11 +57,11 @@ function aTransferencia(api: TransferenciaApi): Transferencia {
     estado: api.estado,
     monto: api.monto,
     cargadaEl: api.fecha_pago,
-    realizadaEl: api.fecha_hora_transferencia,
-    titularCuenta: api.titular_cuenta_origen,
-    observaciones: api.observaciones,
+    realizadaEl: api.fecha_hora_transferencia ?? null,
+    titularCuenta: api.titular_cuenta_origen ?? null,
+    observaciones: api.observaciones ?? null,
     resueltaEl: api.fecha_confirmacion ?? null,
-    motivoRechazo: api.motivo_rechazo,
+    motivoRechazo: api.motivo_rechazo ?? null,
     alumno: { id: api.alumno.id_alumno, nombre: api.alumno.nombre, apellido: api.alumno.apellido },
     horasDesdeLaCarga: api.horas_desde_la_carga ?? 0,
     superaPlazo: api.supera_24_horas ?? false,
@@ -74,7 +74,6 @@ export interface ConsultaTransferencias {
   offset?: number;
 }
 
-/** GET /pagos/transferencias: de la más antigua a la más nueva, como las ordena el back. */
 export async function listarTransferencias({
   estado,
   idAlumno,
@@ -83,7 +82,12 @@ export async function listarTransferencias({
   const { data } = await apiClient.get("/pagos/transferencias", {
     params: { estado, id_alumno: idAlumno, limit: TRANSFERENCIAS_POR_PAGINA, offset },
   });
-  return z.array(transferenciaApiSchema).parse(data).map(aTransferencia);
+  const items = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { datos?: unknown[] })?.datos)
+    ? (data as { datos: unknown[] }).datos
+    : [];
+  return z.array(transferenciaApiSchema).parse(items).map(aTransferencia);
 }
 
 /**

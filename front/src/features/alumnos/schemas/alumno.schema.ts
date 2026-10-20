@@ -129,17 +129,35 @@ export const tutorFormSchema = z
     }
   });
 
+export const contEmergNombre = z
+  .string()
+  .trim()
+  .min(1, "El contacto de emergencia es obligatorio")
+  .max(80, "Máximo 80 caracteres")
+  .regex(/^\p{L}[\p{L}\p{M} '’.-]*$/u, "Solo puede contener letras, espacios y guiones");
+
+export const contEmergTelefono = z
+  .string()
+  .trim()
+  .min(1, "El teléfono de emergencia es obligatorio")
+  .max(20, "Máximo 20 caracteres")
+  .regex(/^\+?[\d(][\d ()-]*$/, "Solo dígitos, espacios, guiones y un + inicial")
+  .refine((val) => {
+    const digits = val.replace(/\D/g, "").length;
+    return digits >= 7 && digits <= 15;
+  }, "El teléfono de emergencia debe tener entre 7 y 15 dígitos");
+
 export const alumnoFormSchema = z
   .object({
     nombre: nombrePersona,
     apellido: apellidoPersona,
-    dni: dniPersona.optional().or(z.literal("")),
+    dni: dniPersona,
     email: z.string().trim().toLowerCase().optional().or(z.literal("")),
     fecha_nacimiento: fechaNacimientoRegex,
     telefono: z.string().trim().optional().or(z.literal("")),
     direccion: textoLibreOpcional(120),
-    cont_emerg_nombre: textoLibreOpcional(80),
-    cont_emerg_telefono: z.string().trim().optional().or(z.literal("")),
+    cont_emerg_nombre: contEmergNombre,
+    cont_emerg_telefono: contEmergTelefono,
     apto_medico: z.boolean().default(false),
     fecha_apto_medico: z
       .string()
@@ -205,18 +223,7 @@ export const alumnoFormSchema = z
       }
     }
 
-    // El teléfono de contacto del alumno es obligatorio solo para mayores de edad (su único contacto).
-    // Para menores de edad es opcional, ya que el contacto obligatorio es el tutor legal (US-06).
-    if (!menor) {
-      if (!data.telefono || data.telefono.trim() === "") {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "El teléfono de contacto es obligatorio para alumnos mayores",
-          path: ["telefono"],
-        });
-      }
-    }
-
+    // El teléfono de contacto del alumno es siempre opcional (tanto para mayores como para menores).
     if (data.telefono && data.telefono.trim() !== "") {
       const resTel = telefonoPersona.safeParse(data.telefono);
       if (!resTel.success) {
@@ -230,20 +237,6 @@ export const alumnoFormSchema = z
     }
 
     validarAptoMedico(data, ctx);
-
-    // Validar teléfono de emergencia si se completó
-    if (data.cont_emerg_telefono && data.cont_emerg_telefono.trim() !== "") {
-      const resEmerg = telefonoPersona.safeParse(data.cont_emerg_telefono);
-      if (!resEmerg.success) {
-        resEmerg.error.issues.forEach((issue) => {
-          ctx.addIssue({
-            ...issue,
-            message: "El teléfono de emergencia debe tener entre 7 y 15 dígitos",
-            path: ["cont_emerg_telefono"],
-          });
-        });
-      }
-    }
   });
 
 // Igual que el formulario de edición (alumno.ts): con el apto marcado, la fecha es obligatoria.

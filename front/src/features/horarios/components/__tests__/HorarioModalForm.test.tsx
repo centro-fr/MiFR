@@ -50,11 +50,11 @@ describe("HorarioModalForm", () => {
     render(<HorarioModalForm {...defaultProps} />);
 
     // Verificamos que el título esté en pantalla
-    expect(screen.getByText("Asignar Nuevo Horario")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nuevo horario" })).toBeInTheDocument();
     // Verificamos que las etiquetas de los inputs existan
-    expect(screen.getByText("Actividad / Disciplina")).toBeInTheDocument();
-    expect(screen.getByText("Profesora responsable")).toBeInTheDocument();
-    expect(screen.getByText("Día")).toBeInTheDocument();
+    expect(screen.getByText(/^Actividad/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Profesora/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Día/i)).toBeInTheDocument();
   });
 
   it("muestra alerta roja si falla la validación de esquema (Zod) antes de guardar", () => {

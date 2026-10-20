@@ -1,0 +1,454 @@
+import { useState, type FormEvent } from "react";
+import { Check, X } from "lucide-react";
+import { toast } from "sonner";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useActividades } from "@/features/actividades/hooks/use-actividades";
+import { ModalBajaPlan, ModalCambioFrecuencia } from "@/features/planes/components/modales-plan";
+import {
+  useActualizarPlan,
+  useDarDeBajaPlan,
+  usePlanes,
+} from "@/features/planes/hooks/use-planes";
+import {
+  aCuerpoActualizacion,
+  crearPlanFormSchema,
+  erroresDe,
+  valoresDelPlan,
+  type ErroresPlanForm,
+  type FrecuenciaElegida,
+  type PlanFormValues,
+} from "@/features/planes/schemas/plan";
+import { cambiosDelPlan, nombreRepetido } from "@/features/planes/utils/planes";
+import type { Plan } from "@/types/plan";
+import { cn } from "@/utils/cn";
+
+interface PropsEditarPlanDialog {
+  plan: Plan | null;
+  onClose: () => void;
+  onExito?: () => void;
+}
+
+const OPCIONES_FRECUENCIA: { valor: FrecuenciaElegida; label: string }[] = [
+  { valor: "1", label: "1 clase" },
+  { valor: "2", label: "2 clases" },
+  { valor: "3", label: "3 clases" },
+  { valor: "4", label: "4 clases" },
+  { valor: "5", label: "5 clases" },
+  { valor: "6", label: "6 clases" },
+  { valor: "7", label: "7 clases" },
+  { valor: "LIBRE", label: "Clases libres, sin tope" },
+];
+
+export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDialog) {
+  const { data: actividades = [] } = useActividades();
+  const { data: todosLosPlanes = [] } = usePlanes();
+  const actualizar = useActualizarPlan();
+  const darDeBaja = useDarDeBajaPlan();
+
+  const [valores, setValores] = useState<PlanFormValues>(() =>
+    plan ? valoresDelPlan(plan) : ({} as PlanFormValues)
+  );
+  const [errores, setErrores] = useState<ErroresPlanForm>({});
+  const [bajaAbierta, setBajaAbierta] = useState(false);
+  const [confirmarFrecuencia, setConfirmarFrecuencia] = useState(false);
+
+  if (!plan) return null;
+
+  const esMensual = valores.tipo === "MENSUAL";
+  const cambios = cambiosDelPlan(plan, valores, actividades);
+  const cambioDeFrecuencia = cambios?.find(({ campo }) => campo === "Frecuencia");
+  const sinCambios = cambios?.length === 0;
+
+  const cambiar = (cambio: Partial<PlanFormValues>) => {
+    setValores((prev) => ({ ...prev, ...cambio }));
+    setErrores((prev) => ({
+      ...prev,
+      ...Object.fromEntries(Object.keys(cambio).map((c) => [c, undefined])),
+    }));
+  };
+
+  const validar = (): boolean => {
+    const resultado = crearPlanFormSchema({ editando: true }).safeParse(valores);
+    const nuevos = resultado.success ? {} : erroresDe(resultado.error);
+    if (!nuevos.nombre && nombreRepetido(todosLosPlanes, valores.nombre, plan.id)) {
+      nuevos.nombre = "Ya existe un plan vigente con ese nombre.";
+    }
+    setErrores(nuevos);
+    return Object.keys(nuevos).length === 0;
+  };
+
+  const guardar = (valoresAGuardar: PlanFormValues) => {
+    actualizar.mutate(
+      { id: plan.id, cambios: aCuerpoActualizacion(plan, valoresAGuardar) },
+      {
+        onSuccess: (guardado) => {
+          toast.success(`Cambios guardados en "${guardado.nombre}"`);
+          onExito?.();
+          onClose();
+        },
+        onError: (err) => {
+          toast.error(mensajeDeErrorApi(err, "No se pudieron guardar los cambios."));
+        },
+      }
+    );
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!validar()) return;
+    if (cambioDeFrecuencia) {
+      setConfirmarFrecuencia(true);
+    } else {
+      guardar(valores);
+    }
+  };
+
+  const confirmarBaja = async () => {
+    try {
+      await darDeBaja.mutateAsync(plan.id);
+      toast.info(`Plan "${plan.nombre}" dado de baja`);
+      setBajaAbierta(false);
+      onExito?.();
+      onClose();
+    } catch {
+      // El error se muestra en el modal de baja
+    }
+  };
+
+  return (
+    <>
+      <Dialog
+        open={plan !== null}
+        onOpenChange={(abierto) => {
+          if (!abierto && !actualizar.isPending) onClose();
+        }}
+      >
+        <DialogContent
+          hideClose
+          className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
+        >
+          {/* Encabezado */}
+          <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Editar plan {plan.nombre}
+            </DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              aria-label="Cerrar formulario"
+              className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <X className="size-4" />
+            </Button>
+          </DialogHeader>
+
+          {/* Formulario */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
+            {/* Nombre */}
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Nombre <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="plan-nombre"
+                name="nombre"
+                value={valores.nombre}
+                maxLength={40}
+                required
+                onChange={(e) => cambiar({ nombre: e.target.value })}
+                placeholder="Nombre del plan"
+                className={cn(
+                  "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                  errores.nombre && "border-rose-500"
+                )}
+              />
+              {errores.nombre && (
+                <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                  {errores.nombre}
+                </p>
+              )}
+            </div>
+
+            {/* Tipo */}
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Tipo <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Mensual */}
+                <div
+                  className={cn(
+                    "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
+                    esMensual
+                      ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                      esMensual ? "border-primary" : "border-slate-300 dark:border-slate-600"
+                    )}
+                  >
+                    {esMensual && <div className="size-2 rounded-full bg-primary" />}
+                  </div>
+                  <span className="text-sm">Mensual</span>
+                </div>
+
+                {/* Suelta */}
+                <div
+                  className={cn(
+                    "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
+                    !esMensual
+                      ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                      !esMensual ? "border-primary" : "border-slate-300 dark:border-slate-600"
+                    )}
+                  >
+                    {!esMensual && <div className="size-2 rounded-full bg-primary" />}
+                  </div>
+                  <span className="text-sm">Suelta</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground pt-0.5">
+                El tipo no se puede cambiar: define cómo vencen las cuotas de quienes ya tienen este plan.
+              </p>
+            </div>
+
+            {/* Clases por semana y Días de gracia */}
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Clases por semana */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="plan-frecuencia" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Clases por semana <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    disabled={!esMensual}
+                    value={valores.frecuencia}
+                    onValueChange={(val) => cambiar({ frecuencia: val as FrecuenciaElegida })}
+                  >
+                    <SelectTrigger
+                      id="plan-frecuencia"
+                      aria-label="Clases por semana *"
+                      className={cn(
+                        "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                        errores.frecuencia && "border-rose-500"
+                      )}
+                    >
+                      <SelectValue placeholder="Seleccionar frecuencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OPCIONES_FRECUENCIA.map((opcion) => (
+                        <SelectItem key={opcion.valor} value={opcion.valor}>
+                          {opcion.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errores.frecuencia && (
+                    <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                      {errores.frecuencia}
+                    </p>
+                  )}
+                </div>
+
+                {/* Días de gracia */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="plan-gracia" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Días de gracia
+                  </Label>
+                  <Input
+                    id="plan-gracia"
+                    name="diasGracia"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={365}
+                    disabled={!esMensual}
+                    value={valores.diasGracia}
+                    onChange={(e) => cambiar({ diasGracia: e.target.value })}
+                    className={cn(
+                      "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                      errores.diasGracia && "border-rose-500"
+                    )}
+                  />
+                  {errores.diasGracia && (
+                    <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                      {errores.diasGracia}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground pt-0.5">
+                Días que el alumno puede seguir viniendo después de que vence su cuota.
+              </p>
+            </div>
+
+            {/* Actividad */}
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Actividad
+              </Label>
+              <Select
+                value={valores.idActividad || "todas"}
+                onValueChange={(val) => cambiar({ idActividad: val === "todas" ? "" : val })}
+              >
+                <SelectTrigger
+                  id="plan-actividad"
+                  aria-label="Actividad"
+                  className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+                >
+                  <SelectValue placeholder="Cualquier actividad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Cualquier actividad</SelectItem>
+                  {actividades.map((act) => (
+                    <SelectItem key={act.id} value={act.id}>
+                      {act.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground pt-0.5">
+                Si elegís una, al inscribir solo se pueden tomar horarios de esa actividad.
+              </p>
+            </div>
+
+            {/* Solo con la profesora a cargo (Checkbox estilizado) */}
+            <div
+              role="checkbox"
+              aria-checked={valores.profesoraUnica}
+              tabIndex={0}
+              onClick={() => cambiar({ profesoraUnica: !valores.profesoraUnica })}
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  cambiar({ profesoraUnica: !valores.profesoraUnica });
+                }
+              }}
+              className="flex items-start gap-3 cursor-pointer select-none pt-1"
+            >
+              <div
+                className={cn(
+                  "size-5 rounded-md border flex items-center justify-center transition-colors mt-0.5 shrink-0",
+                  valores.profesoraUnica
+                    ? "bg-primary border-primary text-white"
+                    : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                )}
+              >
+                {valores.profesoraUnica && <Check className="size-3.5 stroke-[3]" />}
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 block">
+                  Solo con la profesora a cargo
+                </span>
+                <span className="text-xs text-muted-foreground block">
+                  El alumno no puede ir a clases de otra profesora.
+                </span>
+              </div>
+            </div>
+
+            {/* Descripción (opcional) */}
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-descripcion" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
+              </Label>
+              <Textarea
+                id="plan-descripcion"
+                name="descripcion"
+                rows={3}
+                value={valores.descripcion}
+                maxLength={255}
+                onChange={(e) => cambiar({ descripcion: e.target.value })}
+                placeholder="Para chicos de 6 a 12 años"
+                className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium"
+              />
+            </div>
+
+            {/* Botón Dar de baja el plan */}
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBajaAbierta(true)}
+                className="rounded-xl border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-bold text-xs sm:text-sm h-10 px-4"
+              >
+                Dar de baja el plan
+              </Button>
+            </div>
+
+            {/* Footer de botones */}
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={actualizar.isPending}
+                className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={actualizar.isPending || sinCambios}
+                className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+              >
+                {actualizar.isPending ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal confirmación de cambio de frecuencia */}
+      {confirmarFrecuencia && cambioDeFrecuencia && (
+        <ModalCambioFrecuencia
+          antes={cambioDeFrecuencia.antes}
+          despues={cambioDeFrecuencia.despues}
+          guardando={actualizar.isPending}
+          onClose={() => setConfirmarFrecuencia(false)}
+          onConfirm={() => {
+            setConfirmarFrecuencia(false);
+            guardar(valores);
+          }}
+        />
+      )}
+
+      {/* Modal confirmación de baja */}
+      {bajaAbierta && (
+        <ModalBajaPlan
+          nombre={plan.nombre}
+          dandoDeBaja={darDeBaja.isPending}
+          error={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja el plan.") : null}
+          onClose={() => setBajaAbierta(false)}
+          onConfirm={() => void confirmarBaja()}
+        />
+      )}
+    </>
+  );
+}

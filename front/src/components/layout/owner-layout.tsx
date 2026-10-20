@@ -1,10 +1,11 @@
 import { Fragment, useId, useState, type ComponentProps, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Bell, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,17 +42,9 @@ import type { RoleCode } from "@/types/auth";
 /** Cookie con la que el Sidebar de shadcn recuerda si quedó contraído (solo UI). */
 const COOKIE_SIDEBAR = "sidebar_state";
 
-/** Etiquetas en español para el rol del bloque inferior del menú. */
-const ETIQUETAS_ROL: Record<RoleCode, string> = {
-  PROPIETARIA: "Propietaria",
-  PROFESORA: "Profesora",
-  ALUMNO: "Alumno/a",
-  TUTOR: "Tutor/a",
-};
-
-/** Ítem activo en rosa de marca; el resto de estados (hover, foco) los resuelve el Sidebar. */
+/** Ítem de navegación con estilo refinado según diseño oscuro */
 const CLASES_ITEM =
-  "h-11 pointer-fine:h-9 [&>svg]:size-5 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden";
+  "h-11 pointer-fine:h-9.5 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-white [&>svg]:size-5 [&>svg]:text-slate-400 hover:[&>svg]:text-white data-[active=true]:bg-[#281525] data-[active=true]:text-white data-[active=true]:font-bold data-[active=true]:[&>svg]:text-primary group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden transition-colors";
 
 function leerSidebarAbierto(): boolean {
   try {
@@ -65,11 +58,9 @@ function LogoMarca() {
   return <LogoFr className="size-8" />;
 }
 
-/** Props de entrada en cascada del drawer mobile (el delay crece con el índice del ítem). */
+/** Props de entrada en cascada del drawer mobile. */
 type EntradaEscalonada = Pick<ComponentProps<"li">, "className" | "style">;
 
-// Hasta el 6º ítem, 15 ms entre uno y otro: con la animación de 200 ms, el último termina a los
-// ~290 ms, casi junto con el panel (250 ms). Antes llegaba a ~520 ms y el menú se sentía pesado.
 const PASO_CASCADA_MS = 15;
 const ITEMS_EN_CASCADA = 6;
 
@@ -78,20 +69,24 @@ function entradaEscalonada(indice: number): EntradaEscalonada {
 }
 
 /**
- * Número de pendientes junto a una opción (en ámbar, como el diseño). El lector de pantalla
- * lo lee como parte del nombre del enlace: "Pendientes de alta, 2 pendientes".
+ * Globo de notificación / alerta junto a una opción (en rosa de marca).
+ * Muestra un signo de exclamación cuando hay pendientes que requieren atención
+ * (transferencias por verificar o rendición de efectivo).
  */
 function Contador({ valor, className }: { valor?: number; className?: string }) {
-  if (!valor) return null;
+  if (!valor || valor <= 0) return null;
   return (
     <>
       <span
         aria-hidden="true"
-        className={cn("min-w-5 rounded-full bg-amber-400 px-1.5 text-center text-xs leading-5 font-bold text-amber-950", className)}
+        className={cn(
+          "size-5 flex items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-xs shrink-0 select-none",
+          className,
+        )}
       >
-        {valor}
+        !
       </span>
-      <span className="sr-only">, {valor === 1 ? "1 pendiente" : `${valor} pendientes`}</span>
+      <span className="sr-only">, {valor === 1 ? "1 pendiente por verificar" : `${valor} pendientes por verificar`}</span>
     </>
   );
 }
@@ -119,7 +114,14 @@ function ItemSimple({ item, alNavegar, entrada }: PropsItem) {
       <SidebarMenuButton asChild isActive={item.esActivo} tooltip={item.etiqueta} className={CLASES_ITEM}>
         <Link to={item.to} onClick={alNavegar} aria-current={item.esActivo ? "page" : undefined}>
           <Icono aria-hidden="true" />
-          <span>{item.etiqueta}</span>
+          <span className="flex-1 truncate">{item.etiqueta}</span>
+          <Contador valor={item.contador} />
+          {item.esActivo && (
+            <span
+              aria-hidden="true"
+              className="size-1.5 rounded-full bg-primary shrink-0 ml-auto group-data-[collapsible=icon]:hidden"
+            />
+          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -136,8 +138,7 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
           <SidebarMenuButton isActive={item.esActivo} tooltip={item.etiqueta} className={cn(CLASES_ITEM, "relative")}>
             <Icono aria-hidden="true" />
             <span>{item.etiqueta}</span>
-            {/* Contraído solo se ve el ícono: el número va como punto en la esquina. */}
-            <Contador valor={item.contador} className="absolute top-0 right-0 min-w-4 px-1 text-[10px] leading-4" />
+            <Contador valor={item.contador} className="absolute top-0.5 right-0.5 size-4 text-[10px]" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
@@ -174,11 +175,19 @@ function Flecha({ abierto, className }: { abierto: boolean; className?: string }
   );
 }
 
-/**
- * Cabecera de un grupo con pantalla propia: el nombre lleva a esa pantalla (las sub-opciones como
- * tarjetas) y la flecha, aparte, solo despliega o pliega sin navegar.
- */
-function CabeceraConPantalla({ item, to, abierto, alNavegar, alternar }: { item: ItemConEstado; to: string; abierto: boolean; alNavegar: () => void; alternar: () => void }) {
+function CabeceraConPantalla({
+  item,
+  to,
+  abierto,
+  alNavegar,
+  alternar,
+}: {
+  item: ItemConEstado;
+  to: string;
+  abierto: boolean;
+  alNavegar: () => void;
+  alternar: () => void;
+}) {
   const Icono = item.icono;
   const enSuPantalla = item.esActivo && !item.hijos?.some((hijo) => hijo.esActivo);
   return (
@@ -186,7 +195,7 @@ function CabeceraConPantalla({ item, to, abierto, alNavegar, alternar }: { item:
       <SidebarMenuButton asChild isActive={enSuPantalla} className={cn(CLASES_ITEM, "pr-11")}>
         <Link to={to} onClick={alNavegar} aria-current={enSuPantalla ? "page" : undefined}>
           <Icono aria-hidden="true" />
-          <span>{item.etiqueta}</span>
+          <span className="flex-1 truncate">{item.etiqueta}</span>
           {!abierto && <Contador valor={item.contador} className="ml-auto" />}
         </Link>
       </SidebarMenuButton>
@@ -195,8 +204,7 @@ function CabeceraConPantalla({ item, to, abierto, alNavegar, alternar }: { item:
         aria-expanded={abierto}
         aria-label={abierto ? `Plegar ${item.etiqueta}` : `Desplegar ${item.etiqueta}`}
         onClick={alternar}
-        // Centrada en el ítem: 44 px táctil y 36 px con mouse, menos su tamaño, dejan 4 px arriba.
-        className="top-1 right-1 size-9 rounded-md peer-data-[size=default]/menu-button:top-1 pointer-fine:size-7 [&>svg]:size-4"
+        className="top-1 right-1 size-9 rounded-md peer-data-[size=default]/menu-button:top-1 pointer-fine:size-7 [&>svg]:size-4 text-slate-400 hover:text-white"
       >
         <Flecha abierto={abierto} />
       </SidebarMenuAction>
@@ -209,8 +217,7 @@ function CabeceraSinPantalla({ item, abierto, alternar }: { item: ItemConEstado;
   return (
     <SidebarMenuButton type="button" aria-expanded={abierto} onClick={alternar} className={CLASES_ITEM}>
       <Icono aria-hidden="true" />
-      <span>{item.etiqueta}</span>
-      {/* Abierto, el número se ve en la sub-opción: no se repite en el grupo. */}
+      <span className="flex-1 truncate">{item.etiqueta}</span>
       {!abierto && <Contador valor={item.contador} className="ml-auto" />}
       <Flecha abierto={abierto} className={cn((abierto || !item.contador) && "ml-auto")} />
     </SidebarMenuButton>
@@ -219,8 +226,6 @@ function CabeceraSinPantalla({ item, abierto, alternar }: { item: ItemConEstado;
 
 function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
   const { pathname } = useLocation();
-  // Estado derivado (sin efectos): nace abierto en rutas hijas y el toggle manual
-  // solo vale para la ruta donde se hizo; al cambiar de sección vuelve al default.
   const [forzado, setForzado] = useState<{ ruta: string; abierto: boolean } | null>(null);
   const abierto = forzado?.ruta === pathname ? forzado.abierto : item.esActivo;
   const alternar = () => setForzado({ ruta: pathname, abierto: !abierto });
@@ -232,7 +237,6 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
       ) : (
         <CabeceraSinPantalla item={item} abierto={abierto} alternar={alternar} />
       )}
-      {/* Altura animada con grid-rows 0fr→1fr; `inert` cerrado saca a las hijas del tab. */}
       <div
         inert={!abierto}
         className={cn(
@@ -240,18 +244,16 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
           abierto ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
-        <SidebarMenuSub className="min-h-0 overflow-hidden py-0">
+        <SidebarMenuSub className="min-h-0 overflow-hidden py-1 border-white/10 ml-4">
           {item.hijos?.map((hijo) => (
             <SidebarMenuSubItem key={hijo.to}>
               <SidebarMenuSubButton
                 asChild
                 isActive={hijo.esActivo}
-                // Alto mínimo y no fijo: un nombre largo ("Transferencias pendientes" con su contador)
-                // pasa a dos líneas en lugar de cortarse o encimarse con el ítem de abajo.
-                className="h-auto min-h-11 py-1.5 leading-tight pointer-fine:min-h-8 data-[active=true]:bg-sidebar-primary data-[active=true]:font-bold data-[active=true]:text-sidebar-primary-foreground"
+                className="h-auto min-h-9 py-1.5 leading-tight rounded-lg text-slate-300 hover:text-white hover:bg-white/5 data-[active=true]:bg-primary/20 data-[active=true]:text-white data-[active=true]:font-bold"
               >
                 <Link to={hijo.to} onClick={alNavegar} aria-current={hijo.esActivo ? "page" : undefined}>
-                  <span>{hijo.etiqueta}</span>
+                  <span className="truncate">{hijo.etiqueta}</span>
                   <Contador valor={hijo.contador} className="ml-auto" />
                 </Link>
               </SidebarMenuSubButton>
@@ -266,11 +268,9 @@ function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
 interface SeccionDelMenu {
   titulo?: string;
   items: ItemConEstado[];
-  /** Posición del primer ítem en todo el menú: la cascada del drawer sigue sin cortes entre secciones. */
   desde: number;
 }
 
-// Agrupa los ítems seguidos que comparten sección; el orden lo define owner-navigation.ts.
 function agruparPorSeccion(items: ItemConEstado[]): SeccionDelMenu[] {
   const secciones: SeccionDelMenu[] = [];
   items.forEach((item, indice) => {
@@ -293,7 +293,10 @@ function SeccionMenu({ seccion, contraido, isMobile, alNavegar }: PropsSeccion) 
   return (
     <SidebarGroup className="py-1">
       {seccion.titulo && !contraido && (
-        <SidebarGroupLabel id={idTitulo} className="text-xs font-bold tracking-wide uppercase">
+        <SidebarGroupLabel
+          id={idTitulo}
+          className="text-[11px] font-bold tracking-wider uppercase text-slate-400/90 px-3"
+        >
           {seccion.titulo}
         </SidebarGroupLabel>
       )}
@@ -321,8 +324,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
     <nav aria-label="Menú principal" className="py-1">
       {agruparPorSeccion(items).map((seccion, indice) => (
         <Fragment key={seccion.titulo ?? "sin-seccion"}>
-          {/* La línea separa temas; contraído, el título se oculta y la línea es lo que los distingue. */}
-          {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none" />}
+          {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none border-white/5" />}
           <SeccionMenu seccion={seccion} contraido={contraido} isMobile={isMobile} alNavegar={alNavegar} />
         </Fragment>
       ))}
@@ -330,7 +332,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
   );
 }
 
-/** Contraer/expandir el menú en desktop. En mobile no aplica: ahí el menú es un drawer. */
+/** Contraer/expandir el menú en desktop. */
 function BotonColapsarMenu() {
   const { state, isMobile, toggleSidebar } = useSidebar();
   if (isMobile) return null;
@@ -348,7 +350,7 @@ function BotonColapsarMenu() {
           aria-label={etiqueta}
           className={cn(
             CLASES_ITEM,
-            "w-fit text-sidebar-foreground/70 hover:text-sidebar-foreground group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center!",
+            "w-fit text-slate-400 hover:text-white group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center!",
           )}
         >
           <Icono aria-hidden="true" />
@@ -358,13 +360,60 @@ function BotonColapsarMenu() {
   );
 }
 
+/** Switch de roles Propietaria / Profesora en el header del menú */
+function SwitchRoles({
+  roles,
+  rolActivo,
+  onCambiarRol,
+}: {
+  roles: readonly RoleCode[];
+  rolActivo: RoleCode;
+  onCambiarRol: (rol: RoleCode) => void;
+}) {
+  const { state } = useSidebar();
+  if (!roles.includes("PROPIETARIA") || !roles.includes("PROFESORA") || state === "collapsed") {
+    return null;
+  }
+
+  return (
+    <div className="px-3 pt-3 pb-1 group-data-[collapsible=icon]:hidden">
+      <div className="grid grid-cols-2 p-1 bg-[#1a1f2c] rounded-xl border border-white/5 gap-1">
+        <button
+          type="button"
+          onClick={() => onCambiarRol("PROPIETARIA")}
+          className={cn(
+            "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
+            rolActivo === "PROPIETARIA"
+              ? "bg-white text-slate-900 shadow-xs"
+              : "text-slate-400 hover:text-white",
+          )}
+        >
+          Propietaria
+        </button>
+        <button
+          type="button"
+          onClick={() => onCambiarRol("PROFESORA")}
+          className={cn(
+            "py-1.5 text-xs font-bold rounded-lg transition-all text-center cursor-pointer",
+            rolActivo === "PROFESORA"
+              ? "bg-white text-slate-900 shadow-xs"
+              : "text-slate-400 hover:text-white",
+          )}
+        >
+          Profesora
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Bloque de usuario al pie del menú con avatar, nombre, email y botón de logout a la derecha */
 function BloqueUsuario() {
   const { user, logout } = useAuth();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const nombre = user ? `${user.nombre} ${user.apellido}`.trim() : "";
   const iniciales = user ? `${user.nombre.charAt(0)}${user.apellido.charAt(0)}`.toUpperCase() : "";
-  // Una persona puede tener más de un rol.
-  const rolTexto = (user?.roles ?? []).map((rol) => ETIQUETAS_ROL[rol]).join(" · ");
+  const email = user?.email ?? "";
 
   const handleLogout = () => {
     setOpenMobile(false);
@@ -372,50 +421,75 @@ function BloqueUsuario() {
   };
 
   return (
-    <SidebarFooter className="border-t border-sidebar-border group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:items-center">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2.5 px-0.5 py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sm font-bold">
+    <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2">
+      <div className="flex items-center gap-3 w-full group-data-[collapsible=icon]:justify-center">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow-xs">
               {iniciales}
             </div>
-            <div className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-              <div className="truncate text-sm font-semibold">{nombre}</div>
-              <div className="truncate text-sm font-medium text-pink-200">{rolTexto}</div>
-            </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right" hidden={state !== "collapsed" || isMobile}>
-          {nombre}
-        </TooltipContent>
-      </Tooltip>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton tooltip="Cerrar sesión" onClick={handleLogout} className={CLASES_ITEM}>
-            <LogOut aria-hidden="true" />
-            <span>Cerrar sesión</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
+          </TooltipTrigger>
+          <TooltipContent side="right" hidden={state !== "collapsed" || isMobile}>
+            <div>{nombre}</div>
+            <div className="text-xs text-muted-foreground">{email}</div>
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden">
+          <div className="truncate text-sm font-bold text-white">{nombre}</div>
+          <div className="truncate text-xs text-slate-400 mt-0.5">{email}</div>
+        </div>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Cerrar sesión"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors group-data-[collapsible=icon]:hidden cursor-pointer"
+            >
+              <LogOut aria-hidden="true" className="size-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Cerrar sesión</TooltipContent>
+        </Tooltip>
+      </div>
     </SidebarFooter>
   );
 }
 
-function MenuLateral({ items }: { items: ItemConEstado[] }) {
+function MenuLateral({
+  items,
+  roles,
+  rolActivo,
+  onCambiarRol,
+}: {
+  items: ItemConEstado[];
+  roles: readonly RoleCode[];
+  rolActivo: RoleCode;
+  onCambiarRol: (rol: RoleCode) => void;
+}) {
   return (
-    <Sidebar collapsible="icon" className="border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
       <SidebarHeader className="h-14 flex flex-row items-center border-b border-sidebar-border px-3.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
         <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
           <LogoMarca />
-          <span className="truncate text-sm font-extrabold group-data-[collapsible=icon]:hidden">MiFR Centro</span>
+          <span className="truncate text-base font-black tracking-tight text-white group-data-[collapsible=icon]:hidden">
+            MiFR
+          </span>
         </div>
       </SidebarHeader>
+
+      <SwitchRoles roles={roles} rolActivo={rolActivo} onCambiarRol={onCambiarRol} />
+
       <SidebarContent>
         <NavegacionPrincipal items={items} />
       </SidebarContent>
-      <SidebarGroup className="py-0 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:py-0">
+
+      <SidebarGroup className="py-0 px-2 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:py-0">
         <BotonColapsarMenu />
       </SidebarGroup>
+
       <BloqueUsuario />
       <SidebarRail />
     </Sidebar>
@@ -458,7 +532,29 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
   );
 }
 
-/** Barra superior: botón del drawer (solo mobile; en desktop se contrae desde el propio menú), migas y tema. */
+/** Botón de Notificaciones con indicador en la barra superior */
+function BotonNotificaciones() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="relative size-9 rounded-xl border border-border bg-white text-slate-600 hover:bg-slate-100 hover:text-dark dark:border-white/10 dark:bg-surface-low dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+        >
+          <Link to="/app/notificaciones" aria-label="Notificaciones">
+            <Bell className="size-4" />
+            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Notificaciones</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Barra superior: botón mobile, logo, migas de pan, notificaciones y alternar tema */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
@@ -468,7 +564,8 @@ function BarraSuperior({ migas }: { migas: Miga[] }) {
         <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>
       </div>
       <MigasDePan migas={migas} />
-      <div className="ml-auto flex shrink-0 items-center">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <BotonNotificaciones />
         <ThemeToggle compacto />
       </div>
     </header>
@@ -479,12 +576,30 @@ interface OwnerLayoutProps {
   children: ReactNode;
 }
 
-// Pese al nombre, es el layout de toda la app autenticada: el menú sale de los roles de la sesión.
+// Layout de la app autenticada con soporte para switch de roles
 export function OwnerLayout({ children }: OwnerLayoutProps) {
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { roles } = usePermissions();
-  const { items, migas } = useOwnerNavigation(useContadoresMenu(), roles);
-  // Solo importa en el primer render: el Provider recuerda el estado después.
+
+  // Detecta si la ruta actual es propia de Profesora
+  const esRutaProfesora = pathname.startsWith("/app/hoy") || pathname.startsWith("/app/mis-clases");
+  const [rolManual, setRolManual] = useState<RoleCode | null>(null);
+
+  const rolActivo: RoleCode =
+    rolManual ?? (esRutaProfesora && roles.includes("PROFESORA") ? "PROFESORA" : "PROPIETARIA");
+
+  const cambiarRol = (nuevoRol: RoleCode) => {
+    setRolManual(nuevoRol);
+    if (nuevoRol === "PROFESORA" && !pathname.startsWith("/app/hoy") && !pathname.startsWith("/app/mis-clases")) {
+      navigate("/app/hoy");
+    } else if (nuevoRol === "PROPIETARIA" && (pathname.startsWith("/app/hoy") || pathname.startsWith("/app/mis-clases"))) {
+      navigate("/app/dashboard");
+    }
+  };
+
+  const contadores = useContadoresMenu();
+  const { items, migas } = useOwnerNavigation(contadores, roles, rolActivo);
   const [abiertoInicial] = useState(leerSidebarAbierto);
 
   return (
@@ -492,11 +607,9 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
       defaultOpen={abiertoInicial}
       className="bg-bg-light text-foreground dark:bg-canvas"
     >
-      <MenuLateral items={items} />
+      <MenuLateral items={items} roles={roles} rolActivo={rolActivo} onCambiarRol={cambiarRol} />
       <div className="flex min-w-0 flex-1 flex-col">
         <BarraSuperior migas={migas} />
-        {/* Con key por ruta el contenido re-activa la animación de entrada al navegar;
-            el sidebar queda fijo, sin parpadeos. */}
         <main
           key={pathname}
           className="flex w-full min-w-0 flex-1 animate-page-enter flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"

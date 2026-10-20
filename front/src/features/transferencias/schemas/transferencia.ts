@@ -83,24 +83,28 @@ const montoApiSchema = z
 
 export const estadoTransferenciaApiSchema = z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]);
 
-// Columnas usadas en revisión y en listado de alumno
-export const transferenciaApiSchema = z.object({
-  id_pago: z.number().int(),
-  id_cuota: z.number().int().optional(),
-  id_inscripcion: z.number().int().optional(),
-  forma_pago: z.enum(["TRANSFERENCIA", "EFECTIVO"]).optional().default("TRANSFERENCIA"),
-  estado: estadoTransferenciaApiSchema,
-  monto: montoApiSchema,
-  fecha_pago: z.string(),
-  fecha_hora_transferencia: z.string().nullable(),
-  titular_cuenta_origen: z.string().nullable(),
-  observaciones: z.string().nullable(),
-  fecha_confirmacion: z.string().nullable().optional(),
-  motivo_rechazo: z.string().nullable(),
-  alumno: z.object({ id_alumno: z.number().int(), nombre: z.string(), apellido: z.string() }),
-  horas_desde_la_carga: z.number().int().nonnegative().optional(),
-  supera_24_horas: z.boolean().optional(),
-});
+export const transferenciaApiSchema = z
+  .object({
+    id_pago: z.number().int(),
+    id_cuota: z.number().int().nullable().optional(),
+    id_inscripcion: z.number().int().nullable().optional(),
+    forma_pago: z.enum(["TRANSFERENCIA", "EFECTIVO"]).optional().default("TRANSFERENCIA"),
+    estado: estadoTransferenciaApiSchema,
+    monto: montoApiSchema,
+    fecha_pago: z.string(),
+    fecha_hora_transferencia: z.string().nullable().optional(),
+    titular_cuenta_origen: z.string().nullable().optional(),
+    observaciones: z.string().nullable().optional(),
+    fecha_confirmacion: z.string().nullable().optional(),
+    motivo_rechazo: z.string().nullable().optional(),
+    alumno: z.object({ id_alumno: z.number().int(), nombre: z.string(), apellido: z.string() }),
+    plan: z.string().optional(),
+    monto_esperado: z.number().optional(),
+    tipo: z.string().optional(),
+    horas_desde_la_carga: z.number().int().optional(),
+    supera_24_horas: z.boolean().optional(),
+  })
+  .passthrough();
 
 export type TransferenciaApi = z.infer<typeof transferenciaApiSchema>;
 

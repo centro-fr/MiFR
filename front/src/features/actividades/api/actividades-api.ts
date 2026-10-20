@@ -17,16 +17,31 @@ export function aActividad(api: ActividadApi): Actividad {
     descripcion: api.descripcion ?? "",
     modalidad: api.modalidad,
     cupoMaximo: api.cupo_maximo,
+    activo: api.activo,
+    requiereMedidas: api.requiere_medidas ?? false,
   };
+}
+
+function normalizarCodigo(nombre: string): string {
+  const limpio = nombre
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  return limpio.slice(0, 20) || "ACTIVIDAD";
 }
 
 function aCuerpo(datos: ActividadFormData): ActualizarActividadBody {
   return {
     nombre: datos.nombre,
     // El back acepta null o string vacío en la descripción; textoOpcionalSchema lo normaliza a null.
-    descripcion: datos.descripcion,
+    descripcion: datos.descripcion?.trim() || undefined,
     modalidad: datos.modalidad,
     cupo_maximo: datos.cupoMaximo,
+    requiere_medidas: datos.requiereMedidas,
   };
 }
 
@@ -37,7 +52,8 @@ export async function listarActividades(): Promise<Actividad[]> {
 }
 
 export async function crearActividad(datos: ActividadFormData): Promise<Actividad> {
-  const cuerpo: CrearActividadBody = { codigo: datos.codigo, ...aCuerpo(datos) };
+  const codigoFinal = datos.codigo?.trim() || normalizarCodigo(datos.nombre);
+  const cuerpo: CrearActividadBody = { codigo: codigoFinal, ...aCuerpo(datos) };
   const { data } = await apiClient.post("/actividades", cuerpo);
   return aActividad(actividadApiSchema.parse(data));
 }

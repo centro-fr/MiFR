@@ -25,14 +25,13 @@ interface DragHorarioInfo {
   horaFinOrigen: string;
 }
 
-// 6 Columnas (Lunes a Sábado).
+// 5 Columnas (Lunes a Viernes)
 const DIAS_COLUMNAS: { id: DiaSemana; label: string }[] = [
   { id: 'LUNES', label: 'Lunes' },
   { id: 'MARTES', label: 'Martes' },
   { id: 'MIERCOLES', label: 'Miércoles' },
   { id: 'JUEVES', label: 'Jueves' },
   { id: 'VIERNES', label: 'Viernes' },
-  { id: 'SABADO', label: 'Sábado' },
 ];
 
 // Límites permitidos del negocio
@@ -97,18 +96,18 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
   if (totalSlots === 0) {
     return (
-      <div className="w-full bg-transparent border-none shadow-none">
+      <div className="w-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
         {/* Cabecera de días */}
-        <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
-          <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
-            Horario
+        <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-50/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="p-3 text-center border-r border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-center">
+            <span className="sr-only">Horario</span>
           </div>
           {DIAS_COLUMNAS.map((dia) => (
             <div
               key={dia.id}
-              className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
+              className="p-3.5 pl-4 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center"
             >
-              <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 {dia.label}
               </span>
             </div>
@@ -116,11 +115,11 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
         </div>
 
         {/* Estado vacío sin franjas */}
-        <div className="py-16 px-6 text-center bg-slate-50/30 dark:bg-white/[0.03] flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-400 mb-3 shadow-2xs">
+        <div className="py-16 px-6 text-center bg-white dark:bg-slate-900/20 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-primary/10 flex items-center justify-center text-primary mb-3 shadow-2xs">
             <Plus className="w-6 h-6" />
           </div>
-          <p className="text-sm font-bold text-foreground">
+          <p className="text-sm font-bold text-slate-900 dark:text-white">
             Cronograma sin franjas horarias
           </p>
           <p className="text-sm text-muted-foreground max-w-sm mt-1 leading-relaxed">
@@ -132,20 +131,20 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
   }
 
   return (
-    <div className="w-full bg-transparent border-none shadow-none">
+    <div className="w-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
-        <div className="min-w-[760px]">
+        <div className="min-w-[700px]">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] bg-slate-50/95 dark:bg-surface-low sticky top-0 z-20">
-            <div className="p-3 text-center border-r border-border text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center justify-center">
-              Horario
+          <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-50/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
+            <div className="p-3 text-center border-r border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-center">
+              <span className="sr-only">Horario</span>
             </div>
             {DIAS_COLUMNAS.map((dia) => (
               <div
                 key={dia.id}
-                className="p-3 text-center border-r last:border-r-0 border-border flex items-center justify-center"
+                className="p-3.5 pl-4 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center"
               >
-                <span className="text-sm font-bold uppercase tracking-wider text-foreground">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                   {dia.label}
                 </span>
               </div>
@@ -153,30 +152,30 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
           </div>
 
           {/* Grilla: horas y columnas de días */}
-          <div className="grid grid-cols-[128px_repeat(6,minmax(0,1fr))] text-sm">
+          <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] text-sm">
             {/* COLUMNA 0: ETIQUETAS DE HORAS */}
             <div
-              className="border-r border-slate-200/60 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 select-none grid"
+              className="border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 select-none grid"
               style={{ gridTemplateRows: `repeat(${totalSlots}, 104px)` }}
             >
               {franjasHorarias.map((franja) => (
                 <div
                   key={franja.label}
-                  className="h-[104px] px-2 text-center font-bold text-dark dark:text-white text-xs sm:text-sm flex items-center justify-center whitespace-nowrap"
+                  className="h-[104px] px-2 text-center font-bold text-slate-400 dark:text-slate-500 text-xs sm:text-sm flex items-start justify-center pt-2.5 whitespace-nowrap border-b border-slate-200/60 dark:border-slate-800/60"
                 >
-                  {franja.label}
+                  <span>{franja.inicio}</span>
                 </div>
               ))}
             </div>
 
-            {/* COLUMNAS 1 A 6: DÍAS (LUNES A SÁBADO) */}
+            {/* COLUMNAS 1 A 5: DÍAS (LUNES A VIERNES) */}
             {DIAS_COLUMNAS.map((dia) => {
               const horariosDelDia = horarios.filter((h) => h.diaSemana === dia.id);
 
               return (
                 <div
                   key={dia.id}
-                  className="border-r last:border-r-0 border-slate-200/60 dark:border-white/10 relative"
+                  className="border-r last:border-r-0 border-slate-200/80 dark:border-slate-800/80 relative"
                   style={{ height: `${totalSlots * 104}px` }}
                 >
                   {/* CAPA 1: CELDAS LIBRES / DROP TARGETS */}
@@ -195,7 +194,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             right: 0,
                             height: '104px',
                           }}
-                          className="p-1.5 bg-slate-50/20 dark:bg-white/[0.02] select-none"
+                          className="p-1.5 border-b border-slate-200/60 dark:border-slate-800/60 bg-transparent select-none"
                         />
                       );
                     }
@@ -280,9 +279,9 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                           setDraggedHorarioId(null);
                         }}
                         onClick={() => onAddForCell(dia.id, franja.inicio, franja.fin)}
-                        className={`group transition flex items-center justify-center cursor-pointer select-none ${isOverCell
+                        className={`group transition flex items-center justify-center cursor-pointer select-none border-b border-slate-200/60 dark:border-slate-800/60 ${isOverCell
                             ? 'bg-pink-100/90 dark:bg-[#3b1230] border-2 border-dashed border-primary z-20'
-                            : 'hover:bg-slate-100/60 dark:hover:bg-white/10'
+                            : 'hover:bg-slate-50/70 dark:hover:bg-white/5'
                           }`}
                         title={
                           isOverCell
@@ -322,7 +321,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                     const topPx = (startMins - baseMinutos) * (104 / 60);
                     const heightPx = duracionMins * (104 / 60);
                     const isCompact = heightPx <= 110 || duracionMins <= 60;
-                    const theme = h.tema;
+                    const esPersonalizada = h.actividadTipo === 'PERSONALIZADA';
 
                     return (
                       <div
@@ -399,18 +398,19 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             setDraggedHorarioId(null);
                           }}
                           onClick={() => onEdit(h)}
-                          className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing border-0 bg-(--tema-bg) dark:bg-(--tema-bg-oscuro) shadow-xs group relative overflow-hidden select-none ${isCompact ? 'p-2.5' : 'p-3.5'
-                            } ${draggedHorarioId === h.id
+                          className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing shadow-xs group relative overflow-hidden select-none ${
+                            esPersonalizada
+                              ? 'bg-[#F3EFFD] border border-[#DDD4FA] dark:bg-purple-950/30 dark:border-purple-900/40'
+                              : 'bg-[#FDF2F4] border border-[#F9D5DD] dark:bg-pink-950/30 dark:border-pink-900/40'
+                          } ${
+                            draggedHorarioId === h.id
                               ? 'opacity-30 scale-95 border-2 border-dashed border-primary'
                               : ''
-                            } ${dragOverCardId === h.id
+                          } ${
+                            dragOverCardId === h.id
                               ? 'ring-4 ring-primary scale-[1.02] shadow-xl'
                               : 'hover:-translate-y-0.5'
-                            }`}
-                          style={{
-                            '--tema-bg': theme.bg,
-                            '--tema-bg-oscuro': theme.bgOscuro,
-                          } as React.CSSProperties}
+                          }`}
                         >
                           <div
                             className={`absolute inset-0 bg-primary/95 backdrop-blur-xs z-30 flex flex-col items-center justify-center text-white p-2 text-center pointer-events-none transition-opacity duration-150 ${dragOverCardId === h.id ? 'opacity-100' : 'opacity-0'

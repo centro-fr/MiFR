@@ -40,16 +40,17 @@ export const actividadFormSchema = z
       .string()
       .trim()
       .toUpperCase()
-      .min(1, "El código es obligatorio")
       .max(20, "Máximo 20 caracteres")
       .regex(
         /^(?=.*[A-Z])[A-Z0-9_-]+$/,
         "El código solo puede tener letras sin acento, números, guion y guion bajo, con al menos una letra",
-      ),
+      )
+      .optional()
+      .or(z.literal("")),
     nombre: z
       .string()
       .trim()
-      .min(1, "El nombre es obligatorio")
+      .min(1, "Ingresá el nombre de la actividad.")
       .max(60, "Máximo 60 caracteres")
       .refine((v) => !CARACTER_NO_PERMITIDO.test(v), "Contiene caracteres no permitidos")
       .refine((v) => TIENE_LETRA.test(v), "El nombre debe contener al menos una letra"),
@@ -57,13 +58,16 @@ export const actividadFormSchema = z
       .string()
       .trim()
       .max(255, "Máximo 255 caracteres")
-      .refine((v) => v === "" || !CARACTER_NO_PERMITIDO_MULTILINEA.test(v), "Contiene caracteres no permitidos")
-      .refine((v) => v === "" || TIENE_LETRA.test(v), "La descripción debe contener al menos una letra"),
+      .refine((v) => !v || !CARACTER_NO_PERMITIDO_MULTILINEA.test(v), "Contiene caracteres no permitidos")
+      .optional()
+      .or(z.literal("")),
     modalidad: modalidadActividadSchema,
     cupoMaximo: cupoMaximoSchema,
+    requiereMedidas: z.boolean().optional().default(false),
+    activo: z.boolean().optional().default(true),
   })
   .refine((datos) => datos.modalidad !== "PERSONALIZADA" || datos.cupoMaximo !== null, {
-    message: "El cupo máximo es obligatorio para la modalidad personalizada",
+    message: "En las personalizadas el cupo es obligatorio.",
     path: ["cupoMaximo"],
   })
   .refine(
@@ -95,6 +99,7 @@ export interface CrearActividadBody {
   descripcion?: string;
   modalidad: ActividadApi["modalidad"];
   cupo_maximo: number | null;
+  requiere_medidas?: boolean;
 }
 
 // El código no se puede cambiar: el back no lo acepta en el PATCH.
