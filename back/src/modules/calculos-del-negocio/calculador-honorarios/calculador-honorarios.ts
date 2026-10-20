@@ -119,6 +119,9 @@ export class CalculadorHonorarios implements ICalculoHonorarios {
         continue;
       }
       const monto = redondearAlCentavo(tarifa.valor * horasDeLaClase(clase));
+      // Una clase tan corta o con una tarifa tan chica que redondea a 0,00 no genera líneas.
+      // El descuento de 0 violaría ck_liquidacion_detalles_x3 (monto < 0) y no cambia ningún total.
+      if (monto === 0) continue;
       detalles.push(
         {
           id_profesora: id_prof_suplente,

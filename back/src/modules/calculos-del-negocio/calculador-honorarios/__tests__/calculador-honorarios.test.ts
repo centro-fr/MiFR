@@ -341,6 +341,20 @@ describe("CalculadorHonorarios", () => {
       expect(resultado.detalles.map(({ monto }) => monto)).toEqual([esperado, -esperado]);
     });
 
+    it("si el monto de la clase redondea a 0,00 no genera ni la suma ni el descuento, ni advierte", () => {
+      // 0,01 por hora x 10 minutos = 0,0016 -> 0,00
+      const resultado = calculador.calcular(
+        datos({
+          suplencias: [suplida({ hora_fin: new Date("1970-01-01T10:10:00Z") })],
+          tarifas: [{ ...tarifaSuplente, valor: 0.01 }],
+        }),
+      );
+
+      expect(resultado.detalles).toEqual([]);
+      expect(resultado.advertencias).toEqual([]);
+      expect(resultado.totalesPorProfesora.size).toBe(0);
+    });
+
     it("usa la tarifa HORA_SUPLENCIA de la suplente y no la de la ausente", () => {
       const resultado = calculador.calcular(
         datos({
