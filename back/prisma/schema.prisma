@@ -278,6 +278,7 @@ model alumnos {
   inscripciones      inscripciones[]
   registros_progreso registros_progreso[]
   asistencias        asistencias[]
+  insignias          alumno_insignias[]
 }
 
 enum estado_inscripcion {
@@ -563,4 +564,36 @@ model notificaciones {
   @@unique([id_usuario, id_cuota, tipo], map: "UK_notificaciones_usuario_cuota_tipo")
   @@index([id_cuota], map: "IXFK_notificaciones_cuotas")
   @@index([id_usuario], map: "IXFK_notificaciones_usuarios")
+}
+
+enum tipo_insignia {
+  MES_PERFECTO
+  RACHA
+  TOTAL_CLASES
+  PODIO_MES
+}
+
+model insignias {
+  id_insignia  Int           @id(map: "PK_insignias") @default(autoincrement())
+  codigo       String        @unique(map: "UK_insignias_codigo") @db.VarChar(30)
+  nombre       String        @db.VarChar(60)
+  descripcion  String?       @db.VarChar(255)
+  tipo         tipo_insignia
+  valor_umbral Int           @db.SmallInt
+
+  alumnos alumno_insignias[]
+}
+
+model alumno_insignias {
+  id_alumno       Int
+  id_insignia     Int
+  periodo         String    @default("") @db.VarChar(7)
+  fecha_obtencion DateTime  @default(now()) @db.Timestamp(6)
+
+  alumno   alumnos   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_alumnos")
+  insignia insignias @relation(fields: [id_insignia], references: [id_insignia], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_insignias")
+
+  @@id([id_alumno, id_insignia, periodo], map: "PK_alumno_insignias")
+  @@index([id_alumno], map: "IXFK_alumno_insignias_alumnos")
+  @@index([id_insignia], map: "IXFK_alumno_insignias_insignias")
 }
