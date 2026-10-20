@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   estadisticasInscripcionesQuerySchema,
   estadisticasPlanesQuerySchema,
+  informeAsistenciaQuerySchema,
+  informeOcupacionQuerySchema,
   informeCobranzaQuerySchema,
   informeCuotasVencidasQuerySchema,
 } from "../generador-informes.schemas.js";
@@ -127,5 +129,72 @@ describe("generador-informes.schemas", () => {
         }),
       ).toThrow("desde no puede ser posterior a hasta");
     });
+  });
+
+  describe("informeAsistenciaQuerySchema (US-33)", () => {
+    it("sin filtros no incluye bajas y pagina de a 50", () => {
+      expect(informeAsistenciaQuerySchema.parse({})).toEqual({ incluir_bajas: false, limit: 50, offset: 0 });
+    });
+
+    it("combina período, alumno, profesora, actividad e incluir_bajas", () => {
+      expect(
+        informeAsistenciaQuerySchema.parse({
+          desde: "2026-10-01",
+          hasta: "2026-10-31",
+          id_alumno: "5",
+          id_profesora: "2",
+          id_actividad: "3",
+          incluir_bajas: "true",
+          limit: "10",
+          offset: "20",
+        }),
+      ).toEqual({
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-31T00:00:00Z"),
+        id_alumno: 5,
+        id_profesora: 2,
+        id_actividad: 3,
+        incluir_bajas: true,
+        limit: 10,
+        offset: 20,
+      });
+    });
+
+    it.each([
+      { id_alumno: "0" },
+      { id_profesora: "-1" },
+      { id_actividad: "1e1" },
+      { incluir_bajas: "si" },
+      { incluir_bajas: "1" },
+      { desde: "2026-02-30" },
+      { limit: "101" },
+    ])("rechaza %j", (query) => {
+      expect(informeAsistenciaQuerySchema.safeParse(query).success).toBe(false);
+    });
+
+    it("rechaza fechas invertidas", () => {
+      expect(() => informeAsistenciaQuerySchema.parse({ desde: "2026-10-31", hasta: "2026-10-01" })).toThrow(
+        "desde no puede ser posterior a hasta",
+      );
+    });
+  });
+
+  describe("informeOcupacionQuerySchema (US-37)", () => {
+    it("acepta los filtros por actividad, profesora y modalidad", () => {
+      expect(
+        informeOcupacionQuerySchema.parse({
+          id_actividad: "3",
+          id_profesora: "2",
+          modalidad: "PERSONALIZADA",
+        }),
+      ).toEqual({ id_actividad: 3, id_profesora: 2, modalidad: "PERSONALIZADA" });
+    });
+
+    it.each([{ modalidad: "grupal" }, { modalidad: "OTRA" }, { id_actividad: "01" }])(
+      "rechaza %j",
+      (query) => {
+        expect(informeOcupacionQuerySchema.safeParse(query).success).toBe(false);
+      },
+    );
   });
 });

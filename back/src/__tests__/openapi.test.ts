@@ -75,6 +75,8 @@ const OPERACIONES_ESPERADAS = [
   "get /reportes/cobranza",
   "get /reportes/planes",
   "get /reportes/inscripciones",
+  "get /reportes/asistencia",
+  "get /reportes/ocupacion",
   "post /pagos/{id}/aprobar",
   "post /pagos/{id}/rechazar",
   "get /pagos/{id}/comprobante",

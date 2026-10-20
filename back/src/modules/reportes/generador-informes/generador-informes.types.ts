@@ -1,5 +1,7 @@
+import type { modalidad_actividad } from "@prisma/client";
 import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 import type { FormaPago } from "../../gestion-cuotas-y-pagos/pago/pago.types.js";
+import type { EstadoAlumno } from "../../gestion-personas/alumno/alumno.types.js";
 import type { TipoPlan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
 
 // ============================================================
@@ -190,4 +192,91 @@ export interface EstadisticasInscripciones {
     } | null;
   };
   meses: ItemEstadisticaMes[];
+}
+
+// ============================================================
+// 5. ASISTENCIA (US-33)
+// ============================================================
+
+export interface FiltroInformeAsistencia extends Paginacion {
+  desde?: Date;
+  hasta?: Date;
+  id_alumno?: number;
+  id_profesora?: number;
+  id_actividad?: number;
+  incluir_bajas: boolean;
+}
+
+export interface ItemAsistenciaAlumno {
+  id_alumno: number;
+  nombre: string;
+  apellido: string;
+  estado: EstadoAlumno;
+  clases_previstas: number;
+  asistencias: number;
+  inasistencias: number;
+  porcentaje_asistencia: number;
+}
+
+export interface ItemAsistenciaProfesora {
+  id_profesora: number;
+  nombre: string;
+  apellido: string;
+  clases_dictadas: number;
+  cantidad_alumnos: number;
+  asistencias: number;
+  porcentaje_promedio: number;
+}
+
+export interface InformeAsistencia {
+  periodo: { desde: string; hasta: string };
+  resumen: {
+    clases_dictadas: number;
+    asistencias: number;
+    inasistencias: number;
+    porcentaje_asistencia: number;
+  };
+  por_profesora: ItemAsistenciaProfesora[];
+  datos: ItemAsistenciaAlumno[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// ============================================================
+// 6. OCUPACIÓN DE HORARIOS (US-37)
+// ============================================================
+
+export type Modalidad = modalidad_actividad;
+
+// SIN_CUPO: ni el horario ni la actividad tienen cupo, así que no hay porcentaje que calcular.
+export type NivelOcupacion = "LIBRE" | "MODERADO" | "CASI_LLENO" | "COMPLETO" | "SIN_CUPO";
+
+export interface FiltroOcupacion {
+  id_actividad?: number;
+  id_profesora?: number;
+  modalidad?: Modalidad;
+}
+
+export interface ItemOcupacionHorario {
+  id_horario: number;
+  dia_semana: number;
+  hora_inicio: Date;
+  hora_fin: Date;
+  actividad: { id_actividad: number; nombre: string; modalidad: Modalidad };
+  profesora: { id_profesora: number; nombre: string; apellido: string };
+  cupo_maximo: number | null;
+  inscriptos: number;
+  porcentaje_ocupacion: number | null;
+  nivel: NivelOcupacion;
+}
+
+export interface InformeOcupacion {
+  resumen: {
+    total_horarios: number;
+    // Inscriptos sobre cupos, sumando los horarios que tienen cupo.
+    ocupacion_total: number;
+    por_nivel: Record<NivelOcupacion, number>;
+  };
+  datos: ItemOcupacionHorario[];
 }

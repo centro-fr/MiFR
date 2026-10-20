@@ -11,10 +11,14 @@ import type {
   EstadisticasPlanes,
   FiltroCobranza,
   FiltroCuotasVencidas,
+  FiltroInformeAsistencia,
   FiltroInscripciones,
+  FiltroOcupacion,
   FiltroPlanes,
+  InformeAsistencia,
   InformeCobranza,
   InformeCuotasVencidas,
+  InformeOcupacion,
 } from "./generador-informes/generador-informes.types.js";
 import type { ILogicaInformes } from "./interface/i-logica-informes.js";
 
@@ -55,5 +59,13 @@ export class ReportesService implements ILogicaInformes {
 
   estadisticasInscripciones(filtro: FiltroInscripciones): Promise<EstadisticasInscripciones> {
     return this.generadorInformes.estadisticasInscripciones(filtro);
+  }
+
+  informeAsistencia(filtro: FiltroInformeAsistencia): Promise<InformeAsistencia> {
+    return this.generadorInformes.informeAsistencia(filtro);
+  }
+
+  informeOcupacion(filtro: FiltroOcupacion): Promise<InformeOcupacion> {
+    return this.generadorInformes.informeOcupacion(filtro);
   }
 }

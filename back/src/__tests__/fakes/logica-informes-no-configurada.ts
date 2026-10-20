@@ -12,4 +12,6 @@ export const logicaInformesNoConfigurada = {
   informeCobranza: operacionNoConfigurada,
   estadisticasPlanes: operacionNoConfigurada,
   estadisticasInscripciones: operacionNoConfigurada,
+  informeAsistencia: operacionNoConfigurada,
+  informeOcupacion: operacionNoConfigurada,
 } satisfies ILogicaInformes;

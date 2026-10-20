@@ -27,6 +27,8 @@ describe("rutas de alumnos inactivos", () => {
       informeCobranza: vi.fn(),
       estadisticasPlanes: vi.fn(),
       estadisticasInscripciones: vi.fn(),
+      informeAsistencia: vi.fn(),
+      informeOcupacion: vi.fn(),
     };
     const autenticacion = {
       validarSesion: async (token: string) => ROLES[token],

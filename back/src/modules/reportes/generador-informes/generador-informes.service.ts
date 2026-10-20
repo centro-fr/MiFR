@@ -1,20 +1,31 @@
 import { fechaActualArgentina, rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 import type { IInfoCuotas } from "../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoPagos } from "../../gestion-cuotas-y-pagos/pago/interface/i-info-pagos.js";
+import type { AsistenciaDeAlumno } from "../../gestion-inscripciones-y-clases/asistencia/asistencia.types.js";
+import type { IInfoAsistencia } from "../../gestion-inscripciones-y-clases/asistencia/interface/i-info-asistencia.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
+import type { HorarioRespuesta } from "../../gestion-servicio-entrenamiento/horario/horario.types.js";
+import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { IInfoPlanes } from "../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import type {
   EstadisticasInscripciones,
   EstadisticasPlanes,
   FiltroCobranza,
   FiltroCuotasVencidas,
+  FiltroInformeAsistencia,
   FiltroInscripciones,
+  FiltroOcupacion,
   FiltroPlanes,
+  InformeAsistencia,
   InformeCobranza,
   InformeCuotasVencidas,
+  InformeOcupacion,
+  ItemAsistenciaAlumno,
   ItemEstadisticaMes,
   ItemEstadisticaPlan,
+  ItemOcupacionHorario,
+  NivelOcupacion,
   TotalPorFormaPago,
 } from "./generador-informes.types.js";
 
@@ -33,6 +44,87 @@ const NOMBRES_MESES = [
   "Diciembre",
 ];
 
+// US-37: verde por debajo del 60 %, amarillo hasta el 84 %, naranja hasta el 99 % y rojo al llenarse. Se
+// compara en enteros para que 17 de 20 sea CASI_LLENO sin depender del redondeo.
+const UMBRALES_OCUPACION: readonly [number, NivelOcupacion][] = [
+  [100, "COMPLETO"],
+  [85, "CASI_LLENO"],
+  [60, "MODERADO"],
+];
+
+function porcentaje(parte: number, total: number): number {
+  return total > 0 ? Math.round((parte / total) * 10000) / 100 : 0;
+}
+
+function sumar<T>(filas: T[], valor: (fila: T) => number): number {
+  return filas.reduce((total, fila) => total + valor(fila), 0);
+}
+
+function nivelDeOcupacion(inscriptos: number, cupo: number | null): NivelOcupacion {
+  if (cupo === null) return "SIN_CUPO";
+  return UMBRALES_OCUPACION.find(([minimo]) => inscriptos * 100 >= minimo * cupo)?.[1] ?? "LIBRE";
+}
+
+function itemAsistenciaAlumno(fila: AsistenciaDeAlumno): ItemAsistenciaAlumno {
+  return {
+    id_alumno: fila.id_alumno,
+    nombre: fila.nombre,
+    apellido: fila.apellido,
+    estado: fila.estado,
+    clases_previstas: fila.clases_previstas,
+    asistencias: fila.clases_asistidas,
+    inasistencias: fila.clases_previstas - fila.clases_asistidas,
+    porcentaje_asistencia: porcentaje(fila.clases_asistidas, fila.clases_previstas),
+  };
+}
+
+function itemOcupacion(horario: HorarioRespuesta, inscriptos: number): ItemOcupacionHorario {
+  const { actividad, profesora } = horario;
+  const cupo = horario.cupo_maximo_efectivo;
+  return {
+    id_horario: horario.id_horario,
+    dia_semana: horario.dia_semana,
+    hora_inicio: horario.hora_inicio,
+    hora_fin: horario.hora_fin,
+    actividad: {
+      id_actividad: actividad.id_actividad,
+      nombre: actividad.nombre,
+      modalidad: actividad.modalidad,
+    },
+    profesora: {
+      id_profesora: profesora.id_profesora,
+      nombre: profesora.usuario.nombre,
+      apellido: profesora.usuario.apellido,
+    },
+    cupo_maximo: cupo,
+    inscriptos,
+    porcentaje_ocupacion: cupo === null ? null : porcentaje(inscriptos, cupo),
+    nivel: nivelDeOcupacion(inscriptos, cupo),
+  };
+}
+
+function resumirOcupacion(datos: ItemOcupacionHorario[]): InformeOcupacion["resumen"] {
+  const conCupo = datos.filter(
+    (item): item is ItemOcupacionHorario & { cupo_maximo: number } => item.cupo_maximo !== null,
+  );
+  const por_nivel: Record<NivelOcupacion, number> = {
+    LIBRE: 0,
+    MODERADO: 0,
+    CASI_LLENO: 0,
+    COMPLETO: 0,
+    SIN_CUPO: 0,
+  };
+  for (const { nivel } of datos) por_nivel[nivel] += 1;
+  return {
+    total_horarios: datos.length,
+    ocupacion_total: porcentaje(
+      sumar(conCupo, ({ inscriptos }) => inscriptos),
+      sumar(conCupo, ({ cupo_maximo }) => cupo_maximo),
+    ),
+    por_nivel,
+  };
+}
+
 // Componente GeneradorInformes de Reportes (capa de negocio no persistente).
 // Coordina consultas analíticas a través de interfaces IInfo* de los subsistemas persistentes,
 // computando agregaciones, porcentajes y resúmenes para la toma de decisiones de la propietaria.
@@ -43,6 +135,8 @@ export class GeneradorInformesService {
     private readonly planes: IInfoPlanes,
     private readonly inscripciones: IInfoInscripciones,
     private readonly alumnos: IInfoAlumnos,
+    private readonly asistencias: IInfoAsistencia,
+    private readonly horarios: IInfoHorarios,
   ) {}
 
   // US-34: informe de alumnos con cuota vencida (fuera del período de gracia), con deuda exigible y días de mora.
@@ -345,5 +439,67 @@ export class GeneradorInformesService {
       },
       meses,
     };
+  }
+
+  // US-33: solo clases dictadas, con las inasistencias que registró el cierre (US-21). Por defecto, el
+  // mes en curso hasta hoy. Los totales son del período entero; el detalle por alumno, paginado.
+  async informeAsistencia(filtro: FiltroInformeAsistencia): Promise<InformeAsistencia> {
+    const hasta = filtro.hasta ?? fechaActualArgentina();
+    const desde = filtro.desde ?? new Date(Date.UTC(hasta.getUTCFullYear(), hasta.getUTCMonth(), 1));
+    const consulta = {
+      desde,
+      hasta,
+      id_alumno: filtro.id_alumno,
+      id_profesora: filtro.id_profesora,
+      id_actividad: filtro.id_actividad,
+      incluir_bajas: filtro.incluir_bajas,
+    };
+    const [alumnos, profesoras] = await Promise.all([
+      this.asistencias.resumirPorAlumno(consulta),
+      this.asistencias.resumirPorProfesora(consulta),
+    ]);
+    const previstas = sumar(alumnos, ({ clases_previstas }) => clases_previstas);
+    const asistencias = sumar(alumnos, ({ clases_asistidas }) => clases_asistidas);
+
+    return {
+      periodo: { desde: desde.toISOString().slice(0, 10), hasta: hasta.toISOString().slice(0, 10) },
+      resumen: {
+        // Cada clase tiene una sola profesora dictante: la suma no cuenta dos veces una clase.
+        clases_dictadas: sumar(profesoras, ({ clases_dictadas }) => clases_dictadas),
+        asistencias,
+        inasistencias: previstas - asistencias,
+        porcentaje_asistencia: porcentaje(asistencias, previstas),
+      },
+      por_profesora: profesoras.map((profesora) => ({
+        id_profesora: profesora.id_profesora,
+        nombre: profesora.nombre,
+        apellido: profesora.apellido,
+        clases_dictadas: profesora.clases_dictadas,
+        cantidad_alumnos: profesora.alumnos,
+        asistencias: profesora.clases_asistidas,
+        porcentaje_promedio: porcentaje(profesora.clases_asistidas, profesora.clases_previstas),
+      })),
+      datos: alumnos.slice(filtro.offset, filtro.offset + filtro.limit).map(itemAsistenciaAlumno),
+      total: alumnos.length,
+      limit: filtro.limit,
+      offset: filtro.offset,
+    };
+  }
+
+  // US-37: inscriptos activos de cada horario vigente contra el cupo del horario o, si no tiene, el de
+  // la actividad. Una pre-inscripción no cuenta: todavía no es un alumno activo.
+  async informeOcupacion(filtro: FiltroOcupacion): Promise<InformeOcupacion> {
+    const horarios = (await this.horarios.listarVigentes()).filter(
+      (horario) =>
+        (filtro.id_actividad === undefined || horario.id_actividad === filtro.id_actividad) &&
+        (filtro.id_profesora === undefined || horario.id_profesora === filtro.id_profesora) &&
+        (filtro.modalidad === undefined || horario.actividad.modalidad === filtro.modalidad),
+    );
+    const inscriptos = await this.inscripciones.contarInscriptosParaAsistencia(
+      horarios.map(({ id_horario }) => id_horario),
+      fechaActualArgentina(),
+    );
+    const datos = horarios.map((horario) => itemOcupacion(horario, inscriptos.get(horario.id_horario) ?? 0));
+    return { resumen: resumirOcupacion(datos), datos };
   }
 }

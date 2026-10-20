@@ -4,8 +4,10 @@ import { respuestaJson, respuestasDeError, SEGURIDAD_BEARER } from "../../../sha
 import {
   estadisticasInscripcionesQuerySchema,
   estadisticasPlanesQuerySchema,
+  informeAsistenciaQuerySchema,
   informeCobranzaQuerySchema,
   informeCuotasVencidasQuerySchema,
+  informeOcupacionQuerySchema,
 } from "./generador-informes.schemas.js";
 
 const contacto = {
@@ -144,6 +146,89 @@ const estadisticasInscripcionesSchema = z
   })
   .openapi("EstadisticasInscripciones");
 
+const informeAsistenciaSchema = z
+  .object({
+    periodo: z.object({ desde: z.string(), hasta: z.string() }).openapi({ description: "AAAA-MM-DD" }),
+    resumen: z.object({
+      clases_dictadas: z.number().int(),
+      asistencias: z.number().int(),
+      inasistencias: z.number().int().openapi({ description: "Incluye las que registró el cierre (US-21)" }),
+      porcentaje_asistencia: z.number(),
+    }),
+    por_profesora: z.array(
+      z.object({
+        id_profesora: z.number().int(),
+        nombre: z.string(),
+        apellido: z.string(),
+        clases_dictadas: z.number().int(),
+        cantidad_alumnos: z.number().int(),
+        asistencias: z.number().int(),
+        porcentaje_promedio: z.number(),
+      }),
+    ),
+    datos: z.array(
+      z
+        .object({
+          id_alumno: z.number().int(),
+          nombre: z.string(),
+          apellido: z.string(),
+          estado: z.enum(["ACTIVO", "INACTIVO", "BAJA"]),
+          clases_previstas: z.number().int(),
+          asistencias: z.number().int(),
+          inasistencias: z.number().int(),
+          porcentaje_asistencia: z.number(),
+        })
+        .openapi("ItemAsistenciaAlumno"),
+    ),
+    total: z.number().int(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+  })
+  .openapi("InformeAsistencia");
+
+const nivelOcupacionSchema = z.enum(["LIBRE", "MODERADO", "CASI_LLENO", "COMPLETO", "SIN_CUPO"]);
+
+const horaSchema = z.string().datetime().openapi({
+  description: "Hora en UTC sobre la fecha 1970-01-01",
+  example: "1970-01-01T09:00:00.000Z",
+});
+
+const informeOcupacionSchema = z
+  .object({
+    resumen: z.object({
+      total_horarios: z.number().int(),
+      ocupacion_total: z
+        .number()
+        .openapi({ description: "Inscriptos sobre cupos de todos los horarios con cupo, en porcentaje" }),
+      por_nivel: z.record(nivelOcupacionSchema, z.number().int()),
+    }),
+    datos: z.array(
+      z
+        .object({
+          id_horario: z.number().int(),
+          dia_semana: z.number().int().openapi({ description: "1 = lunes … 6 = sábado" }),
+          hora_inicio: horaSchema,
+          hora_fin: horaSchema,
+          actividad: z.object({
+            id_actividad: z.number().int(),
+            nombre: z.string(),
+            modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]),
+          }),
+          profesora: z.object({ id_profesora: z.number().int(), nombre: z.string(), apellido: z.string() }),
+          cupo_maximo: z
+            .number()
+            .int()
+            .nullable()
+            .openapi({ description: "El del horario o, si no tiene, el de la actividad" }),
+          inscriptos: z.number().int(),
+          porcentaje_ocupacion: z.number().nullable().openapi({ description: "null si no hay cupo" }),
+          nivel: nivelOcupacionSchema,
+        })
+        .openapi("ItemOcupacionHorario"),
+    ),
+  })
+  .openapi("InformeOcupacion");
+
 export function registrarDocumentacionGeneradorInformes(registro: OpenAPIRegistry): void {
   const tags = ["Informes"];
   const security = SEGURIDAD_BEARER;
@@ -209,6 +294,43 @@ export function registrarDocumentacionGeneradorInformes(registro: OpenAPIRegistr
     request: { query: estadisticasInscripcionesQuerySchema },
     responses: {
       200: respuestaJson("Estadísticas de inscripciones", estadisticasInscripcionesSchema),
+      ...respuestasDeError(400, 401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/reportes/asistencia",
+    tags,
+    security,
+    summary: "Informe de asistencia (US-33)",
+    description:
+      `${soloPropietaria} Por defecto, el mes en curso hasta hoy. Los filtros por alumno, profesora (la ` +
+      "que dictó la clase: en una suplencia, la suplente) y actividad se combinan. Solo cuentan las clases " +
+      "dictadas, no las canceladas, con las inasistencias que registró el cierre de la asistencia. Los " +
+      "alumnos dados de baja figuran solo con `incluir_bajas=true`. El detalle por alumno se pagina; el " +
+      "resumen y el detalle por profesora son del período entero.",
+    request: { query: informeAsistenciaQuerySchema },
+    responses: {
+      200: respuestaJson("Informe de asistencia", informeAsistenciaSchema),
+      ...respuestasDeError(400, 401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/reportes/ocupacion",
+    tags,
+    security,
+    summary: "Ocupación de horarios (US-37)",
+    description:
+      `${soloPropietaria} Cada horario vigente con sus inscriptos activos (sin pre-inscripciones ni ` +
+      "alumnos dados de baja) contra el cupo del horario o, si no tiene, el de la actividad. Nivel: LIBRE " +
+      "por debajo del 60 %, MODERADO hasta el 84 %, CASI_LLENO hasta el 99 % y COMPLETO desde el 100 %; " +
+      "SIN_CUPO si no hay cupo definido.",
+    request: { query: informeOcupacionQuerySchema },
+    responses: {
+      200: respuestaJson("Ocupación de los horarios", informeOcupacionSchema),
       ...respuestasDeError(400, 401, 403),
     },
   });

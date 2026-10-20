@@ -195,6 +195,8 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
           planService,
           inscripcionService,
           alumnoService,
+          asistenciaService,
+          horarioService,
         ),
       ),
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
