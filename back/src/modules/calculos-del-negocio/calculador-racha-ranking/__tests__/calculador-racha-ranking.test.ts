@@ -50,7 +50,11 @@ describe("CalculadorRachaRanking", () => {
     });
 
     it("si la última fue una inasistencia la racha actual es 0", () => {
-      expect(calculador.resumirRacha(marcas("PPA"))).toMatchObject({ actual: 0, mejor: 2, inicio_actual: null });
+      expect(calculador.resumirRacha(marcas("PPA"))).toMatchObject({
+        actual: 0,
+        mejor: 2,
+        inicio_actual: null,
+      });
     });
   });
 
