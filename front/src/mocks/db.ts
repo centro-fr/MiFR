@@ -18,6 +18,10 @@ import {
   type PlanMock,
   type PlanPrecioMock,
 } from "@/mocks/data/inscripciones";
+import { tarifasSemilla, type LiquidacionDetalleMock, type LiquidacionMock, type TarifaHonorarioMock } from "@/mocks/data/honorarios";
+import { liquidarPeriodo } from "@/mocks/calculo-honorarios";
+import type { NotificacionMock } from "@/mocks/data/notificaciones";
+import { parametrosSemilla, type ParametroMock } from "@/mocks/data/parametros";
 import {
   ACTIVIDADES_SEMILLA,
   HORARIOS_SEMILLA,
@@ -72,6 +76,15 @@ interface BaseMock {
   pagos: PagoMock[];
   clases: ClaseAsistenciaMock[];
   asistencias: RegistroAsistenciaMock[];
+  // US-23: tarifas, liquidaciones y sus detalles (tablas tarifas_honorario, liquidaciones y
+  // liquidacion_detalles del DER). Se calculan sobre los datos fijos de data/honorarios.ts.
+  tarifasHonorario: TarifaHonorarioMock[];
+  liquidaciones: LiquidacionMock[];
+  liquidacionDetalles: LiquidacionDetalleMock[];
+  // parametros_sistema: lo que lee y modifica la configuración (US-25, US-26).
+  parametros: ParametroMock[];
+  // Los avisos de la campana (US-25, US-26). Arranca vacía, como en la base.
+  notificaciones: NotificacionMock[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
 }
@@ -97,10 +110,19 @@ export const db: BaseMock = {
   pagos: pagosSemilla(),
   clases: [],
   asistencias: [],
+  tarifasHonorario: tarifasSemilla(),
+  liquidaciones: [],
+  liquidacionDetalles: [],
+  parametros: parametrosSemilla(),
+  notificaciones: [],
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
   idUsuarioSesion: leerUsuarioGuardado() ?? ID_USUARIO_SESION_INICIAL,
 };
+
+// Octubre de 2026 (el mes de los datos copiados de la base) arranca calculado y en revisión; los
+// otros meses se ven sin calcular, como en el back hasta que se pide POST /liquidaciones.
+liquidarPeriodo(db, "2026-10", PROFESORAS_SEMILLA.map((profesora) => profesora.id_profesora));
 
 function leerUsuarioGuardado(): number | null {
   try {

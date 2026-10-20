@@ -60,8 +60,6 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 const SECCIONES_EN_CONSTRUCCION = [
   { path: "ausentes", seccion: "Ausentes" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
-  { path: "honorarios", seccion: "Honorarios" },
-  { path: "notificaciones", seccion: "Notificaciones" },
   { path: "reportes", seccion: "Reportes" },
   // Menú de la profesora (MENUS.md).
   { path: "mis-clases", seccion: "Mis clases" },
@@ -203,6 +201,48 @@ export const router = createBrowserRouter([
           {
             path: "transferencias",
             element: <Navigate to="/app/pagos?tab=transferencias" replace />,
+          },
+        ],
+      },
+      {
+        // US-23: informe mensual de honorarios. Solo la propietaria: el back exige el mismo permiso.
+        path: "honorarios",
+        element: guardiaDeSeccion("honorarios", "HONORARIOS_VER_TODOS"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/honorarios/pages/honorarios-page"), "HonorariosPage") },
+          // US-24 (otro integrante del front): reemplazar por su pantalla de suplencias.
+          {
+            path: "suplencias",
+            lazy: paginaPerezosa(
+              () => import("@/features/honorarios/pages/suplencias-en-construccion-page"),
+              "SuplenciasEnConstruccionPage",
+            ),
+          },
+        ],
+      },
+      {
+        // US-25 y US-26: la bandeja de la campana es de todos los roles; configurar los avisos (días de
+        // aviso de la cuota y hora del resumen diario) es solo de la propietaria, como en el back.
+        path: "notificaciones",
+        element: guardiaDeSeccion("notificaciones"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/notificaciones/pages/bandeja-notificaciones-page"), "BandejaNotificacionesPage"),
+          },
+          {
+            path: "configuracion",
+            element: (
+              <PermissionGuard roles={["PROPIETARIA"]} permission="PARAMETROS_EDITAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              {
+                index: true,
+                lazy: paginaPerezosa(() => import("@/features/notificaciones/pages/configuracion-avisos-page"), "ConfiguracionAvisosPage"),
+              },
+            ],
           },
         ],
       },

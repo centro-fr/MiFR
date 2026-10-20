@@ -1,11 +1,11 @@
 import { Fragment, useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -532,28 +532,6 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
   );
 }
 
-/** Botón de Notificaciones con indicador en la barra superior */
-function BotonNotificaciones() {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          asChild
-          variant="ghost"
-          size="icon"
-          className="relative size-9 rounded-xl border border-border bg-white text-slate-600 hover:bg-slate-100 hover:text-dark dark:border-white/10 dark:bg-surface-low dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-        >
-          <Link to="/app/notificaciones" aria-label="Notificaciones">
-            <Bell className="size-4" />
-            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
-          </Link>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>Notificaciones</TooltipContent>
-    </Tooltip>
-  );
-}
-
 /** Barra superior: botón mobile, logo, migas de pan, notificaciones y alternar tema */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
@@ -565,7 +543,7 @@ function BarraSuperior({ migas }: { migas: Miga[] }) {
       </div>
       <MigasDePan migas={migas} />
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <BotonNotificaciones />
+        <CampanaNotificaciones />
         <ThemeToggle compacto />
       </div>
     </header>
