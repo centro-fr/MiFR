@@ -331,7 +331,10 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "ICalculoRachaRanking" as R_GI_CalculoRachaRanking
     interface "IInfoAlumnos"         as R_GI_InfoAlumnos
     interface "IInfoParametros"      as R_GI_InfoParametros
+    interface "IOtorgamientoInsignias" as I_OtorgamientoInsignias
 
+    Insignia -down- I_OtorgamientoInsignias
+    CierreMensualInsignias -up-( I_OtorgamientoInsignias
     Insignia -right-( R_GI_InfoAsistencia
     Insignia -right-( R_GI_CalculoRachaRanking
     Insignia -left-( R_GI_InfoAlumnos
