@@ -34,7 +34,8 @@ export function textoEdad(edad: number): string {
 }
 
 /** El DER guarda el DNI solo con dígitos: "38412985" → "38.412.985". */
-export function formatearDni(dni: string): string {
+export function formatearDni(dni: string | null | undefined): string {
+  if (!dni) return "Sin DNI";
   return dni.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
@@ -60,3 +61,23 @@ export function enlaceWhatsApp(telefono: string): string | null {
   const digitos = limpio.replace(/\D/g, "");
   return digitos.length >= 8 ? `https://wa.me/${digitos}` : null;
 }
+
+export function tiempoDesdeFecha(fechaIso: string | null): string {
+  if (!fechaIso) return "";
+  const soloFecha = fechaIso.includes("T") ? fechaIso.slice(0, 10) : fechaIso;
+  const fecha = new Date(`${soloFecha}T00:00:00Z`);
+  if (isNaN(fecha.getTime())) return "";
+  const ahora = new Date();
+  const meses = (ahora.getFullYear() - fecha.getFullYear()) * 12 + (ahora.getMonth() - fecha.getMonth());
+  if (meses <= 0) {
+    const dias = Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+    if (dias <= 0) return "Hoy";
+    if (dias === 1) return "Ayer";
+    return `Hace ${dias} días`;
+  }
+  if (meses === 1) return "Hace 1 mes";
+  if (meses < 12) return `Hace ${meses} meses`;
+  const anios = Math.floor(meses / 12);
+  return anios === 1 ? "Hace 1 año" : `Hace ${anios} años`;
+}
+

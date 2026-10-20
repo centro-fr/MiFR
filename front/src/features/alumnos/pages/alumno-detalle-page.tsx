@@ -1,23 +1,21 @@
 import { useState, type KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  Activity,
   ArrowLeft,
   CalendarClock,
   CalendarDays,
+  CreditCard,
   Dumbbell,
   Loader2,
   Mail,
-  Phone,
+  MoreHorizontal,
+  PenSquare,
   Ruler,
-  Scale,
   UserRound,
-  UserRoundPen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AccionesEstadoAlumno } from "@/features/alumnos/components/acciones-estado-alumno";
@@ -31,25 +29,21 @@ import { formatearPrecio } from "@/utils/moneda";
 import { calcularEdad, type AlumnoDetalle, type InscripcionDeAlumno } from "@/features/alumnos/schemas/alumno";
 import { diaSemana } from "@/features/alumnos/utils/fecha";
 import { detalleVencimiento } from "@/features/alumnos/utils/situacion-cuota";
+import {
+  enlaceTelefono,
+  formatearDni,
+  formatearFecha,
+  tiempoDesdeFecha,
+} from "@/features/alumnos/utils/formato-ficha";
 import { HistorialCobrosAlumno } from "@/features/cobros/components/historial-cobros-alumno";
+import { ModalRegistrarCobro } from "@/features/cobros/components/modal-registrar-cobro";
 
-type SeccionFicha = "datos" | "plan" | "cobros" | "asistencia" | "progreso";
+type SeccionFicha = "datos" | "plan" | "progreso" | "cobros" | "asistencia";
 
-// INACTIVO es el pre-inscripto que espera su primer pago (US-07).
 function textoEstado(estado: string): string {
   if (estado === "ACTIVO" || estado === "ACTIVA") return "Activo";
   if (estado === "PREINSCRIPTA" || estado === "INACTIVO") return "Pendiente de alta";
   return "Baja";
-}
-
-function clasesEstado(estado: string): string {
-  if (estado === "ACTIVO" || estado === "ACTIVA") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-200";
-  }
-  if (estado === "PREINSCRIPTA" || estado === "INACTIVO") {
-    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-200";
-  }
-  return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200";
 }
 
 function fechaLegible(fecha: string | null): string {
@@ -58,41 +52,9 @@ function fechaLegible(fecha: string | null): string {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(valor);
 }
 
-
-function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null | undefined }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-sm text-slate-600 dark:text-slate-300">{etiqueta}</dt>
-      <dd className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">
-        {valor || "Sin información"}
-      </dd>
-    </div>
-  );
-}
-
-function DatoEnlace({
-  etiqueta,
-  valor,
-  href,
-}: {
-  etiqueta: string;
-  valor: string | null;
-  href: string | null;
-}) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-sm text-slate-600 dark:text-slate-300">{etiqueta}</dt>
-      <dd className="mt-1 break-all text-sm font-semibold text-slate-800 dark:text-slate-100">
-        {href ? (
-          <a className="rounded-sm hover:text-[#BC1266] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82] dark:hover:text-pink-200" href={href}>
-            {valor}
-          </a>
-        ) : (
-          valor || "Sin información"
-        )}
-      </dd>
-    </div>
-  );
+function formatearFechaCorta(fechaIso: string | null): string {
+  if (!fechaIso) return "-";
+  return formatearFecha(fechaIso);
 }
 
 function iniciales(nombre: string, apellido: string): string {
@@ -107,29 +69,33 @@ export function AlumnoDetallePage() {
   const { hasPermission, hasRole } = usePermissions();
   const esPropietaria = hasRole("PROPIETARIA");
   const puedeVerCobros = esPropietaria || hasPermission("PAGOS_REGISTRAR");
-  // Como en el back (PATCH /alumnos/:id): con ALUMNOS_EDITAR la propietaria edita todo; la
-  // profesora, solo contacto y observaciones. Baja, reactivación y cambio de plan, solo la propietaria.
   const puedeEditarTodosLosDatos = esPropietaria && hasPermission("ALUMNOS_EDITAR");
   const puedeEditar = hasPermission("ALUMNOS_EDITAR");
+
   const [cambiandoPlan, setCambiandoPlan] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
+  const [menuAccionesAbierto, setMenuAccionesAbierto] = useState(false);
   const [seccion, setSeccion] = useState<SeccionFicha>("datos");
+
   const alumno = consulta.data;
   const nombreCompleto = alumno ? `${alumno.usuario.nombre} ${alumno.usuario.apellido}` : "Ficha del alumno";
   const esMenor = alumno
     ? (calcularEdad(alumno.usuario.fecha_nacimiento) ?? Infinity) < 18
     : false;
+
   const secciones: { id: SeccionFicha; etiqueta: string }[] = [
-    { id: "datos", etiqueta: "Datos personales" },
-    { id: "plan", etiqueta: "Plan y horarios" },
-    ...(puedeVerCobros ? [{ id: "cobros" as const, etiqueta: "Cobros" }] : []),
+    { id: "datos", etiqueta: "Datos" },
+    { id: "plan", etiqueta: "Plan" },
+    { id: "progreso", etiqueta: "Rutina y progreso" },
+    ...(puedeVerCobros ? [{ id: "cobros" as const, etiqueta: "Cobros y cuotas" }] : []),
     { id: "asistencia", etiqueta: "Asistencia" },
-    { id: "progreso", etiqueta: "Progreso y rutina" },
   ];
 
   function terminarEdicion() {
     setEditando(false);
     toast.success("Los datos del alumno se actualizaron.");
+    void consulta.refetch();
   }
 
   function navegarPestanas(evento: KeyboardEvent<HTMLButtonElement>, indice: number) {
@@ -151,16 +117,30 @@ export function AlumnoDetallePage() {
     document.getElementById(`tab-${siguiente.id}`)?.focus();
   }
 
+  // Información calculada para los 4 KPIs superiores
+  const planNombre = alumno?.inscripcion?.plan.nombre ?? "Sin plan";
+  const planSubtitulo = alumno?.inscripcion?.plan.tipo === "CLASE_SUELTA" ? "Clase suelta" : "3 clases por semana";
+
+  const profesoraNombre = alumno?.inscripcion?.profesora ?? "Sin asignar";
+  const primeraActividad = alumno?.inscripcion?.horarios[0]?.actividad ?? "Entrenamiento";
+  const diasHorarios = alumno?.inscripcion?.horarios.length
+    ? alumno.inscripcion.horarios.map((h) => diaSemana(h.dia_semana).slice(0, 3)).join(", ")
+    : "A coordinar";
+  const profesoraSubtitulo = `${primeraActividad} · ${diasHorarios}`;
+
+  const cuotaSituacion = alumno?.inscripcion?.situacion_cuota ?? null;
+  const cuotaSubtitulo = cuotaSituacion
+    ? (cuotaSituacion.fecha_vencimiento
+        ? `Vence el ${formatearFechaCorta(cuotaSituacion.fecha_vencimiento)}`
+        : detalleVencimiento(cuotaSituacion) ?? "Sin vencimiento")
+    : "Sin plan activo";
+
+  const altaFecha = alumno?.fecha_alta ? formatearFechaCorta(alumno.fecha_alta) : "-";
+  const altaAntiguedad = alumno?.fecha_alta ? tiempoDesdeFecha(alumno.fecha_alta) : "";
+
   return (
     <OwnerLayout>
-      <main className="mx-auto w-full max-w-[1240px] py-5 pb-8 md:py-8">
-        <Link
-          to="/app/alumnos/listado"
-          className="mb-4 inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#BC1266] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82] dark:text-slate-300"
-        >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          Volver al listado
-        </Link>
+      <main className="mx-auto w-full max-w-[1240px] space-y-6 py-4 pb-10">
 
         {!idValido ? (
           <EstadoFicha
@@ -173,7 +153,7 @@ export function AlumnoDetallePage() {
             role="status"
             className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
           >
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-[#E91E82]" />
+            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
             Cargando ficha…
           </div>
         ) : consulta.isError && esAlumnoNoEncontrado(consulta.error) ? (
@@ -194,8 +174,19 @@ export function AlumnoDetallePage() {
           />
         ) : editando ? (
           <>
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditando(false)}
+                className="h-9 gap-2 rounded-xl border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <ArrowLeft aria-hidden="true" className="size-4" />
+                Volver
+              </Button>
+            </div>
             <header className="mb-5">
-              <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-[#181C26] dark:text-white">
+              <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                 Editar ficha de {nombreCompleto}
               </h1>
             </header>
@@ -208,80 +199,152 @@ export function AlumnoDetallePage() {
             />
           </>
         ) : (
-          <>
-            <header className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm sm:p-5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-              <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
-                  <span className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#E91E82] text-lg font-black text-white sm:size-16">
-                    {iniciales(alumno.usuario.nombre, alumno.usuario.apellido)}
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "absolute -bottom-1 -right-1 size-4 rounded-full border-2 border-white dark:border-surface-low",
-                        alumno.estado === "ACTIVO"
-                          ? "bg-emerald-500"
-                          : alumno.estado === "INACTIVO"
-                            ? "bg-amber-500"
-                            : "bg-slate-400",
-                      )}
-                    />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#BC1266] dark:text-pink-200">Ficha del alumno</p>
-                    <h1 className="mt-0.5 break-words text-xl font-black tracking-tight text-[#181C26] sm:text-2xl dark:text-white">
-                      {nombreCompleto}
-                    </h1>
-                    <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-300">
-                      DNI: {alumno.usuario.dni ?? "Sin DNI"} <span aria-hidden="true">·</span>{" "}
-                      {calcularEdad(alumno.usuario.fecha_nacimiento)} años <span aria-hidden="true">·</span> ID:
-                      {" "}ALU-{String(alumno.id_alumno).padStart(3, "0")}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                      Alta: {fechaLegible(alumno.fecha_alta)}
-                      {alumno.fecha_baja && <> · Baja: {fechaLegible(alumno.fecha_baja)}</>}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "min-h-7 border px-2 text-sm",
-                          clasesEstado(alumno.estado),
-                        )}
-                      >
-                        {textoEstado(alumno.estado)}
-                      </Badge>
-                      {alumno.inscripcion?.situacion_cuota && (
-                        <BadgeSituacionCuota situacion={alumno.inscripcion.situacion_cuota} />
-                      )}
-                      {esMenor && (
-                        <Badge
-                          variant="outline"
-                          className="min-h-7 border-indigo-200 bg-indigo-50 text-sm text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-200"
+          <div className="space-y-6">
+            {/* Botón volver hacia atrás arriba a la izquierda */}
+            <div>
+              <Button
+                asChild
+                variant="outline"
+                className="h-9 gap-2 rounded-xl border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <Link to="/app/alumnos/listado" aria-label="Volver al listado de alumnos">
+                  <ArrowLeft aria-hidden="true" className="size-4" />
+                  Volver al listado
+                </Link>
+              </Button>
+            </div>
+
+            {/* Header del Alumno: Avatar + Nombre + Botones (Sin insignias ni rachas) */}
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-pink-100 text-2xl font-black text-primary shadow-2xs dark:bg-pink-950/60 dark:text-pink-300">
+                  {iniciales(alumno.usuario.nombre, alumno.usuario.apellido)}
+                </span>
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white truncate">
+                    {nombreCompleto}
+                  </h1>
+                </div>
+              </div>
+
+              {/* Botones de acción principales */}
+              <div className="flex items-center gap-2 shrink-0">
+                {puedeEditar && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditando(true)}
+                    className="h-10 rounded-xl border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    <PenSquare aria-hidden="true" className="mr-1.5 size-4 text-slate-600 dark:text-slate-300" />
+                    Editar datos
+                  </Button>
+                )}
+
+                {puedeVerCobros && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!alumno.inscripcion) {
+                        toast.error("El alumno no tiene una inscripción para cobrar.");
+                        return;
+                      }
+                      setModalCobroAbierto(true);
+                    }}
+                    className="h-10 rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-dark transition-all"
+                  >
+                    <CreditCard aria-hidden="true" className="mr-1.5 size-4" />
+                    Registrar cobro
+                  </Button>
+                )}
+
+                {/* Dropdown / Botón de más acciones */}
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setMenuAccionesAbierto(!menuAccionesAbierto)}
+                    className="size-10 rounded-xl border-slate-200 bg-white p-0 text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    aria-label="Más acciones"
+                  >
+                    <MoreHorizontal aria-hidden="true" className="size-4" />
+                  </Button>
+
+                  {menuAccionesAbierto && (
+                    <div
+                      className="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+                      onClick={() => setMenuAccionesAbierto(false)}
+                    >
+                      {puedeEditarTodosLosDatos && alumno.inscripcion && (
+                        <button
+                          type="button"
+                          onClick={() => setCambiandoPlan(true)}
+                          className="w-full text-left rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                         >
-                          Menor de edad
-                        </Badge>
+                          Cambiar plan u horarios
+                        </button>
+                      )}
+                      {puedeEditarTodosLosDatos && (
+                        <div className="pt-1">
+                          <AccionesEstadoAlumno alumno={alumno} />
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
-                <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
-                  {puedeEditar && (
-                    <Button
-                      type="button"
-                      onClick={() => setEditando(true)}
-                      className="min-h-[48px] w-full shrink-0 rounded-xl bg-[#BC1266] font-bold text-white hover:bg-[#9D1055] sm:w-auto dark:bg-pink-700 dark:hover:bg-pink-600"
-                    >
-                      <UserRoundPen aria-hidden="true" className="mr-2 h-4 w-4" />
-                      {puedeEditarTodosLosDatos ? "Editar ficha" : "Editar contacto"}
-                    </Button>
                   )}
-                  {puedeEditarTodosLosDatos && <AccionesEstadoAlumno alumno={alumno} />}
                 </div>
               </div>
             </header>
 
+            {/* 4 Tarjetas de Resumen / KPIs */}
+            <section aria-label="Resumen del alumno" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* KPI 1: Plan */}
+              <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Plan</span>
+                <p className="mt-1 text-lg font-black text-slate-900 dark:text-white truncate">
+                  {planNombre}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                  {planSubtitulo}
+                </p>
+              </Card>
+
+              {/* KPI 2: Profesora */}
+              <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Profesora</span>
+                <p className="mt-1 text-lg font-black text-slate-900 dark:text-white truncate">
+                  {profesoraNombre}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 truncate">
+                  {profesoraSubtitulo}
+                </p>
+              </Card>
+
+              {/* KPI 3: Cuota */}
+              <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Cuota</span>
+                <div className="mt-1">
+                  <BadgeSituacionCuota situacion={cuotaSituacion} />
+                </div>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  {cuotaSubtitulo}
+                </p>
+              </Card>
+
+              {/* KPI 4: Alta */}
+              <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Alta</span>
+                <p className="mt-1 text-lg font-black text-slate-900 dark:text-white">
+                  {altaFecha}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                  {altaAntiguedad}
+                </p>
+              </Card>
+            </section>
+
+            {/* Pestañas horizontales con subrayado fucsia activo */}
             <div
-              className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 lg:overflow-visible"
+              className="flex border-b border-slate-200 dark:border-slate-700 gap-6 overflow-x-auto"
               role="tablist"
               aria-orientation="horizontal"
               aria-label="Secciones de la ficha"
@@ -298,10 +361,10 @@ export function AlumnoDetallePage() {
                   onClick={() => setSeccion(item.id)}
                   onKeyDown={(evento) => navegarPestanas(evento, indice)}
                   className={cn(
-                    "min-h-[44px] shrink-0 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E91E82]",
+                    "pb-3 text-sm font-bold transition-all whitespace-nowrap focus-visible:outline-none",
                     seccion === item.id
-                      ? "border-[#E91E82] text-[#BC1266] dark:text-pink-200"
-                      : "border-transparent text-slate-700 hover:border-pink-200 dark:text-slate-300 dark:hover:border-pink-600",
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
                   )}
                 >
                   {item.etiqueta}
@@ -309,6 +372,7 @@ export function AlumnoDetallePage() {
               ))}
             </div>
 
+            {/* Panel de Contenido de la Ficha */}
             <section
               id="panel-ficha-alumno"
               role="tabpanel"
@@ -318,93 +382,90 @@ export function AlumnoDetallePage() {
               className="space-y-4"
             >
               {seccion === "datos" && (
-                <>
+                <div className="space-y-4">
+                  {/* Tutor si es menor de edad */}
                   {esMenor && alumno.tutor && (
-                    <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                      <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                        <UserRound aria-hidden="true" className="h-5 w-5 text-[#E91E82]" />
+                    <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                      <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                         Tutor responsable
                       </h2>
-                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                        Datos de contacto de la persona responsable del alumno menor de edad.
-                      </p>
-                      <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <Dato etiqueta="Nombre" valor={`${alumno.tutor.nombre} ${alumno.tutor.apellido}`} />
-                        <Dato etiqueta="DNI" valor={alumno.tutor.dni} />
-                        <Dato etiqueta="Teléfono" valor={alumno.tutor.telefono} />
-                        <Dato etiqueta="Email" valor={alumno.tutor.email} />
-                      </dl>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <DatoFicha etiqueta="Nombre" valor={`${alumno.tutor.nombre} ${alumno.tutor.apellido}`} />
+                        <DatoFicha etiqueta="DNI" valor={formatearDni(alumno.tutor.dni)} />
+                        <DatoFicha etiqueta="Teléfono" valor={alumno.tutor.telefono} />
+                        <DatoFicha etiqueta="Email" valor={alumno.tutor.email} />
+                      </div>
                     </Card>
                   )}
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <UserRound aria-hidden="true" className="h-5 w-5 text-[#E91E82]" />
-                      Datos personales
+
+                  {/* Fila superior: Datos personales & Contacto */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Datos personales */}
+                    <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                      <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Datos personales
+                      </h2>
+                      <div className="mt-4 space-y-3.5">
+                        <FilaDato etiqueta="DNI" valor={formatearDni(alumno.usuario.dni)} />
+                        <FilaDato etiqueta="Nacimiento" valor={formatearFechaCorta(alumno.usuario.fecha_nacimiento)} />
+                        <FilaDato
+                          etiqueta="Edad"
+                          valor={alumno.usuario.fecha_nacimiento ? `${calcularEdad(alumno.usuario.fecha_nacimiento)} años` : "-"}
+                        />
+                        <FilaDato etiqueta="Dirección" valor={alumno.usuario.direccion || "Sin dirección"} />
+                      </div>
+                    </Card>
+
+                    {/* Contacto */}
+                    <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                      <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                        Contacto
+                      </h2>
+                      <div className="mt-4 space-y-3.5">
+                        <FilaDato
+                          etiqueta="Teléfono"
+                          valor={alumno.usuario.telefono || "Sin teléfono"}
+                          destacado
+                          href={alumno.usuario.telefono ? enlaceTelefono(alumno.usuario.telefono) : undefined}
+                        />
+                        <FilaDato
+                          etiqueta="Email"
+                          valor={alumno.usuario.email || "Sin email"}
+                          destacado
+                          href={alumno.usuario.email ? `mailto:${alumno.usuario.email}` : undefined}
+                        />
+                        <FilaDato etiqueta="Emergencia" valor={alumno.cont_emerg_nombre || "Sin contacto"} />
+                        <FilaDato
+                          etiqueta="Tel. emergencia"
+                          valor={alumno.cont_emerg_telefono || "Sin teléfono"}
+                          destacado
+                          href={alumno.cont_emerg_telefono ? enlaceTelefono(alumno.cont_emerg_telefono) : undefined}
+                        />
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Fila inferior: Salud */}
+                  <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                    <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                      Salud
                     </h2>
-                    <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      <Dato etiqueta="Nombre y apellido" valor={nombreCompleto} />
-                      <Dato etiqueta="DNI" valor={alumno.usuario.dni} />
-                      <Dato
-                        etiqueta="Fecha de nacimiento"
-                        valor={`${fechaLegible(alumno.usuario.fecha_nacimiento)} · ${calcularEdad(alumno.usuario.fecha_nacimiento)} años`}
-                      />
-                      <Dato etiqueta="Dirección" valor={alumno.usuario.direccion} />
-                      <Dato
+                    <div className="mt-4 space-y-3.5">
+                      <FilaDato
                         etiqueta="Apto médico"
                         valor={
                           alumno.apto_medico
-                            ? `Presentado · ${fechaLegible(alumno.fecha_apto_medico)}`
-                            : "No presentado"
+                            ? `Presentado el ${formatearFechaCorta(alumno.fecha_apto_medico)}`
+                            : "Sin presentar"
                         }
                       />
-                    </dl>
-                  </Card>
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <Phone aria-hidden="true" className="h-5 w-5 text-[#E91E82]" />
-                      Contacto
-                    </h2>
-                    <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      <DatoEnlace
-                        etiqueta="Teléfono"
-                        valor={alumno.usuario.telefono}
-                        href={alumno.usuario.telefono ? `tel:${alumno.usuario.telefono.replace(/[^\d+]/gu, "")}` : null}
+                      <FilaDato
+                        etiqueta="Observaciones"
+                        valor={alumno.observaciones || "Sin observaciones"}
                       />
-                      <DatoEnlace
-                        etiqueta="Email"
-                        valor={alumno.usuario.email}
-                        href={alumno.usuario.email ? `mailto:${alumno.usuario.email}` : null}
-                      />
-                      <Dato etiqueta="Contacto de emergencia" valor={alumno.cont_emerg_nombre} />
-                      <Dato etiqueta="Teléfono de emergencia" valor={alumno.cont_emerg_telefono} />
-                    </dl>
-                  </Card>
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <Activity aria-hidden="true" className="size-5 text-[#E91E82]" />
-                      Información médica y observaciones
-                    </h2>
-                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                      {alumno.observaciones || "No hay observaciones registradas."}
-                    </p>
-                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                      Apto médico: {alumno.apto_medico ? `Presentado · ${fechaLegible(alumno.fecha_apto_medico)}` : "No presentado"}
-                    </p>
-                  </Card>
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <Scale aria-hidden="true" className="size-5 text-emerald-600" />
-                      Mediciones básicas
-                    </h2>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <Dato etiqueta="Peso actual" valor={null} />
-                      <Dato etiqueta="Talla / estatura" valor={null} />
                     </div>
-                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                      Todavía no hay mediciones registradas.
-                    </p>
                   </Card>
-                </>
+                </div>
               )}
 
               {seccion === "plan" && (
@@ -420,11 +481,11 @@ export function AlumnoDetallePage() {
               )}
 
               {seccion === "asistencia" && (
-                <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                  <h2 className="text-base font-extrabold text-[#181C26] dark:text-white">
+                <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                  <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                     Historial de asistencia
                   </h2>
-                  <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                     El historial de asistencia todavía no está disponible.
                   </p>
                 </Card>
@@ -432,27 +493,29 @@ export function AlumnoDetallePage() {
 
               {seccion === "progreso" && (
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <Dumbbell aria-hidden="true" className="size-5 text-[#E91E82]" />
+                  <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                    <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
+                      <Dumbbell aria-hidden="true" className="size-5 text-primary" />
                       Rutina
                     </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                       Todavía no hay una rutina registrada para este alumno.
                     </p>
                   </Card>
-                  <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-                      <Ruler aria-hidden="true" className="size-5 text-[#E91E82]" />
+                  <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                    <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
+                      <Ruler aria-hidden="true" className="size-5 text-primary" />
                       Evolución y mediciones
                     </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                       El historial de peso y talla aparecerá acá cuando se registren mediciones.
                     </p>
                   </Card>
                 </div>
               )}
             </section>
+
+            {/* Modal de Cambio de Plan */}
             {cambiandoPlan && alumno.inscripcion && (
               <ModalCambiarPlan
                 nombre={nombreCompleto}
@@ -460,10 +523,91 @@ export function AlumnoDetallePage() {
                 onClose={() => setCambiandoPlan(false)}
               />
             )}
-          </>
+
+            {/* Modal de Cobro */}
+            {modalCobroAbierto && alumno.inscripcion && (
+              <ModalRegistrarCobro
+                abierto={modalCobroAbierto}
+                onClose={() => setModalCobroAbierto(false)}
+                alumno={{
+                  id_alumno: alumno.id_alumno,
+                  nombre: alumno.usuario.nombre,
+                  apellido: alumno.usuario.apellido,
+                  dni: alumno.usuario.dni,
+                }}
+                inscripcion={{
+                  id_inscripcion: alumno.inscripcion.id_inscripcion,
+                  nombre_plan: alumno.inscripcion.plan.nombre,
+                  precio_vigente: alumno.inscripcion.plan.precio,
+                  situacion_cuota: alumno.inscripcion.situacion_cuota,
+                }}
+                onExito={() => {
+                  setModalCobroAbierto(false);
+                  toast.success("Cobro registrado con éxito.");
+                  void consulta.refetch();
+                }}
+                onTransferenciaInformada={() => {
+                  setModalCobroAbierto(false);
+                  toast.info("Transferencia informada.");
+                  void consulta.refetch();
+                }}
+              />
+            )}
+          </div>
         )}
       </main>
     </OwnerLayout>
+  );
+}
+
+function FilaDato({
+  etiqueta,
+  valor,
+  destacado = false,
+  href,
+}: {
+  etiqueta: string;
+  valor: string;
+  destacado?: boolean;
+  href?: string;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 text-sm">
+      <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+        {etiqueta}
+      </span>
+      {href ? (
+        <a
+          href={href}
+          className={cn(
+            "font-semibold truncate hover:underline text-right",
+            destacado ? "text-primary dark:text-pink-300" : "text-slate-800 dark:text-slate-200"
+          )}
+        >
+          {valor}
+        </a>
+      ) : (
+        <span
+          className={cn(
+            "font-semibold text-right truncate",
+            destacado ? "text-primary dark:text-pink-300" : "text-slate-800 dark:text-slate-200"
+          )}
+        >
+          {valor}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function DatoFicha({ etiqueta, valor }: { etiqueta: string; valor: string | null | undefined }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">{etiqueta}</dt>
+      <dd className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">
+        {valor || "Sin información"}
+      </dd>
+    </div>
   );
 }
 
@@ -478,15 +622,15 @@ function PlanYHorarios({
 }) {
   const { inscripcion } = alumno;
   return (
-    <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-600 dark:bg-slate-800">
+    <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-          <CalendarDays aria-hidden="true" className="h-5 w-5 text-[#E91E82]" />
+        <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
+          <CalendarDays aria-hidden="true" className="size-5 text-primary" />
           Plan y horarios
         </h2>
         {puedeCambiar && inscripcion && (
-          <Button type="button" variant="outline" onClick={onCambiar} className="min-h-[44px] w-full rounded-xl font-bold sm:w-auto">
-            <CalendarClock aria-hidden="true" className="mr-2 h-4 w-4" />
+          <Button type="button" variant="outline" onClick={onCambiar} className="min-h-[40px] rounded-xl font-bold sm:w-auto">
+            <CalendarClock aria-hidden="true" className="mr-2 size-4" />
             Cambiar plan u horarios
           </Button>
         )}
@@ -494,7 +638,7 @@ function PlanYHorarios({
       {inscripcion ? (
         <DetalleInscripcion inscripcion={inscripcion} />
       ) : (
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
           {alumno.estado === "BAJA"
             ? "Está dado de baja: no tiene un plan vigente. Al reactivarlo se elige el plan y los horarios."
             : "No tiene una inscripción vigente."}
@@ -508,38 +652,37 @@ function DetalleInscripcion({ inscripcion }: { inscripcion: InscripcionDeAlumno 
   return (
     <>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Dato etiqueta="Plan asignado" valor={inscripcion.plan.nombre} />
-        <Dato etiqueta="Precio al inscribirse" valor={formatearPrecio(inscripcion.plan.precio)} />
-        <Dato etiqueta="Profesora a cargo" valor={inscripcion.profesora} />
-        <Dato etiqueta="Estado de inscripción" valor={textoEstado(inscripcion.estado)} />
-        <Dato etiqueta="Inicio" valor={fechaLegible(inscripcion.fecha_inicio)} />
+        <DatoFicha etiqueta="Plan asignado" valor={inscripcion.plan.nombre} />
+        <DatoFicha etiqueta="Precio al inscribirse" valor={formatearPrecio(inscripcion.plan.precio)} />
+        <DatoFicha etiqueta="Profesora a cargo" valor={inscripcion.profesora} />
+        <DatoFicha etiqueta="Estado de inscripción" valor={textoEstado(inscripcion.estado)} />
+        <DatoFicha etiqueta="Inicio" valor={fechaLegible(inscripcion.fecha_inicio)} />
       </div>
       {inscripcion.situacion_cuota && <CuotaDeInscripcion situacion={inscripcion.situacion_cuota} />}
       {inscripcion.reserva && <AvisoReserva reserva={inscripcion.reserva} />}
-      <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-600">
+      <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Horarios</h3>
         {inscripcion.horarios.length ? (
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {inscripcion.horarios.map((horario) => (
-              <li key={horario.id_horario} className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-600">
+              <li key={horario.id_horario} className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-700">
                 <p className="font-semibold text-slate-800 dark:text-slate-100">
                   {horario.actividad} · {diaSemana(horario.dia_semana)}
                 </p>
-                <p className="mt-1 text-slate-600 dark:text-slate-300">
+                <p className="mt-1 text-slate-500 dark:text-slate-400">
                   {horario.hora_inicio}–{horario.hora_fin} · {horario.profesora}
                 </p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No tiene horarios asignados.</p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No tiene horarios asignados.</p>
         )}
       </div>
     </>
   );
 }
 
-// US-18: el estado de la cuota con su vencimiento, si puede asistir y si hay una transferencia por revisar.
 function CuotaDeInscripcion({ situacion }: { situacion: NonNullable<InscripcionDeAlumno["situacion_cuota"]> }) {
   const detalles = [
     detalleVencimiento(situacion),
@@ -547,13 +690,13 @@ function CuotaDeInscripcion({ situacion }: { situacion: NonNullable<InscripcionD
     situacion.tiene_pago_pendiente ? "Tiene una transferencia informada sin revisar." : null,
   ].filter((detalle): detalle is string => detalle !== null);
   return (
-    <div className="mt-4 rounded-lg border border-slate-200 p-3 dark:border-slate-600">
+    <div className="mt-4 rounded-xl border border-slate-200 p-3.5 dark:border-slate-700">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Cuota</h3>
         <BadgeSituacionCuota situacion={situacion} />
       </div>
       {detalles.length > 0 && (
-        <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+        <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
           {detalles.map((detalle) => (
             <li key={detalle}>{detalle}</li>
           ))}
@@ -563,17 +706,15 @@ function CuotaDeInscripcion({ situacion }: { situacion: NonNullable<InscripcionD
   );
 }
 
-// US-07: la pre-inscripción guarda el lugar unos días sin el primer pago; el alta se confirma en
-// "Pendientes de alta". Esa pantalla es solo de la propietaria: al resto no se le ofrece el enlace.
 function AvisoReserva({ reserva }: { reserva: NonNullable<InscripcionDeAlumno["reserva"]> }) {
   const { hasRole } = usePermissions();
   return (
     <p
       className={cn(
-        "mt-4 rounded-lg border p-3 text-sm font-medium",
+        "mt-4 rounded-xl border p-3 text-xs font-medium",
         reserva.vencida
           ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-200"
-          : "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200",
+          : "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
       )}
     >
       {reserva.vencida
@@ -582,8 +723,8 @@ function AvisoReserva({ reserva }: { reserva: NonNullable<InscripcionDeAlumno["r
       {hasRole("PROPIETARIA") ? (
         <>
           El alta se confirma al registrar el primer pago, desde{" "}
-          <Link to="/app/alumnos/pendientes" className="font-bold underline underline-offset-2">
-            Pendientes de alta
+          <Link to="/app/pagos" className="font-bold underline underline-offset-2">
+            Cobros y Cuotas
           </Link>
           .
         </>
@@ -606,34 +747,34 @@ function EstadoFicha({
   onReintentar?: () => void;
 }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600 bg-card">
       <span
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-xl",
+          "flex size-12 items-center justify-center rounded-2xl",
           error
             ? "bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-200"
             : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200",
         )}
       >
         {error ? (
-          <Mail aria-hidden="true" className="h-6 w-6" />
+          <Mail aria-hidden="true" className="size-6" />
         ) : (
-          <UserRound aria-hidden="true" className="h-6 w-6" />
+          <UserRound aria-hidden="true" className="size-6" />
         )}
       </span>
-      <h1 className="text-xl font-extrabold text-[#181C26] dark:text-white">{titulo}</h1>
+      <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">{titulo}</h1>
       <p
         role={error ? "alert" : undefined}
-        className="max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+        className="max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400"
       >
         {descripcion}
       </p>
       {onReintentar && (
-        <Button type="button" onClick={onReintentar} className="min-h-[44px]">
+        <Button type="button" onClick={onReintentar} className="min-h-[40px] rounded-xl">
           Reintentar
         </Button>
       )}
-      <Button asChild variant="outline" className="min-h-[44px]">
+      <Button asChild variant="outline" className="min-h-[40px] rounded-xl">
         <Link to="/app/alumnos/listado">Volver al listado</Link>
       </Button>
     </Card>

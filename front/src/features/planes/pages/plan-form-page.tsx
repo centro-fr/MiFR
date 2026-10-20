@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AlertCircle, ArrowLeft, Loader2, SearchX } from "lucide-react";
 import { toast } from "sonner";
@@ -7,20 +7,16 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
-import { BadgeEstadoPlan } from "@/features/planes/components/badges-plan";
+import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { FormularioPlan } from "@/features/planes/components/formulario-plan";
-import { ModalBajaPlan } from "@/features/planes/components/modales-plan";
 import {
   esPlanNoEncontrado,
-  useActualizarPlan,
   useCrearPlan,
-  useDarDeBajaPlan,
   usePlan,
   usePlanes,
 } from "@/features/planes/hooks/use-planes";
-import { aCuerpoActualizacion, aCuerpoCreacion, type PlanFormValues } from "@/features/planes/schemas/plan";
+import { aCuerpoCreacion, type PlanFormValues } from "@/features/planes/schemas/plan";
 import { estaVigente } from "@/features/planes/utils/planes";
-import type { Plan } from "@/types/plan";
 
 const RUTA_LISTADO = "/app/planes";
 
@@ -146,92 +142,8 @@ export function NuevoPlanPage() {
   );
 }
 
-function EdicionDePlan({ plan }: { plan: Plan }) {
-  const navigate = useNavigate();
-  const actualizar = useActualizarPlan();
-  const darDeBaja = useDarDeBajaPlan();
-  const [bajaAbierta, setBajaAbierta] = useState(false);
-  const { actividades, planes, error, reintentar } = useDatosDelFormulario();
-
-  const guardar = (valores: PlanFormValues) => {
-    actualizar.mutate(
-      { id: plan.id, cambios: aCuerpoActualizacion(plan, valores) },
-      {
-        onSuccess: (guardado) => {
-          toast.success(`Cambios guardados en "${guardado.nombre}"`);
-          navigate(RUTA_LISTADO);
-        },
-      },
-    );
-  };
-
-  // mutateAsync y no mutate: al refrescarse, el plan llega dado de baja y esta vista se desmonta
-  // antes de que corra el onSuccess de mutate, que React Query descarta en ese caso.
-  const confirmarBaja = () => {
-    darDeBaja
-      .mutateAsync(plan.id)
-      .then(() => {
-        toast.info(`Plan "${plan.nombre}" dado de baja`);
-        navigate(RUTA_LISTADO);
-      })
-      .catch(() => {
-        // El error ya se muestra en el modal (darDeBaja.isError).
-      });
-  };
-
-  const abrirBaja = () => {
-    darDeBaja.reset();
-    setBajaAbierta(true);
-  };
-
-  return (
-    <>
-      <Encabezado
-        titulo={
-          <>
-            {plan.nombre} <BadgeEstadoPlan vigente />
-          </>
-        }
-        detalle="Los cambios rigen para las próximas inscripciones y renovaciones."
-        acciones={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={abrirBaja}
-            className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-600 transition-colors hover:border-rose-600 hover:bg-rose-600 hover:text-white pointer-fine:min-h-0 dark:border-rose-500/30 dark:bg-transparent dark:text-rose-300 dark:hover:bg-rose-600"
-          >
-            Dar de baja el plan
-          </Button>
-        }
-      />
-      {actividades && planes ? (
-        <FormularioPlan
-          plan={plan}
-          actividades={actividades}
-          planes={planes}
-          guardando={actualizar.isPending}
-          errorGuardado={actualizar.isError ? mensajeDeErrorApi(actualizar.error, "No se pudieron guardar los cambios.") : null}
-          onGuardar={guardar}
-        />
-      ) : error ? (
-        <ErrorDeCarga error={error} onReintentar={reintentar} />
-      ) : (
-        <CargandoFormulario />
-      )}
-      {bajaAbierta && (
-        <ModalBajaPlan
-          nombre={plan.nombre}
-          dandoDeBaja={darDeBaja.isPending}
-          error={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja el plan.") : null}
-          onClose={() => setBajaAbierta(false)}
-          onConfirm={confirmarBaja}
-        />
-      )}
-    </>
-  );
-}
-
 function ContenidoEdicion({ idPlan }: { idPlan: string }) {
+  const navigate = useNavigate();
   const { data: plan, isPending, isError, error, refetch } = usePlan(idPlan);
   if (isPending) return <CargandoFormulario />;
   if (isError) {
@@ -245,7 +157,7 @@ function ContenidoEdicion({ idPlan }: { idPlan: string }) {
   if (!estaVigente(plan)) {
     return <PlanNoDisponible titulo={`"${plan.nombre}" está dado de baja`} detalle="Un plan dado de baja ya no se puede editar. Si lo necesitás de nuevo, creá un plan nuevo." />;
   }
-  return <EdicionDePlan plan={plan} />;
+  return <EditarPlanDialog plan={plan} onClose={() => navigate(RUTA_LISTADO)} />;
 }
 
 // Los ids del DER son SERIAL: cualquier otra cosa en la URL no puede ser un plan.

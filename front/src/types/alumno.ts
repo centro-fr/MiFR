@@ -21,11 +21,11 @@ export interface CrearAlumnoPayload {
   apellido: string;
   email?: string;
   fecha_nacimiento: string;
-  dni?: string;
+  dni: string;
   telefono?: string | null;
   direccion?: string | null;
-  cont_emerg_nombre?: string | null;
-  cont_emerg_telefono?: string | null;
+  cont_emerg_nombre: string;
+  cont_emerg_telefono: string;
   apto_medico: boolean;
   fecha_apto_medico?: string | null;
   observaciones?: string | null;

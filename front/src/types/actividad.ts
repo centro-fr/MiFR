@@ -10,4 +10,6 @@ export interface Actividad {
   modalidad: ModalidadActividad;
   /** null = sin límite de cupo (solo en GRUPAL). */
   cupoMaximo: number | null;
+  activo?: boolean;
+  requiereMedidas?: boolean;
 }

@@ -58,6 +58,7 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
+  { path: "ausentes", seccion: "Ausentes" },
   { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "honorarios", seccion: "Honorarios" },
   { path: "notificaciones", seccion: "Notificaciones" },
@@ -82,7 +83,7 @@ export const router = createBrowserRouter([
     ...carga,
     lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
   },
-  { path: "/seguridad/permisos", element: <Navigate to="/app/seguridad/permisos" replace /> },
+  { path: "/seguridad/permisos", element: <Navigate to="/app/dashboard" replace /> },
   {
     path: "/login",
     element: (
@@ -115,13 +116,8 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // US-20/21: la propietaria consulta fechas anteriores y corrige marcas individuales.
         path: "asistencia",
-        element: guardiaDeSeccion("asistencia", "ASISTENCIAS_MARCAR"),
-        children: [
-          { index: true, lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "AsistenciaPage") },
-          { path: ":id", lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "AsistenciaPage") },
-        ],
+        element: <Navigate to="/app/ausentes" replace />,
       },
       {
         // Grupo "Profesora" que suma a su menú la propietaria que también dicta clases.
@@ -168,15 +164,9 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Alta definitiva (US-07): pre-inscripciones que esperan su primer pago. Actor: la propietaria.
+        // Redirección de la ruta histórica de pendientes de alta hacia Cobros y Cuotas
         path: "alumnos/pendientes",
-        element: guardiaDeSeccion("alumnos/pendientes", "ALUMNOS_VER"),
-        children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(() => import("@/features/alumnos/pages/pendientes-de-alta-page"), "PendientesDeAltaPage"),
-          },
-        ],
+        element: <Navigate to="/app/pagos?tab=transferencias" replace />,
       },
       {
         // US-11: planes vigentes. Verlos pide PLANES_VER; crearlos y editarlos, además, PLANES_EDITAR.
@@ -202,49 +192,23 @@ export const router = createBrowserRouter([
         path: "pagos",
         element: guardiaDeSeccion("pagos"),
         children: [
-          { index: true, lazy: paginaDeGrupo("/app/pagos", "/app/dashboard") },
           {
-            // US-15: estado de cuotas de alumnos y cobro en efectivo. Actor: Propietaria con PAGOS_REGISTRAR.
-            path: "cuotas",
-            element: (
-              <PermissionGuard permission="PAGOS_REGISTRAR">
-                <Outlet />
-              </PermissionGuard>
-            ),
-            children: [
-              {
-                index: true,
-                lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
-              },
-            ],
+            index: true,
+            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
           },
           {
-            // US-17: revisión de las transferencias que informan los alumnos, con el mismo permiso
-            // que exige el back (pago.routes.ts).
+            path: "cuotas",
+            element: <Navigate to="/app/pagos?tab=cuotas" replace />,
+          },
+          {
             path: "transferencias",
-            element: (
-              <PermissionGuard permission="PAGOS_CONFIRMAR">
-                <Outlet />
-              </PermissionGuard>
-            ),
-            children: [
-              {
-                index: true,
-                lazy: paginaPerezosa(() => import("@/features/transferencias/pages/transferencias-page"), "TransferenciasPage"),
-              },
-            ],
+            element: <Navigate to="/app/pagos?tab=transferencias" replace />,
           },
         ],
       },
       {
         path: "seguridad/permisos",
-        element: guardiaDeSeccion("seguridad/permisos", "SEGURIDAD_MATRIZ_VER"),
-        children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(() => import("@/features/seguridad/pages/permisos-page"), "PermisosPage"),
-          },
-        ],
+        element: <Navigate to="/app/dashboard" replace />,
       },
       {
         // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.

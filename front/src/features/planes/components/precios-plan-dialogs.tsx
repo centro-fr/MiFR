@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -10,12 +11,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { usePreciosPlan, useRegistrarPrecioPlan } from "@/features/planes/hooks/use-planes";
 import { crearActualizacionPrecioSchema } from "@/features/planes/schemas/plan";
 import type { Plan } from "@/types/plan";
 import { formatearPrecio } from "@/utils/moneda";
+import { cn } from "@/utils/cn";
 import { toast } from "sonner";
 
 function hoyEnArgentina(): string {
@@ -34,6 +38,29 @@ function fechaLegible(fecha: string): string {
   return new Date(`${fecha.slice(0, 10)}T00:00:00.000Z`).toLocaleDateString("es-AR", { timeZone: "UTC" });
 }
 
+function fechaLegibleCorta(fecha: string): string {
+  const [y, m, d] = fecha.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function formatoRangoHistorial(desdeIso: string, hastaIso: string | null, hoyStr: string): string {
+  const d = desdeIso.slice(0, 10);
+  const h = hastaIso ? hastaIso.slice(0, 10) : null;
+  const fechaD = fechaLegibleCorta(d);
+
+  if (!h || h >= hoyStr) {
+    return `${fechaD} - hoy`;
+  }
+
+  const [yD, mD, diaD] = d.split("-");
+  const [yH, mH, diaH] = h.split("-");
+
+  if (yD === yH) {
+    return `${diaD}/${mD} - ${diaH}/${mH}/${yH}`;
+  }
+  return `${diaD}/${mD}/${yD} - ${diaH}/${mH}/${yH}`;
+}
+
 function precioInicial(plan: Plan): string {
   return plan.precioVigente?.toLocaleString("es-AR") ?? "";
 }
@@ -48,9 +75,11 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
   const schema = crearActualizacionPrecioSchema({ hoy });
   const [precio, setPrecio] = useState(() => (plan ? precioInicial(plan) : ""));
   const [fecha, setFecha] = useState(hoyEnArgentina);
+  const [nota, setNota] = useState("");
   const [errores, setErrores] = useState<{ precio?: string; fecha_vigencia_desde?: string }>({});
   const [confirmacionAbierta, setConfirmacionAbierta] = useState(false);
   const registrar = useRegistrarPrecioPlan();
+  const consultaPrecios = usePreciosPlan(plan?.id ?? "", plan !== null);
 
   const validar = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -103,6 +132,17 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
     fecha_vigencia_desde: fecha,
   });
 
+  const precioLimpio = precio.trim().replace(/\./g, "").replace(",", ".");
+  const nuevoPrecioNum = Number(precioLimpio);
+  const precioActualNum = plan?.precioVigente ?? 0;
+  const diff = nuevoPrecioNum - precioActualNum;
+  const pct = precioActualNum > 0 ? Math.round((diff / precioActualNum) * 100) : 0;
+  const pctTexto = pct > 0 ? ` (+${pct}%)` : pct < 0 ? ` (${pct}%)` : "";
+
+  const historialPrecios = (consultaPrecios.data ?? [])
+    .slice()
+    .sort((a, b) => b.fecha_vigencia_desde.localeCompare(a.fecha_vigencia_desde));
+
   return (
     <>
       <Dialog
@@ -112,166 +152,194 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         }}
       >
         <DialogContent
-          bottomSheetOnMobile
-          className="gap-0 border-border bg-white p-0 dark:bg-surface-low sm:max-w-lg"
-          aria-describedby="actualizar-precio-descripcion"
+          hideClose
+          className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
         >
-          <DialogHeader className="border-b border-border px-5 py-4 pr-12 text-left sm:px-6">
-            <p className="text-xs font-extrabold uppercase tracking-wider text-primary">Vigencia de precio</p>
-            <DialogTitle className="text-lg font-extrabold text-slate-900 dark:text-white">
-              Actualizar precio
-            </DialogTitle>
-            <DialogDescription
-              id="actualizar-precio-descripcion"
-              className="text-sm text-slate-600 dark:text-slate-400"
-            >
-              Las cuotas ya cobradas o facturadas no se modifican.
-            </DialogDescription>
-          </DialogHeader>
           {plan && (
-            <form onSubmit={validar} className="flex max-h-[calc(92dvh-82px)] flex-col overflow-y-auto">
-              <div className="flex flex-col gap-5 p-5 sm:p-6">
-                <section
-                  aria-label="Precio actual"
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-slate-50 p-4 dark:bg-white/5"
-                >
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Plan seleccionado
-                    </p>
-                    <h3 className="mt-1 break-words font-extrabold text-slate-900 dark:text-white">
-                      {plan.nombre}
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {plan.precioVigenteDesde
-                        ? `Vigente desde ${fechaLegible(plan.precioVigenteDesde)}`
-                        : "El plan todavía no tiene un precio vigente."}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Actual
-                    </p>
-                    <p className="text-lg font-extrabold text-slate-900 dark:text-white">
-                      {plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente)}
-                    </p>
-                  </div>
-                </section>
-
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="nuevo-precio"
-                    className="text-sm font-bold text-slate-800 dark:text-slate-200"
-                  >
-                    Nuevo arancel (ARS) <span aria-hidden="true">*</span>
-                  </label>
-                  <div className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-500"
-                    >
-                      $
-                    </span>
-                    <input
-                      id="nuevo-precio"
-                      name="precio"
-                      type="text"
-                      inputMode="decimal"
-                      autoComplete="off"
-                      maxLength={14}
-                      required
-                      value={precio}
-                      onChange={(event) => {
-                        setPrecio(event.target.value);
-                        setErrores((actuales) => ({ ...actuales, precio: undefined }));
-                      }}
-                      aria-invalid={Boolean(errores.precio)}
-                      aria-describedby={errores.precio ? "nuevo-precio-error" : undefined}
-                      className="min-h-12 w-full rounded-xl border border-slate-300 bg-white pl-8 pr-3 text-base font-extrabold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white"
-                      placeholder="28.000"
-                    />
-                  </div>
-                  {errores.precio ? (
-                    <p
-                      id="nuevo-precio-error"
-                      role="alert"
-                      className="text-sm font-semibold text-rose-700 dark:text-rose-300"
-                    >
-                      {errores.precio}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Mayor a $0; podés usar punto para miles y coma para decimales.
-                    </p>
-                  )}
+            <>
+              {/* Encabezado */}
+              <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+                <div>
+                  <p className="text-xs sm:text-sm font-semibold text-muted-foreground">Cambiar precio</p>
+                  <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mt-0.5">
+                    {plan.nombre}
+                  </DialogTitle>
                 </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="fecha-vigencia-precio"
-                    className="text-sm font-bold text-slate-800 dark:text-slate-200"
-                  >
-                    Fecha de vigencia <span aria-hidden="true">*</span>
-                  </label>
-                  <input
-                    id="fecha-vigencia-precio"
-                    name="fecha_vigencia_desde"
-                    type="date"
-                    min={hoy}
-                    required
-                    value={fecha}
-                    onChange={(event) => {
-                      setFecha(event.target.value);
-                      setErrores((actuales) => ({ ...actuales, fecha_vigencia_desde: undefined }));
-                    }}
-                    aria-invalid={Boolean(errores.fecha_vigencia_desde)}
-                    aria-describedby={
-                      errores.fecha_vigencia_desde ? "fecha-vigencia-error" : "fecha-vigencia-ayuda"
-                    }
-                    className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white"
-                  />
-                  {errores.fecha_vigencia_desde ? (
-                    <p
-                      id="fecha-vigencia-error"
-                      role="alert"
-                      className="text-sm font-semibold text-rose-700 dark:text-rose-300"
-                    >
-                      {errores.fecha_vigencia_desde}
-                    </p>
-                  ) : (
-                    <p id="fecha-vigencia-ayuda" className="text-xs text-slate-500 dark:text-slate-400">
-                      Aplica a partir de las 00:00. Podés elegir hoy o una fecha futura.
-                    </p>
-                  )}
-                </div>
-
-                {plan.precioProgramado && (
-                  <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-950 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
-                    Ya hay un precio programado de {formatearPrecio(plan.precioProgramado.precio)} desde el{" "}
-                    {fechaLegible(plan.precioProgramado.desde)}. La nueva fecha reemplazará las programaciones
-                    desde ese día.
-                  </p>
-                )}
-              </div>
-              <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-border bg-white p-4 sm:flex-row sm:justify-end dark:bg-surface-low">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
+                  size="icon"
                   onClick={onClose}
-                  disabled={registrar.isPending}
-                  className="min-h-11 rounded-xl font-bold"
+                  aria-label="Cerrar formulario"
+                  className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  Cancelar
+                  <X className="size-4" />
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={registrar.isPending}
-                  className="min-h-11 rounded-xl bg-primary px-5 font-extrabold text-white hover:bg-primary-dark"
-                >
-                  Revisar y confirmar
-                </Button>
-              </div>
-            </form>
+              </DialogHeader>
+
+              {/* Formulario */}
+              <form onSubmit={validar} className="space-y-4 pt-1">
+                {/* Caja Precio actual */}
+                <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+                  <p className="text-xs font-semibold text-muted-foreground">Precio actual</p>
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5 tabular-nums">
+                    {plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {plan.precioVigenteDesde
+                      ? `Desde el ${fechaLegibleCorta(plan.precioVigenteDesde)}`
+                      : "Sin fecha registrada"}
+                  </p>
+                </div>
+
+                {/* Inputs en 2 columnas: Nuevo precio y Rige desde */}
+                <div className="space-y-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="nuevo-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                        Nuevo precio <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="nuevo-precio"
+                        name="precio"
+                        aria-label="Nuevo arancel (ARS) *"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        maxLength={14}
+                        required
+                        value={precio}
+                        onChange={(event) => {
+                          setPrecio(event.target.value);
+                          setErrores((actuales) => ({ ...actuales, precio: undefined }));
+                        }}
+                        placeholder="33000"
+                        className={cn(
+                          "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                          errores.precio && "border-rose-500",
+                        )}
+                      />
+                      {errores.precio && (
+                        <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                          {errores.precio}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="fecha-vigencia-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                        Rige desde <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="fecha-vigencia-precio"
+                        name="fecha_vigencia_desde"
+                        aria-label="Fecha de vigencia *"
+                        type="date"
+                        min={hoy}
+                        required
+                        value={fecha}
+                        onChange={(event) => {
+                          setFecha(event.target.value);
+                          setErrores((actuales) => ({ ...actuales, fecha_vigencia_desde: undefined }));
+                        }}
+                        className={cn(
+                          "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                          errores.fecha_vigencia_desde && "border-rose-500",
+                        )}
+                      />
+                      {errores.fecha_vigencia_desde && (
+                        <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                          {errores.fecha_vigencia_desde}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-0.5">Hoy o una fecha futura.</p>
+                </div>
+
+                {/* Nota opcional */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="nota-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Nota <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="nota-precio"
+                    name="nota"
+                    type="text"
+                    value={nota}
+                    onChange={(e) => setNota(e.target.value)}
+                    placeholder="Ej: aumento de noviembre"
+                    className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  />
+                </div>
+
+                {/* Callout informativo azul */}
+                {!Number.isNaN(nuevoPrecioNum) && nuevoPrecioNum > 0 && fecha && (
+                  <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 text-xs sm:text-sm text-blue-900 dark:text-blue-200 leading-snug font-medium">
+                    Desde el <span className="font-bold">{fechaLegibleCorta(fecha)}</span> pasa de{" "}
+                    <span className="font-bold">{formatearPrecio(precioActualNum)}</span> a{" "}
+                    <span className="font-bold">{formatearPrecio(nuevoPrecioNum)}</span>
+                    {pctTexto}. Las cuotas ya cobradas no cambian.
+                  </div>
+                )}
+
+                {/* Precios anteriores */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    Precios anteriores
+                  </h4>
+                  {consultaPrecios.isPending ? (
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-6 w-full rounded-lg" />
+                      <Skeleton className="h-6 w-full rounded-lg" />
+                    </div>
+                  ) : historialPrecios.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Sin cambios de precio registrados previamente.</p>
+                  ) : (
+                    <div className="space-y-1.5 text-xs sm:text-sm">
+                      {historialPrecios.map((item) => (
+                        <div
+                          key={item.id_plan_precio}
+                          className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60 last:border-0"
+                        >
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">
+                            {formatoRangoHistorial(item.fecha_vigencia_desde, item.fecha_vigencia_hasta, hoy)}
+                          </span>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                            {formatearPrecio(item.precio)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer de botones */}
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={registrar.isPending}
+                    className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={registrar.isPending}
+                    aria-label="Revisar y confirmar"
+                    className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+                  >
+                    {registrar.isPending
+                      ? "Guardando..."
+                      : fecha > hoy
+                        ? "Programar precio"
+                        : "Actualizar precio"}
+                  </Button>
+                </div>
+              </form>
+            </>
           )}
         </DialogContent>
       </Dialog>

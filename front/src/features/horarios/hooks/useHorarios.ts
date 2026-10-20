@@ -17,6 +17,7 @@ import {
   moverHorarioEnLista,
   numeroDeDia,
   validarSolapamientoProfesoraEnLista,
+  mensajeSuperposicion,
 } from "@/features/horarios/utils/cronograma";
 import { temaDeModalidad } from "@/features/horarios/utils/tema-horario";
 import type { Actividad } from "@/types/actividad";
@@ -139,7 +140,7 @@ export const useHorarios = () => {
       if (conflicto) {
         return {
           ok: false,
-          error: `La profesora ${conflicto.profesoraNombre} ya dicta una clase el ${conflicto.diaSemana} de ${conflicto.horaInicio} a ${conflicto.horaFin} hs.`,
+          error: mensajeSuperposicion(conflicto),
         };
       }
       return { ok: true };
@@ -259,6 +260,7 @@ export const useHorarios = () => {
     errorCarga: consultas.find((consulta) => consulta.isError)?.error ?? null,
     reintentarCarga: () => consultas.forEach((consulta) => void consulta.refetch()),
     horarios: horariosFiltrados,
+    todosLosHorarios: horariosEditables,
     totalHorarios: horariosEditables.length,
     actividades,
     profesoras,

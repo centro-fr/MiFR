@@ -1,15 +1,38 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { CobrosPage } from "../cobros-page";
 
-const renderCobrosPage = () =>
-  render(
-    <MemoryRouter>
-      <CobrosPage />
-    </MemoryRouter>
+const renderCobrosPage = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <CobrosPage />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
+};
+
+vi.mock("@/features/transferencias/hooks/use-transferencias", () => ({
+  useTransferencias: () => ({
+    data: [],
+    isLoading: false,
+    refetch: vi.fn(),
+  }),
+  useAprobarTransferencia: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useRechazarTransferencia: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+}));
 
 vi.mock("@/components/layout/owner-layout", () => ({
   OwnerLayout: ({ children }: { children: ReactNode }) => <div data-testid="layout">{children}</div>,

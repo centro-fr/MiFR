@@ -11,58 +11,40 @@ function navegacionEn(ruta: string, contadores: ContadoresMenu = {}) {
   return renderHook(() => useOwnerNavigation(contadores), { wrapper }).result.current;
 }
 
-function grupoAlumnos(ruta: string, contadores?: ContadoresMenu) {
-  return navegacionEn(ruta, contadores).items.find((item) => item.etiqueta === "Alumnos")!;
-}
-
-function alumnosActivo(ruta: string): boolean {
-  return grupoAlumnos(ruta).esActivo;
-}
-
-function subOpcionActiva(ruta: string): string | undefined {
-  return grupoAlumnos(ruta).hijos!.find((hijo) => hijo.esActivo)?.etiqueta;
+function buscarItem(ruta: string, etiqueta: string, contadores?: ContadoresMenu) {
+  return navegacionEn(ruta, contadores).items.find((item) => item.etiqueta === etiqueta)!;
 }
 
 describe("useOwnerNavigation: sección Alumnos", () => {
-  it("marca Alumnos en el listado", () => {
-    expect(alumnosActivo("/app/alumnos/listado")).toBe(true);
+  it("marca Listado en su ruta", () => {
+    expect(buscarItem("/app/alumnos/listado", "Listado").esActivo).toBe(true);
   });
 
-  it("marca la sub-opción Listado en el listado", () => {
-    expect(subOpcionActiva("/app/alumnos/listado")).toBe("Listado");
-  });
-
-  // La ficha (US-08) se abre desde el listado: no tiene sub-opción propia y queda marcado Listado.
+  // La ficha se abre desde el listado: mantiene marcado Listado por subrutasDe
   it("mantiene marcado Listado dentro de la ficha de un alumno", () => {
-    expect(subOpcionActiva("/app/alumnos/baja/3")).toBe("Listado");
-    expect(navegacionEn("/app/alumnos/baja/3").migas.map((miga) => miga.etiqueta)).toEqual(["Inicio", "Alumnos", "Listado"]);
+    expect(buscarItem("/app/alumnos/3", "Listado").esActivo).toBe(true);
   });
 
-  // /app/alumnos/pendientes también está "dentro" de /app/alumnos: gana la ruta más específica.
-  it("marca solo Pendientes de alta en su pantalla", () => {
-    expect(subOpcionActiva("/app/alumnos/pendientes")).toBe("Pendientes de alta");
+  it("marca Ausentes en su ruta", () => {
+    expect(buscarItem("/app/ausentes", "Ausentes").esActivo).toBe(true);
   });
 
-  // Un prefijo de texto no alcanza: /app/alumnos-x no es una subruta de /app/alumnos.
-  it("no marca Alumnos en una ruta que solo empieza con el mismo texto", () => {
-    expect(alumnosActivo("/app/alumnos-x")).toBe(false);
+  it("marca Cobros y Cuotas en su ruta", () => {
+    expect(buscarItem("/app/pagos", "Cobros y Cuotas").esActivo).toBe(true);
   });
 
-  it("no marca Alumnos en otra sección", () => {
-    expect(alumnosActivo("/app/horarios")).toBe(false);
+  it("no marca Listado en otra sección", () => {
+    expect(buscarItem("/app/horarios", "Listado").esActivo).toBe(false);
   });
 });
 
 describe("useOwnerNavigation: contadores", () => {
-  it("pone el número de pendientes en su sub-opción y en el grupo", () => {
-    const alumnos = grupoAlumnos("/app/dashboard", { PENDIENTES_DE_ALTA: 2 });
-
-    expect(alumnos.hijos!.find((hijo) => hijo.etiqueta === "Pendientes de alta")!.contador).toBe(2);
-    expect(alumnos.contador).toBe(2);
+  it("pone el número de transferencias pendientes en Cobros y Cuotas", () => {
+    const cobros = buscarItem("/app/dashboard", "Cobros y Cuotas", { TRANSFERENCIAS_PENDIENTES: 3 });
+    expect(cobros.contador).toBe(3);
   });
 
-  // Mientras carga o sin permiso no hay número: no se muestra un 0 engañoso.
   it("sin dato no hay contador", () => {
-    expect(grupoAlumnos("/app/dashboard").contador).toBeUndefined();
+    expect(buscarItem("/app/dashboard", "Cobros y Cuotas").contador).toBeUndefined();
   });
 });

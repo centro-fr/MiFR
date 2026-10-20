@@ -3,9 +3,7 @@ import { Banknote, FileText, Receipt, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
-import { ModalCobroEfectivo } from "@/features/cobros/components/modal-cobro-efectivo";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import { formatearPrecio } from "@/utils/moneda";
@@ -16,54 +14,23 @@ interface Props {
 }
 
 export function HistorialCobrosAlumno({ alumno }: Props) {
-  const { hasPermission } = usePermissions();
-  const puedeRegistrarCobro = hasPermission("PAGOS_REGISTRAR") && alumno.estado !== "BAJA";
-
-  const inscripcionVigente =
-    alumno.inscripcion && (alumno.inscripcion.estado === "ACTIVA" || alumno.inscripcion.estado === "PREINSCRIPTA")
-      ? alumno.inscripcion
-      : null;
-
   const { data: pagos = [], isLoading } = useHistorialPagos({
     idAlumno: alumno.id_alumno,
   });
 
-  const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
   const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<number | null>(null);
-
-  function abrirCobro() {
-    setModalCobroAbierto(true);
-  }
-
-  function handleCobroExitoso(idPago: number) {
-    setModalCobroAbierto(false);
-    setComprobanteSeleccionado(idPago);
-  }
 
   return (
     <>
       <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-850">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-              <Receipt aria-hidden="true" className="size-5 text-[#BC1266] dark:text-pink-400" />
-              Historial de cobros y comprobantes
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Registro de cuotas abonadas y comprobantes digitales emitidos (US-15).
-            </p>
-          </div>
-
-          {puedeRegistrarCobro && inscripcionVigente && (
-            <Button
-              type="button"
-              onClick={abrirCobro}
-              className="min-h-[44px] bg-[#BC1266] font-bold text-white hover:bg-[#9D1055] dark:bg-pink-700 dark:hover:bg-pink-600"
-            >
-              <Banknote aria-hidden="true" className="mr-2 size-4" />
-              Registrar cobro en efectivo
-            </Button>
-          )}
+        <div>
+          <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
+            <Receipt aria-hidden="true" className="size-5 text-[#BC1266] dark:text-pink-400" />
+            Historial de cobros y comprobantes
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Registro de cuotas abonadas y comprobantes digitales emitidos (US-15).
+          </p>
         </div>
 
         {isLoading ? (
@@ -78,14 +45,8 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
               No hay cobros registrados todavía
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Al cobrar una cuota en efectivo se emitirá automáticamente el comprobante digital correspondiente.
+              Al cobrar una cuota se emitirá automáticamente el comprobante digital correspondiente.
             </p>
-            {puedeRegistrarCobro && inscripcionVigente && (
-              <Button type="button" onClick={abrirCobro} variant="outline" className="mt-4 min-h-[40px]">
-                <Banknote className="mr-2 size-4 text-[#BC1266]" />
-                Registrar primer cobro en efectivo
-              </Button>
-            )}
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -163,27 +124,6 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
           </div>
         )}
       </Card>
-
-      {/* Modal de cobro en efectivo */}
-      {inscripcionVigente && (
-        <ModalCobroEfectivo
-          abierto={modalCobroAbierto}
-          onClose={() => setModalCobroAbierto(false)}
-          alumno={{
-            id_alumno: alumno.id_alumno,
-            nombre: alumno.usuario.nombre,
-            apellido: alumno.usuario.apellido,
-            dni: alumno.usuario.dni,
-          }}
-          inscripcion={{
-            id_inscripcion: inscripcionVigente.id_inscripcion,
-            nombre_plan: inscripcionVigente.plan.nombre,
-            precio_vigente: inscripcionVigente.plan.precio,
-            situacion_cuota: inscripcionVigente.situacion_cuota,
-          }}
-          onExito={handleCobroExitoso}
-        />
-      )}
 
       {/* Modal de comprobante digital */}
       <ModalComprobante

@@ -23,7 +23,6 @@ const DIAS_TAB: { id: DiaSemana; label: string; shortLabel: string }[] = [
   { id: 'MIERCOLES', label: 'Miércoles', shortLabel: 'Mié' },
   { id: 'JUEVES', label: 'Jueves', shortLabel: 'Jue' },
   { id: 'VIERNES', label: 'Viernes', shortLabel: 'Vie' },
-  { id: 'SABADO', label: 'Sábado', shortLabel: 'Sáb' },
 ];
 
 export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({

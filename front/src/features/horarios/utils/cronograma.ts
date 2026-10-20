@@ -60,11 +60,22 @@ export function validarSolapamientoProfesoraEnLista(
   );
 }
 
-type ResultadoCronograma = { ok: true; horariosActualizados: Horario[] } | { ok: false; error: string };
+const DIA_EN_ESPANOL: Record<DiaSemana, string> = {
+  LUNES: 'lunes',
+  MARTES: 'martes',
+  MIERCOLES: 'miércoles',
+  JUEVES: 'jueves',
+  VIERNES: 'viernes',
+  SABADO: 'sábado',
+  DOMINGO: 'domingo',
+};
 
-function mensajeSuperposicion(conflicto: Horario): string {
-  return `La profesora ${conflicto.profesoraNombre} ya dicta una clase el ${conflicto.diaSemana} de ${conflicto.horaInicio} a ${conflicto.horaFin} hs.`;
+export function mensajeSuperposicion(conflicto: Horario): string {
+  const diaTxt = DIA_EN_ESPANOL[conflicto.diaSemana] ?? conflicto.diaSemana.toLowerCase();
+  return `${conflicto.profesoraNombre} ya da ${conflicto.actividadNombre} el ${diaTxt} a las ${conflicto.horaInicio}. Elegí otro horario u otra profesora.`;
 }
+
+type ResultadoCronograma = { ok: true; horariosActualizados: Horario[] } | { ok: false; error: string };
 
 function evaluarPosicion(horarios: Horario[], target: Horario, dia: DiaSemana, inicio: string) {
   const duracion = timeToMinutes(target.horaFin) - timeToMinutes(target.horaInicio);

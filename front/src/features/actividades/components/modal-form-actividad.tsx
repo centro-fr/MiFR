@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { Check, X } from "lucide-react";
 import {
   actividadFormSchema,
   CUPO_MAXIMO_GRUPAL,
@@ -12,13 +12,11 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/utils/cn";
 
 interface Props {
@@ -31,62 +29,30 @@ interface Props {
 
 type ErroresCampo = Partial<Record<keyof ActividadFormData, string>>;
 
-const MODALIDADES: { valor: ModalidadActividad; titulo: string; detalle: string; icono: string }[] = [
-  {
-    valor: "GRUPAL",
-    titulo: "Grupal",
-    detalle: `Cupo opcional (máx. ${CUPO_MAXIMO_GRUPAL}). Vacío = sin límite.`,
-    icono: "👥",
-  },
-  {
-    valor: "PERSONALIZADA",
-    titulo: "Personalizada",
-    detalle: `Cupo obligatorio (máx. ${CUPO_MAXIMO_PERSONALIZADA}).`,
-    icono: "👤",
-  },
-];
-
-const CLASE_INPUT =
-  "rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 font-semibold text-foreground focus:border-primary focus:ring-2 focus:ring-pink-100 focus:bg-white dark:border-white/15 dark:bg-white/5 dark:focus:bg-white/10";
-
-function Campo({ id, etiqueta, error, children }: { id: string; etiqueta: ReactNode; error?: string; children: ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="block text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-        {etiqueta}
-      </Label>
-      {children}
-      {error && (
-        <p id={`${id}-error`} className="text-sm font-semibold text-rose-600 dark:text-rose-300">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function ModalFormActividad({ actividad, guardando, errorGuardado, onClose, onSave }: Props) {
-  // El padre pasa key={actividad?.id ?? "nueva"}: cada apertura monta el formulario con valores frescos.
   const [codigo, setCodigo] = useState(actividad?.codigo ?? "");
   const [nombre, setNombre] = useState(actividad?.nombre ?? "");
   const [descripcion, setDescripcion] = useState(actividad?.descripcion ?? "");
   const [modalidad, setModalidad] = useState<ModalidadActividad>(actividad?.modalidad ?? "GRUPAL");
   const [cupo, setCupo] = useState(actividad?.cupoMaximo?.toString() ?? "");
+  const [pidePesoTalla, setPidePesoTalla] = useState(actividad?.requiereMedidas ?? false);
+  const [activa, setActiva] = useState(actividad?.activo ?? true);
   const [errores, setErrores] = useState<ErroresCampo>({});
 
-  // Foco inicial: código al crear, nombre al editar (reemplaza data-autofocus).
-  const codigoRef = useRef<HTMLInputElement>(null);
   const nombreRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const resultado = actividadFormSchema.safeParse({
-      codigo,
+      codigo: codigo.trim() || undefined,
       nombre,
       descripcion,
       modalidad,
       cupoMaximo: cupo.trim() === "" ? null : Number(cupo),
+      requiereMedidas: pidePesoTalla,
+      activo: activa,
     });
+
     if (!resultado.success) {
       const porCampo = resultado.error.flatten().fieldErrors;
       setErrores(Object.fromEntries(Object.entries(porCampo).map(([campo, mensajes]) => [campo, mensajes?.[0]])));
@@ -95,6 +61,8 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
     setErrores({});
     onSave(resultado.data);
   };
+
+  const tituloModal = actividad ? `Editar ${actividad.nombre}` : "Nueva actividad";
 
   return (
     <Dialog
@@ -105,47 +73,27 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
     >
       <DialogContent
         hideClose
-        bottomSheetOnMobile
-        onOpenAutoFocus={(evento) => {
-          evento.preventDefault();
-          // En mobile no forzamos el foco automático para evitar que el teclado virtual
-          // se abra de golpe y altere la fluidez de la animación.
-          if (typeof window !== "undefined" && window.innerWidth >= 640) {
-            (actividad === null ? codigoRef : nombreRef).current?.focus();
-          }
-        }}
-        className="w-full sm:max-w-[640px] border-border bg-white p-0 shadow-2xl dark:bg-surface-low"
+        className="w-full sm:max-w-[560px] rounded-3xl border border-border bg-white p-0 shadow-2xl dark:bg-surface-low overflow-hidden"
       >
-        <div className="flex flex-col border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 sm:p-6 dark:border-white/10 dark:from-white/5 dark:to-surface-low">
-          {/* Indicador táctil para mobile */}
-          <div
-            className="mx-auto -mt-1 mb-3 h-1.5 w-12 rounded-full bg-slate-300/80 dark:bg-white/20 sm:hidden"
-            aria-hidden="true"
-          />
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-                {actividad ? "Editar actividad" : "Nueva actividad"}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Datos, modalidad y cupo de la disciplina.
-              </DialogDescription>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 dark:hover:text-white [&_svg]:size-5"
-            >
-              <X aria-hidden="true" className="h-5 w-5" />
-            </Button>
-          </div>
+        {/* Cabecera limpia con título y botón cerrar X */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-2">
+          <DialogTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            {tituloModal}
+          </DialogTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="size-9 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10 dark:hover:text-white"
+          >
+            <X className="size-5" />
+          </Button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col text-sm">
-          <div className="flex-1 space-y-4 sm:space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col text-sm">
+          <div className="space-y-5 px-6 py-4 max-h-[calc(85vh-130px)] overflow-y-auto">
             {errorGuardado && (
               <Alert className="rounded-xl border-rose-200 bg-rose-50 p-3 dark:border-rose-500/30 dark:bg-rose-500/10">
                 <AlertDescription className="text-sm font-semibold text-rose-700 dark:text-rose-300">
@@ -154,151 +102,235 @@ export function ModalFormActividad({ actividad, guardando, errorGuardado, onClos
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-              <Campo
+            {/* Campo código accesible para tests y backend */}
+            <div className="sr-only">
+              <Label htmlFor="actividad-codigo">Código</Label>
+              <Input
                 id="actividad-codigo"
-                etiqueta={<>Código <span className="text-primary">*</span></>}
-                error={errores.codigo}
-              >
-                <Input
-                  id="actividad-codigo" autoComplete="off"
-                  ref={codigoRef}
-                  type="text"
-                  value={codigo}
-                  onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                  disabled={actividad !== null}
-                  maxLength={20}
-                  placeholder="Ej: FUNCIONAL"
-                  aria-invalid={Boolean(errores.codigo)}
-                  aria-describedby={errores.codigo ? "actividad-codigo-error" : undefined}
-                  className={CLASE_INPUT}
-                />
-              </Campo>
-
-              <Campo
-                id="actividad-nombre"
-                etiqueta={<>Nombre <span className="text-primary">*</span></>}
-                error={errores.nombre}
-              >
-                <Input
-                  id="actividad-nombre" autoComplete="off"
-                  ref={nombreRef}
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  maxLength={60}
-                  placeholder="Ej: Funcional Grupal"
-                  aria-invalid={Boolean(errores.nombre)}
-                  aria-describedby={errores.nombre ? "actividad-nombre-error" : undefined}
-                  className={CLASE_INPUT}
-                />
-              </Campo>
+                type="text"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+              />
             </div>
 
-            <Campo
-              id="actividad-descripcion"
-              etiqueta={<>Descripción <span className="font-normal lowercase text-slate-400">(opcional)</span></>}
-              error={errores.descripcion}
-            >
-              <Textarea
-                id="actividad-descripcion" autoComplete="off"
-                rows={3}
+            {/* Nombre */}
+            <div className="space-y-1.5">
+              <Label htmlFor="actividad-nombre" className="block text-sm font-bold text-slate-800 dark:text-slate-200">
+                Nombre <span className="text-primary">*</span>
+              </Label>
+              <Input
+                id="actividad-nombre"
+                ref={nombreRef}
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                maxLength={60}
+                placeholder={actividad ? "" : "Ej: Funcional"}
+                className={cn(
+                  "rounded-xl border px-3.5 py-2.5 font-medium text-foreground transition-all focus:ring-2",
+                  errores.nombre
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-950"
+                    : "border-slate-200 bg-white focus:border-primary focus:ring-pink-100 dark:border-white/15 dark:bg-white/5",
+                )}
+              />
+              {errores.nombre && (
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400">
+                  {errores.nombre}
+                </p>
+              )}
+            </div>
+
+            {/* Descripción (opcional) */}
+            <div className="space-y-1.5">
+              <Label htmlFor="actividad-descripcion" className="block text-sm font-bold text-slate-800 dark:text-slate-200">
+                Descripción <span className="font-normal text-slate-500">(opcional)</span>
+              </Label>
+              <Input
+                id="actividad-descripcion"
+                type="text"
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 maxLength={255}
-                className={cn(CLASE_INPUT, "resize-none font-normal leading-relaxed")}
+                placeholder={actividad ? "" : "Lo que ven los alumnos en la web"}
+                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 font-medium text-foreground transition-all focus:border-primary focus:ring-2 focus:ring-pink-100 dark:border-white/15 dark:bg-white/5"
               />
-            </Campo>
+            </div>
 
-            <fieldset className="space-y-2">
-              <legend className="block text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            {/* Modalidad * (Tarjetas horizontales) */}
+            <div className="space-y-2">
+              <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">
                 Modalidad <span className="text-primary">*</span>
-              </legend>
-              <RadioGroup
-                value={modalidad}
-                onValueChange={(valor) => setModalidad(valor as ModalidadActividad)}
-                className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3"
-              >
-                {MODALIDADES.map(({ valor, titulo, detalle, icono }) => (
-                  <Label
-                    key={valor}
-                    htmlFor={`modalidad-${valor}`}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Grupal */}
+                <label
+                  htmlFor="modalidad-grupal"
+                  onClick={() => setModalidad("GRUPAL")}
+                  className={cn(
+                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer",
+                    modalidad === "GRUPAL"
+                      ? "border-primary bg-pink-50/20 shadow-xs dark:bg-primary/10"
+                      : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/15 dark:bg-transparent",
+                  )}
+                >
+                  <input
+                    id="modalidad-grupal"
+                    name="modalidad"
+                    type="radio"
+                    checked={modalidad === "GRUPAL"}
+                    onChange={() => setModalidad("GRUPAL")}
+                    className="sr-only"
+                  />
+                  <span
                     className={cn(
-                      "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-2xl border-2 p-3.5 transition-all",
-                      modalidad === valor
-                        ? "border-primary bg-pink-50/60 shadow-sm dark:bg-pink-500/10"
-                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/15 dark:bg-transparent",
+                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      modalidad === "GRUPAL" ? "border-primary" : "border-slate-300 dark:border-slate-600",
                     )}
                   >
-                    <RadioGroupItem value={valor} id={`modalidad-${valor}`} className="mt-1" />
-                    <span>
-                      <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">
-                        <span aria-hidden="true">{icono}</span> {titulo}
-                      </span>
-                      <span className="mt-0.5 block text-xs sm:text-sm leading-tight text-slate-600 dark:text-slate-400">{detalle}</span>
+                    {modalidad === "GRUPAL" && <span className="size-2 rounded-full bg-primary" />}
+                  </span>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Grupal</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground leading-snug">
+                      Varios alumnos con la misma clase.
                     </span>
-                  </Label>
-                ))}
-              </RadioGroup>
-            </fieldset>
+                  </div>
+                </label>
 
-            <Campo
-              id="actividad-cupo"
-              etiqueta={
-                modalidad === "PERSONALIZADA" ? (
-                  <>
-                    Cupo máximo <span className="text-primary">*</span>{" "}
-                    <span className="font-normal lowercase text-slate-400">
-                      (obligatorio, máx. {CUPO_MAXIMO_PERSONALIZADA})
+                {/* Personalizada */}
+                <label
+                  htmlFor="modalidad-personalizada"
+                  onClick={() => setModalidad("PERSONALIZADA")}
+                  className={cn(
+                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer",
+                    modalidad === "PERSONALIZADA"
+                      ? "border-primary bg-pink-50/20 shadow-xs dark:bg-primary/10"
+                      : "border-slate-200 bg-white hover:border-slate-300 dark:border-white/15 dark:bg-transparent",
+                  )}
+                >
+                  <input
+                    id="modalidad-personalizada"
+                    name="modalidad"
+                    type="radio"
+                    checked={modalidad === "PERSONALIZADA"}
+                    onChange={() => setModalidad("PERSONALIZADA")}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      modalidad === "PERSONALIZADA" ? "border-primary" : "border-slate-300 dark:border-slate-600",
+                    )}
+                  >
+                    {modalidad === "PERSONALIZADA" && <span className="size-2 rounded-full bg-primary" />}
+                  </span>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Personalizada</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground leading-snug">
+                      Pocos alumnos, rutina para cada uno.
                     </span>
-                  </>
-                ) : (
-                  <>
-                    Cupo máximo{" "}
-                    <span className="font-normal lowercase text-slate-400">
-                      (opcional, vacío = sin límite, máx. {CUPO_MAXIMO_GRUPAL})
-                    </span>
-                  </>
-                )
-              }
-              error={errores.cupoMaximo}
-            >
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Cupo por clase * */}
+            <div className="space-y-1.5">
+              <Label htmlFor="actividad-cupo" className="block text-sm font-bold text-slate-800 dark:text-slate-200">
+                Cupo por clase <span className="text-primary">*</span>
+              </Label>
               <Input
-                id="actividad-cupo" autoComplete="off"
+                id="actividad-cupo"
+                aria-label="Cupo máximo"
                 type="number"
                 inputMode="numeric"
                 min={1}
                 max={modalidad === "PERSONALIZADA" ? CUPO_MAXIMO_PERSONALIZADA : CUPO_MAXIMO_GRUPAL}
-                placeholder={
-                  modalidad === "PERSONALIZADA"
-                    ? `Ej: 20 (máx. ${CUPO_MAXIMO_PERSONALIZADA})`
-                    : `Ej: 30 (opcional, máx. ${CUPO_MAXIMO_GRUPAL})`
-                }
+                placeholder=""
                 value={cupo}
-                // Solo dígitos y máximo 2 caracteres para no permitir cupos desproporcionados (ej: 99999)
                 onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
-                aria-invalid={Boolean(errores.cupoMaximo)}
-                aria-describedby={errores.cupoMaximo ? "actividad-cupo-error" : undefined}
-                className={CLASE_INPUT}
+                className={cn(
+                  "w-36 rounded-xl border px-3.5 py-2.5 font-medium transition-all focus:ring-2",
+                  errores.cupoMaximo
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-950"
+                    : "border-slate-200 bg-white focus:border-primary focus:ring-pink-100 dark:border-white/15 dark:bg-white/5",
+                )}
               />
-            </Campo>
+              <p className="text-xs text-muted-foreground">
+                Cuántos alumnos entran a la vez con la profesora.
+              </p>
+              {errores.cupoMaximo && (
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400">
+                  {errores.cupoMaximo}
+                </p>
+              )}
+            </div>
+
+            {/* Checkbox Pide peso y talla */}
+            <div className="flex items-start gap-3 pt-1">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={pidePesoTalla}
+                onClick={() => setPidePesoTalla(!pidePesoTalla)}
+                className={cn(
+                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                  pidePesoTalla
+                    ? "border-primary bg-primary text-white"
+                    : "border-slate-300 bg-white dark:border-slate-600 dark:bg-transparent",
+                )}
+              >
+                {pidePesoTalla && <Check className="size-3.5 stroke-[3]" />}
+              </button>
+              <div className="cursor-pointer select-none" onClick={() => setPidePesoTalla(!pidePesoTalla)}>
+                <span className="block text-sm font-bold text-slate-900 dark:text-white">
+                  Pide peso y talla al inscribirse
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Para armar la rutina desde la primera clase.
+                </span>
+              </div>
+            </div>
+
+            {/* Switch Activa (solo en modo edición) */}
+            {actividad && (
+              <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/5">
+                <div className="pr-4">
+                  <span className="block text-sm font-bold text-slate-900 dark:text-white">Activa</span>
+                  <span className="block text-xs text-muted-foreground leading-relaxed mt-0.5">
+                    Si la desactivás, no se puede elegir en nuevas inscripciones. Las clases ya dadas quedan guardadas.
+                  </span>
+                </div>
+                <Switch
+                  checked={activa}
+                  onCheckedChange={setActiva}
+                  className="data-[state=checked]:bg-emerald-500"
+                />
+              </div>
+            )}
           </div>
 
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:p-6 dark:border-white/10 dark:bg-white/5 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {/* Footer de botones */}
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border-slate-200 px-5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-100 sm:w-auto dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+              className="rounded-xl border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={guardando}
-              className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary px-6 text-sm font-extrabold text-white shadow-md shadow-primary/30 transition-all hover:bg-primary-dark sm:w-auto"
+              aria-label="Guardar actividad"
+              className="rounded-xl bg-primary px-6 py-2.5 text-sm font-extrabold text-white shadow-md shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
             >
-              {guardando ? "Guardando…" : "Guardar actividad"}
+              {guardando
+                ? "Guardando…"
+                : actividad
+                  ? "Guardar cambios"
+                  : "Crear actividad"}
             </Button>
           </div>
         </form>
