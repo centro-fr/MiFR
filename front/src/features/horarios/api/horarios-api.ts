@@ -10,6 +10,8 @@ import {
 
 export interface ProfesoraDatos {
   id: string;
+  /** Usuario de la profesora: identifica a la de la sesión sin depender del nombre. */
+  idUsuario: number;
   nombre: string;
   apellido: string;
 }
@@ -22,6 +24,7 @@ export async function listarProfesoras(): Promise<ProfesoraDatos[]> {
     .parse(data)
     .map((profesora) => ({
       id: String(profesora.id_profesora),
+      idUsuario: profesora.id_usuario,
       nombre: profesora.usuario.nombre,
       apellido: profesora.usuario.apellido,
     }));

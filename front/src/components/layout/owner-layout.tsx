@@ -35,9 +35,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/utils/cn";
+import { panelExclusivoDeLaRuta, type Panel } from "./owner-navigation";
 import { useContadoresMenu } from "./use-contadores-menu";
 import { useOwnerNavigation, type ItemConEstado, type Miga } from "./use-owner-navigation";
-import type { RoleCode } from "@/types/auth";
+import { usePanelActivo } from "./use-panel-activo";
+import { homePathForRoles, type RoleCode } from "@/types/auth";
 
 /** Cookie con la que el Sidebar de shadcn recuerda si quedó contraído (solo UI). */
 const COOKIE_SIDEBAR = "sidebar_state";
@@ -367,8 +369,8 @@ function SwitchRoles({
   onCambiarRol,
 }: {
   roles: readonly RoleCode[];
-  rolActivo: RoleCode;
-  onCambiarRol: (rol: RoleCode) => void;
+  rolActivo?: RoleCode;
+  onCambiarRol: (panel: Panel) => void;
 }) {
   const { state } = useSidebar();
   if (!roles.includes("PROPIETARIA") || !roles.includes("PROFESORA") || state === "collapsed") {
@@ -466,8 +468,8 @@ function MenuLateral({
 }: {
   items: ItemConEstado[];
   roles: readonly RoleCode[];
-  rolActivo: RoleCode;
-  onCambiarRol: (rol: RoleCode) => void;
+  rolActivo?: RoleCode;
+  onCambiarRol: (panel: Panel) => void;
 }) {
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
@@ -559,25 +561,17 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { roles } = usePermissions();
+  const { panelActivo, elegirPanel } = usePanelActivo();
 
-  // Detecta si la ruta actual es propia de Profesora
-  const esRutaProfesora = pathname.startsWith("/app/hoy") || pathname.startsWith("/app/mis-clases");
-  const [rolManual, setRolManual] = useState<RoleCode | null>(null);
-
-  const rolActivo: RoleCode =
-    rolManual ?? (esRutaProfesora && roles.includes("PROFESORA") ? "PROFESORA" : "PROPIETARIA");
-
-  const cambiarRol = (nuevoRol: RoleCode) => {
-    setRolManual(nuevoRol);
-    if (nuevoRol === "PROFESORA" && !pathname.startsWith("/app/hoy") && !pathname.startsWith("/app/mis-clases")) {
-      navigate("/app/hoy");
-    } else if (nuevoRol === "PROPIETARIA" && (pathname.startsWith("/app/hoy") || pathname.startsWith("/app/mis-clases"))) {
-      navigate("/app/dashboard");
-    }
+  // En una pantalla que ofrecen los dos paneles (Alumnos) se queda: cambia lo que muestra.
+  const cambiarPanel = (panel: Panel) => {
+    elegirPanel(panel);
+    const panelDeLaRuta = panelExclusivoDeLaRuta(pathname);
+    if (panelDeLaRuta && panelDeLaRuta !== panel) navigate(homePathForRoles([panel]));
   };
 
   const contadores = useContadoresMenu();
-  const { items, migas } = useOwnerNavigation(contadores, roles, rolActivo);
+  const { items, migas } = useOwnerNavigation(contadores, roles, panelActivo);
   const [abiertoInicial] = useState(leerSidebarAbierto);
 
   return (
@@ -585,7 +579,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
       defaultOpen={abiertoInicial}
       className="bg-bg-light text-foreground dark:bg-canvas"
     >
-      <MenuLateral items={items} roles={roles} rolActivo={rolActivo} onCambiarRol={cambiarRol} />
+      <MenuLateral items={items} roles={roles} rolActivo={panelActivo} onCambiarRol={cambiarPanel} />
       <div className="flex min-w-0 flex-1 flex-col">
         <BarraSuperior migas={migas} />
         <main

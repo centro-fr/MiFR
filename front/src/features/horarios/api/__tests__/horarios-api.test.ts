@@ -34,6 +34,7 @@ describe("API de Horarios", () => {
       expect(resultado).toEqual([
         {
           id: "1",
+          idUsuario: 10,
           nombre: "Lucía",
           apellido: "Gómez",
         },

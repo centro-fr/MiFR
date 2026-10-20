@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { AvisoDeCuota } from "@/features/notificaciones/components/aviso-de-cuota";
 
 // Inicio provisorio de cada rol: ya muestra el menú del rol mientras su pantalla real no existe.
 function InicioProvisorio({ titulo, descripcion }: { titulo: string; descripcion: string }) {
@@ -36,6 +37,8 @@ export function StudentHomePage() {
             Bienvenido/a al portal del alumno. Consultá el estado de tu cuota y los datos para transferir.
           </p>
         </div>
+
+        <AvisoDeCuota />
 
         <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">

@@ -68,19 +68,24 @@ function aTransferencia(api: TransferenciaApi): Transferencia {
   };
 }
 
+/** Por fecha de carga. Sin indicarlo, el back trae primero las más viejas: las que corren el plazo de 24 h. */
+export type OrdenTransferencias = "asc" | "desc";
+
 export interface ConsultaTransferencias {
   estado?: EstadoTransferencia;
   idAlumno?: number;
   offset?: number;
+  orden?: OrdenTransferencias;
 }
 
 export async function listarTransferencias({
   estado,
   idAlumno,
   offset = 0,
+  orden,
 }: ConsultaTransferencias): Promise<Transferencia[]> {
   const { data } = await apiClient.get("/pagos/transferencias", {
-    params: { estado, id_alumno: idAlumno, limit: TRANSFERENCIAS_POR_PAGINA, offset },
+    params: { estado, id_alumno: idAlumno, limit: TRANSFERENCIAS_POR_PAGINA, offset, orden },
   });
   const items = Array.isArray(data)
     ? data

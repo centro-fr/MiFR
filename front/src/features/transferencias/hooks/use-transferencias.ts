@@ -14,6 +14,7 @@ import {
   listarTransferencias,
   obtenerMiPlan,
   rechazarTransferencia,
+  type OrdenTransferencias,
 } from "@/features/transferencias/api/transferencias-api";
 import type { InformarTransferenciaFormData } from "@/features/transferencias/schemas/transferencia";
 import type { EstadoTransferencia, Transferencia } from "@/types/transferencia";
@@ -74,6 +75,7 @@ interface OpcionesListado {
   enabled?: boolean;
   /** Solo la pantalla la pide: así el plazo de 24 horas avanza sin que el menú consulte de fondo. */
   refetchInterval?: number;
+  orden?: OrdenTransferencias;
 }
 
 /**
@@ -82,11 +84,11 @@ interface OpcionesListado {
  */
 export function useTransferencias(
   estado: EstadoTransferencia,
-  { enabled = true, refetchInterval }: OpcionesListado = {},
+  { enabled = true, refetchInterval, orden = "asc" }: OpcionesListado = {},
 ) {
   return useInfiniteQuery({
-    queryKey: [...TRANSFERENCIAS_QUERY_KEY, "listado", estado],
-    queryFn: ({ pageParam }) => listarTransferencias({ estado, offset: pageParam }),
+    queryKey: [...TRANSFERENCIAS_QUERY_KEY, "listado", estado, orden],
+    queryFn: ({ pageParam }) => listarTransferencias({ estado, offset: pageParam, orden }),
     initialPageParam: 0,
     // El back no informa el total: una página llena indica que puede haber más.
     getNextPageParam: (ultima, paginas) =>

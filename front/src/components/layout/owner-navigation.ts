@@ -127,6 +127,32 @@ function ofreceLaRuta(item: ItemMenu, ruta: string): boolean {
 
 const ROLES_POR_ALCANCE: RoleCode[] = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
 
+/** Paneles entre los que alterna con el switch quien es propietaria y profesora. */
+export type Panel = Extract<RoleCode, "PROPIETARIA" | "PROFESORA">;
+const PANELES: Panel[] = ["PROPIETARIA", "PROFESORA"];
+
+export function rolPrincipal(tieneElRol: (rol: RoleCode) => boolean): RoleCode | undefined {
+  return ROLES_POR_ALCANCE.find(tieneElRol);
+}
+
+function esRutaDe(ruta: string, destino: string | undefined): boolean {
+  return destino !== undefined && (ruta === destino || ruta.startsWith(`${destino}/`));
+}
+
+function ofreceLaPantalla(item: ItemMenu, ruta: string): boolean {
+  const opciones = [item, ...(item.hijos ?? [])];
+  return opciones.some((opcion) => esRutaDe(ruta, opcion.to) || esRutaDe(ruta, opcion.subrutasDe));
+}
+
+/**
+ * El único panel cuyo menú ofrece la pantalla, o null si la ofrecen los dos (Alumnos y su ficha) o
+ * ninguno (Notificaciones): en esas, el panel lo decide desde cuál se llegó.
+ */
+export function panelExclusivoDeLaRuta(ruta: string): Panel | null {
+  const paneles = PANELES.filter((panel) => MENU_POR_ROL[panel].some((item) => ofreceLaPantalla(item, ruta)));
+  return paneles.length === 1 ? paneles[0] : null;
+}
+
 const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to" | "descripcion"> & { items: ItemMenu[] }> = {
   PROPIETARIA: { etiqueta: "Propietaria", icono: LayoutDashboard, items: ITEMS_PROPIETARIA },
   PROFESORA: {
@@ -160,7 +186,7 @@ export function itemsDelMenu(roles: readonly RoleCode[], rolActivo?: RoleCode): 
   if (rolActivo && roles.includes(rolActivo) && MENU_POR_ROL[rolActivo]) {
     return MENU_POR_ROL[rolActivo];
   }
-  const [principal] = ROLES_POR_ALCANCE.filter((rol) => roles.includes(rol));
+  const principal = rolPrincipal((rol) => roles.includes(rol));
   if (!principal) return [];
   return MENU_POR_ROL[principal];
 }

@@ -227,10 +227,12 @@ Si una persona tiene **más de un rol** (ej: propietaria + profesora):
 
 | Rol extra | Sub-opciones del desplegable |
 | ----- | ------------- |
-| **Profesora** | Hoy, Mis clases (alumnos y cobros ya están en el menú de la propietaria) |
 | **Alumno / Tutor** | Inicio, Mi plan, Progreso, Comunidad |
 
-Ejemplo: la propietaria que dicta clases ve sus 11 ítems y, al final, bajo el título **Otros roles**, **Profesora** con Hoy y Mis clases.
+**Propietaria que también dicta clases:** en lugar del desplegable, arriba del menú tiene un switch **Propietaria / Profesora** que alterna entre los dos menús completos. En el panel Profesora se comporta como cualquier profesora (Hoy, Mis clases, Alumnos, Cobros, Perfil): en **Alumnos** ve solo a sus alumnos a cargo, sin el filtro por profesora.
+
+- Alumnos (listado y ficha) está en los dos paneles: se muestra en el panel desde el que se llegó, y cambiar el switch ahí mismo pasa del listado completo al de sus alumnos a cargo.
+- El resto de las pantallas es de un solo panel: el switch lleva al inicio del otro (Dashboard u Hoy).
 
 Cada rol entra solo a las pantallas de su menú: abrir por URL la de otro rol muestra "Sin acceso".
 

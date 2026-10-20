@@ -50,7 +50,7 @@ describe("useHorarios", () => {
       isError: false,
     } as unknown as ReturnType<typeof useActividades>);
     
-    vi.mocked(listarProfesoras).mockResolvedValue([{ id: "1", nombre: "Lucía", apellido: "Gómez" }]);
+    vi.mocked(listarProfesoras).mockResolvedValue([{ id: "1", idUsuario: 1, nombre: "Lucía", apellido: "Gómez" }]);
     vi.mocked(listarHorarios).mockResolvedValue([crearHorario()]);
   });
 

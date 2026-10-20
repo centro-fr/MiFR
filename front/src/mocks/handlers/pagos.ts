@@ -149,6 +149,7 @@ const LIMITE_MAXIMO = 100;
 const listarTransferenciasQuerySchema = z.object({
   estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]).optional(),
   id_alumno: z.coerce.number().int().positive().optional(),
+  orden: z.enum(["asc", "desc"]).default("asc"),
   limit: z.coerce.number().int().min(1).max(LIMITE_MAXIMO).default(LIMITE_MAXIMO),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -184,8 +185,9 @@ function idAlumnoDe(pago: PagoMock): number | undefined {
   return db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)?.id_alumno;
 }
 
-// Como pago.repository.ts: solo transferencias, de la más antigua a la más nueva.
+// Como pago.repository.ts: solo transferencias, por fecha de carga (por defecto, la más antigua primero).
 function listarTransferencias(filtro: z.infer<typeof listarTransferenciasQuerySchema>) {
+  const sentido = filtro.orden === "desc" ? -1 : 1;
   return db.pagos
     .filter(
       (pago) =>
@@ -193,7 +195,7 @@ function listarTransferencias(filtro: z.infer<typeof listarTransferenciasQuerySc
         (filtro.estado === undefined || pago.estado === filtro.estado) &&
         (filtro.id_alumno === undefined || idAlumnoDe(pago) === filtro.id_alumno),
     )
-    .sort((a, b) => a.fecha_pago.localeCompare(b.fecha_pago) || a.id_pago - b.id_pago)
+    .sort((a, b) => sentido * (a.fecha_pago.localeCompare(b.fecha_pago) || a.id_pago - b.id_pago))
     .slice(filtro.offset, filtro.offset + filtro.limit)
     .map(transferenciaEnRevision);
 }

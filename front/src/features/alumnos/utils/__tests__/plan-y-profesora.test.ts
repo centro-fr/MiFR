@@ -49,8 +49,8 @@ function mockHorario(
 }
 
 const mockProfesoras: ProfesoraDatos[] = [
-  { id: "1", nombre: "María", apellido: "López" },
-  { id: "2", nombre: "Laura", apellido: "Gómez" },
+  { id: "1", idUsuario: 1, nombre: "María", apellido: "López" },
+  { id: "2", idUsuario: 2, nombre: "Laura", apellido: "Gómez" },
 ];
 
 describe("plan-y-profesora utils", () => {

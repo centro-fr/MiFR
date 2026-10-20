@@ -41,7 +41,8 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
 
   // 5 Alumnos con Cuota Vencida
   persona(111, "Franco", "Navarro", { dni: "39456123", email: "franco.navarro@example.com", telefono: "11 4455-1201", fecha_nacimiento: "1998-05-15", direccion: "Belgrano 101" }, "ACTIVO"),
-  persona(112, "Lucía", "Benítez", { dni: "41234567", email: "lucia.benitez@example.com", telefono: "11 4455-1202", fecha_nacimiento: "1999-07-20", direccion: "Mitre 202" }, "ACTIVO"),
+  // Menor a cargo de Mariana López (126): su aviso de cuota vencida le llega a la tutora (US-25).
+  persona(112, "Lucía", "Benítez", { dni: "53234567", fecha_nacimiento: "2012-07-20", direccion: "Mitre 202" }, "ACTIVO"),
   persona(113, "Martín", "Morales", { dni: "38789012", email: "martin.morales@example.com", telefono: "11 4455-1203", fecha_nacimiento: "1996-03-12", direccion: "Rivadavia 303" }, "ACTIVO"),
   persona(114, "Rocío", "Castro", { dni: "40567890", email: "rocio.castro@example.com", telefono: "11 4455-1204", fecha_nacimiento: "1997-11-05", direccion: "Sarmiento 404" }, "ACTIVO"),
   persona(115, "Emiliano", "Sosa", { dni: "42345678", email: "emiliano.sosa@example.com", telefono: "11 4455-1205", fecha_nacimiento: "2000-09-18", direccion: "Urquiza 505" }, "ACTIVO"),
@@ -59,6 +60,9 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
   persona(123, "Nicolás", "Vega", { dni: "40123789", email: "nicolas.vega@example.com", telefono: "11 4455-1213", fecha_nacimiento: "1997-05-25", direccion: "Gorriti 1313" }, "ACTIVO"),
   persona(124, "Daiana", "Silva", { dni: "39345678", email: "daiana.silva@example.com", telefono: "11 4455-1214", fecha_nacimiento: "1998-09-11", direccion: "Arenales 1414" }, "ACTIVO"),
   persona(125, "Gonzalo", "Fernández", { dni: "41890123", email: "gonzalo.fernandez@example.com", telefono: "11 4455-1215", fecha_nacimiento: "1999-03-07", direccion: "Juncal 1515" }, "ACTIVO"),
+
+  // La tutora con sesión de semilla.ts (mismo email): así el perfil Tutor del login ve los avisos de su menor.
+  persona(126, "Mariana", "López", { dni: "30876543", email: "mariana.lopez@example.com", telefono: "11 4455-1226", fecha_nacimiento: "1982-09-02" }, "ACTIVO"),
 ];
 
 type DatosPersona = Partial<Omit<UsuarioPersonaMock, "id_usuario" | "nombre" | "apellido" | "estado">> & { fecha_nacimiento: string };
@@ -137,7 +141,7 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
 
   // 5 Alumnos con Cuota Vencida
   alumno(11, 111, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(12, 112, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(12, 112, { estado: "ACTIVO", id_usuario_responsable: 126, apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
   alumno(13, 113, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
   alumno(14, 114, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
   alumno(15, 115, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
