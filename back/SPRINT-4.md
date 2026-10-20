@@ -20,7 +20,7 @@ Ninguno de estos pendientes bloquea el Sprint 4. La API de parámetros, que era 
 
 | Pendiente | Responsable | Bloquea a |
 | --- | --- | --- |
-| ~~API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango~~ Hecha e integrada a `dev` el 12/10/2026 (PI-53, PI-54). Falta solo validar las claves nuevas de este sprint | Rosario | — |
+| ~~API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango~~ Hecha e integrada a `dev` el 12/10/2026 (PI-53, PI-54). Las claves nuevas de este sprint ya se validan al editarlas de este sprint | Rosario | — |
 | Reflejar en el `.eap` las dependencias nuevas de `Clase` y `CierreAsistencia` y regenerar el `.jpg` y el `.pdf` (US-20) | Nicolas | — |
 | ~~Puntos abiertos de la sección 9 de `PRUEBAS-INTEGRACION.md` (clases de días anteriores, pre-inscriptos en la lista, observaciones)~~ Resueltos el 12/10/2026, junto con la clase cancelada (PI-55, PI-56; ver `SPRINT-3.md`) | Nicolas | — |
 
@@ -315,7 +315,7 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
   - [ ] La tarifa que aplica es la vigente a la fecha de cada línea; sin tarifa → la línea no se genera y la respuesta la informa como advertencia.
   - [ ] Profesora sin alumnos ni suplencias → honorario 0. `monto_total` es la suma de sus detalles.
 - [x] `ParametrosSistema` (pendiente del Sprint 3): `GET /api/v1/parametros`, `PATCH /api/v1/parametros/:clave` (rol `PROPIETARIA` + `PARAMETROS_EDITAR`, permiso nuevo exclusivo), validación por `tipo_dato` y por rango (no negativos) y `GET /api/v1/parametros/datos-bancarios` para alumnos y tutores. Integrado a `dev` el 12/10/2026 (PI-53, PI-54).
-- [ ] Validar las claves nuevas del sprint al editarlas: `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los enteros no negativos.
+- [x] Validar las claves nuevas del sprint al editarlas: `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los enteros no negativos.
 - [ ] Tests parametrizados del calculador (alta y baja en el medio del mes, porcentaje, suplencias, sin tarifa), del service (estados de la liquidación) y de integración.
 
 ---
