@@ -9,12 +9,16 @@ import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripcione
 import { createGestionInscripcionesYClasesRoutes } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.routes.js";
 import type { ILogicaNotificaciones } from "./modules/gestion-notificaciones/interface/i-logica-notificaciones.js";
 import { createGestionNotificacionesRoutes } from "./modules/gestion-notificaciones/gestion-notificaciones.routes.js";
+import type { ILogicaInsignias } from "./modules/gestion-insignias/interface/i-logica-insignias.js";
+import { createGestionInsigniasRoutes } from "./modules/gestion-insignias/gestion-insignias.routes.js";
 import type { ILogicaInformes } from "./modules/reportes/interface/i-logica-informes.js";
 import { createReportesRoutes } from "./modules/reportes/reportes.routes.js";
 import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-logica-personas.js";
 import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import { createGestionServicioEntrenamientoRoutes } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.routes.js";
+import type { ILogicaHonorarios } from "./modules/gestion-honorarios/interface/i-logica-honorarios.js";
+import { createGestionHonorariosRoutes } from "./modules/gestion-honorarios/gestion-honorarios.routes.js";
 import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
 import { createGestionUsuariosRoutes } from "./modules/gestion-usuarios/gestion-usuarios.routes.js";
 import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
@@ -32,7 +36,9 @@ export interface AppDependencies {
   gestionInscripcionesYClases: ILogicaInscripcionesYClases;
   gestionCuotasYPagos: ILogicaCuotasPagos;
   gestionNotificaciones: ILogicaNotificaciones;
+  gestionInsignias: ILogicaInsignias;
   reportes: ILogicaInformes;
+  gestionHonorarios: ILogicaHonorarios;
   difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
@@ -70,13 +76,16 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
     createGestionUsuariosRoutes(deps.gestionUsuarios, acceso, { loginDesarrollo: opciones.loginDesarrollo }),
   );
   api.use(createGestionPersonasRoutes(deps.gestionPersonas, acceso));
+  api.use(createGestionInsigniasRoutes(deps.gestionInsignias, acceso));
   api.use(createGestionServicioEntrenamientoRoutes(deps.gestionServicioEntrenamiento, acceso));
-  // Va después de GestionPersonas: su /alumnos exige rol PROPIETARIA a todo lo que le llega, y
-  // montado antes bloquearía las rutas de alumnos que GestionPersonas abre a otros roles.
+  // Va después de GestionPersonas y GestionInsignias: su /alumnos exige rol PROPIETARIA a todo lo que
+  // le llega, y montado antes bloquearía las rutas de alumnos que esos dos abren a otros roles.
   api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
   api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
   api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
+  // Va después de GestionInsignias: su /reportes exige rol PROPIETARIA, y bloquearía el ranking.
   api.use(createReportesRoutes(deps.reportes, acceso));
+  api.use(createGestionHonorariosRoutes(deps.gestionHonorarios, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

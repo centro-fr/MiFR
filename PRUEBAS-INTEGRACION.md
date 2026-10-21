@@ -98,6 +98,9 @@ Antes de cada test la base de prueba se vacía y el test carga solo los datos qu
 | Reloj fijo                       | Los casos de asistencia (PI-47 a PI-50) fijan solo `Date` con `vi.useFakeTimers({ toFake: ["Date"] })` en el lunes 12/10/2026 a las 15:00 de Argentina: las clases del día y su cierre dependen del día de la semana y de la hora. El cierre automático se corre con `entorno.cierreAsistencia.procesarCierresAutomaticos(hora)`. Lo que la base completa con su propio reloj (como `horarios.fecha_alta`) se fija a mano: el reloj simulado no llega a Postgres |
 | Horarios                         | Fábrica `crearHorarioDePrueba` (`back/src/__tests__/integracion/fabricas.ts`): horario directo para el test con actividad, profesora, día, horas y cupo propios configurables                                                                                                                                       |
 | Cuotas y pagos                   | `armarCuotasYPagos` (`back/src/__tests__/integracion/cobro.ts`): arma el subsistema con los componentes y repositorios reales sobre la base de prueba. Repite el cableado de `composicion.ts`, con los calculadores reales, para poder pasarle otro `PagoRepository` y simular una falla al guardar el pago (PI-35). Los flujos por HTTP (PI-42, PI-43) usan la API montada |
+| Profesoras, actividades y roles  | Fábricas `crearProfesora` (usuario con el rol y su fila en `profesoras`), `crearActividad` (grupal o personalizada, con o sin cupo) y `darRol` (el rol que el alta definitiva le daría a un alumno o tutor), en `back/src/__tests__/integracion/fabricas.ts`. Las usan los casos de insignias, ranking e informes (PI-71 a PI-77) |
+| Clases con su asistencia         | Fábrica `crearClase` (`back/src/__tests__/integracion/fabricas.ts`): una clase en el estado que se pida (`DICTADA` por defecto, `PROGRAMADA` o `CANCELADA`), con la profesora dictante y una marca por inscripto. Sin `id_usuario_registra`, la marca es como las que deja el cierre; con él, es una marca manual. Carga el historial de asistencia sin tomarla clase por clase |
+| Catálogo de insignias            | El mismo del seed de producción (`cargarCatalogoInsignias`), antes de cada test. Los casos de racha bajan los umbrales en la base (Racha de 10 a 3 clases, Total de 50 a 4) para no cargar medio año de clases |
 | Escenario de demostración        | Seed de desarrollo (`cargarDatosDemo`, `back/src/shared/db/datos-demo.ts`). `pnpm --filter back db:seed:demo` lo carga en la base local y los tests en la base de prueba, así el mismo escenario se recorre a mano (Swagger o front) y en los tests                                                                    |
 
 Cuando las pruebas necesiten otro tipo de dato, se agrega una fábrica reutilizable en `fabricas.ts`, igual que `crearUsuario`.
@@ -206,14 +209,14 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-27 | Carga de rutina y evolución física                        |   5    |                                                               |                                                                                        |
 | US-28 | Consulta de rutina y progreso físico                      |   5    |                                                               |                                                                                        |
 | US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                               |                                                                                        |
-| US-30 | Ranking de asistencia entre alumnos                       |   5    |                                                               |                                                                                        |
-| US-31 | Insignias y racha de asistencia                           |   5    |                                                               |                                                                                        |
+| US-30 | Ranking de asistencia entre alumnos                       |   5    | PI-72, PI-73 (el Podio del mes sale del ranking)              | Sí                                                                                     |
+| US-31 | Insignias y racha de asistencia                           |   5    | PI-71, PI-73                                                  | Sí                                                                                     |
 | US-32 | Panel público de disponibilidad                           |   5    | PI-46                                                         | Parcial: las actividades y sus días; los horarios, los cupos y la próxima clase quedan con sesión (decidido el 12/10/2026); la promoción, pendiente |
-| US-33 | Informe de asistencia                                     |   5    |                                                               |                                                                                        |
+| US-33 | Informe de asistencia                                     |   5    | PI-74, PI-75                                                  | Parcial: el informe por la API; la exportación a PDF y Excel no está en el back        |
 | US-34 | Informe de cuotas vencidas                                |   5    |                                                               |                                                                                        |
 | US-35 | Reportes de inscriptos por mes                            |   5    |                                                               |                                                                                        |
 | US-36 | Reportes de planes más elegidos                           |   5    |                                                               |                                                                                        |
-| US-37 | Mapa de calor de ocupación de horarios                    |   5    |                                                               |                                                                                        |
+| US-37 | Mapa de calor de ocupación de horarios                    |   5    | PI-76, PI-77                                                  | Sí: los datos de cada celda y su nivel; los colores y la grilla son del front          |
 
 ## 6. Casos de prueba
 
@@ -286,6 +289,13 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-68         | Las notificaciones propias por la API                               | US-25               | Servicios          | Demostración, reloj fijo                                   | Sí           |
 | PI-69         | La detección de alumnos inactivos con la cuota al día               | US-22               | Servicios          | Demostración, clases cerradas cargadas en la base          | Sí           |
 | PI-70         | La gestión de los alumnos inactivos                                 | US-22               | Servicios          | Demostración, clases cerradas cargadas en la base          | Sí           |
+| PI-71         | La racha y las insignias del alumno                                 | US-31               | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-72         | El ranking de asistencia                                            | US-30               | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-73         | El cierre mensual de insignias                                      | US-30, US-31        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-74         | El informe de asistencia                                            | US-33, US-21, US-24 | Servicios          | Fábricas, `crearClase`, cierre automático                  | Sí           |
+| PI-75         | Los filtros y los permisos del informe de asistencia                | US-33               | Servicios          | Fábricas, `crearClase`, cierre automático                  | Sí           |
+| PI-76         | La ocupación de los horarios                                        | US-37               | Servicios          | Fábricas                                                   | Sí           |
+| PI-77         | Los filtros y los permisos de la ocupación                          | US-37               | Servicios          | Fábricas                                                   | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad.
 
@@ -1085,9 +1095,87 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (O-05 a O-07).
 
+#### PI-71 — La racha y las insignias del alumno
+
+**US:** US-31 · **Precondición:** Ana, Beto y Caro (menor, con su tutor) activos en un horario de una profesora; Dani dado de baja. En septiembre: el 1 y el 4 dictadas por la titular, el 2 por una suplente, el 3 cancelada (sin marcas), el 5 y el 6 dictadas y el 7 todavía abierta. Ana: presente, presente, presente, ausente, presente, y ausente en la abierta. Umbrales bajados: Racha de 10 a 3 clases y Total de 50 a 4. Reloj fijo el 30/09/2026.
+
+1. Ana pide su ficha (`GET /alumnos/{id}/insignias`) dos veces.
+2. El tutor pide la de Caro; la propietaria, la de Beto. Ana pide la de Beto; el tutor, la de Ana; la profesora, la de Ana; Ana y la propietaria, la de un id que no existe.
+3. Se vuelve a cargar el catálogo después de cambiar un umbral; se intenta guardar un umbral en 0.
+4. Se guarda el Mes perfecto de Beto en agosto y en septiembre, y otra vez en septiembre.
+
+**Resultado esperado:** en el paso 1, racha actual 1 desde el 6/9, mejor 3, 4 clases asistidas y próximo hito a 2 clases: la cancelada y la suplencia no cortan la racha, la falta sí y la abierta no cuenta. Las seis insignias del catálogo, con Racha (desde el 4/9, la clase que completó el umbral) y Total (desde el 6/9) obtenidas; en la base quedan esas dos filas una sola vez. En el paso 2, el tutor ve la de su menor (racha 3) y la propietaria cualquiera; los demás reciben 403, también el id inexistente para Ana, y la propietaria 404; no se guarda nada de Beto. En el paso 3 la recarga repone el umbral y el `CHECK` rechaza el 0. En el paso 4 la repetición en el mismo mes se rechaza y quedan dos filas.
+
+**Automatizado:** Sí (P-01 a P-05).
+
+#### PI-72 — El ranking de asistencia
+
+**US:** US-30 · **Precondición:** la de PI-71.
+
+1. Ana pide el ranking de septiembre (`GET /reportes/ranking-asistencia?desde=2026-09-01&hasta=2026-09-30`).
+2. Con `RANKING_MINIMO_CLASES` en 3, el tutor pide el ranking sin período.
+3. La profesora lo pide filtrando por otra actividad; Ana pide la segunda página de a uno; se le quita `REPORTES_RANKING_VER` al rol Alumno y Ana lo pide de nuevo.
+
+**Resultado esperado:** en el paso 1, Beto primero (5 de 5, racha 5) y Ana segunda (80 %, racha 1, `es_propia`, con sus dos insignias), también en `propias`; Caro no llega a 4 clases y Dani está de baja, así que no figuran; ningún email, teléfono ni id de usuario. En el paso 2 el período es el mes en curso, Caro entra y queda segunda por clases asistidas (empata en 100 % con Beto, que tiene más), marcada como propia para el tutor. En el paso 3 la otra actividad da un ranking vacío, la página trae a Ana con el total 2, y sin el permiso responde 403.
+
+**Automatizado:** Sí (P-06 a P-08).
+
+#### PI-73 — El cierre mensual de insignias
+
+**US:** US-30, US-31 · **Precondición:** la de PI-71, con el reloj en octubre.
+
+1. Beto pide su ficha el 05/10/2026.
+2. Con la base reiniciada, un proceso nuevo cierra septiembre; se baja `RANKING_MINIMO_CLASES` a 3 y otro proceso nuevo (un reinicio) vuelve a cerrar septiembre.
+
+**Resultado esperado:** en el paso 1 la consulta cierra septiembre: Beto obtiene Mes perfecto y Podio del mes con período `2026-09`, y Ana el Podio; Caro no, por el mínimo. En el paso 2 el primer cierre informa 1 Mes perfecto y 2 podios; el segundo no agrega podios aunque Caro ahora entraría, y Beto sigue con un solo Mes perfecto.
+
+**Automatizado:** Sí (P-09, P-10).
+
+#### PI-74 — El informe de asistencia
+
+**US:** US-33, US-21, US-24 · **Precondición:** Ana, Beto y Caro activos y Dani dado de baja, inscriptos en Funcional (cupo 4); Eva pre-inscripta. En septiembre: el 1 lo dicta la titular, el 2 la suplente, el 3 se cancela; el 7 la titular marca solo a Ana y el cierre automático de las 20:30 registra ausentes a Beto y Caro; el 10 sigue abierta con marcas.
+
+1. La propietaria pide el informe de septiembre (`GET /reportes/asistencia?desde=2026-09-01&hasta=2026-09-30`).
+
+**Resultado esperado:** 3 clases dictadas, 5 asistencias y 4 inasistencias (55,56 %), con las dos del cierre automático y sin la cancelada ni la abierta. Ana 3 de 3, Beto y Caro 1 de 3; la titular con 2 clases y 50 %, la suplente con 1 y 66,67 %. Dani no figura.
+
+**Automatizado:** Sí (Q-01).
+
+#### PI-75 — Los filtros y los permisos del informe de asistencia
+
+**US:** US-33 · **Precondición:** la de PI-74.
+
+1. La propietaria filtra por Ana, la suplente y Funcional a la vez; pide la segunda página de a uno; pide con `incluir_bajas=true`; filtra por otra actividad.
+2. La profesora y un alumno piden el informe.
+
+**Resultado esperado:** en el paso 1, la combinación trae solo la clase del 2/9 de Ana; la página, a Beto con el total 3; con las bajas aparece Dani (`BAJA`, 1 clase) y suben las asistencias; otra actividad responde todo en cero, sin error. En el paso 2, 403.
+
+**Automatizado:** Sí (Q-02, Q-03).
+
+#### PI-76 — La ocupación de los horarios
+
+**US:** US-37 · **Precondición:** la de PI-74. Funcional con cupo propio 4: Ana, Beto y Caro activos, Dani dado de baja con la inscripción activa y Eva pre-inscripta. Personalizado sin cupo propio, en una actividad con cupo 2: Ana y Beto. Un horario sin cupo ni inscriptos, de la suplente, y otro dado de baja.
+
+1. La propietaria pide la ocupación (`GET /reportes/ocupacion`).
+
+**Resultado esperado:** Funcional 3 de 4 (75 %, `MODERADO`), Personalizado 2 de 2 heredado de la actividad (100 %, `COMPLETO`) y el horario sin cupo `SIN_CUPO`; el dado de baja no figura. El resumen da 3 horarios, ocupación total 83,33 % y un horario por nivel.
+
+**Automatizado:** Sí (Q-04).
+
+#### PI-77 — Los filtros y los permisos de la ocupación
+
+**US:** US-37 · **Precondición:** la de PI-76.
+
+1. La propietaria filtra por modalidad personalizada, por la actividad de Funcional y por la suplente.
+2. La profesora pide la ocupación.
+
+**Resultado esperado:** cada filtro trae solo su horario. La profesora recibe 403.
+
+**Automatizado:** Sí (Q-05, Q-06).
+
 ## 7. Tests automatizados
 
-245 tests en quince archivos (la L, de suplencias, todavía no está en la tabla):
+261 tests en diecisiete archivos (la L, de suplencias, todavía no está en la tabla):
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1105,6 +1193,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    M    | `back/src/__tests__/integracion/resumen-diario.integration.test.ts`             | 3 (M-01 a M-03)  | PI-65                             |
 |    N    | `back/src/__tests__/integracion/notificaciones.integration.test.ts`             | 6 (N-01 a N-06)  | PI-67, PI-68                      |
 |    O    | `back/src/__tests__/integracion/alumnos-inactivos.integration.test.ts`          | 7 (O-01 a O-07)  | PI-69, PI-70                      |
+|    P    | `back/src/__tests__/integracion/insignias-y-ranking.integration.test.ts`        | 10 (P-01 a P-10) | PI-71 a PI-73                     |
+|    Q    | `back/src/__tests__/integracion/reportes-asistencia-y-ocupacion.integration.test.ts` | 6 (Q-01 a Q-06) | PI-74 a PI-77                |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -1239,6 +1329,22 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | O-05        | La marca se muestra, los ignorados se ocultan salvo con el filtro, y la marca vence si vuelve a asistir | PI-70 |
 | O-06        | Quitar la marca la borra; una segunda vez responde 404 | PI-70 |
 | O-07        | No se marca una pre-inscripción (404); una profesora recibe 403 y sin sesión 401, sin cambios en la base | PI-70 |
+| P-01        | La racha cuenta clases dictadas: la cancelada y la suplencia no la cortan, la falta sí y la abierta no cuenta; la ficha trae el catálogo con lo obtenido y el progreso | PI-71 |
+| P-02        | Las insignias alcanzadas se guardan una sola vez, con la fecha de la clase que completó el umbral | PI-71 |
+| P-03        | El tutor ve la ficha de su menor y la propietaria la de cualquiera; otro alumno, el tutor de otro, la profesora o un id inexistente reciben 403, y la propietaria 404 | PI-71 |
+| P-04        | El catálogo inicial tiene seis insignias, recargarlo repone su definición y el `CHECK` rechaza un umbral en 0 | PI-71 |
+| P-05        | Una insignia mensual se repite en otro mes pero no dos veces en el mismo (clave primaria con el período) | PI-71 |
+| P-06        | El ranking ordena a los activos con el mínimo de clases, marca la fila propia y no muestra datos de contacto | PI-72 |
+| P-07        | El período por defecto es el mes en curso, el mínimo sale de `RANKING_MINIMO_CLASES` y el empate se desempata por clases asistidas | PI-72 |
+| P-08        | Filtro por actividad, paginación, la profesora lo ve y sin `REPORTES_RANKING_VER` responde 403 | PI-72 |
+| P-09        | La primera consulta de octubre cierra septiembre: Mes perfecto y Podio del mes con su período | PI-73 |
+| P-10        | Volver a cerrar el mes tras un reinicio no duplica ni agranda el podio | PI-73 |
+| Q-01        | El informe cuenta solo clases dictadas, con los ausentes del cierre automático y la suplente como dictante | PI-74 |
+| Q-02        | Filtros combinados, paginación, `incluir_bajas` y un período sin datos en cero | PI-75 |
+| Q-03        | La profesora y el alumno reciben 403 | PI-75 |
+| Q-04        | Inscriptos activos contra el cupo del horario o de la actividad, sin pre-inscriptos, bajas ni horarios dados de baja, con su nivel | PI-76 |
+| Q-05        | Filtros por modalidad, actividad y profesora | PI-77 |
+| Q-06        | La profesora recibe 403 | PI-77 |
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -1367,6 +1473,14 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Los ignorados aparecen sin el filtro                                                    | O-05 y un unitario del detector                                                                            |
 | Se marca una inscripción que no es activa de plan mensual                               | O-07 y un unitario del detector                                                                            |
 | `/informes/alumnos-inactivos` sin `acceso.rol("PROPIETARIA")`                           | Solo los unitarios de las rutas: `REPORTES_COBRANZA_VER` es exclusivo de la propietaria y ningún otro rol lo tiene en la base |
+| El ranking no exige `RANKING_MINIMO_CLASES`                                             | P-06, P-08, P-09, P-10                                                                                     |
+| La ficha no comprueba que el alumno sea propio o del menor a cargo                      | P-03                                                                                                       |
+| El podio se vuelve a dar en un mes que ya lo tiene                                      | P-10                                                                                                       |
+| El historial de la racha incluye las clases abiertas                                    | P-01, P-06                                                                                                 |
+| Los resúmenes de asistencia cuentan clases que no están dictadas                        | Q-01, Q-02 (la primera versión no lo detectaba: todas las clases con marcas terminaban cerradas; se sumó una abierta con marcas) |
+| Los resúmenes de asistencia incluyen a los dados de baja sin pedirlo                    | Q-01, Q-02                                                                                                 |
+| La ocupación cuenta los lugares ocupados (con reservas y bajas) en lugar de los inscriptos activos | Q-04                                                                                            |
+| Una falta no corta la racha al buscar cuándo se alcanzó un umbral                       | Solo los unitarios del calculador: en P-01 la racha de 3 se completa antes de la falta                     |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1420,6 +1534,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 18/10/2026 | Avisos de vencimiento de cuota y notificaciones propias (PI-67, PI-68) | 236 | 236 aprobados | 44,2 s | Pasaron también los 1896 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las 5 fallas provocadas fueron detectadas. K e I pasan con el parámetro nuevo `DIAS_AVISO_VENCIMIENTO` |
 | 18/10/2026 | Detección y gestión de alumnos inactivos (PI-69, PI-70)               | 243 | 243 aprobados | 46,3 s | Pasaron también los 1964 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. De las 7 fallas provocadas, 6 las detectan O-01 a O-07; la séptima (las rutas sin `acceso.rol("PROPIETARIA")`) solo los unitarios de las rutas |
 | 18/10/2026 | DNI y contacto de emergencia obligatorios en el alta (PI-15)          | 245 | 245 aprobados | 295,7 s | Corrida sobre `dev` con notificaciones e inactividad ya integradas. La migración `contacto_emergencia_obligatorio` se aplicó sobre la base de prueba después de las de notificaciones. 17 tests de PI-15 a PI-17, PI-31 y PI-64 se adaptaron: mandaban altas sin DNI o sin contacto. Pasaron también los 1973 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas |
+| 20/10/2026 | Ranking, insignias y los informes de asistencia y ocupación (PI-71 a PI-77) | 261 | 261 aprobados | 51,8 s | Pasaron también los 2179 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las migraciones `agregar_insignias` y `agregar_checks_insignias` se aplicaron sobre la base nueva. De las 9 fallas provocadas, 7 las detectaron los de integración en la primera versión; los resúmenes que contaban clases abiertas, después de sumar una clase abierta con marcas, y la falta en el logro de racha, los unitarios del calculador |
 
 ### 8.2 Resultado por caso
 
@@ -1466,6 +1581,13 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-69         | 18/10/2026 | Nicolas           | Aprobado           | Pasan O-01 a O-04; sin defectos                                                  |
 | PI-70         | 18/10/2026 | Nicolas           | Aprobado           | Pasan O-05 a O-07; sin defectos                                                  |
 | PI-15         | 18/10/2026 | Francisco Andrade | Aprobado           | Pasan E-01 a E-04, E-24 y E-25; sin defectos                                     |
+| PI-71         | 20/10/2026 | Nicolas           | Aprobado           | Pasan P-01 a P-05; sin defectos                                                  |
+| PI-72         | 20/10/2026 | Nicolas           | Aprobado           | Pasan P-06 a P-08; sin defectos                                                  |
+| PI-73         | 20/10/2026 | Nicolas           | Aprobado           | Pasan P-09 y P-10; sin defectos                                                  |
+| PI-74         | 20/10/2026 | Nicolas           | Aprobado           | Pasa Q-01; sin defectos                                                          |
+| PI-75         | 20/10/2026 | Nicolas           | Aprobado           | Pasan Q-02 y Q-03; sin defectos                                                  |
+| PI-76         | 20/10/2026 | Nicolas           | Aprobado           | Pasa Q-04; sin defectos                                                          |
+| PI-77         | 20/10/2026 | Nicolas           | Aprobado           | Pasan Q-05 y Q-06; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1515,6 +1637,11 @@ Los defectos se numeran D-01, D-02…
 | PI-47 | ¿Los pre-inscriptos aparecen en la lista de asistencia? Resuelto (12/10/2026): no; todavía no pagaron y no habilitan a asistir (US-07), así que no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo | Cerrado |
 | PI-50 | ¿Cómo se cancela una clase? Resuelto: `POST /clases/:id/cancelar`, solo la propietaria y solo una clase PROGRAMADA sin marcas; no genera inasistencias. El aviso `CLASE_CANCELADA` llega con las notificaciones (US-25, Sprint 4); ver PI-56 | Cerrado |
 | PI-48 | ¿Cómo se cargan las `observaciones` de una asistencia? Resuelto: con la marca (`PUT /clases/:id/asistencia/:idAlumno`, campo opcional): sin el campo se conservan y `""` las borra; ver J-13 | Cerrado |
+| PI-72 | ¿Quién ve el ranking de asistencia (US-30)? SPRINT-5.md lo daba a la propietaria y las profesoras; US-30 dice que es la misma vista para los tres roles y que el alumno ve su posición. Resuelto (20/10/2026): `REPORTES_RANKING_VER` en la matriz inicial de propietaria, profesora, alumno y tutor, con la fila propia marcada (`es_propia`) | Cerrado |
+| PI-71 | ¿Cuándo se otorgan la racha y el total de clases? Una clase cuenta recién al cerrarse la asistencia, y que `Asistencia` llamara a `Insignia` armaba un ciclo con el diagrama. Resuelto (20/10/2026): se derivan del historial de clases dictadas y se guardan al consultar la ficha o el ranking, con la fecha de la clase en que se alcanzó el umbral | Cerrado |
+| PI-73 | ¿El Mes perfecto exige el mínimo de clases del ranking? Resuelto (20/10/2026): sí, `RANKING_MINIMO_CLASES`; con menos clases no hay Mes perfecto ni Podio | Cerrado |
+| PI-73 | El cierre de un mes corre una vez por proceso desde el día 1. Una clase del último día que se cierre después de esa corrida no se vuelve a evaluar hasta un reinicio; si cambia el ranking, el podio no se recalcula (se otorga una sola vez por mes) | Abierto |
+| PI-74 | El cierre automático sin ninguna marca manual no registra ausentes (US-21): esa clase no figura como dictada en el informe de asistencia ni cuenta para la racha | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -1583,3 +1710,4 @@ Los defectos se numeran D-01, D-02…
 |   2.27  | 18/10/2026 | Casos PI-67 (los avisos de vencimiento de cuota) y PI-68 (las notificaciones propias por la API) y archivo N con N-01 a N-06; US-25 pasa a automatizada | Nicolas |
 |   2.28  | 18/10/2026 | Casos PI-69 (la detección de alumnos inactivos con la cuota al día) y PI-70 (su gestión) y archivo O con O-01 a O-07; US-22 pasa a automatizada | Nicolas |
 |   2.29  | 18/10/2026 | PI-15 suma los pasos 5 y 6 (DNI y contacto de emergencia obligatorios en el alta) y los tests E-24 y E-25; PI-16, PI-17, PI-31 y PI-64 mandan ahora altas completas | Francisco Andrade |
+|   2.30  | 20/10/2026 | Casos PI-71 a PI-73 (racha e insignias, ranking de asistencia y cierre mensual) y archivo P con P-01 a P-10; casos PI-74 a PI-77 (informe de asistencia y ocupación de horarios) y archivo Q con Q-01 a Q-06. US-30, US-31 y US-37 pasan a automatizadas y US-33 a parcial (sin la exportación). Fábricas `darRol`, `crearProfesora`, `crearActividad` y `crearClase` | Nicolas |

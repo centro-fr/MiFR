@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { cargarCatalogoInsignias } from "../../shared/db/catalogo-insignias.js";
 import { cargarCatalogoSeguridad } from "../../shared/db/catalogo-seguridad.js";
 import { cargarParametrosIniciales } from "../../shared/db/parametros-iniciales.js";
 
@@ -22,8 +23,8 @@ export function crearPrismaDePrueba(): PrismaClient {
   return new PrismaClient({ datasourceUrl: URL_BASE_DE_PRUEBA, log: ["error"] });
 }
 
-// Deja la base como recién sembrada: sin datos y con roles, permisos, la matriz inicial y los
-// parámetros del sistema.
+// Deja la base como recién sembrada: sin datos y con roles, permisos, la matriz inicial, los
+// parámetros del sistema y el catálogo de insignias.
 // Se trunca todo lo que exista en el esquema para no tener que mantener la lista de tablas a mano.
 export async function reiniciarBase(prisma: PrismaClient): Promise<void> {
   const tablas = await prisma.$queryRaw<{ tablename: string }[]>`
@@ -33,4 +34,5 @@ export async function reiniciarBase(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(`TRUNCATE ${lista} RESTART IDENTITY CASCADE`);
   await cargarCatalogoSeguridad(prisma);
   await cargarParametrosIniciales(prisma);
+  await cargarCatalogoInsignias(prisma);
 }

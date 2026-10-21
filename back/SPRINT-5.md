@@ -7,10 +7,10 @@ Sprint 5: **Cierre de funcionalidades pendientes**. Este documento reúne el alc
 | US-23 | Informe y liquidación mensual de honorarios | Pendiente; regla de cálculo por actualizar | Rosario |
 | US-27 | Carga de rutinas y evolución física | Pendiente | Rosario |
 | US-28 | Consulta de rutina y progreso por alumno/tutor | Pendiente | Rosario |
-| US-30 | Ranking de asistencia | Pendiente | Nicolas |
-| US-31 | Insignias y racha de asistencia | Pendiente | Nicolas |
-| US-33 | Informe de asistencia | Pendiente | Nicolas |
-| US-37 | Ocupación de horarios | Pendiente | Nicolas |
+| US-30 | Ranking de asistencia | Hecho | Nicolas |
+| US-31 | Insignias y racha de asistencia | Hecho | Nicolas |
+| US-33 | Informe de asistencia | Hecho (la exportación a PDF y Excel no está en el back) | Nicolas |
+| US-37 | Ocupación de horarios | Hecho | Nicolas |
 | US-34 | Informe de cuotas vencidas | Hecho | Francisco |
 | — | Informe de cobranza por período | Hecho | Francisco |
 | US-36 | Estadísticas de planes | Hecho | Francisco |
@@ -26,7 +26,7 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 - [x] Validar `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los parámetros enteros con valores no negativos (Francisco).
 - [x] Completar la notificación diaria del resumen de la propietaria (US-26); el endpoint `GET /resumen-diario` ya está implementado (Francisco).
 - [ ] Reflejar en Enterprise Architect y regenerar los entregables de las dependencias pendientes de US-13, US-20, US-22, US-24, US-25 y US-26.
-- [ ] Resolver la regla de suplencias en períodos liquidados de US-24 antes de cerrar esa historia (Nicolas).
+- [x] Resolver la regla de suplencias en períodos liquidados de US-24 antes de cerrar esa historia (Nicolas). Decidido el 20/10/2026 (ver "Suplencia en un período liquidado" en SPRINT-4.md): la liquidación cerrada es una foto y la regla la controla la fachada de `GestionHonorarios`. Implementarla espera a las liquidaciones de US-23.
 - [ ] Cerrar los casos de integración y demostración pendientes que se arrastren de SPRINT-3.md y SPRINT-4.md.
 
 ## Honorarios (US-23)
@@ -49,24 +49,24 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 
 ## Ranking e insignias (US-30 y US-31)
 
-- [ ] Agregar `tipo_insignia`, los modelos `insignias` y `alumno_insignias`, sus relaciones y migración. `periodo` debe ser obligatorio al integrar la clave primaria compuesta; guardar `""` para insignias sin período y `AAAA-MM` para las mensuales.
-- [ ] Cargar el catálogo inicial: rachas de 10 y 25 clases, totales de 50 y 100 clases, Mes perfecto y Podio del mes. Los íconos y colores se resuelven en el front, no en la base.
-- [ ] Al registrar asistencia, actualizar racha y total de clases y otorgar las insignias correspondientes sin duplicados.
-- [ ] Aplicar la regla de racha: una falta la corta; una clase cancelada o una suplencia no la corta.
-- [ ] Implementar el cierre mensual: Mes perfecto cuenta clases dictadas y excluye canceladas; Podio del mes reconoce los tres primeros del ranking.
-- [ ] Agregar `RANKING_MINIMO_CLASES = 4` a `parametros_sistema` y excluir del ranking a quienes no alcancen el mínimo.
-- [ ] Implementar `GET /reportes/ranking-asistencia?desde&hasta&actividad` con nombre, previstas, asistidas, porcentaje, racha e insignias.
-- [ ] Ordenar por porcentaje descendente, clases asistidas descendente y nombre ascendente; actualizar US-30 para reflejar este desempate y el mínimo de clases.
-- [ ] Implementar `GET /alumnos/:id/insignias`, devolviendo el catálogo, si cada insignia fue obtenida y el progreso hacia su umbral.
-- [ ] Agregar `REPORTES_RANKING_VER` para propietaria y profesoras y `INSIGNIAS_VER_PROPIAS` para el portal; probar que un alumno no consulte datos ajenos.
+- [x] Agregar `tipo_insignia`, los modelos `insignias` y `alumno_insignias`, sus relaciones y migración. `periodo` debe ser obligatorio al integrar la clave primaria compuesta; guardar `""` para insignias sin período y `AAAA-MM` para las mensuales.
+- [x] Cargar el catálogo inicial: rachas de 10 y 25 clases, totales de 50 y 100 clases, Mes perfecto y Podio del mes. Los íconos y colores se resuelven en el front, no en la base.
+- [x] Al registrar asistencia, actualizar racha y total de clases y otorgar las insignias correspondientes sin duplicados. Decidido el 20/10/2026: una clase cuenta recién al cerrarse su asistencia, y que `Asistencia` llamara a `Insignia` armaba un ciclo con el diagrama. La racha y el total se derivan del historial de clases dictadas y se guardan al consultar la ficha o el ranking, con la fecha de la clase en que se alcanzó el umbral.
+- [x] Aplicar la regla de racha: una falta la corta; una clase cancelada o una suplencia no la corta.
+- [x] Implementar el cierre mensual (proceso `CierreMensualInsignias`, desde el día 1, también al consultar la ficha o el ranking). Mes perfecto exige además `RANKING_MINIMO_CLASES` (decidido el 20/10/2026): Mes perfecto cuenta clases dictadas y excluye canceladas; Podio del mes reconoce los tres primeros del ranking.
+- [x] Agregar `RANKING_MINIMO_CLASES = 4` a `parametros_sistema` y excluir del ranking a quienes no alcancen el mínimo.
+- [x] Implementar `GET /reportes/ranking-asistencia?desde&hasta&actividad` con nombre, previstas, asistidas, porcentaje, racha e insignias.
+- [x] Ordenar por porcentaje descendente, clases asistidas descendente y nombre ascendente; actualizar US-30 para reflejar este desempate y el mínimo de clases.
+- [x] Implementar `GET /alumnos/:id/insignias`, devolviendo el catálogo, si cada insignia fue obtenida y el progreso hacia su umbral.
+- [x] Agregar `REPORTES_RANKING_VER` para propietaria y profesoras y `INSIGNIAS_VER_PROPIAS` para el portal; probar que un alumno no consulte datos ajenos. Decidido el 20/10/2026: el ranking también lo ven alumnos y tutores, como pide US-30 (misma vista para todos los roles, con la fila propia destacada).
 
 ## Reportes (US-33 a US-37 y requisitos agregados)
 
-- [ ] Implementar el informe de asistencia de US-33 con período y filtros combinables por alumno, profesora y actividad; excluir clases canceladas e incluir inasistencias automáticas.
+- [x] Implementar el informe de asistencia de US-33 (`GET /reportes/asistencia`) con período y filtros combinables por alumno, profesora y actividad; excluir clases canceladas e incluir inasistencias automáticas.
 - [x] Implementar el informe de cuotas vencidas de US-34; excluir cuotas dentro del período de gracia y devolver deuda exigible y días de mora.
 - [x] Implementar `GET /reportes/inscripciones?desde&hasta`, usando `alumnos.fecha_alta` y `fecha_baja`; contar altas definitivas y no reactivaciones.
 - [x] Implementar `GET /reportes/planes`, con inscripciones activas por plan y `plan_precios` vigente.
-- [ ] Implementar `GET /reportes/ocupacion`, con inscriptos activos por horario, cupo del horario o de la actividad y porcentaje de ocupación.
+- [x] Implementar `GET /reportes/ocupacion`, con inscriptos activos por horario, cupo del horario o de la actividad y porcentaje de ocupación.
 - [x] Implementar `GET /reportes/cobranza?desde&hasta`, mostrando cuotas del período y pagos `CONFIRMADOS` agrupados por forma de pago.
 - [x] Proteger los reportes administrativos con permisos exclusivos de propietaria y probar denegaciones para otros roles.
 - [x] Documentar filtros, respuestas y permisos en OpenAPI; agregar pruebas de consultas, límites de fechas, datos vacíos y agregaciones.

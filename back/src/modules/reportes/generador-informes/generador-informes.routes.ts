@@ -6,11 +6,14 @@ import { createGeneradorInformesController } from "./generador-informes.controll
 import {
   estadisticasInscripcionesQuerySchema,
   estadisticasPlanesQuerySchema,
+  informeAsistenciaQuerySchema,
   informeCobranzaQuerySchema,
   informeCuotasVencidasQuerySchema,
+  informeOcupacionQuerySchema,
 } from "./generador-informes.schemas.js";
 
-// US-34 a US-36 y cobranza: reportes administrativos reservados a la propietaria.
+// US-33 a US-37 y cobranza: reportes administrativos reservados a la propietaria. El ranking de
+// asistencia (US-30), que ven todos los roles, lo monta GestionInsignias.
 export function createGeneradorInformesRoutes(
   logica: ILogicaGeneradorInformes,
   acceso: ControlDeAcceso,
@@ -32,6 +35,8 @@ export function createGeneradorInformesRoutes(
     validate({ query: estadisticasInscripcionesQuerySchema }),
     controller.inscripciones,
   );
+  router.get("/asistencia", validate({ query: informeAsistenciaQuerySchema }), controller.asistencia);
+  router.get("/ocupacion", validate({ query: informeOcupacionQuerySchema }), controller.ocupacion);
 
   return router;
 }

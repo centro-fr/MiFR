@@ -3,8 +3,10 @@ import type { ILogicaGeneradorInformes } from "../interface/i-logica-informes.js
 import type {
   EstadisticasInscripcionesQuery,
   EstadisticasPlanesQuery,
+  InformeAsistenciaQuery,
   InformeCobranzaQuery,
   InformeCuotasVencidasQuery,
+  InformeOcupacionQuery,
 } from "./generador-informes.schemas.js";
 
 export function createGeneradorInformesController(logica: ILogicaGeneradorInformes) {
@@ -25,6 +27,14 @@ export function createGeneradorInformesController(logica: ILogicaGeneradorInform
       res.json(
         await logica.estadisticasInscripciones(req.query as unknown as EstadisticasInscripcionesQuery),
       );
+    },
+
+    async asistencia(req: Request, res: Response) {
+      res.json(await logica.informeAsistencia(req.query as unknown as InformeAsistenciaQuery));
+    },
+
+    async ocupacion(req: Request, res: Response) {
+      res.json(await logica.informeOcupacion(req.query as unknown as InformeOcupacionQuery));
     },
   };
 }

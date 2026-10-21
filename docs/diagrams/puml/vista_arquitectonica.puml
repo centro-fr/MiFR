@@ -326,11 +326,21 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   ' ---------------- GestionInsignias ----------------
   package "GestionInsignias" as GestionInsignias <<subsystem>> {
     component "Insignia" as Insignia
+    component "CierreMensualInsignias" as CierreMensualInsignias <<process>>
     interface "IInfoAsistencia"      as R_GI_InfoAsistencia
     interface "ICalculoRachaRanking" as R_GI_CalculoRachaRanking
+    interface "IInfoAlumnos"         as R_GI_InfoAlumnos
+    interface "IInfoParametros"      as R_GI_InfoParametros
+    interface "IOtorgamientoInsignias" as I_OtorgamientoInsignias
 
+    Insignia -down- I_OtorgamientoInsignias
+    CierreMensualInsignias -up-( I_OtorgamientoInsignias
     Insignia -right-( R_GI_InfoAsistencia
     Insignia -right-( R_GI_CalculoRachaRanking
+    Insignia -left-( R_GI_InfoAlumnos
+    Insignia -left-( R_GI_InfoParametros
+    CierreMensualInsignias ..> Insignia
+    Insignia -[hidden]down-> CierreMensualInsignias
   }
   interface "ILogicaInsignias" as I_LogicaInsignias
   interface "IAutorizacion"    as R_GI_Autz
@@ -353,6 +363,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Liquidacion     -left-( R_GH_CalculoHonorarios
     Liquidacion     -left-( R_GH_InfoClases
     Liquidacion     -right-( R_GH_InfoInscripciones
+    Liquidacion     -right-( R_GH_InfoProfesores
     Liquidacion     -right-( R_GH_InfoCuotas
     TarifaHonorario -right-( R_GH_InfoPlanes
     TarifaHonorario -right-( R_GH_InfoProfesores
@@ -434,7 +445,9 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     interface "IInfoAlumnos"       as R_RE_InfoAlumnosDet
     interface "IInfoCuotas"        as R_RE_InfoCuotasDet
     interface "IInfoPagos"         as R_RE_InfoPagos
+    interface "IInfoAsistencia"    as R_RE_InfoAsistenciaInf
 
+    GeneradorInformes   -up-( R_RE_InfoAsistenciaInf
     GeneradorInformes   -right-( R_RE_InfoAlumnos
     GeneradorInformes   -right-( R_RE_InfoHorarios
     GeneradorInformes   -down-( R_RE_InfoPlanes

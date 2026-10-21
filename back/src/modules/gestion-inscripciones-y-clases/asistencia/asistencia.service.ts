@@ -4,11 +4,15 @@ import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoInscripciones } from "../inscripcion/interface/i-info-inscripciones.js";
 import type { ClaseConDatos } from "../clase/clase.types.js";
 import type { IInfoClases } from "../clase/interface/i-info-clases.js";
+import type { MarcaDeHistorial } from "../../calculos-del-negocio/calculador-racha-ranking/calculador-racha-ranking.types.js";
 import type { AsistenciaRepository } from "./asistencia.repository.js";
 import type {
   Asistencia,
+  AsistenciaDeAlumno,
+  AsistenciaDeProfesora,
   EstadoAsistencia,
   EstadoSeguimientoInactividad,
+  FiltroAsistenciasDictadas,
   InscriptoConAsistencia,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
@@ -124,5 +128,17 @@ export class AsistenciaService implements IInfoAsistencia {
 
   quitarSeguimiento(idInscripcion: number): Promise<boolean> {
     return this.repositorio.quitarSeguimiento(idInscripcion);
+  }
+
+  resumirPorAlumno(filtro: FiltroAsistenciasDictadas): Promise<AsistenciaDeAlumno[]> {
+    return this.repositorio.resumirPorAlumno(filtro);
+  }
+
+  resumirPorProfesora(filtro: FiltroAsistenciasDictadas): Promise<AsistenciaDeProfesora[]> {
+    return this.repositorio.resumirPorProfesora(filtro);
+  }
+
+  historialDeAlumnos(idsAlumnos: number[]): Promise<Map<number, MarcaDeHistorial[]>> {
+    return this.repositorio.historialDeAlumnos(idsAlumnos);
   }
 }

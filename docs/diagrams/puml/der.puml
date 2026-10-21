@@ -401,12 +401,13 @@ package "NOTIFICACIONES E INSIGNIAS" {
     * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(30) <color:#9CA3AF>UK</color>
     * nombre : VARCHAR(60)
       descripcion : VARCHAR(255)
-    * tipo_criterio : ENUM <color:#000000><<RACHA|ASISTENCIAS_TOTALES>></color>
+    * tipo : ENUM <color:#000000><<MES_PERFECTO|RACHA|TOTAL_CLASES|PODIO_MES>></color>
     * valor_umbral : SMALLINT <color:#6B7280><size:11>> 0</size></color>
   }
   entity "alumno_insignias" as alumno_insignias <<Notificaciones>> {
     * <color:#DAA520><&key></color> id_alumno : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
     * <color:#DAA520><&key></color> id_insignia : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> periodo : VARCHAR(7) <color:#DAA520>PK</color>
     --
     * fecha_obtencion : TIMESTAMP
   }

@@ -53,7 +53,30 @@ export const estadisticasInscripcionesQuerySchema = z
   })
   .refine(fechasEnOrden, RANGO_FECHAS_INVALIDO);
 
+export const informeAsistenciaQuerySchema = z
+  .object({
+    desde: fechaSchema.optional(),
+    hasta: fechaSchema.optional(),
+    id_alumno: idDesdeTextoSchema.optional(),
+    id_profesora: idDesdeTextoSchema.optional(),
+    id_actividad: idDesdeTextoSchema.optional(),
+    incluir_bajas: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((valor) => valor === "true"),
+    ...paginacionSchema(50),
+  })
+  .refine(fechasEnOrden, RANGO_FECHAS_INVALIDO);
+
+export const informeOcupacionQuerySchema = z.object({
+  id_actividad: idDesdeTextoSchema.optional(),
+  id_profesora: idDesdeTextoSchema.optional(),
+  modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]).optional(),
+});
+
 export type InformeCuotasVencidasQuery = z.infer<typeof informeCuotasVencidasQuerySchema>;
 export type InformeCobranzaQuery = z.infer<typeof informeCobranzaQuerySchema>;
 export type EstadisticasPlanesQuery = z.infer<typeof estadisticasPlanesQuerySchema>;
 export type EstadisticasInscripcionesQuery = z.infer<typeof estadisticasInscripcionesQuerySchema>;
+export type InformeAsistenciaQuery = z.infer<typeof informeAsistenciaQuerySchema>;
+export type InformeOcupacionQuery = z.infer<typeof informeOcupacionQuerySchema>;

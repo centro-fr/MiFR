@@ -36,6 +36,15 @@ describe("catálogo de permisos", () => {
     expect(PERMISOS_EXCLUSIVOS_PROPIETARIA).not.toContain("PAGOS_REGISTRAR");
   });
 
+  it("todos los roles ven el ranking y solo alumno y tutor arrancan con las insignias propias (US-30, US-31)", () => {
+    for (const rol of ["PROFESORA", "ALUMNO", "TUTOR"] as const) {
+      expect(MATRIZ_INICIAL[rol]).toContain("REPORTES_RANKING_VER");
+    }
+    expect(MATRIZ_INICIAL.ALUMNO).toContain("INSIGNIAS_VER_PROPIAS");
+    expect(MATRIZ_INICIAL.TUTOR).toContain("INSIGNIAS_VER_PROPIAS");
+    expect(MATRIZ_INICIAL.PROFESORA).not.toContain("INSIGNIAS_VER_PROPIAS");
+  });
+
   it("ningún otro rol arranca con un permiso exclusivo de la propietaria", () => {
     for (const rol of ["PROFESORA", "ALUMNO", "TUTOR"] as const) {
       for (const exclusivo of PERMISOS_EXCLUSIVOS_PROPIETARIA) {

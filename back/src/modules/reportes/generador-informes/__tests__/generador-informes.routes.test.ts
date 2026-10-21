@@ -25,6 +25,8 @@ describe("rutas de reportes analíticos (/api/v1/reportes)", () => {
       informeCobranza: vi.fn().mockResolvedValue({ datos: [], total: 0 }),
       estadisticasPlanes: vi.fn().mockResolvedValue({ planes: [] }),
       estadisticasInscripciones: vi.fn().mockResolvedValue({ meses: [] }),
+      informeAsistencia: vi.fn().mockResolvedValue({ datos: [], total: 0 }),
+      informeOcupacion: vi.fn().mockResolvedValue({ datos: [] }),
     };
     const autenticacion = {
       validarSesion: async (token: string) => ROLES[token],
@@ -141,6 +143,56 @@ describe("rutas de reportes analíticos (/api/v1/reportes)", () => {
     it("responde 400 con año fuera de rango", async () => {
       const respuesta = await como("propietaria", "/inscripciones?anio=1990");
       expect(respuesta.status).toBe(400);
+    });
+  });
+
+  describe("GET /reportes/asistencia (US-33)", () => {
+    it("pasa los filtros combinados al informe", async () => {
+      const respuesta = await como(
+        "propietaria",
+        "/asistencia?desde=2026-10-01&hasta=2026-10-31&id_alumno=5&id_profesora=2&id_actividad=3",
+      );
+
+      expect(respuesta.status).toBe(200);
+      expect(logica.informeAsistencia).toHaveBeenCalledWith({
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-31T00:00:00Z"),
+        id_alumno: 5,
+        id_profesora: 2,
+        id_actividad: 3,
+        incluir_bajas: false,
+        limit: 50,
+        offset: 0,
+      });
+    });
+
+    it("solo la propietaria: profesora y alumno reciben 403 sin llegar al informe", async () => {
+      expect((await como("profesora", "/asistencia")).status).toBe(403);
+      expect((await como("alumno", "/asistencia")).status).toBe(403);
+      expect(logica.informeAsistencia).not.toHaveBeenCalled();
+    });
+
+    it("responde 400 con fechas invertidas", async () => {
+      const respuesta = await como("propietaria", "/asistencia?desde=2026-10-31&hasta=2026-10-01");
+      expect(respuesta.status).toBe(400);
+    });
+  });
+
+  describe("GET /reportes/ocupacion (US-37)", () => {
+    it("pasa los filtros al informe", async () => {
+      const respuesta = await como("propietaria", "/ocupacion?id_actividad=3&modalidad=GRUPAL");
+
+      expect(respuesta.status).toBe(200);
+      expect(logica.informeOcupacion).toHaveBeenCalledWith({ id_actividad: 3, modalidad: "GRUPAL" });
+    });
+
+    it("solo la propietaria: una profesora recibe 403", async () => {
+      expect((await como("profesora", "/ocupacion")).status).toBe(403);
+      expect(logica.informeOcupacion).not.toHaveBeenCalled();
+    });
+
+    it("responde 400 con una modalidad desconocida", async () => {
+      expect((await como("propietaria", "/ocupacion?modalidad=OTRA")).status).toBe(400);
     });
   });
 });

@@ -2,9 +2,11 @@ import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { registrarDocumentacionDifusionPublica } from "./modules/difusion-publica/difusion-publica.openapi.js";
 import { registrarDocumentacionGestionCuotasYPagos } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.openapi.js";
 import { registrarDocumentacionGestionNotificaciones } from "./modules/gestion-notificaciones/gestion-notificaciones.openapi.js";
+import { registrarDocumentacionGestionInsignias } from "./modules/gestion-insignias/gestion-insignias.openapi.js";
 import { registrarDocumentacionGestionInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/gestion-inscripciones-y-clases.openapi.js";
 import { registrarDocumentacionGestionPersonas } from "./modules/gestion-personas/gestion-personas.openapi.js";
 import { registrarDocumentacionGestionServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.openapi.js";
+import { registrarDocumentacionGestionHonorarios } from "./modules/gestion-honorarios/gestion-honorarios.openapi.js";
 import { registrarDocumentacionReportes } from "./modules/reportes/reportes.openapi.js";
 import { registrarDocumentacionGestionUsuarios } from "./modules/gestion-usuarios/gestion-usuarios.openapi.js";
 import { GUIA_DE_PRUEBA } from "./openapi-guia.js";
@@ -32,6 +34,8 @@ export function registrarDocumentacionApi(
   registrarDocumentacionGestionInscripcionesYClases(registro);
   registrarDocumentacionGestionCuotasYPagos(registro);
   registrarDocumentacionGestionNotificaciones(registro);
+  registrarDocumentacionGestionInsignias(registro);
   registrarDocumentacionReportes(registro);
+  registrarDocumentacionGestionHonorarios(registro);
   registrarDocumentacionDifusionPublica(registro);
 }

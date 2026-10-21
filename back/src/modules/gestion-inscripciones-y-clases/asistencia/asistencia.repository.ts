@@ -1,9 +1,14 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { clienteEnCurso } from "../../../shared/db/transaccion.js";
+import { instanteArgentino } from "../../../shared/utils/fecha-argentina.js";
+import type { MarcaDeHistorial } from "../../calculos-del-negocio/calculador-racha-ranking/calculador-racha-ranking.types.js";
 import type { InscriptoDeHorario } from "../inscripcion/inscripcion.types.js";
 import type {
   Asistencia,
+  AsistenciaDeAlumno,
+  AsistenciaDeProfesora,
   EstadoSeguimientoInactividad,
+  FiltroAsistenciasDictadas,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
   RachaDeInasistencia,
@@ -14,6 +19,29 @@ export interface MarcaDeAsistencia {
   idClase: number;
   idUsuario: number;
   fechaRegistro: Date;
+}
+
+// El FROM y el WHERE comunes a los resúmenes de asistencia, con las uniones que agregue cada uno.
+// Los valores van como parámetros.
+function desdeAsistenciasDictadas(filtro: FiltroAsistenciasDictadas, uniones: Prisma.Sql): Prisma.Sql {
+  const condiciones = [
+    Prisma.sql`c.estado = 'DICTADA'`,
+    Prisma.sql`c.fecha_clase BETWEEN ${filtro.desde}::date AND ${filtro.hasta}::date`,
+  ];
+  if (!filtro.incluir_bajas) condiciones.push(Prisma.sql`al.estado <> 'BAJA'`);
+  if (filtro.id_alumno !== undefined) condiciones.push(Prisma.sql`a.id_alumno = ${filtro.id_alumno}`);
+  if (filtro.id_profesora !== undefined) {
+    condiciones.push(Prisma.sql`c.id_prof_dictante = ${filtro.id_profesora}`);
+  }
+  if (filtro.id_actividad !== undefined)
+    condiciones.push(Prisma.sql`h.id_actividad = ${filtro.id_actividad}`);
+  return Prisma.sql`
+    FROM asistencias a
+    JOIN clases c ON c.id_clase = a.id_clase
+    JOIN horarios h ON h.id_horario = c.id_horario
+    JOIN alumnos al ON al.id_alumno = a.id_alumno
+    ${uniones}
+    WHERE ${Prisma.join(condiciones, " AND ")}`;
 }
 
 export class AsistenciaRepository {
@@ -164,5 +192,55 @@ export class AsistenciaRepository {
       where: { id_inscripcion: idInscripcion },
     });
     return count > 0;
+  }
+
+  resumirPorAlumno(filtro: FiltroAsistenciasDictadas): Promise<AsistenciaDeAlumno[]> {
+    return this.prisma.$queryRaw<AsistenciaDeAlumno[]>`
+      SELECT al.id_alumno, al.id_usuario, al.id_usuario_responsable, al.estado, u.nombre, u.apellido,
+             COUNT(*)::int AS clases_previstas,
+             (COUNT(*) FILTER (WHERE a.asistio))::int AS clases_asistidas
+      ${desdeAsistenciasDictadas(filtro, Prisma.sql`JOIN usuarios u ON u.id_usuario = al.id_usuario`)}
+      GROUP BY al.id_alumno, u.id_usuario
+      ORDER BY u.apellido, u.nombre, al.id_alumno`;
+  }
+
+  resumirPorProfesora(filtro: FiltroAsistenciasDictadas): Promise<AsistenciaDeProfesora[]> {
+    return this.prisma.$queryRaw<AsistenciaDeProfesora[]>`
+      SELECT p.id_profesora, u.nombre, u.apellido,
+             COUNT(DISTINCT c.id_clase)::int AS clases_dictadas,
+             COUNT(DISTINCT a.id_alumno)::int AS alumnos,
+             COUNT(*)::int AS clases_previstas,
+             (COUNT(*) FILTER (WHERE a.asistio))::int AS clases_asistidas
+      ${desdeAsistenciasDictadas(
+        filtro,
+        Prisma.sql`JOIN profesoras p ON p.id_profesora = c.id_prof_dictante
+                   JOIN usuarios u ON u.id_usuario = p.id_usuario`,
+      )}
+      GROUP BY p.id_profesora, u.id_usuario
+      ORDER BY u.apellido, u.nombre, p.id_profesora`;
+  }
+
+  async historialDeAlumnos(idsAlumnos: number[]): Promise<Map<number, MarcaDeHistorial[]>> {
+    if (idsAlumnos.length === 0) return new Map();
+    const marcas = await this.prisma.asistencias.findMany({
+      where: { id_alumno: { in: idsAlumnos }, clase: { estado: "DICTADA" } },
+      select: {
+        id_alumno: true,
+        asistio: true,
+        clase: { select: { fecha_clase: true, horario: { select: { hora_inicio: true } } } },
+      },
+      orderBy: [{ clase: { fecha_clase: "asc" } }, { clase: { horario: { hora_inicio: "asc" } } }],
+    });
+    return new Map(
+      idsAlumnos.map((idAlumno) => [
+        idAlumno,
+        marcas
+          .filter(({ id_alumno }) => id_alumno === idAlumno)
+          .map(({ asistio, clase }) => ({
+            asistio,
+            inicio: instanteArgentino(clase.fecha_clase, clase.horario.hora_inicio),
+          })),
+      ]),
+    );
   }
 }

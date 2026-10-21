@@ -15,6 +15,8 @@ describe("ReportesService", () => {
       informeCobranza: vi.fn().mockResolvedValue("cobranza"),
       estadisticasPlanes: vi.fn().mockResolvedValue("planes"),
       estadisticasInscripciones: vi.fn().mockResolvedValue("inscripciones"),
+      informeAsistencia: vi.fn().mockResolvedValue("asistencia"),
+      informeOcupacion: vi.fn().mockResolvedValue("ocupacion"),
     };
     const reportes = new ReportesService(
       detector as unknown as DetectorInactividadService,
@@ -42,5 +44,12 @@ describe("ReportesService", () => {
 
     await expect(reportes.estadisticasInscripciones({})).resolves.toBe("inscripciones");
     expect(generador.estadisticasInscripciones).toHaveBeenCalledWith({});
+
+    const filtroAsistencia = { incluir_bajas: false, limit: 50, offset: 0 };
+    await expect(reportes.informeAsistencia(filtroAsistencia)).resolves.toBe("asistencia");
+    expect(generador.informeAsistencia).toHaveBeenCalledWith(filtroAsistencia);
+
+    await expect(reportes.informeOcupacion({ modalidad: "GRUPAL" })).resolves.toBe("ocupacion");
+    expect(generador.informeOcupacion).toHaveBeenCalledWith({ modalidad: "GRUPAL" });
   });
 });

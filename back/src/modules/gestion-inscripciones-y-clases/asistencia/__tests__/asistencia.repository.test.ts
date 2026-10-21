@@ -210,4 +210,81 @@ describe("AsistenciaRepository", () => {
       await expect(repositorio.quitarSeguimiento(50)).resolves.toBe(false);
     });
   });
+
+  describe("resúmenes para el ranking y los informes (US-30, US-31, US-33)", () => {
+    const DESDE = new Date("2026-10-01T00:00:00Z");
+    const HASTA = new Date("2026-10-31T00:00:00Z");
+
+    function sqlDeLaConsulta(): Prisma.Sql {
+      const [partes, ...valores] = prisma.$queryRaw.mock.calls[0] as [TemplateStringsArray, ...unknown[]];
+      return Prisma.sql(partes, ...valores);
+    }
+
+    it("resumirPorAlumno cuenta solo clases dictadas del período y deja afuera a los dados de baja", async () => {
+      const fila = { id_alumno: 5, clases_previstas: 4, clases_asistidas: 3 };
+      prisma.$queryRaw.mockResolvedValue([fila]);
+
+      await expect(repositorio.resumirPorAlumno({ desde: DESDE, hasta: HASTA })).resolves.toEqual([fila]);
+      const sql = sqlDeLaConsulta();
+      expect(sql.values).toEqual([DESDE, HASTA]);
+      expect(sql.sql).toContain("c.estado = 'DICTADA'");
+      expect(sql.sql).toContain("al.estado <> 'BAJA'");
+      expect(sql.sql).toContain("JOIN usuarios u ON u.id_usuario = al.id_usuario");
+    });
+
+    it("resumirPorAlumno combina los filtros de alumno, profesora dictante y actividad, e incluye bajas si se pide", async () => {
+      await repositorio.resumirPorAlumno({
+        desde: DESDE,
+        hasta: HASTA,
+        id_alumno: 5,
+        id_profesora: 2,
+        id_actividad: 3,
+        incluir_bajas: true,
+      });
+
+      const sql = sqlDeLaConsulta();
+      expect(sql.values).toEqual([DESDE, HASTA, 5, 2, 3]);
+      expect(sql.sql).toContain("a.id_alumno = ");
+      expect(sql.sql).toContain("c.id_prof_dictante = ");
+      expect(sql.sql).toContain("h.id_actividad = ");
+      expect(sql.sql).not.toContain("al.estado <> 'BAJA'");
+    });
+
+    it("resumirPorProfesora agrupa por la profesora que dictó la clase", async () => {
+      await repositorio.resumirPorProfesora({ desde: DESDE, hasta: HASTA, id_actividad: 3 });
+
+      const sql = sqlDeLaConsulta();
+      expect(sql.values).toEqual([DESDE, HASTA, 3]);
+      expect(sql.sql).toContain("JOIN profesoras p ON p.id_profesora = c.id_prof_dictante");
+      expect(sql.sql).toContain("COUNT(DISTINCT c.id_clase)");
+    });
+
+    it("historialDeAlumnos trae de una sola consulta las marcas de clases dictadas, en orden y con el inicio de la clase", async () => {
+      const dia = new Date("2026-10-12T00:00:00Z");
+      const hora = new Date("1970-01-01T18:30:00Z");
+      prisma.asistencias.findMany.mockResolvedValue([
+        { id_alumno: 5, asistio: true, clase: { fecha_clase: dia, horario: { hora_inicio: hora } } },
+        { id_alumno: 6, asistio: false, clase: { fecha_clase: dia, horario: { hora_inicio: hora } } },
+      ]);
+
+      await expect(repositorio.historialDeAlumnos([5, 6, 7])).resolves.toEqual(
+        new Map([
+          [5, [{ asistio: true, inicio: new Date("2026-10-12T21:30:00Z") }]],
+          [6, [{ asistio: false, inicio: new Date("2026-10-12T21:30:00Z") }]],
+          [7, []],
+        ]),
+      );
+      expect(prisma.asistencias.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id_alumno: { in: [5, 6, 7] }, clase: { estado: "DICTADA" } },
+          orderBy: [{ clase: { fecha_clase: "asc" } }, { clase: { horario: { hora_inicio: "asc" } } }],
+        }),
+      );
+    });
+
+    it("historialDeAlumnos no consulta la base sin alumnos", async () => {
+      await expect(repositorio.historialDeAlumnos([])).resolves.toEqual(new Map());
+      expect(prisma.asistencias.findMany).not.toHaveBeenCalled();
+    });
+  });
 });

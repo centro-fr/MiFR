@@ -65,15 +65,21 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 
 - La racha se calcula sobre **clases seguidas sin faltar**, según historial de asistencia.
 - Una **inasistencia corta la racha** y la reinicia a cero.
-- El criterio de otorgamiento de insignias **queda a definir con la propietaria durante el desarrollo**.
+- Criterios de otorgamiento (definidos en el Sprint 5):
+  - **Racha de 10 y de 25 clases**: clases seguidas sin faltar.
+  - **50 y 100 clases**: total de clases asistidas.
+  - **Mes perfecto**: asistió a todas sus clases dictadas del mes, con al menos `RANKING_MINIMO_CLASES` clases (4 por defecto).
+  - **Podio del mes**: los tres primeros del ranking de asistencia del mes (US-30), con el mismo mínimo y al menos una clase asistida.
+- Racha y total se calculan sobre el historial de clases dictadas y la insignia queda con la fecha de la clase en que se alcanzó el umbral. Las mensuales se otorgan al cerrar el mes, desde el día 1 del mes siguiente, una vez por mes (pueden repetirse en otros meses).
+- Una clase cuenta para la racha recién cuando se cierra su asistencia: mientras está abierta, sus marcas todavía pueden cambiar.
 - Las insignias se otorgan automáticamente al cumplirse los criterios.
 - El alumno **solo ve sus propias** rachas e insignias (no las de otros).
 - Si el alumno es menor de edad, el **tutor** accede a esta información.
 - Las rachas se calculan por período continuo (no se resetean por mes calendario).
-- Las clases canceladas no cuentan ni a favor ni en contra de la racha.
+- Las clases canceladas no cuentan ni a favor ni en contra de la racha. Una clase dictada por una suplente (US-24) cuenta como cualquier otra.
 - Las clases personalizadas también cuentan para la racha.
-- Las clases sueltas cuentan para la racha solo si son consecutivas en el tiempo (según criterio a definir).
-- Las insignias se muestran con íconos distintivos y colores de la marca.
+- Las clases sueltas cuentan para la racha como cualquier otra clase dictada con marca: la racha sigue el orden en el tiempo de las clases del alumno.
+- Las insignias se muestran con íconos distintivos y colores de la marca, que resuelve el front según el tipo: la base no los guarda.
 
 ## 8. Criterios de aceptación
 
@@ -90,7 +96,7 @@ Como alumno, quiero recibir insignias y ver mi racha de asistencia en mi panel, 
 - Alumno recién inscripto sin racha ni insignias → estados vacíos claros
 - Alumno con racha de 0 (nunca asistió) → mostrar mensaje motivacional
 - Alumno con racha cortada recientemente → mostrar mensaje de ánimo
-- Empate en el cálculo de racha por clases canceladas → definir criterio
+- Clases canceladas en medio de una racha → no la cortan ni la suman (no tienen marcas)
 - Error de red al cargar la racha o insignias
 - Insignia otorgada pero no visible por error → registrar log y reintentar
 

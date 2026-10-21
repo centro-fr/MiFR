@@ -51,8 +51,8 @@ back/
     __tests__/integracion/
       global-setup.ts                 verifica que la base sea _test y aplica las migraciones
       base-de-prueba.ts               URL, verificación _test, PrismaClient de prueba, reiniciarBase
-      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + cierreAsistencia (cierre automático con la hora que pida el test) + planificadorNotificaciones (avisos de cuota con el día que pida el test)
-      fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...), crearInscripcionDePrueba(...)
+      entorno.ts                      app real + Google simulado + iniciarSesion(email) + infoInscripciones (alta definitiva sin pasar por un cobro) + cierreAsistencia (cierre automático con la hora que pida el test) + planificadorNotificaciones (avisos de cuota con el día que pida el test) + cierreMensualInsignias (cierre del mes con el día que pida el test)
+      fabricas.ts                     crearUsuario(prisma, { roles, estado }), crearPlan(...), crearAlumno(...), crearHorarioDePrueba(...), crearInscripcionDePrueba(...), darRol(...), crearProfesora(...), crearActividad(...), crearClase(...)
 ```
 
 ## Datos disponibles
@@ -62,6 +62,9 @@ back/
 - **`crearPlan`:** plan mensual de 2 clases por semana con un único precio abierto ($25.000 desde el 01/01/2026); se le puede pasar nombre, tipo, precio, fecha de vigencia y actividad exclusiva. Devuelve `id_plan` e `id_plan_precio`, que es lo que necesita una inscripción.
 - **`crearAlumno`:** alumno con su usuario, pre-inscripto (`INACTIVO`, sin roles), mayor de edad y con email `alumnoN@example.com`; se le puede pasar nombre, apellido, DNI, email (`null` para un menor), fecha de nacimiento, estado y `id_usuario_responsable`. Devuelve `id_alumno` e `id_usuario`.
 - **`cargarDatosDemo`:** Marina Sosa (`marina.sosa@example.com`, propietaria y profesora), Lucía Gómez y Carla Ruiz (profesoras); Funcional Grupal (`FUNCIONAL`, grupal, sin cupo) y Entrenamiento Personalizado (`ENTRENAMIENTO_PERS`, personalizada, cupo 4); horarios de Lucía lunes y miércoles 18–19, Carla martes y jueves 9–10, y Marina viernes 19–20 con cupo propio 12. Planes Básico, Intermedio, Personalizado 2 días (exclusivo de Entrenamiento Personalizado, profesora única) y Clase suelta, con precios desde el 01/01/2026; alumnos pre-inscriptos Sofía Medina (mayor) y Mateo Romero (menor, tutora Paula Romero). Devuelve los ids de profesoras por correo, de actividades por código, de planes por nombre y de alumnos por DNI. Como el escenario ya trae planes y alumnos, los tests cuentan contra lo que había o filtran por sus propios nombres.
+- **`crearProfesora`, `crearActividad` y `darRol`:** una profesora con su fila en `profesoras`; una actividad grupal o personalizada, con o sin cupo; el rol que el alta definitiva le daría a un alumno o tutor para que entre al portal.
+- **`crearClase`:** una clase `DICTADA`, `PROGRAMADA` o `CANCELADA` con su dictante y una marca por inscripto; con `id_usuario_registra` la marca es manual (la que espera el cierre automático para completar ausentes).
+- **Catálogo de insignias:** se carga solo en cada `reiniciarBase`. Los casos de racha bajan los umbrales en la base.
 - **`crearInscripcionDePrueba`:** inscripción de un alumno en un horario, directo en la base, `ACTIVA` por defecto (o `PREINSCRIPTA`, o `BAJA` con motivo y horario cerrado), con inicio el 01/10/2026.
 - **Reloj fijo:** lo que depende del día o la hora (las clases del día, el cierre de la asistencia) fija solo `Date` con `vi.useFakeTimers({ toFake: ["Date"] })` y lo restaura en `afterEach`; la base y supertest siguen con sus temporizadores reales.
 - Los horarios tienen que caer de lunes a sábado, entre las 07:00 y las 23:00 (horario de atención): un domingo o una hora fuera de esa franja hacen que la API responda 400 antes de llegar a la regla que se quiere probar.
@@ -86,6 +89,8 @@ Los códigos de los tests son de `PRUEBAS-INTEGRACION.md` (raíz del repo), para
 | M | `src/__tests__/integracion/resumen-diario.integration.test.ts` | El resumen diario de la propietaria: los tres bloques, sin novedades y quién lo ve. La L queda para `suplencias.integration.test.ts` | M-03 |
 | N | `src/__tests__/integracion/notificaciones.integration.test.ts` | Los avisos de vencimiento de cuota (con el planificador y el día de hoy) y las notificaciones propias por la API (con el reloj fijo en un día propio) | N-06 |
 | O | `src/__tests__/integracion/alumnos-inactivos.integration.test.ts` | La detección de alumnos inactivos con la cuota al día y su gestión, con las clases cerradas cargadas en la base | O-07 |
+| P | `src/__tests__/integracion/insignias-y-ranking.integration.test.ts` | La racha y las insignias del alumno, el ranking de asistencia y el cierre mensual de insignias (con el reloj fijo y las clases cargadas con `crearClase`) | P-10 |
+| Q | `src/__tests__/integracion/reportes-asistencia-y-ocupacion.integration.test.ts` | El informe de asistencia (con el cierre automático real) y la ocupación de los horarios | Q-06 |
 
 El último caso PI se toma de la sección 6.1 de `PRUEBAS-INTEGRACION.md`.
 

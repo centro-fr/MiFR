@@ -71,6 +71,12 @@ export const CATALOGO_PERMISOS = [
   { codigo: "RUTINAS_VER", modulo: "RUTINAS", descripcion: "Ver las rutinas y el progreso de los alumnos" },
   { codigo: "RUTINAS_EDITAR", modulo: "RUTINAS", descripcion: "Crear y modificar rutinas de alumnos" },
   { codigo: "REPORTES_COBRANZA_VER", modulo: "REPORTES", descripcion: "Ver los reportes de cobranza" },
+  { codigo: "REPORTES_RANKING_VER", modulo: "REPORTES", descripcion: "Ver el ranking de asistencia" },
+  {
+    codigo: "INSIGNIAS_VER_PROPIAS",
+    modulo: "INSIGNIAS",
+    descripcion: "Ver la racha y las insignias propias o de un menor a cargo",
+  },
 ] as const;
 
 export type CodigoPermiso = (typeof CATALOGO_PERMISOS)[number]["codigo"];
@@ -97,7 +103,8 @@ export const PERMISOS_CRITICOS: readonly CodigoPermiso[] = [
 ];
 
 // Matriz con la que arranca el sistema; después la administra la propietaria.
-// Alumno y tutor no necesitan permisos para ver lo suyo: eso se resuelve por pertenencia.
+// Lo de cada alumno se acota por pertenencia; el permiso solo abre la pantalla del portal. El ranking
+// es la misma vista para todos los roles (US-30).
 export const MATRIZ_INICIAL: Record<CodigoRol, readonly CodigoPermiso[]> = {
   PROPIETARIA: CATALOGO_PERMISOS.map((permiso) => permiso.codigo),
   // La profesora pre-inscribe alumnos (US-05): para eso necesita ver los planes y dar de alta al
@@ -114,9 +121,10 @@ export const MATRIZ_INICIAL: Record<CodigoRol, readonly CodigoPermiso[]> = {
     "RUTINAS_VER",
     "RUTINAS_EDITAR",
     "HONORARIOS_VER_PROPIOS",
+    "REPORTES_RANKING_VER",
   ],
-  ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER"],
-  TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER"],
+  ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
+  TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
 };
 
 export function esPermisoCritico(codigo: string): boolean {

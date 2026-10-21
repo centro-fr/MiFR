@@ -3,6 +3,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../../app.js";
 import { construirSistema } from "../../composicion.js";
+import type { CierreMensualInsigniasService } from "../../modules/gestion-insignias/cierre-mensual-insignias/cierre-mensual-insignias.service.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoClases } from "../../modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
@@ -29,18 +30,26 @@ export interface EntornoDeIntegracion {
   cierreAsistencia: CierreAsistenciaService;
   // Los avisos de cuota (US-25), para generarlos con el día que pide cada caso.
   planificadorNotificaciones: PlanificadorNotificacionesService;
+  // El cierre mensual de insignias (US-31), para correrlo con el día que pide cada caso.
+  cierreMensualInsignias: CierreMensualInsigniasService;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
 
 export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
-  const { dependencias, infoInscripciones, infoClases, cierreAsistencia, planificadorNotificaciones } =
-    construirSistema({
-      prisma,
-      googleAuth: googleSimulado,
-      jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
-    });
+  const {
+    dependencias,
+    infoInscripciones,
+    infoClases,
+    cierreAsistencia,
+    planificadorNotificaciones,
+    cierreMensualInsignias,
+  } = construirSistema({
+    prisma,
+    googleAuth: googleSimulado,
+    jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
+  });
   const app = createApp(dependencias);
 
   // La sesión se abre por el endpoint real de login, así el token es el mismo que recibe el front.
@@ -61,6 +70,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     infoClases,
     cierreAsistencia,
     planificadorNotificaciones,
+    cierreMensualInsignias,
     iniciarSesion,
     cerrar: () => prisma.$disconnect(),
   };

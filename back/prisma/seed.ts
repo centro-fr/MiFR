@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { CATALOGO_PERMISOS, CATALOGO_ROLES } from "../src/modules/gestion-usuarios/rol/rol.catalogo.js";
 import { cargarCatalogoSeguridad } from "../src/shared/db/catalogo-seguridad.js";
+import { cargarCatalogoInsignias } from "../src/shared/db/catalogo-insignias.js";
 import { cargarParametrosIniciales } from "../src/shared/db/parametros-iniciales.js";
 
 const prisma = new PrismaClient();
@@ -20,6 +21,7 @@ async function main(): Promise<void> {
   }
 
   await cargarCatalogoSeguridad(prisma);
+  await cargarCatalogoInsignias(prisma);
   await cargarParametrosIniciales(prisma);
   const propietaria = await prisma.roles.findUniqueOrThrow({ where: { codigo: "PROPIETARIA" } });
 

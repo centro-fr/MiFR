@@ -25,7 +25,12 @@ export type EventoSeguridad =
   | "PROMOCION_DESACTIVADA"
   | "SUPLENCIA_REGISTRADA"
   | "SUPLENCIA_MODIFICADA"
-  | "SUPLENCIA_ELIMINADA";
+  | "SUPLENCIA_ELIMINADA"
+  | "TARIFA_HONORARIO_REGISTRADA"
+  | "TARIFA_HONORARIO_CERRADA"
+  | "LIQUIDACION_GENERADA"
+  | "LIQUIDACION_CERRADA"
+  | "LIQUIDACION_PAGADA";
 
 export function auditar(evento: EventoSeguridad, datos: Record<string, unknown>): void {
   console.warn(JSON.stringify({ auditoria: evento, fecha: new Date().toISOString(), ...datos }));

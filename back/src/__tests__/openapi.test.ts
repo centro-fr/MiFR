@@ -75,6 +75,10 @@ const OPERACIONES_ESPERADAS = [
   "get /reportes/cobranza",
   "get /reportes/planes",
   "get /reportes/inscripciones",
+  "get /reportes/asistencia",
+  "get /reportes/ocupacion",
+  "get /reportes/ranking-asistencia",
+  "get /alumnos/{id}/insignias",
   "post /pagos/{id}/aprobar",
   "post /pagos/{id}/rechazar",
   "get /pagos/{id}/comprobante",
@@ -99,6 +103,14 @@ const OPERACIONES_ESPERADAS = [
   "post /suplencias",
   "patch /suplencias/{idClase}",
   "delete /suplencias/{idClase}",
+  "get /tarifas-honorario",
+  "post /tarifas-honorario",
+  "post /tarifas-honorario/{id}/cerrar",
+  "post /liquidaciones",
+  "get /liquidaciones",
+  "get /liquidaciones/{id}",
+  "post /liquidaciones/{id}/cerrar",
+  "post /liquidaciones/{id}/pagar",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {

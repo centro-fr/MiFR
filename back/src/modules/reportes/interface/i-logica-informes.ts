@@ -10,10 +10,14 @@ import type {
   EstadisticasPlanes,
   FiltroCobranza,
   FiltroCuotasVencidas,
+  FiltroInformeAsistencia,
   FiltroInscripciones,
+  FiltroOcupacion,
   FiltroPlanes,
+  InformeAsistencia,
   InformeCobranza,
   InformeCuotasVencidas,
+  InformeOcupacion,
 } from "../generador-informes/generador-informes.types.js";
 
 // La parte de ILogicaInformes que usa el controller de DetectorInactividad (US-22). No es una interfaz
@@ -28,12 +32,14 @@ export interface ILogicaAlumnosInactivos {
   quitarSeguimientoInactividad(idInscripcion: number): Promise<void>;
 }
 
-// La parte de ILogicaInformes que usa el controller de GeneradorInformes (US-34 a US-36 y cobranza).
+// La parte de ILogicaInformes que usa el controller de GeneradorInformes (US-33 a US-37 y cobranza).
 export interface ILogicaGeneradorInformes {
   informeCuotasVencidas(filtro: FiltroCuotasVencidas): Promise<InformeCuotasVencidas>;
   informeCobranza(filtro: FiltroCobranza): Promise<InformeCobranza>;
   estadisticasPlanes(filtro: FiltroPlanes): Promise<EstadisticasPlanes>;
   estadisticasInscripciones(filtro: FiltroInscripciones): Promise<EstadisticasInscripciones>;
+  informeAsistencia(filtro: FiltroInformeAsistencia): Promise<InformeAsistencia>;
+  informeOcupacion(filtro: FiltroOcupacion): Promise<InformeOcupacion>;
 }
 
 // Interfaz del subsistema Reportes en la vista arquitectónica: lo que consume la presentación

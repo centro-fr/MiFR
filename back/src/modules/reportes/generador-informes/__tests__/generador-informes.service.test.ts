@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IInfoCuotas } from "../../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoPagos } from "../../../gestion-cuotas-y-pagos/pago/interface/i-info-pagos.js";
+import type { IInfoAsistencia } from "../../../gestion-inscripciones-y-clases/asistencia/interface/i-info-asistencia.js";
 import type { IInfoAlumnos } from "../../../gestion-personas/alumno/interface/i-info-alumnos.js";
+import type { IInfoHorarios } from "../../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { IInfoInscripciones } from "../../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoPlanes } from "../../../gestion-servicio-entrenamiento/plan/interface/i-info-planes.js";
 import { GeneradorInformesService } from "../generador-informes.service.js";
@@ -10,16 +12,29 @@ describe("GeneradorInformesService", () => {
   let cuotas: { cuotasVencidasDetalladas: ReturnType<typeof vi.fn> };
   let pagos: { obtenerCobranza: ReturnType<typeof vi.fn> };
   let planes: { listarVigentes: ReturnType<typeof vi.fn>; precioVigente: ReturnType<typeof vi.fn> };
-  let inscripciones: { contarActivasPorPlan: ReturnType<typeof vi.fn> };
+  let inscripciones: {
+    contarActivasPorPlan: ReturnType<typeof vi.fn>;
+    contarInscriptosParaAsistencia: ReturnType<typeof vi.fn>;
+  };
   let alumnos: { contarAltasPorMes: ReturnType<typeof vi.fn> };
+  let asistencias: {
+    resumirPorAlumno: ReturnType<typeof vi.fn>;
+    resumirPorProfesora: ReturnType<typeof vi.fn>;
+  };
+  let horarios: { listarVigentes: ReturnType<typeof vi.fn> };
   let servicio: GeneradorInformesService;
 
   beforeEach(() => {
     cuotas = { cuotasVencidasDetalladas: vi.fn() };
     pagos = { obtenerCobranza: vi.fn() };
     planes = { listarVigentes: vi.fn(), precioVigente: vi.fn() };
-    inscripciones = { contarActivasPorPlan: vi.fn() };
+    inscripciones = { contarActivasPorPlan: vi.fn(), contarInscriptosParaAsistencia: vi.fn() };
     alumnos = { contarAltasPorMes: vi.fn() };
+    asistencias = {
+      resumirPorAlumno: vi.fn().mockResolvedValue([]),
+      resumirPorProfesora: vi.fn().mockResolvedValue([]),
+    };
+    horarios = { listarVigentes: vi.fn().mockResolvedValue([]) };
 
     servicio = new GeneradorInformesService(
       cuotas as unknown as IInfoCuotas,
@@ -27,7 +42,13 @@ describe("GeneradorInformesService", () => {
       planes as unknown as IInfoPlanes,
       inscripciones as unknown as IInfoInscripciones,
       alumnos as unknown as IInfoAlumnos,
+      asistencias as unknown as IInfoAsistencia,
+      horarios as unknown as IInfoHorarios,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe("informeCuotasVencidas (US-34)", () => {
@@ -440,6 +461,271 @@ describe("GeneradorInformesService", () => {
 
       expect(resultado.meses).toHaveLength(0);
       expect(resultado.resumen.promedio_mensual).toBe(0);
+    });
+  });
+
+  describe("informeAsistencia (US-33)", () => {
+    const filtroBase = { incluir_bajas: false, limit: 50, offset: 0 };
+
+    function alumno(id_alumno: number, apellido: string, clases_previstas: number, clases_asistidas: number) {
+      return {
+        id_alumno,
+        id_usuario: id_alumno * 10,
+        id_usuario_responsable: null,
+        nombre: "Nombre",
+        apellido,
+        estado: "ACTIVO" as const,
+        clases_previstas,
+        clases_asistidas,
+      };
+    }
+
+    it("por defecto consulta el mes en curso hasta hoy, sin datos responde en cero", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-10-20T15:00:00Z"));
+
+      const informe = await servicio.informeAsistencia(filtroBase);
+
+      const consulta = {
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-20T00:00:00Z"),
+        id_alumno: undefined,
+        id_profesora: undefined,
+        id_actividad: undefined,
+        incluir_bajas: false,
+      };
+      expect(asistencias.resumirPorAlumno).toHaveBeenCalledWith(consulta);
+      expect(asistencias.resumirPorProfesora).toHaveBeenCalledWith(consulta);
+      expect(informe).toEqual({
+        periodo: { desde: "2026-10-01", hasta: "2026-10-20" },
+        resumen: { clases_dictadas: 0, asistencias: 0, inasistencias: 0, porcentaje_asistencia: 0 },
+        por_profesora: [],
+        datos: [],
+        total: 0,
+        limit: 50,
+        offset: 0,
+      });
+    });
+
+    it("con solo hasta, arranca el primer día de ese mes y pasa los filtros combinados", async () => {
+      await servicio.informeAsistencia({
+        ...filtroBase,
+        hasta: new Date("2026-09-15T00:00:00Z"),
+        id_alumno: 5,
+        id_profesora: 2,
+        id_actividad: 3,
+        incluir_bajas: true,
+      });
+
+      expect(asistencias.resumirPorAlumno).toHaveBeenCalledWith({
+        desde: new Date("2026-09-01T00:00:00Z"),
+        hasta: new Date("2026-09-15T00:00:00Z"),
+        id_alumno: 5,
+        id_profesora: 2,
+        id_actividad: 3,
+        incluir_bajas: true,
+      });
+    });
+
+    it("suma totales del período entero, calcula porcentajes y pagina el detalle por alumno", async () => {
+      asistencias.resumirPorAlumno.mockResolvedValue([
+        alumno(5, "Paz", 4, 3),
+        alumno(6, "Ruiz", 3, 2),
+        alumno(7, "Sosa", 2, 0),
+      ]);
+      asistencias.resumirPorProfesora.mockResolvedValue([
+        {
+          id_profesora: 2,
+          nombre: "Lía",
+          apellido: "Gómez",
+          clases_dictadas: 3,
+          alumnos: 2,
+          clases_previstas: 6,
+          clases_asistidas: 4,
+        },
+        {
+          id_profesora: 4,
+          nombre: "Ana",
+          apellido: "Vera",
+          clases_dictadas: 1,
+          alumnos: 2,
+          clases_previstas: 3,
+          clases_asistidas: 1,
+        },
+      ]);
+
+      const informe = await servicio.informeAsistencia({
+        ...filtroBase,
+        desde: new Date("2026-10-01T00:00:00Z"),
+        hasta: new Date("2026-10-31T00:00:00Z"),
+        limit: 2,
+        offset: 1,
+      });
+
+      expect(informe.resumen).toEqual({
+        clases_dictadas: 4,
+        asistencias: 5,
+        inasistencias: 4,
+        porcentaje_asistencia: 55.56,
+      });
+      expect(informe.por_profesora).toEqual([
+        {
+          id_profesora: 2,
+          nombre: "Lía",
+          apellido: "Gómez",
+          clases_dictadas: 3,
+          cantidad_alumnos: 2,
+          asistencias: 4,
+          porcentaje_promedio: 66.67,
+        },
+        {
+          id_profesora: 4,
+          nombre: "Ana",
+          apellido: "Vera",
+          clases_dictadas: 1,
+          cantidad_alumnos: 2,
+          asistencias: 1,
+          porcentaje_promedio: 33.33,
+        },
+      ]);
+      expect(informe.datos).toEqual([
+        {
+          id_alumno: 6,
+          nombre: "Nombre",
+          apellido: "Ruiz",
+          estado: "ACTIVO",
+          clases_previstas: 3,
+          asistencias: 2,
+          inasistencias: 1,
+          porcentaje_asistencia: 66.67,
+        },
+        {
+          id_alumno: 7,
+          nombre: "Nombre",
+          apellido: "Sosa",
+          estado: "ACTIVO",
+          clases_previstas: 2,
+          asistencias: 0,
+          inasistencias: 2,
+          porcentaje_asistencia: 0,
+        },
+      ]);
+      expect(informe).toMatchObject({ total: 3, limit: 2, offset: 1 });
+      expect(informe.datos[0]).not.toHaveProperty("id_usuario");
+    });
+  });
+
+  describe("informeOcupacion (US-37)", () => {
+    const HORA = new Date("1970-01-01T18:00:00Z");
+
+    function horario(id_horario: number, cupo: number | null, extra: Record<string, unknown> = {}) {
+      return {
+        id_horario,
+        id_actividad: 3,
+        id_profesora: 2,
+        dia_semana: 1,
+        hora_inicio: HORA,
+        hora_fin: HORA,
+        cupo_maximo_efectivo: cupo,
+        actividad: { id_actividad: 3, nombre: "Funcional", modalidad: "GRUPAL" },
+        profesora: { id_profesora: 2, usuario: { nombre: "Lía", apellido: "Gómez" } },
+        ...extra,
+      };
+    }
+
+    it("cuenta los inscriptos activos de hoy y clasifica cada horario por su ocupación", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-10-20T15:00:00Z"));
+      horarios.listarVigentes.mockResolvedValue([
+        horario(1, 20),
+        horario(2, 20),
+        horario(3, 20),
+        horario(4, 20),
+        horario(5, 20),
+        horario(6, 20),
+        horario(7, null),
+      ]);
+      inscripciones.contarInscriptosParaAsistencia.mockResolvedValue(
+        new Map([
+          [1, 11],
+          [2, 12],
+          [3, 16],
+          [4, 17],
+          [5, 19],
+          [6, 21],
+          [7, 8],
+        ]),
+      );
+
+      const informe = await servicio.informeOcupacion({});
+
+      expect(inscripciones.contarInscriptosParaAsistencia).toHaveBeenCalledWith(
+        [1, 2, 3, 4, 5, 6, 7],
+        new Date("2026-10-20T00:00:00Z"),
+      );
+      expect(informe.datos.map(({ nivel, porcentaje_ocupacion }) => [nivel, porcentaje_ocupacion])).toEqual([
+        ["LIBRE", 55],
+        ["MODERADO", 60],
+        ["MODERADO", 80],
+        ["CASI_LLENO", 85],
+        ["CASI_LLENO", 95],
+        ["COMPLETO", 105],
+        ["SIN_CUPO", null],
+      ]);
+      expect(informe.datos[0]).toEqual({
+        id_horario: 1,
+        dia_semana: 1,
+        hora_inicio: HORA,
+        hora_fin: HORA,
+        actividad: { id_actividad: 3, nombre: "Funcional", modalidad: "GRUPAL" },
+        profesora: { id_profesora: 2, nombre: "Lía", apellido: "Gómez" },
+        cupo_maximo: 20,
+        inscriptos: 11,
+        porcentaje_ocupacion: 55,
+        nivel: "LIBRE",
+      });
+      expect(informe.resumen).toEqual({
+        total_horarios: 7,
+        ocupacion_total: 80,
+        por_nivel: { LIBRE: 1, MODERADO: 2, CASI_LLENO: 2, COMPLETO: 1, SIN_CUPO: 1 },
+      });
+    });
+
+    it("un horario sin inscriptos queda en 0 y sin horarios la ocupación total es 0", async () => {
+      horarios.listarVigentes.mockResolvedValue([horario(1, 10)]);
+      inscripciones.contarInscriptosParaAsistencia.mockResolvedValue(new Map());
+
+      const informe = await servicio.informeOcupacion({});
+      expect(informe.datos[0]).toMatchObject({ inscriptos: 0, porcentaje_ocupacion: 0, nivel: "LIBRE" });
+
+      horarios.listarVigentes.mockResolvedValue([]);
+      await expect(servicio.informeOcupacion({})).resolves.toEqual({
+        resumen: {
+          total_horarios: 0,
+          ocupacion_total: 0,
+          por_nivel: { LIBRE: 0, MODERADO: 0, CASI_LLENO: 0, COMPLETO: 0, SIN_CUPO: 0 },
+        },
+        datos: [],
+      });
+    });
+
+    it("filtra por actividad, profesora y modalidad", async () => {
+      horarios.listarVigentes.mockResolvedValue([
+        horario(1, 10),
+        horario(2, 10, { id_actividad: 9 }),
+        horario(3, 10, { id_profesora: 8 }),
+        horario(4, 10, { actividad: { id_actividad: 3, nombre: "Funcional", modalidad: "PERSONALIZADA" } }),
+      ]);
+      inscripciones.contarInscriptosParaAsistencia.mockResolvedValue(new Map());
+
+      const informe = await servicio.informeOcupacion({
+        id_actividad: 3,
+        id_profesora: 2,
+        modalidad: "GRUPAL",
+      });
+
+      expect(informe.datos.map(({ id_horario }) => id_horario)).toEqual([1]);
+      expect(inscripciones.contarInscriptosParaAsistencia).toHaveBeenCalledWith([1], expect.any(Date));
     });
   });
 });

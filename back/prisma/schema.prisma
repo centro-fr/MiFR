@@ -136,6 +136,8 @@ model profesoras {
   clases_dictadas    clases[]
   registros_progreso registros_progreso[]
   ausencias_suplidas suplencias[]
+  tarifas_honorario  tarifas_honorario[]
+  liquidaciones      liquidaciones[]
 }
 
 model horarios {
@@ -182,6 +184,7 @@ model planes {
   precios             plan_precios[]
   inscripciones       inscripciones[]
   promociones         promocion_planes[]
+  tarifas_honorario   tarifas_honorario[]
 }
 
 enum tipo_descuento {
@@ -278,6 +281,7 @@ model alumnos {
   inscripciones      inscripciones[]
   registros_progreso registros_progreso[]
   asistencias        asistencias[]
+  insignias          alumno_insignias[]
 }
 
 enum estado_inscripcion {
@@ -321,6 +325,7 @@ model inscripciones {
   cuotas      cuotas[]
   asistencias asistencias[]
   seguimiento seguimientos_inactividad?
+  honorarios  liquidacion_detalles[]
 
   @@index([id_alumno], map: "IXFK_inscripciones_alumnos")
   @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
@@ -362,6 +367,7 @@ model clases {
   profesora   profesoras    @relation(fields: [id_prof_dictante], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_profesoras")
   asistencias asistencias[]
   suplencias  suplencias[]
+  honorarios  liquidacion_detalles[]
 
   @@unique([id_horario, fecha_clase], map: "UK_clases_horario_fecha")
   @@index([id_horario], map: "IXFK_clases_horarios")
@@ -563,4 +569,125 @@ model notificaciones {
   @@unique([id_usuario, id_cuota, tipo], map: "UK_notificaciones_usuario_cuota_tipo")
   @@index([id_cuota], map: "IXFK_notificaciones_cuotas")
   @@index([id_usuario], map: "IXFK_notificaciones_usuarios")
+}
+
+enum tipo_insignia {
+  MES_PERFECTO
+  RACHA
+  TOTAL_CLASES
+  PODIO_MES
+}
+
+model insignias {
+  id_insignia  Int           @id(map: "PK_insignias") @default(autoincrement())
+  codigo       String        @unique(map: "UK_insignias_codigo") @db.VarChar(30)
+  nombre       String        @db.VarChar(60)
+  descripcion  String?       @db.VarChar(255)
+  tipo         tipo_insignia
+  valor_umbral Int           @db.SmallInt
+
+  alumnos alumno_insignias[]
+}
+
+model alumno_insignias {
+  id_alumno       Int
+  id_insignia     Int
+  periodo         String    @default("") @db.VarChar(7)
+  fecha_obtencion DateTime  @default(now()) @db.Timestamp(6)
+
+  alumno   alumnos   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_alumnos")
+  insignia insignias @relation(fields: [id_insignia], references: [id_insignia], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_insignias")
+
+  @@id([id_alumno, id_insignia, periodo], map: "PK_alumno_insignias")
+  @@index([id_alumno], map: "IXFK_alumno_insignias_alumnos")
+  @@index([id_insignia], map: "IXFK_alumno_insignias_insignias")
+}
+
+// ============================================================
+// HONORARIOS
+// ============================================================
+
+enum concepto_tarifa_honorario {
+  ALUMNO_A_CARGO
+  HORA_SUPLENCIA
+}
+
+enum tipo_valor_honorario {
+  PORCENTAJE
+  MONTO_FIJO
+}
+
+enum estado_liquidacion {
+  BORRADOR
+  CERRADA
+  PAGADA
+}
+
+enum concepto_liquidacion_detalle {
+  ALUMNO_A_CARGO
+  CLASE_SUPLIDA
+  DESCUENTO_AUSENCIA
+}
+
+// US-23: cuánto cobra una profesora por cada concepto. Una tarifa nueva cierra la vigente del mismo
+// concepto, profesora y plan, como plan_precios.
+model tarifas_honorario {
+  id_tarifa            Int                       @id(map: "PK_tarifas_honorario") @default(autoincrement())
+  id_profesora         Int
+  concepto             concepto_tarifa_honorario
+  // NULL = aplica a todos los planes; siempre NULL en HORA_SUPLENCIA
+  id_plan              Int?
+  tipo_valor           tipo_valor_honorario
+  // > 0; <= 100 si PORCENTAJE
+  valor                Decimal                   @db.Decimal(10, 2)
+  fecha_vigencia_desde DateTime                  @db.Date
+  // NULL = vigente
+  fecha_vigencia_hasta DateTime?                 @db.Date
+
+  profesora profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_tarifas_honorario_profesoras")
+  plan      planes?                @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_tarifas_honorario_planes")
+  detalles  liquidacion_detalles[]
+
+  @@index([id_plan], map: "IXFK_tarifas_honorario_planes")
+  @@index([id_profesora], map: "IXFK_tarifas_honorario_profesoras")
+}
+
+// Una por profesora y período. Una CERRADA o PAGADA es una foto: sus detalles no se recalculan.
+model liquidaciones {
+  id_liquidacion    Int                @id(map: "PK_liquidaciones") @default(autoincrement())
+  id_profesora      Int
+  periodo_desde     DateTime           @db.Date
+  // > periodo_desde
+  periodo_hasta     DateTime           @db.Date
+  fecha_liquidacion DateTime           @default(now()) @db.Timestamp(6)
+  monto_total       Decimal            @db.Decimal(12, 2)
+  estado            estado_liquidacion
+
+  profesora profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidaciones_profesoras")
+  detalles  liquidacion_detalles[]
+
+  @@index([id_profesora], map: "IXFK_liquidaciones_profesoras")
+}
+
+model liquidacion_detalles {
+  id_liq_detalle Int                          @id(map: "PK_liquidacion_detalles") @default(autoincrement())
+  id_liquidacion Int
+  id_tarifa      Int
+  concepto       concepto_liquidacion_detalle
+  // obligatorio si ALUMNO_A_CARGO
+  id_inscripcion Int?
+  // obligatorio si CLASE_SUPLIDA / DESCUENTO_AUSENCIA
+  id_clase       Int?
+  // < 0 si DESCUENTO_AUSENCIA
+  monto          Decimal                      @db.Decimal(10, 2)
+
+  liquidacion liquidaciones      @relation(fields: [id_liquidacion], references: [id_liquidacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_liquidaciones")
+  tarifa      tarifas_honorario  @relation(fields: [id_tarifa], references: [id_tarifa], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_tarifas_honorario")
+  inscripcion inscripciones?     @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_inscripciones")
+  clase       clases?            @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_clases")
+
+  @@index([id_clase], map: "IXFK_liquidacion_detalles_clases")
+  @@index([id_inscripcion], map: "IXFK_liquidacion_detalles_inscripciones")
+  @@index([id_liquidacion], map: "IXFK_liquidacion_detalles_liquidaciones")
+  @@index([id_tarifa], map: "IXFK_liquidacion_detalles_tarifas_honorario")
 }

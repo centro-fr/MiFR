@@ -50,4 +50,9 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
     descripcion:
       "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
   },
+  RANKING_MINIMO_CLASES: {
+    tipo_dato: "ENTERO",
+    valor_inicial: "4",
+    descripcion: "Cantidad mínima de clases en el período para figurar en el ranking de asistencia",
+  },
 };
