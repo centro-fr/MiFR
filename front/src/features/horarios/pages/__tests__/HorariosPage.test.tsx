@@ -52,14 +52,13 @@ describe("HorariosPage", () => {
     });
   });
 
-  it("renderiza correctamente los breadcrumbs, el título y subtítulo exacto", () => {
+  it("renderiza correctamente el título y subtítulo exacto", () => {
     render(
       <MemoryRouter>
         <HorariosPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("navigation", { name: "Ruta de navegación" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Horarios" })).toBeInTheDocument();
     expect(
       screen.getByText("La semana del centro: qué clase hay, con quién y cuántos lugares quedan.")

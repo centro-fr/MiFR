@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { OwnerLayout } from '@/components/layout/owner-layout';
 import { mensajeDeErrorApi } from '@/api/errores';
 import { useHorarios } from '../hooks/useHorarios';
@@ -22,20 +21,6 @@ import {
 } from '@/components/ui/select';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { Plus, CalendarX, Loader2 } from 'lucide-react';
-
-function Breadcrumbs() {
-  return (
-    <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-      <Link to="/app" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
-        Inicio
-      </Link>
-      <span>/</span>
-      <span>Clases</span>
-      <span>/</span>
-      <span className="font-bold text-slate-800 dark:text-slate-200">Horarios</span>
-    </nav>
-  );
-}
 
 export const HorariosPage: React.FC = () => {
   const {
@@ -196,19 +181,12 @@ export const HorariosPage: React.FC = () => {
     <OwnerLayout>
       {/* CONTENIDO PRINCIPAL */}
       <div className="space-y-6 min-w-0">
-        <Breadcrumbs />
-
         {/* ENCABEZADO */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Horarios
-              </h1>
-              <span className="rounded-full bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-bold px-2.5 py-0.5">
-                {totalHorarios} {totalHorarios === 1 ? 'clase semanal' : 'clases semanales'}
-              </span>
-            </div>
+            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Horarios
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
               La semana del centro: qué clase hay, con quién y cuántos lugares quedan.
             </p>

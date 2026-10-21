@@ -23,44 +23,23 @@ Esta skill define la guía obligatoria, arquitectura, estándares visuales y pla
 2. **Nunca aplicar anchos fijos centrados a la página:**
    - **PROHIBIDO:** `mx-auto max-w-[1240px]` o similares a nivel de página.
    - El contenido debe ocupar el 100% del ancho provisto por `OwnerLayout` para que el título y los componentes comiencen exactamente alineados a la izquierda en todo el sistema.
-3. **Breadcrumbs en la parte superior:**
-   - Toda página principal debe iniciar con una barra de navegación breadcrumb:
-     ```tsx
-     function Breadcrumbs() {
-       return (
-         <nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-           <Link to="/app" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
-             Inicio
-           </Link>
-           <span>/</span>
-           <span>Sección</span>
-           <span>/</span>
-           <span className="font-bold text-slate-800 dark:text-slate-200">{paginaActual}</span>
-         </nav>
-       );
-     }
-     ```
+3. **Breadcrumbs provistos por el Layout:**
+   - `OwnerLayout` ya renderiza de forma centralizada las migas de pan (`MigasDePan`) en la barra superior a partir de la ruta actual.
+   - **PROHIBIDO** incluir un componente `<Breadcrumbs />` local dentro del contenido de la página para evitar rutas duplicadas.
 
 ---
 
 ## 2. Estructura del Encabezado Principal (Header)
 
-Todas las vistas deben mantener la misma jerarquía de encabezado con título `h1`, badge de píldora de conteo, subtítulo descriptivo y botón de acción principal:
+Todas las vistas deben mantener la misma jerarquía de encabezado con título `h1`, subtítulo descriptivo y botón de acción principal (el conteo se reserva para las pestañas o tarjetas de resumen, evitando píldoras pegadas al título):
 
 ```tsx
 {/* ENCABEZADO PRINCIPAL */}
 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
   <div className="min-w-0">
-    <div className="flex items-center gap-2.5 flex-wrap">
-      <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-        {tituloPagina}
-      </h1>
-      {conteo !== undefined && (
-        <span className="rounded-full bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-bold px-2.5 py-0.5 shadow-2xs">
-          {conteo} {conteo === 1 ? etiquetaSingular : etiquetaPlural}
-        </span>
-      )}
-    </div>
+    <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+      {tituloPagina}
+    </h1>
     <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
       {descripcionPagina}
     </p>
