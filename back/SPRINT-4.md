@@ -225,7 +225,7 @@ El DER ya resuelve quién dicta: la suplente pasa a ser `clases.id_prof_dictante
 ### Pendiente (US-24)
 
 - [ ] Reflejar en el `.eap` de Enterprise Architect que `Suplencia` requiere `IInfoProfesores` y regenerar el `.jpg` y el `.pdf` (regla dura 2).
-- [ ] No se modifica ni se borra una suplencia de un período con liquidación `CERRADA` o `PAGADA`: espera a las liquidaciones de US-23 y a la decisión de "Suplencia en un período liquidado".
+- [ ] No se modifica ni se borra una suplencia de un período con liquidación `CERRADA` o `PAGADA`: la regla ya está decidida ("Suplencia en un período liquidado", 20/10/2026) y espera a las liquidaciones de US-23.
 
 ## US-22 – Detección de alumnos inactivos con cuota al día
 
@@ -339,5 +339,5 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 - [ ] **Profesora que ve sus honorarios (US-23).** La spec dice que la profesora no accede al informe, pero el catálogo ya le da `HONORARIOS_VER_PROPIOS`. **Propuesta:** el informe consolidado es solo de la propietaria; la profesora ve únicamente sus liquidaciones `CERRADA` o `PAGADA`, sin el detalle de las otras.
 - [x] **Ajuste manual del honorario (US-23).** El DER no tiene un concepto para eso (`ALUMNO_A_CARGO`, `CLASE_SUPLIDA`, `DESCUENTO_AUSENCIA`) y no está en los criterios de aceptación. **Decidido** (12/10/2026): fuera del MVP, sin cambiar el DER. Sumarlo pedía un concepto nuevo, cambiar `ck_liquidacion_detalles_x2` y una columna para el motivo. Mientras la liquidación está en `BORRADOR` se corrige la tarifa o la suplencia y se recalcula.
 - [ ] **Alumno que cambia de profesora en el mes (US-23).** **Propuesta:** como cambiar de plan o de profesora genera otra inscripción, cada inscripción se liquida a su profesora; si las dos estuvieron activas en el mes, el alumno cuenta para las dos. Más simple que "donde estuvo más tiempo" y queda trazado en el detalle.
-- [ ] **Suplencia en un período liquidado (US-24).** `Suplencia` no puede consultar a `Liquidacion` sin un ciclo entre subsistemas (`GestionHonorarios` ya requiere `IInfoClases`). **Propuesta:** como la liquidación cerrada es una foto, editar una suplencia después no la cambia; la regla se controla en la fachada de `GestionHonorarios`, o se agrega al diagrama una interfaz `IInfoLiquidaciones` que requiera `Suplencia`. Hay que elegir una antes de codificar.
+- [x] **Suplencia en un período liquidado (US-24).** `Suplencia` no puede consultar a `Liquidacion` sin un ciclo entre subsistemas (`GestionHonorarios` ya requiere `IInfoClases`). **Decidido** (20/10/2026): la liquidación cerrada es una foto, así que editar una suplencia después no la cambia, y la regla se controla en la fachada de `GestionHonorarios`, sin agregar `IInfoLiquidaciones` al diagrama. Se implementa con las liquidaciones de US-23.
 - [x] **Baja de una suplencia (US-24).** La spec habla de estado `activa` / `cancelada`; el DER no tiene la columna y no está en los criterios de aceptación. **Decidido** (12/10/2026): sin cambiar el DER. Borrado físico de la fila con auditoría, y la clase vuelve a la titular. Una suplencia cancelada no la usa nadie: los honorarios solo miran las vigentes.
