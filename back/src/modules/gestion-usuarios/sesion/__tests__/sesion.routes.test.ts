@@ -1,6 +1,7 @@
 import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/logica-notificaciones-no-configurada.js";
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
+import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp as crearAppBase } from "../../../../app.js";
@@ -30,6 +31,7 @@ function createApp(
     | "gestionNotificaciones"
     | "gestionInsignias"
     | "reportes"
+    | "gestionHonorarios"
   >,
   opciones?: Parameters<typeof crearAppBase>[1],
 ) {
@@ -44,6 +46,7 @@ function createApp(
       gestionNotificaciones: logicaNotificacionesNoConfigurada,
       gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,
+      gestionHonorarios: logicaHonorariosNoConfigurada,
     },
     opciones,
   );

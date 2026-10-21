@@ -17,6 +17,8 @@ import type { ILogicaPersonas } from "./modules/gestion-personas/interface/i-log
 import { createGestionPersonasRoutes } from "./modules/gestion-personas/gestion-personas.routes.js";
 import type { ILogicaServicioEntrenamiento } from "./modules/gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import { createGestionServicioEntrenamientoRoutes } from "./modules/gestion-servicio-entrenamiento/gestion-servicio-entrenamiento.routes.js";
+import type { ILogicaHonorarios } from "./modules/gestion-honorarios/interface/i-logica-honorarios.js";
+import { createGestionHonorariosRoutes } from "./modules/gestion-honorarios/gestion-honorarios.routes.js";
 import type { ILogicaUsuarios } from "./modules/gestion-usuarios/interface/i-logica-usuarios.js";
 import { createGestionUsuariosRoutes } from "./modules/gestion-usuarios/gestion-usuarios.routes.js";
 import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-autorizacion.js";
@@ -36,6 +38,7 @@ export interface AppDependencies {
   gestionNotificaciones: ILogicaNotificaciones;
   gestionInsignias: ILogicaInsignias;
   reportes: ILogicaInformes;
+  gestionHonorarios: ILogicaHonorarios;
   difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
@@ -82,6 +85,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
   // Va después de GestionInsignias: su /reportes exige rol PROPIETARIA, y bloquearía el ranking.
   api.use(createReportesRoutes(deps.reportes, acceso));
+  api.use(createGestionHonorariosRoutes(deps.gestionHonorarios, acceso));
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);

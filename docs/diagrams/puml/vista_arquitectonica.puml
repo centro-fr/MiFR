@@ -363,6 +363,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Liquidacion     -left-( R_GH_CalculoHonorarios
     Liquidacion     -left-( R_GH_InfoClases
     Liquidacion     -right-( R_GH_InfoInscripciones
+    Liquidacion     -right-( R_GH_InfoProfesores
     Liquidacion     -right-( R_GH_InfoCuotas
     TarifaHonorario -right-( R_GH_InfoPlanes
     TarifaHonorario -right-( R_GH_InfoProfesores

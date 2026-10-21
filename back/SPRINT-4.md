@@ -10,7 +10,7 @@ Sprint 4: **Control Administrativo, Finanzas y Retención** (según `docs/v.1.1 
 | US-22 | Detección de alumnos inactivos con cuota al día | Hecho (falta EA y el escenario de demostración) | Nicolas |
 | US-24 | Registro de suplencias entre profesoras | Hecho (falta EA y la regla del período liquidado) | Nicolas |
 | US-25 | Aviso automático de vencimiento de cuota | Hecho (falta EA) | Nicolas |
-| US-23 | Informe mensual automático de honorarios | Pendiente | Rosario |
+| US-23 | Informe mensual automático de honorarios | Hecho (falta EA y las diferencias abiertas) | Rosario |
 
 Fuentes: `docs/specs/04-*/US-13`, `docs/specs/05-*/US-19`, `docs/specs/06-*/US-22`, `docs/specs/07-*` y `docs/specs/08-*`, `docs/sdd/04-*`, `docs/sdd/05-*` a `docs/sdd/08-*`, y el DER. Ante una diferencia entre las specs o el SDD y el DER, gana el DER (ver el final del archivo).
 
@@ -20,7 +20,7 @@ Ninguno de estos pendientes bloquea el Sprint 4. La API de parámetros, que era 
 
 | Pendiente | Responsable | Bloquea a |
 | --- | --- | --- |
-| ~~API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango~~ Hecha e integrada a `dev` el 12/10/2026 (PI-53, PI-54). Falta solo validar las claves nuevas de este sprint | Rosario | — |
+| ~~API de `ParametrosSistema` (`GET /parametros`, `PATCH /parametros/:clave`, `GET /parametros/datos-bancarios`) y su validación de rango~~ Hecha e integrada a `dev` el 12/10/2026 (PI-53, PI-54). Las claves nuevas de este sprint ya se validan al editarlas de este sprint | Rosario | — |
 | Reflejar en el `.eap` las dependencias nuevas de `Clase` y `CierreAsistencia` y regenerar el `.jpg` y el `.pdf` (US-20) | Nicolas | — |
 | ~~Puntos abiertos de la sección 9 de `PRUEBAS-INTEGRACION.md` (clases de días anteriores, pre-inscriptos en la lista, observaciones)~~ Resueltos el 12/10/2026, junto con la clase cancelada (PI-55, PI-56; ver `SPRINT-3.md`) | Nicolas | — |
 
@@ -294,29 +294,33 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 
 `CalculadorHonorarios` es puro, como los del Sprint 3: recibe inscripciones, tarifas y suplencias, y devuelve los detalles. `Liquidacion` junta los datos, llama al calculador y guarda el resultado. Una liquidación `CERRADA` es una foto: `liquidacion_detalles` no se recalcula.
 
+### Hecho (US-23)
+
+- [x] Modelos `tarifas_honorario`, `liquidaciones` y `liquidacion_detalles` en Prisma + migraciones `agregar_honorarios` y `agregar_checks_honorarios`, con los CHECK del SQL de EA.
+- [x] Subsistema `src/modules/gestion-honorarios/` con `ILogicaHonorarios` (partes `ILogicaTarifasHonorario` y `ILogicaLiquidaciones`), su fachada y los componentes `tarifa-honorario/` y `liquidacion/`. Montado en `app.ts`, `openapi.ts` y `composicion.ts`.
+- [x] `CalculadorHonorarios` implementa `ICalculoHonorarios` en `calculos-del-negocio/calculador-honorarios/`. Una clase suplida cuyo monto redondea a 0,00 no genera líneas: el descuento en 0 violaría `ck_liquidacion_detalles_x3`.
+- [x] **Tarifas** (`TarifaHonorario`): listar, registrar y cerrar la vigencia. Una tarifa nueva cierra la vigente del mismo concepto, profesora y plan. Las programadas que ya usa una liquidación no se borran.
+- [x] **Liquidaciones** (`Liquidacion`):
+  - [x] `POST /api/v1/liquidaciones` (`periodo` `AAAA-MM`): genera o recalcula el `BORRADOR` de cada profesora y devuelve las advertencias (líneas sin tarifa). Responde 200.
+  - [x] `GET /api/v1/liquidaciones?periodo=` (total general y una fila por profesora) y `GET /api/v1/liquidaciones/:id` (detalle por alumno y por clase suplida).
+  - [x] `POST /api/v1/liquidaciones/:id/cerrar` (`BORRADOR → CERRADA`) y `POST /api/v1/liquidaciones/:id/pagar` (`CERRADA → PAGADA`), con un `UPDATE` que revalida el estado. Cada generación, cierre y pago queda en la auditoría.
+  - [x] Rol `PROPIETARIA` + `HONORARIOS_VER_TODOS` para ver y `HONORARIOS_LIQUIDAR` para generar, cerrar y pagar.
+- [x] **Reglas del cálculo**: una línea `ALUMNO_A_CARGO` por inscripción que estuvo `ACTIVA` algún día del mes; las `sin_cargo` y `PREINSCRIPTA` no generan honorarios; cada clase suplida suma a la suplente y resta a la titular; la tarifa es la vigente a la fecha de cada línea y, sin tarifa, la línea no se genera y se advierte; la profesora sin movimientos queda en 0.
+- [x] `ParametrosSistema`: API y validación de las claves nuevas (`HORA_RESUMEN_DIARIO` con formato `HH:MM`).
+- [x] Tests parametrizados del calculador, de los services, de los repositorios y de las rutas, con cobertura del 100 %.
+
+Lo que hay que saber:
+
+- **Bajas que nunca pagaron:** el DER no guarda cuándo se activó una inscripción, así que una `BAJA` puede ser una pre-inscripción sin pago. `Liquidacion` descarta las `BAJA` sin cobros hasta el fin del período (`IInfoCuotas.cobradoEnPeriodo`), y supone que esa función cuenta solo pagos confirmados. Hay que revisarlo con Nicolas y Francisco.
+- **Liquidaciones cerradas:** al regenerar el mes no se recalculan ni se tocan; la respuesta las informa en `sin_recalcular`.
+- **Profesoras:** tienen liquidación las activas y cualquier otra con movimientos en el mes (una dada de baja que dictó o tuvo alumnos).
+- **Períodos futuros:** se rechazan con 400. El mes en curso se puede liquidar, buscando la tarifa al último día del mes.
+
 ### Pendiente (US-23)
 
-- [ ] Modelos `tarifas_honorario`, `liquidaciones` y `liquidacion_detalles` en Prisma + migración, con los CHECK del SQL de EA (`ck_tarifas_honorario_*`, `ck_liquidaciones_estado`, `ck_liquidaciones_x1`, `ck_liquidacion_detalles_*`).
-- [ ] Subsistema `src/modules/gestion-honorarios/` con `ILogicaHonorarios`, su fachada y los componentes `tarifa-honorario/` y `liquidacion/`. Montarlo en `app.ts`, `openapi.ts` y `composicion.ts`.
-- [ ] `CalculadorHonorarios` implementa `ICalculoHonorarios` en `calculos-del-negocio/calculador-honorarios/`.
-- [ ] **Tarifas** (`TarifaHonorario`):
-  - [ ] `GET /api/v1/tarifas-honorario` (filtro por profesora), `POST` y `POST /:id/cerrar` (cierra la vigencia, como `plan_precios`).
-  - [ ] Conceptos `ALUMNO_A_CARGO` (por plan o para todos) y `HORA_SUPLENCIA` (sin plan); `MONTO_FIJO` o `PORCENTAJE` (de lo cobrado de la cuota).
-  - [ ] Una tarifa nueva cierra la vigente del mismo concepto, profesora y plan; sin superposiciones.
-- [ ] **Liquidaciones** (`Liquidacion`):
-  - [ ] `POST /api/v1/liquidaciones` (`periodo` `AAAA-MM`): genera o recalcula el `BORRADOR` de cada profesora para el mes.
-  - [ ] `GET /api/v1/liquidaciones?periodo=` (total general y una fila por profesora) y `GET /api/v1/liquidaciones/:id` (detalle por alumno y por clase suplida).
-  - [ ] `POST /api/v1/liquidaciones/:id/cerrar` (`BORRADOR → CERRADA`) y `POST /api/v1/liquidaciones/:id/pagar` (`CERRADA → PAGADA`). Una cerrada no se recalcula.
-  - [ ] Rol `PROPIETARIA` + `HONORARIOS_VER_TODOS` para ver, `HONORARIOS_LIQUIDAR` para generar, cerrar y pagar.
-- [ ] **Reglas del cálculo**:
-  - [ ] Se cobra por inscripto, asista o no: una línea `ALUMNO_A_CARGO` por inscripción que estuvo `ACTIVA` algún día del mes (incluye a los dados de baja en el mes y a los de clase suelta).
-  - [ ] Las inscripciones `sin_cargo` y las `PREINSCRIPTA` no generan honorarios.
-  - [ ] Cada clase suplida suma `CLASE_SUPLIDA` a la suplente y resta `DESCUENTO_AUSENCIA` (monto negativo) a la titular, por la tarifa `HORA_SUPLENCIA` de la suplente.
-  - [ ] La tarifa que aplica es la vigente a la fecha de cada línea; sin tarifa → la línea no se genera y la respuesta la informa como advertencia.
-  - [ ] Profesora sin alumnos ni suplencias → honorario 0. `monto_total` es la suma de sus detalles.
-- [x] `ParametrosSistema` (pendiente del Sprint 3): `GET /api/v1/parametros`, `PATCH /api/v1/parametros/:clave` (rol `PROPIETARIA` + `PARAMETROS_EDITAR`, permiso nuevo exclusivo), validación por `tipo_dato` y por rango (no negativos) y `GET /api/v1/parametros/datos-bancarios` para alumnos y tutores. Integrado a `dev` el 12/10/2026 (PI-53, PI-54).
-- [ ] Validar las claves nuevas del sprint al editarlas: `HORA_RESUMEN_DIARIO` con formato `HH:MM` y los enteros no negativos.
-- [ ] Tests parametrizados del calculador (alta y baja en el medio del mes, porcentaje, suplencias, sin tarifa), del service (estados de la liquidación) y de integración.
+- [ ] Reflejar en el `.eap` de Enterprise Architect las dependencias de `TarifaHonorario` y `Liquidacion` y regenerar el `.jpg` y el `.pdf` (regla dura 2). `Liquidacion` requiere también `IInfoProfesores`.
+- [ ] Sumar los casos a `PRUEBAS-INTEGRACION.md` (desde PI-71) y su archivo de tests de integración.
+- [ ] Cerrar con el equipo las diferencias que siguen abiertas (ver abajo).
 
 ---
 
@@ -335,9 +339,9 @@ Es el primer componente de `Reportes`, la capa no persistente: no tiene tablas, 
 - [x] **Un aviso por cuota (US-25).** `arquitectura.md` pide resolver la idempotencia con un único `(id_usuario, id_cuota, tipo)` en la base, pero el DER actual no lo tiene. **Decidido** (18/10/2026): agregarlo al DER y a EA antes de la migración e insertar ignorando el conflicto. El resumen diario no tiene `id_cuota`, así que su "uno por día" se controla dentro del mismo bloqueo en que se inserta (`seguridad.md`, regla 7).
 - [x] **`arquitectura.md` desactualizada.** La sección "Generación de notificaciones" habla de `notificaciones_internas`, `fecha_lectura` y `GestionNotificacionesEInsignias`; el DER y la vista dicen `notificaciones` (sin `fecha_lectura`, con `estado_envio`) y `GestionNotificaciones`. **Decidido** (18/10/2026): Nicolas la corrigió en el primer commit de US-25, junto con las menciones de `patrones.md`.
 - [x] **Ejecución de los procesos (US-25, US-26).** El SDD propone `node-cron`. En Render el servidor se duerme sin tráfico, igual que con el cierre de la asistencia. **Decidido** (18/10/2026), según la propuesta: el mismo enfoque de US-21: un intervalo dentro del proceso mientras está despierto, y además se generan al consultar (`/notificaciones/mias`, `/resumen-diario`). Si hace falta puntualidad, un Cron Job de Render que llame a un endpoint interno protegido.
-- [ ] **Exportar el informe de honorarios (US-23).** El SDD propone `pdfkit` y `xlsx`. **Propuesta:** como el comprobante de US-15, el back devuelve los datos y el front arma el PDF o el CSV. Evita dos librerías en el back.
-- [ ] **Profesora que ve sus honorarios (US-23).** La spec dice que la profesora no accede al informe, pero el catálogo ya le da `HONORARIOS_VER_PROPIOS`. **Propuesta:** el informe consolidado es solo de la propietaria; la profesora ve únicamente sus liquidaciones `CERRADA` o `PAGADA`, sin el detalle de las otras.
+- [ ] **Exportar el informe de honorarios (US-23).** El SDD propone `pdfkit` y `xlsx`. **Propuesta:** como el comprobante de US-15, el back devuelve los datos y el front arma el PDF o el CSV. Evita dos librerías en el back. Sigue abierta: hoy el back devuelve los datos y no arma PDF ni CSV.
+- [ ] **Profesora que ve sus honorarios (US-23).** La spec dice que la profesora no accede al informe, pero el catálogo ya le da `HONORARIOS_VER_PROPIOS`. **Propuesta:** el informe consolidado es solo de la propietaria; la profesora ve únicamente sus liquidaciones `CERRADA` o `PAGADA`, sin el detalle de las otras. Hoy solo la propietaria accede; falta decidir si la profesora ve sus liquidaciones `CERRADA` o `PAGADA`.
 - [x] **Ajuste manual del honorario (US-23).** El DER no tiene un concepto para eso (`ALUMNO_A_CARGO`, `CLASE_SUPLIDA`, `DESCUENTO_AUSENCIA`) y no está en los criterios de aceptación. **Decidido** (12/10/2026): fuera del MVP, sin cambiar el DER. Sumarlo pedía un concepto nuevo, cambiar `ck_liquidacion_detalles_x2` y una columna para el motivo. Mientras la liquidación está en `BORRADOR` se corrige la tarifa o la suplencia y se recalcula.
-- [ ] **Alumno que cambia de profesora en el mes (US-23).** **Propuesta:** como cambiar de plan o de profesora genera otra inscripción, cada inscripción se liquida a su profesora; si las dos estuvieron activas en el mes, el alumno cuenta para las dos. Más simple que "donde estuvo más tiempo" y queda trazado en el detalle.
+- [ ] **Alumno que cambia de profesora en el mes (US-23).** **Propuesta:** como cambiar de plan o de profesora genera otra inscripción, cada inscripción se liquida a su profesora; si las dos estuvieron activas en el mes, el alumno cuenta para las dos. Más simple que "donde estuvo más tiempo" y queda trazado en el detalle. Implementado según la propuesta: cada inscripción se liquida a su profesora. A confirmar con el equipo.
 - [x] **Suplencia en un período liquidado (US-24).** `Suplencia` no puede consultar a `Liquidacion` sin un ciclo entre subsistemas (`GestionHonorarios` ya requiere `IInfoClases`). **Decidido** (20/10/2026): la liquidación cerrada es una foto, así que editar una suplencia después no la cambia, y la regla se controla en la fachada de `GestionHonorarios`, sin agregar `IInfoLiquidaciones` al diagrama. Se implementa con las liquidaciones de US-23.
 - [x] **Baja de una suplencia (US-24).** La spec habla de estado `activa` / `cancelada`; el DER no tiene la columna y no está en los criterios de aceptación. **Decidido** (12/10/2026): sin cambiar el DER. Borrado físico de la fila con auditoría, y la clase vuelve a la titular. Una suplencia cancelada no la usa nadie: los honorarios solo miran las vigentes.
