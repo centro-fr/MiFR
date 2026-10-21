@@ -57,23 +57,23 @@ Como usuario registrado (alumno, profesor/a o propietaria), quiero visualizar el
 ## 7. Reglas de negocio
 
 - El ranking se ordena por **porcentaje de asistencia sobre las clases previstas del plan de cada alumno**.
+- En caso de empate en el porcentaje, se desempata por **clases asistidas descendente** y luego por **nombre y apellido alfabéticamente ascendente**.
 - Es la **misma vista para los tres roles** (no hay versión recortada por rol).
 - Se consideran solo los alumnos **activos** (no los dados de baja).
 - El cálculo se hace sobre un período definido (por defecto, el mes actual).
-- Se deben considerar solo las clases efectivamente previstas (según plan y horarios).
-- El ranking es **visible para todos los usuarios registrados**, sin distinción de rol.
+- Se deben considerar solo las clases efectivamente previstas (según plan y horarios): las clases dictadas del período en las que el alumno tiene una marca de asistencia, presente o ausente (el cierre registra como ausente a cada inscripto sin marcar, US-21). Las canceladas y las que siguen abiertas no cuentan.
+- El ranking es **visible para todos los usuarios registrados**: el permiso `REPORTES_RANKING_VER` está en la matriz inicial de propietaria, profesoras, alumnos y tutores (decidido el 20/10/2026). El tutor ve destacada la fila de su menor a cargo.
 - No se muestran datos sensibles (teléfono, email, estado de cuota).
-- El porcentaje se redondea a dos decimales o al entero más cercano (según política).
-- En caso de empate, se ordena alfabéticamente.
+- El porcentaje se redondea a dos decimales.
 - El alumno puede ver su propia posición destacada en el ranking.
-- Los alumnos con menos de X clases previstas en el período no aparecen (evitar distorsiones).
+- Los alumnos con menos de X clases previstas en el período (`RANKING_MINIMO_CLASES = 4` de `parametros_sistema`) no aparecen (para evitar distorsiones).
 
 ## 8. Criterios de aceptación
 
 - [ ] Acceso al ranking desde el panel de un alumno → se muestra correctamente
 - [ ] Acceso al ranking desde el panel de la propietaria → mismo contenido
 - [ ] El ranking se ordena por porcentaje de asistencia descendente
-- [ ] En caso de empate, orden alfabético
+- [ ] En caso de empate en el porcentaje, primero quien asistió a más clases y después orden alfabético por apellido y nombre
 - [ ] El alumno ve su propia posición destacada
 - [ ] Solo se consideran alumnos activos
 - [ ] Solo se consideran alumnos con mínimo de clases previstas
@@ -85,7 +85,7 @@ Como usuario registrado (alumno, profesor/a o propietaria), quiero visualizar el
 - Alumno con 100% de asistencia → aparece primero
 - Alumno con 0% de asistencia → aparece último (si cumple el mínimo)
 - Sin datos suficientes → mostrar mensaje claro
-- Empate en el primer puesto → orden alfabético
+- Empate en el primer puesto → más clases asistidas y después orden alfabético
 - Error de red al cargar el ranking
 - Período sin clases → ranking vacío con mensaje
 
