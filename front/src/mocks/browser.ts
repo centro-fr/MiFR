@@ -4,6 +4,8 @@ import { alumnosHandlers } from "@/mocks/handlers/alumnos";
 import { asistenciaHandlers } from "@/mocks/handlers/asistencia";
 import { authHandlers } from "@/mocks/handlers/auth";
 import { honorariosHandlers } from "@/mocks/handlers/honorarios";
+import { promocionesHandlers } from "@/mocks/handlers/promociones";
+import { suplenciasHandlers } from "@/mocks/handlers/suplencias";
 import { horariosHandlers } from "@/mocks/handlers/horarios";
 import { inscripcionesHandlers } from "@/mocks/handlers/inscripciones";
 import { notificacionesHandlers } from "@/mocks/handlers/notificaciones";
@@ -26,5 +28,7 @@ export const worker = setupWorker(
   ...pagosHandlers,
   ...publicoHandlers,
   ...honorariosHandlers,
+  ...promocionesHandlers,
+  ...suplenciasHandlers,
   ...notificacionesHandlers,
 );

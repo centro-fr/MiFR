@@ -1,10 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Clock, Sparkles, Tag } from "lucide-react";
+import { AlertCircle, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
@@ -14,6 +13,8 @@ import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
+import { PromocionesPanel } from "@/features/promociones/components/promociones-panel";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
 type PestanaPlanes = "PLANES" | "PROMOCIONES";
 
@@ -67,10 +68,12 @@ function Pestanas({
   activa,
   onChange,
   cantidadPlanes,
+  cantidadPromociones,
 }: {
   activa: PestanaPlanes;
   onChange: (tab: PestanaPlanes) => void;
   cantidadPlanes: number;
+  cantidadPromociones?: number;
 }) {
   return (
     <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 pt-1">
@@ -119,38 +122,12 @@ function Pestanas({
               : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
           )}
         >
-          3
+          {cantidadPromociones ?? "—"}
         </span>
         {activa === "PROMOCIONES" && (
           <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
         )}
       </button>
-    </div>
-  );
-}
-
-function PromocionesEnConstruccion() {
-  return (
-    <div className="flex flex-col items-center justify-center p-12 sm:p-16 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-center max-w-xl mx-auto my-6">
-      <div className="size-16 rounded-3xl bg-pink-50 dark:bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-xs">
-        <Sparkles className="size-8 text-primary" />
-      </div>
-      <Badge
-        variant="outline"
-        className="rounded-full border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold text-primary dark:border-primary/40 dark:bg-primary/20 dark:text-pink-300 mb-3"
-      >
-        En construcción
-      </Badge>
-      <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-        Módulo de Promociones
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-        Estamos desarrollando el módulo para gestionar promociones por tiempo limitado, descuentos por grupo familiar y convenios especiales.
-      </p>
-      <div className="mt-6 flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500">
-        <Clock className="size-3.5" />
-        <span>Próximamente disponible en MiFR</span>
-      </div>
     </div>
   );
 }
@@ -171,6 +148,7 @@ function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: str
 // US-11: Catálogo de planes y promociones comerciales
 export function PlanesPage() {
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
+  const promociones = usePromociones();
   const [pestana, setPestana] = useState<PestanaPlanes>("PLANES");
   const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
   const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
@@ -187,10 +165,11 @@ export function PlanesPage() {
           activa={pestana}
           onChange={setPestana}
           cantidadPlanes={planesVigentes.length}
+          cantidadPromociones={promociones.data?.length}
         />
 
         {pestana === "PROMOCIONES" ? (
-          <PromocionesEnConstruccion />
+          <PromocionesPanel planes={planesVigentes} />
         ) : isPending ? (
           <ListaPlanesCargando />
         ) : isError ? (

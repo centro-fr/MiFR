@@ -14,6 +14,13 @@ vi.mock("@/components/guards/can", () => ({
   Can: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
+vi.mock("@/features/promociones/hooks/use-promociones", () => ({
+  usePromociones: () => ({ data: [], isPending: false, isError: false, error: null, refetch: vi.fn() }),
+  useCrearPromocion: () => ({ isPending: false, isError: false, error: null, reset: vi.fn(), mutate: vi.fn() }),
+  useActualizarPromocion: () => ({ isPending: false, isError: false, error: null, reset: vi.fn(), mutate: vi.fn() }),
+  useDesactivarPromocion: () => ({ isPending: false, isError: false, error: null, mutate: vi.fn() }),
+}));
+
 const mockPlanes: Plan[] = [
   {
     id: "1",
@@ -129,15 +136,14 @@ describe("PlanesPage", () => {
     expect(screen.getByText("3 clases por semana")).toBeInTheDocument();
   });
 
-  it("muestra el estado en construcción al seleccionar la pestaña Promociones", () => {
+  it("muestra el estado vacío de promociones al seleccionar la pestaña Promociones", () => {
     renderPlanesPage();
 
     const btnPromociones = screen.getByRole("button", { name: /^Promociones/i });
     fireEvent.click(btnPromociones);
 
-    expect(screen.getByText("Módulo de Promociones")).toBeInTheDocument();
-    expect(screen.getByText("En construcción")).toBeInTheDocument();
-    expect(screen.getByText(/Estamos desarrollando el módulo para gestionar promociones/i)).toBeInTheDocument();
+    expect(screen.getByText("Todavía no hay promociones")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ Nueva promoción" })).toBeInTheDocument();
   });
 
   it("abre el modal centrado de Cambiar precio al presionar el botón", async () => {
