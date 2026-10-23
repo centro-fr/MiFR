@@ -214,8 +214,8 @@ export const router = createBrowserRouter([
           {
             path: "suplencias",
             lazy: paginaPerezosa(
-              () => import("@/features/honorarios/pages/suplencias-en-construccion-page"),
-              "SuplenciasEnConstruccionPage",
+              () => import("@/features/honorarios/pages/suplencias-page"),
+              "SuplenciasPage",
             ),
           },
         ],
