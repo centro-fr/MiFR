@@ -158,12 +158,17 @@ const tutorSchema = z.union([
     .strict(),
 ]);
 
+const contactoDeEmergencia = {
+  cont_emerg_nombre: z.string().trim().min(1, "El contacto de emergencia es obligatorio").max(80),
+  cont_emerg_telefono: z.string().trim().min(7, "El teléfono de emergencia debe tener entre 7 y 15 dígitos").max(20),
+};
+
 const datosDelAlumno = {
   dni: z.string().regex(/^\d{7,8}$/).optional(),
   telefono: z.string().nullable().optional(),
   direccion: z.string().nullable().optional(),
-  cont_emerg_nombre: z.string().nullable().optional(),
-  cont_emerg_telefono: z.string().nullable().optional(),
+  cont_emerg_nombre: contactoDeEmergencia.cont_emerg_nombre.optional(),
+  cont_emerg_telefono: contactoDeEmergencia.cont_emerg_telefono.optional(),
   fecha_apto_medico: z.string().date().nullable().optional(),
   observaciones: z.string().max(500).nullable().optional(),
 };
@@ -174,6 +179,8 @@ const crearAlumnoSchema = z.object({
   email: z.string().email().optional(),
   fecha_nacimiento: z.string().date(),
   ...datosDelAlumno,
+  cont_emerg_nombre: contactoDeEmergencia.cont_emerg_nombre,
+  cont_emerg_telefono: contactoDeEmergencia.cont_emerg_telefono,
   apto_medico: z.boolean().default(false),
   tutor: tutorSchema.optional(),
 });
@@ -273,8 +280,8 @@ function crearAlumno(datos: z.infer<typeof crearAlumnoSchema>, idResponsable: nu
     id_alumno: siguienteId(db.alumnos.map((a) => a.id_alumno)),
     id_usuario: usuario.id_usuario,
     id_usuario_responsable: idResponsable,
-    cont_emerg_nombre: datos.cont_emerg_nombre ?? null,
-    cont_emerg_telefono: datos.cont_emerg_telefono ?? null,
+    cont_emerg_nombre: datos.cont_emerg_nombre ?? "Contacto de Emergencia",
+    cont_emerg_telefono: datos.cont_emerg_telefono ?? "3794 401122",
     apto_medico: datos.apto_medico,
     fecha_apto_medico: fechaDate(datos.fecha_apto_medico) ?? null,
     observaciones: datos.observaciones ?? null,

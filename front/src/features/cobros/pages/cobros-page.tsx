@@ -25,6 +25,8 @@ import {
   type DatosInscripcionCobro,
 } from "@/features/cobros/components/modal-registrar-cobro";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
+import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectivo-a-rendir";
+import { useEfectivoPendiente } from "@/features/cobros/hooks/use-rendiciones";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { ModalDetalleAprobacion } from "@/features/transferencias/components/modal-detalle-aprobacion";
@@ -124,6 +126,9 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     }
     return [];
   }, [transferenciasData]);
+
+  // Consulta de efectivo a rendir pendiente (solo propietaria)
+  const { data: efectivoData } = useEfectivoPendiente(undefined, { enabled: !soloACargo });
 
   // Consulta de alumnos activos con su inscripción
   const {
@@ -308,23 +313,23 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
       {!soloACargo && (
         <nav
           aria-label="Secciones de cobros y cuotas"
-          className="flex items-center gap-6 border-b border-slate-200 text-sm font-bold text-slate-500 dark:border-slate-800 dark:text-slate-400"
+          className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pt-1 scrollbar-none"
         >
           {/* Cuotas */}
           <button
             type="button"
             onClick={() => cambiarTab("cuotas")}
             className={cn(
-              "relative pb-3 font-bold transition-colors inline-flex items-center gap-2",
+              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
               tabActiva === "cuotas"
-                ? "text-slate-900 border-b-2 border-primary dark:text-white"
-                : "hover:text-slate-800 dark:hover:text-slate-200"
+                ? "border-primary text-slate-900 dark:text-white"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <span>Cuotas</span>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black",
+                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
                 tabActiva === "cuotas"
                   ? "bg-primary text-white"
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -339,16 +344,16 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
             type="button"
             onClick={() => cambiarTab("transferencias")}
             className={cn(
-              "relative pb-3 font-bold transition-colors inline-flex items-center gap-2",
+              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
               tabActiva === "transferencias"
-                ? "text-slate-900 border-b-2 border-primary dark:text-white"
-                : "hover:text-slate-800 dark:hover:text-slate-200"
+                ? "border-primary text-slate-900 dark:text-white"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <span>Transferencias por verificar</span>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black",
+                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
                 tabActiva === "transferencias"
                   ? "bg-primary text-white"
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -363,22 +368,22 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
             type="button"
             onClick={() => cambiarTab("efectivo")}
             className={cn(
-              "relative pb-3 font-bold transition-colors inline-flex items-center gap-2",
+              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
               tabActiva === "efectivo"
-                ? "text-slate-900 border-b-2 border-primary dark:text-white"
-                : "hover:text-slate-800 dark:hover:text-slate-200"
+                ? "border-primary text-slate-900 dark:text-white"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             )}
           >
             <span>Efectivo a rendir</span>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black",
+                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
                 tabActiva === "efectivo"
                   ? "bg-primary text-white"
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
               )}
             >
-              2
+              {efectivoData?.cantidad ?? 0}
             </span>
           </button>
         </nav>
@@ -661,7 +666,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
       {/* TAB 2: TRANSFERENCIAS POR VERIFICAR */}
       {tabActiva === "transferencias" && (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full min-w-0 max-w-full">
           {/* Banner celeste de aviso */}
           <div className="flex items-center gap-3 rounded-2xl border border-sky-200/80 bg-sky-50/60 p-4 text-xs font-semibold text-sky-900 dark:border-sky-800/40 dark:bg-sky-950/20 dark:text-sky-200">
             <Info className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
@@ -688,138 +693,216 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
               </p>
             </Card>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                    <tr>
-                      <th scope="col" className="px-6 py-3.5">
-                        Alumno
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Fecha
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Titular
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Transfirió
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Informada
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-right">
-                        <span className="sr-only">Acciones</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {transferenciasPendientes.map((transferencia) => {
-                      const tramo = tramoDePlazo(transferencia);
-                      const fechaFormateada = formatearFechaHoraCorta(
-                        transferencia.realizadaEl
-                      );
-                      const textoPlazo =
-                        tramo === "vencida"
-                          ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
-                          : `Hace ${transferencia.horasDesdeLaCarga} h`;
+            <>
+              {/* Desktop Table */}
+              <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                      <tr>
+                        <th scope="col" className="px-6 py-3.5">
+                          Alumno
+                        </th>
+                        <th scope="col" className="px-4 py-3.5">
+                          Fecha
+                        </th>
+                        <th scope="col" className="px-4 py-3.5">
+                          Titular
+                        </th>
+                        <th scope="col" className="px-4 py-3.5">
+                          Transfirió
+                        </th>
+                        <th scope="col" className="px-4 py-3.5">
+                          Informada
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-right">
+                          <span className="sr-only">Acciones</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {transferenciasPendientes.map((transferencia) => {
+                        const tramo = tramoDePlazo(transferencia);
+                        const fechaFormateada = formatearFechaHoraCorta(
+                          transferencia.realizadaEl
+                        );
+                        const textoPlazo =
+                          tramo === "vencida"
+                            ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
+                            : `Hace ${transferencia.horasDesdeLaCarga} h`;
 
-                      return (
-                        <tr
-                          key={transferencia.id}
-                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
-                        >
-                          {/* Alumno */}
-                          <td className="px-6 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                                {inicialesDe(
-                                  transferencia.alumno.nombre,
-                                  transferencia.alumno.apellido
+                        return (
+                          <tr
+                            key={transferencia.id}
+                            className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                          >
+                            {/* Alumno */}
+                            <td className="px-6 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                                  {inicialesDe(
+                                    transferencia.alumno.nombre,
+                                    transferencia.alumno.apellido
+                                  )}
+                                </span>
+                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                  {transferencia.alumno.nombre} {transferencia.alumno.apellido}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Fecha */}
+                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                              {fechaFormateada}
+                            </td>
+
+                            {/* Titular */}
+                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                              {transferencia.titularCuenta || "—"}
+                            </td>
+
+                            {/* Transfirió */}
+                            <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                              {formatearPrecio(transferencia.monto)}
+                            </td>
+
+                            {/* Informada */}
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
+                                  tramo === "vencida"
+                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
                                 )}
-                              </span>
-                              <span className="font-bold text-sm text-slate-900 dark:text-white">
-                                {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Fecha */}
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                            {fechaFormateada}
-                          </td>
-
-                          {/* Titular */}
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                            {transferencia.titularCuenta || "—"}
-                          </td>
-
-                          {/* Transfirió */}
-                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                            {formatearPrecio(transferencia.monto)}
-                          </td>
-
-                          {/* Informada */}
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
-                                tramo === "vencida"
-                                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                              )}
-                            >
-                              <Clock className="size-3.5" />
-                              <span>{textoPlazo}</span>
-                            </span>
-                          </td>
-
-                          {/* Acciones: Ver detalle y Aprobar */}
-                          <td className="px-6 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                               >
-                                Ver detalle
-                              </Button>
-                              <Button
-                                type="button"
-                                onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                className="h-8 rounded-lg bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
-                              >
-                                Aprobar
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                <Clock className="size-3.5" />
+                                <span>{textoPlazo}</span>
+                              </span>
+                            </td>
+
+                            {/* Acciones: Ver detalle y Aprobar */}
+                            <td className="px-6 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setTransferenciaSeleccionada(transferencia)}
+                                  className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                >
+                                  Ver detalle
+                                </Button>
+                                <Button
+                                  type="button"
+                                  onClick={() => setTransferenciaSeleccionada(transferencia)}
+                                  className="h-8 rounded-lg bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
+                                >
+                                  Aprobar
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+
+              {/* Mobile Cards */}
+              <div className="grid w-full min-w-0 gap-3 xl:hidden">
+                {transferenciasPendientes.map((transferencia) => {
+                  const tramo = tramoDePlazo(transferencia);
+                  const fechaFormateada = formatearFechaHoraCorta(
+                    transferencia.realizadaEl
+                  );
+                  const textoPlazo =
+                    tramo === "vencida"
+                      ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
+                      : `Hace ${transferencia.horasDesdeLaCarga} h`;
+                  const nombreCompleto = `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}`;
+
+                  return (
+                    <Card
+                      key={transferencia.id}
+                      className="w-full min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 text-slate-900 shadow-2xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <div className="flex items-center justify-between gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                            {inicialesDe(
+                              transferencia.alumno.nombre,
+                              transferencia.alumno.apellido
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                              {nombreCompleto}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {fechaFormateada}
+                              {transferencia.titularCuenta ? ` · Titular: ${transferencia.titularCuenta}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs",
+                            tramo === "vencida"
+                              ? "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300"
+                              : "border-amber-200/60 bg-amber-50 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
+                          )}
+                        >
+                          <Clock className="size-3.5 shrink-0" />
+                          <span>{textoPlazo}</span>
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs dark:border-slate-800 min-w-0">
+                        <div className="min-w-0 flex-1 truncate pr-2">
+                          <span className="text-slate-500 dark:text-slate-400">Titular de cuenta: </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {transferencia.titularCuenta || "—"}
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-slate-900 dark:text-white shrink-0">
+                          {formatearPrecio(transferencia.monto)}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 pt-2 w-full min-w-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTransferenciaSeleccionada(transferencia)}
+                          aria-label={`Ver detalle de transferencia de ${nombreCompleto}`}
+                          className="w-full min-w-0 h-9 rounded-xl border-slate-200 text-xs font-semibold text-slate-800 hover:text-primary dark:border-slate-700 dark:text-slate-200 truncate"
+                        >
+                          Ver detalle
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setTransferenciaSeleccionada(transferencia)}
+                          aria-label={`Aprobar transferencia de ${nombreCompleto}`}
+                          className="w-full min-w-0 h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary-dark shadow-2xs truncate"
+                        >
+                          Aprobar
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
 
-      {/* TAB 3: EFECTIVO A RENDIR (EN CONSTRUCCIÓN) */}
-      {tabActiva === "efectivo" && (
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-14 text-center shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/60 dark:text-pink-300">
-            <Banknote className="size-7" />
-          </div>
-          <h2 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
-            En construcción
-          </h2>
-          <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Esta sección estará disponible en el próximo sprint. Desde acá vas a poder supervisar
-            el efectivo recaudado por las profesoras y registrar sus rendiciones.
-          </p>
-        </div>
-      )}
+      {/* TAB 3: EFECTIVO A RENDIR */}
+      {tabActiva === "efectivo" && <PanelEfectivoARendir />}
 
       {/* Modal de cobro de cuota */}
       {alumnoSeleccionado && (

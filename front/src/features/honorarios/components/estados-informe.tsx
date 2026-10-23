@@ -36,7 +36,7 @@ function mensajeDeError(error: unknown): string {
 
 export function InformeConError({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
+    <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-12 text-center dark:border-slate-800">
       <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensajeDeError(error)}
@@ -57,11 +57,11 @@ interface PropsSinCalcular {
 /** El back solo tiene liquidaciones de un mes después de calcularlo (POST /liquidaciones). */
 export function InformeSinCalcular({ periodo, calculando, onCalcular }: PropsSinCalcular) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
+    <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
       <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
         <Calculator aria-hidden="true" className="size-7" />
       </span>
-      <h2 className="text-lg font-extrabold text-dark dark:text-white">Todavía no se calcularon los honorarios de {etiquetaPeriodo(periodo)}</h2>
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Todavía no se calcularon los honorarios de {etiquetaPeriodo(periodo)}</h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
         {esPeriodoEnCurso(periodo)
           ? "El mes está en curso: podés calcularlo ahora y volver a hacerlo hasta cerrar cada liquidación."

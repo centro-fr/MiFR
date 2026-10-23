@@ -17,8 +17,8 @@ export interface AlumnoMock {
   id_alumno: number;
   id_usuario: number;
   id_usuario_responsable: number | null;
-  cont_emerg_nombre: string | null;
-  cont_emerg_telefono: string | null;
+  cont_emerg_nombre: string;
+  cont_emerg_telefono: string;
   apto_medico: boolean;
   fecha_apto_medico: string | null;
   observaciones: string | null;
@@ -63,6 +63,12 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
 
   // La tutora con sesión de semilla.ts (mismo email): así el perfil Tutor del login ve los avisos de su menor.
   persona(126, "Mariana", "López", { dni: "30876543", email: "mariana.lopez@example.com", telefono: "11 4455-1226", fecha_nacimiento: "1982-09-02" }, "ACTIVO"),
+
+  // Alumno menor Mateo Fernández (127) y su tutor Carlos Fernández (128)
+  persona(127, "Mateo", "Fernández", { dni: "52444555", fecha_nacimiento: "2013-09-14", direccion: "Av. San Juan 740" }, "ACTIVO"),
+  persona(128, "Carlos", "Fernández", { dni: "31888999", email: "carlos.fernandez@example.com", telefono: "+5491133334444", fecha_nacimiento: "1983-05-20", direccion: "Av. San Juan 740" }, "ACTIVO"),
+  // Alumno Lucas Benítez (129)
+  persona(129, "Lucas", "Benítez", { dni: "39777888", email: "lucas.benitez@example.com", telefono: "+5491177778888", fecha_nacimiento: "1997-11-23", direccion: "Bv. Chacabuco 320" }, "ACTIVO"),
 ];
 
 type DatosPersona = Partial<Omit<UsuarioPersonaMock, "id_usuario" | "nombre" | "apellido" | "estado">> & { fecha_nacimiento: string };
@@ -91,8 +97,8 @@ function alumno(id_alumno: number, id_usuario: number, datos: DatosAlumno = {}):
     id_alumno,
     id_usuario,
     id_usuario_responsable: null,
-    cont_emerg_nombre: null,
-    cont_emerg_telefono: null,
+    cont_emerg_nombre: "Contacto de Emergencia",
+    cont_emerg_telefono: "3794 401122",
     apto_medico: false,
     fecha_apto_medico: null,
     observaciones: null,
@@ -119,7 +125,13 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
     cont_emerg_telefono: "351 555-6677",
     observaciones: "Asiste por la tarde.",
   }),
-  alumno(3, 104, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-05T00:00:00.000Z" }),
+  alumno(3, 104, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-05T00:00:00.000Z",
+    cont_emerg_nombre: "Marcos Herrera",
+    cont_emerg_telefono: "351 666-9900",
+  }),
   alumno(4, 105, {
     estado: "ACTIVO",
     apto_medico: true,
@@ -140,23 +152,130 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
   }),
 
   // 5 Alumnos con Cuota Vencida
-  alumno(11, 111, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(12, 112, { estado: "ACTIVO", id_usuario_responsable: 126, apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(13, 113, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(14, 114, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(15, 115, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(11, 111, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Carlos Navarro",
+    cont_emerg_telefono: "11 4455-9001",
+  }),
+  alumno(12, 112, {
+    estado: "ACTIVO",
+    id_usuario_responsable: 126,
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Mariana López",
+    cont_emerg_telefono: "11 4455-1226",
+  }),
+  alumno(13, 113, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Silvia Morales",
+    cont_emerg_telefono: "11 4455-9003",
+  }),
+  alumno(14, 114, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Daniel Castro",
+    cont_emerg_telefono: "11 4455-9004",
+  }),
+  alumno(15, 115, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Lorena Sosa",
+    cont_emerg_telefono: "11 4455-9005",
+  }),
 
   // 5 Alumnos con Cuota Por Vencer
-  alumno(16, 116, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(17, 117, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(18, 118, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(19, 119, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(20, 120, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(16, 116, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Claudio Herrera",
+    cont_emerg_telefono: "11 4455-9006",
+  }),
+  alumno(17, 117, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Andrea Domínguez",
+    cont_emerg_telefono: "11 4455-9007",
+  }),
+  alumno(18, 118, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Patricia Giménez",
+    cont_emerg_telefono: "11 4455-9008",
+  }),
+  alumno(19, 119, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Gustavo Ortiz",
+    cont_emerg_telefono: "11 4455-9009",
+  }),
+  alumno(20, 120, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Marta Romero",
+    cont_emerg_telefono: "11 4455-9010",
+  }),
 
   // 5 Alumnos con Cuota Al Día
-  alumno(21, 121, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(22, 122, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(23, 123, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(24, 124, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
-  alumno(25, 125, { estado: "ACTIVO", apto_medico: true, fecha_apto_medico: "2026-01-01T00:00:00.000Z" }),
+  alumno(21, 121, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Esteban Medina",
+    cont_emerg_telefono: "11 4455-9011",
+  }),
+  alumno(22, 122, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Valeria Ríos",
+    cont_emerg_telefono: "11 4455-9012",
+  }),
+  alumno(23, 123, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Beatriz Vega",
+    cont_emerg_telefono: "11 4455-9013",
+  }),
+  alumno(24, 124, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Horacio Silva",
+    cont_emerg_telefono: "11 4455-9014",
+  }),
+  alumno(25, 125, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-01-01T00:00:00.000Z",
+    cont_emerg_nombre: "Rosa Fernández",
+    cont_emerg_telefono: "11 4455-9015",
+  }),
+  // Menor con tutor a cargo (US-22 / US-25)
+  alumno(26, 127, {
+    estado: "ACTIVO",
+    id_usuario_responsable: 128,
+    apto_medico: true,
+    fecha_apto_medico: "2026-02-15T00:00:00.000Z",
+    cont_emerg_nombre: "Carlos Fernández",
+    cont_emerg_telefono: "+5491133334444",
+  }),
+  alumno(27, 129, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-03-01T00:00:00.000Z",
+    cont_emerg_nombre: "Mirta Benítez",
+    cont_emerg_telefono: "+5491177778889",
+  }),
 ];

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
@@ -152,7 +152,6 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
           </label>
           <label className={OPCION}>
             <input type="radio" value="MONTO_FIJO" {...formulario.register("tipoValor")} className="size-4 accent-primary" />
-            Monto fijo por alumno, asista o no
           </label>
           <MensajeError id="tarifa-tipo-error" mensaje={errores.tipoValor?.message} />
         </fieldset>
@@ -263,17 +262,29 @@ interface PropsDialogo {
 export function DialogoTarifa({ liquidacion, periodo, onClose }: PropsDialogo) {
   return (
     <Dialog open={liquidacion !== null} onOpenChange={(abierto) => !abierto && onClose()}>
-      <DialogContent bottomSheetOnMobile className="gap-0 border-border bg-white p-0 sm:max-w-lg dark:bg-surface-low">
-        <DialogHeader className="border-b border-border px-5 py-4 pr-12 text-left sm:px-6">
-          <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
-          <DialogTitle className="text-lg font-extrabold text-slate-900 dark:text-white">
-            Tarifa de {liquidacion ? nombreCompleto(liquidacion.profesora) : ""}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-            Lo que cobra por cada alumno a cargo y por cada hora que cubre como suplente.
-          </DialogDescription>
+      <DialogContent hideClose className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-0 shadow-2xl border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-surface-low">
+        <DialogHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
+          <div className="min-w-0 pr-2">
+            <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
+            <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              Tarifa de {liquidacion ? nombreCompleto(liquidacion.profesora) : ""}
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+              Lo que cobra por cada alumno a cargo y por cada hora que cubre como suplente.
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Cerrar diálogo de tarifa"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+          >
+            <X className="size-4" />
+          </Button>
         </DialogHeader>
-        <div className="max-h-[calc(92dvh-96px)] overflow-y-auto p-5 sm:p-6">
+        <div className="max-h-[calc(92vh-100px)] overflow-y-auto p-5 sm:p-6">
           {liquidacion && <ContenidoDialogo liquidacion={liquidacion} periodo={periodo} onClose={onClose} />}
         </div>
       </DialogContent>

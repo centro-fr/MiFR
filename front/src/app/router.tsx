@@ -58,8 +58,6 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "ausentes", seccion: "Ausentes" },
-  { path: "pagos", seccion: "Cobros y Cuotas" },
   { path: "reportes", seccion: "Reportes" },
   // Menú de la profesora (MENUS.md).
   { path: "mis-clases", seccion: "Mis clases" },
@@ -165,6 +163,14 @@ export const router = createBrowserRouter([
         // Redirección de la ruta histórica de pendientes de alta hacia Cobros y Cuotas
         path: "alumnos/pendientes",
         element: <Navigate to="/app/pagos?tab=transferencias" replace />,
+      },
+      {
+        // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
+        path: "ausentes",
+        element: guardiaDeSeccion("ausentes", "REPORTES_COBRANZA_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/inactivos/pages/ausentes-page"), "AusentesPage") },
+        ],
       },
       {
         // US-11: planes vigentes. Verlos pide PLANES_VER; crearlos y editarlos, además, PLANES_EDITAR.

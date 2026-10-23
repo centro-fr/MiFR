@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Plus, Users } from "lucide-react";
+import { AlertCircle, Loader2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { HORARIOS_QUERY_KEY, PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
@@ -97,44 +96,120 @@ export function SuplenciasPage() {
     );
   };
 
-  if (cargando) {
-    return <OwnerLayout><ContenidoBase><div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold"><Loader2 className="size-5 animate-spin text-primary" />Cargando suplencias...</div></ContenidoBase></OwnerLayout>;
-  }
-
-  if (error) {
-    return <OwnerLayout><ContenidoBase><Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-12 text-center dark:border-slate-800"><AlertCircle className="size-8 text-rose-600" /><p role="alert" className="text-sm font-semibold">{mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}</p><Button type="button" onClick={() => { void consultaSuplencias.refetch(); void consultaHorarios.refetch(); void consultaProfesoras.refetch(); }} className="min-h-11 rounded-xl font-bold">Reintentar</Button></Card></ContenidoBase></OwnerLayout>;
-  }
-
   return (
     <OwnerLayout>
-      <ContenidoBase>
+      <div className="space-y-6 min-w-0">
         <EncabezadoHonorarios
+          titulo="Honorarios"
+          descripcion="Registro de suplencias docentes para el cálculo y liquidación de honorarios."
           acciones={
-            <Button type="button" onClick={abrirNueva} className="min-h-11 rounded-xl bg-primary font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"><Plus className="mr-2 size-4" />Nueva suplencia</Button>
+            <Button
+              type="button"
+              onClick={abrirNueva}
+              className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
+            >
+              + Nueva suplencia
+            </Button>
           }
         />
-        <PestanasHonorarios />
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900">
-            <Users className="size-4 text-muted-foreground" />
-            <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
-              <SelectTrigger aria-label="Filtrar por profesora" className="h-auto min-w-[150px] border-0 bg-transparent p-0 text-sm font-bold shadow-none focus:ring-0"><SelectValue placeholder="Todas las profesoras" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODAS">Todas las profesoras</SelectItem>
-                {profesoras.map((profesora) => <SelectItem key={profesora.id} value={profesora.id}>{profesora.nombre} {profesora.apellido}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        <PestanasHonorarios cantidadSuplencias={suplencias.length} />
+
+        {cargando ? (
+          <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
+            Cargando suplencias...
           </div>
-        </div>
-        {suplencias.length === 0 ? (
-          <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
-            <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70"><Users className="size-7" /></span>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">{filtroProfesora === "TODAS" ? "Todavía no hay suplencias" : "No hay suplencias para esta profesora"}</h2>
-            <p className="max-w-md text-sm text-muted-foreground">Registrá quién cubrió una clase para que el informe de honorarios refleje correctamente la suplencia.</p>
-            {filtroProfesora === "TODAS" && <Button type="button" onClick={abrirNueva} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">+ Nueva suplencia</Button>}
+        ) : error ? (
+          <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 dark:border-slate-800 px-5 py-12 text-center">
+            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
+            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
+            </p>
+            <Button
+              type="button"
+              onClick={() => {
+                void consultaSuplencias.refetch();
+                void consultaHorarios.refetch();
+                void consultaProfesoras.refetch();
+              }}
+              className="min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark transition-transform active:scale-95"
+            >
+              Reintentar
+            </Button>
           </Card>
         ) : (
-          <ListaSuplencias suplencias={suplencias} onEditar={abrirEdicion} onEliminar={setSuplenciaAEliminar} />
+          <>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+                <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Profesora:
+                </span>
+                <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
+                  <SelectTrigger
+                    aria-label="Filtrar por profesora"
+                    className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[140px]"
+                  >
+                    <SelectValue placeholder="Todas las profesoras" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TODAS">Todas las profesoras</SelectItem>
+                    {profesoras.map((profesora) => (
+                      <SelectItem key={profesora.id} value={profesora.id}>
+                        {profesora.nombre} {profesora.apellido}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filtroProfesora !== "TODAS" && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setFiltroProfesora("TODAS")}
+                  className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+
+            {suplencias.length === 0 ? (
+              <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 dark:border-slate-800 px-5 py-14 text-center">
+                <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
+                  <Users className="size-7" />
+                </span>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  {filtroProfesora === "TODAS" ? "Todavía no hay suplencias" : "No hay suplencias para esta profesora"}
+                </h2>
+                <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                  {filtroProfesora === "TODAS"
+                    ? "Registrá quién cubrió una clase para que el informe de honorarios refleje correctamente la suplencia."
+                    : "No se encontraron suplencias registradas con la profesora seleccionada."}
+                </p>
+                {filtroProfesora === "TODAS" ? (
+                  <Button
+                    type="button"
+                    onClick={abrirNueva}
+                    className="min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark transition-transform active:scale-95 shadow-md shadow-primary/20"
+                  >
+                    + Nueva suplencia
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFiltroProfesora("TODAS")}
+                    className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 px-5"
+                  >
+                    Ver todas las suplencias
+                  </Button>
+                )}
+              </Card>
+            ) : (
+              <ListaSuplencias suplencias={suplencias} onEditar={abrirEdicion} onEliminar={setSuplenciaAEliminar} />
+            )}
+          </>
         )}
 
         <SuplenciaDialog
@@ -156,20 +231,55 @@ export function SuplenciasPage() {
         />
 
         <Dialog open={suplenciaAEliminar !== null} onOpenChange={(open) => !open && setSuplenciaAEliminar(null)}>
-          <DialogContent className="rounded-3xl sm:max-w-md">
-            <DialogHeader><DialogTitle className="font-black">¿Eliminar suplencia?</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">La clase volverá a quedar a cargo de la titular y ya no afectará los honorarios. ¿Confirmás?</p>
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={() => setSuplenciaAEliminar(null)} className="rounded-xl font-bold">Cancelar</Button>
-              <Button type="button" disabled={eliminar.isPending} onClick={() => { if (!suplenciaAEliminar) return; eliminar.mutate(suplenciaAEliminar.idClase, { onSuccess: () => { setSuplenciaAEliminar(null); toast.success("Suplencia eliminada"); } }); }} className="rounded-xl bg-rose-600 font-bold text-white hover:bg-rose-700">{eliminar.isPending ? "Eliminando..." : "Eliminar"}</Button>
-            </DialogFooter>
+          <DialogContent hideClose className="w-[96vw] sm:w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border-slate-200 dark:border-slate-800">
+            <DialogHeader className="flex flex-row items-center justify-between pb-2 text-left">
+              <DialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                ¿Eliminar suplencia?
+              </DialogTitle>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSuplenciaAEliminar(null)}
+                aria-label="Cerrar modal"
+                className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="size-4" />
+              </Button>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              La clase volverá a quedar a cargo de la titular y ya no afectará los honorarios. ¿Confirmás?
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSuplenciaAEliminar(null)}
+                disabled={eliminar.isPending}
+                className="h-11 px-6 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={eliminar.isPending}
+                onClick={() => {
+                  if (!suplenciaAEliminar) return;
+                  eliminar.mutate(suplenciaAEliminar.idClase, {
+                    onSuccess: () => {
+                      setSuplenciaAEliminar(null);
+                      toast.success("Suplencia eliminada");
+                    },
+                  });
+                }}
+                className="h-11 px-6 rounded-xl bg-rose-600 font-bold text-sm text-white hover:bg-rose-700 transition-colors shadow-xs"
+              >
+                {eliminar.isPending ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
-      </ContenidoBase>
+      </div>
     </OwnerLayout>
   );
-}
-
-function ContenidoBase({ children }: { children: React.ReactNode }) {
-  return <div className="min-w-0 space-y-6"><nav aria-label="Ruta de navegación" className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400"><Link to="/app" className="hover:text-slate-800 dark:hover:text-slate-200">Inicio</Link><span>/</span><span>Honorarios</span><span>/</span><span className="font-bold text-slate-800 dark:text-slate-200">Suplencias</span></nav>{children}</div>;
 }

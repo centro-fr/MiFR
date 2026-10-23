@@ -89,7 +89,7 @@ export function HonorariosPage() {
 
   return (
     <OwnerLayout>
-      <div className="mx-auto w-full max-w-7xl space-y-6">
+      <div className="space-y-6 min-w-0">
         <EncabezadoHonorarios
           acciones={
             <>

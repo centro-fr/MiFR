@@ -88,7 +88,10 @@ export function ModalDetalleAprobacion({
 
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
-      <DialogContent className="max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:rounded-3xl dark:border-slate-800 dark:bg-slate-900">
+      <DialogContent
+        hideClose
+        className="w-[96vw] sm:w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[92vh] overflow-y-auto"
+      >
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">

@@ -64,10 +64,12 @@ export function ConfirmarCambioEstado({ cambio, periodo, onClose }: Props) {
 
   return (
     <AlertDialog open={cambio !== null} onOpenChange={(abierto) => !abierto && !mutacion.isPending && onClose()}>
-      <AlertDialogContent className="border-border bg-white dark:bg-surface-low">
+      <AlertDialogContent className="w-[96vw] sm:w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-lg font-extrabold text-slate-900 dark:text-white">{textos.titulo}</AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-300">
+          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+            {textos.titulo}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-300 mt-2">
             {cambio && (
               <>
                 <strong className="text-slate-900 dark:text-white">{nombreCompleto(cambio.liquidacion.profesora)}</strong> ·{" "}
@@ -77,8 +79,8 @@ export function ConfirmarCambioEstado({ cambio, periodo, onClose }: Props) {
             {textos.explicacion}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={mutacion.isPending} className="min-h-11 rounded-xl font-bold">
+        <AlertDialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800 gap-2 sm:gap-3">
+          <AlertDialogCancel disabled={mutacion.isPending} className="h-11 px-6 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800">
             Cancelar
           </AlertDialogCancel>
           {/* Botón común y no AlertDialogAction: esa acción cierra el diálogo antes de saber si salió bien. */}
@@ -86,9 +88,9 @@ export function ConfirmarCambioEstado({ cambio, periodo, onClose }: Props) {
             type="button"
             onClick={() => void confirmar()}
             disabled={mutacion.isPending}
-            className="min-h-11 rounded-xl bg-primary font-extrabold text-white hover:bg-primary-dark"
+            className="h-11 px-6 rounded-xl bg-primary font-bold text-sm text-white hover:bg-primary-dark transition-colors shadow-xs"
           >
-            {mutacion.isPending && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}
+            {mutacion.isPending && <Loader2 aria-hidden="true" className="size-4 animate-spin mr-1.5" />}
             {mutacion.isPending ? "Guardando…" : textos.confirmar}
           </Button>
         </AlertDialogFooter>

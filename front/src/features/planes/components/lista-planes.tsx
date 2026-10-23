@@ -40,17 +40,17 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
   return (
     <li
       className={cn(
-        "flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 shadow-xs hover:shadow-md transition-all gap-4",
+        "flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-2xs hover:shadow-md transition-all gap-3.5",
         !vigente && "bg-muted/40 opacity-80",
       )}
     >
       <div>
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             {plan.nombre}
           </h2>
           {plan.precioProgramado ? (
-            <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-3 py-0.5 shrink-0">
+            <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2.5 py-0.5 shrink-0">
               Sube el {fechaDiaMes(plan.precioProgramado.desde)}
             </span>
           ) : !vigente ? (
@@ -59,12 +59,12 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
         </div>
 
         {/* Precio */}
-        <div className="flex items-baseline justify-between gap-1.5 my-2.5">
+        <div className="flex items-baseline justify-between gap-1.5 my-2">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-white tabular-nums">
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white tabular-nums">
               {plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente)}
             </span>
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
               {plan.tipo === "MENSUAL" ? "por mes" : "por clase"}
             </span>
           </div>
@@ -80,7 +80,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
         </div>
 
         {/* Características */}
-        <ul className="flex flex-col gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 my-3">
+        <ul className="flex flex-col gap-1 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 my-2">
           <li>{textoFrecuenciaCard(plan)}</li>
           <li>{textoActividadCard(plan)}</li>
           <li>{textoProfesoraCard(plan)}</li>
@@ -89,12 +89,12 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
 
       {/* Botones de acción */}
       {vigente && (
-        <div className="mt-auto flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="mt-auto flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="button"
             variant="outline"
             onClick={() => onActualizarPrecio(plan)}
-            className="flex-1 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+            className="flex-1 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
           >
             Cambiar precio
             <span className="sr-only"> de {plan.nombre}</span>
@@ -105,7 +105,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
                 type="button"
                 variant="outline"
                 onClick={() => onEditarPlan(plan)}
-                className="px-6 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+                className="px-4 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
               >
                 Editar
                 <span className="sr-only"> {plan.nombre}</span>
@@ -114,7 +114,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
               <Button
                 asChild
                 variant="outline"
-                className="px-6 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+                className="px-4 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
               >
                 <Link to={`/app/planes/${plan.id}/editar`}>
                   Editar
@@ -132,7 +132,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
 export function ListaPlanes({ planes, total, onActualizarPrecio, onEditarPlan, onVerHistorial }: { planes: Plan[]; total: number } & AccionesDeLaTarjeta) {
   return (
     <div className="space-y-4">
-      <ul aria-label="Planes" className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <ul aria-label="Planes" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
         {planes.map((plan) => (
           <TarjetaPlan
             key={plan.id}
@@ -156,11 +156,11 @@ export function ListaPlanes({ planes, total, onActualizarPrecio, onEditarPlan, o
 export function ListaPlanesCargando() {
   return (
     <div role="status">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {Array.from({ length: 4 }, (_, indice) => (
-          <div key={indice} className="flex h-64 flex-col gap-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6">
-            <div className="h-6 w-1/3 animate-pulse rounded-lg bg-muted" />
-            <div className="h-9 w-1/2 animate-pulse rounded-lg bg-muted" />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+        {Array.from({ length: 6 }, (_, indice) => (
+          <div key={indice} className="flex h-56 flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5">
+            <div className="h-5 w-1/3 animate-pulse rounded-lg bg-muted" />
+            <div className="h-8 w-1/2 animate-pulse rounded-lg bg-muted" />
             <div className="flex-1 animate-pulse rounded-lg bg-muted/60" />
           </div>
         ))}

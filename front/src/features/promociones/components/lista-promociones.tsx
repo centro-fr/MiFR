@@ -24,28 +24,28 @@ export function ListaPromociones({
   onDesactivar: (promocion: Promocion) => void;
 }) {
   return (
-    <ul aria-label="Promociones" className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+    <ul aria-label="Promociones" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
       {promociones.map((promocion) => (
-        <li key={promocion.id} className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60 sm:p-6">
+        <li key={promocion.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/50 dark:text-pink-300"><Tag className="size-5" /></span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-pink-950/50 dark:text-pink-300"><Tag className="size-4" /></span>
               <div className="min-w-0">
-                <h2 className="truncate text-lg font-black tracking-tight text-slate-900 dark:text-white">{promocion.nombre}</h2>
+                <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900 dark:text-white">{promocion.nombre}</h2>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{promocion.codigo}</p>
               </div>
             </div>
-            <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold", ESTADOS[promocion.estado])}>{promocion.estado.toLowerCase()}</span>
+            <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold", ESTADOS[promocion.estado])}>{promocion.estado.toLowerCase()}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 border-y border-slate-100 py-3 text-sm dark:border-slate-800">
+          <div className="grid grid-cols-2 gap-3 border-y border-slate-100 py-3 text-xs sm:text-sm dark:border-slate-800">
             <Dato label="Descuento" valor={descuento(promocion)} destacado />
             <Dato label="Vigencia" valor={`${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`} icono={<CalendarDays className="size-3.5" />} />
             <Dato label="Planes" valor={promocion.planes.map((plan) => plan.nombre).join(", ")} />
           </div>
           {(promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA") && (
-            <div className="flex gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className="h-11 flex-1 rounded-xl font-bold"><Pencil className="mr-2 size-4" />Editar</Button>
-              <Button type="button" variant="outline" onClick={() => onDesactivar(promocion)} className="h-11 rounded-xl font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-300"><Power className="mr-2 size-4" />Desactivar</Button>
+            <div className="flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+              <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className="h-10 flex-1 rounded-xl font-bold text-xs sm:text-sm"><Pencil className="mr-1.5 size-3.5" />Editar</Button>
+              <Button type="button" variant="outline" onClick={() => onDesactivar(promocion)} className="h-10 rounded-xl font-bold text-xs sm:text-sm text-rose-600 hover:bg-rose-50 dark:text-rose-300"><Power className="mr-1.5 size-3.5" />Desactivar</Button>
             </div>
           )}
         </li>

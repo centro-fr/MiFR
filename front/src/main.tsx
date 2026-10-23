@@ -10,8 +10,18 @@ initTema();
 async function enableMocks() {
   if (import.meta.env.VITE_USE_MOCKS !== "true") return;
   if (import.meta.env.PROD) return;
-  const { worker } = await import("./mocks/browser.ts");
-  await worker.start({ onUnhandledRequest: "bypass" });
+  try {
+    const { worker } = await import("./mocks/browser.ts");
+    await worker.start({
+      onUnhandledRequest: "bypass",
+      serviceWorker: {
+        url: "/mockServiceWorker.js",
+      },
+    });
+    console.log("%c[MSW] Mock Service Worker activo", "color: #10b981; font-weight: bold;");
+  } catch (err) {
+    console.error("[MSW] Error al inicializar Mock Service Worker:", err);
+  }
 }
 
 void enableMocks().finally(() => {

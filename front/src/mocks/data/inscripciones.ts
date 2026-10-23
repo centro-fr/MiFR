@@ -153,6 +153,9 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     inscripcion(23, { id_alumno: 23, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 15),
     inscripcion(24, { id_alumno: 24, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 5),
     inscripcion(25, { id_alumno: 25, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
+    // Alumnos ausentes sincronizados con US-22
+    inscripcion(26, { id_alumno: 26, id_plan: 3, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
+    inscripcion(27, { id_alumno: 27, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 10),
   ];
 }
 
@@ -261,6 +264,8 @@ function transferenciasSemilla(): PagoMock[] {
 export function pagosSemilla(): PagoMock[] {
   return [
     cobroSinRendir(1, 3, PRECIOS[1], 1, 7),
+    cobroSinRendir(101, 12, PRECIOS[0], 2, 3),
+    cobroSinRendir(102, 14, PRECIOS[3], 1, 16),
     ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
     ...transferenciasSemilla(),
@@ -283,5 +288,7 @@ export function pagosSemilla(): PagoMock[] {
     pagoConfirmado(123, 23, PRECIOS[1]),
     pagoConfirmado(124, 24, PRECIOS[2]),
     pagoConfirmado(125, 25, PRECIOS[0]),
+    pagoConfirmado(126, 26, PRECIOS[2]),
+    pagoConfirmado(127, 27, PRECIOS[1]),
   ];
 }

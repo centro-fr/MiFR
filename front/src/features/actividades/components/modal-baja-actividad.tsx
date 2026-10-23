@@ -30,34 +30,34 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="max-w-md space-y-4 rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <AlertDialogHeader className="space-y-4">
-          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 font-black text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-            <TriangleAlert className="h-5 w-5" />
+      <AlertDialogContent className="max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <AlertDialogHeader className="space-y-3">
+          <div aria-hidden="true" className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 font-black text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
+            <TriangleAlert className="size-6" />
           </div>
           <div>
-            <AlertDialogTitle className="text-base font-extrabold text-dark dark:text-white">
+            <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
               ¿Dar de baja esta actividad?
             </AlertDialogTitle>
-            <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <AlertDialogDescription className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Estás por dar de baja <strong>{actividad.nombre}</strong>. La baja es lógica: sale del catálogo y queda en
               el historial. Si tiene horarios activos, primero hay que darlos de baja.
             </AlertDialogDescription>
           </div>
         </AlertDialogHeader>
         {errorBaja && (
-          <Alert className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-            <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">
+          <Alert className="rounded-xl border-amber-300 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/40">
+            <AlertDescription className="text-xs font-semibold text-amber-900 dark:text-amber-200">
               {errorBaja}
             </AlertDescription>
           </Alert>
         )}
-        <AlertDialogFooter className="flex-row items-center justify-end gap-2 pt-2">
+        <AlertDialogFooter className="flex-row items-center justify-end gap-2.5 pt-2">
           <AlertDialogCancel asChild>
             <Button
               type="button"
               variant="outline"
-              className="min-h-[44px] rounded-xl border-slate-200 px-4 text-sm font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+              className="h-10 rounded-xl border-slate-200 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Cancelar
             </Button>
@@ -67,7 +67,7 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
             variant="destructive"
             onClick={onConfirm}
             disabled={dandoDeBaja}
-            className="min-h-[44px] rounded-xl bg-rose-600 px-4 text-sm font-bold text-white shadow-md hover:bg-rose-700"
+            className="h-10 rounded-xl bg-rose-600 px-5 text-xs font-bold text-white shadow-md shadow-rose-600/20 hover:bg-rose-700"
           >
             {dandoDeBaja ? "Dando de baja..." : "Confirmar baja"}
           </Button>

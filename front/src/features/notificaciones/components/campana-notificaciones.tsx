@@ -31,7 +31,7 @@ function ContadorSinLeer({ cantidad }: { cantidad: number }) {
   return (
     <span
       aria-hidden="true"
-      className="absolute -top-1.5 -right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 ring-bg-light tabular-nums dark:ring-canvas"
+      className="absolute top-1.5 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 ring-bg-light tabular-nums dark:ring-canvas"
     >
       {cantidad > MAXIMO_EN_EL_CONTADOR ? `${MAXIMO_EN_EL_CONTADOR}+` : cantidad}
     </span>
@@ -75,7 +75,6 @@ function SinNotificaciones() {
         <Bell className="size-5" />
       </span>
       <p className="text-sm font-bold text-slate-800 dark:text-slate-100">No tenés notificaciones</p>
-      <p className="text-xs text-muted-foreground">Acá vas a ver los avisos que MiFR genera solo.</p>
     </div>
   );
 }
@@ -108,9 +107,9 @@ export function CampanaNotificaciones() {
               variant="ghost"
               size="icon"
               aria-label={noLeidas > 0 ? `Notificaciones: ${etiquetaSinLeer(noLeidas)}` : "Notificaciones"}
-              className="relative size-9 rounded-xl border border-border bg-white text-slate-600 hover:bg-slate-100 hover:text-dark dark:border-white/10 dark:bg-surface-low dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="relative h-11 w-11 cursor-pointer justify-center rounded-xl p-0 text-slate-600 transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-white/10"
             >
-              <Bell aria-hidden="true" className="size-4" />
+              <Bell aria-hidden="true" className="size-5 shrink-0" />
               <ContadorSinLeer cantidad={noLeidas} />
             </Button>
           </DropdownMenuTrigger>

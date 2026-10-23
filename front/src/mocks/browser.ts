@@ -7,6 +7,7 @@ import { honorariosHandlers } from "@/mocks/handlers/honorarios";
 import { promocionesHandlers } from "@/mocks/handlers/promociones";
 import { suplenciasHandlers } from "@/mocks/handlers/suplencias";
 import { horariosHandlers } from "@/mocks/handlers/horarios";
+import { inactivosHandlers } from "@/mocks/handlers/inactivos";
 import { inscripcionesHandlers } from "@/mocks/handlers/inscripciones";
 import { notificacionesHandlers } from "@/mocks/handlers/notificaciones";
 import { pagosHandlers } from "@/mocks/handlers/pagos";
@@ -31,4 +32,5 @@ export const worker = setupWorker(
   ...promocionesHandlers,
   ...suplenciasHandlers,
   ...notificacionesHandlers,
+  ...inactivosHandlers,
 );

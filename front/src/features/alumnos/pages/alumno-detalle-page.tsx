@@ -344,7 +344,7 @@ export function AlumnoDetallePage() {
 
             {/* Pestañas horizontales con subrayado fucsia activo */}
             <div
-              className="flex border-b border-slate-200 dark:border-slate-700 gap-6 overflow-x-auto"
+              className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none"
               role="tablist"
               aria-orientation="horizontal"
               aria-label="Secciones de la ficha"
@@ -361,13 +361,13 @@ export function AlumnoDetallePage() {
                   onClick={() => setSeccion(item.id)}
                   onKeyDown={(evento) => navegarPestanas(evento, indice)}
                   className={cn(
-                    "pb-3 text-sm font-bold transition-all whitespace-nowrap focus-visible:outline-none",
+                    "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none",
                     seccion === item.id
-                      ? "border-b-2 border-primary text-primary"
-                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                      ? "border-primary text-slate-900 dark:text-white"
+                      : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
                   )}
                 >
-                  {item.etiqueta}
+                  <span>{item.etiqueta}</span>
                 </button>
               ))}
             </div>

@@ -218,6 +218,20 @@ function resolver(pago: PagoMock, request: Request, cambios: Pick<PagoMock, "est
   return pago;
 }
 
+// Helper para obtener nombre y apellido de la profesora cobradora
+function resolverDatosProfesora(idProf: number | null | undefined): { nombre: string; apellido: string } {
+  if (!idProf) return { nombre: "Profesora", apellido: "" };
+  const prof = db.profesoras.find((pr) => pr.id_profesora === idProf);
+  const usuario = prof
+    ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) ||
+      db.usuariosPersonas.find((u) => u.id_usuario === prof.id_usuario)
+    : null;
+  return {
+    nombre: usuario?.nombre ?? "Profesora",
+    apellido: usuario?.apellido ?? "",
+  };
+}
+
 export const pagosHandlers = [
   http.get("*/api/v1/pagos/:id/comprobante", async ({ params, request }) => {
     await delay(200);
@@ -501,5 +515,295 @@ export const pagosHandlers = [
     const { pago, error } = buscarTransferenciaPendiente(id);
     if (error) return error;
     return HttpResponse.json(resolver(pago, request, { estado: "RECHAZADO", motivo_rechazo: cuerpo.data.motivo_rechazo }));
+  }),
+
+  // ---------- US-19: Control y rendición de efectivo ----------
+
+  // GET /api/v1/pagos/efectivo-pendiente
+  http.get("*/api/v1/pagos/efectivo-pendiente", async ({ request }) => {
+  await delay(350);
+  const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_RENDICION_VER" });
+  if (denegado) return denegado;
+
+  const url = new URL(request.url);
+  const idProfParam = url.searchParams.get("id_profesora");
+  const idProfFiltro = idProfParam ? Number(idProfParam) : undefined;
+  const desdeParam = url.searchParams.get("desde");
+  const hastaParam = url.searchParams.get("hasta");
+  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+  const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
+
+  // Cobros en efectivo confirmados de una profesora que no están rendidos
+  let cobros = db.pagos.filter(
+    (p) =>
+      p.forma_pago === "EFECTIVO" &&
+      p.estado === "CONFIRMADO" &&
+      p.rendido === false &&
+      p.id_profesora_cobra !== null &&
+      p.id_profesora_cobra !== undefined
+  );
+
+  if (idProfFiltro) {
+    cobros = cobros.filter((p) => p.id_profesora_cobra === idProfFiltro);
+  }
+
+  if (desdeParam) {
+    cobros = cobros.filter((p) => p.fecha_pago.slice(0, 10) >= desdeParam);
+  }
+  if (hastaParam) {
+    cobros = cobros.filter((p) => p.fecha_pago.slice(0, 10) <= hastaParam);
+  }
+
+  // Orden del más viejo al más nuevo (ascendente)
+  cobros.sort((a, b) => new Date(a.fecha_pago).getTime() - new Date(b.fecha_pago).getTime());
+
+  // Agrupación por profesora (totales completos)
+  const mapaProf = new Map<
+    number,
+    { id_profesora: number; nombre: string; apellido: string; cantidad: number; total: number }
+  >();
+
+  for (const p of cobros) {
+    const idProf = p.id_profesora_cobra!;
+    if (!mapaProf.has(idProf)) {
+      const datosProf = resolverDatosProfesora(idProf);
+      mapaProf.set(idProf, {
+        id_profesora: idProf,
+        nombre: datosProf.nombre,
+        apellido: datosProf.apellido,
+        cantidad: 0,
+        total: 0,
+      });
+    }
+    const entry = mapaProf.get(idProf)!;
+    entry.cantidad += 1;
+    entry.total += p.monto;
+  }
+
+  const totalGeneral = cobros.reduce((acc, p) => acc + p.monto, 0);
+  const cantidadGeneral = cobros.length;
+
+  // Detalle paginado
+  const cobrosPaginados = cobros.slice(offset, offset + limit).map((p) => {
+    const insc = db.inscripciones.find((i) => i.id_inscripcion === p.id_inscripcion);
+    const al = insc ? db.alumnos.find((a) => a.id_alumno === insc.id_alumno) : null;
+    const persona = al ? db.usuariosPersonas.find((u) => u.id_usuario === al.id_usuario) : null;
+    const plan = insc ? db.planes.find((pl) => pl.id_plan === insc.id_plan) : null;
+    const datosProf = resolverDatosProfesora(p.id_profesora_cobra);
+
+    const diasSinRendir = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(p.fecha_pago).getTime()) / (1000 * 60 * 60 * 24))
+    );
+
+    return {
+      id_pago: p.id_pago,
+      monto: p.monto,
+      fecha_pago: p.fecha_pago,
+      dias_sin_rendir: diasSinRendir,
+      alumno: {
+        id_alumno: al?.id_alumno ?? 0,
+        nombre: persona?.nombre ?? "Alumno",
+        apellido: persona?.apellido ?? "",
+        dni: persona?.dni ?? "",
+      },
+      plan: plan?.nombre ?? "Plan",
+      cuota: {
+        numero: 1,
+        vencimiento: p.fecha_pago,
+      },
+      profesora: {
+        id_profesora: p.id_profesora_cobra!,
+        nombre: datosProf.nombre,
+        apellido: datosProf.apellido,
+      },
+    };
+  });
+
+    return HttpResponse.json({
+      cantidad: cantidadGeneral,
+      total: totalGeneral,
+      profesoras: Array.from(mapaProf.values()),
+      cobros: cobrosPaginados,
+      limit,
+      offset,
+    });
+  }),
+
+  // POST /api/v1/pagos/:id/rendir
+  http.post("*/api/v1/pagos/:id/rendir", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_RENDICION_VER" });
+    if (denegado) return denegado;
+
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+
+    const pago = db.pagos.find((p) => p.id_pago === id);
+    if (!pago) return errorApi(404, "NOT_FOUND", "Cobro no encontrado");
+
+    if (pago.forma_pago !== "EFECTIVO" || !pago.id_profesora_cobra) {
+      return errorApi(409, "CONFLICT", "Solo se rinde efectivo cobrado por una profesora");
+    }
+
+    if (pago.rendido) {
+      return errorApi(409, "CONFLICT", "El cobro ya fue rendido");
+    }
+
+    const cuerpo = (await request.json().catch(() => ({}))) as { observaciones?: string };
+    const ahora = new Date().toISOString();
+    pago.rendido = true;
+    pago.fecha_rendicion = ahora;
+    if (cuerpo.observaciones) {
+      pago.observaciones = cuerpo.observaciones;
+    }
+
+    return HttpResponse.json({
+      rendidos: [pago.id_pago],
+      cantidad: 1,
+      total: pago.monto,
+      salteados: [],
+    });
+  }),
+
+  // POST /api/v1/pagos/rendir (en lote)
+  http.post("*/api/v1/pagos/rendir", async ({ request }) => {
+    await delay(600);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_RENDICION_VER" });
+    if (denegado) return denegado;
+
+    const cuerpo = (await request.json().catch(() => ({}))) as {
+      id_profesora?: number;
+      ids_pagos?: number[];
+      observaciones?: string;
+    };
+
+    let pagosARendir: typeof db.pagos = [];
+    const salteados: { id_pago: number; motivo: string }[] = [];
+
+    if (cuerpo.id_profesora) {
+      pagosARendir = db.pagos.filter(
+        (p) =>
+          p.id_profesora_cobra === cuerpo.id_profesora &&
+          p.forma_pago === "EFECTIVO" &&
+          p.estado === "CONFIRMADO" &&
+          !p.rendido
+      );
+    } else if (Array.isArray(cuerpo.ids_pagos)) {
+      for (const idPago of cuerpo.ids_pagos) {
+        const p = db.pagos.find((item) => item.id_pago === idPago);
+        if (!p) {
+          salteados.push({ id_pago: idPago, motivo: "NO_EXISTE" });
+        } else if (p.forma_pago !== "EFECTIVO" || !p.id_profesora_cobra) {
+          salteados.push({ id_pago: idPago, motivo: "NO_ES_EFECTIVO_DE_PROFESORA" });
+        } else if (p.rendido) {
+          salteados.push({ id_pago: idPago, motivo: "YA_RENDIDO" });
+        } else {
+          pagosARendir.push(p);
+        }
+      }
+    } else {
+      return errorApi(400, "VALIDATION_ERROR", "Debe indicar id_profesora o ids_pagos");
+    }
+
+    const ahora = new Date().toISOString();
+    const rendidos: number[] = [];
+    let total = 0;
+
+    for (const p of pagosARendir) {
+      p.rendido = true;
+      p.fecha_rendicion = ahora;
+      rendidos.push(p.id_pago);
+      total += p.monto;
+    }
+
+    return HttpResponse.json({
+      rendidos,
+      cantidad: rendidos.length,
+      total,
+      salteados,
+    });
+  }),
+
+  // GET /api/v1/pagos/rendiciones (historial)
+  http.get("*/api/v1/pagos/rendiciones", async ({ request }) => {
+    await delay(350);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PAGOS_RENDICION_VER" });
+    if (denegado) return denegado;
+
+    const url = new URL(request.url);
+    const idProfParam = url.searchParams.get("id_profesora");
+    const idProfFiltro = idProfParam ? Number(idProfParam) : undefined;
+    const desdeParam = url.searchParams.get("desde");
+    const hastaParam = url.searchParams.get("hasta");
+    const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+    const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
+
+    let rendidos = db.pagos.filter(
+      (p) =>
+        p.forma_pago === "EFECTIVO" &&
+        p.rendido === true &&
+        p.fecha_rendicion !== null &&
+        p.fecha_rendicion !== undefined
+    );
+
+    if (idProfFiltro) {
+      rendidos = rendidos.filter((p) => p.id_profesora_cobra === idProfFiltro);
+    }
+
+    if (desdeParam) {
+      rendidos = rendidos.filter(
+        (p) => p.fecha_rendicion && p.fecha_rendicion.slice(0, 10) >= desdeParam
+      );
+    }
+    if (hastaParam) {
+      rendidos = rendidos.filter(
+        (p) => p.fecha_rendicion && p.fecha_rendicion.slice(0, 10) <= hastaParam
+      );
+    }
+
+    // Orden descendente por fecha de rendición
+    rendidos.sort(
+      (a, b) => new Date(b.fecha_rendicion!).getTime() - new Date(a.fecha_rendicion!).getTime()
+    );
+
+    const total = rendidos.length;
+    const datosPaginados = rendidos.slice(offset, offset + limit).map((p) => {
+      const insc = db.inscripciones.find((i) => i.id_inscripcion === p.id_inscripcion);
+      const al = insc ? db.alumnos.find((a) => a.id_alumno === insc.id_alumno) : null;
+      const persona = al ? db.usuariosPersonas.find((u) => u.id_usuario === al.id_usuario) : null;
+      const plan = insc ? db.planes.find((pl) => pl.id_plan === insc.id_plan) : null;
+      const datosProf = resolverDatosProfesora(p.id_profesora_cobra);
+
+      return {
+        id_pago: p.id_pago,
+        monto: p.monto,
+        fecha_pago: p.fecha_pago,
+        fecha_rendicion: p.fecha_rendicion!,
+        alumno: {
+          id_alumno: al?.id_alumno ?? 0,
+          nombre: persona?.nombre ?? "Alumno",
+          apellido: persona?.apellido ?? "",
+          dni: persona?.dni ?? "",
+        },
+        plan: plan?.nombre ?? "Plan",
+        cuota: {
+          numero: 1,
+          vencimiento: p.fecha_pago,
+        },
+        profesora: {
+          id_profesora: p.id_profesora_cobra!,
+          nombre: datosProf.nombre,
+          apellido: datosProf.apellido,
+        },
+      };
+    });
+
+    return HttpResponse.json({
+      datos: datosPaginados,
+      total,
+      limit,
+      offset,
+    });
   }),
 ];

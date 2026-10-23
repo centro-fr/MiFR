@@ -55,21 +55,21 @@ function Pestanas({
   cantidadPromociones?: number;
 }) {
   return (
-    <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 pt-1">
+    <div className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none">
       <button
         type="button"
         onClick={() => onChange("PLANES")}
         className={cn(
-          "flex items-center gap-2 pb-3 text-sm font-bold transition-colors relative",
+          "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
           activa === "PLANES"
-            ? "text-slate-900 dark:text-white"
-            : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+            ? "border-primary text-slate-900 dark:text-white"
+            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
         )}
       >
         <span>Planes</span>
         <span
           className={cn(
-            "px-2.5 py-0.5 rounded-full text-xs font-black transition-colors",
+            "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
             activa === "PLANES"
               ? "bg-primary text-white"
               : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
@@ -77,25 +77,22 @@ function Pestanas({
         >
           {cantidadPlanes}
         </span>
-        {activa === "PLANES" && (
-          <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-        )}
       </button>
 
       <button
         type="button"
         onClick={() => onChange("PROMOCIONES")}
         className={cn(
-          "flex items-center gap-2 pb-3 text-sm font-bold transition-colors relative",
+          "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
           activa === "PROMOCIONES"
-            ? "text-slate-900 dark:text-white"
-            : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+            ? "border-primary text-slate-900 dark:text-white"
+            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
         )}
       >
         <span>Promociones</span>
         <span
           className={cn(
-            "px-2.5 py-0.5 rounded-full text-xs font-black transition-colors",
+            "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
             activa === "PROMOCIONES"
               ? "bg-primary text-white"
               : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
@@ -103,9 +100,6 @@ function Pestanas({
         >
           {cantidadPromociones ?? "—"}
         </span>
-        {activa === "PROMOCIONES" && (
-          <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-        )}
       </button>
     </div>
   );

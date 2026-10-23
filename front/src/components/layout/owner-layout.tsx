@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type ComponentProps, type ReactNode } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -60,16 +60,6 @@ function LogoMarca() {
   return <LogoFr className="size-8" />;
 }
 
-/** Props de entrada en cascada del drawer mobile. */
-type EntradaEscalonada = Pick<ComponentProps<"li">, "className" | "style">;
-
-const PASO_CASCADA_MS = 15;
-const ITEMS_EN_CASCADA = 6;
-
-function entradaEscalonada(indice: number): EntradaEscalonada {
-  return { className: "animate-drawer-item", style: { animationDelay: `${Math.min(indice, ITEMS_EN_CASCADA) * PASO_CASCADA_MS}ms` } };
-}
-
 /**
  * Globo de notificación / alerta junto a una opción (en rosa de marca).
  * Muestra un signo de exclamación cuando hay pendientes que requieren atención
@@ -96,14 +86,13 @@ function Contador({ valor, className }: { valor?: number; className?: string }) 
 interface PropsItem {
   item: ItemConEstado;
   alNavegar: () => void;
-  entrada?: EntradaEscalonada;
 }
 
-function ItemSimple({ item, alNavegar, entrada }: PropsItem) {
+function ItemSimple({ item, alNavegar }: PropsItem) {
   const Icono = item.icono;
   if (!item.to) {
     return (
-      <SidebarMenuItem {...entrada}>
+      <SidebarMenuItem>
         <SidebarMenuButton aria-disabled="true" tooltip={`${item.etiqueta} (próximamente)`} className={CLASES_ITEM}>
           <Icono aria-hidden="true" />
           <span>{item.etiqueta}</span>
@@ -112,7 +101,7 @@ function ItemSimple({ item, alNavegar, entrada }: PropsItem) {
     );
   }
   return (
-    <SidebarMenuItem {...entrada}>
+    <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={item.esActivo} tooltip={item.etiqueta} className={CLASES_ITEM}>
         <Link to={item.to} onClick={alNavegar} aria-current={item.esActivo ? "page" : undefined}>
           <Icono aria-hidden="true" />
@@ -226,14 +215,14 @@ function CabeceraSinPantalla({ item, abierto, alternar }: { item: ItemConEstado;
   );
 }
 
-function GrupoDesplegable({ item, alNavegar, entrada }: PropsItem) {
+function GrupoDesplegable({ item, alNavegar }: PropsItem) {
   const { pathname } = useLocation();
   const [forzado, setForzado] = useState<{ ruta: string; abierto: boolean } | null>(null);
   const abierto = forzado?.ruta === pathname ? forzado.abierto : item.esActivo;
   const alternar = () => setForzado({ ruta: pathname, abierto: !abierto });
 
   return (
-    <SidebarMenuItem {...entrada}>
+    <SidebarMenuItem>
       {item.to ? (
         <CabeceraConPantalla item={item} to={item.to} abierto={abierto} alNavegar={alNavegar} alternar={alternar} />
       ) : (
@@ -286,11 +275,10 @@ function agruparPorSeccion(items: ItemConEstado[]): SeccionDelMenu[] {
 interface PropsSeccion {
   seccion: SeccionDelMenu;
   contraido: boolean;
-  isMobile: boolean;
   alNavegar: () => void;
 }
 
-function SeccionMenu({ seccion, contraido, isMobile, alNavegar }: PropsSeccion) {
+function SeccionMenu({ seccion, contraido, alNavegar }: PropsSeccion) {
   const idTitulo = useId();
   return (
     <SidebarGroup className="py-1">
@@ -303,13 +291,12 @@ function SeccionMenu({ seccion, contraido, isMobile, alNavegar }: PropsSeccion) 
         </SidebarGroupLabel>
       )}
       <SidebarMenu aria-labelledby={seccion.titulo && !contraido ? idTitulo : undefined}>
-        {seccion.items.map((item, indice) => {
-          const entrada = isMobile ? entradaEscalonada(seccion.desde + indice) : undefined;
-          if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} entrada={entrada} />;
+        {seccion.items.map((item) => {
+          if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} />;
           return contraido ? (
             <GrupoContraido key={item.etiqueta} item={item} />
           ) : (
-            <GrupoDesplegable key={item.etiqueta} item={item} alNavegar={alNavegar} entrada={entrada} />
+            <GrupoDesplegable key={item.etiqueta} item={item} alNavegar={alNavegar} />
           );
         })}
       </SidebarMenu>
@@ -327,7 +314,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
       {agruparPorSeccion(items).map((seccion, indice) => (
         <Fragment key={seccion.titulo ?? "sin-seccion"}>
           {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none border-white/5" />}
-          <SeccionMenu seccion={seccion} contraido={contraido} isMobile={isMobile} alNavegar={alNavegar} />
+          <SeccionMenu seccion={seccion} contraido={contraido} alNavegar={alNavegar} />
         </Fragment>
       ))}
     </nav>
@@ -582,10 +569,7 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
       <MenuLateral items={items} roles={roles} rolActivo={panelActivo} onCambiarRol={cambiarPanel} />
       <div className="flex min-w-0 flex-1 flex-col">
         <BarraSuperior migas={migas} />
-        <main
-          key={pathname}
-          className="flex w-full min-w-0 flex-1 animate-page-enter flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"
-        >
+        <main className="flex w-full min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>

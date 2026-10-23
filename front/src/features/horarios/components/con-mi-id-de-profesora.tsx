@@ -54,9 +54,6 @@ export function ConMiIdDeProfesora({ children }: Props) {
           <Users aria-hidden="true" className="size-7" />
         </span>
         <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">No tenés alumnos a cargo</h1>
-        <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
-          Tu perfil de profesora no está activo, así que no hay alumnos asignados a vos.
-        </p>
       </Card>
     );
   }

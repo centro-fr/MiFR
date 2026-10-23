@@ -50,30 +50,109 @@ export function SuplenciaDialog({ abierto, suplencia, horarios, profesoras, guar
 
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent hideClose bottomSheetOnMobile className="max-h-[92dvh] overflow-y-auto rounded-t-[28px] p-5 sm:rounded-3xl sm:p-7">
-        <DialogHeader className="flex flex-row items-center justify-between text-left">
-          <DialogTitle className="text-xl font-black tracking-tight">{suplencia ? "Editar suplencia" : "Registrar suplencia"}</DialogTitle>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario"><X className="size-4" /></Button>
+      <DialogContent hideClose className="w-[96vw] sm:w-full max-w-lg md:max-w-xl rounded-3xl p-5 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border-slate-200 dark:border-slate-800">
+        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
+          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            {suplencia ? "Editar suplencia" : "Registrar suplencia"}
+          </DialogTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Cerrar formulario"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X className="size-4" />
+          </Button>
         </DialogHeader>
-        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="space-y-4 pt-2">
-          <Campo label="Fecha de la clase" error={formulario.formState.errors.fechaClase?.message}><Input type="date" disabled={Boolean(suplencia)} {...formulario.register("fechaClase")} className="h-11 rounded-xl" /></Campo>
+
+        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="space-y-4 pt-1">
+          <Campo label="Fecha de la clase" error={formulario.formState.errors.fechaClase?.message}>
+            <Input
+              type="date"
+              disabled={Boolean(suplencia)}
+              {...formulario.register("fechaClase")}
+              className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+            />
+          </Campo>
+
           <Campo label="Horario" error={formulario.formState.errors.idHorario?.message}>
-            <Select value={idHorario} onValueChange={(value) => formulario.setValue("idHorario", value, { shouldValidate: true })}>
-              <SelectTrigger disabled={Boolean(suplencia)} className="h-11 rounded-xl"><SelectValue placeholder="Elegí actividad y horario" /></SelectTrigger>
-              <SelectContent>{horariosDisponibles.map((horario) => <SelectItem key={horario.id_horario} value={String(horario.id_horario)}>{horario.actividad.nombre} · {horario.hora_inicio.slice(11, 16)} hs · {horario.profesora.usuario.nombre} {horario.profesora.usuario.apellido}</SelectItem>)}</SelectContent>
+            <Select
+              value={idHorario}
+              onValueChange={(value) => formulario.setValue("idHorario", value, { shouldValidate: true })}
+            >
+              <SelectTrigger
+                disabled={Boolean(suplencia)}
+                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+              >
+                <SelectValue placeholder={horariosDisponibles.length === 0 ? "No hay clases este día" : "Elegí actividad y horario"} />
+              </SelectTrigger>
+              <SelectContent>
+                {horariosDisponibles.length === 0 ? (
+                  <SelectItem disabled value="_sin_clases">
+                    No hay clases registradas en este día de la semana
+                  </SelectItem>
+                ) : (
+                  horariosDisponibles.map((horario) => (
+                    <SelectItem key={horario.id_horario} value={String(horario.id_horario)}>
+                      {horario.actividad.nombre} · {horario.hora_inicio.slice(11, 16)} hs · {horario.profesora.usuario.nombre} {horario.profesora.usuario.apellido}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
             </Select>
           </Campo>
+
           <Campo label="Profesora suplente" error={formulario.formState.errors.idProfesoraSuplente?.message}>
-            <Select value={idProfesoraSuplente} onValueChange={(value) => formulario.setValue("idProfesoraSuplente", value, { shouldValidate: true })}>
-              <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Elegí una profesora" /></SelectTrigger>
-              <SelectContent>{profesorasDisponibles.map((profesora) => <SelectItem key={profesora.id} value={profesora.id}>{profesora.nombre} {profesora.apellido}</SelectItem>)}</SelectContent>
+            <Select
+              value={idProfesoraSuplente}
+              onValueChange={(value) => formulario.setValue("idProfesoraSuplente", value, { shouldValidate: true })}
+            >
+              <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold">
+                <SelectValue placeholder="Elegí una profesora" />
+              </SelectTrigger>
+              <SelectContent>
+                {profesorasDisponibles.map((profesora) => (
+                  <SelectItem key={profesora.id} value={profesora.id}>
+                    {profesora.nombre} {profesora.apellido}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </Campo>
-          <Campo label="Motivo" error={formulario.formState.errors.motivo?.message} obligatorio={false}><Textarea {...formulario.register("motivo")} className="min-h-24 rounded-xl" placeholder="Opcional" /></Campo>
-          {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{error}</p>}
-          <div className="flex gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <Button type="button" variant="outline" onClick={onClose} disabled={guardando} className="h-11 rounded-xl font-bold">Cancelar</Button>
-            <Button type="submit" disabled={guardando} className="h-11 flex-1 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">{guardando ? "Guardando..." : "Guardar suplencia"}</Button>
+
+          <Campo label="Motivo" error={formulario.formState.errors.motivo?.message} obligatorio={false}>
+            <Textarea
+              {...formulario.register("motivo")}
+              className="min-h-24 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium"
+              placeholder="Opcional: motivo de la ausencia o cobertura"
+            />
+          </Campo>
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+              {error}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={guardando}
+              className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={guardando}
+              className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+            >
+              {guardando ? "Guardando..." : "Guardar suplencia"}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -81,6 +160,24 @@ export function SuplenciaDialog({ abierto, suplencia, horarios, profesoras, guar
   );
 }
 
-function Campo({ label, error, obligatorio = true, children }: { label: string; error?: string; obligatorio?: boolean; children: React.ReactNode }) {
-  return <div className="space-y-1.5"><Label className="text-sm font-bold">{label} {obligatorio && <span className="text-destructive">*</span>}</Label>{children}{error && <p className="text-xs font-semibold text-destructive">{error}</p>}</div>;
+function Campo({
+  label,
+  error,
+  obligatorio = true,
+  children,
+}: {
+  label: string;
+  error?: string;
+  obligatorio?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+        {label} {obligatorio && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
+      {error && <p className="text-xs font-semibold text-destructive mt-1">{error}</p>}
+    </div>
+  );
 }

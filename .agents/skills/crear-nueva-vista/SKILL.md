@@ -62,40 +62,63 @@ Todas las vistas deben mantener la misma jerarquía de encabezado con título `h
 
 ## 3. Pestañas Superiores de Navegación (Tabs)
 
-Para páginas que alternan entre diferentes sub-vistas o estados (como Planes vs Promociones, o Alumnos Activos / Pendientes / Bajas):
+Para páginas que alternan entre diferentes sub-vistas o estados (como Cobros y Cuotas, Planes vs Promociones, o Ausentes por Contactar / Contactados / Ignorados / Todos):
+
+> [!IMPORTANT]
+> **ESTÁNDAR UNIFICADO DE PESTAÑAS (TABS):**
+> - **Sin iconos**: Texto limpio y directo, sin iconos en las pestañas para máxima claridad y uniformidad.
+> - **Subrayado fucsia**: `border-b-2 border-primary text-slate-900 dark:text-white` en la activa; `border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200` en las inactivas.
+> - **Badge de conteo (Píldora)**:
+>   - Activa: `bg-primary text-white` (fucsia sólido con número blanco, `px-2 py-0.5 rounded-full text-xs font-black transition-colors`).
+>   - Inactiva: `bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400`.
+> - **Contenedor**: `flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none`.
 
 ```tsx
-<div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 pt-1">
+<div className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none">
   <button
     type="button"
     onClick={() => setPestana("PRINCIPAL")}
     className={cn(
-      "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 transition-colors",
+      "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
       pestana === "PRINCIPAL"
         ? "border-primary text-slate-900 dark:text-white"
         : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
     )}
   >
-    <Icono className="size-4" />
-    Pestaña Principal ({conteo})
+    <span>Pestaña Principal</span>
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+        pestana === "PRINCIPAL"
+          ? "bg-primary text-white"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+      )}
+    >
+      {conteoPrincipal}
+    </span>
   </button>
+
   <button
     type="button"
     onClick={() => setPestana("SECUNDARIA")}
     className={cn(
-      "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 transition-colors",
+      "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
       pestana === "SECUNDARIA"
         ? "border-primary text-slate-900 dark:text-white"
         : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
     )}
   >
-    <IconoSecundario className="size-4" />
-    Secundaria
-    {enConstruccion && (
-      <span className="rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-bold px-2 py-0.5">
-        En construcción
-      </span>
-    )}
+    <span>Secundaria</span>
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+        pestana === "SECUNDARIA"
+          ? "bg-primary text-white"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+      )}
+    >
+      {conteoSecundaria}
+    </span>
   </button>
 </div>
 ```

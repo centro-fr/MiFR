@@ -1,12 +1,19 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarPlus, Loader2, Search } from "lucide-react";
+import { AlertCircle, CalendarPlus, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -15,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ModalBajaActividad } from "@/features/actividades/components/modal-baja-actividad";
 import { ModalFormActividad } from "@/features/actividades/components/modal-form-actividad";
 import {
   useActividades,
@@ -28,14 +36,17 @@ import { HORARIOS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import type { Actividad, ModalidadActividad } from "@/types/actividad";
 import { cn } from "@/utils/cn";
 
+type ModalidadFiltro = "TODAS" | ModalidadActividad;
+
 function textoModalidad(modalidad: ModalidadActividad): string {
   return modalidad === "GRUPAL" ? "Grupal" : "Personalizada";
 }
 
+// Colores oficiales de front/AGENTS.md: Grupal -> azul (#3B82F6), Personalizada -> violeta (#8B5CF6)
 function badgeModalidadClase(modalidad: ModalidadActividad): string {
   return modalidad === "GRUPAL"
-    ? "bg-slate-100 text-slate-700 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10"
-    : "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/40";
+    ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300"
+    : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300";
 }
 
 function textoCupoActividad(cupo: number | null): string {
@@ -56,7 +67,11 @@ export function ActividadesPage() {
 
   const [formAbierto, setFormAbierto] = useState(false);
   const [actividadEditar, setActividadEditar] = useState<Actividad | null>(null);
+  const [actividadBaja, setActividadBaja] = useState<Actividad | null>(null);
+  const [errorBaja, setErrorBaja] = useState<string | null>(null);
+
   const [busqueda, setBusqueda] = useState("");
+  const [filtroModalidad, setFiltroModalidad] = useState<ModalidadFiltro>("TODAS");
 
   const guardado = actividadEditar ? actualizar : crear;
 
@@ -80,6 +95,26 @@ export function ActividadesPage() {
     actualizar.reset();
     setActividadEditar(actividad);
     setFormAbierto(true);
+  };
+
+  const abrirConfirmacionBaja = (actividad: Actividad) => {
+    setErrorBaja(null);
+    setActividadBaja(actividad);
+  };
+
+  const handleConfirmarBaja = () => {
+    if (!actividadBaja) return;
+    setErrorBaja(null);
+    darDeBaja.mutate(actividadBaja.id, {
+      onSuccess: () => {
+        setActividadBaja(null);
+        setFormAbierto(false);
+        toast.info(`Actividad "${actividadBaja.nombre}" dada de baja`);
+      },
+      onError: (err) => {
+        setErrorBaja(mensajeDeErrorApi(err, "No se pudo desactivar la actividad."));
+      },
+    });
   };
 
   const guardar = (datos: ActividadFormData) => {
@@ -111,16 +146,27 @@ export function ActividadesPage() {
     }
   };
 
+  const hayFiltrosActivos = busqueda.trim().length > 0 || filtroModalidad !== "TODAS";
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroModalidad("TODAS");
+  };
+
   const listaFiltrada = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    if (!q) return actividades;
-    return actividades.filter(
-      (a) =>
+    return actividades.filter((a) => {
+      if (filtroModalidad !== "TODAS" && a.modalidad !== filtroModalidad) {
+        return false;
+      }
+      if (!q) return true;
+      return (
         a.nombre.toLowerCase().includes(q) ||
         a.descripcion.toLowerCase().includes(q) ||
-        a.codigo.toLowerCase().includes(q),
-    );
-  }, [actividades, busqueda]);
+        a.codigo.toLowerCase().includes(q)
+      );
+    });
+  }, [actividades, busqueda, filtroModalidad]);
 
   return (
     <OwnerLayout>
@@ -128,7 +174,7 @@ export function ActividadesPage() {
         {/* Encabezado principal */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
+            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               Actividades
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
@@ -144,88 +190,152 @@ export function ActividadesPage() {
           </Button>
         </div>
 
-        {/* Buscador */}
-        <div className="flex items-center justify-end pt-1">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+        {/* Barra de Búsqueda y Filtros Compactos en Píldoras */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          {/* Buscador */}
+          <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-sm">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+            />
             <Input
+              id="buscar-actividad"
+              aria-label="Buscar actividad"
               type="text"
-              placeholder="Buscar actividad"
+              placeholder="Buscar por nombre o descripción..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:border-primary focus:ring-2 focus:ring-pink-100 dark:border-white/15 dark:bg-surface-low dark:focus:ring-pink-950/40"
+              className="h-10 w-full rounded-xl border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary focus:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
+          </div>
+
+          {/* Filtros compactos en píldoras */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Modalidad */}
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Modalidad:
+              </span>
+              <Select
+                value={filtroModalidad}
+                onValueChange={(val) => setFiltroModalidad(val as ModalidadFiltro)}
+              >
+                <SelectTrigger
+                  aria-label="Filtrar por modalidad"
+                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[80px]"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODAS">Todas</SelectItem>
+                  <SelectItem value="GRUPAL">Grupales</SelectItem>
+                  <SelectItem value="PERSONALIZADA">Personalizadas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Limpiar filtros */}
+            {hayFiltrosActivos && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={limpiarFiltros}
+                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+              >
+                Limpiar filtros
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Contenido de lista */}
         {isPending ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm font-semibold text-slate-600 dark:text-slate-400">
-            <Loader2 className="size-5 animate-spin text-primary" />
+          <div
+            role="status"
+            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+          >
+            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
             Cargando actividades…
           </div>
         ) : isError ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
+            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
             <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {mensajeDeErrorApi(error, "No se pudieron cargar las actividades.")}
             </p>
-            <Button type="button" onClick={() => void refetch()} className="min-h-[44px] rounded-xl px-5 text-sm font-bold">
+            <Button
+              type="button"
+              onClick={() => void refetch()}
+              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold text-sm"
+            >
               Reintentar
             </Button>
-          </div>
+          </Card>
         ) : listaFiltrada.length === 0 ? (
-          <EmptyActividades onNuevo={abrirNueva} esFiltro={busqueda.trim().length > 0} />
+          <EmptyActividades
+            onNuevo={abrirNueva}
+            esFiltro={hayFiltrosActivos}
+            onLimpiarFiltros={limpiarFiltros}
+          />
         ) : (
           <>
             {/* Mobile Cards */}
-            <div className="grid grid-cols-1 gap-3 pb-8 md:grid-cols-2 xl:hidden">
+            <div className="grid grid-cols-1 gap-3.5 pb-8 md:grid-cols-2 xl:hidden">
               {listaFiltrada.map((actividad) => {
                 const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                 return (
-                  <Card key={actividad.id} className="rounded-2xl border-border bg-white p-4 shadow-xs dark:bg-surface-low space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                  <Card
+                    key={actividad.id}
+                    className="w-full min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <h2 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
                           {actividad.nombre}
                         </h2>
                         {actividad.descripcion && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-medium">
                             {actividad.descripcion}
                           </p>
                         )}
                       </div>
-                      <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold shrink-0", badgeModalidadClase(actividad.modalidad))}>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold shrink-0",
+                          badgeModalidadClase(actividad.modalidad),
+                        )}
+                      >
                         {textoModalidad(actividad.modalidad)}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-3 dark:border-white/10">
+                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-3 dark:border-slate-800">
                       <div>
-                        <span className="text-muted-foreground block">Cupo por clase</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="text-slate-400 dark:text-slate-500 block font-medium">Cupo por clase</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">
                           {textoCupoActividad(actividad.cupoMaximo)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block">Horarios</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="text-slate-400 dark:text-slate-500 block font-medium">Horarios</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">
                           {cantHorarios > 0 ? `${cantHorarios} por semana` : "—"}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground block">Pide peso y talla</span>
+                      <div className="col-span-2 pt-1 border-t border-slate-50 dark:border-slate-800/60">
+                        <span className="text-slate-400 dark:text-slate-500 inline-block font-medium mr-2">Pide peso y talla:</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {actividad.requiereMedidas ? "Sí" : "—"}
+                          {actividad.requiereMedidas ? "Sí" : "No"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="pt-2 flex justify-end">
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => abrirEdicion(actividad)}
-                        className="rounded-xl border-slate-200 px-4 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 dark:border-white/15 dark:text-slate-200"
+                        className="w-full rounded-xl h-10 px-4 text-xs font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                       >
                         Editar
                       </Button>
@@ -235,30 +345,30 @@ export function ActividadesPage() {
               })}
             </div>
 
-            {/* Desktop Table (Limpia continua de 6 columnas según imagen 1) */}
-            <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-xs xl:block dark:bg-surface-low">
+            {/* Desktop Table */}
+            <Card className="hidden overflow-hidden rounded-2xl border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
               <Table className="w-full text-left text-sm">
                 <TableHeader>
-                  <TableRow className="border-b border-border bg-transparent text-xs font-bold text-muted-foreground">
-                    <TableHead className="px-6 py-4 font-bold text-slate-600 dark:text-slate-400">Actividad</TableHead>
-                    <TableHead className="px-4 py-4 font-bold text-slate-600 dark:text-slate-400">Modalidad</TableHead>
-                    <TableHead className="px-4 py-4 font-bold text-slate-600 dark:text-slate-400">Cupo por clase</TableHead>
-                    <TableHead className="px-4 py-4 font-bold text-slate-600 dark:text-slate-400">Horarios</TableHead>
-                    <TableHead className="px-4 py-4 font-bold text-slate-600 dark:text-slate-400">Pide peso y talla</TableHead>
-                    <TableHead className="px-6 py-4 text-right"></TableHead>
+                  <TableRow className="border-b border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 uppercase tracking-wider">
+                    <TableHead className="px-6 py-3.5 font-bold text-slate-600 dark:text-slate-400">Actividad</TableHead>
+                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Modalidad</TableHead>
+                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Cupo por clase</TableHead>
+                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Horarios</TableHead>
+                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Pide peso y talla</TableHead>
+                    <TableHead className="px-6 py-3.5 text-right"><span className="sr-only">Acciones</span></TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-slate-100 font-medium dark:divide-white/5">
+                <TableBody className="divide-y divide-slate-100 font-medium dark:divide-slate-800">
                   {listaFiltrada.map((actividad) => {
                     const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                     return (
-                      <TableRow key={actividad.id} className="hover:bg-slate-50/70 transition-colors dark:hover:bg-white/5">
+                      <TableRow key={actividad.id} className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40">
                         <TableCell className="px-6 py-4 align-middle">
-                          <div className="font-bold text-sm text-slate-900 dark:text-white">
+                          <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                             {actividad.nombre}
                           </div>
                           {actividad.descripcion ? (
-                            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1 max-w-md">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 max-w-md font-normal">
                               {actividad.descripcion}
                             </div>
                           ) : null}
@@ -267,7 +377,7 @@ export function ActividadesPage() {
                         <TableCell className="px-4 py-4 align-middle">
                           <span
                             className={cn(
-                              "inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold",
+                              "inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-bold",
                               badgeModalidadClase(actividad.modalidad),
                             )}
                           >
@@ -292,7 +402,7 @@ export function ActividadesPage() {
                             type="button"
                             variant="outline"
                             onClick={() => abrirEdicion(actividad)}
-                            className="rounded-xl border-slate-200 bg-white px-4 py-1.5 text-xs font-bold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
+                            className="h-8 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                           >
                             Editar
                           </Button>
@@ -307,6 +417,7 @@ export function ActividadesPage() {
         )}
       </div>
 
+      {/* Formulario Modal Centrado de Creación y Edición */}
       {formAbierto && (
         <ModalFormActividad
           key={actividadEditar?.id ?? "nueva"}
@@ -315,46 +426,76 @@ export function ActividadesPage() {
           errorGuardado={
             guardado.isError
               ? mensajeDeErrorApi(guardado.error, "No se pudo guardar la actividad.")
-              : darDeBaja.isError
-                ? mensajeDeErrorApi(darDeBaja.error, "No se pudo desactivar la actividad.")
-                : null
+              : null
           }
           onClose={() => setFormAbierto(false)}
           onSave={guardar}
+          onDarDeBaja={actividadEditar ? () => abrirConfirmacionBaja(actividadEditar) : undefined}
+        />
+      )}
+
+      {/* Modal de confirmación de baja lógica */}
+      {actividadBaja && (
+        <ModalBajaActividad
+          actividad={actividadBaja}
+          dandoDeBaja={darDeBaja.isPending}
+          errorBaja={errorBaja}
+          onClose={() => {
+            setActividadBaja(null);
+            setErrorBaja(null);
+          }}
+          onConfirm={handleConfirmarBaja}
         />
       )}
     </OwnerLayout>
   );
 }
 
-function EmptyActividades({ onNuevo, esFiltro }: { onNuevo: () => void; esFiltro?: boolean }) {
+function EmptyActividades({
+  onNuevo,
+  esFiltro,
+  onLimpiarFiltros,
+}: {
+  onNuevo: () => void;
+  esFiltro?: boolean;
+  onLimpiarFiltros?: () => void;
+}) {
   return (
-    <Card className="border-0 bg-transparent px-6 py-16 text-center shadow-none">
-      <CardContent className="flex flex-col items-center justify-center gap-3 p-0">
-        <span
-          aria-hidden="true"
-          className="flex size-14 items-center justify-center rounded-2xl bg-pink-100 text-primary-dark dark:bg-pink-500/15 dark:text-pink-300"
+    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl">
+      <span
+        aria-hidden="true"
+        className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
+      >
+        <CalendarPlus className="size-7" />
+      </span>
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+        {esFiltro
+          ? "No se encontraron actividades con los filtros seleccionados"
+          : "Todavía no hay actividades cargadas"}
+      </h2>
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+        {esFiltro
+          ? "Probá cambiando el término de búsqueda o restableciendo los filtros de modalidad."
+          : "Creá la primera disciplina del centro para empezar a diagramar horarios y planes."}
+      </p>
+      {esFiltro ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onLimpiarFiltros}
+          className="mt-2 rounded-xl font-bold text-xs"
         >
-          <CalendarPlus className="size-7" />
-        </span>
-        <h2 className="text-xl font-extrabold tracking-tight text-dark dark:text-white">
-          {esFiltro ? "No se encontraron actividades" : "Todavía no hay actividades"}
-        </h2>
-        <p className="max-w-[320px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-          {esFiltro
-            ? "Probá cambiando la búsqueda o revisá la otra pestaña."
-            : "Creá la primera disciplina del centro para empezar a diagramar horarios."}
-        </p>
-        {!esFiltro && (
-          <Button
-            type="button"
-            onClick={onNuevo}
-            className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
-          >
-            + Nueva actividad
-          </Button>
-        )}
-      </CardContent>
+          Limpiar filtros
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          onClick={onNuevo}
+          className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+        >
+          + Nueva actividad
+        </Button>
+      )}
     </Card>
   );
 }
