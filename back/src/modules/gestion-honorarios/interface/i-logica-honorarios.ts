@@ -2,7 +2,11 @@ import type {
   CerrarTarifaInput,
   RegistrarTarifaInput,
 } from "../tarifa-honorario/tarifa-honorario.schemas.js";
-import type { FiltroTarifa, TarifaHonorario } from "../tarifa-honorario/tarifa-honorario.types.js";
+import type {
+  FiltroTarifa,
+  TarifaHonorario,
+  TarifaHonorarioConPlan,
+} from "../tarifa-honorario/tarifa-honorario.types.js";
 import type {
   LiquidacionDetallada,
   PeriodoLiquidacion,
@@ -14,7 +18,7 @@ import type {
 
 // US-23: las tarifas que cobra cada profesora. Solo la propietaria las ve y las cambia.
 export interface ILogicaTarifasHonorario {
-  listarTarifas(filtro: FiltroTarifa): Promise<TarifaHonorario[]>;
+  listarTarifas(filtro: FiltroTarifa): Promise<TarifaHonorarioConPlan[]>;
   registrarTarifa(input: RegistrarTarifaInput): Promise<TarifaHonorario>;
   cerrarTarifa(id: number, fechaHasta: CerrarTarifaInput["fecha_hasta"]): Promise<TarifaHonorario>;
 }

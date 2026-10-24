@@ -34,6 +34,15 @@ const tarifaSchema = z
   })
   .openapi("TarifaHonorario");
 
+const tarifaConPlanSchema = tarifaSchema
+  .extend({
+    plan: z
+      .object({ id_plan: z.number().int(), nombre: z.string() })
+      .nullable()
+      .openapi({ description: "El plan al que aplica; null cuando aplica a todos los planes" }),
+  })
+  .openapi("TarifaHonorarioConPlan");
+
 export function registrarDocumentacionTarifasHonorario(registro: OpenAPIRegistry): void {
   const tags = ["Tarifas de honorarios"];
   const security = SEGURIDAD_BEARER;

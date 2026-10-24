@@ -2,12 +2,22 @@ import type { Prisma, PrismaClient, tarifas_honorario } from "@prisma/client";
 import { enTransaccion } from "../../../shared/db/transaccion.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { RegistrarTarifaInput } from "./tarifa-honorario.schemas.js";
-import type { FiltroTarifa, TarifaHonorario } from "./tarifa-honorario.types.js";
+import type { FiltroTarifa, TarifaHonorario, TarifaHonorarioConPlan } from "./tarifa-honorario.types.js";
 
 const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
 
+const CON_PLAN = {
+  plan: { select: { id_plan: true, nombre: true } },
+} satisfies Prisma.tarifas_honorarioInclude;
+
+type FilaConPlan = Prisma.tarifas_honorarioGetPayload<{ include: typeof CON_PLAN }>;
+
 function aTarifa(fila: tarifas_honorario): TarifaHonorario {
   return { ...fila, valor: fila.valor.toNumber() };
+}
+
+function aTarifaConPlan({ plan, ...fila }: FilaConPlan): TarifaHonorarioConPlan {
+  return { ...aTarifa(fila), plan };
 }
 
 // Serializa dos altas del mismo alcance (profesora, concepto y plan), que si no podían dejar dos
@@ -23,7 +33,7 @@ async function bloquearAlcance(
 export class TarifaHonorarioRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listar(filtro: FiltroTarifa): Promise<TarifaHonorario[]> {
+  async listar(filtro: FiltroTarifa): Promise<TarifaHonorarioConPlan[]> {
     const hoy = fechaActualArgentina();
     const where: Prisma.tarifas_honorarioWhereInput = {
       ...(filtro.id_profesora ? { id_profesora: filtro.id_profesora } : {}),
@@ -33,9 +43,10 @@ export class TarifaHonorarioRepository {
     };
     const filas = await this.prisma.tarifas_honorario.findMany({
       where,
+      include: CON_PLAN,
       orderBy: [{ id_profesora: "asc" }, { concepto: "asc" }, { fecha_vigencia_desde: "desc" }],
     });
-    return filas.map(aTarifa);
+    return filas.map(aTarifaConPlan);
   }
 
   async buscarPorId(id: number): Promise<TarifaHonorario | null> {

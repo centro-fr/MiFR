@@ -63,15 +63,30 @@ describe("TarifaHonorarioRepository", () => {
 
   describe("listar", () => {
     it("sin filtros trae todas, ordenadas por profesora, concepto y vigencia, con el valor como número", async () => {
-      prisma.tarifas_honorario.findMany.mockResolvedValue([fila()]);
+      prisma.tarifas_honorario.findMany.mockResolvedValue([fila({ plan: null })]);
 
       const tarifas = await repositorio.listar({});
 
       expect(prisma.tarifas_honorario.findMany).toHaveBeenCalledWith({
         where: {},
+        include: { plan: { select: { id_plan: true, nombre: true } } },
         orderBy: [{ id_profesora: "asc" }, { concepto: "asc" }, { fecha_vigencia_desde: "desc" }],
       });
-      expect(tarifas).toEqual([{ ...fila(), valor: 5000.5 }]);
+      expect(tarifas).toEqual([{ ...fila(), valor: 5000.5, plan: null }]);
+    });
+
+    it("trae el plan de cada tarifa, y null cuando aplica a todos los planes", async () => {
+      prisma.tarifas_honorario.findMany.mockResolvedValue([
+        fila({ id_tarifa: 1, id_plan: 2, plan: { id_plan: 2, nombre: "Intermedio" } }),
+        fila({ id_tarifa: 2, id_plan: null, plan: null }),
+      ]);
+
+      const tarifas = await repositorio.listar({});
+
+      expect(tarifas.map(({ id_tarifa, id_plan, plan }) => ({ id_tarifa, id_plan, plan }))).toEqual([
+        { id_tarifa: 1, id_plan: 2, plan: { id_plan: 2, nombre: "Intermedio" } },
+        { id_tarifa: 2, id_plan: null, plan: null },
+      ]);
     });
 
     it("filtra por profesora y, con soloVigentes, deja las abiertas o que vencen hoy o después", async () => {

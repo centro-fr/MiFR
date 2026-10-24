@@ -9,8 +9,8 @@ import {
 const valida = {
   id_profesora: 10,
   concepto: "ALUMNO_A_CARGO",
-  tipo_valor: "MONTO_FIJO",
-  valor: 5000,
+  tipo_valor: "PORCENTAJE",
+  valor: 50,
   fecha_vigencia_desde: "2026-11-01",
 };
 
@@ -33,15 +33,28 @@ describe("registrarTarifaSchema", () => {
   it.each<[string, Record<string, unknown>]>([
     ["un porcentaje de 100", { tipo_valor: "PORCENTAJE", valor: 100 }],
     ["un porcentaje con decimales", { tipo_valor: "PORCENTAJE", valor: 12.5 }],
-    ["HORA_SUPLENCIA sin plan", { concepto: "HORA_SUPLENCIA" }],
-    ["un monto fijo mayor a 100", { valor: 250000.5 }],
+    ["HORA_SUPLENCIA sin plan, en monto fijo", { concepto: "HORA_SUPLENCIA", tipo_valor: "MONTO_FIJO" }],
+    [
+      "un monto fijo mayor a 100 en HORA_SUPLENCIA",
+      { concepto: "HORA_SUPLENCIA", tipo_valor: "MONTO_FIJO", valor: 250000.5 },
+    ],
   ])("acepta %s", (_caso, cambios) => {
     expect(registrarTarifaSchema.safeParse({ ...valida, ...cambios }).success).toBe(true);
   });
 
   it.each<[string, Record<string, unknown>, string]>([
     ["un porcentaje mayor a 100", { tipo_valor: "PORCENTAJE", valor: 100.01 }, "valor"],
-    ["HORA_SUPLENCIA con plan", { concepto: "HORA_SUPLENCIA", id_plan: 7 }, "id_plan"],
+    [
+      "HORA_SUPLENCIA con plan",
+      { concepto: "HORA_SUPLENCIA", tipo_valor: "MONTO_FIJO", id_plan: 7 },
+      "id_plan",
+    ],
+    ["ALUMNO_A_CARGO en monto fijo", { tipo_valor: "MONTO_FIJO", valor: 5000 }, "tipo_valor"],
+    [
+      "HORA_SUPLENCIA en porcentaje",
+      { concepto: "HORA_SUPLENCIA", tipo_valor: "PORCENTAJE", valor: 50 },
+      "tipo_valor",
+    ],
     ["un valor en 0", { valor: 0 }, "valor"],
     ["un valor negativo", { valor: -1 }, "valor"],
     ["un valor con tres decimales", { valor: 10.123 }, "valor"],
