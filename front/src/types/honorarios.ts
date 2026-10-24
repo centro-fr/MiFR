@@ -16,6 +16,13 @@ export interface ProfesoraDeLiquidacion {
   apellido: string;
 }
 
+export interface DesgloseLiquidacion {
+  cantidadAlumnos: number;
+  subtotalAlumnos: number;
+  /** Neto de las suplencias: lo que cubrió suma y lo que le cubrieron resta. */
+  subtotalSuplencias: number;
+}
+
 /** Una fila por profesora: lo que alcanza para la tarjeta sin pedir el detalle. */
 export interface LiquidacionResumen {
   id: number;
@@ -24,10 +31,8 @@ export interface LiquidacionResumen {
   calculadaEl: string;
   montoTotal: number;
   profesora: ProfesoraDeLiquidacion;
-  cantidadAlumnos: number;
-  subtotalAlumnos: number;
-  /** Neto de las suplencias: lo que cubrió suma y lo que le cubrieron resta. */
-  subtotalSuplencias: number;
+  /** null mientras el back no lo mande en el listado: la tarjeta muestra solo el total. */
+  desglose: DesgloseLiquidacion | null;
 }
 
 export interface InformeHonorarios {
@@ -45,15 +50,21 @@ export interface TarifaAplicada {
   valor: number;
 }
 
+export interface InscripcionDeLaLinea {
+  plan: string;
+  estado: "ACTIVA" | "BAJA";
+  /** Timestamp ISO; solo si se dio de baja. */
+  fechaBaja: string | null;
+}
+
 export interface LineaAlumno {
   id: number;
   monto: number;
-  tarifa: TarifaAplicada;
+  /** null si la tarifa ya no figura en /tarifas-honorario. */
+  tarifa: TarifaAplicada | null;
   alumno: { nombre: string; apellido: string };
-  plan: string;
-  estadoInscripcion: "ACTIVA" | "BAJA";
-  /** Timestamp ISO; solo si se dio de baja. */
-  fechaBaja: string | null;
+  /** null mientras el back no mande el plan y la situación de la inscripción. */
+  inscripcion: InscripcionDeLaLinea | null;
 }
 
 export interface ClaseDeSuplencia {
@@ -63,8 +74,9 @@ export interface ClaseDeSuplencia {
   horaInicio: string;
   horaFin: string;
   actividad: string;
-  ausente: ProfesoraDeLiquidacion;
-  suplente: ProfesoraDeLiquidacion;
+  /** null mientras el back no mande quién faltó y quién la cubrió. */
+  ausente: ProfesoraDeLiquidacion | null;
+  suplente: ProfesoraDeLiquidacion | null;
 }
 
 export interface LineaSuplencia {
@@ -72,7 +84,7 @@ export interface LineaSuplencia {
   /** CLASE_SUPLIDA suma a la suplente; DESCUENTO_AUSENCIA resta a la titular (monto negativo). */
   concepto: "CLASE_SUPLIDA" | "DESCUENTO_AUSENCIA";
   monto: number;
-  tarifa: TarifaAplicada;
+  tarifa: TarifaAplicada | null;
   clase: ClaseDeSuplencia;
 }
 
@@ -90,7 +102,7 @@ export interface TarifaHonorario {
   idProfesora: number;
   concepto: ConceptoTarifa;
   /** null: rige para todos los planes. */
-  plan: { id: number; nombre: string } | null;
+  idPlan: number | null;
   tipoValor: TipoValorTarifa;
   valor: number;
   /** AAAA-MM-DD. */

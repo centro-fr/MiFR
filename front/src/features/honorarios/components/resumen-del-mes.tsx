@@ -3,7 +3,7 @@ import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BadgeEstadoLiquidacion } from "@/features/honorarios/components/badge-estado-liquidacion";
-import { estadoDelMes, fechaHora, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
+import { alumnosDelMes, estadoDelMes, fechaHora, leyendaDelTotal, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
 import { esPeriodoEnCurso } from "@/features/honorarios/utils/periodo";
 import type { InformeHonorarios } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
@@ -11,16 +11,13 @@ import { formatearPrecio } from "@/utils/moneda";
 const TARJETA = "rounded-2xl border-border bg-white p-5 shadow-sm dark:bg-surface-low";
 
 function TotalDelMes({ informe }: { informe: InformeHonorarios }) {
-  const alumnos = informe.liquidaciones.reduce((total, fila) => total + fila.cantidadAlumnos, 0);
   return (
     <Card className={TARJETA}>
       <h2 className="text-sm font-semibold text-muted-foreground">Total del mes</h2>
       <p className="mt-1 text-3xl font-black tracking-tight text-dark tabular-nums dark:text-white">
         {formatearPrecio(informe.totalGeneral)}
       </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {alumnos} {alumnos === 1 ? "alumno a cargo" : "alumnos a cargo"} · se cuenta cada inscripto, asista o no
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">{leyendaDelTotal(alumnosDelMes(informe.liquidaciones))}</p>
     </Card>
   );
 }

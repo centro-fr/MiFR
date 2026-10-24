@@ -5,7 +5,8 @@ import { fechaCorta } from "@/features/honorarios/utils/formato-honorarios";
 import type { RegistrarTarifaBody } from "@/features/honorarios/schemas/honorarios";
 
 // Nueva tarifa de una profesora (US-23). Replica los CHECK de tarifas_honorario del DER para avisar
-// antes de enviar: valor > 0, PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan. El back valida igual.
+// antes de enviar: valor > 0, PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan. También la regla del back
+// de que la vigencia no empiece en el pasado: una tarifa no cambia lo ya liquidado. El back valida igual.
 
 /** DECIMAL(10,2) de tarifas_honorario.valor. */
 const VALOR_MAXIMO = 99_999_999.99;
@@ -52,7 +53,8 @@ export function valorDesdeTexto(texto: string, tipoValor: TipoValorTarifa): numb
   return tipoValor === "PORCENTAJE" ? porcentajeDesdeTexto(texto.trim()) : precioDesdeTexto(texto);
 }
 
-export function crearTarifaFormSchema(ultimoInicio: UltimoInicioPorConcepto) {
+/** `hoy` es AAAA-MM-DD en Argentina: la vigencia puede empezar desde ese día. */
+export function crearTarifaFormSchema(ultimoInicio: UltimoInicioPorConcepto, hoy: string) {
   return z
     .object({
       concepto: z.enum(["ALUMNO_A_CARGO", "HORA_SUPLENCIA"], { required_error: "Elegí por qué se cobra." }),
@@ -67,6 +69,11 @@ export function crearTarifaFormSchema(ultimoInicio: UltimoInicioPorConcepto) {
       }
       const problema = valores.tipoValor === "PORCENTAJE" ? problemaDelPorcentaje(valores.valor) : problemaDelMonto(valores.valor);
       if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["valor"], message: problema });
+
+      if (valores.desde && valores.desde < hoy) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["desde"], message: "No puede empezar antes de hoy." });
+        return;
+      }
 
       // Sin superposiciones: la nueva cierra la anterior, así que tiene que empezar después que ella.
       const inicioAnterior = ultimoInicio[valores.concepto];

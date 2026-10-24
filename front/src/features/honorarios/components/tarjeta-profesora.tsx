@@ -20,7 +20,7 @@ import {
   tarifaGeneralVigente,
   tarifasPorPlanVigentes,
 } from "@/features/honorarios/utils/formato-honorarios";
-import type { LiquidacionResumen, TarifaHonorario } from "@/types/honorarios";
+import type { DesgloseLiquidacion, LiquidacionResumen, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
 
@@ -41,23 +41,58 @@ function cantidadDeAlumnos(cantidad: number): string {
 }
 
 interface TarifaDeLaTarjeta {
-  /** "2 alumnos × $ 8.000" o "2 alumnos · 50% de lo cobrado". */
-  lineaAlumnos: string;
+  /** La tarifa general vigente; null si rige una por plan o no tiene ninguna. */
+  general: TarifaHonorario | null;
+  porPlan: boolean;
   /** Texto de la tarifa vigente; null si no tiene ninguna y undefined si todavía no se sabe. */
   descripcion: string | null | undefined;
 }
 
 function tarifaDeLaTarjeta(liquidacion: LiquidacionResumen, tarifas: TarifaHonorario[] | undefined, dia: string): TarifaDeLaTarjeta {
-  const alumnos = cantidadDeAlumnos(liquidacion.cantidadAlumnos);
-  if (!tarifas) return { lineaAlumnos: alumnos, descripcion: undefined };
+  if (!tarifas) return { general: null, porPlan: false, descripcion: undefined };
   const general = tarifaGeneralVigente(tarifas, liquidacion.profesora.id, "ALUMNO_A_CARGO", dia);
-  const porPlan = tarifasPorPlanVigentes(tarifas, liquidacion.profesora.id, dia);
-  if (porPlan.length > 0) return { lineaAlumnos: `${alumnos} · tarifa según el plan`, descripcion: "Según el plan" };
-  if (!general) return { lineaAlumnos: alumnos, descripcion: null };
-  const descripcion = describirTarifa(general, "ALUMNO_A_CARGO");
-  const lineaAlumnos =
-    general.tipoValor === "MONTO_FIJO" ? `${alumnos} × ${formatearPrecio(general.valor)}` : `${alumnos} · ${descripcion}`;
-  return { lineaAlumnos, descripcion };
+  if (tarifasPorPlanVigentes(tarifas, liquidacion.profesora.id, dia).length > 0) {
+    return { general: null, porPlan: true, descripcion: "Según el plan" };
+  }
+  if (!general) return { general: null, porPlan: false, descripcion: null };
+  return { general, porPlan: false, descripcion: describirTarifa(general, "ALUMNO_A_CARGO") };
+}
+
+/** "2 alumnos × $ 8.000", "2 alumnos · 50% de lo cobrado" o "2 alumnos · tarifa según el plan". */
+function lineaDeAlumnos(cantidad: number, tarifa: TarifaDeLaTarjeta): string {
+  const alumnos = cantidadDeAlumnos(cantidad);
+  if (tarifa.porPlan) return `${alumnos} · tarifa según el plan`;
+  if (!tarifa.general || !tarifa.descripcion) return alumnos;
+  return tarifa.general.tipoValor === "MONTO_FIJO"
+    ? `${alumnos} × ${formatearPrecio(tarifa.general.valor)}`
+    : `${alumnos} · ${tarifa.descripcion}`;
+}
+
+const FILA = "flex items-baseline justify-between gap-3 text-sm";
+
+function Desglose({ desglose, tarifa }: { desglose: DesgloseLiquidacion; tarifa: TarifaDeLaTarjeta }) {
+  const ajuste = desglose.subtotalSuplencias;
+  return (
+    <dl className="space-y-1.5">
+      <div className={FILA}>
+        <dt className="text-muted-foreground">{lineaDeAlumnos(desglose.cantidadAlumnos, tarifa)}</dt>
+        <dd className="font-semibold text-slate-800 tabular-nums dark:text-slate-100">{formatearPrecio(desglose.subtotalAlumnos)}</dd>
+      </div>
+      <div className={FILA}>
+        <dt className="text-muted-foreground">Suplencias</dt>
+        <dd
+          className={cn(
+            "font-semibold tabular-nums",
+            ajuste > 0 && "text-emerald-700 dark:text-emerald-300",
+            ajuste < 0 && "text-rose-700 dark:text-rose-300",
+            ajuste === 0 && "text-muted-foreground",
+          )}
+        >
+          {formatearAjuste(ajuste)}
+        </dd>
+      </div>
+    </dl>
+  );
 }
 
 function MenuEstado({ liquidacion, onCambiarEstado }: Pick<PropsTarjeta, "liquidacion" | "onCambiarEstado">) {
@@ -87,14 +122,11 @@ function MenuEstado({ liquidacion, onCambiarEstado }: Pick<PropsTarjeta, "liquid
   );
 }
 
-const FILA = "flex items-baseline justify-between gap-3 text-sm";
-
 export function TarjetaProfesora({ liquidacion, tarifas, diaDeReferencia, onCambiarTarifa, onCambiarEstado }: PropsTarjeta) {
   const [abierta, setAbierta] = useState(false);
   const idDetalle = useId();
   const { profesora } = liquidacion;
   const tarifa = tarifaDeLaTarjeta(liquidacion, tarifas, diaDeReferencia);
-  const ajuste = liquidacion.subtotalSuplencias;
 
   return (
     <Card className="flex flex-col rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low">
@@ -115,25 +147,7 @@ export function TarjetaProfesora({ liquidacion, tarifas, diaDeReferencia, onCamb
 
         <p className="text-3xl font-black tracking-tight text-dark tabular-nums dark:text-white">{formatearPrecio(liquidacion.montoTotal)}</p>
 
-        <dl className="space-y-1.5">
-          <div className={FILA}>
-            <dt className="text-muted-foreground">{tarifa.lineaAlumnos}</dt>
-            <dd className="font-semibold text-slate-800 tabular-nums dark:text-slate-100">{formatearPrecio(liquidacion.subtotalAlumnos)}</dd>
-          </div>
-          <div className={FILA}>
-            <dt className="text-muted-foreground">Suplencias</dt>
-            <dd
-              className={cn(
-                "font-semibold tabular-nums",
-                ajuste > 0 && "text-emerald-700 dark:text-emerald-300",
-                ajuste < 0 && "text-rose-700 dark:text-rose-300",
-                ajuste === 0 && "text-muted-foreground",
-              )}
-            >
-              {formatearAjuste(ajuste)}
-            </dd>
-          </div>
-        </dl>
+        {liquidacion.desglose && <Desglose desglose={liquidacion.desglose} tarifa={tarifa} />}
 
         <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-white/5">
           {tarifa.descripcion === undefined && <Skeleton aria-label="Cargando la tarifa" className="h-5 w-40 rounded-md" />}

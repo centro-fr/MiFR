@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   calcularLiquidaciones,
   cerrarLiquidacion,
@@ -23,6 +23,14 @@ const liquidacionKey = (id: number) => [...LIQUIDACIONES_KEY, id] as const;
 const TREINTA_SEGUNDOS = 30_000;
 const CINCO_MINUTOS = 5 * 60_000;
 
+const tarifasQuery = { queryKey: TARIFAS_KEY, queryFn: listarTarifas, staleTime: CINCO_MINUTOS };
+
+// El detalle identifica la tarifa aplicada solo por id: se completa con el listado de tarifas, que
+// casi siempre ya está en caché por las tarjetas. Si se registró una tarifa, se vuelve a pedir.
+async function detalleConTarifas(queryClient: QueryClient, id: number): Promise<LiquidacionDetalle> {
+  return obtenerLiquidacion(id, await queryClient.fetchQuery(tarifasQuery));
+}
+
 // Sin placeholderData al cambiar de mes: mostrar los montos de octubre bajo "Septiembre" mientras
 // carga sería engañoso en un informe de dinero. Se ve el esqueleto.
 export function useInformeHonorarios(periodo: string) {
@@ -31,16 +39,17 @@ export function useInformeHonorarios(periodo: string) {
 
 /** El detalle se pide recién al abrir la tarjeta: la grilla se arma con un solo pedido. */
 export function useLiquidacion(id: number, enabled: boolean) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: liquidacionKey(id),
-    queryFn: () => obtenerLiquidacion(id),
+    queryFn: () => detalleConTarifas(queryClient, id),
     staleTime: TREINTA_SEGUNDOS,
     enabled,
   });
 }
 
 export function useTarifas() {
-  return useQuery({ queryKey: TARIFAS_KEY, queryFn: listarTarifas, staleTime: CINCO_MINUTOS });
+  return useQuery(tarifasQuery);
 }
 
 /**
@@ -53,7 +62,11 @@ export function useCargarDetalles() {
     (ids: number[]): Promise<LiquidacionDetalle[]> =>
       Promise.all(
         ids.map((id) =>
-          queryClient.fetchQuery({ queryKey: liquidacionKey(id), queryFn: () => obtenerLiquidacion(id), staleTime: TREINTA_SEGUNDOS }),
+          queryClient.fetchQuery({
+            queryKey: liquidacionKey(id),
+            queryFn: () => detalleConTarifas(queryClient, id),
+            staleTime: TREINTA_SEGUNDOS,
+          }),
         ),
       ),
     [queryClient],

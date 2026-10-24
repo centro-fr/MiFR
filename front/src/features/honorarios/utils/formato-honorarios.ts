@@ -1,6 +1,8 @@
 import type {
   ConceptoTarifa,
   EstadoLiquidacion,
+  LineaAlumno,
+  LineaSuplencia,
   LiquidacionResumen,
   TarifaAplicada,
   TarifaHonorario,
@@ -21,8 +23,9 @@ export const ETIQUETA_CONCEPTO: Record<ConceptoTarifa, string> = {
   HORA_SUPLENCIA: "Por hora de suplencia",
 };
 
-/** "50% de lo cobrado", "$ 8.000 por alumno" o "$ 5.000 por hora". */
-export function describirTarifa(tarifa: TarifaAplicada, concepto: ConceptoTarifa): string {
+/** "50% de lo cobrado", "$ 8.000 por alumno", "$ 5.000 por hora" o "—" si no se conoce. */
+export function describirTarifa(tarifa: TarifaAplicada | null, concepto: ConceptoTarifa): string {
+  if (!tarifa) return "—";
   if (tarifa.tipoValor === "PORCENTAJE") return `${FORMATO_PORCENTAJE.format(tarifa.valor)}% de lo cobrado`;
   return `${formatearPrecio(tarifa.valor)} ${concepto === "ALUMNO_A_CARGO" ? "por alumno" : "por hora"}`;
 }
@@ -31,8 +34,8 @@ export function describirTarifa(tarifa: TarifaAplicada, concepto: ConceptoTarifa
  * Con PORCENTAJE el back guarda solo el monto: lo cobrado se recupera dividiendo por la tarifa.
  * Sirve para mostrar la base del cálculo ("$ 25.000 × 50%"), no para volver a calcular.
  */
-export function baseCobrada(monto: number, tarifa: TarifaAplicada): number | null {
-  if (tarifa.tipoValor !== "PORCENTAJE" || tarifa.valor === 0) return null;
+export function baseCobrada(monto: number, tarifa: TarifaAplicada | null): number | null {
+  if (!tarifa || tarifa.tipoValor !== "PORCENTAJE" || tarifa.valor === 0) return null;
   return Math.round((monto * 100 * 100) / tarifa.valor) / 100;
 }
 
@@ -48,6 +51,18 @@ export function nombreCompleto({ nombre, apellido }: { nombre: string; apellido:
 
 export function inicialesDe({ nombre, apellido }: { nombre: string; apellido: string }): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
+}
+
+/** "Activa", "Baja el 13/10/2026" o "—" si el back no mandó la inscripción. */
+export function situacionDeLaLinea({ inscripcion }: LineaAlumno): string {
+  if (!inscripcion) return "—";
+  return inscripcion.estado === "BAJA" && inscripcion.fechaBaja ? `Baja el ${fechaCorta(inscripcion.fechaBaja)}` : "Activa";
+}
+
+/** "Cubrió a Ana Pérez" / "La cubrió Ana Pérez", o el concepto si el back no mandó quién. */
+export function quienDeLaSuplencia({ concepto, clase }: LineaSuplencia): string {
+  if (concepto === "CLASE_SUPLIDA") return clase.ausente ? `Cubrió a ${nombreCompleto(clase.ausente)}` : "Cubrió una clase";
+  return clase.suplente ? `La cubrió ${nombreCompleto(clase.suplente)}` : "Le cubrieron una clase";
 }
 
 /** AAAA-MM-DD → "13/10/2026". */
@@ -78,7 +93,7 @@ export function tarifaGeneralVigente(
     (tarifa) =>
       tarifa.idProfesora === idProfesora &&
       tarifa.concepto === concepto &&
-      tarifa.plan === null &&
+      tarifa.idPlan === null &&
       tarifa.desde <= dia &&
       (tarifa.hasta === null || tarifa.hasta >= dia),
   );
@@ -89,7 +104,7 @@ export function tarifasPorPlanVigentes(tarifas: TarifaHonorario[], idProfesora: 
   return tarifas.filter(
     (tarifa) =>
       tarifa.idProfesora === idProfesora &&
-      tarifa.plan !== null &&
+      tarifa.idPlan !== null &&
       tarifa.desde <= dia &&
       (tarifa.hasta === null || tarifa.hasta >= dia),
   );
@@ -102,8 +117,25 @@ export function ultimaTarifaGeneral(
   concepto: ConceptoTarifa,
 ): TarifaHonorario | undefined {
   return tarifas
-    .filter((tarifa) => tarifa.idProfesora === idProfesora && tarifa.concepto === concepto && tarifa.plan === null)
+    .filter((tarifa) => tarifa.idProfesora === idProfesora && tarifa.concepto === concepto && tarifa.idPlan === null)
     .sort((a, b) => b.desde.localeCompare(a.desde))[0];
+}
+
+/** Alumnos a cargo de todo el mes; null si alguna liquidación llegó sin desglose. */
+export function alumnosDelMes(liquidaciones: LiquidacionResumen[]): number | null {
+  let total = 0;
+  for (const { desglose } of liquidaciones) {
+    if (!desglose) return null;
+    total += desglose.cantidadAlumnos;
+  }
+  return total;
+}
+
+/** "3 alumnos a cargo · se cuenta…" o solo la regla si no se sabe cuántos son. */
+export function leyendaDelTotal(alumnos: number | null): string {
+  const regla = "se cuenta cada inscripto, asista o no";
+  if (alumnos === null) return regla.charAt(0).toUpperCase() + regla.slice(1);
+  return `${alumnos} ${alumnos === 1 ? "alumno a cargo" : "alumnos a cargo"} · ${regla}`;
 }
 
 /** El estado del mes para la tarjeta de resumen: si queda algo en revisión, el mes está en revisión. */

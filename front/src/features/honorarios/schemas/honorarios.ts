@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-// Contrato de US-23 (back: gestion-honorarios, todavía sin endpoints). Sale de lo planeado en
-// back/SPRINT-4.md, del DER (liquidaciones, liquidacion_detalles, tarifas_honorario) y de los tipos
-// de CalculadorHonorarios. Si el back cambia algo, se ajusta acá y en el mapeo de la API.
+// Contrato de US-23: /liquidaciones y /tarifas-honorario (back: gestion-honorarios). Los campos
+// marcados "pedido al back" todavía no llegan: son opcionales y la pantalla se arma sin ellos.
 
 // NUMERIC del DER: el back lo suele pasar a number, pero Prisma serializa Decimal como texto.
 const montoSchema = z
@@ -30,29 +29,27 @@ export const tipoValorTarifaSchema = z.enum(["PORCENTAJE", "MONTO_FIJO"]);
 
 const profesoraApiSchema = z.object({
   id_profesora: idSchema,
-  nombre: z.string(),
-  apellido: z.string(),
+  usuario: z.object({ nombre: z.string(), apellido: z.string() }),
 });
 
-export const liquidacionResumenApiSchema = z.object({
+export const liquidacionApiSchema = z.object({
   id_liquidacion: idSchema,
   estado: estadoLiquidacionSchema,
   fecha_liquidacion: z.string(),
   monto_total: montoSchema,
   profesora: profesoraApiSchema,
-  cantidad_alumnos: z.number().int().nonnegative(),
-  subtotal_alumnos: montoSchema,
-  subtotal_suplencias: montoSchema,
+  // Pedido al back: el desglose de la tarjeta sin pedir el detalle de cada profesora.
+  cantidad_alumnos: z.number().int().nonnegative().optional(),
+  subtotal_alumnos: montoSchema.optional(),
+  subtotal_suplencias: montoSchema.optional(),
 });
 
 const centavos = (monto: number) => Math.round(monto * 100);
 
 const informeBaseSchema = z.object({
   periodo: z.string().regex(/^\d{4}-\d{2}$/),
-  periodo_desde: diaSchema,
-  periodo_hasta: diaSchema,
   total_general: montoSchema,
-  liquidaciones: z.array(liquidacionResumenApiSchema),
+  liquidaciones: z.array(liquidacionApiSchema),
 });
 
 // RNF-01: el total general tiene que ser la suma de las liquidaciones. Si no coincide, el informe
@@ -81,56 +78,44 @@ export const resultadoCalculoApiSchema = informeBaseSchema
   .extend({ advertencias: z.array(advertenciaApiSchema) })
   .refine(totalCoincide, TOTAL_INCONSISTENTE);
 
-const tarifaAplicadaApiSchema = z.object({
+// El detalle trae solo el id de la tarifa aplicada: el front la busca en /tarifas-honorario.
+const detalleBaseApiSchema = z.object({
+  id_liq_detalle: idSchema,
   id_tarifa: idSchema,
-  tipo_valor: tipoValorTarifaSchema,
-  valor: montoSchema,
+  monto: montoSchema,
 });
 
-const detalleAlumnoApiSchema = z.object({
-  id_liq_detalle: idSchema,
+const detalleAlumnoApiSchema = detalleBaseApiSchema.extend({
   concepto: z.literal("ALUMNO_A_CARGO"),
-  monto: montoSchema,
-  tarifa: tarifaAplicadaApiSchema,
-  inscripcion: z.object({
-    id_inscripcion: idSchema,
-    // Las PREINSCRIPTA no generan honorarios: nunca llegan al detalle.
-    estado: z.enum(["ACTIVA", "BAJA"]),
-    fecha_baja: z.string().nullable(),
-    alumno: z.object({ id_alumno: idSchema, nombre: z.string(), apellido: z.string() }),
-    plan: z.object({ id_plan: idSchema, nombre: z.string() }),
-  }),
-  clase: z.null(),
+  alumno: z.object({ id_alumno: idSchema, nombre: z.string(), apellido: z.string() }),
+  // Pedido al back: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
+  inscripcion: z
+    .object({
+      estado: z.enum(["ACTIVA", "BAJA"]),
+      fecha_baja: z.string().nullable(),
+      plan: z.object({ id_plan: idSchema, nombre: z.string() }),
+    })
+    .optional(),
 });
 
-const detalleSuplenciaApiSchema = z.object({
-  id_liq_detalle: idSchema,
+const detalleSuplenciaApiSchema = detalleBaseApiSchema.extend({
   concepto: z.enum(["CLASE_SUPLIDA", "DESCUENTO_AUSENCIA"]),
-  monto: montoSchema,
-  tarifa: tarifaAplicadaApiSchema,
-  inscripcion: z.null(),
   clase: z.object({
-    id_clase: idSchema,
     fecha_clase: diaSchema,
     hora_inicio: horaSchema,
     hora_fin: horaSchema,
-    actividad: z.object({ id_actividad: idSchema, nombre: z.string() }),
-    profesora_ausente: profesoraApiSchema,
-    profesora_suplente: profesoraApiSchema,
+    actividad: z.string(),
+    // Pedido al back: quién faltó (la titular del horario) y quién dictó la clase.
+    profesora_titular: profesoraApiSchema.optional(),
+    profesora_suplente: profesoraApiSchema.optional(),
   }),
 });
 
 export const detalleLiquidacionApiSchema = z.discriminatedUnion("concepto", [detalleAlumnoApiSchema, detalleSuplenciaApiSchema]);
 
 // RNF-01, por profesora: monto_total es la suma de sus detalles.
-export const liquidacionDetalleApiSchema = z
-  .object({
-    id_liquidacion: idSchema,
-    estado: estadoLiquidacionSchema,
-    monto_total: montoSchema,
-    profesora: profesoraApiSchema,
-    detalles: z.array(detalleLiquidacionApiSchema),
-  })
+export const liquidacionDetalleApiSchema = liquidacionApiSchema
+  .extend({ detalles: z.array(detalleLiquidacionApiSchema) })
   .refine(
     ({ monto_total, detalles }) =>
       centavos(monto_total) === detalles.reduce((suma, detalle) => suma + centavos(detalle.monto), 0),
@@ -142,7 +127,6 @@ export const tarifaHonorarioApiSchema = z.object({
   id_profesora: idSchema,
   concepto: conceptoTarifaSchema,
   id_plan: idSchema.nullable(),
-  plan: z.object({ id_plan: idSchema, nombre: z.string() }).nullable(),
   tipo_valor: tipoValorTarifaSchema,
   valor: montoSchema,
   fecha_vigencia_desde: diaSchema,
@@ -150,9 +134,9 @@ export const tarifaHonorarioApiSchema = z.object({
 });
 
 export type InformeHonorariosApi = z.infer<typeof informeHonorariosApiSchema>;
-export type LiquidacionResumenApi = z.infer<typeof liquidacionResumenApiSchema>;
+export type LiquidacionApi = z.infer<typeof liquidacionApiSchema>;
 export type LiquidacionDetalleApi = z.infer<typeof liquidacionDetalleApiSchema>;
-export type ResultadoCalculoApi = z.infer<typeof resultadoCalculoApiSchema>;
+export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export type TarifaHonorarioApi = z.infer<typeof tarifaHonorarioApiSchema>;
 
 /** Cuerpo de POST /tarifas-honorario. */
@@ -163,5 +147,6 @@ export interface RegistrarTarifaBody {
   id_plan: null;
   tipo_valor: z.infer<typeof tipoValorTarifaSchema>;
   valor: number;
+  /** AAAA-MM-DD, desde hoy en adelante: el back no acepta vigencias en el pasado. */
   fecha_vigencia_desde: string;
 }

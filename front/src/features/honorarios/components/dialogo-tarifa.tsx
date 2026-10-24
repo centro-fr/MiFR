@@ -21,9 +21,10 @@ import {
   nombreCompleto,
   ultimaTarifaGeneral,
 } from "@/features/honorarios/utils/formato-honorarios";
-import { etiquetaPeriodo, primerDiaDe, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
+import { esPeriodoEnCurso, etiquetaPeriodo, primerDiaDe, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
 import type { LiquidacionResumen, ProfesoraDeLiquidacion, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
+import { fechaActualArgentina } from "@/utils/fecha";
 
 const CONTROL =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
@@ -35,10 +36,20 @@ function diaSiguiente(dia: string): string {
   return new Date(new Date(`${dia}T00:00:00.000Z`).getTime() + 86_400_000).toISOString().slice(0, 10);
 }
 
-/** El primer día del mes que se está viendo, salvo que ya haya una tarifa que empiece ese día o después. */
-function desdeSugerido(periodo: string, ultimoInicio: string | null): string {
+/**
+ * El primer día del mes que se está viendo, pero nunca antes de hoy (el back no acepta vigencias en el
+ * pasado) ni antes del día siguiente al inicio de la última tarifa.
+ */
+function desdeSugerido(periodo: string, ultimoInicio: string | null, hoy: string): string {
   const inicioDelMes = primerDiaDe(periodo);
-  return ultimoInicio && ultimoInicio >= inicioDelMes ? diaSiguiente(ultimoInicio) : inicioDelMes;
+  const desde = inicioDelMes > hoy ? inicioDelMes : hoy;
+  return ultimoInicio && ultimoInicio >= desde ? diaSiguiente(ultimoInicio) : desde;
+}
+
+// Con la vigencia desde hoy, la tarifa solo puede cambiar el mes en curso.
+function mensajeDeTarifaGuardada(periodo: string, desde: string): string {
+  if (!esPeriodoEnCurso(periodo)) return `Tarifa guardada. Rige desde el ${fechaCorta(desde)}.`;
+  return `Tarifa guardada. Si ${etiquetaPeriodo(periodo).toLowerCase()} sigue en revisión, recalculalo para aplicarla.`;
 }
 
 function etiquetaDelValor(concepto: TarifaFormValues["concepto"], tipoValor: TarifaFormValues["tipoValor"]): string {
@@ -70,7 +81,7 @@ function TarifasVigentes({ tarifas, idProfesora, dia }: { tarifas: TarifaHonorar
             <li key={tarifa.id} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
               <span className="text-slate-600 dark:text-slate-300">
                 {ETIQUETA_CONCEPTO[tarifa.concepto]}
-                {tarifa.plan && ` · ${tarifa.plan.nombre}`}
+                {tarifa.idPlan !== null && " · para un plan puntual"}
               </span>
               <span className="font-bold text-slate-900 dark:text-white">
                 {describirTarifa(tarifa, tarifa.concepto)} <span className="font-normal text-muted-foreground">desde {fechaCorta(tarifa.desde)}</span>
@@ -92,6 +103,7 @@ interface PropsFormulario {
 
 function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormulario) {
   const registrar = useRegistrarTarifa();
+  const hoy = fechaActualArgentina();
   const ultimoInicio = useMemo<UltimoInicioPorConcepto>(
     () => ({
       ALUMNO_A_CARGO: ultimaTarifaGeneral(tarifas, profesora.id, "ALUMNO_A_CARGO")?.desde ?? null,
@@ -100,12 +112,12 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
     [tarifas, profesora.id],
   );
   const formulario = useForm<TarifaFormValues>({
-    resolver: zodResolver(crearTarifaFormSchema(ultimoInicio)),
+    resolver: zodResolver(crearTarifaFormSchema(ultimoInicio, hoy)),
     defaultValues: {
       concepto: "ALUMNO_A_CARGO",
       tipoValor: "PORCENTAJE",
       valor: "",
-      desde: desdeSugerido(periodo, ultimoInicio.ALUMNO_A_CARGO),
+      desde: desdeSugerido(periodo, ultimoInicio.ALUMNO_A_CARGO, hoy),
     },
   });
   const errores = formulario.formState.errors;
@@ -115,7 +127,7 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
   const guardar = formulario.handleSubmit(async (valores) => {
     try {
       await registrar.mutateAsync(aRegistrarTarifaBody(profesora.id, valores));
-      toast.success(`Tarifa guardada. Si ${etiquetaPeriodo(periodo).toLowerCase()} sigue en revisión, recalculalo para aplicarla.`);
+      toast.success(mensajeDeTarifaGuardada(periodo, valores.desde));
       onListo();
     } catch (error) {
       toast.error(mensajeDeErrorApi(error, "No se pudo guardar la tarifa."));
@@ -127,7 +139,7 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
     onChange: (evento: { target: { value: TarifaFormValues["concepto"] } }) => {
       const elegido = evento.target.value;
       if (elegido === "HORA_SUPLENCIA") formulario.setValue("tipoValor", "MONTO_FIJO");
-      formulario.setValue("desde", desdeSugerido(periodo, ultimoInicio[elegido]));
+      formulario.setValue("desde", desdeSugerido(periodo, ultimoInicio[elegido], hoy));
     },
   });
 
@@ -194,6 +206,7 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
         <input
           id="tarifa-desde"
           type="date"
+          min={hoy}
           aria-invalid={Boolean(errores.desde)}
           aria-describedby={errores.desde ? "tarifa-desde-error" : "tarifa-desde-ayuda"}
           {...formulario.register("desde")}

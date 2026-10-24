@@ -2,11 +2,15 @@ import { createPortal } from "react-dom";
 import type { InformeHonorarios, LiquidacionDetalle, LineaAlumno, LineaSuplencia } from "@/types/honorarios";
 import {
   ETIQUETA_ESTADO,
+  alumnosDelMes,
   baseCobrada,
   describirTarifa,
   fechaCorta,
   fechaHora,
+  leyendaDelTotal,
   nombreCompleto,
+  quienDeLaSuplencia,
+  situacionDeLaLinea,
 } from "@/features/honorarios/utils/formato-honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
 import { formatearPrecio } from "@/utils/moneda";
@@ -29,8 +33,8 @@ function FilaAlumno({ linea }: { linea: LineaAlumno }) {
   return (
     <tr>
       <td className={CELDA}>{`${linea.alumno.apellido}, ${linea.alumno.nombre}`}</td>
-      <td className={CELDA}>{linea.plan}</td>
-      <td className={CELDA}>{linea.estadoInscripcion === "BAJA" && linea.fechaBaja ? `Baja el ${fechaCorta(linea.fechaBaja)}` : "Activa"}</td>
+      <td className={CELDA}>{linea.inscripcion?.plan ?? "—"}</td>
+      <td className={CELDA}>{situacionDeLaLinea(linea)}</td>
       <td className={CELDA}>
         {describirTarifa(linea.tarifa, "ALUMNO_A_CARGO")}
         {base !== null && ` (cobrado ${formatearPrecio(base)})`}
@@ -45,9 +49,7 @@ function FilaSuplencia({ linea }: { linea: LineaSuplencia }) {
   return (
     <tr>
       <td className={CELDA}>{`${clase.actividad}, ${fechaCorta(clase.fecha)} ${clase.horaInicio}–${clase.horaFin}`}</td>
-      <td className={CELDA}>
-        {linea.concepto === "CLASE_SUPLIDA" ? `Cubrió a ${nombreCompleto(clase.ausente)}` : `La cubrió ${nombreCompleto(clase.suplente)}`}
-      </td>
+      <td className={CELDA}>{quienDeLaSuplencia(linea)}</td>
       <td className={CELDA}>{describirTarifa(linea.tarifa, "HORA_SUPLENCIA")}</td>
       <td className={CELDA_MONTO}>{formatearPrecio(linea.monto)}</td>
     </tr>
@@ -104,7 +106,6 @@ function SeccionProfesora({ detalle }: { detalle: LiquidacionDetalle }) {
 }
 
 export function InformeImprimible({ informe, detalles, generadoEl }: DatosImpresion) {
-  const alumnos = informe.liquidaciones.reduce((total, fila) => total + fila.cantidadAlumnos, 0);
   return createPortal(
     <div className="informe-impresion bg-white font-sans text-slate-900">
       <header className="border-b border-slate-300 pb-3">
@@ -117,9 +118,7 @@ export function InformeImprimible({ informe, detalles, generadoEl }: DatosImpres
       <section className="mt-4 flex items-baseline justify-between gap-4">
         <div>
           <p className="text-sm text-slate-600">Total del mes</p>
-          <p className="text-sm text-slate-600">
-            {alumnos} {alumnos === 1 ? "alumno a cargo" : "alumnos a cargo"} · se cuenta cada inscripto, asista o no
-          </p>
+          <p className="text-sm text-slate-600">{leyendaDelTotal(alumnosDelMes(informe.liquidaciones))}</p>
         </div>
         <p className="text-2xl font-bold tabular-nums">{formatearPrecio(informe.totalGeneral)}</p>
       </section>

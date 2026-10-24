@@ -6,7 +6,6 @@ import {
   ALUMNOS_HONORARIOS,
   CLASES_SUPLIDAS_HONORARIOS,
   INSCRIPCIONES_HONORARIOS,
-  PLANES_HONORARIOS,
   type LiquidacionDetalleMock,
   type LiquidacionMock,
   type TarifaHonorarioMock,
@@ -14,8 +13,8 @@ import {
 import { hoyEnArgentina } from "@/mocks/precios";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 
-// Mock de US-23 con el contrato que espera el front (features/honorarios/schemas/honorarios.ts):
-// /liquidaciones y /tarifas-honorario según back/SPRINT-4.md. El back todavía no los tiene.
+// Mock de US-23 con el contrato del back (gestion-honorarios: liquidacion y tarifa-honorario). Los
+// campos que el front le pidió al back y todavía no existen no se mockean: el mock no los inventa.
 //
 // Los alumnos e inscripciones salen de data/honorarios.ts (copia de la base local), no de los de
 // alumnos.ts: registrar un cobro en otra pantalla del mock no cambia estos honorarios.
@@ -44,82 +43,71 @@ const horaComoFecha = (hora: string) => `1970-01-01T${hora}:00.000Z`;
 function profesora(idProfesora: number) {
   const fila = db.profesoras.find((p) => p.id_profesora === idProfesora);
   const usuario = db.usuarios.find((u) => u.id_usuario === fila?.id_usuario);
-  return { id_profesora: idProfesora, nombre: usuario?.nombre ?? "", apellido: usuario?.apellido ?? "" };
+  return { id_profesora: idProfesora, usuario: { nombre: usuario?.nombre ?? "", apellido: usuario?.apellido ?? "" } };
 }
 
 function detallesDe(idLiquidacion: number): LiquidacionDetalleMock[] {
   return db.liquidacionDetalles.filter((detalle) => detalle.id_liquidacion === idLiquidacion);
 }
 
-function resumen(liquidacion: LiquidacionMock) {
-  const detalles = detallesDe(liquidacion.id_liquidacion);
-  const deAlumnos = detalles.filter((d) => d.concepto === "ALUMNO_A_CARGO");
+// LiquidacionConProfesora del back.
+function liquidacionConProfesora(liquidacion: LiquidacionMock) {
   return {
-    id_liquidacion: liquidacion.id_liquidacion,
-    estado: liquidacion.estado,
-    fecha_liquidacion: liquidacion.fecha_liquidacion,
-    monto_total: liquidacion.monto_total,
+    ...liquidacion,
+    periodo_desde: diaComoFecha(liquidacion.periodo_desde),
+    periodo_hasta: diaComoFecha(liquidacion.periodo_hasta),
     profesora: profesora(liquidacion.id_profesora),
-    cantidad_alumnos: deAlumnos.length,
-    subtotal_alumnos: sumarMontos(deAlumnos.map((d) => d.monto)),
-    subtotal_suplencias: sumarMontos(detalles.filter((d) => d.concepto !== "ALUMNO_A_CARGO").map((d) => d.monto)),
   };
 }
 
 function informe(periodo: string) {
-  const { desde, hasta } = limitesDelPeriodo(periodo);
-  const liquidaciones = db.liquidaciones.filter((l) => l.periodo_desde === desde);
+  const { desde } = limitesDelPeriodo(periodo);
+  const liquidaciones = db.liquidaciones
+    .filter((l) => l.periodo_desde === desde)
+    .sort((a, b) => a.id_profesora - b.id_profesora);
   return {
     periodo,
-    periodo_desde: diaComoFecha(desde),
-    periodo_hasta: diaComoFecha(hasta),
     total_general: sumarMontos(liquidaciones.map((l) => l.monto_total)),
-    liquidaciones: liquidaciones.map(resumen),
+    liquidaciones: liquidaciones.map(liquidacionConProfesora),
   };
 }
 
-function tarifaAplicada(idTarifa: number) {
-  const tarifa = db.tarifasHonorario.find((t) => t.id_tarifa === idTarifa)!;
-  return { id_tarifa: tarifa.id_tarifa, tipo_valor: tarifa.tipo_valor, valor: tarifa.valor };
+function alumnoDeLaLinea(idInscripcion: number) {
+  const inscripcion = INSCRIPCIONES_HONORARIOS.find((i) => i.id_inscripcion === idInscripcion)!;
+  return ALUMNOS_HONORARIOS.find((a) => a.id_alumno === inscripcion.id_alumno)!;
 }
 
-function detalleConDatos(detalle: LiquidacionDetalleMock) {
-  const base = { id_liq_detalle: detalle.id_liq_detalle, concepto: detalle.concepto, monto: detalle.monto, tarifa: tarifaAplicada(detalle.id_tarifa) };
-  if (detalle.concepto === "ALUMNO_A_CARGO") {
-    const inscripcion = INSCRIPCIONES_HONORARIOS.find((i) => i.id_inscripcion === detalle.id_inscripcion)!;
-    return {
-      ...base,
-      inscripcion: {
-        id_inscripcion: inscripcion.id_inscripcion,
-        estado: inscripcion.estado,
-        fecha_baja: inscripcion.fecha_baja,
-        alumno: ALUMNOS_HONORARIOS.find((a) => a.id_alumno === inscripcion.id_alumno)!,
-        plan: PLANES_HONORARIOS.find((p) => p.id_plan === inscripcion.id_plan)!,
-      },
-      clase: null,
-    };
-  }
-  const clase = CLASES_SUPLIDAS_HONORARIOS.find((c) => c.id_clase === detalle.id_clase)!;
+function claseDeLaLinea(idClase: number) {
+  const clase = CLASES_SUPLIDAS_HONORARIOS.find((c) => c.id_clase === idClase)!;
   return {
-    ...base,
-    inscripcion: null,
-    clase: {
-      id_clase: clase.id_clase,
-      fecha_clase: diaComoFecha(clase.fecha_clase),
-      hora_inicio: horaComoFecha(clase.hora_inicio),
-      hora_fin: horaComoFecha(clase.hora_fin),
-      actividad: { id_actividad: clase.id_actividad, nombre: clase.actividad },
-      profesora_ausente: profesora(clase.id_prof_ausente),
-      profesora_suplente: profesora(clase.id_prof_suplente),
-    },
+    fecha_clase: diaComoFecha(clase.fecha_clase),
+    hora_inicio: horaComoFecha(clase.hora_inicio),
+    hora_fin: horaComoFecha(clase.hora_fin),
+    actividad: clase.actividad,
   };
+}
+
+// DetalleLiquidacion del back: la tarifa va solo por id.
+function detalleConDatos(detalle: LiquidacionDetalleMock) {
+  return {
+    id_liq_detalle: detalle.id_liq_detalle,
+    id_tarifa: detalle.id_tarifa,
+    concepto: detalle.concepto,
+    id_inscripcion: detalle.id_inscripcion,
+    id_clase: detalle.id_clase,
+    monto: detalle.monto,
+    alumno: detalle.id_inscripcion === null ? null : alumnoDeLaLinea(detalle.id_inscripcion),
+    clase: detalle.id_clase === null ? null : claseDeLaLinea(detalle.id_clase),
+  };
+}
+
+function liquidacionDetallada(liquidacion: LiquidacionMock) {
+  return { ...liquidacionConProfesora(liquidacion), detalles: detallesDe(liquidacion.id_liquidacion).map(detalleConDatos) };
 }
 
 function tarifaConDatos(tarifa: TarifaHonorarioMock) {
-  const plan = PLANES_HONORARIOS.find((p) => p.id_plan === tarifa.id_plan) ?? null;
   return {
     ...tarifa,
-    plan,
     fecha_vigencia_desde: diaComoFecha(tarifa.fecha_vigencia_desde),
     fecha_vigencia_hasta: tarifa.fecha_vigencia_hasta && diaComoFecha(tarifa.fecha_vigencia_hasta),
   };
@@ -145,7 +133,7 @@ function cambiarEstado(desde: LiquidacionMock["estado"], hacia: LiquidacionMock[
     if (!liquidacion) return errorApi(404, "NOT_FOUND", "La liquidación no existe");
     if (liquidacion.estado !== desde) return errorApi(409, "ESTADO_INVALIDO", mensaje);
     liquidacion.estado = hacia;
-    return HttpResponse.json(resumen(liquidacion));
+    return HttpResponse.json(liquidacionDetallada(liquidacion));
   };
 }
 
@@ -167,15 +155,16 @@ export const honorariosHandlers = [
     if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "El período tiene que ser AAAA-MM");
     const { periodo } = cuerpo.data;
     if (periodo > hoyEnArgentina().slice(0, 7)) {
-      return errorApi(400, "PERIODO_FUTURO", "No se puede liquidar un mes que todavía no empezó");
+      return errorApi(400, "VALIDATION_ERROR", "El período todavía no empezó");
     }
-    const delMes = db.liquidaciones.filter((l) => l.periodo_desde === limitesDelPeriodo(periodo).desde);
-    if (delMes.length > 0 && delMes.every((l) => l.estado !== "BORRADOR")) {
-      return errorApi(409, "LIQUIDACIONES_CERRADAS", "Todas las liquidaciones del mes ya están cerradas");
-    }
+    const { desde, hasta } = limitesDelPeriodo(periodo);
+    const sinRecalcular = db.liquidaciones
+      .filter((l) => l.periodo_desde === desde && l.estado !== "BORRADOR")
+      .map((l) => l.id_profesora);
     const activas = db.profesoras.filter((p) => p.fecha_baja === null).map((p) => p.id_profesora);
-    const advertencias = liquidarPeriodo(db, periodo, activas);
-    return HttpResponse.json({ ...informe(periodo), advertencias }, { status: 201 });
+    // El back informa en cada advertencia el día con el que buscó la tarifa; el front no lo usa.
+    const advertencias = liquidarPeriodo(db, periodo, activas).map((a) => ({ ...a, fecha: diaComoFecha(hasta) }));
+    return HttpResponse.json({ ...informe(periodo), advertencias, sin_recalcular: sinRecalcular });
   }),
 
   http.get("*/api/v1/liquidaciones/:id", async ({ request, params }) => {
@@ -185,13 +174,7 @@ export const honorariosHandlers = [
     if (idDeRuta(params.id) === null) return idInvalido();
     const liquidacion = buscarLiquidacion(params.id);
     if (!liquidacion) return errorApi(404, "NOT_FOUND", "La liquidación no existe");
-    return HttpResponse.json({
-      id_liquidacion: liquidacion.id_liquidacion,
-      estado: liquidacion.estado,
-      monto_total: liquidacion.monto_total,
-      profesora: profesora(liquidacion.id_profesora),
-      detalles: detallesDe(liquidacion.id_liquidacion).map(detalleConDatos),
-    });
+    return HttpResponse.json(liquidacionDetallada(liquidacion));
   }),
 
   http.post("*/api/v1/liquidaciones/:id/cerrar", cambiarEstado("BORRADOR", "CERRADA", "Solo se cierra una liquidación en revisión")),
@@ -213,7 +196,12 @@ export const honorariosHandlers = [
     const cuerpo = registrarTarifaSchema.safeParse(await request.json().catch(() => null));
     if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
     const nueva = cuerpo.data;
-    if (!db.profesoras.some((p) => p.id_profesora === nueva.id_profesora)) return errorApi(404, "NOT_FOUND", "La profesora no existe");
+    if (nueva.fecha_vigencia_desde < hoyEnArgentina()) {
+      return errorApi(400, "VALIDATION_ERROR", "La vigencia no puede empezar en el pasado");
+    }
+    if (!db.profesoras.some((p) => p.id_profesora === nueva.id_profesora)) {
+      return errorApi(400, "VALIDATION_ERROR", `La profesora ${nueva.id_profesora} no existe`);
+    }
     const mismas = db.tarifasHonorario.filter(
       (t) => t.id_profesora === nueva.id_profesora && t.concepto === nueva.concepto && t.id_plan === nueva.id_plan,
     );

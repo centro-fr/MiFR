@@ -1,10 +1,12 @@
-import type { InformeHonorarios, LiquidacionDetalle, LineaAlumno, LineaSuplencia } from "@/types/honorarios";
+import type { InformeHonorarios, LiquidacionDetalle, LineaSuplencia } from "@/types/honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
 import {
   ETIQUETA_ESTADO,
   describirTarifa,
   fechaCorta,
   nombreCompleto,
+  quienDeLaSuplencia,
+  situacionDeLaLinea,
 } from "@/features/honorarios/utils/formato-honorarios";
 
 // Planilla del informe (US-23): CSV que abre Excel sin sumar una librería. Excel en español usa
@@ -34,15 +36,9 @@ function fila(celdas: Celda[]): string {
 
 const ENCABEZADO = ["Período", "Profesora", "Estado", "Concepto", "Detalle", "Plan", "Situación", "Tarifa", "Monto"];
 
-function situacion(linea: LineaAlumno): string {
-  return linea.estadoInscripcion === "BAJA" && linea.fechaBaja ? `Baja el ${fechaCorta(linea.fechaBaja)}` : "Activa";
-}
-
-function detalleDeSuplencia({ concepto, clase }: LineaSuplencia): string {
-  const cuando = `${clase.actividad} ${fechaCorta(clase.fecha)} ${clase.horaInicio}-${clase.horaFin}`;
-  return concepto === "CLASE_SUPLIDA"
-    ? `${cuando} (cubrió a ${nombreCompleto(clase.ausente)})`
-    : `${cuando} (la cubrió ${nombreCompleto(clase.suplente)})`;
+function detalleDeSuplencia(linea: LineaSuplencia): string {
+  const { clase } = linea;
+  return `${clase.actividad} ${fechaCorta(clase.fecha)} ${clase.horaInicio}-${clase.horaFin} (${quienDeLaSuplencia(linea)})`;
 }
 
 function filasDeLaProfesora(periodo: string, detalle: LiquidacionDetalle): Celda[][] {
@@ -52,8 +48,8 @@ function filasDeLaProfesora(periodo: string, detalle: LiquidacionDetalle): Celda
       ...base,
       "Alumno a cargo",
       `${linea.alumno.apellido}, ${linea.alumno.nombre}`,
-      linea.plan,
-      situacion(linea),
+      linea.inscripcion?.plan ?? "—",
+      situacionDeLaLinea(linea),
       describirTarifa(linea.tarifa, "ALUMNO_A_CARGO"),
       linea.monto,
     ]),

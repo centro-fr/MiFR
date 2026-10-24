@@ -2,43 +2,52 @@ import { z } from "zod";
 import { apiClient } from "@/api/client";
 import {
   informeHonorariosApiSchema,
+  liquidacionApiSchema,
   liquidacionDetalleApiSchema,
-  liquidacionResumenApiSchema,
   resultadoCalculoApiSchema,
   tarifaHonorarioApiSchema,
   type InformeHonorariosApi,
+  type LiquidacionApi,
   type LiquidacionDetalleApi,
-  type LiquidacionResumenApi,
+  type ProfesoraApi,
   type RegistrarTarifaBody,
   type TarifaHonorarioApi,
 } from "@/features/honorarios/schemas/honorarios";
+import { primerDiaDe, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
 import type {
+  DesgloseLiquidacion,
   InformeHonorarios,
   LiquidacionDetalle,
   LiquidacionResumen,
   LineaAlumno,
   LineaSuplencia,
+  ProfesoraDeLiquidacion,
   ResultadoCalculo,
+  TarifaAplicada,
   TarifaHonorario,
 } from "@/types/honorarios";
 
-// Endpoints de US-23 según back/SPRINT-4.md. Solo la propietaria: HONORARIOS_VER_TODOS para ver,
+// Endpoints de US-23 (back: gestion-honorarios). Solo la propietaria: HONORARIOS_VER_TODOS para ver,
 // HONORARIOS_LIQUIDAR para calcular, cerrar, marcar abonada y cargar tarifas.
 
-function profesoraDe(api: { id_profesora: number; nombre: string; apellido: string }) {
-  return { id: api.id_profesora, nombre: api.nombre, apellido: api.apellido };
+function profesoraDe(api: ProfesoraApi): ProfesoraDeLiquidacion {
+  return { id: api.id_profesora, nombre: api.usuario.nombre, apellido: api.usuario.apellido };
 }
 
-function aResumen(api: LiquidacionResumenApi): LiquidacionResumen {
+function desgloseDe(api: LiquidacionApi): DesgloseLiquidacion | null {
+  const { cantidad_alumnos, subtotal_alumnos, subtotal_suplencias } = api;
+  if (cantidad_alumnos === undefined || subtotal_alumnos === undefined || subtotal_suplencias === undefined) return null;
+  return { cantidadAlumnos: cantidad_alumnos, subtotalAlumnos: subtotal_alumnos, subtotalSuplencias: subtotal_suplencias };
+}
+
+function aResumen(api: LiquidacionApi): LiquidacionResumen {
   return {
     id: api.id_liquidacion,
     estado: api.estado,
     calculadaEl: api.fecha_liquidacion,
     montoTotal: api.monto_total,
     profesora: profesoraDe(api.profesora),
-    cantidadAlumnos: api.cantidad_alumnos,
-    subtotalAlumnos: api.subtotal_alumnos,
-    subtotalSuplencias: api.subtotal_suplencias,
+    desglose: desgloseDe(api),
   };
 }
 
@@ -50,31 +59,33 @@ function porMonto(a: LiquidacionResumen, b: LiquidacionResumen): number {
 function aInforme(api: InformeHonorariosApi): InformeHonorarios {
   return {
     periodo: api.periodo,
-    desde: api.periodo_desde,
-    hasta: api.periodo_hasta,
+    desde: primerDiaDe(api.periodo),
+    hasta: ultimoDiaDe(api.periodo),
     totalGeneral: api.total_general,
     liquidaciones: api.liquidaciones.map(aResumen).sort(porMonto),
   };
 }
 
-function tarifaAplicada(api: { tipo_valor: TarifaHonorarioApi["tipo_valor"]; valor: number }) {
-  return { tipoValor: api.tipo_valor, valor: api.valor };
+function tarifaAplicada(idTarifa: number, tarifas: TarifaHonorario[]): TarifaAplicada | null {
+  const tarifa = tarifas.find(({ id }) => id === idTarifa);
+  return tarifa ? { tipoValor: tarifa.tipoValor, valor: tarifa.valor } : null;
 }
 
-function aDetalle(api: LiquidacionDetalleApi): LiquidacionDetalle {
+function aDetalle(api: LiquidacionDetalleApi, tarifas: TarifaHonorario[]): LiquidacionDetalle {
   const alumnos: LineaAlumno[] = [];
   const suplencias: LineaSuplencia[] = [];
   for (const detalle of api.detalles) {
+    const tarifa = tarifaAplicada(detalle.id_tarifa, tarifas);
     if (detalle.concepto === "ALUMNO_A_CARGO") {
-      const { inscripcion } = detalle;
+      const { alumno, inscripcion } = detalle;
       alumnos.push({
         id: detalle.id_liq_detalle,
         monto: detalle.monto,
-        tarifa: tarifaAplicada(detalle.tarifa),
-        alumno: { nombre: inscripcion.alumno.nombre, apellido: inscripcion.alumno.apellido },
-        plan: inscripcion.plan.nombre,
-        estadoInscripcion: inscripcion.estado,
-        fechaBaja: inscripcion.fecha_baja,
+        tarifa,
+        alumno: { nombre: alumno.nombre, apellido: alumno.apellido },
+        inscripcion: inscripcion
+          ? { plan: inscripcion.plan.nombre, estado: inscripcion.estado, fechaBaja: inscripcion.fecha_baja }
+          : null,
       });
       continue;
     }
@@ -83,14 +94,14 @@ function aDetalle(api: LiquidacionDetalleApi): LiquidacionDetalle {
       id: detalle.id_liq_detalle,
       concepto: detalle.concepto,
       monto: detalle.monto,
-      tarifa: tarifaAplicada(detalle.tarifa),
+      tarifa,
       clase: {
         fecha: clase.fecha_clase,
         horaInicio: clase.hora_inicio,
         horaFin: clase.hora_fin,
-        actividad: clase.actividad.nombre,
-        ausente: profesoraDe(clase.profesora_ausente),
-        suplente: profesoraDe(clase.profesora_suplente),
+        actividad: clase.actividad,
+        ausente: clase.profesora_titular ? profesoraDe(clase.profesora_titular) : null,
+        suplente: clase.profesora_suplente ? profesoraDe(clase.profesora_suplente) : null,
       },
     });
   }
@@ -104,7 +115,7 @@ function aTarifa(api: TarifaHonorarioApi): TarifaHonorario {
     id: api.id_tarifa,
     idProfesora: api.id_profesora,
     concepto: api.concepto,
-    plan: api.plan && { id: api.plan.id_plan, nombre: api.plan.nombre },
+    idPlan: api.id_plan,
     tipoValor: api.tipo_valor,
     valor: api.valor,
     desde: api.fecha_vigencia_desde,
@@ -118,10 +129,13 @@ export async function obtenerInforme(periodo: string): Promise<InformeHonorarios
   return aInforme(informeHonorariosApiSchema.parse(data));
 }
 
-/** Detalle por alumno y por clase suplida de una profesora. */
-export async function obtenerLiquidacion(id: number): Promise<LiquidacionDetalle> {
+/**
+ * Detalle por alumno y por clase suplida de una profesora. Las tarifas completan cada línea con la
+ * tarifa aplicada, que el back identifica solo por id.
+ */
+export async function obtenerLiquidacion(id: number, tarifas: TarifaHonorario[]): Promise<LiquidacionDetalle> {
   const { data } = await apiClient.get(`/liquidaciones/${encodeURIComponent(id)}`);
-  return aDetalle(liquidacionDetalleApiSchema.parse(data));
+  return aDetalle(liquidacionDetalleApiSchema.parse(data), tarifas);
 }
 
 /** Genera o recalcula los borradores del mes; las cerradas no se tocan. 400 si el mes no empezó. */
@@ -143,13 +157,13 @@ export async function calcularLiquidaciones(periodo: string): Promise<ResultadoC
 /** BORRADOR → CERRADA: queda como foto y ya no se recalcula. 409 si no estaba en borrador. */
 export async function cerrarLiquidacion(id: number): Promise<LiquidacionResumen> {
   const { data } = await apiClient.post(`/liquidaciones/${encodeURIComponent(id)}/cerrar`);
-  return aResumen(liquidacionResumenApiSchema.parse(data));
+  return aResumen(liquidacionApiSchema.parse(data));
 }
 
 /** CERRADA → PAGADA: solo registra que se le abonó por fuera. 409 si no estaba cerrada. */
 export async function marcarLiquidacionAbonada(id: number): Promise<LiquidacionResumen> {
   const { data } = await apiClient.post(`/liquidaciones/${encodeURIComponent(id)}/pagar`);
-  return aResumen(liquidacionResumenApiSchema.parse(data));
+  return aResumen(liquidacionApiSchema.parse(data));
 }
 
 /** Todas las tarifas (vigentes, programadas y cerradas): son pocas y así alcanza con un pedido. */
@@ -158,7 +172,7 @@ export async function listarTarifas(): Promise<TarifaHonorario[]> {
   return z.array(tarifaHonorarioApiSchema).parse(data).map(aTarifa);
 }
 
-/** Cierra la vigente del mismo concepto, profesora y plan. 409 si se superpone con otra. */
+/** Cierra la vigente del mismo concepto, profesora y plan el día anterior. 400 si empieza en el pasado. */
 export async function registrarTarifa(cuerpo: RegistrarTarifaBody): Promise<TarifaHonorario> {
   const { data } = await apiClient.post("/tarifas-honorario", cuerpo);
   return aTarifa(tarifaHonorarioApiSchema.parse(data));

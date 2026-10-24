@@ -9,36 +9,44 @@ import {
   fechaCorta,
   formatearAjuste,
   nombreCompleto,
+  quienDeLaSuplencia,
 } from "@/features/honorarios/utils/formato-honorarios";
-import type { LineaAlumno, LineaSuplencia } from "@/types/honorarios";
+import type { InscripcionDeLaLinea, LineaAlumno, LineaSuplencia } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
 
 const FORMATO_PORCENTAJE = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
 
-function calculoDeLaLinea(linea: LineaAlumno): string {
+function calculoDeLaLinea(linea: LineaAlumno): string | null {
+  if (!linea.tarifa) return null;
   const base = baseCobrada(linea.monto, linea.tarifa);
   if (base === null) return describirTarifa(linea.tarifa, "ALUMNO_A_CARGO");
   return `${formatearPrecio(base)} × ${FORMATO_PORCENTAJE.format(linea.tarifa.valor)}%`;
 }
 
+function SituacionDeLaInscripcion({ inscripcion }: { inscripcion: InscripcionDeLaLinea }) {
+  return (
+    <p className="text-sm text-muted-foreground">
+      {inscripcion.plan} ·{" "}
+      {inscripcion.estado === "BAJA" && inscripcion.fechaBaja ? (
+        <span className="text-rose-700 dark:text-rose-300">Baja el {fechaCorta(inscripcion.fechaBaja)}</span>
+      ) : (
+        "Activa"
+      )}
+    </p>
+  );
+}
+
 function ItemAlumno({ linea }: { linea: LineaAlumno }) {
-  const deBaja = linea.estadoInscripcion === "BAJA";
+  const calculo = calculoDeLaLinea(linea);
   return (
     <li className="flex items-start justify-between gap-3 py-2">
       <div className="min-w-0">
         <p className="break-words text-sm font-semibold text-dark dark:text-white">{nombreCompleto(linea.alumno)}</p>
-        <p className="text-sm text-muted-foreground">
-          {linea.plan} ·{" "}
-          {deBaja && linea.fechaBaja ? (
-            <span className="text-rose-700 dark:text-rose-300">Baja el {fechaCorta(linea.fechaBaja)}</span>
-          ) : (
-            "Activa"
-          )}
-        </p>
+        {linea.inscripcion && <SituacionDeLaInscripcion inscripcion={linea.inscripcion} />}
       </div>
       <div className="shrink-0 text-right">
         <p className="text-sm font-bold text-dark tabular-nums dark:text-white">{formatearPrecio(linea.monto)}</p>
-        <p className="text-xs text-muted-foreground tabular-nums">{calculoDeLaLinea(linea)}</p>
+        {calculo && <p className="text-xs text-muted-foreground tabular-nums">{calculo}</p>}
       </div>
     </li>
   );
@@ -50,9 +58,7 @@ function ItemSuplencia({ linea }: { linea: LineaSuplencia }) {
   return (
     <li className="flex items-start justify-between gap-3 py-2">
       <div className="min-w-0">
-        <p className="break-words text-sm font-semibold text-dark dark:text-white">
-          {cubrio ? `Cubrió a ${nombreCompleto(clase.ausente)}` : `La cubrió ${nombreCompleto(clase.suplente)}`}
-        </p>
+        <p className="break-words text-sm font-semibold text-dark dark:text-white">{quienDeLaSuplencia(linea)}</p>
         <p className="text-sm text-muted-foreground">
           {clase.actividad} · {fechaCorta(clase.fecha)} {clase.horaInicio}–{clase.horaFin}
         </p>
