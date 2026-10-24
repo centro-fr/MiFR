@@ -10,7 +10,7 @@ import type { TarifaHonorarioService } from "../tarifa-honorario/tarifa-honorari
 import type { LiquidacionRepository } from "./liquidacion.repository.js";
 import type {
   EstadoLiquidacion,
-  LiquidacionConProfesora,
+  LiquidacionConDesglose,
   LiquidacionDetallada,
   PeriodoLiquidacion,
   ResultadoGeneracion,
@@ -25,7 +25,7 @@ function sumarEnCentavos(montos: number[]): number {
   return montos.reduce((total, monto) => total + Math.round(monto * 100), 0) / 100;
 }
 
-function resumir(periodo: string, liquidaciones: LiquidacionConProfesora[]): ResumenLiquidaciones {
+function resumir(periodo: string, liquidaciones: LiquidacionConDesglose[]): ResumenLiquidaciones {
   return {
     periodo,
     total_general: sumarEnCentavos(liquidaciones.map(({ monto_total }) => monto_total)),

@@ -13,6 +13,11 @@ import {
   listarLiquidacionesQuerySchema,
 } from "./liquidacion.schemas.js";
 
+const profesoraSchema = z.object({
+  id_profesora: z.number().int(),
+  usuario: z.object({ nombre: z.string(), apellido: z.string() }),
+});
+
 const liquidacionSchema = z
   .object({
     id_liquidacion: z.number().int(),
@@ -22,10 +27,7 @@ const liquidacionSchema = z
     fecha_liquidacion: fechaSchema,
     monto_total: z.number().openapi({ description: "Suma de sus detalles; puede ser negativo" }),
     estado: z.enum(["BORRADOR", "CERRADA", "PAGADA"]),
-    profesora: z.object({
-      id_profesora: z.number().int(),
-      usuario: z.object({ nombre: z.string(), apellido: z.string() }),
-    }),
+    profesora: profesoraSchema,
   })
   .openapi("Liquidacion");
 
@@ -41,12 +43,25 @@ const detalleSchema = z
       .object({ id_alumno: z.number().int(), nombre: z.string(), apellido: z.string() })
       .nullable()
       .openapi({ description: "Solo en ALUMNO_A_CARGO" }),
+    inscripcion: z
+      .object({
+        estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
+        fecha_baja: fechaSchema.nullable(),
+        plan: z.object({ id_plan: z.number().int(), nombre: z.string() }),
+      })
+      .nullable()
+      .openapi({ description: "Plan y situación de la inscripción. Solo en ALUMNO_A_CARGO" }),
     clase: z
       .object({
         fecha_clase: fechaSchema,
         hora_inicio: fechaSchema,
         hora_fin: fechaSchema,
         actividad: z.string(),
+        profesora_titular: profesoraSchema.nullable().openapi({
+          description:
+            "Quien faltó, según la suplencia registrada. Null si la suplencia se eliminó con la liquidación en BORRADOR",
+        }),
+        profesora_suplente: profesoraSchema.openapi({ description: "Quien dictó la clase" }),
       })
       .nullable()
       .openapi({ description: "Solo en CLASE_SUPLIDA y DESCUENTO_AUSENCIA" }),
@@ -57,11 +72,23 @@ const liquidacionDetalladaSchema = liquidacionSchema
   .extend({ detalles: z.array(detalleSchema) })
   .openapi("LiquidacionDetallada");
 
+const liquidacionConDesgloseSchema = liquidacionSchema
+  .extend({
+    cantidad_alumnos: z.number().int().openapi({
+      description: "Líneas ALUMNO_A_CARGO de la liquidación (una por inscripción)",
+    }),
+    subtotal_alumnos: z.number().openapi({ description: "Suma de las líneas ALUMNO_A_CARGO" }),
+    subtotal_suplencias: z.number().openapi({
+      description: "Neto de CLASE_SUPLIDA más DESCUENTO_AUSENCIA; puede ser negativo",
+    }),
+  })
+  .openapi("LiquidacionConDesglose");
+
 const resumenSchema = z
   .object({
     periodo: z.string().openapi({ example: "2026-10" }),
     total_general: z.number(),
-    liquidaciones: z.array(liquidacionSchema),
+    liquidaciones: z.array(liquidacionConDesgloseSchema),
   })
   .openapi("ResumenLiquidaciones");
 
@@ -110,7 +137,7 @@ export function registrarDocumentacionLiquidaciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Listar las liquidaciones de un mes (US-23)",
-    description: `${soloPropietaria} \`HONORARIOS_VER_TODOS\`. Una fila por profesora, con el total general. \`periodo\` con formato AAAA-MM.`,
+    description: `${soloPropietaria} \`HONORARIOS_VER_TODOS\`. Una fila por profesora, con su desglose (cantidad de alumnos, subtotal de alumnos y neto de suplencias) y el total general. \`periodo\` con formato AAAA-MM.`,
     request: { query: listarLiquidacionesQuerySchema },
     responses: {
       200: respuestaJson("Liquidaciones del mes", resumenSchema),
