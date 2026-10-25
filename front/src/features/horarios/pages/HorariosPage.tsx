@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OwnerLayout } from '@/components/layout/owner-layout';
 import { mensajeDeErrorApi } from '@/api/errores';
 import { useHorarios } from '../hooks/useHorarios';
@@ -50,6 +50,17 @@ export const HorariosPage: React.FC = () => {
   } = useHorarios();
 
   const [selectedMobileDay, setSelectedMobileDay] = useState<DiaSemana>('LUNES');
+
+  // Protección para no perder cambios en borrador si se recarga o cierra la ventana
+  useEffect(() => {
+    if (!hayCambiosPendientes) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hayCambiosPendientes]);
 
   // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);

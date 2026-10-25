@@ -187,8 +187,7 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
         <span className="flex flex-col">
           <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Solo con la profesora a cargo</span>
           <span className="text-sm text-muted-foreground">
-            Activado, todos sus horarios son de la profesora a cargo de su inscripción. Desactivado, pueden ser de otra, pero siempre de
-            una sola.
+            Activado, el alumno cursa siempre con la misma docente asignada. Desactivado, puede coordinar clases con diferentes profesoras del equipo.
           </span>
         </span>
         <Switch id="plan-profesora-unica" checked={valores.profesoraUnica} onCheckedChange={(profesoraUnica) => onChange({ profesoraUnica })} />

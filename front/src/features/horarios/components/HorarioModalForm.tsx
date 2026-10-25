@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { X, AlertCircle } from 'lucide-react';
@@ -191,16 +192,30 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   ref={primerCampoRef}
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
-                  <SelectValue placeholder="Seleccionar actividad" />
+                  <SelectValue placeholder={actividades.length === 0 ? "Sin actividades activas" : "Seleccionar actividad"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {actividades.map((act) => (
-                    <SelectItem key={act.id} value={act.id}>
-                      {act.nombre}
-                    </SelectItem>
-                  ))}
+                  {actividades.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground">
+                      No hay actividades activas.
+                    </div>
+                  ) : (
+                    actividades.map((act) => (
+                      <SelectItem key={act.id} value={act.id}>
+                        {act.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {actividades.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  No hay actividades.{" "}
+                  <Link to="/app/actividades" className="font-bold underline hover:text-amber-700">
+                    Crear actividad
+                  </Link>
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -212,16 +227,30 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   id="horario-profesora"
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
-                  <SelectValue placeholder="Seleccionar profesora" />
+                  <SelectValue placeholder={profesoras.length === 0 ? "Sin profesoras activas" : "Seleccionar profesora"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {profesoras.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.nombre} {prof.apellido}
-                    </SelectItem>
-                  ))}
+                  {profesoras.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground">
+                      No hay profesoras activas.
+                    </div>
+                  ) : (
+                    profesoras.map((prof) => (
+                      <SelectItem key={prof.id} value={prof.id}>
+                        {prof.nombre} {prof.apellido}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {profesoras.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  No hay profesoras.{" "}
+                  <Link to="/app/profesoras" className="font-bold underline hover:text-amber-700">
+                    Crear profesora
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
 

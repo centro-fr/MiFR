@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { HorarioModalForm } from "../HorarioModalForm";
 
 // Ignoramos advertencias de act() innecesarias generadas por Dialog de Radix UI en jsdom
@@ -114,4 +115,20 @@ describe("HorarioModalForm", () => {
       diaSemana: "LUNES",
     });
   });
+
+  it("ofrece atajos directos con links si no hay actividades o profesoras configuradas", () => {
+    render(
+      <MemoryRouter>
+        <HorarioModalForm
+          {...defaultProps}
+          actividades={[]}
+          profesoras={[]}
+        />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("link", { name: "Crear actividad" })).toHaveAttribute("href", "/app/actividades");
+    expect(screen.getByRole("link", { name: "Crear profesora" })).toHaveAttribute("href", "/app/profesoras");
+  });
 });
+
