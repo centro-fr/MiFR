@@ -84,6 +84,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     subrutasDe: "/app/pagos",
     descripcion: "Quién debe, qué transferencias faltan verificar y cuánto efectivo te tienen que rendir.",
   },
+  { etiqueta: "Profesoras", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", descripcion: "Plantel de profesoras, especialidades y staff." },
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
   { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
   { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },

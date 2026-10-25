@@ -135,6 +135,13 @@ export const router = createBrowserRouter([
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
       },
       {
+        path: "profesoras",
+        element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
+        ],
+      },
+      {
         path: "actividades",
         element: guardiaDeSeccion("actividades", "ACTIVIDADES_VER"),
         children: [
