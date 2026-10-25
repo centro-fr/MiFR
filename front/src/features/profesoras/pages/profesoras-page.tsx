@@ -284,9 +284,6 @@ export function ProfesorasPage() {
                     <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       Incorporación
                     </TableHead>
-                    <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      Estado
-                    </TableHead>
                     <TableHead className="py-3.5 pr-6 text-right font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       Acciones
                     </TableHead>
@@ -352,19 +349,6 @@ export function ProfesorasPage() {
                             <span>{formatearFecha(prof.fechaAlta)}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          {prof.activa ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                              <span className="size-1.5 rounded-full bg-emerald-500" />
-                              Activa
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                              <span className="size-1.5 rounded-full bg-slate-400" />
-                              Dada de baja
-                            </span>
-                          )}
-                        </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
                           {prof.activa ? (
                             <Button
@@ -378,7 +362,7 @@ export function ProfesorasPage() {
                               Dar de baja
                             </Button>
                           ) : (
-                            <span className="text-xs text-muted-foreground italic">Inactiva</span>
+                            <span className="text-xs font-semibold text-slate-400 italic">Dada de baja</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -402,30 +386,19 @@ export function ProfesorasPage() {
                       !prof.activa && "opacity-75 bg-muted/30",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
-                          {prof.nombre.charAt(0)}
-                          {prof.apellido.charAt(0)}
-                        </div>
-                        <div>
-                          <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                            {prof.nombreCompleto}
-                          </h2>
-                          {prof.email && (
-                            <p className="text-xs text-muted-foreground">{prof.email}</p>
-                          )}
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                        {prof.nombre.charAt(0)}
+                        {prof.apellido.charAt(0)}
                       </div>
-                      {prof.activa ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          Activa
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                          Baja
-                        </span>
-                      )}
+                      <div>
+                        <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                          {prof.nombreCompleto}
+                        </h2>
+                        {prof.email && (
+                          <p className="text-xs text-muted-foreground">{prof.email}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5 text-xs">
@@ -459,7 +432,7 @@ export function ProfesorasPage() {
                       </p>
                     </div>
 
-                    {prof.activa && (
+                    {prof.activa ? (
                       <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                         <Button
                           type="button"
@@ -470,6 +443,10 @@ export function ProfesorasPage() {
                           <Trash2 className="size-3.5 mr-1.5" />
                           Dar de baja
                         </Button>
+                      </div>
+                    ) : (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+                        <span className="text-xs font-semibold text-slate-400 italic">Dada de baja</span>
                       </div>
                     )}
                   </div>
