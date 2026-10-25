@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Calendar, GraduationCap, Loader2, Phone, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Calendar, Clock, GraduationCap, Loader2, Phone, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -19,6 +19,7 @@ import { ModalFormProfesora } from "@/features/profesoras/components/modal-form-
 import {
   useCrearProfesora,
   useDarDeBajaProfesora,
+  useHorariosActivos,
   useProfesoras,
 } from "@/features/profesoras/hooks/use-profesoras";
 import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
@@ -38,6 +39,17 @@ function formatearFecha(iso: string): string {
 
 export function ProfesorasPage() {
   const { data: profesoras = [], isPending, isError, error, refetch } = useProfesoras();
+  const { data: horarios = [] } = useHorariosActivos();
+
+  const horariosPorProfesora = useMemo(() => {
+    const mapa = new Map<number, typeof horarios>();
+    for (const h of horarios) {
+      const lista = mapa.get(h.id_profesora) ?? [];
+      lista.push(h);
+      mapa.set(h.id_profesora, lista);
+    }
+    return mapa;
+  }, [horarios]);
 
   const crearMutation = useCrearProfesora();
   const darDeBajaMutation = useDarDeBajaProfesora();
@@ -267,6 +279,9 @@ export function ProfesorasPage() {
                       Especialidad
                     </TableHead>
                     <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      Clases semanales
+                    </TableHead>
+                    <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       Incorporación
                     </TableHead>
                     <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -278,157 +293,188 @@ export function ProfesorasPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {listaFiltrada.map((prof) => (
-                    <TableRow
-                      key={prof.id}
-                      className={cn(
-                        "border-b border-slate-100 dark:border-slate-800/80 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30",
-                        !prof.activa && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
-                      )}
-                    >
-                      <TableCell className="py-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
-                            {prof.nombre.charAt(0)}
-                            {prof.apellido.charAt(0)}
-                          </div>
-                          <div>
-                            <span className="font-bold text-sm text-slate-900 dark:text-white block">
-                              {prof.nombreCompleto}
-                            </span>
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
-                              {prof.email && <span>{prof.email}</span>}
-                              {prof.telefono && (
-                                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                                  <Phone className="size-3 text-slate-400" />
-                                  {prof.telefono}
-                                </span>
-                              )}
+                  {listaFiltrada.map((prof) => {
+                    const clases = horariosPorProfesora.get(prof.id) ?? [];
+                    const conteoHorarios = clases.length;
+
+                    return (
+                      <TableRow
+                        key={prof.id}
+                        className={cn(
+                          "border-b border-slate-100 dark:border-slate-800/80 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30",
+                          !prof.activa && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                        )}
+                      >
+                        <TableCell className="py-4 pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                              {prof.nombre.charAt(0)}
+                              {prof.apellido.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-bold text-sm text-slate-900 dark:text-white block">
+                                {prof.nombreCompleto}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                                {prof.email && <span>{prof.email}</span>}
+                                {prof.telefono && (
+                                  <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                    <Phone className="size-3 text-slate-400" />
+                                    {prof.telefono}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                        {prof.especialidad ? (
-                          <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                            {prof.especialidad}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic text-xs">Sin especialidad</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="size-3.5 text-slate-400" />
-                          <span>{formatearFecha(prof.fechaAlta)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        {prof.activa ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                            Activa
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                            <span className="size-1.5 rounded-full bg-slate-400" />
-                            Dada de baja
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-4 pr-6 text-right">
-                        {prof.activa ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => abrirConfirmacionBaja(prof)}
-                            className="rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30 font-bold text-xs h-9 px-3"
-                          >
-                            <Trash2 className="size-3.5 mr-1.5" />
-                            Dar de baja
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">Inactiva</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                          {prof.especialidad ? (
+                            <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                              {prof.especialidad}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-xs">Sin especialidad</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                          {conteoHorarios > 0 ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/40 px-2.5 py-1 text-xs font-bold text-primary dark:text-pink-300 border border-pink-100 dark:border-pink-900/50">
+                              <Clock className="size-3" />
+                              {conteoHorarios} {conteoHorarios === 1 ? "clase" : "clases"}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-xs">Sin clases a cargo</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="size-3.5 text-slate-400" />
+                            <span>{formatearFecha(prof.fechaAlta)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          {prof.activa ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <span className="size-1.5 rounded-full bg-emerald-500" />
+                              Activa
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              <span className="size-1.5 rounded-full bg-slate-400" />
+                              Dada de baja
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4 pr-6 text-right">
+                          {prof.activa ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => abrirConfirmacionBaja(prof)}
+                              className="rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30 font-bold text-xs h-9 px-3"
+                            >
+                              <Trash2 className="size-3.5 mr-1.5" />
+                              Dar de baja
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Inactiva</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
 
             {/* VISTA MÓVIL (TARJETAS) */}
             <div className="sm:hidden flex flex-col gap-3">
-              {listaFiltrada.map((prof) => (
-                <div
-                  key={prof.id}
-                  className={cn(
-                    "flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3",
-                    !prof.activa && "opacity-75 bg-muted/30",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
-                        {prof.nombre.charAt(0)}
-                        {prof.apellido.charAt(0)}
-                      </div>
-                      <div>
-                        <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                          {prof.nombreCompleto}
-                        </h2>
-                        {prof.email && (
-                          <p className="text-xs text-muted-foreground">{prof.email}</p>
-                        )}
-                      </div>
-                    </div>
-                    {prof.activa ? (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        Activa
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                        Baja
-                      </span>
-                    )}
-                  </div>
+              {listaFiltrada.map((prof) => {
+                const clases = horariosPorProfesora.get(prof.id) ?? [];
+                const conteoHorarios = clases.length;
 
-                  <div className="space-y-1 text-xs">
-                    {prof.telefono && (
-                      <p className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                        <Phone className="size-3 text-slate-400" />
-                        <span className="font-semibold">{prof.telefono}</span>
-                      </p>
+                return (
+                  <div
+                    key={prof.id}
+                    className={cn(
+                      "flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3",
+                      !prof.activa && "opacity-75 bg-muted/30",
                     )}
-                    {prof.especialidad && (
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">
-                        Especialidad:{" "}
-                        <span className="font-normal text-slate-600 dark:text-slate-400">
-                          {prof.especialidad}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                          {prof.nombre.charAt(0)}
+                          {prof.apellido.charAt(0)}
+                        </div>
+                        <div>
+                          <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                            {prof.nombreCompleto}
+                          </h2>
+                          {prof.email && (
+                            <p className="text-xs text-muted-foreground">{prof.email}</p>
+                          )}
+                        </div>
+                      </div>
+                      {prof.activa ? (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          Activa
                         </span>
-                      </p>
-                    )}
-                    <p className="text-muted-foreground">
-                      Incorporación: {formatearFecha(prof.fechaAlta)}
-                    </p>
-                  </div>
-
-                  {prof.activa && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => abrirConfirmacionBaja(prof)}
-                        className="w-full h-10 rounded-xl border-rose-200 text-rose-600 dark:border-rose-900/40 dark:text-rose-400 font-bold text-xs hover:bg-rose-50"
-                      >
-                        <Trash2 className="size-3.5 mr-1.5" />
-                        Dar de baja
-                      </Button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                          Baja
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="space-y-1.5 text-xs">
+                      {prof.telefono && (
+                        <p className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                          <Phone className="size-3 text-slate-400" />
+                          <span className="font-semibold">{prof.telefono}</span>
+                        </p>
+                      )}
+                      {prof.especialidad && (
+                        <p className="font-semibold text-slate-800 dark:text-slate-200">
+                          Especialidad:{" "}
+                          <span className="font-normal text-slate-600 dark:text-slate-400">
+                            {prof.especialidad}
+                          </span>
+                        </p>
+                      )}
+                      <p className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                        <span>Clases semanales:</span>
+                        {conteoHorarios > 0 ? (
+                          <span className="font-bold text-primary flex items-center gap-1">
+                            <Clock className="size-3" />
+                            {conteoHorarios} {conteoHorarios === 1 ? "clase" : "clases"}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">Sin clases</span>
+                        )}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Incorporación: {formatearFecha(prof.fechaAlta)}
+                      </p>
+                    </div>
+
+                    {prof.activa && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => abrirConfirmacionBaja(prof)}
+                          className="w-full h-10 rounded-xl border-rose-200 text-rose-600 dark:border-rose-900/40 dark:text-rose-400 font-bold text-xs hover:bg-rose-50"
+                        >
+                          <Trash2 className="size-3.5 mr-1.5" />
+                          Dar de baja
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
@@ -448,15 +494,22 @@ export function ProfesorasPage() {
         )}
 
         {/* MODAL DE CONFIRMACIÓN DE BAJA */}
-        {profesoraBaja && (
-          <ModalBajaProfesora
-            profesora={profesoraBaja}
-            dandoDeBaja={darDeBajaMutation.isPending}
-            errorBaja={errorBaja}
-            onClose={() => setProfesoraBaja(null)}
-            onConfirm={handleConfirmarBaja}
-          />
-        )}
+        {profesoraBaja && (() => {
+          const clases = horariosPorProfesora.get(profesoraBaja.id) ?? [];
+          const nombres = Array.from(new Set(clases.map((c) => c.actividad.nombre)));
+
+          return (
+            <ModalBajaProfesora
+              profesora={profesoraBaja}
+              cantidadHorarios={clases.length}
+              actividadesNombres={nombres}
+              dandoDeBaja={darDeBajaMutation.isPending}
+              errorBaja={errorBaja}
+              onClose={() => setProfesoraBaja(null)}
+              onConfirm={handleConfirmarBaja}
+            />
+          );
+        })()}
       </div>
     </OwnerLayout>
   );

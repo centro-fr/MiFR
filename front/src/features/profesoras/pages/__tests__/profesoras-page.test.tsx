@@ -43,6 +43,7 @@ const mockProfesoras: Profesora[] = [
 
 const mockMutateCrear = vi.fn();
 const mockMutateDarDeBaja = vi.fn();
+let mockHorariosActivos: Array<{ id_profesora: number; actividad: { nombre: string } }> = [];
 
 vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
   useProfesoras: () => ({
@@ -66,6 +67,11 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     reset: vi.fn(),
     mutate: mockMutateDarDeBaja,
   }),
+  useHorariosActivos: () => ({
+    data: mockHorariosActivos,
+    isPending: false,
+    isError: false,
+  }),
 }));
 
 function renderizar() {
@@ -82,6 +88,7 @@ function renderizar() {
 describe("ProfesorasPage (US-38)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHorariosActivos = [];
   });
 
   it("renderiza el título principal, subtítulo y botón de acción", () => {
@@ -168,4 +175,22 @@ describe("ProfesorasPage (US-38)", () => {
       expect.any(Object),
     );
   });
+
+  it("advierte si la profesora tiene clases activas a su cargo y ofrece ir a Horarios", () => {
+    mockHorariosActivos = [
+      { id_profesora: 1, actividad: { nombre: "Funcional" } },
+      { id_profesora: 1, actividad: { nombre: "HIIT" } },
+    ];
+    renderizar();
+
+    expect(screen.getAllByText("2 clases").length).toBeGreaterThan(0);
+
+    const botonesBaja = screen.getAllByRole("button", { name: /Dar de baja/i });
+    fireEvent.click(botonesBaja[0]);
+
+    expect(screen.getByText(/Tiene 2 clases semanales asignadas/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ir a Horarios" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar baja" })).not.toBeInTheDocument();
+  });
 });
+

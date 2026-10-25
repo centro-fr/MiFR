@@ -4,6 +4,7 @@ import {
   darDeBajaProfesora,
   listarProfesoras,
 } from "@/features/profesoras/api/profesoras-api";
+import { listarHorarios } from "@/features/horarios/api/horarios-api";
 import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
 
 export const PROFESORAS_QUERY_KEY = ["profesoras"] as const;
@@ -34,3 +35,11 @@ export function useDarDeBajaProfesora() {
     },
   });
 }
+
+export function useHorariosActivos() {
+  return useQuery({
+    queryKey: ["horarios"] as const,
+    queryFn: listarHorarios,
+  });
+}
+

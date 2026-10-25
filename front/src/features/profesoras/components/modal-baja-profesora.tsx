@@ -1,4 +1,5 @@
 import { TriangleAlert } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,6 +15,8 @@ import type { Profesora } from "@/features/profesoras/schemas/profesora";
 
 interface Props {
   profesora: Profesora;
+  cantidadHorarios?: number;
+  actividadesNombres?: string[];
   dandoDeBaja: boolean;
   errorBaja: string | null;
   onClose: () => void;
@@ -22,11 +25,17 @@ interface Props {
 
 export function ModalBajaProfesora({
   profesora,
+  cantidadHorarios = 0,
+  actividadesNombres = [],
   dandoDeBaja,
   errorBaja,
   onClose,
   onConfirm,
 }: Props) {
+  const tieneHorarios = cantidadHorarios > 0;
+  const actividadesTexto =
+    actividadesNombres.slice(0, 3).join(", ") + (actividadesNombres.length > 3 ? "..." : "");
+
   return (
     <AlertDialog
       open
@@ -54,11 +63,23 @@ export function ModalBajaProfesora({
           </div>
         </AlertDialogHeader>
 
-        {errorBaja && (
+        {tieneHorarios ? (
+          <Alert className="rounded-2xl border-amber-300 bg-amber-50/90 p-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <AlertDescription className="space-y-1.5 text-xs font-medium leading-relaxed">
+              <p className="font-bold text-amber-900 dark:text-amber-100">
+                Tiene {cantidadHorarios} {cantidadHorarios === 1 ? "clase semanal asignada" : "clases semanales asignadas"}
+                {actividadesTexto ? ` (${actividadesTexto})` : ""}.
+              </p>
+              <p>
+                Para mantener la integridad del cronograma y no dejar clases sin docente a cargo, primero debés reasignar o dar de baja sus horarios en el Cronograma.
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : errorBaja ? (
           <Alert className="rounded-xl border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
             <AlertDescription className="text-xs font-semibold">{errorBaja}</AlertDescription>
           </Alert>
-        )}
+        ) : null}
 
         <AlertDialogFooter className="flex-row items-center justify-end gap-2.5 pt-2">
           <AlertDialogCancel asChild>
@@ -68,18 +89,28 @@ export function ModalBajaProfesora({
               disabled={dandoDeBaja}
               className="h-10 rounded-xl border-slate-200 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              Cancelar
+              {tieneHorarios ? "Cerrar" : "Cancelar"}
             </Button>
           </AlertDialogCancel>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={dandoDeBaja}
-            onClick={onConfirm}
-            className="h-10 rounded-xl px-4 text-xs font-bold shadow-xs"
-          >
-            {dandoDeBaja ? "Dando de baja..." : "Confirmar baja"}
-          </Button>
+
+          {tieneHorarios ? (
+            <Button
+              asChild
+              className="h-10 rounded-xl bg-primary px-4 text-xs font-bold text-white shadow-xs hover:bg-primary-dark"
+            >
+              <Link to="/app/horarios">Ir a Horarios</Link>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={dandoDeBaja}
+              onClick={onConfirm}
+              className="h-10 rounded-xl px-4 text-xs font-bold shadow-xs"
+            >
+              {dandoDeBaja ? "Dando de baja..." : "Confirmar baja"}
+            </Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
