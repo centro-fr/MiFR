@@ -78,6 +78,13 @@ export const personasHandlers = [
       return errorApi(409, "CONFLICT", "La profesora ya está dada de baja");
     }
 
+    const tieneHorariosActivos = db.horarios.some(
+      (h) => h.id_profesora === id && h.fecha_baja === null,
+    );
+    if (tieneHorariosActivos) {
+      return errorApi(409, "CONFLICT", "Debe dar de baja los horarios activos antes que a la profesora");
+    }
+
     profesora.fecha_baja = new Date().toISOString();
     return HttpResponse.json(profesoraConNombre(profesora));
   }),
