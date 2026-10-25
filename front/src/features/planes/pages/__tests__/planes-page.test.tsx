@@ -171,8 +171,8 @@ describe("PlanesPage", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Nuevo plan" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toBeInTheDocument();
-    expect(screen.getByText("Mensual")).toBeInTheDocument();
-    expect(screen.getByText("Clase suelta")).toBeInTheDocument();
+    expect(screen.getByText("Abono mensual")).toBeInTheDocument();
+    expect(screen.getByText("Pase por clase individual")).toBeInTheDocument();
     expect(screen.getByLabelText(/Precio inicial \*/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Crear plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();

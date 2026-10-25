@@ -58,9 +58,9 @@ describe("EditarPlanDialog", () => {
 
     expect(screen.getByRole("heading", { name: "Editar plan Kids" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toHaveValue("Kids");
-    expect(screen.getByText("Mensual")).toBeInTheDocument();
-    expect(screen.getByText("Suelta")).toBeInTheDocument();
-    expect(screen.getByText(/El tipo no se puede cambiar/i)).toBeInTheDocument();
+    expect(screen.getByText("Abono mensual")).toBeInTheDocument();
+    expect(screen.getByText("Pase por clase individual")).toBeInTheDocument();
+    expect(screen.getByText(/La modalidad de cobro no se puede modificar/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Clases por semana \*/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Días de gracia")).toHaveValue(5);
     expect(screen.getByLabelText("Actividad")).toBeInTheDocument();

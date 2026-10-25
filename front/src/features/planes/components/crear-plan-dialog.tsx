@@ -177,13 +177,13 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
             )}
           </div>
 
-          {/* Tipo de plan (Mensual / Suelta) */}
+          {/* Modalidad de cobro (Abono mensual / Pase por clase individual) */}
           <div className="space-y-1.5">
             <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-              Tipo de plan <span className="text-destructive">*</span>
+              Modalidad de cobro <span className="text-destructive">*</span>
             </Label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Mensual */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Abono mensual */}
               <button
                 type="button"
                 onClick={() => cambiar({ tipo: "MENSUAL" })}
@@ -202,10 +202,13 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 >
                   {esMensual && <div className="size-2 rounded-full bg-primary" />}
                 </div>
-                <span className="text-sm">Mensual</span>
+                <div>
+                  <span className="text-sm block">Abono mensual</span>
+                  <span className="text-[11px] text-muted-foreground block font-normal">Cuota periódica mensual</span>
+                </div>
               </button>
 
-              {/* Suelta */}
+              {/* Pase por clase individual */}
               <button
                 type="button"
                 onClick={() => cambiar({ tipo: "CLASE_SUELTA" })}
@@ -224,7 +227,10 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 >
                   {!esMensual && <div className="size-2 rounded-full bg-primary" />}
                 </div>
-                <span className="text-sm">Clase suelta</span>
+                <div>
+                  <span className="text-sm block">Pase por clase individual</span>
+                  <span className="text-[11px] text-muted-foreground block font-normal">Sin cuota fija mensual</span>
+                </div>
               </button>
             </div>
             <p className="text-xs text-muted-foreground pt-0.5">

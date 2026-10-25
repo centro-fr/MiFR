@@ -188,13 +188,13 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               )}
             </div>
 
-            {/* Tipo */}
+            {/* Modalidad de cobro */}
             <div className="space-y-1.5">
               <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Tipo <span className="text-destructive">*</span>
+                Modalidad de cobro <span className="text-destructive">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Mensual */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Abono mensual */}
                 <div
                   className={cn(
                     "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
@@ -211,10 +211,13 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   >
                     {esMensual && <div className="size-2 rounded-full bg-primary" />}
                   </div>
-                  <span className="text-sm">Mensual</span>
+                  <div>
+                    <span className="text-sm block">Abono mensual</span>
+                    <span className="text-[11px] text-muted-foreground block font-normal">Cuota periódica mensual</span>
+                  </div>
                 </div>
 
-                {/* Suelta */}
+                {/* Pase por clase individual */}
                 <div
                   className={cn(
                     "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
@@ -231,11 +234,14 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   >
                     {!esMensual && <div className="size-2 rounded-full bg-primary" />}
                   </div>
-                  <span className="text-sm">Suelta</span>
+                  <div>
+                    <span className="text-sm block">Pase por clase individual</span>
+                    <span className="text-[11px] text-muted-foreground block font-normal">Sin cuota fija mensual</span>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground pt-0.5">
-                El tipo no se puede cambiar: define cómo vencen las cuotas de quienes ya tienen este plan.
+                La modalidad de cobro no se puede modificar: define cómo vencen las cuotas de quienes ya tienen este plan.
               </p>
             </div>
 

@@ -60,7 +60,7 @@ export function ResumenPlan({ valores, actividades, cambios }: Props) {
       </p>
       <p className="mb-2 text-sm text-muted-foreground">{esMensual ? "por mes" : "por clase"}</p>
       <dl>
-        <Dato etiqueta="Tipo">{valores.tipo ? ETIQUETA_TIPO_PLAN[valores.tipo] : "—"}</Dato>
+        <Dato etiqueta="Modalidad">{valores.tipo ? ETIQUETA_TIPO_PLAN[valores.tipo] : "—"}</Dato>
         <Dato etiqueta="Actividad">{actividad?.nombre ?? "Cualquiera"}</Dato>
         <Dato etiqueta="Frecuencia">{esMensual && !valores.frecuencia ? "—" : textoFrecuencia(valores.tipo, datos.clases_por_semana)}</Dato>
         {esMensual && <Dato etiqueta="Vencimiento">{/^\d+$/.test(valores.diasGracia) ? textoDiasGracia(datos.dias_gracia) : "—"}</Dato>}
