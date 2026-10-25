@@ -9,11 +9,11 @@
 
 ## 2. Objetivo
 
-Permitir a la Propietaria administrar el plantel de profesoras del centro de entrenamiento (altas, especialidad, consultas y bajas lógicas), asegurando que solo usuarios activos y con rol `PROFESORA` puedan ser asignadas a horarios, clases y liquidaciones de honorarios.
+Permitir a la Propietaria administrar el plantel de profesoras del centro de entrenamiento (altas, especialidad, consultas y bajas lógicas), asegurando que solo usuarios activos y con rol `PROFESORA` puedan ser asignadas a horarios, clases y cálculo de honorarios.
 
 ## 3. Descripción
 
-Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indicando sus datos de especialidad y vinculándolas a su cuenta de usuario con rol docente, para poder contar con el staff activo necesario para dictar disciplinas, cubrir suplencias y liquidar honorarios.
+Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indicando sus datos de especialidad y vinculándolas a su cuenta de usuario con rol docente, para poder contar con el staff activo necesario para dictar disciplinas, cubrir suplencias y generar los informes de honorarios.
 
 ## 4. Estados de la pantalla / flujo
 
@@ -56,7 +56,7 @@ Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indic
 3. **Baja Estrictamente Lógica**: La baja nunca elimina físicamente el registro (`fecha_baja = fechaActualArgentina()`). Esto garantiza la preservación histórica y la integridad referencial en:
    - Historial de clases dictadas y asistencias (US-20).
    - Suplencias registradas pasadas (US-24).
-   - Liquidaciones mensuales de honorarios ya efectuadas (US-23).
+   - Informes y cálculos mensuales de honorarios ya generados (US-23).
    - Cobros en efectivo rendidos (US-15 y US-19).
 4. **Integridad con Horarios y Cronograma**: Si una profesora dada de baja aún posee horarios semanales asignados en el cronograma vigente (US-04), el sistema debe advertir o bloquear la baja hasta que sus franjas horarias sean reasignadas a otra docente o dadas de baja.
 5. **Permisos y Seguridad**:
@@ -82,7 +82,7 @@ Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indic
 
 - **US-01 y US-02**: Autenticación y gestión de usuarios/roles.
 - **US-04**: Asignación de profesoras a los horarios semanales.
-- **US-23 y US-24**: Liquidación mensual de honorarios y suplencias del plantel.
+- **US-23 y US-24**: Informe mensual de honorarios y suplencias del plantel.
 - **Backend**: Módulo `gestion-personas/profesor` (`POST /api/profesoras`, `GET /api/profesoras`, `DELETE /api/profesoras/:id`).
 
 ## 11. Notas de implementación (Frontend)

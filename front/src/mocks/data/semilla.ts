@@ -44,6 +44,14 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
   { id_usuario: 6, email: "julian.fernandez@example.com", nombre: "Julián", apellido: "Fernández", roles: ["ALUMNO"] },
   { id_usuario: 7, email: "micaela.garcia@example.com", nombre: "Micaela", apellido: "García", roles: ["ALUMNO"] },
   { id_usuario: 8, email: "mariana.lopez@example.com", nombre: "Mariana", apellido: "López", roles: ["TUTOR"] },
+  {
+    id_usuario: 9,
+    email: "sofia.martinez@example.com",
+    nombre: "Sofía",
+    apellido: "Martínez",
+    roles: ["PROFESORA"],
+    estado: "ACTIVO",
+  },
 ];
 
 // Usuario con el que arranca la sesión del mock: la propietaria multi-rol de la seed.

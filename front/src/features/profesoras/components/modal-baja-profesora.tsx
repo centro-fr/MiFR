@@ -48,7 +48,7 @@ export function ModalBajaProfesora({
             </AlertDialogTitle>
             <AlertDialogDescription className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Estás por dar de baja el perfil de <strong>{profesora.nombreCompleto}</strong>. La baja es estrictamente lógica:
-              se preserva todo su historial de clases dictadas, suplencias y liquidaciones de honorarios, pero dejará de estar disponible
+              se preserva todo su historial de clases dictadas, suplencias e informes de honorarios, pero dejará de estar disponible
               para la asignación de nuevos horarios.
             </AlertDialogDescription>
           </div>
