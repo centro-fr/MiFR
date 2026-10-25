@@ -15,7 +15,7 @@ const usuarioCreadoSchema = z.object({
 });
 
 export async function listarProfesoras(): Promise<Profesora[]> {
-  const { data } = await apiClient.get("/profesoras");
+  const { data } = await apiClient.get("/profesoras", { params: { incluirBajas: true } });
   return z.array(profesoraApiSchema).parse(data).map(normalizarProfesora);
 }
 

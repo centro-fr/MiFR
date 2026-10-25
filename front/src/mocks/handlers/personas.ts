@@ -10,7 +10,17 @@ export const personasHandlers = [
     await delay(200);
     const denegado = verificarAcceso(request, { permiso: "HORARIOS_VER" });
     if (denegado) return denegado;
-    return HttpResponse.json(db.profesoras.filter((p) => p.fecha_baja === null).map(profesoraConNombre));
+
+    const url = new URL(request.url);
+    const incluirBajas =
+      url.searchParams.get("incluirBajas") === "true" ||
+      url.searchParams.get("incluir_bajas") === "true";
+
+    const lista = incluirBajas
+      ? db.profesoras
+      : db.profesoras.filter((p) => p.fecha_baja === null);
+
+    return HttpResponse.json(lista.map(profesoraConNombre));
   }),
 
   http.post("*/api/v1/profesoras", async ({ request }) => {
