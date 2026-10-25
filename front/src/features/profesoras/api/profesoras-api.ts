@@ -25,7 +25,8 @@ export async function crearProfesora(input: CrearProfesoraInput): Promise<Profes
     nombre: input.nombre,
     apellido: input.apellido,
     email: input.email,
-    fecha_nacimiento: "1995-01-01",
+    telefono: input.telefono.trim(),
+    fecha_nacimiento: input.fecha_nacimiento,
   });
 
   const usuario = usuarioCreadoSchema.parse(usuarioData);

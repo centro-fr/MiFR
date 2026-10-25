@@ -26,8 +26,16 @@ export function ModalFormProfesora({
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [especialidad, setEspecialidad] = useState("");
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
+
+  // Fecha máxima permitida (al menos 18 años cumplidos)
+  const hoy = new Date();
+  const fechaMaximaMayorEdad = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate())
+    .toISOString()
+    .split("T")[0];
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -37,6 +45,8 @@ export function ModalFormProfesora({
       nombre,
       apellido,
       email,
+      telefono,
+      fecha_nacimiento: fechaNacimiento,
       especialidad: especialidad.trim() || undefined,
     });
 
@@ -72,7 +82,7 @@ export function ModalFormProfesora({
                 Dar de alta profesora
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Ingresá los datos personales y la cuenta Google para el acceso
+                Ingresá los datos de contacto y la cuenta Google para el acceso
               </p>
             </div>
           </div>
@@ -101,7 +111,7 @@ export function ModalFormProfesora({
             </Alert>
           )}
 
-          {/* Formulario de Alta Directa */}
+          {/* Nombre y Apellido */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -131,6 +141,7 @@ export function ModalFormProfesora({
             </div>
           </div>
 
+          {/* Email de Google */}
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Correo electrónico (Google) <span className="text-destructive">*</span>
@@ -147,6 +158,39 @@ export function ModalFormProfesora({
             <p className="text-[11px] text-muted-foreground">
               Es la cuenta con la que la profesora podrá iniciar sesión mediante Google Auth.
             </p>
+          </div>
+
+          {/* Teléfono y Fecha de Nacimiento */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="telefono" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Teléfono de contacto <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="telefono"
+                type="tel"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                placeholder="Ej: 11 2345-6789"
+                disabled={guardando}
+                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fecha_nacimiento" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Fecha de nacimiento <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="fecha_nacimiento"
+                type="date"
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+                max={fechaMaximaMayorEdad}
+                min="1920-01-01"
+                disabled={guardando}
+                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+              />
+            </div>
           </div>
 
           {/* Especialidad */}

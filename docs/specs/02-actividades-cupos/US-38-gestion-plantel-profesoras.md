@@ -32,6 +32,7 @@ Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indic
 
 - Identificador único (`id_profesora`).
 - Nombre y apellido de la profesora (obtenido de `usuarios`).
+- Correo electrónico de acceso y teléfono de contacto.
 - Especialidad deportiva o disciplina principal (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
 - Fecha de incorporación / alta (`fecha_alta`).
 - Estado operativo (`Activa` / `Dada de baja`).
@@ -42,6 +43,8 @@ Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indic
 - **Nombre** (`nombre`): Obligatorio. Texto entre 2 y 60 caracteres.
 - **Apellido** (`apellido`): Obligatorio. Texto entre 2 y 60 caracteres.
 - **Correo electrónico de Google** (`email`): Obligatorio. Email válido (máx. 120 caracteres) para inicio de sesión mediante Google Auth.
+- **Teléfono de contacto** (`telefono`): Obligatorio. Entre 7 y 15 dígitos para contacto y coordinación docente.
+- **Fecha de nacimiento** (`fecha_nacimiento`): Obligatoria. Fecha en formato AAAA-MM-DD validando mayoría de edad (al menos 18 años).
 - **Especialidad** (`especialidad`): Opcional. Texto libre de hasta 80 caracteres (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
 
 ## 6. Acciones del usuario

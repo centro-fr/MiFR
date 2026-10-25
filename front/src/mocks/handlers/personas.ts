@@ -98,6 +98,8 @@ export const personasHandlers = [
       nombre?: string;
       apellido?: string;
       email?: string;
+      telefono?: string;
+      fecha_nacimiento?: string;
     };
 
     if (!cuerpo.nombre || !cuerpo.apellido || !cuerpo.email) {
@@ -115,6 +117,8 @@ export const personasHandlers = [
       nombre: cuerpo.nombre.trim(),
       apellido: cuerpo.apellido.trim(),
       email: cuerpo.email.trim().toLowerCase(),
+      telefono: cuerpo.telefono?.trim() || null,
+      fecha_nacimiento: cuerpo.fecha_nacimiento || "1995-01-01",
       estado: "ACTIVO" as const,
       roles: [],
     };

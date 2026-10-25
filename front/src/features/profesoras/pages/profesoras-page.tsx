@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Calendar, GraduationCap, Loader2, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Calendar, GraduationCap, Loader2, Phone, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -96,7 +96,8 @@ export function ProfesorasPage() {
       return (
         p.nombreCompleto.toLowerCase().includes(q) ||
         (p.especialidad && p.especialidad.toLowerCase().includes(q)) ||
-        (p.email && p.email.toLowerCase().includes(q))
+        (p.email && p.email.toLowerCase().includes(q)) ||
+        (p.telefono && p.telefono.includes(q))
       );
     });
   }, [profesoras, pestana, busqueda]);
@@ -295,9 +296,15 @@ export function ProfesorasPage() {
                             <span className="font-bold text-sm text-slate-900 dark:text-white block">
                               {prof.nombreCompleto}
                             </span>
-                            {prof.email && (
-                              <span className="text-xs text-muted-foreground">{prof.email}</span>
-                            )}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                              {prof.email && <span>{prof.email}</span>}
+                              {prof.telefono && (
+                                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                  <Phone className="size-3 text-slate-400" />
+                                  {prof.telefono}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -388,6 +395,12 @@ export function ProfesorasPage() {
                   </div>
 
                   <div className="space-y-1 text-xs">
+                    {prof.telefono && (
+                      <p className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                        <Phone className="size-3 text-slate-400" />
+                        <span className="font-semibold">{prof.telefono}</span>
+                      </p>
+                    )}
                     {prof.especialidad && (
                       <p className="font-semibold text-slate-800 dark:text-slate-200">
                         Especialidad:{" "}

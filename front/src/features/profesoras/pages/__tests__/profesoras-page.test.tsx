@@ -18,6 +18,8 @@ const mockProfesoras: Profesora[] = [
     nombre: "Lucía",
     apellido: "Gómez",
     email: "lucia.gomez@example.com",
+    telefono: "1144556677",
+    fechaNacimiento: "1992-05-10",
     especialidad: "Funcional",
     fechaAlta: "2026-01-01T00:00:00.000Z",
     fechaBaja: null,
@@ -30,6 +32,8 @@ const mockProfesoras: Profesora[] = [
     nombre: "Carla",
     apellido: "Ruiz",
     email: "carla.ruiz@example.com",
+    telefono: null,
+    fechaNacimiento: null,
     especialidad: "GAP",
     fechaAlta: "2026-01-01T00:00:00.000Z",
     fechaBaja: "2026-02-01T00:00:00.000Z",
@@ -146,6 +150,8 @@ describe("ProfesorasPage (US-38)", () => {
     fireEvent.change(screen.getByPlaceholderText("Ej: Laura"), { target: { value: "Laura" } });
     fireEvent.change(screen.getByPlaceholderText("Ej: García"), { target: { value: "García" } });
     fireEvent.change(screen.getByPlaceholderText("ejemplo@gmail.com"), { target: { value: "laura@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText("Ej: 11 2345-6789"), { target: { value: "1144556677" } });
+    fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/i), { target: { value: "1994-06-15" } });
     fireEvent.change(screen.getByPlaceholderText(/Pilates Reformer/i), { target: { value: "Pilates" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar profesora" }));
@@ -155,6 +161,8 @@ describe("ProfesorasPage (US-38)", () => {
         nombre: "Laura",
         apellido: "García",
         email: "laura@example.com",
+        telefono: "1144556677",
+        fecha_nacimiento: "1994-06-15",
         especialidad: "Pilates",
       },
       expect.any(Object),
