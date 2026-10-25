@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { AlertCircle, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
 import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
@@ -18,7 +19,7 @@ import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
 type PestanaPlanes = "PLANES" | "PROMOCIONES";
 
-function Encabezado() {
+function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="min-w-0">
@@ -31,12 +32,11 @@ function Encabezado() {
       </div>
       <Can permission="PLANES_EDITAR">
         <Button
-          asChild
+          type="button"
+          onClick={onNuevoPlan}
           className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
         >
-          <Link to="/app/planes/nuevo">
-            + Nuevo plan
-          </Link>
+          + Nuevo plan
         </Button>
       </Can>
     </div>
@@ -122,17 +122,26 @@ function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: str
 export function PlanesPage() {
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
   const promociones = usePromociones();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pestana, setPestana] = useState<PestanaPlanes>("PLANES");
+  const [planNuevo, setPlanNuevo] = useState(() => searchParams.get("nuevo") === "1");
   const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
   const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
   const [planEdicion, setPlanEdicion] = useState<Plan | null>(null);
+
+  const cerrarModalNuevo = () => {
+    setPlanNuevo(false);
+    if (searchParams.has("nuevo")) {
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   const planesVigentes = (planes ?? []).filter(estaVigente);
 
   return (
     <OwnerLayout>
       <div className="space-y-6 min-w-0">
-        <Encabezado />
+        <Encabezado onNuevoPlan={() => setPlanNuevo(true)} />
         <Pestanas
           activa={pestana}
           onChange={setPestana}
@@ -165,12 +174,11 @@ export function PlanesPage() {
             accion={
               <Can permission="PLANES_EDITAR">
                 <Button
-                  asChild
+                  type="button"
+                  onClick={() => setPlanNuevo(true)}
                   className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
                 >
-                  <Link to="/app/planes/nuevo">
-                    + Nuevo plan
-                  </Link>
+                  + Nuevo plan
                 </Button>
               </Can>
             }
@@ -185,6 +193,10 @@ export function PlanesPage() {
           />
         )}
 
+        <CrearPlanDialog
+          abierto={planNuevo}
+          onClose={cerrarModalNuevo}
+        />
         <ActualizarPrecioDialog
           key={planPrecio?.id ?? "precio-cerrado"}
           plan={planPrecio}
