@@ -363,7 +363,7 @@ export function AusentesPage() {
                         </p>
                         {contacto.esTutor && (
                           <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 truncate">
-                            Tutor: {contacto.nombreCompleto} (menor)
+                            Tutor: {contacto.nombreCompleto}
                           </p>
                         )}
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -452,7 +452,7 @@ export function AusentesPage() {
                               </p>
                               {contacto.esTutor && (
                                 <p className="text-xs font-semibold text-pink-600 dark:text-pink-400">
-                                  Tutor: {contacto.nombreCompleto} (menor)
+                                  Tutor: {contacto.nombreCompleto}
                                 </p>
                               )}
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
