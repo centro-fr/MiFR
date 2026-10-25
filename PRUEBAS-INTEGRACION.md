@@ -202,7 +202,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49, PI-55, PI-56                             | Sí                                                                                     |
 | US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50, PI-53, PI-56                             | Sí                                                                                     |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    | PI-69, PI-70                                                  | Sí                                                                                     |
-| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo) | Parcial: los contratos de `IInfoCuotas`, `IInfoClases` e `IInfoInscripciones`; el informe, cuando exista |
+| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82 | Sí: el 50 % de lo cobrado, el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
 | US-24 | Registro de suplencias entre profesoras                   |   4    | PI-60 a PI-63                                                 | Sí; no editar una suplencia de un período liquidado queda para US-23 (sección 9)       |
 | US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar), PI-67, PI-68                  | Sí: los avisos, su destinatario, que no se dupliquen y las notificaciones propias por la API |
 | US-26 | Resumen diario para la propietaria                        |   4    | PI-65                                                         | Parcial: los tres bloques por la API (`GET /resumen-diario`); la notificación diaria `RESUMEN_DIARIO` espera a `Notificacion` (US-25) |
@@ -296,8 +296,13 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-75         | Los filtros y los permisos del informe de asistencia                | US-33               | Servicios          | Fábricas, `crearClase`, cierre automático                  | Sí           |
 | PI-76         | La ocupación de los horarios                                        | US-37               | Servicios          | Fábricas                                                   | Sí           |
 | PI-77         | Los filtros y los permisos de la ocupación                          | US-37               | Servicios          | Fábricas                                                   | Sí           |
+| PI-78         | El cálculo de los honorarios del mes                                | US-23, US-24        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-79         | Lo que no genera honorarios y lo que no se puede calcular           | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-80         | Recalcular, cerrar y pagar una liquidación                          | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-81         | Los períodos y los permisos de las liquidaciones                    | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-82         | Las tarifas de honorarios                                           | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad.
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026).
 
 ### 6.2 Detalle
 
@@ -1346,6 +1351,67 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | Q-05        | Filtros por modalidad, actividad y profesora | PI-77 |
 | Q-06        | La profesora recibe 403 | PI-77 |
 
+#### PI-78 — El cálculo de los honorarios del mes
+
+**US:** US-23, US-24 · **Precondición:** una propietaria y tres profesoras (Lucía, Carla y Rita), con el reloj fijo el lunes 12/10/2026 y septiembre como mes a liquidar. Tarifas desde el 01/01/2026: Lucía 50 % para todos los planes y 40 % para el Intermedio, y Carla 50 % y $2.500 por hora de suplencia. Cobros confirmados: Acosta (Inicial) $20.000 el 03/09, Benítez (Intermedio) $20.000 el 10/09, Farías (baja el 20/09) $10.000 el 05/09 y Gómez, de Carla, $30.000. La clase del lunes 07/09 de Lucía la dictó Carla, una hora.
+
+1. La propietaria genera las liquidaciones de septiembre (`POST /liquidaciones`, período `2026-09`).
+2. Abre la liquidación de Lucía y la de Carla (`GET /liquidaciones/:id`).
+3. Pide el listado de septiembre y el de agosto (`GET /liquidaciones?periodo=`), un id que no existe y uno que no es un número.
+
+**Resultado esperado:** el paso 1 responde 200 con un total general de $38.000, sin advertencias ni liquidaciones sin recalcular, y tres liquidaciones en BORRADOR: Lucía $20.500, Carla $17.500 y Rita $0, que no tuvo movimientos. En la base el período va del 01/09 al 30/09 y hay seis líneas de detalle. En el paso 2, la liquidación de Lucía tiene cuatro líneas: Acosta $10.000, Benítez $8.000 (la tarifa del plan gana a la general), Farías $5.000 y un DESCUENTO_AUSENCIA de −$2.500 por la clase del 07/09, a la tarifa de Carla. La de Carla tiene a Gómez ($15.000) y una CLASE_SUPLIDA de $2.500. En el paso 3 el listado de septiembre trae el total general y una fila por profesora con su nombre, el de agosto sale vacío, y el id inexistente responde 404 y el que no es número, 400.
+
+**Automatizado:** Sí (R-01 a R-03).
+
+#### PI-79 — Lo que no genera honorarios y lo que no se puede calcular
+
+**US:** US-23 · **Precondición:** la de PI-78, más tres inscripciones de Lucía: Cruz (sin cargo, que pagó $20.000), Díaz (pre-inscripta) y Espinoza (baja sin ningún pago).
+
+1. La propietaria genera septiembre y se miran las líneas guardadas.
+2. Con la base reiniciada, Rita tiene una tarifa del 50 % y una alumna, Sosa, con pagos de $20.000 el 02/09, $5.001 el 30/09 y $30.000 el 01/10; se genera septiembre.
+3. Con la base reiniciada, Rita no tiene tarifas, tiene una alumna sin tarifa y dicta una clase suplida el 14/09; se genera septiembre.
+
+**Resultado esperado:** en el paso 1 hay solo cuatro líneas de alumno (Acosta, Benítez, Farías y Gómez): Cruz, Díaz y Espinoza no liquidan, y Farías, que pagó antes de irse, sí. Lucía queda en $20.500. En el paso 2 el honorario de Rita es de $12.500,50: cuentan los pagos confirmados dentro del mes, el último día incluido, y no el de octubre. En el paso 3 la respuesta es 200 con dos advertencias `SIN_TARIFA` de Rita, una por el alumno (con su inscripción) y otra por la hora de suplencia (con su clase); Rita queda en $0, Lucía en $20.500 y el total general en $38.000.
+
+**Automatizado:** Sí (R-04 a R-06).
+
+#### PI-80 — Recalcular, cerrar y pagar una liquidación
+
+**US:** US-23 · **Precondición:** la de PI-78, con las liquidaciones de septiembre generadas.
+
+1. Se sube la tarifa general de Lucía al 60 % y la propietaria vuelve a generar septiembre.
+2. Con la base reiniciada, la propietaria cierra la liquidación de Lucía y después la paga.
+3. Con la base reiniciada, la propietaria cierra la de Lucía, se suben las tarifas generales de Lucía (60 %) y de Carla (80 %) y se vuelve a generar septiembre.
+4. Con la base reiniciada, la propietaria intenta pagar la de Carla en borrador, cierra la de Lucía dos veces, la paga dos veces, intenta cerrarla ya pagada y cierra un id que no existe.
+
+**Resultado esperado:** en el paso 1 se recalcula sin duplicar nada: tres liquidaciones y seis líneas; Lucía queda en $23.500 y el total general en $41.000. En el paso 2, cerrar responde 200 con estado CERRADA y $20.500, pagar responde 200 con estado PAGADA y sus cuatro líneas, y el estado queda guardado en la base. En el paso 3 la liquidación cerrada es una foto: se informa en `sin_recalcular`, sigue en $20.500 con sus cuatro líneas, y la de Carla, que sigue en borrador, se recalcula a $26.500. En el paso 4 responde 409 al pagar un borrador, al cerrar una cerrada, al pagar una pagada y al cerrar una pagada; 404 con el id inexistente; Lucía termina PAGADA y Carla sigue en BORRADOR.
+
+**Automatizado:** Sí (R-07 a R-10).
+
+#### PI-81 — Los períodos y los permisos de las liquidaciones
+
+**US:** US-23, US-02 · **Precondición:** la de PI-78; sesiones de la propietaria y de Lucía, y un usuario con rol Alumno.
+
+1. La propietaria intenta generar con los períodos `septiembre`, `2026-13`, `2026-9` y `2026-11` (el mes que viene), y sin período; después genera el mes en curso (`2026-10`).
+2. Lucía y el usuario Alumno intentan listar, abrir, generar y cerrar liquidaciones; también se hace un pedido sin sesión.
+
+**Resultado esperado:** en el paso 1 los cinco intentos responden 400 y no se guarda ninguna liquidación; el mes en curso responde 200 y deja tres liquidaciones con el período hasta el 31/10. En el paso 2 los cuatro pedidos de cada uno responden 403 y el pedido sin sesión, 401; la base no cambia: no hay liquidaciones nuevas y la existente sigue en BORRADOR.
+
+**Automatizado:** Sí (R-11 y R-12).
+
+#### PI-82 — Las tarifas de honorarios
+
+**US:** US-23, US-02 · **Precondición:** la de PI-78; sesiones de la propietaria y de Lucía. Lucía tiene una tarifa de alumno a cargo del 50 %, vigente desde el 01/01/2026.
+
+1. La propietaria registra para Lucía una tarifa de alumno a cargo del 60 % desde el 01/11/2026, lista las tarifas vigentes de Lucía y vuelve a generar septiembre.
+2. La propietaria intenta registrar tarifas con una vigencia pasada, con valor 0, con tres decimales, con un porcentaje de 150 %, con un monto fijo para alumno a cargo, con un porcentaje para hora de suplencia, con una hora de suplencia atada a un plan, con una profesora que no existe y con un plan que no existe; después registra una hora de suplencia de $3.000.
+3. La propietaria intenta cerrar la tarifa en el pasado, la cierra el 31/12/2026 e intenta cerrar una que no existe.
+4. Lucía intenta listar, registrar y cerrar tarifas; también se hace un pedido sin sesión.
+
+**Resultado esperado:** el paso 1 responde 201; la tarifa anterior queda cerrada el 31/10/2026 y la nueva abierta, el listado trae las dos (50 % y 60 %) y septiembre no cambia (Lucía sigue en $20.500). En el paso 2 los nueve rechazos responden 400 y no se guarda ninguna tarifa; la hora de suplencia en monto fijo responde 201. En el paso 3 el cierre en el pasado responde 400, el cierre válido responde 200 con la vigencia hasta el 31/12/2026 y el id inexistente responde 404. En el paso 4 los tres pedidos de Lucía responden 403 y el pedido sin sesión, 401; la tarifa sigue abierta.
+
+**Automatizado:** Sí (R-13 a R-16).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1588,6 +1654,11 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-75         | 20/10/2026 | Nicolas           | Aprobado           | Pasan Q-02 y Q-03; sin defectos                                                  |
 | PI-76         | 20/10/2026 | Nicolas           | Aprobado           | Pasa Q-04; sin defectos                                                          |
 | PI-77         | 20/10/2026 | Nicolas           | Aprobado           | Pasan Q-05 y Q-06; sin defectos                                                  |
+| PI-78         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-01 a R-03; sin defectos                                                  |
+| PI-79         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-04 a R-06; sin defectos                                                  |
+| PI-80         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-07 a R-10; sin defectos                                                  |
+| PI-81         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-11 y R-12; sin defectos                                                  |
+| PI-82         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-13 a R-16; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1642,6 +1713,8 @@ Los defectos se numeran D-01, D-02…
 | PI-73 | ¿El Mes perfecto exige el mínimo de clases del ranking? Resuelto (20/10/2026): sí, `RANKING_MINIMO_CLASES`; con menos clases no hay Mes perfecto ni Podio | Cerrado |
 | PI-73 | El cierre de un mes corre una vez por proceso desde el día 1. Una clase del último día que se cierre después de esa corrida no se vuelve a evaluar hasta un reinicio; si cambia el ranking, el podio no se recalcula (se otorga una sola vez por mes) | Abierto |
 | PI-74 | El cierre automático sin ninguna marca manual no registra ausentes (US-21): esa clase no figura como dictada en el informe de asistencia ni cuenta para la racha | Abierto |
+| PI-78 | La regla del 50 % de lo cobrado (US-23) se implementó con una propuesta que falta confirmar con el equipo: la base son los pagos confirmados dentro del mes; las inscripciones que cuentan son las activas y las dadas de baja que cobraron; la atribución es a la profesora de la inscripción; las suplencias se aplican sobre el honorario por cuotas. Las devoluciones no están definidas: hoy no restan | Abierto |
+| PI-79 | Los datos de demostración (`cargarDatosDemo`) cargan tarifas de monto fijo para alumnos, que la regla nueva ya no usa: la demostración mostraría advertencias de tarifa no aplicable. Hay que pasarlas a porcentaje | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -1711,3 +1784,4 @@ Los defectos se numeran D-01, D-02…
 |   2.28  | 18/10/2026 | Casos PI-69 (la detección de alumnos inactivos con la cuota al día) y PI-70 (su gestión) y archivo O con O-01 a O-07; US-22 pasa a automatizada | Nicolas |
 |   2.29  | 18/10/2026 | PI-15 suma los pasos 5 y 6 (DNI y contacto de emergencia obligatorios en el alta) y los tests E-24 y E-25; PI-16, PI-17, PI-31 y PI-64 mandan ahora altas completas | Francisco Andrade |
 |   2.30  | 20/10/2026 | Casos PI-71 a PI-73 (racha e insignias, ranking de asistencia y cierre mensual) y archivo P con P-01 a P-10; casos PI-74 a PI-77 (informe de asistencia y ocupación de horarios) y archivo Q con Q-01 a Q-06. US-30, US-31 y US-37 pasan a automatizadas y US-33 a parcial (sin la exportación). Fábricas `darRol`, `crearProfesora`, `crearActividad` y `crearClase` | Nicolas |
+|   2.31  | 24/10/2026 | Casos PI-78 a PI-82 (las liquidaciones y las tarifas de honorarios, US-23) y archivo R con R-01 a R-16; el honorario pasa a ser el 50 % de lo cobrado en el mes, las tarifas de alumno a cargo son un porcentaje y las de hora de suplencia, un monto fijo; US-23 pasa a automatizada | Rosario Mendoza |
