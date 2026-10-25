@@ -22,7 +22,7 @@ import {
   useProfesoras,
   useUsuariosAptosProfesora,
 } from "@/features/profesoras/hooks/use-profesoras";
-import type { CrearProfesoraFormData, Profesora } from "@/features/profesoras/schemas/profesora";
+import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
 
 type PestanaEstado = "ACTIVAS" | "TODAS";
@@ -75,7 +75,7 @@ export function ProfesorasPage() {
     });
   };
 
-  const handleGuardarNueva = (datos: CrearProfesoraFormData) => {
+  const handleGuardarNueva = (datos: CrearProfesoraInput) => {
     crearMutation.mutate(datos, {
       onSuccess: (nueva) => {
         setFormAbierto(false);

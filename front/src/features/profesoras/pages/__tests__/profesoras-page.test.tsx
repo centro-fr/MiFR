@@ -153,4 +153,27 @@ describe("ProfesorasPage (US-38)", () => {
     fireEvent.click(btnCancelarBaja);
     expect(screen.queryByText("¿Dar de baja a esta profesora?")).not.toBeInTheDocument();
   });
+
+  it("permite completar el formulario de alta directa y enviar los datos", () => {
+    renderizar();
+    fireEvent.click(screen.getByRole("button", { name: "+ Nueva profesora" }));
+
+    fireEvent.change(screen.getByPlaceholderText("Ej: Laura"), { target: { value: "Laura" } });
+    fireEvent.change(screen.getByPlaceholderText("Ej: García"), { target: { value: "García" } });
+    fireEvent.change(screen.getByPlaceholderText("ejemplo@gmail.com"), { target: { value: "laura@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText(/Pilates Reformer/i), { target: { value: "Pilates" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Guardar profesora" }));
+
+    expect(mockMutateCrear).toHaveBeenCalledWith(
+      {
+        modo: "NUEVA",
+        nombre: "Laura",
+        apellido: "García",
+        email: "laura@example.com",
+        especialidad: "Pilates",
+      },
+      expect.any(Object),
+    );
+  });
 });

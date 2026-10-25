@@ -3,7 +3,7 @@ import { apiClient } from "@/api/client";
 import {
   normalizarProfesora,
   profesoraApiSchema,
-  type CrearProfesoraFormData,
+  type CrearProfesoraInput,
   type Profesora,
 } from "@/features/profesoras/schemas/profesora";
 
@@ -30,11 +30,35 @@ export async function listarProfesoras(): Promise<Profesora[]> {
   return z.array(profesoraApiSchema).parse(data).map(normalizarProfesora);
 }
 
-export async function crearProfesora(datos: CrearProfesoraFormData): Promise<Profesora> {
+export async function crearProfesora(input: CrearProfesoraInput): Promise<Profesora> {
+  let idUsuarioParaProfesora: number;
+
+  if (input.modo === "EXISTENTE") {
+    idUsuarioParaProfesora = input.id_usuario;
+  } else {
+    // 1. Crear el usuario en el sistema
+    const { data: usuarioCreado } = await apiClient.post("/usuarios", {
+      nombre: input.nombre,
+      apellido: input.apellido,
+      email: input.email,
+      fecha_nacimiento: "1995-01-01",
+    });
+
+    const parsedUsuario = usuarioApiSchema.parse(usuarioCreado);
+    idUsuarioParaProfesora = parsedUsuario.id_usuario;
+
+    // 2. Asignar rol PROFESORA a la cuenta
+    await apiClient.post(`/usuarios/${idUsuarioParaProfesora}/roles`, {
+      rol: "PROFESORA",
+    });
+  }
+
+  // 3. Crear el perfil de profesora
   const cuerpo = {
-    id_usuario: datos.id_usuario,
-    especialidad: datos.especialidad && datos.especialidad.trim().length > 0 ? datos.especialidad.trim() : undefined,
+    id_usuario: idUsuarioParaProfesora,
+    especialidad: input.especialidad && input.especialidad.trim().length > 0 ? input.especialidad.trim() : undefined,
   };
+
   const { data } = await apiClient.post("/profesoras", cuerpo);
   return normalizarProfesora(profesoraApiSchema.parse(data));
 }

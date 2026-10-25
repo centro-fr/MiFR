@@ -15,7 +15,21 @@ export const profesoraApiSchema = z.object({
 
 export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 
-export const crearProfesoraFormSchema = z.object({
+export const crearProfesoraDirectaSchema = z.object({
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(60),
+  apellido: z.string().trim().min(2, "El apellido debe tener al menos 2 caracteres").max(60),
+  email: z.string().trim().toLowerCase().email("Ingresá un correo electrónico válido").max(120),
+  especialidad: z
+    .string()
+    .trim()
+    .max(80, "La especialidad no puede superar los 80 caracteres")
+    .optional()
+    .or(z.literal("")),
+});
+
+export type CrearProfesoraDirectaData = z.infer<typeof crearProfesoraDirectaSchema>;
+
+export const crearProfesoraExistenteSchema = z.object({
   id_usuario: z.number({ required_error: "Debes seleccionar un usuario" }).positive("Usuario inválido"),
   especialidad: z
     .string()
@@ -25,7 +39,11 @@ export const crearProfesoraFormSchema = z.object({
     .or(z.literal("")),
 });
 
-export type CrearProfesoraFormData = z.infer<typeof crearProfesoraFormSchema>;
+export type CrearProfesoraExistenteData = z.infer<typeof crearProfesoraExistenteSchema>;
+
+export type CrearProfesoraInput =
+  | ({ modo: "NUEVA" } & CrearProfesoraDirectaData)
+  | ({ modo: "EXISTENTE" } & CrearProfesoraExistenteData);
 
 export interface Profesora {
   id: number;

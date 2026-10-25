@@ -6,7 +6,7 @@ import {
   listarUsuariosCandidatos,
   type UsuarioCandidato,
 } from "@/features/profesoras/api/profesoras-api";
-import type { CrearProfesoraFormData, Profesora } from "@/features/profesoras/schemas/profesora";
+import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
 
 export const PROFESORAS_QUERY_KEY = ["profesoras"] as const;
 export const USUARIOS_CANDIDATOS_QUERY_KEY = ["usuarios-aptos-profesora"] as const;
@@ -21,7 +21,7 @@ export function useProfesoras() {
 export function useCrearProfesora() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (datos: CrearProfesoraFormData) => crearProfesora(datos),
+    mutationFn: (datos: CrearProfesoraInput) => crearProfesora(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROFESORAS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: USUARIOS_CANDIDATOS_QUERY_KEY });

@@ -88,4 +88,59 @@ export const personasHandlers = [
       })),
     );
   }),
+
+  http.post("*/api/v1/usuarios", async ({ request }) => {
+    await delay(300);
+    const denegado = verificarAcceso(request, { permiso: "USUARIOS_EDITAR" });
+    if (denegado) return denegado;
+
+    const cuerpo = (await request.json().catch(() => ({}))) as {
+      nombre?: string;
+      apellido?: string;
+      email?: string;
+    };
+
+    if (!cuerpo.nombre || !cuerpo.apellido || !cuerpo.email) {
+      return errorApi(400, "VALIDATION_ERROR", "Nombre, apellido y email son requeridos");
+    }
+
+    const emailExistente = db.usuarios.find((u) => u.email.toLowerCase() === cuerpo.email?.toLowerCase());
+    if (emailExistente) {
+      return errorApi(409, "CONFLICT", "Ya existe un usuario registrado con ese email");
+    }
+
+    const nuevoId = Math.max(0, ...db.usuarios.map((u) => u.id_usuario)) + 1;
+    const nuevoUsuario = {
+      id_usuario: nuevoId,
+      nombre: cuerpo.nombre.trim(),
+      apellido: cuerpo.apellido.trim(),
+      email: cuerpo.email.trim().toLowerCase(),
+      estado: "ACTIVO" as const,
+      roles: [],
+    };
+
+    db.usuarios.push(nuevoUsuario);
+    return HttpResponse.json(nuevoUsuario, { status: 201 });
+  }),
+
+  http.post("*/api/v1/usuarios/:id/roles", async ({ request, params }) => {
+    await delay(200);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "USUARIOS_EDITAR" });
+    if (denegado) return denegado;
+
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
+
+    const usuario = db.usuarios.find((u) => u.id_usuario === id);
+    if (!usuario) return errorApi(404, "NOT_FOUND", "Usuario no encontrado");
+
+    const cuerpo = (await request.json().catch(() => ({}))) as { rol?: string };
+    if (!cuerpo.rol) return errorApi(400, "VALIDATION_ERROR", "Rol inválido");
+
+    if (!usuario.roles.includes(cuerpo.rol as any)) {
+      usuario.roles.push(cuerpo.rol as any);
+    }
+
+    return HttpResponse.json({ id_usuario: id, rol: cuerpo.rol }, { status: 201 });
+  }),
 ];
