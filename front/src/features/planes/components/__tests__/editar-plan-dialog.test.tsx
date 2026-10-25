@@ -64,7 +64,6 @@ describe("EditarPlanDialog", () => {
     expect(screen.getByLabelText(/Clases por semana \*/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Días de gracia")).toHaveValue(5);
     expect(screen.getByLabelText("Actividad")).toBeInTheDocument();
-    expect(screen.getByText("Solo con la profesora a cargo")).toBeInTheDocument();
     expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
     expect(screen.getByRole("button", { name: "Dar de baja el plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();

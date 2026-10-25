@@ -29,20 +29,20 @@ interface Props {
 }
 
 // El control al que va el foco cuando su campo tiene error, en el orden del formulario.
-const ID_DEL_CAMPO: Record<keyof PlanFormValues, string> = {
+const ID_DEL_CAMPO: Partial<Record<keyof PlanFormValues, string>> = {
   nombre: "plan-nombre",
   descripcion: "plan-descripcion",
   tipo: "plan-tipo-MENSUAL",
   precio: "plan-precio",
   idActividad: "plan-actividad",
-  profesoraUnica: "plan-profesora-unica",
   frecuencia: "plan-frecuencia-1",
   diasGracia: "plan-gracia",
 };
 
 function enfocarPrimerError(errores: ErroresPlanForm) {
   const campo = (Object.keys(ID_DEL_CAMPO) as (keyof PlanFormValues)[]).find((clave) => errores[clave]);
-  if (campo) document.getElementById(ID_DEL_CAMPO[campo])?.focus();
+  const id = campo ? ID_DEL_CAMPO[campo] : undefined;
+  if (id) document.getElementById(id)?.focus();
 }
 
 export function FormularioPlan({ plan, actividades, planes, guardando, errorGuardado, onGuardar }: Props) {

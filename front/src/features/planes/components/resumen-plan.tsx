@@ -5,7 +5,6 @@ import {
   ETIQUETA_TIPO_PLAN,
   textoDiasGracia,
   textoFrecuencia,
-  textoProfesora,
   type CambioDelPlan,
 } from "@/features/planes/utils/planes";
 import type { Actividad } from "@/types/actividad";
@@ -65,7 +64,6 @@ export function ResumenPlan({ valores, actividades, cambios }: Props) {
         <Dato etiqueta="Actividad">{actividad?.nombre ?? "Cualquiera"}</Dato>
         <Dato etiqueta="Frecuencia">{esMensual && !valores.frecuencia ? "—" : textoFrecuencia(valores.tipo, datos.clases_por_semana)}</Dato>
         {esMensual && <Dato etiqueta="Vencimiento">{/^\d+$/.test(valores.diasGracia) ? textoDiasGracia(datos.dias_gracia) : "—"}</Dato>}
-        <Dato etiqueta="Profesora">{textoProfesora(valores.profesoraUnica)}</Dato>
       </dl>
       {cambios && <CambiosSinGuardar cambios={cambios} />}
     </aside>

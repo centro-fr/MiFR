@@ -1,5 +1,4 @@
 import { Info, TriangleAlert } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { BadgeModalidad } from "@/features/planes/components/badges-plan";
 import { CampoPlan, SeccionPlan } from "@/features/planes/components/campo-plan";
@@ -183,15 +182,6 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
         </div>
       </div>
       <AvisoModalidad actividad={actividad} />
-      <label htmlFor="plan-profesora-unica" className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/15">
-        <span className="flex flex-col">
-          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Solo con la profesora a cargo</span>
-          <span className="text-sm text-muted-foreground">
-            Activado, el alumno cursa siempre con la misma docente asignada. Desactivado, puede coordinar clases con diferentes profesoras del equipo.
-          </span>
-        </span>
-        <Switch id="plan-profesora-unica" checked={valores.profesoraUnica} onCheckedChange={(profesoraUnica) => onChange({ profesoraUnica })} />
-      </label>
     </SeccionPlan>
   );
 }
