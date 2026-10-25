@@ -24,15 +24,17 @@ const CLASE_CONTROL =
   "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus-visible:outline-2 focus-visible:outline-primary dark:border-white/15 dark:bg-surface-low dark:text-slate-200";
 
 interface Props {
-  estado: EstadoTransferencia;
+  /** Sin estado no se muestra su selector: la lista es de un solo estado (por ejemplo, las pendientes). */
+  estado?: EstadoTransferencia;
   filtros: FiltrosTransferencias;
-  onEstado: (estado: EstadoTransferencia) => void;
+  onEstado?: (estado: EstadoTransferencia) => void;
   onChange: (filtros: FiltrosTransferencias) => void;
   onLimpiar: () => void;
 }
 
 export function BarraFiltros({ estado, filtros, onEstado, onChange, onLimpiar }: Props) {
   const cambiar = (cambios: Partial<FiltrosTransferencias>) => onChange({ ...filtros, ...cambios });
+  const conEstado = estado !== undefined && onEstado !== undefined;
 
   return (
     <div
@@ -53,24 +55,26 @@ export function BarraFiltros({ estado, filtros, onEstado, onChange, onLimpiar }:
         />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center">
-        <select
-          aria-label="Estado"
-          value={estado}
-          onChange={(evento) => onEstado(evento.target.value as EstadoTransferencia)}
-          className={CLASE_CONTROL}
-        >
-          {ESTADOS.map(({ valor, texto }) => (
-            <option key={valor} value={valor}>
-              {texto}
-            </option>
-          ))}
-        </select>
+        {conEstado && (
+          <select
+            aria-label="Estado"
+            value={estado}
+            onChange={(evento) => onEstado(evento.target.value as EstadoTransferencia)}
+            className={CLASE_CONTROL}
+          >
+            {ESTADOS.map(({ valor, texto }) => (
+              <option key={valor} value={valor}>
+                {texto}
+              </option>
+            ))}
+          </select>
+        )}
         <input
           type="date"
           aria-label="Fecha de la transferencia"
           value={filtros.fecha}
           onChange={(evento) => cambiar({ fecha: evento.target.value })}
-          className={CLASE_CONTROL}
+          className={conEstado ? CLASE_CONTROL : `${CLASE_CONTROL} col-span-2 sm:col-span-1`}
         />
         <select
           aria-label="Ordenar"

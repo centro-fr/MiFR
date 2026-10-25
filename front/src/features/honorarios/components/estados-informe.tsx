@@ -64,7 +64,7 @@ export function InformeSinCalcular({ periodo, calculando, onCalcular }: PropsSin
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Todavía no se calcularon los honorarios de {etiquetaPeriodo(periodo)}</h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
         {esPeriodoEnCurso(periodo)
-          ? "El mes está en curso: podés calcularlo ahora y volver a hacerlo hasta cerrar cada liquidación."
+          ? "El mes está en curso: podés calcularlo ahora y volver a hacerlo hasta cerrar los honorarios de cada profesora."
           : "Se cuentan los alumnos que estuvieron inscriptos algún día del mes, asistan o no."}
       </p>
       <Can

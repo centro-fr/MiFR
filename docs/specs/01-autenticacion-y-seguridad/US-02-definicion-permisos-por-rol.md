@@ -1,5 +1,15 @@
 # US-02 – Definición de permisos por rol
 
+## Estado de la historia
+
+- **Estado:** Descartada
+- **Fecha y sprint:** Sprint 4 – 25/10/2026
+- **Motivo:** El equipo vio que no hacía falta un panel de permisos, ya que la propietaria (dueña del centro) no lo quiere.
+- **Decidido por:** Equipo FR
+- **Reemplazo:** Ninguna
+
+El resto del documento queda como registro de lo que se había planificado.
+
 ## 1. Información general
 
 - **Épica:** Autenticación y Seguridad

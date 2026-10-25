@@ -114,7 +114,7 @@ function MenuEstado({ liquidacion, onCambiarEstado }: Pick<PropsTarjeta, "liquid
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => onCambiarEstado(liquidacion, accion)} className="min-h-11">
-            {accion === "cerrar" ? "Cerrar liquidación" : "Marcar como abonada"}
+            {accion === "cerrar" ? "Cerrar honorarios" : "Marcar como abonados"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -166,10 +166,9 @@ export function TarjetaProfesora({ liquidacion, tarifas, diaDeReferencia, onCamb
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => onCambiarTarifa(liquidacion)}
               aria-label={`Cambiar la tarifa de ${nombreCompleto(profesora)}`}
-              className="min-h-10 shrink-0 rounded-lg bg-white font-bold dark:bg-transparent"
+              className="min-h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-bold pointer-fine:min-h-10 dark:bg-transparent"
             >
               Cambiar
             </Button>

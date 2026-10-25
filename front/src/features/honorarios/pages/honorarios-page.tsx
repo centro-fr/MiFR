@@ -52,7 +52,7 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
       {advertencias.length > 0 && (
         <AvisoAdvertencias advertencias={advertencias} liquidaciones={informe.liquidaciones} onCerrar={() => setAdvertencias([])} />
       )}
-      <section aria-label="Liquidación por profesora" className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Honorarios por profesora" className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
         {informe.liquidaciones.map((liquidacion) => (
           <TarjetaProfesora
             key={liquidacion.id}

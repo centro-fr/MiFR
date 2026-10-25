@@ -25,16 +25,16 @@ export interface CambioDeEstado {
 
 const TEXTOS: Record<AccionDeEstado, { titulo: string; confirmar: string; explicacion: string; exito: string }> = {
   cerrar: {
-    titulo: "¿Cerrar la liquidación?",
-    confirmar: "Cerrar liquidación",
+    titulo: "¿Cerrar los honorarios?",
+    confirmar: "Cerrar honorarios",
     explicacion: "Queda como foto: ya no se recalcula aunque cambien las tarifas, los alumnos o las suplencias del mes.",
-    exito: "Liquidación cerrada.",
+    exito: "Honorarios cerrados.",
   },
   abonar: {
     titulo: "¿Marcar como abonada?",
     confirmar: "Marcar como abonada",
     explicacion: "Solo deja registro de que ya se le abonó por fuera del sistema: MiFR no mueve dinero.",
-    exito: "Liquidación marcada como abonada.",
+    exito: "Honorarios marcados como abonados.",
   },
 };
 
@@ -58,7 +58,7 @@ export function ConfirmarCambioEstado({ cambio, periodo, onClose }: Props) {
       toast.success(textos.exito);
       onClose();
     } catch (error) {
-      toast.error(mensajeDeErrorApi(error, "No se pudo actualizar la liquidación."));
+      toast.error(mensajeDeErrorApi(error, "No se pudieron actualizar los honorarios."));
     }
   }
 

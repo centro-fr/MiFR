@@ -46,7 +46,7 @@ function ItemAlumno({ linea }: { linea: LineaAlumno }) {
       </div>
       <div className="shrink-0 text-right">
         <p className="text-sm font-bold text-dark tabular-nums dark:text-white">{formatearPrecio(linea.monto)}</p>
-        {calculo && <p className="text-xs text-muted-foreground tabular-nums">{calculo}</p>}
+        {calculo && <p className="text-sm text-muted-foreground tabular-nums">{calculo}</p>}
       </div>
     </li>
   );
@@ -60,7 +60,10 @@ function ItemSuplencia({ linea }: { linea: LineaSuplencia }) {
       <div className="min-w-0">
         <p className="break-words text-sm font-semibold text-dark dark:text-white">{quienDeLaSuplencia(linea)}</p>
         <p className="text-sm text-muted-foreground">
-          {clase.actividad} · {fechaCorta(clase.fecha)} {clase.horaInicio}–{clase.horaFin}
+          {clase.actividad} ·{" "}
+          <span className="whitespace-nowrap">
+            {fechaCorta(clase.fecha)} {clase.horaInicio}–{clase.horaFin}
+          </span>
         </p>
       </div>
       <p
@@ -101,7 +104,7 @@ export function DetalleLiquidacion({ id }: { id: number }) {
           <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
           {mensajeDeErrorApi(error, "No se pudo cargar el detalle.")}
         </p>
-        <Button type="button" variant="outline" size="sm" disabled={isFetching} onClick={() => void refetch()} className="min-h-10 rounded-lg font-bold">
+        <Button type="button" variant="outline" disabled={isFetching} onClick={() => void refetch()} className="min-h-11 rounded-lg text-sm font-bold pointer-fine:min-h-10">
           Reintentar
         </Button>
       </div>

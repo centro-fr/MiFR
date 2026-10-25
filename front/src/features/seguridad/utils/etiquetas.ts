@@ -29,7 +29,7 @@ const DESCRIPCIONES: Record<string, string> = {
   PLANES: "Planes, precios y promociones",
   PARAMETROS: "Datos bancarios, plazos y avisos automáticos",
   PAGOS: "Cobros en efectivo, transferencias y rendición",
-  HONORARIOS: "Liquidaciones de profesoras",
+  HONORARIOS: "Honorarios de profesoras",
   ASISTENCIAS: "Toma de asistencia en clases",
   RUTINAS: "Rutinas y progreso físico",
   REPORTES: "Informes y estadísticas",
