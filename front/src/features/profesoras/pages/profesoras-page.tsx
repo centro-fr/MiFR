@@ -20,7 +20,6 @@ import {
   useCrearProfesora,
   useDarDeBajaProfesora,
   useProfesoras,
-  useUsuariosAptosProfesora,
 } from "@/features/profesoras/hooks/use-profesoras";
 import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
@@ -39,7 +38,6 @@ function formatearFecha(iso: string): string {
 
 export function ProfesorasPage() {
   const { data: profesoras = [], isPending, isError, error, refetch } = useProfesoras();
-  const { data: candidatos = [], isPending: cargandoCandidatos } = useUsuariosAptosProfesora(profesoras);
 
   const crearMutation = useCrearProfesora();
   const darDeBajaMutation = useDarDeBajaProfesora();
@@ -425,8 +423,6 @@ export function ProfesorasPage() {
         {/* MODAL DE ALTA */}
         {formAbierto && (
           <ModalFormProfesora
-            candidatos={candidatos}
-            cargandoCandidatos={cargandoCandidatos}
             guardando={crearMutation.isPending}
             errorGuardado={
               crearMutation.isError

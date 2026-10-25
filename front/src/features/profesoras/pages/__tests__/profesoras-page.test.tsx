@@ -37,17 +37,6 @@ const mockProfesoras: Profesora[] = [
   },
 ];
 
-const mockCandidatos = [
-  {
-    idUsuario: 99,
-    nombre: "Valeria",
-    apellido: "Docente",
-    email: "valeria@example.com",
-    roles: ["PROFESORA"],
-    estado: "ACTIVO",
-  },
-];
-
 const mockMutateCrear = vi.fn();
 const mockMutateDarDeBaja = vi.fn();
 
@@ -58,10 +47,6 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     isError: false,
     error: null,
     refetch: vi.fn(),
-  }),
-  useUsuariosAptosProfesora: () => ({
-    data: mockCandidatos,
-    isPending: false,
   }),
   useCrearProfesora: () => ({
     isPending: false,
@@ -167,7 +152,6 @@ describe("ProfesorasPage (US-38)", () => {
 
     expect(mockMutateCrear).toHaveBeenCalledWith(
       {
-        modo: "NUEVA",
         nombre: "Laura",
         apellido: "García",
         email: "laura@example.com",

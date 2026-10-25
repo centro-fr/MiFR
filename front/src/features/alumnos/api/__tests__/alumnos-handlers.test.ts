@@ -49,8 +49,8 @@ describe("alumnosHandlers", () => {
         offset: 0,
       });
 
-      expect(respuesta.total).toBe(19);
-      expect(respuesta.items).toHaveLength(19);
+      expect(respuesta.total).toBe(21);
+      expect(respuesta.items).toHaveLength(21);
       expect(respuesta.items.some((alumno) => alumno.estado === "BAJA")).toBe(false);
     } finally {
       clearSessionToken();
@@ -95,7 +95,7 @@ describe("alumnosHandlers", () => {
     const cuerpo = (await respuesta.json()) as { datos: { estado: string }[]; total: number };
 
     expect(cuerpo.datos.some((alumno) => alumno.estado === "BAJA")).toBe(true);
-    expect(cuerpo.total).toBe(20);
+    expect(cuerpo.total).toBe(22);
   });
 
   it("devuelve la ficha con tutor e inscripciones, sin el antiguo historial de cobros", async () => {

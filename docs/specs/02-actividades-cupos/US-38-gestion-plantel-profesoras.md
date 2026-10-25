@@ -39,19 +39,21 @@ Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indic
 
 ### Datos que se cargan / editan
 
-- **Usuario a vincular** (`id_usuario`): Obligatorio. Selector de usuarios registrados, activos y con rol `PROFESORA` que aún no tengan ficha docente creada.
-- **Especialidad** (`especialidad`): Opcional. Texto libre de hasta 80 caracteres.
+- **Nombre** (`nombre`): Obligatorio. Texto entre 2 y 60 caracteres.
+- **Apellido** (`apellido`): Obligatorio. Texto entre 2 y 60 caracteres.
+- **Correo electrónico de Google** (`email`): Obligatorio. Email válido (máx. 120 caracteres) para inicio de sesión mediante Google Auth.
+- **Especialidad** (`especialidad`): Opcional. Texto libre de hasta 80 caracteres (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
 
 ## 6. Acciones del usuario
 
 - Visualizar el listado completo de profesoras activas e historial de bajas.
 - Buscar o filtrar profesoras por nombre, apellido o especialidad.
-- Dar de alta una nueva profesora vinculando una cuenta de usuario existente.
+- Dar de alta una nueva profesora mediante alta directa creando su cuenta de acceso y perfil docente en un solo paso.
 - Dar de baja lógica a una profesora que deja de prestar servicios en el centro.
 
 ## 7. Reglas de negocio
 
-1. **Prerrequisito de Rol y Estado**: Solo se puede dar de alta como profesora a un usuario que exista en la plataforma, esté en estado `ACTIVO` y tenga asignado previamente el rol `PROFESORA` (según US-02).
+1. **Creación de Cuenta y Perfil**: Al dar de alta una profesora, el sistema registra la cuenta de usuario, le asigna automáticamente el rol `PROFESORA` y crea su perfil docente vinculado.
 2. **Unicidad de Perfil Docente**: Un usuario no puede tener más de un registro de profesora vinculado (`id_usuario` único).
 3. **Baja Estrictamente Lógica**: La baja nunca elimina físicamente el registro (`fecha_baja = fechaActualArgentina()`). Esto garantiza la preservación histórica y la integridad referencial en:
    - Historial de clases dictadas y asistencias (US-20).

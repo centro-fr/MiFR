@@ -57,9 +57,9 @@ Tareas técnicas, secuenciales y verificables para implementar la épica **Confi
   - Mostrar feedback visual inmediato en caso de error de superposición retornado por el backend.
   - *Criterio de verificación*: La grilla dibuja las clases en su día y franja horaria correspondiente sin descuadres visuales.
 
-- [ ] **3.3. Pantalla / Gestión del Plantel de Profesoras (US-38)**
+- [x] **3.3. Pantalla / Gestión del Plantel de Profesoras (US-38)**
   - Crear componente de administración de profesoras con listado/tabla de staff y especialidad.
-  - Implementar modal flotante centrado de alta rápida con selector de usuarios con rol `PROFESORA`.
+  - Implementar modal flotante centrado de alta rápida con campos directos (nombre, apellido, email Google y especialidad opcional).
   - Implementar diálogo de confirmación para baja lógica.
   - *Criterio de verificación*: Alta de profesora visible de inmediato en el listado y disponible en el selector de horarios.
 
