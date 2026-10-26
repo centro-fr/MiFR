@@ -84,7 +84,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     subrutasDe: "/app/pagos",
     descripcion: "Quién debe, qué transferencias faltan verificar y cuánto efectivo te tienen que rendir.",
   },
-  { etiqueta: "Profesoras", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", descripcion: "Plantel de profesoras, especialidades y staff." },
+  { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
   { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
   { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
@@ -157,10 +157,10 @@ export function panelExclusivoDeLaRuta(ruta: string): Panel | null {
 const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to" | "descripcion"> & { items: ItemMenu[] }> = {
   PROPIETARIA: { etiqueta: "Propietaria", icono: LayoutDashboard, items: ITEMS_PROPIETARIA },
   PROFESORA: {
-    etiqueta: "Profesora",
+    etiqueta: "Profesor/a",
     icono: Presentation,
     to: "/app/profesora",
-    descripcion: "Tus clases como profesora: las de hoy y su historial.",
+    descripcion: "Tus clases como profesor/a: las de hoy y su historial.",
     items: CLASES_PROFESORA,
   },
   ALUMNO: { etiqueta: "Alumno", icono: GraduationCap, items: PANEL_ALUMNO },

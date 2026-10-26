@@ -63,6 +63,13 @@ Tareas técnicas, secuenciales y verificables para implementar la épica **Confi
   - Implementar diálogo de confirmación para baja lógica.
   - *Criterio de verificación*: Alta de profesora visible de inmediato en el listado y disponible en el selector de horarios.
 
+- [ ] **3.4. Vista de Cronograma Semanal para Profesoras ("Mis clases") (US-04)**
+  - Crear pantalla `/app/mis-clases` en modo consulta para el rol Profesor/a.
+  - En desktop: grilla semanal limpia sin controles de edición ni drag-and-drop.
+  - En mobile: selector de días (Lunes a Sábado) con pestañas y tarjetas táctiles con actividad, horario y cupo.
+  - Filtro automático por la docente autenticada (`useMiIdDeProfesora`).
+  - *Criterio de verificación*: La profesora solo visualiza sus horarios semanales asignados; la pantalla responde rápido y maneja estado vacío si no tiene clases.
+
 ---
 
 ## Fase 4: Validación End-to-End y Criterios de Aceptación
