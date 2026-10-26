@@ -90,7 +90,7 @@ describe("CrearPlanDialog", () => {
     render(<CrearPlanDialog abierto={true} onClose={onClose} />);
 
     const inputNombre = screen.getByLabelText(/Nombre \*/i);
-    fireEvent.change(inputNombre, { target: { value: "Plan Funcional 3 Días" } });
+    fireEvent.change(inputNombre, { target: { value: "Plan Intermedio" } });
 
     const inputPrecio = screen.getByLabelText(/Precio inicial \*/i);
     fireEvent.change(inputPrecio, { target: { value: "38500" } });
@@ -100,7 +100,7 @@ describe("CrearPlanDialog", () => {
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        nombre: "Plan Funcional 3 Días",
+        nombre: "Plan Intermedio",
         tipo: "MENSUAL",
         precio: 38500,
         dias_gracia: 5,

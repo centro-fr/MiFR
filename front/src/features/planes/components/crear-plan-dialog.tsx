@@ -164,7 +164,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
               value={valores.nombre}
               maxLength={LARGO_MAXIMO_NOMBRE}
               onChange={(e) => cambiar({ nombre: e.target.value })}
-              placeholder="Ej: Pase Libre, Funcional 3 días, Pilates Dupla"
+              placeholder="Ej: Básico, Intermedio, Particular, Premium"
               className={cn(
                 "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                 errores.nombre && "border-rose-500 focus-visible:ring-rose-500"
