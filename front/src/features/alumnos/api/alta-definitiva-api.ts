@@ -30,6 +30,7 @@ function aPendiente(inscripcion: InscripcionPendienteApi, alumno: AlumnoEnListad
     fechaNacimiento: usuario.fecha_nacimiento.slice(0, 10),
     tutor: responsable && { nombre: responsable.nombre, apellido: responsable.apellido, telefono: responsable.telefono },
     idPlan: String(inscripcion.plan.id_plan),
+    idPromocion: inscripcion.id_promocion,
     nombrePlan: inscripcion.plan.nombre,
     precio: inscripcion.plan_precio.precio,
     profesora: `${inscripcion.profesora.usuario.nombre} ${inscripcion.profesora.usuario.apellido}`,
@@ -82,6 +83,7 @@ export async function registrarTransferenciaRecibida(cuerpo: RegistrarTransferen
 export interface InformarTransferenciaPrimerPagoBody {
   id_inscripcion: number;
   monto: number;
+  id_promocion?: number;
   fecha_hora_transferencia: string;
   titular_cuenta_origen?: string;
   observaciones?: string;

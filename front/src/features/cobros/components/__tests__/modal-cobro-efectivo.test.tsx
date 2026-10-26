@@ -30,6 +30,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
 
   const inscripcionPrueba = {
     id_inscripcion: 3,
+    id_plan: 1,
     nombre_plan: "Plan Básico",
     precio_vigente: 25000,
     situacion_cuota: {
@@ -64,6 +65,20 @@ describe("ModalCobroEfectivo (US-15)", () => {
 
     const inputMonto = screen.getByLabelText(/Monto cobrado/i);
     expect(inputMonto).toHaveValue("25000");
+  });
+
+  it("muestra la acción para crear una promoción nueva cuando la inscripción tiene plan", () => {
+    render(
+      <ModalCobroEfectivo
+        abierto={true}
+        onClose={vi.fn()}
+        alumno={alumnoPrueba}
+        inscripcion={inscripcionPrueba}
+        onExito={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /crear nueva promoción/i })).toBeInTheDocument();
   });
 
   it("registra el cobro exitosamente al confirmar con el precio vigente", async () => {

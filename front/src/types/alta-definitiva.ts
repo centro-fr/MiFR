@@ -39,6 +39,7 @@ export interface PreInscripcionPendiente {
   fechaNacimiento: string;
   tutor: TutorPreInscripcion | null;
   idPlan: string;
+  idPromocion: number | null;
   nombrePlan: string;
   /**
    * Precio del plan al pre-inscribirse. El back espera el precio vigente hoy, que suele ser el

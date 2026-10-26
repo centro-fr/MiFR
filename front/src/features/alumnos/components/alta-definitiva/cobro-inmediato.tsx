@@ -6,6 +6,7 @@ import { ModalConfirmarAlta } from "@/features/alumnos/components/alta-definitiv
 import { PENDIENTES_DE_ALTA_QUERY_KEY, useConfirmarAltaDefinitiva } from "@/features/alumnos/hooks/use-alta-definitiva";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
 interface CobroInmediatoProps {
   /** La pre-inscripción recién creada con "Confirmar y cobrar ahora". */
@@ -23,6 +24,7 @@ export function CobroInmediato({ idInscripcion, onTerminar }: CobroInmediatoProp
   const esPropietaria = hasRole("PROPIETARIA");
   const formas = useFormasDePrimerPago();
   const confirmarAlta = useConfirmarAltaDefinitiva();
+  const promociones = usePromociones();
   // La lista en caché es de antes de pre-inscribir: se vuelve a pedir y se espera a la nueva.
   const pendientes = useQuery({
     queryKey: PENDIENTES_DE_ALTA_QUERY_KEY,
@@ -46,6 +48,7 @@ export function CobroInmediato({ idInscripcion, onTerminar }: CobroInmediatoProp
     <ModalConfirmarAlta
       pendiente={pendiente}
       formas={formas}
+      promociones={promociones.data ?? []}
       confirmando={confirmarAlta.isPending}
       error={confirmarAlta.error}
       onClose={onTerminar}

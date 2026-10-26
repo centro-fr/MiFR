@@ -2,6 +2,7 @@ import { http, HttpResponse, delay } from "msw";
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
 import { precioVigenteDePlan } from "@/mocks/precios";
+import { precioConPromocion } from "@/mocks/handlers/promociones";
 import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
@@ -19,6 +20,7 @@ const monto = z
 
 const efectivoSchema = z.object({
   id_inscripcion: z.number().int().positive(),
+  id_promocion: z.number().int().positive().optional(),
   monto,
   confirmar_monto_distinto: z.boolean().default(false),
   observaciones: z.string().max(255).optional(),
@@ -34,6 +36,7 @@ const transferenciaRecibidaSchema = efectivoSchema.extend({
 
 const informarTransferenciaSchema = z.object({
   id_inscripcion: z.number().int().positive(),
+  id_promocion: z.number().int().positive().optional(),
   monto,
   fecha_hora_transferencia: z
     .string()
@@ -55,7 +58,11 @@ function errorAntesDeCobrar(inscripcion: InscripcionMock | undefined, cuerpo: z.
   if (inscripcion.estado === "BAJA" || alumno.estado === "BAJA") {
     return errorApi(409, "CONFLICT", "El alumno está dado de baja");
   }
-  const esperado = precioVigente(inscripcion.id_plan);
+  const precioLista = precioVigente(inscripcion.id_plan);
+  const esperado =
+    precioLista === undefined
+      ? undefined
+      : precioConPromocion(inscripcion.id_plan, precioLista, cuerpo.id_promocion ?? inscripcion.id_promocion);
   if (esperado === undefined) return errorApi(409, "CONFLICT", "El plan no tiene un precio vigente hoy");
   if (cuerpo.monto !== esperado && !cuerpo.confirmar_monto_distinto) {
     return errorApi(

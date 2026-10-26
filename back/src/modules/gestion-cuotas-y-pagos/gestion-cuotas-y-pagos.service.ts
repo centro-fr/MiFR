@@ -44,7 +44,10 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
   async registrarCobroEfectivo(input: RegistrarEfectivoInput, solicitante: Solicitante): Promise<Pago> {
     const inscripcion = await this.inscripcionACobrar(input.id_inscripcion, solicitante);
     const idProfesoraCobra = await this.pagos.profesoraQueCobra(inscripcion, solicitante);
-    const cuota = await this.cuotas.prepararCobro(inscripcion);
+    const cuota =
+      input.id_promocion === undefined
+        ? await this.cuotas.prepararCobro(inscripcion)
+        : await this.cuotas.prepararCobro(inscripcion, input.id_promocion);
     const datos = this.pagos.prepararEfectivo(cuota, input, solicitante, idProfesoraCobra);
     return this.conAltaDefinitiva(inscripcion.id_inscripcion, () => this.pagos.guardar(cuota, datos));
   }
@@ -56,7 +59,10 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
   async informarTransferencia(input: InformarTransferenciaInput, solicitante: Solicitante): Promise<Pago> {
     const inscripcion = await this.inscripcionACobrar(input.id_inscripcion, solicitante);
     await this.pagos.profesoraQueCobra(inscripcion, solicitante);
-    const cuota = await this.cuotas.prepararCobro(inscripcion);
+    const cuota =
+      input.id_promocion === undefined
+        ? await this.cuotas.prepararCobro(inscripcion)
+        : await this.cuotas.prepararCobro(inscripcion, input.id_promocion);
     const datos = await this.pagos.prepararTransferencia(cuota, input, solicitante);
     return this.pagos.guardar(cuota, datos);
   }
@@ -65,9 +71,11 @@ export class GestionCuotasYPagosService implements ILogicaCuotasPagos {
     input: RegistrarTransferenciaRecibidaInput,
     solicitante: Solicitante,
   ): Promise<Pago> {
-    const cuota = await this.cuotas.prepararCobro(
-      await this.inscripcionACobrar(input.id_inscripcion, solicitante),
-    );
+    const inscripcion = await this.inscripcionACobrar(input.id_inscripcion, solicitante);
+    const cuota =
+      input.id_promocion === undefined
+        ? await this.cuotas.prepararCobro(inscripcion)
+        : await this.cuotas.prepararCobro(inscripcion, input.id_promocion);
     const datos = await this.pagos.prepararTransferenciaRecibida(cuota, input, solicitante);
     return this.conAltaDefinitiva(cuota.inscripcion.id_inscripcion, () => this.pagos.guardar(cuota, datos));
   }

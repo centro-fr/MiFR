@@ -25,6 +25,9 @@ import {
   type EtiquetasFormaDeCobro,
 } from "@/features/cobros/components/campos-cobro";
 import { formatearPrecio, textoHorarios } from "@/features/alumnos/utils/pendientes-de-alta";
+import { calcularCotizacionCobro } from "@/features/cobros/api/cobros-api";
+import type { Promocion } from "@/types/promocion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
 
@@ -121,17 +124,37 @@ interface Props {
   error: unknown;
   onClose: () => void;
   onConfirm: (pago: CuerpoPrimerPago) => void;
+  promociones?: Promocion[];
 }
 
 // US-07: el alta definitiva es la consecuencia de registrar el primer pago. El back la hace
 // en la misma transacción del cobro y no deja activar a nadie sin un pago confirmado.
-export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onClose, onConfirm }: Props) {
+export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onClose, onConfirm, promociones = [] }: Props) {
   const { hasRole } = usePermissions();
   const esPropietaria = hasRole("PROPIETARIA");
-  const [valores, setValores] = useState(() => valoresInicialesPrimerPago(pendiente.precio, formas[0]));
+  const promocionesAplicables = promociones.filter(
+    (promocion) =>
+      promocion.activo &&
+      promocion.estado === "ACTIVA" &&
+      promocion.planes.some((plan) => plan.id === pendiente.idPlan),
+  );
+  const promocionInicial = promocionesAplicables.some((promocion) => promocion.id === String(pendiente.idPromocion))
+    ? String(pendiente.idPromocion)
+    : "SIN_PROMOCION";
+  const [promocionSeleccionada, setPromocionSeleccionada] = useState(promocionInicial);
+  const cotizacion = calcularCotizacionCobro(
+    {
+      id: Number(pendiente.idInscripcion),
+      idPlan: Number(pendiente.idPlan),
+      precioLista: pendiente.precio,
+      idPromocion: promocionSeleccionada === "SIN_PROMOCION" ? null : Number(promocionSeleccionada),
+    },
+    promocionesAplicables,
+  );
+  const [valores, setValores] = useState(() => valoresInicialesPrimerPago(cotizacion.monto, formas[0]));
   const [errores, setErrores] = useState<Errores>({});
   const backInformoMontoDistinto = esMontoDistinto(error);
-  const contexto = { precio: pendiente.precio, backInformoMontoDistinto };
+  const contexto = { precio: cotizacion.monto, backInformoMontoDistinto };
   const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
 
   const etiquetasForma: EtiquetasFormaDeCobro = {
@@ -159,12 +182,18 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
       setErrores(erroresDe(resultado.error.issues));
       return;
     }
-    onConfirm(aCuerpoPrimerPago(pendiente.idInscripcion, resultado.data));
+    onConfirm(
+      aCuerpoPrimerPago(
+        pendiente.idInscripcion,
+        resultado.data,
+        promocionSeleccionada === "SIN_PROMOCION" ? undefined : Number(promocionSeleccionada),
+      ),
+    );
   };
 
   const mensajeMonto = backInformoMontoDistinto
     ? mensajeDeErrorApi(error, "El monto no coincide con el precio vigente del plan.")
-    : `El precio del plan es ${formatearPrecio(pendiente.precio)}.`;
+    : `El precio del plan es ${formatearPrecio(cotizacion.monto)}.`;
   const errorGeneral = error && !backInformoMontoDistinto ? mensajeDeErrorApi(error, "No se pudo registrar el cobro.") : null;
 
   return (
@@ -193,6 +222,39 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
 
           <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="promocion-primer-pago" className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Promoción
+            </label>
+            <Select value={promocionSeleccionada} onValueChange={(valor) => {
+              setPromocionSeleccionada(valor);
+              const nuevaCotizacion = calcularCotizacionCobro(
+                {
+                  id: Number(pendiente.idInscripcion),
+                  idPlan: Number(pendiente.idPlan),
+                  precioLista: pendiente.precio,
+                  idPromocion: valor === "SIN_PROMOCION" ? null : Number(valor),
+                },
+                promocionesAplicables,
+              );
+              cambiar({ monto: String(nuevaCotizacion.monto).replace(".", ","), confirmarMontoDistinto: false });
+            }}>
+              <SelectTrigger id="promocion-primer-pago" className="h-11 rounded-xl border-slate-200 dark:border-white/15">
+                <SelectValue placeholder="Sin promoción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SIN_PROMOCION">Sin promoción</SelectItem>
+                {promocionesAplicables.map((promocion) => (
+                  <SelectItem key={promocion.id} value={promocion.id}>
+                    {promocion.nombre} · {promocion.tipoDescuento === "PORCENTAJE" ? `${promocion.valor}% OFF` : `${formatearPrecio(promocion.valor)} OFF`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {promocionesAplicables.length === 0 && (
+              <p className="text-xs text-muted-foreground">No hay promociones activas para este plan.</p>
+            )}
+          </div>
           <SelectorFormaDeCobro
             formas={formas}
             valor={valores.formaPago}

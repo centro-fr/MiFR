@@ -19,7 +19,7 @@ import type { Plan } from "@/types/plan";
 interface Props {
   abierto: boolean;
   promocion: Promocion | null;
-  planes: Plan[];
+  planes: Array<Pick<Plan, "id" | "nombre">>;
   guardando: boolean;
   error: string | null;
   onClose: () => void;

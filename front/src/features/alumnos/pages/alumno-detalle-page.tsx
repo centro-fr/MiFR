@@ -537,9 +537,14 @@ export function AlumnoDetallePage() {
                 }}
                 inscripcion={{
                   id_inscripcion: alumno.inscripcion.id_inscripcion,
+                  id_plan: alumno.inscripcion.plan.id_plan,
                   nombre_plan: alumno.inscripcion.plan.nombre,
                   precio_vigente: alumno.inscripcion.plan.precio,
                   situacion_cuota: alumno.inscripcion.situacion_cuota,
+                }}
+                plan={{
+                  id: String(alumno.inscripcion.plan.id_plan),
+                  nombre: alumno.inscripcion.plan.nombre,
                 }}
                 onExito={() => {
                   setModalCobroAbierto(false);

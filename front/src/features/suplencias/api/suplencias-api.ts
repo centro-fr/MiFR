@@ -4,6 +4,14 @@ import { suplenciaApiSchema, type RegistrarSuplenciaBody } from "@/features/supl
 import type { Suplencia, SuplenciaRegistrada } from "@/types/suplencia";
 
 const listaSchema = z.array(suplenciaApiSchema);
+const LIMITE_SUPLENCIAS = 50;
+
+export interface FiltrosSuplencias {
+  desde?: string;
+  hasta?: string;
+  idProfesora?: string;
+  idActividad?: string;
+}
 
 function hora(api: string): string {
   return api.includes("T") ? api.slice(11, 16) : api.slice(0, 5);
@@ -30,8 +38,17 @@ function aSuplencia(api: z.infer<typeof suplenciaApiSchema>): Suplencia {
   };
 }
 
-export async function listarSuplencias(): Promise<Suplencia[]> {
-  const { data } = await apiClient.get("/suplencias", { params: { limit: 100, offset: 0 } });
+export async function listarSuplencias(filtros: FiltrosSuplencias = {}): Promise<Suplencia[]> {
+  const { data } = await apiClient.get("/suplencias", {
+    params: {
+      desde: filtros.desde,
+      hasta: filtros.hasta,
+      id_profesora: filtros.idProfesora,
+      id_actividad: filtros.idActividad,
+      limit: LIMITE_SUPLENCIAS,
+      offset: 0,
+    },
+  });
   return listaSchema.parse(data).map(aSuplencia);
 }
 

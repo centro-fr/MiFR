@@ -24,6 +24,10 @@ describe("schemas de pagos", () => {
   afterEach(() => vi.useRealTimers());
 
   describe("registrarEfectivoSchema", () => {
+    it("acepta una promoción opcional", () => {
+      expect(registrarEfectivoSchema.parse({ ...efectivo, id_promocion: 4 }).id_promocion).toBe(4);
+    });
+
     it("completa confirmar_monto_distinto en false y descarta campos desconocidos", () => {
       expect(registrarEfectivoSchema.parse({ ...efectivo, estado: "CONFIRMADO" })).toEqual({
         ...efectivo,
@@ -48,6 +52,10 @@ describe("schemas de pagos", () => {
   });
 
   describe("informarTransferenciaSchema", () => {
+    it("acepta una promoción opcional", () => {
+      expect(informarTransferenciaSchema.parse({ ...transferencia, id_promocion: 4 }).id_promocion).toBe(4);
+    });
+
     it("convierte la fecha y hora con zona horaria", () => {
       expect(informarTransferenciaSchema.parse(transferencia).fecha_hora_transferencia).toEqual(
         new Date("2026-10-09T13:30:00Z"),

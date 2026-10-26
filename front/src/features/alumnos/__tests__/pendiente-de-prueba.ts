@@ -13,6 +13,7 @@ export function crearPendiente(cambios: Partial<PreInscripcionPendiente> = {}): 
     fechaNacimiento: "1996-08-14",
     tutor: null,
     idPlan: "1",
+    idPromocion: null,
     nombrePlan: "Básico",
     precio: 25000,
     profesora: "Lucía Gómez",

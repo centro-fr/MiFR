@@ -77,6 +77,7 @@ const inscripcionVigenteApiSchema = z.object({
   estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
   fecha_inicio: z.string(),
   id_profesora: z.number().int(),
+  id_promocion: z.number().int().nullable(),
   plan: z.object({ id_plan: z.number().int(), nombre: z.string(), tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]) }),
   plan_precio: z.object({ precio: precioApiSchema }),
   profesora: z.object({ usuario: nombreApiSchema }),

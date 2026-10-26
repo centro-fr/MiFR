@@ -23,7 +23,6 @@ import type { SuplenciaFormValues } from "@/features/suplencias/schemas/suplenci
 import type { Suplencia } from "@/types/suplencia";
 
 export function SuplenciasPage() {
-  const consultaSuplencias = useSuplencias();
   const consultaHorarios = useQuery({ queryKey: HORARIOS_QUERY_KEY, queryFn: listarHorarios, staleTime: 5 * 60_000 });
   const consultaProfesoras = useQuery({ queryKey: PROFESORAS_QUERY_KEY, queryFn: listarProfesoras, staleTime: 5 * 60_000 });
   const registrar = useRegistrarSuplencia();
@@ -32,22 +31,35 @@ export function SuplenciasPage() {
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [suplenciaEditando, setSuplenciaEditando] = useState<Suplencia | null>(null);
   const [suplenciaAEliminar, setSuplenciaAEliminar] = useState<Suplencia | null>(null);
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
   const [filtroProfesora, setFiltroProfesora] = useState("TODAS");
+  const [filtroActividad, setFiltroActividad] = useState("TODAS");
+
+  const filtros = useMemo(
+    () => ({
+      desde: filtroDesde || undefined,
+      hasta: filtroHasta || undefined,
+      idProfesora: filtroProfesora === "TODAS" ? undefined : filtroProfesora,
+      idActividad: filtroActividad === "TODAS" ? undefined : filtroActividad,
+    }),
+    [filtroActividad, filtroDesde, filtroHasta, filtroProfesora],
+  );
+  const consultaSuplencias = useSuplencias(filtros);
 
   const horarios = consultaHorarios.data ?? [];
   const profesoras = consultaProfesoras.data ?? [];
-  const suplencias = useMemo(
+  const actividades = useMemo(
     () =>
-      (consultaSuplencias.data ?? []).filter(
-        (suplencia) =>
-          filtroProfesora === "TODAS" ||
-          suplencia.titular.id === filtroProfesora ||
-          suplencia.suplente.id === filtroProfesora,
+      [...new Map(horarios.map((horario) => [String(horario.actividad.id_actividad), horario.actividad])).values()].sort(
+        (a, b) => a.nombre.localeCompare(b.nombre),
       ),
-    [consultaSuplencias.data, filtroProfesora],
+    [horarios],
   );
+  const suplencias = consultaSuplencias.data ?? [];
   const cargando = consultaSuplencias.isPending || consultaHorarios.isPending || consultaProfesoras.isPending;
   const error = consultaSuplencias.error ?? consultaHorarios.error ?? consultaProfesoras.error;
+  const hayFiltrosActivos = Boolean(filtroDesde || filtroHasta || filtroProfesora !== "TODAS" || filtroActividad !== "TODAS");
 
   const abrirNueva = () => {
     registrar.reset();
@@ -141,6 +153,30 @@ export function SuplenciasPage() {
           <>
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+                <label htmlFor="suplencias-desde" className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Desde
+                </label>
+                <input
+                  id="suplencias-desde"
+                  type="date"
+                  value={filtroDesde}
+                  onChange={(event) => setFiltroDesde(event.target.value)}
+                  className="h-7 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-slate-100"
+                />
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+                <label htmlFor="suplencias-hasta" className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                  Hasta
+                </label>
+                <input
+                  id="suplencias-hasta"
+                  type="date"
+                  value={filtroHasta}
+                  onChange={(event) => setFiltroHasta(event.target.value)}
+                  className="h-7 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-slate-100"
+                />
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
                 <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
                   Profesor/a:
                 </span>
@@ -162,14 +198,41 @@ export function SuplenciasPage() {
                 </Select>
               </div>
 
-              {filtroProfesora !== "TODAS" && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setFiltroProfesora("TODAS")}
-                  className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+                <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Actividad:
+                </span>
+                <Select value={filtroActividad} onValueChange={setFiltroActividad}>
+                <SelectTrigger
+                  aria-label="Filtrar por actividad"
+                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[140px]"
                 >
-                  Limpiar filtros
+                  <SelectValue placeholder="Todas las actividades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODAS">Todas las actividades</SelectItem>
+                  {actividades.map((actividad) => (
+                    <SelectItem key={actividad.id_actividad} value={String(actividad.id_actividad)}>
+                      {actividad.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                </Select>
+              </div>
+
+              {hayFiltrosActivos && (
+                <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setFiltroDesde("");
+                  setFiltroHasta("");
+                  setFiltroProfesora("TODAS");
+                  setFiltroActividad("TODAS");
+                }}
+                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+                >
+                Limpiar filtros
                 </Button>
               )}
             </div>
