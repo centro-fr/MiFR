@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
@@ -44,7 +44,17 @@ export function SuplenciaDialog({ abierto, suplencia, horarios, profesoras, guar
   }, [formulario, suplencia]);
 
   const dia = fecha ? new Date(`${fecha}T12:00:00`).getDay() || 7 : 0;
-  const horariosDisponibles = horarios.filter((horario) => horario.dia_semana === dia);
+  const horariosDisponibles = useMemo(() => {
+    return horarios
+      .filter((horario) => horario.dia_semana === dia)
+      .sort((a, b) => {
+        const compActividad = a.actividad.nombre.trim().localeCompare(b.actividad.nombre.trim(), "es", {
+          sensitivity: "base",
+        });
+        if (compActividad !== 0) return compActividad;
+        return a.hora_inicio.localeCompare(b.hora_inicio);
+      });
+  }, [horarios, dia]);
   const horarioSeleccionado = horarios.find((horario) => String(horario.id_horario) === idHorario);
   const profesorasDisponibles = profesoras.filter((profesora) => String(profesora.id) !== String(horarioSeleccionado?.id_profesora));
 
@@ -104,13 +114,13 @@ export function SuplenciaDialog({ abierto, suplencia, horarios, profesoras, guar
             </Select>
           </Campo>
 
-          <Campo label="Profesora suplente" error={formulario.formState.errors.idProfesoraSuplente?.message}>
+          <Campo label="Profesor/a suplente" error={formulario.formState.errors.idProfesoraSuplente?.message}>
             <Select
               value={idProfesoraSuplente}
               onValueChange={(value) => formulario.setValue("idProfesoraSuplente", value, { shouldValidate: true })}
             >
               <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold">
-                <SelectValue placeholder="Elegí una profesora" />
+                <SelectValue placeholder="Elegí un/a profesor/a" />
               </SelectTrigger>
               <SelectContent>
                 {profesorasDisponibles.map((profesora) => (
