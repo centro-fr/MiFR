@@ -83,7 +83,7 @@ describe("HonorariosPage", () => {
     expect(screen.getByText(/Cuánto le corresponde a cada profesora en el mes/i)).toBeInTheDocument();
 
     // Pestañas
-    expect(screen.getByRole("link", { name: /Liquidación del mes/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Suplencias/i })).toBeInTheDocument();
 
     // Sin breadcrumbs locales

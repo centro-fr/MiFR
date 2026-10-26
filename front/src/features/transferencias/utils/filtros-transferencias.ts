@@ -16,11 +16,16 @@ export interface FiltrosTransferencias {
   orden: OrdenTransferencias;
 }
 
-// Las más antiguas primero: así se respetan las 24 horas.
-export const FILTROS_INICIALES: FiltrosTransferencias = { busqueda: "", fecha: "", tramo: null, orden: "ANTIGUAS" };
+// Las más recientes primero (decisión de la propietaria); el color del plazo marca las que pasan las 24 horas.
+export const FILTROS_INICIALES: FiltrosTransferencias = { busqueda: "", fecha: "", tramo: null, orden: "RECIENTES" };
 
 export function hayFiltrosActivos(filtros: FiltrosTransferencias): boolean {
-  return filtros.busqueda.trim() !== "" || filtros.fecha !== "" || filtros.tramo !== null || filtros.orden !== "ANTIGUAS";
+  return (
+    filtros.busqueda.trim() !== "" ||
+    filtros.fecha !== "" ||
+    filtros.tramo !== null ||
+    filtros.orden !== FILTROS_INICIALES.orden
+  );
 }
 
 /** Timestamp ISO → "AAAA-MM-DD" en el huso horario de quien mira, para compararlo con el input date. */

@@ -11,7 +11,7 @@ interface PropsEncabezado {
 
 export function EncabezadoHonorarios({
   titulo = "Honorarios",
-  descripcion = "Cuánto le corresponde a cada profesora en el mes. Es solo informativo: el sistema no mueve dinero.",
+  descripcion = "Cuánto le corresponde a cada profesora en el mes. Es solo informativo: El sistema no mueve dinero.",
   acciones,
 }: PropsEncabezado) {
   return (
@@ -31,7 +31,7 @@ export function EncabezadoHonorarios({
 
 // "Suplencias" (US-24): registro de suplencias docentes para el cálculo de honorarios.
 const PESTANAS = [
-  { etiqueta: "Liquidación del mes", to: "/app/honorarios", end: true },
+  { etiqueta: "Honorarios del mes", to: "/app/honorarios", end: true },
   { etiqueta: "Suplencias", to: "/app/honorarios/suplencias", end: false },
 ];
 
@@ -47,7 +47,7 @@ export function PestanasHonorarios({ cantidadSuplencias }: { cantidadSuplencias?
           end={end}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors shrink-0",
+              "flex min-h-11 items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors shrink-0",
               isActive
                 ? "border-primary text-slate-900 dark:text-white"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",

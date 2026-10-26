@@ -149,7 +149,7 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
         <legend className={cn(ETIQUETA, "mb-2")}>Qué se le paga</legend>
         {(["ALUMNO_A_CARGO", "HORA_SUPLENCIA"] as const).map((opcion) => (
           <label key={opcion} className={OPCION}>
-            <input type="radio" value={opcion} {...registroConcepto} className="size-4 accent-primary" />
+            <input type="radio" value={opcion} {...registroConcepto} className="size-4 shrink-0 accent-primary" />
             {ETIQUETA_CONCEPTO[opcion]}
           </label>
         ))}
@@ -159,11 +159,12 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
         <fieldset className="flex flex-col gap-2">
           <legend className={cn(ETIQUETA, "mb-2")}>Cómo se calcula</legend>
           <label className={OPCION}>
-            <input type="radio" value="PORCENTAJE" {...formulario.register("tipoValor")} className="size-4 accent-primary" />
+            <input type="radio" value="PORCENTAJE" {...formulario.register("tipoValor")} className="size-4 shrink-0 accent-primary" />
             Porcentaje de lo cobrado de la cuota
           </label>
           <label className={OPCION}>
-            <input type="radio" value="MONTO_FIJO" {...formulario.register("tipoValor")} className="size-4 accent-primary" />
+            <input type="radio" value="MONTO_FIJO" {...formulario.register("tipoValor")} className="size-4 shrink-0 accent-primary" />
+            Monto fijo por alumno, asista o no
           </label>
           <MensajeError id="tarifa-tipo-error" mensaje={errores.tipoValor?.message} />
         </fieldset>
@@ -216,12 +217,14 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
           <MensajeError id="tarifa-desde-error" mensaje={errores.desde.message} />
         ) : (
           <p id="tarifa-desde-ayuda" className="text-sm text-muted-foreground">
-            Reemplaza a la tarifa actual desde ese día. Las liquidaciones cerradas no cambian.
+            Reemplaza a la tarifa actual desde ese día. Los honorarios ya cerrados no cambian.
           </p>
         )}
       </div>
 
-      <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
+      {/* Fijos al pie del diálogo: en el celular el formulario no entra entero y Guardar queda siempre a mano.
+          El -bottom compensa el relleno del contenedor que scrollea, para que no se vea el contenido por debajo. */}
+      <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-border bg-white px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6 sm:pb-6 dark:bg-surface-low">
         <Button type="button" variant="outline" onClick={onListo} disabled={registrar.isPending} className="min-h-11 rounded-xl font-bold">
           Cancelar
         </Button>
@@ -251,7 +254,7 @@ function ContenidoDialogo({ liquidacion, periodo, onClose }: { liquidacion: Liqu
           <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
           {mensajeDeErrorApi(error, "No se pudieron cargar las tarifas.")}
         </p>
-        <Button type="button" variant="outline" disabled={isFetching} onClick={() => void refetch()} className="rounded-xl font-bold">
+        <Button type="button" variant="outline" disabled={isFetching} onClick={() => void refetch()} className="min-h-11 rounded-xl font-bold">
           Reintentar
         </Button>
       </div>
@@ -275,14 +278,14 @@ interface PropsDialogo {
 export function DialogoTarifa({ liquidacion, periodo, onClose }: PropsDialogo) {
   return (
     <Dialog open={liquidacion !== null} onOpenChange={(abierto) => !abierto && onClose()}>
-      <DialogContent hideClose className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-0 shadow-2xl border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-surface-low">
-        <DialogHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
+      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-border bg-white p-0 sm:max-w-lg dark:bg-surface-low">
+        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
           <div className="min-w-0 pr-2">
             <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
             <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
               Tarifa de {liquidacion ? nombreCompleto(liquidacion.profesora) : ""}
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+            <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
               Lo que cobra por cada alumno a cargo y por cada hora que cubre como suplente.
             </DialogDescription>
           </div>
@@ -292,12 +295,12 @@ export function DialogoTarifa({ liquidacion, periodo, onClose }: PropsDialogo) {
             size="icon"
             onClick={onClose}
             aria-label="Cerrar diálogo de tarifa"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            className="size-11 shrink-0 rounded-full text-slate-500 pointer-fine:size-9 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            <X className="size-4" />
+            <X aria-hidden="true" className="size-5" />
           </Button>
         </DialogHeader>
-        <div className="max-h-[calc(92vh-100px)] overflow-y-auto p-5 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
           {liquidacion && <ContenidoDialogo liquidacion={liquidacion} periodo={periodo} onClose={onClose} />}
         </div>
       </DialogContent>

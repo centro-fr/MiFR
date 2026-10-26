@@ -29,12 +29,14 @@ import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectiv
 import { useEfectivoPendiente } from "@/features/cobros/hooks/use-rendiciones";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
+import { BarraFiltros } from "@/features/transferencias/components/barra-filtros";
 import { ModalDetalleAprobacion } from "@/features/transferencias/components/modal-detalle-aprobacion";
 import {
   useAprobarTransferencia,
   useRechazarTransferencia,
   useTransferencias,
 } from "@/features/transferencias/hooks/use-transferencias";
+import { FILTROS_INICIALES, filtrarTransferencias } from "@/features/transferencias/utils/filtros-transferencias";
 import { tramoDePlazo } from "@/features/transferencias/utils/plazo-verificacion";
 import type { Transferencia } from "@/types/transferencia";
 import { cn } from "@/utils/cn";
@@ -126,6 +128,14 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     }
     return [];
   }, [transferenciasData]);
+
+  // US-17: búsqueda, fecha y orden sobre las pendientes ya cargadas (el back no los ofrece).
+  const [filtrosTransferencias, setFiltrosTransferencias] = useState(FILTROS_INICIALES);
+  const transferenciasVisibles = useMemo(
+    () => filtrarTransferencias(transferenciasPendientes, filtrosTransferencias),
+    [transferenciasPendientes, filtrosTransferencias]
+  );
+  const limpiarFiltrosTransferencias = () => setFiltrosTransferencias(FILTROS_INICIALES);
 
   // Consulta de efectivo a rendir pendiente (solo propietaria)
   const { data: efectivoData } = useEfectivoPendiente(undefined, { enabled: !soloACargo });
@@ -283,7 +293,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           void recargarAlumnos();
           void recargarTransferencias();
           toast.success("Transferencia rechazada", {
-            description: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido} fue notificado.`,
+            description: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}: el motivo quedó registrado.`,
           });
         },
         onError: () => {
@@ -671,10 +681,18 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           <div className="flex items-center gap-3 rounded-2xl border border-sky-200/80 bg-sky-50/60 p-4 text-xs font-semibold text-sky-900 dark:border-sky-800/40 dark:bg-sky-950/20 dark:text-sky-200">
             <Info className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
             <span>
-              Fijate en tu cuenta que la plata haya entrado y aprobala. Tenés 24 h desde que el
-              alumno la informó.
+              Fijate en tu cuenta que la plata haya entrado y aprobala. Tenés 24 h desde que se
+              informó.
             </span>
           </div>
+
+          {transferenciasPendientes.length > 0 && (
+            <BarraFiltros
+              filtros={filtrosTransferencias}
+              onChange={setFiltrosTransferencias}
+              onLimpiar={limpiarFiltrosTransferencias}
+            />
+          )}
 
           {/* TABLA DE TRANSFERENCIAS */}
           {cargandoTransferencias ? (
@@ -689,8 +707,19 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                 No hay transferencias pendientes
               </h3>
               <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Cuando un alumno informe una transferencia, va a figurar acá para su verificación.
+                Cuando se informe una transferencia, va a figurar acá para su verificación.
               </p>
+            </Card>
+          ) : transferenciasVisibles.length === 0 ? (
+            <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
+              <Search className="size-8 text-slate-400" />
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Sin resultados</h3>
+              <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
+                Ninguna transferencia pendiente coincide con los filtros.
+              </p>
+              <Button type="button" variant="outline" onClick={limpiarFiltrosTransferencias} className="min-h-11 rounded-xl font-bold">
+                Limpiar filtros
+              </Button>
             </Card>
           ) : (
             <>
@@ -721,7 +750,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {transferenciasPendientes.map((transferencia) => {
+                      {transferenciasVisibles.map((transferencia) => {
                         const tramo = tramoDePlazo(transferencia);
                         const fechaFormateada = formatearFechaHoraCorta(
                           transferencia.realizadaEl
@@ -811,7 +840,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
               {/* Mobile Cards */}
               <div className="grid w-full min-w-0 gap-3 xl:hidden">
-                {transferenciasPendientes.map((transferencia) => {
+                {transferenciasVisibles.map((transferencia) => {
                   const tramo = tramoDePlazo(transferencia);
                   const fechaFormateada = formatearFechaHoraCorta(
                     transferencia.realizadaEl

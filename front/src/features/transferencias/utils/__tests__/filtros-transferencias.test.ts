@@ -47,12 +47,12 @@ const nueva = crearTransferencia({
 const todas = [nueva, vieja, media];
 
 describe("filtros-transferencias (US-17)", () => {
-  it("por defecto ordena las más antiguas primero para respetar las 24 horas", () => {
-    expect(filtrarTransferencias(todas, FILTROS_INICIALES).map((t) => t.id)).toEqual([1, 2, 3]);
+  it("por defecto ordena las más recientes primero", () => {
+    expect(filtrarTransferencias(todas, FILTROS_INICIALES).map((t) => t.id)).toEqual([3, 2, 1]);
   });
 
-  it("ordena por más recientes y por monto", () => {
-    expect(filtrarTransferencias(todas, { ...FILTROS_INICIALES, orden: "RECIENTES" }).map((t) => t.id)).toEqual([3, 2, 1]);
+  it("ordena por más antiguas y por monto", () => {
+    expect(filtrarTransferencias(todas, { ...FILTROS_INICIALES, orden: "ANTIGUAS" }).map((t) => t.id)).toEqual([1, 2, 3]);
     expect(filtrarTransferencias(todas, { ...FILTROS_INICIALES, orden: "MONTO" }).map((t) => t.id)).toEqual([2, 3, 1]);
   });
 

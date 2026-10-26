@@ -101,7 +101,7 @@ export function SuplenciasPage() {
       <div className="space-y-6 min-w-0">
         <EncabezadoHonorarios
           titulo="Honorarios"
-          descripcion="Registro de suplencias docentes para el cálculo y liquidación de honorarios."
+          descripcion="Registro de suplencias docentes para el cálculo de honorarios."
           acciones={
             <Button
               type="button"

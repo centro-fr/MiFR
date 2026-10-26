@@ -64,7 +64,7 @@ describe("SuplenciasPage", () => {
     expect(screen.getByText(/Registro de suplencias docentes/i)).toBeInTheDocument();
 
     // Pestañas
-    expect(screen.getByRole("link", { name: /Liquidación del mes/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Suplencias/i })).toBeInTheDocument();
 
     // NO debe haber un nav con aria-label "Ruta de navegación" duplicado

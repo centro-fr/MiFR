@@ -29,9 +29,9 @@ interface PropsEstado {
 }
 
 function mensajeDeEstado(enRevision: number, total: number): string {
-  if (enRevision === 0) return "Todas las liquidaciones del mes están cerradas: ya no cambian.";
-  if (enRevision < total) return `${enRevision} de ${total} liquidaciones siguen en revisión.`;
-  return "Se puede recalcular hasta cerrar cada liquidación.";
+  if (enRevision === 0) return "Los honorarios de todas las profesoras están cerrados: ya no cambian.";
+  if (enRevision < total) return `${enRevision} de ${total} profesoras siguen en revisión.`;
+  return "Se puede recalcular hasta cerrar los honorarios de cada profesora.";
 }
 
 function EstadoDeLaLiquidacion({ informe, calculando, onRecalcular }: PropsEstado) {
@@ -43,7 +43,7 @@ function EstadoDeLaLiquidacion({ informe, calculando, onRecalcular }: PropsEstad
     <Card className={`${TARJETA} flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between`}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">Estado de la liquidación</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground">Estado de los honorarios</h2>
           <BadgeEstadoLiquidacion estado={estado} />
         </div>
         <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{mensajeDeEstado(enRevision, liquidaciones.length)}</p>

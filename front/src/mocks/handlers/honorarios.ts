@@ -130,7 +130,7 @@ function cambiarEstado(desde: LiquidacionMock["estado"], hacia: LiquidacionMock[
     if (denegado) return denegado;
     if (idDeRuta(params.id) === null) return idInvalido();
     const liquidacion = buscarLiquidacion(params.id);
-    if (!liquidacion) return errorApi(404, "NOT_FOUND", "La liquidación no existe");
+    if (!liquidacion) return errorApi(404, "NOT_FOUND", "No se encontraron esos honorarios");
     if (liquidacion.estado !== desde) return errorApi(409, "ESTADO_INVALIDO", mensaje);
     liquidacion.estado = hacia;
     return HttpResponse.json(liquidacionDetallada(liquidacion));
@@ -173,12 +173,12 @@ export const honorariosHandlers = [
     if (denegado) return denegado;
     if (idDeRuta(params.id) === null) return idInvalido();
     const liquidacion = buscarLiquidacion(params.id);
-    if (!liquidacion) return errorApi(404, "NOT_FOUND", "La liquidación no existe");
+    if (!liquidacion) return errorApi(404, "NOT_FOUND", "No se encontraron esos honorarios");
     return HttpResponse.json(liquidacionDetallada(liquidacion));
   }),
 
-  http.post("*/api/v1/liquidaciones/:id/cerrar", cambiarEstado("BORRADOR", "CERRADA", "Solo se cierra una liquidación en revisión")),
-  http.post("*/api/v1/liquidaciones/:id/pagar", cambiarEstado("CERRADA", "PAGADA", "Solo se marca como abonada una liquidación cerrada")),
+  http.post("*/api/v1/liquidaciones/:id/cerrar", cambiarEstado("BORRADOR", "CERRADA", "Solo se cierran los honorarios en revisión")),
+  http.post("*/api/v1/liquidaciones/:id/pagar", cambiarEstado("CERRADA", "PAGADA", "Solo se marcan como abonados los honorarios cerrados")),
 
   http.get("*/api/v1/tarifas-honorario", async ({ request }) => {
     await delay(300);
