@@ -5,95 +5,103 @@
 - **Épica:** Configuración Base
 - **Prioridad:** Alta
 - **Actor principal:** Propietaria
-- **Sprint:** Sprint 4
+- **Sprint:** Sprint 4 / Sprint 5
 
 ## 2. Objetivo
 
-Permitir a la Propietaria administrar el plantel de profesoras del centro de entrenamiento (altas, especialidad, consultas y bajas lógicas), asegurando que solo usuarios activos y con rol `PROFESORA` puedan ser asignadas a horarios, clases y cálculo de honorarios.
+Permitir a la Propietaria administrar el plantel de profesoras del centro de entrenamiento (altas directas, especialidades, consultas operativas y bajas lógicas protegidas), asegurando que solo docentes activas puedan recibir horarios, clases, suplencias y liquidación de honorarios.
 
 ## 3. Descripción
 
-Como propietaria, quiero gestionar el catálogo de profesoras del gimnasio indicando sus datos de especialidad y vinculándolas a su cuenta de usuario con rol docente, para poder contar con el staff activo necesario para dictar disciplinas, cubrir suplencias y generar los informes de honorarios.
+Como propietaria, quiero registrar y gestionar a las profesoras del gimnasio cargando sus datos personales y especialidad en un único flujo de alta directa, para disponer del equipo docente necesario para dictar disciplinas y supervisar las clases semanales a su cargo, impidiendo la baja accidental de docentes con horarios asignados.
 
 ## 4. Estados de la pantalla / flujo
 
-- [ ] **Loading**: Cargando listado de profesoras y usuarios habilitados.
-- [ ] **Listado de profesoras**: Grilla de tarjetas o tabla con datos de perfil, especialidad y estado.
-- [ ] **Modal de alta**: Formulario emergente para seleccionar un usuario con rol `PROFESORA` y cargar su especialidad.
-- [ ] **Guardando**: Feedback de operación asíncrona en curso (spinner / botón deshabilitado).
-- [ ] **Éxito**: Notificación flotante (toast) confirmando el alta o la baja.
-- [ ] **Error**: Manejo de errores de validación, conflicto (ej. usuario ya registrado) o fallo de red.
-- [ ] **Confirmación de baja**: Diálogo modal de confirmación advirtiendo el impacto sobre horarios asignados.
-- [ ] **Empty**: Estado visual cuando aún no hay profesoras registradas o tras una búsqueda sin coincidencias.
+- [ ] **Loading**: Cargando el listado del equipo docente y métricas de clases semanales.
+- [ ] **Listado de profesoras**: Vista de tarjetas (mobile) o tabla moderna (desktop) que muestra las profesoras activas, sus datos de contacto, especialidad y cantidad de clases semanales a cargo.
+- [ ] **Modal de alta directa**: Formulario emergente flotante centrado (`ModalFormProfesora`) para registrar a la docente en un solo paso (nombre, apellido, email de Google, teléfono, fecha de nacimiento y especialidad).
+- [ ] **Guardando**: Deshabilitación de botones y spinner mientras se persiste el alta o la baja.
+- [ ] **Éxito**: Cierre automático del modal y notificación flotante (toast) confirmando la operación.
+- [ ] **Error**: Manejo visual de errores con mensajes específicos (ej. email ya registrado, menor de edad o fallo de conexión).
+- [ ] **Confirmación de baja**: Diálogo modal (`ModalBajaProfesora`) que valida si la docente tiene clases asignadas; si tiene clases activas, bloquea la acción indicando cuántos horarios debe reasignar primero.
+- [ ] **Empty**: Estado visual amigable cuando no hay profesoras registradas o tras una búsqueda sin coincidencias.
 
 ## 5. Datos que necesita
 
 ### Datos que muestra
 
-- Identificador único (`id_profesora`).
-- Nombre y apellido de la profesora (obtenido de `usuarios`).
-- Correo electrónico de acceso y teléfono de contacto.
-- Especialidad deportiva o disciplina principal (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
-- Fecha de incorporación / alta (`fecha_alta`).
-- Estado operativo (`Activa` / `Dada de baja`).
-- Cantidad de horarios semanales a cargo (opcional / métrica informativa).
+- **Identificador**: `id_profesora`.
+- **Nombre y apellido**: Datos de identidad de la docente.
+- **Correo electrónico**: Cuenta de Google vinculada para el inicio de sesión.
+- **Teléfono de contacto**: Número para coordinación operativa.
+- **Especialidad**: Disciplina o enfoque principal (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
+- **Fecha de incorporación**: Fecha de alta en el centro.
+- **Clases semanales a cargo**: Métrica calculada que contabiliza los horarios semanales activos que dicta en el cronograma.
 
-### Datos que se cargan / editan
+### Datos que se cargan / editan (Alta Directa)
 
 - **Nombre** (`nombre`): Obligatorio. Texto entre 2 y 60 caracteres.
 - **Apellido** (`apellido`): Obligatorio. Texto entre 2 y 60 caracteres.
-- **Correo electrónico de Google** (`email`): Obligatorio. Email válido (máx. 120 caracteres) para inicio de sesión mediante Google Auth.
-- **Teléfono de contacto** (`telefono`): Obligatorio. Entre 7 y 15 dígitos para contacto y coordinación docente.
-- **Fecha de nacimiento** (`fecha_nacimiento`): Obligatoria. Fecha en formato AAAA-MM-DD validando mayoría de edad (al menos 18 años).
-- **Especialidad** (`especialidad`): Opcional. Texto libre de hasta 80 caracteres (ej. *Pilates Reformer*, *Funcional*, *Musculación*).
+- **Correo electrónico de Google** (`email`): Obligatorio. Formato válido de email (máx. 120 caracteres) requerido para inicio de sesión mediante Google Auth.
+- **Teléfono de contacto** (`telefono`): Obligatorio. Entre 7 y 15 dígitos numéricos.
+- **Fecha de nacimiento** (`fecha_nacimiento`): Obligatoria. Formato `AAAA-MM-DD`, validando mayoría de edad (mínimo 18 años).
+- **Especialidad** (`especialidad`): Opcional. Texto libre de hasta 80 caracteres.
 
 ## 6. Acciones del usuario
 
-- Visualizar el listado completo de profesoras activas e historial de bajas.
-- Buscar o filtrar profesoras por nombre, apellido o especialidad.
-- Dar de alta una nueva profesora mediante alta directa creando su cuenta de acceso y perfil docente en un solo paso.
-- Dar de baja lógica a una profesora que deja de prestar servicios en el centro.
+- Visualizar el plantel de profesoras activas con sus datos de contacto y carga horaria semanal.
+- Buscar o filtrar profesoras en tiempo real por nombre, apellido o especialidad mediante la barra de búsqueda en píldora.
+- Dar de alta una nueva profesora mediante el modal flotante centrado de alta directa.
+- Solicitar la baja lógica de una profesora.
+- Verificar qué horarios semanales tiene asignados antes de concretar una baja.
 
 ## 7. Reglas de negocio
 
-1. **Creación de Cuenta y Perfil**: Al dar de alta una profesora, el sistema registra la cuenta de usuario, le asigna automáticamente el rol `PROFESORA` y crea su perfil docente vinculado.
-2. **Unicidad de Perfil Docente**: Un usuario no puede tener más de un registro de profesora vinculado (`id_usuario` único).
-3. **Baja Estrictamente Lógica**: La baja nunca elimina físicamente el registro (`fecha_baja = fechaActualArgentina()`). Esto garantiza la preservación histórica y la integridad referencial en:
-   - Historial de clases dictadas y asistencias (US-20).
-   - Suplencias registradas pasadas (US-24).
-   - Informes y cálculos mensuales de honorarios ya generados (US-23).
-   - Cobros en efectivo rendidos (US-15 y US-19).
-4. **Integridad con Horarios y Cronograma**: Si una profesora dada de baja aún posee horarios semanales asignados en el cronograma vigente (US-04), el sistema debe advertir o bloquear la baja hasta que sus franjas horarias sean reasignadas a otra docente o dadas de baja.
-5. **Permisos y Seguridad**:
-   - Consulta (`GET /api/profesoras`): Requiere permiso `HORARIOS_VER`.
-   - Modificación/Alta/Baja (`POST`, `DELETE /api/profesoras`): Requiere rol `PROPIETARIA` y permiso `HORARIOS_EDITAR`.
+1. **Alta Directa Integral**: El alta crea de forma atómica la cuenta de usuario con rol `PROFESORA` y el perfil docente asociado, sin requerir una preexistencia de usuario en el sistema.
+2. **Mayoría de Edad**: Toda profesora debe ser mayor de 18 años calculados a la fecha de registro.
+3. **Unicidad de Cuenta**: No pueden coexistir dos profesoras con la misma dirección de correo electrónico (`email` único).
+4. **Protección Contra Bajas con Clases Asignadas**: Si la profesora tiene uno o más horarios activos en el cronograma semanal (US-04), el sistema **bloquea la baja lógica** informando cuántas clases tiene a cargo e indicando que deben reasignarse o darse de baja primero.
+5. **Baja Estrictamente Lógica**: La baja nunca borra registros físicos (`fecha_baja = fechaActualArgentina()`). Esto preserva intacto:
+   - El historial de asistencias y clases dictadas (US-20).
+   - El registro de suplencias (US-24).
+   - Los informes y liquidaciones de honorarios cerrados o en revisión (US-23).
+   - El control de cobros y rendiciones de efectivo (US-15 y US-19).
+6. **Soporte de Auditoría e Historial**: Las consultas internas admiten el parámetro `incluirBajas=true` para garantizar la reconstrucción de auditorías históricas.
+7. **Permisos de Acceso**:
+   - Consulta (`GET /api/v1/profesoras`): Requiere permiso `HORARIOS_VER`.
+   - Alta y Baja (`POST`, `DELETE /api/v1/profesoras`): Requiere permiso `HORARIOS_EDITAR` y rol `PROPIETARIA`.
 
 ## 8. Criterios de aceptación
 
-- [ ] **CA-01 (Alta exitosa)**: Al seleccionar un usuario activo con rol `PROFESORA` e ingresar especialidad válida, se crea el perfil docente y se actualiza el listado.
-- [ ] **CA-02 (Rechazo por rol inválido o inactivo)**: Si el usuario seleccionado no tiene rol `PROFESORA` o está inactivo, el sistema rechaza la operación informando el error de validación (400 Bad Request).
-- [ ] **CA-03 (Rechazo por perfil preexistente)**: Si el usuario ya cuenta con un perfil de profesora, la solicitud es rechazada por conflicto (409 Conflict).
-- [ ] **CA-04 (Baja lógica con preservación)**: Al confirmar la baja, el registro recibe su `fecha_baja`, deja de figurar como disponible para nuevos horarios y mantiene todo su histórico contable/asistencias intacto.
-- [ ] **CA-05 (Filtro y búsqueda)**: La usuaria puede buscar profesoras por nombre o especialidad en tiempo real en la vista.
+- [ ] **CA-01 (Alta directa exitosa)**: Completar los datos personales requeridos y guardar → se crea la profesora y se muestra en la grilla.
+- [ ] **CA-02 (Rechazo por email duplicado)**: Intentar registrar un correo ya existente → el sistema devuelve conflicto (409) y el formulario resalta el error.
+- [ ] **CA-03 (Rechazo por minoría de edad)**: Ingresar fecha de nacimiento con menos de 18 años → validación Zod bloquea el guardado.
+- [ ] **CA-04 (Bloqueo de baja con horarios)**: Intentar dar de baja a una docente con clases semanales asignadas → el modal `ModalBajaProfesora` deshabilita la confirmación y muestra advertencia con el conteo de clases a reasignar.
+- [ ] **CA-05 (Baja lógica permitida)**: Confirmar baja en docente sin horarios activos → se registra la `fecha_baja` y se quita de la lista de docentes activas.
+- [ ] **CA-06 (Búsqueda en tiempo real)**: El filtro por texto filtra instantáneamente por nombre, apellido o especialidad.
 
 ## 9. Casos borde / Errores
 
-- Usuario seleccionado dado de baja a nivel cuenta antes de asignarle el perfil docente.
-- Intento de dar de baja a una profesora que ya se encuentra dada de baja (conflicto 409).
-- Especialidad que excede el límite máximo de 80 caracteres.
-- Profesora con clases activas en el día de la baja (alerta operativa de reasignación).
+- Intento de baja de una profesora ya dada de baja → respuesta 404 o 409 controlada.
+- Formato de teléfono con caracteres especiales o letras → validación Zod normaliza o rechaza antes del envío.
+- Falla de conexión con el backend → toast de error con opción de reintentar.
 
 ## 10. Dependencias y Trazabilidad
 
-- **US-01 y US-02**: Autenticación y gestión de usuarios/roles.
-- **US-04**: Asignación de profesoras a los horarios semanales.
-- **US-23 y US-24**: Informe mensual de honorarios y suplencias del plantel.
-- **Backend**: Módulo `gestion-personas/profesor` (`POST /api/profesoras`, `GET /api/profesoras`, `DELETE /api/profesoras/:id`).
+- **US-01 y US-02**: Google Auth y control de accesos por rol.
+- **US-04**: Asignación de horarios del cronograma a docentes activas.
+- **US-23 y US-24**: Módulo de honorarios y suplencias.
+- **Backend**:
+  - `GET /api/v1/profesoras?incluirBajas=false`: listado del plantel.
+  - `POST /api/v1/profesoras`: alta directa con perfil docente.
+  - `DELETE /api/v1/profesoras/:id`: baja lógica con validación de horarios activos.
 
 ## 11. Notas de implementación (Frontend)
 
-- **Ubicación en UI**: Sección de configuración o sub-pestaña dentro de *Actividades y Horarios* / *Equipo Docente* bajo `OwnerLayout`.
-- **Componentes**:
-  - Encabezado con breadcrumbs, título `tracking-tight` y badge de píldora de conteo del staff activo.
-  - Modal centrado flotante para el alta rápida.
-  - Select con búsqueda asíncrona de usuarios aptos para rol profesora.
+- **Ubicación en UI**: Ruta `/admin/profesoras` accesible desde el menú principal bajo "Centro" → "Profesoras" (`OwnerLayout`).
+- **Componentes clave**:
+  - `ProfesorasPage`: Vista principal con encabezado estándar, badge de píldora de conteo del staff y barra de búsqueda.
+  - `ModalFormProfesora`: Modal flotante centrado con esquema `altaProfesoraDirectaSchema`.
+  - `ModalBajaProfesora`: Diálogo de confirmación con validación reactiva de horarios activos.
+  - `useProfesoras`: Hook TanStack Query con invalidación automática de caché tras mutaciones.
+- **Tests**: `profesoras-page.test.tsx` (alta, búsqueda, bloqueo de baja con clases y baja exitosa).

@@ -93,9 +93,9 @@ describe("ProfesorasPage (US-38)", () => {
 
   it("renderiza el título principal, subtítulo y botón de acción", () => {
     renderizar();
-    expect(screen.getByRole("heading", { level: 1, name: "Plantel de Profesoras" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Plantel de Profesores" })).toBeInTheDocument();
     expect(screen.getByText(/Equipo docente del centro/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "+ Nueva profesora" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ Nuevo/a profesor/a" })).toBeInTheDocument();
   });
 
   it("muestra por defecto las profesoras activas y filtra las dadas de baja en la pestaña Activas", () => {
@@ -124,17 +124,17 @@ describe("ProfesorasPage (US-38)", () => {
     expect(screen.getByText("Sin resultados para tu búsqueda")).toBeInTheDocument();
   });
 
-  it("abre el modal de alta al presionar '+ Nueva profesora' y permite cancelarlo", () => {
+  it("abre el modal de alta al presionar '+ Nuevo/a profesor/a' y permite cancelarlo", () => {
     renderizar();
-    const btnNuevo = screen.getByRole("button", { name: "+ Nueva profesora" });
+    const btnNuevo = screen.getByRole("button", { name: "+ Nuevo/a profesor/a" });
     fireEvent.click(btnNuevo);
 
-    expect(screen.getByRole("heading", { level: 2, name: "Dar de alta profesora" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Dar de alta profesor/a" })).toBeInTheDocument();
 
     const btnCancelar = screen.getByRole("button", { name: "Cancelar" });
     fireEvent.click(btnCancelar);
 
-    expect(screen.queryByRole("heading", { level: 2, name: "Dar de alta profesora" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Dar de alta profesor/a" })).not.toBeInTheDocument();
   });
 
   it("abre el diálogo de confirmación de baja al hacer clic en 'Dar de baja'", () => {
@@ -142,17 +142,17 @@ describe("ProfesorasPage (US-38)", () => {
     const botonesBaja = screen.getAllByRole("button", { name: /Dar de baja/i });
     fireEvent.click(botonesBaja[0]);
 
-    expect(screen.getByText("¿Dar de baja a esta profesora?")).toBeInTheDocument();
+    expect(screen.getByText("¿Dar de baja a este/a profesor/a?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar baja" })).toBeInTheDocument();
 
     const btnCancelarBaja = screen.getByRole("button", { name: "Cancelar" });
     fireEvent.click(btnCancelarBaja);
-    expect(screen.queryByText("¿Dar de baja a esta profesora?")).not.toBeInTheDocument();
+    expect(screen.queryByText("¿Dar de baja a este/a profesor/a?")).not.toBeInTheDocument();
   });
 
   it("permite completar el formulario de alta directa y enviar los datos", () => {
     renderizar();
-    fireEvent.click(screen.getByRole("button", { name: "+ Nueva profesora" }));
+    fireEvent.click(screen.getByRole("button", { name: "+ Nuevo/a profesor/a" }));
 
     fireEvent.change(screen.getByPlaceholderText("Ej: Laura"), { target: { value: "Laura" } });
     fireEvent.change(screen.getByPlaceholderText("Ej: García"), { target: { value: "García" } });
@@ -161,7 +161,7 @@ describe("ProfesorasPage (US-38)", () => {
     fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/i), { target: { value: "1994-06-15" } });
     fireEvent.change(screen.getByPlaceholderText(/Pilates Reformer/i), { target: { value: "Pilates" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Guardar profesora" }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar profesor/a" }));
 
     expect(mockMutateCrear).toHaveBeenCalledWith(
       {

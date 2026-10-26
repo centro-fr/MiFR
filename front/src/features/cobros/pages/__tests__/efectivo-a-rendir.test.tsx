@@ -275,7 +275,7 @@ describe("PanelEfectivoARendir (US-19)", () => {
   it("filtra por búsqueda por nombre de profesora o alumno", () => {
     renderPanel();
 
-    const inputBuscar = screen.getByPlaceholderText(/Buscar por profesora o alumno.../i);
+    const inputBuscar = screen.getByPlaceholderText(/Buscar por profesor\/a o alumno.../i);
     fireEvent.change(inputBuscar, { target: { value: "Carla" } });
 
     // Carla Ruiz visible, Lucía García oculta

@@ -220,19 +220,19 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
 
             <div className="space-y-1.5">
               <Label htmlFor="horario-profesora" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Profesora <span className="text-destructive">*</span>
+                Profesor/a <span className="text-destructive">*</span>
               </Label>
               <Select value={profesoraId} onValueChange={setProfesoraId}>
                 <SelectTrigger
                   id="horario-profesora"
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
-                  <SelectValue placeholder={profesoras.length === 0 ? "Sin profesoras activas" : "Seleccionar profesora"} />
+                  <SelectValue placeholder={profesoras.length === 0 ? "Sin profesores activos" : "Seleccionar profesor/a"} />
                 </SelectTrigger>
                 <SelectContent>
                   {profesoras.length === 0 ? (
                     <div className="p-3 text-center text-xs text-muted-foreground">
-                      No hay profesoras activas.
+                      No hay profesores activos.
                     </div>
                   ) : (
                     profesoras.map((prof) => (
@@ -245,9 +245,9 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               </Select>
               {profesoras.length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  No hay profesoras.{" "}
+                  No hay profesores.{" "}
                   <Link to="/app/profesoras" className="font-bold underline hover:text-amber-700">
-                    Crear profesora
+                    Crear profesor/a
                   </Link>
                 </p>
               )}

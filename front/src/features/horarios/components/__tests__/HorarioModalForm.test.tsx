@@ -54,7 +54,7 @@ describe("HorarioModalForm", () => {
     expect(screen.getByRole("heading", { name: "Nuevo horario" })).toBeInTheDocument();
     // Verificamos que las etiquetas de los inputs existan
     expect(screen.getByText(/^Actividad/i)).toBeInTheDocument();
-    expect(screen.getByText(/^Profesora/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Profesor/i)).toBeInTheDocument();
     expect(screen.getByText(/^Día/i)).toBeInTheDocument();
   });
 
@@ -128,7 +128,7 @@ describe("HorarioModalForm", () => {
     );
 
     expect(screen.getByRole("link", { name: "Crear actividad" })).toHaveAttribute("href", "/app/actividades");
-    expect(screen.getByRole("link", { name: "Crear profesora" })).toHaveAttribute("href", "/app/profesoras");
+    expect(screen.getByRole("link", { name: "Crear profesor/a" })).toHaveAttribute("href", "/app/profesoras");
   });
 });
 

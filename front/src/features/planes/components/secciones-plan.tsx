@@ -156,7 +156,7 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
   const actividad = actividades.find(({ id }) => id === valores.idActividad);
   const grupo = (modalidad: Actividad["modalidad"]) => actividades.filter((a) => a.modalidad === modalidad);
   return (
-    <SeccionPlan titulo="2. Actividad y profesora" color="bg-blue-500">
+    <SeccionPlan titulo="2. Actividad y profesor/a" color="bg-blue-500">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <CampoPlan id="plan-actividad" etiqueta="Actividad" error={errores.idActividad} ayuda="Elegí una si el plan es solo para esa actividad.">
           {(control) => (

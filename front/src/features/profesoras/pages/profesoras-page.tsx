@@ -77,10 +77,10 @@ export function ProfesorasPage() {
     darDeBajaMutation.mutate(profesoraBaja.id, {
       onSuccess: () => {
         setProfesoraBaja(null);
-        toast.info(`Profesora "${profesoraBaja.nombreCompleto}" dada de baja`);
+        toast.info(`Profesor/a "${profesoraBaja.nombreCompleto}" dado/a de baja`);
       },
       onError: (err) => {
-        setErrorBaja(mensajeDeErrorApi(err, "No se pudo dar de baja a la profesora."));
+        setErrorBaja(mensajeDeErrorApi(err, "No se pudo dar de baja al/a la profesor/a."));
       },
     });
   };
@@ -89,10 +89,10 @@ export function ProfesorasPage() {
     crearMutation.mutate(datos, {
       onSuccess: (nueva) => {
         setFormAbierto(false);
-        toast.success(`Profesora "${nueva.nombreCompleto}" dada de alta correctamente`);
+        toast.success(`Profesor/a "${nueva.nombreCompleto}" dado/a de alta correctamente`);
       },
       onError: (err) => {
-        toast.error(mensajeDeErrorApi(err, "No se pudo registrar la profesora."));
+        toast.error(mensajeDeErrorApi(err, "No se pudo registrar al/a la profesor/a."));
       },
     });
   };
@@ -123,7 +123,7 @@ export function ProfesorasPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Plantel de Profesoras
+              Plantel de Profesores
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
               Equipo docente del centro, especialidades asignadas y disponibilidad para dictado de disciplinas.
@@ -135,7 +135,7 @@ export function ProfesorasPage() {
             onClick={abrirNueva}
             className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
           >
-            + Nueva profesora
+            + Nuevo/a profesor/a
           </Button>
         </div>
 
@@ -223,13 +223,13 @@ export function ProfesorasPage() {
             className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
           >
             <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            Cargando plantel de profesoras...
+            Cargando plantel de profesores...
           </div>
         ) : isError ? (
           <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
             <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
             <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(error, "No se pudo cargar el listado de profesoras.")}
+              {mensajeDeErrorApi(error, "No se pudo cargar el listado de profesores.")}
             </p>
             <Button
               type="button"
@@ -248,12 +248,12 @@ export function ProfesorasPage() {
               <GraduationCap className="size-7" />
             </span>
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              {hayFiltrosActivos ? "Sin resultados para tu búsqueda" : "No hay profesoras registradas"}
+              {hayFiltrosActivos ? "Sin resultados para tu búsqueda" : "No hay profesores registrados"}
             </h2>
             <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
               {hayFiltrosActivos
-                ? "Probá ajustando el término de búsqueda para encontrar profesoras o especialidades."
-                : "Agregá la primera profesora asociando una cuenta con rol PROFESORA para armar el equipo."}
+                ? "Probá ajustando el término de búsqueda para encontrar profesores o especialidades."
+                : "Agregá el/la primer/a profesor/a asociando una cuenta con rol PROFESORA para armar el equipo."}
             </p>
             {!hayFiltrosActivos && (
               <Button
@@ -261,7 +261,7 @@ export function ProfesorasPage() {
                 onClick={abrirNueva}
                 className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
               >
-                + Dar de alta profesora
+                + Dar de alta profesor/a
               </Button>
             )}
           </Card>
@@ -273,7 +273,7 @@ export function ProfesorasPage() {
                 <TableHeader>
                   <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
                     <TableHead className="py-3.5 pl-6 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      Profesora
+                      Profesor/a
                     </TableHead>
                     <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       Especialidad
@@ -446,7 +446,7 @@ export function ProfesorasPage() {
                       </div>
                     ) : (
                       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
-                        <span className="text-xs font-semibold text-slate-400 italic">Dada de baja</span>
+                        <span className="text-xs font-semibold text-slate-400 italic">Dado/a de baja</span>
                       </div>
                     )}
                   </div>
@@ -462,7 +462,7 @@ export function ProfesorasPage() {
             guardando={crearMutation.isPending}
             errorGuardado={
               crearMutation.isError
-                ? mensajeDeErrorApi(crearMutation.error, "No se pudo registrar la profesora.")
+                ? mensajeDeErrorApi(crearMutation.error, "No se pudo registrar al/a la profesor/a.")
                 : null
             }
             onClose={() => setFormAbierto(false)}

@@ -11,7 +11,7 @@ interface PropsEncabezado {
 
 export function EncabezadoHonorarios({
   titulo = "Honorarios",
-  descripcion = "Cuánto le corresponde a cada profesora en el mes. Es solo informativo: El sistema no mueve dinero.",
+  descripcion = "Cuánto le corresponde a cada profesor/a en el mes. Es solo informativo: El sistema no mueve dinero.",
   acciones,
 }: PropsEncabezado) {
   return (

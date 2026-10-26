@@ -113,11 +113,11 @@ describe("MiPlanPage (US-16)", () => {
     expect(screen.getAllByText("Verificada").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("muestra la indicación para avisar a la propietaria o profesora tras transferir", () => {
+  it("muestra la indicación para avisar a la administración o profesor/a tras transferir", () => {
     renderMiPlanPage();
 
     expect(
-      screen.getByText(/avisale a la propietaria o a tu profesora/i),
+      screen.getByText(/avisale a la administración o a tu profesor\/a/i),
     ).toBeInTheDocument();
   });
 

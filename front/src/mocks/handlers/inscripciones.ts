@@ -11,6 +11,7 @@ import {
   vigentesDe,
 } from "@/mocks/handlers/reglas-inscripcion";
 import { inscripcionConDatos } from "@/mocks/handlers/serializar";
+import { hoyEnArgentina } from "@/mocks/precios";
 
 // Mock de /inscripciones (inscripcion.routes.ts): listado con filtros y paginado, pre-inscripción
 // (US-05) y cambio de horarios o de plan de una inscripción vigente.
@@ -96,7 +97,7 @@ export const inscripcionesHandlers = [
 
     const alumno = db.alumnos.find((a) => a.id_alumno === datos.id_alumno);
     if (!alumno || alumno.estado === "BAJA") return errorApi(404, "NOT_FOUND", "Alumno inexistente o dado de baja");
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyEnArgentina();
     if (datos.fecha_inicio && datos.fecha_inicio < hoy) {
       return errorApi(400, "VALIDATION_ERROR", "La fecha de inicio no puede ser anterior a hoy");
     }

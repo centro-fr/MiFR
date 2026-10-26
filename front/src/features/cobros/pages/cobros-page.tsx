@@ -527,7 +527,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                           Plan
                         </th>
                         <th scope="col" className="px-4 py-3.5">
-                          Profesora
+                          Profesor/a
                         </th>
                         <th scope="col" className="px-4 py-3.5">
                           Vencimiento

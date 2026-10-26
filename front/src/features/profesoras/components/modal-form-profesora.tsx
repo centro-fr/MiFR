@@ -79,7 +79,7 @@ export function ModalFormProfesora({
             </span>
             <div>
               <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Dar de alta profesora
+                Dar de alta profesor/a
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Ingresá los datos de contacto y la cuenta Google para el acceso
@@ -156,7 +156,7 @@ export function ModalFormProfesora({
               className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              Es la cuenta con la que la profesora podrá iniciar sesión mediante Google Auth.
+              Es la cuenta con la que el/la profesor/a podrá iniciar sesión mediante Google Auth.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export function ModalFormProfesora({
                   Guardando...
                 </>
               ) : (
-                "Guardar profesora"
+                "Guardar profesor/a"
               )}
             </Button>
           </div>

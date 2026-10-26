@@ -7,7 +7,7 @@ import { fechaActualArgentina } from "@/utils/fecha";
 import { MEDIDAS_VACIAS, medidasCorporalesSchema, type MedidasCorporalesForm } from "../schemas/medidas-corporales";
 import { clasesRequeridasDelPlan, horariosDelPlan, profesorasDelPlan } from "../utils/plan-y-profesora";
 import { alumnoFormSchema, type AlumnoFormData } from "../schemas/alumno.schema";
-import { crearAlumno } from "../api/alumnos-api";
+import { crearAlumno, darDeBajaAlumno } from "../api/alumnos-api";
 import { crearInscripcion } from "../api/inscripciones-api";
 import {
   registrarPrimerPagoEnEfectivo,
@@ -181,6 +181,10 @@ export function usePreinscripcion({
     [horarios, clasesRequeridas],
   );
 
+  const limpiarHorarios = useCallback(() => {
+    setIdsHorarios([]);
+  }, []);
+
   // Validaciones
   const validarPaso1 = useCallback((): boolean => {
     const mapaErrores = erroresDelPaso1(datosAlumno);
@@ -284,6 +288,12 @@ export function usePreinscripcion({
   }, []);
 
   const reiniciar = useCallback(() => {
+    // Si se había creado el alumno pero nunca se completó la inscripción, se da de baja
+    // para no dejar datos huérfanos sin plan en la lista de alumnos.
+    if (idAlumnoCreado && !idInscripcionCreada) {
+      darDeBajaAlumno(idAlumnoCreado, "OTRO", "Pre-inscripción cancelada").catch(() => { });
+      invalidarAlumnos();
+    }
     setPaso(1);
     setExito(false);
     setIdInscripcionCreada(null);
@@ -304,7 +314,7 @@ export function usePreinscripcion({
       fechaHoraTransferencia: new Date().toISOString().slice(0, 16),
       titularCuenta: "",
     });
-  }, []);
+  }, [idAlumnoCreado, idInscripcionCreada, invalidarAlumnos]);
 
   // Confirmar y guardar la pre-inscripción (con o sin cobro)
   const confirmarPreinscripcion = useCallback(async () => {
@@ -336,26 +346,32 @@ export function usePreinscripcion({
         observaciones: datosAlumno.observaciones?.trim() || null,
         tutor:
           menorDeEdad &&
-          datosAlumno.tutor?.nombre &&
-          datosAlumno.tutor?.telefono &&
-          datosAlumno.tutor?.email &&
-          datosAlumno.tutor?.fecha_nacimiento
+            datosAlumno.tutor?.nombre &&
+            datosAlumno.tutor?.telefono &&
+            datosAlumno.tutor?.email &&
+            datosAlumno.tutor?.fecha_nacimiento
             ? {
-                nombre: datosAlumno.tutor.nombre.trim(),
-                apellido: (datosAlumno.tutor.apellido?.trim() || datosAlumno.tutor.nombre.trim()),
-                dni: datosAlumno.tutor.dni?.trim() || undefined,
-                telefono: datosAlumno.tutor.telefono.trim(),
-                email: datosAlumno.tutor.email.trim(),
-                fecha_nacimiento: datosAlumno.tutor.fecha_nacimiento,
-              }
+              nombre: datosAlumno.tutor.nombre.trim(),
+              apellido: (datosAlumno.tutor.apellido?.trim() || datosAlumno.tutor.nombre.trim()),
+              dni: datosAlumno.tutor.dni?.trim() || undefined,
+              telefono: datosAlumno.tutor.telefono.trim(),
+              email: datosAlumno.tutor.email.trim(),
+              fecha_nacimiento: datosAlumno.tutor.fecha_nacimiento,
+            }
             : undefined,
       };
 
-      const alumnoCreado = await crearAlumno(payloadAlumno);
+      // 1. Crear el Alumno (y tutor si es menor) o reutilizar si ya fue creado en un intento previo
+      let idAlumno = idAlumnoCreado;
+      if (!idAlumno) {
+        const alumnoCreado = await crearAlumno(payloadAlumno);
+        idAlumno = alumnoCreado.id_alumno;
+        setIdAlumnoCreado(idAlumno);
+      }
 
       // 2. Crear la Inscripción
       const inscripcion = await crearInscripcion({
-        id_alumno: alumnoCreado.id_alumno,
+        id_alumno: idAlumno,
         id_plan: idPlan,
         id_profesora: idProfesora,
         ids_horarios: idsHorarios,
@@ -401,17 +417,19 @@ export function usePreinscripcion({
       await invalidarAlumnos();
 
       setIdInscripcionCreada(inscripcion.id_inscripcion);
-      setIdAlumnoCreado(alumnoCreado.id_alumno);
+      setIdAlumnoCreado(idAlumno);
       setExito(true);
       onExitoRef.current?.({
         idInscripcion: inscripcion.id_inscripcion,
-        idAlumno: alumnoCreado.id_alumno,
-        cobrarAhora: datosCobro.yaAbono,
+        idAlumno,
+        cobrarAhora: false,
       });
 
       toast.success(
         datosCobro.yaAbono
-          ? "¡Alta confirmada con éxito!"
+          ? (datosCobro.formaPago === "TRANSFERENCIA" && !esPropietaria
+              ? "Pre-inscripción guardada. Transferencia informada pendiente de confirmación."
+              : "¡Alta confirmada con éxito!")
           : "¡Pre-inscripción guardada con éxito!",
       );
     } catch (err) {
@@ -433,6 +451,7 @@ export function usePreinscripcion({
     observacionesInscripcion,
     esPropietaria,
     invalidarAlumnos,
+    idAlumnoCreado,
   ]);
 
   return {
@@ -460,6 +479,7 @@ export function usePreinscripcion({
     erroresMedidas,
     idsHorarios,
     toggleHorario,
+    limpiarHorarios,
     clasesRequeridas,
     horariosDisponibles,
     fechaInicio,

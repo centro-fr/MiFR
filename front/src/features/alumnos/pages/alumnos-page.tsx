@@ -342,16 +342,16 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           {!soloACargo && (
             <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
               <label htmlFor="desktop-filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Profesora
+                Profesor/a
               </label>
               <select
                 id="desktop-filtro-profesora"
-                aria-label="Profesora"
+                aria-label="Profesor/a"
                 value={filtros.id_profesora}
                 onChange={(e) => cambiarFiltro("id_profesora", e.target.value)}
                 className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
               >
-                <option value="">Todas</option>
+                <option value="">Todos</option>
                 {opciones.profesoras.map((p) => (
                   <option key={p.id} value={p.id}>{p.etiqueta}</option>
                 ))}

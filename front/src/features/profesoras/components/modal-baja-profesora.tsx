@@ -53,7 +53,7 @@ export function ModalBajaProfesora({
           </div>
           <div>
             <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              ¿Dar de baja a esta profesora?
+              ¿Dar de baja a este/a profesor/a?
             </AlertDialogTitle>
             <AlertDialogDescription className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
               Estás por dar de baja el perfil de <strong>{profesora.nombreCompleto}</strong>. La baja es estrictamente lógica:
