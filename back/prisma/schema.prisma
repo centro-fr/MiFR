@@ -135,6 +135,7 @@ model profesoras {
   pagos_cobrados     pagos[]
   clases_dictadas    clases[]
   registros_progreso registros_progreso[]
+  rutinas            rutinas[]
   ausencias_suplidas suplencias[]
   tarifas_honorario  tarifas_honorario[]
   liquidaciones      liquidaciones[]
@@ -280,6 +281,7 @@ model alumnos {
   responsable        usuarios?            @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
   inscripciones      inscripciones[]
   registros_progreso registros_progreso[]
+  rutinas            rutinas[]
   asistencias        asistencias[]
   insignias          alumno_insignias[]
 }
@@ -505,6 +507,28 @@ model registros_progreso {
 
   @@index([id_alumno], map: "IXFK_registros_progreso_alumnos")
   @@index([id_profesora], map: "IXFK_registros_progreso_profesoras")
+}
+
+model rutinas {
+  id_rutina     Int       @id(map: "PK_rutinas") @default(autoincrement())
+  id_alumno     Int
+  // la profesora que la cargó
+  id_profesora  Int
+  nombre        String    @db.VarChar(100)
+  fecha_desde   DateTime  @db.Date
+  // >= fecha_desde
+  fecha_hasta   DateTime? @db.Date
+  // días, ejercicios, series y repeticiones
+  contenido     Json
+  observaciones String?   @db.VarChar(500)
+  // solo una vigente por alumno
+  activa        Boolean   @default(true)
+
+  alumno    alumnos    @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_alumnos")
+  profesora profesoras @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_profesoras")
+
+  @@index([id_alumno, activa], map: "IX_rutinas_alumno_activa")
+  @@index([id_profesora], map: "IXFK_rutinas_profesoras")
 }
 
 model tipos_medida {
