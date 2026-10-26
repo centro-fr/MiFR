@@ -3,10 +3,6 @@ ALTER TABLE "rutinas"
   ADD CONSTRAINT "ck_rutinas_fechas"
   CHECK (fecha_hasta IS NULL OR fecha_hasta >= fecha_desde);
 
-ALTER TABLE "medidas_corporales"
-  ADD CONSTRAINT "ck_medidas_corporales_valor"
-  CHECK (valor > 0);
-
 -- Solo una rutina vigente por alumno.
 CREATE UNIQUE INDEX "UK_rutinas_alumno_activa"
   ON "rutinas"("id_alumno")
