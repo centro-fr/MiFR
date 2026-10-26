@@ -5,12 +5,17 @@ import {
   listarSuplencias,
   registrarSuplencia,
 } from "@/features/suplencias/api/suplencias-api";
+import type { FiltrosSuplencias } from "@/features/suplencias/api/suplencias-api";
 import type { RegistrarSuplenciaBody } from "@/features/suplencias/schemas/suplencia";
 
 export const SUPLENCIAS_QUERY_KEY = ["suplencias"] as const;
 
-export function useSuplencias() {
-  return useQuery({ queryKey: SUPLENCIAS_QUERY_KEY, queryFn: listarSuplencias, staleTime: 30_000 });
+export function useSuplencias(filtros: FiltrosSuplencias = {}) {
+  return useQuery({
+    queryKey: [...SUPLENCIAS_QUERY_KEY, filtros],
+    queryFn: () => listarSuplencias(filtros),
+    staleTime: 30_000,
+  });
 }
 
 function useInvalidarSuplencias() {

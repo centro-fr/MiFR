@@ -37,6 +37,7 @@ export async function informarTransferencia(
 ): Promise<TransferenciaApi> {
   const payload = {
     id_inscripcion: datos.id_inscripcion,
+    ...(datos.id_promocion ? { id_promocion: datos.id_promocion } : {}),
     monto: datos.monto,
     fecha_hora_transferencia: aFechaHoraConZona(datos.fecha_hora_transferencia),
     ...(datos.titular_cuenta_origen?.trim()

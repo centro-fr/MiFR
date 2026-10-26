@@ -86,6 +86,13 @@ describe("CuotaService", () => {
       expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, 4);
     });
 
+    it("cobra con la promoción elegida para esta cobranza", async () => {
+      mocks.planes.precioACobrar.mockResolvedValue({ precio_lista: 30000, descuento: 6000, monto: 24000 });
+
+      await expect(servicio.prepararCobro(inscripcion, 8)).resolves.toMatchObject({ monto: 24000 });
+      expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, 8);
+    });
+
     it("la primera cuota cubre desde hoy, con el precio vigente y el vencimiento calculado", async () => {
       await expect(servicio.prepararCobro(inscripcion)).resolves.toEqual({
         inscripcion,

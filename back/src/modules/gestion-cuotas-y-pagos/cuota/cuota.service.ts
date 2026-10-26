@@ -130,7 +130,10 @@ export class CuotaService implements IInfoCuotas {
 
   // Recibe la inscripción ya resuelta: la fachada verifica antes quién paga, para que estos errores
   // (baja, transferencia pendiente, precio) no cuenten nada de una inscripción ajena.
-  async prepararCobro(inscripcion: InscripcionACobrar): Promise<CuotaACobrar> {
+  async prepararCobro(
+    inscripcion: InscripcionACobrar,
+    idPromocion = inscripcion.id_promocion,
+  ): Promise<CuotaACobrar> {
     if (inscripcion.estado === "BAJA" || inscripcion.alumno.estado === "BAJA") {
       throw new ConflictError(
         "El alumno está dado de baja: hay que reactivarlo antes de registrarle un pago",
@@ -140,7 +143,7 @@ export class CuotaService implements IInfoCuotas {
     const hoy = fechaActualArgentina();
     const [[situacion], precio] = await Promise.all([
       this.repositorio.situacionDeInscripciones([inscripcion.id_inscripcion]),
-      this.planes.precioACobrar(inscripcion.id_plan, hoy, inscripcion.id_promocion),
+      this.planes.precioACobrar(inscripcion.id_plan, hoy, idPromocion),
     ]);
     if (tienePagoPendiente(situacion)) {
       throw new ConflictError("La inscripción tiene una transferencia pendiente de revisión");

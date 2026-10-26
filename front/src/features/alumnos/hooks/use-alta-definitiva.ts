@@ -39,6 +39,7 @@ export function useConfirmarAltaDefinitiva() {
       return informarTransferenciaPrimerPago({
         id_inscripcion: pago.cuerpo.id_inscripcion,
         monto: pago.cuerpo.monto,
+        id_promocion: pago.cuerpo.id_promocion,
         fecha_hora_transferencia: pago.cuerpo.fecha_hora_transferencia,
         titular_cuenta_origen: pago.cuerpo.titular_cuenta_origen,
       });

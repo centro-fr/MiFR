@@ -116,11 +116,16 @@ export type CuerpoPrimerPago =
   | { formaPago: "TRANSFERENCIA"; cuerpo: RegistrarTransferenciaRecibidaBody };
 
 /** Arma el cuerpo del endpoint que corresponde a la forma de pago elegida. */
-export function aCuerpoPrimerPago(idInscripcion: string, datos: PrimerPagoValidado): CuerpoPrimerPago {
+export function aCuerpoPrimerPago(
+  idInscripcion: string,
+  datos: PrimerPagoValidado,
+  idPromocion?: number,
+): CuerpoPrimerPago {
   const base: RegistrarEfectivoBody = {
     id_inscripcion: Number(idInscripcion),
     monto: montoDesdeTexto(datos.monto),
     confirmar_monto_distinto: datos.confirmarMontoDistinto,
+    ...(idPromocion !== undefined && { id_promocion: idPromocion }),
   };
   if (datos.formaPago === "EFECTIVO") return { formaPago: "EFECTIVO", cuerpo: base };
   return {

@@ -44,6 +44,7 @@ export type RegistrarCobroEfectivoFormValues = z.input<typeof registrarCobroEfec
 
 export interface RegistrarCobroEfectivoBody {
   id_inscripcion: number;
+  id_promocion?: number;
   monto: number;
   confirmar_monto_distinto?: boolean;
   observaciones?: string;

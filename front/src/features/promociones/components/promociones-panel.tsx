@@ -82,12 +82,16 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
 
   return (
     <section className="space-y-4">
+      <div className="flex justify-end">
+        <Button type="button" onClick={abrirNueva} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
+          + Nueva promoción
+        </Button>
+      </div>
       {promocionesOrdenadas.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70"><Sparkles className="size-7" /></span>
           <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Todavía no hay promociones</h2>
           <p className="max-w-md text-sm text-muted-foreground">Creá una promoción temporal para aplicar descuentos a nuevas inscripciones.</p>
-          <Button type="button" onClick={abrirNueva} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">+ Nueva promoción</Button>
         </Card>
       ) : (
         <ListaPromociones promociones={promocionesOrdenadas} onEditar={abrirEdicion} onDesactivar={setPromocionADesactivar} />

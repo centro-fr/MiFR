@@ -14,6 +14,7 @@ import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-pr
 import type { CuerpoPrimerPago } from "@/features/alumnos/schemas/primer-pago";
 import { FILTROS_INICIALES, filtrarPendientes, planesDe } from "@/features/alumnos/utils/pendientes-de-alta";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 import type { PreInscripcionPendiente } from "@/types/alta-definitiva";
 import { cn } from "@/utils/cn";
 
@@ -110,6 +111,7 @@ function ContenidoPendientes() {
   const { data: pendientes, isPending, isError, error, refetch, isFetching } = usePreInscripcionesPendientes();
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const formas = useFormasDePrimerPago();
+  const promociones = usePromociones();
   const { confirmarAlta, seleccionada, abrir, cerrar, confirmar } = useConfirmacion();
   const visibles = useMemo(() => filtrarPendientes(pendientes ?? [], filtros), [pendientes, filtros]);
   const planes = useMemo(() => planesDe(pendientes ?? []), [pendientes]);
@@ -176,6 +178,7 @@ function ContenidoPendientes() {
         <ModalConfirmarAlta
           pendiente={seleccionada}
           formas={formas}
+          promociones={promociones.data ?? []}
           confirmando={confirmarAlta.isPending}
           error={confirmarAlta.error}
           onClose={cerrar}

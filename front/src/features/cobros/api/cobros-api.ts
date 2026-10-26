@@ -7,9 +7,66 @@ import {
   type PagoApi,
   type RegistrarCobroEfectivoBody,
 } from "@/features/cobros/schemas/cobro-efectivo.schema";
+import type { Promocion } from "@/types/promocion";
 import { z } from "zod";
 
 const CLAVE_CACHE_PAGOS = "mifr_pagos_recientes_sesion";
+
+export const cotizacionCobroSchema = z.object({
+  id_plan_precio: z.number().int(),
+  precio_lista: z.number(),
+  descuento: z.number(),
+  monto: z.number(),
+  promocion: z
+    .object({
+      id_promocion: z.number().int(),
+      codigo: z.string(),
+      nombre: z.string(),
+    })
+    .nullable(),
+});
+
+export type CotizacionCobro = z.infer<typeof cotizacionCobroSchema>;
+
+interface DatosPromocionCobro {
+  id: number;
+  precioLista: number;
+  idPromocion: number | null;
+  idPlan: number;
+}
+
+function redondearMonto(monto: number): number {
+  return Math.round(monto * 100) / 100;
+}
+
+export function calcularCotizacionCobro(
+  datos: DatosPromocionCobro,
+  promociones: Promocion[],
+): CotizacionCobro {
+  const promocion = datos.idPromocion === null
+    ? null
+    : promociones.find(
+        (item) =>
+          item.id === String(datos.idPromocion) &&
+          item.activo &&
+          item.estado === "ACTIVA" &&
+          item.planes.some((plan) => plan.id === String(datos.idPlan)),
+      ) ?? null;
+  const descuento = promocion
+    ? promocion.tipoDescuento === "PORCENTAJE"
+      ? redondearMonto(datos.precioLista * promocion.valor / 100)
+      : Math.min(datos.precioLista, promocion.valor)
+    : 0;
+  return {
+    id_plan_precio: datos.id,
+    precio_lista: datos.precioLista,
+    descuento,
+    monto: redondearMonto(Math.max(0, datos.precioLista - descuento)),
+    promocion: promocion
+      ? { id_promocion: Number(promocion.id), codigo: promocion.codigo, nombre: promocion.nombre }
+      : null,
+  };
+}
 
 export function guardarPagoEnCacheLocal(pago: PagoApi): void {
   try {

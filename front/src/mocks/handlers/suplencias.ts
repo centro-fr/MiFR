@@ -66,7 +66,23 @@ export const suplenciasHandlers = [
     await delay(350);
     const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "HONORARIOS_VER_TODOS" });
     if (denegado) return denegado;
-    return HttpResponse.json([...suplencias].sort((a, b) => b.fecha_clase.localeCompare(a.fecha_clase)).map(serializar));
+    const query = new URL(request.url).searchParams;
+    const desde = query.get("desde");
+    const hasta = query.get("hasta");
+    const idProfesora = query.get("id_profesora");
+    const idActividad = query.get("id_actividad");
+    const filtradas = suplencias.filter((suplencia) => {
+      const actividad = horario(suplencia.id_horario)?.id_actividad;
+      return (
+        (!desde || suplencia.fecha_clase >= desde) &&
+        (!hasta || suplencia.fecha_clase <= hasta) &&
+        (!idProfesora || suplencia.id_prof_ausente === Number(idProfesora) || suplencia.id_prof_suplente === Number(idProfesora)) &&
+        (!idActividad || actividad === Number(idActividad))
+      );
+    });
+    return HttpResponse.json(
+      filtradas.sort((a, b) => b.fecha_clase.localeCompare(a.fecha_clase)).map(serializar),
+    );
   }),
   http.post("*/api/v1/suplencias", async ({ request }) => {
     await delay(500);
@@ -75,8 +91,14 @@ export const suplenciasHandlers = [
     const cuerpo = (await request.json()) as { id_horario: number; fecha_clase: string; id_profesora_suplente: number; motivo?: string };
     const horarioElegido = horario(cuerpo.id_horario);
     if (!horarioElegido) return errorApi(404, "HORARIO_NO_ENCONTRADO", "El horario no existe");
+    const fecha = new Date(`${cuerpo.fecha_clase}T12:00:00`);
+    const dia = fecha.getDay() || 7;
+    if (horarioElegido.dia_semana !== dia) return errorApi(400, "DIA_INVALIDO", "La fecha no coincide con el día del horario");
     if (suplencias.some((suplencia) => suplencia.id_horario === cuerpo.id_horario && suplencia.fecha_clase === cuerpo.fecha_clase)) return errorApi(409, "SUPLENCIA_DUPLICADA", "La clase ya tiene una suplencia");
     if (horarioElegido.id_profesora === cuerpo.id_profesora_suplente) return errorApi(400, "MISMA_PROFESORA", "La suplente tiene que ser otra profesora");
+    if (!db.profesoras.some((profesora) => profesora.id_profesora === cuerpo.id_profesora_suplente)) {
+      return errorApi(400, "PROFESORA_INVALIDA", "La suplente no es una profesora activa");
+    }
     const nueva: SuplenciaMock = {
       id_clase: siguienteId(suplencias.map((suplencia) => suplencia.id_clase)),
       id_prof_ausente: horarioElegido.id_profesora,
@@ -94,7 +116,17 @@ export const suplenciasHandlers = [
     if (denegado) return denegado;
     const suplencia = buscar(params.idClase);
     if (!suplencia) return errorApi(404, "NOT_FOUND", "La suplencia no existe");
-    Object.assign(suplencia, (await request.json()) as Partial<SuplenciaMock>);
+    const cambios = (await request.json()) as { id_profesora_suplente?: number; motivo?: string };
+    if (cambios.id_profesora_suplente !== undefined) {
+      if (cambios.id_profesora_suplente === suplencia.id_prof_ausente) {
+        return errorApi(400, "MISMA_PROFESORA", "La suplente tiene que ser otra profesora");
+      }
+      if (!db.profesoras.some((profesora) => profesora.id_profesora === cambios.id_profesora_suplente)) {
+        return errorApi(400, "PROFESORA_INVALIDA", "La suplente no es una profesora activa");
+      }
+      suplencia.id_prof_suplente = cambios.id_profesora_suplente;
+    }
+    if (cambios.motivo !== undefined) suplencia.motivo = cambios.motivo || null;
     return HttpResponse.json(serializar(suplencia));
   }),
   http.delete("*/api/v1/suplencias/:idClase", async ({ request, params }) => {

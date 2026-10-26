@@ -21,6 +21,7 @@ type Errores = Partial<Record<"monto" | "titular", string>>;
 
 interface Props {
   idInscripcion: number;
+  idPromocion?: number;
   precioVigente: number;
   /** El monto lo guarda el modal: así no se pierde al pasar de efectivo a transferencia y volver. */
   monto: string;
@@ -34,7 +35,7 @@ interface Props {
  * alumno ya no la informa desde la app). Queda pendiente de verificación en "Transferencias
  * pendientes" hasta que la propietaria la controle en el extracto (US-17).
  */
-export function FormularioTransferenciaCobro({ idInscripcion, precioVigente, monto, onMontoChange, onCancelar, onInformada }: Props) {
+export function FormularioTransferenciaCobro({ idInscripcion, idPromocion, precioVigente, monto, onMontoChange, onCancelar, onInformada }: Props) {
   const informar = useInformarTransferencia();
   const [titular, setTitular] = useState("");
   const [errores, setErrores] = useState<Errores>({});
@@ -54,6 +55,7 @@ export function FormularioTransferenciaCobro({ idInscripcion, precioVigente, mon
     try {
       await informar.mutateAsync({
         id_inscripcion: idInscripcion,
+        id_promocion: idPromocion,
         monto: montoComoNumero(resultado.data.monto),
         // Se registra con el momento de la confirmación, en minutos: así nunca es futura.
         fecha_hora_transferencia: fechaHoraParaInput(new Date()),

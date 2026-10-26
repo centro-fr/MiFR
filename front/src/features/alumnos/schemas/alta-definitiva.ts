@@ -17,6 +17,7 @@ export const inscripcionPendienteApiSchema = z.object({
   id_alumno: z.number().int(),
   estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
   fecha_alta: z.string(),
+  id_promocion: z.number().int().nullable().optional().default(null),
   // Solo en las PREINSCRIPTA: hasta qué día guarda su lugar sin el primer pago.
   reserva: z.object({ vence: z.string(), vencida: z.boolean() }).nullable(),
   plan: z.object({ id_plan: z.number().int(), nombre: z.string() }),
@@ -49,6 +50,7 @@ export interface RegistrarEfectivoBody {
   id_inscripcion: number;
   monto: number;
   confirmar_monto_distinto: boolean;
+  id_promocion?: number;
 }
 
 // Cuerpo de POST /pagos/transferencia-recibida (registrarTransferenciaRecibidaSchema).

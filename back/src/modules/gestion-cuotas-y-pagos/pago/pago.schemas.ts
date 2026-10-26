@@ -20,6 +20,7 @@ const fecha_hora_transferencia = z
 
 export const registrarEfectivoSchema = z.object({
   id_inscripcion: idSchema,
+  id_promocion: idSchema.optional(),
   monto,
   confirmar_monto_distinto,
   observaciones,
@@ -28,6 +29,7 @@ export const registrarEfectivoSchema = z.object({
 // Sin comprobante adjunto (decisión de SPRINT-3.md): la propietaria lo busca en su extracto.
 export const informarTransferenciaSchema = z.object({
   id_inscripcion: idSchema,
+  id_promocion: idSchema.optional(),
   monto,
   fecha_hora_transferencia,
   titular_cuenta_origen: textoOpcionalSchema(80).optional(),

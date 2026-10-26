@@ -126,7 +126,10 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     inscripcion(1, { id_alumno: 1, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "PREINSCRIPTA" }),
     inscripcion(2, { id_alumno: 2, id_plan: 5, id_profesora: 2, ids_horarios: [26, 27], estado: "PREINSCRIPTA" }, 5),
     inscripcion(3, { id_alumno: 3, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 40),
-    inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 90),
+    {
+      ...inscripcion(4, { id_alumno: 4, id_plan: 1, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 90),
+      id_promocion: 2,
+    },
     inscripcion(
       5,
       { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [28], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },

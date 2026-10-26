@@ -21,6 +21,7 @@ type Errores = Partial<Record<keyof RegistrarCobroEfectivoFormValues, string>>;
 
 interface Props {
   idInscripcion: number;
+  idPromocion?: number;
   precioVigente: number;
   /** El monto lo guarda el modal: así no se pierde al pasar de efectivo a transferencia y volver. */
   monto: string;
@@ -82,7 +83,7 @@ function ConfirmacionMontoDistinto({ monto, precio, marcado, error, onChange }: 
 }
 
 /** US-15: cobro en efectivo de la cuota. Queda confirmado en el acto y emite el comprobante. */
-export function FormularioCobroEfectivo({ idInscripcion, precioVigente, monto, onMontoChange, onCancelar, onExito }: Props) {
+export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVigente, monto, onMontoChange, onCancelar, onExito }: Props) {
   const { hasRole } = usePermissions();
   const esSoloProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
   const registrar = useRegistrarCobroEfectivo();
@@ -119,7 +120,7 @@ export function FormularioCobroEfectivo({ idInscripcion, precioVigente, monto, o
     const datos = validar();
     if (!datos) return;
     try {
-      const pago = await registrar.mutateAsync(aCuerpoCobroEfectivo(datos));
+      const pago = await registrar.mutateAsync({ ...aCuerpoCobroEfectivo(datos), id_promocion: idPromocion });
       toast.success("Cobro en efectivo registrado correctamente");
       onExito(pago.id_pago);
     } catch (error) {

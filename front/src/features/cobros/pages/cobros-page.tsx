@@ -16,9 +16,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/api/client";
-import { paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
+import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
 import { listarPlanes } from "@/features/planes/api/planes-api";
+import { calcularCotizacionCobro } from "@/features/cobros/api/cobros-api";
+import { listarPromociones } from "@/features/promociones/api/promociones-api";
 import {
   ModalRegistrarCobro,
   type DatosAlumnoCobro,
@@ -104,6 +106,43 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     inscripcion: DatosInscripcionCobro;
   } | null>(null);
   const [comprobanteId, setComprobanteId] = useState<number | null>(null);
+
+  const idAlumnoSeleccionado = alumnoSeleccionado?.alumno.id_alumno;
+  const {
+    data: alumnoDetalleSeleccionado,
+    isLoading: cargandoCotizacion,
+    isError: errorCotizacion,
+  } = useQuery({
+    queryKey: ["alumnos", "detalle-cobro", idAlumnoSeleccionado],
+    queryFn: async () => {
+      const respuesta = await apiClient.get(`/alumnos/${idAlumnoSeleccionado}`);
+      return fichaAlumnoApiSchema.parse(respuesta.data);
+    },
+    enabled: idAlumnoSeleccionado !== undefined,
+    staleTime: 0,
+  });
+  const { data: promociones = [] } = useQuery({
+    queryKey: ["promociones", "cobros"],
+    queryFn: listarPromociones,
+    enabled: alumnoSeleccionado !== null,
+  });
+
+  const cotizacionSeleccionada = useMemo(() => {
+    const idInscripcion = alumnoSeleccionado?.inscripcion.id_inscripcion;
+    const inscripcion = alumnoDetalleSeleccionado?.inscripciones?.find(
+      (item) => item.id_inscripcion === idInscripcion,
+    );
+    if (!inscripcion) return undefined;
+    return calcularCotizacionCobro(
+      {
+        id: inscripcion.id_inscripcion,
+        precioLista: Number(inscripcion.plan_precio.precio),
+        idPromocion: inscripcion.id_promocion,
+        idPlan: inscripcion.plan.id_plan,
+      },
+      promociones,
+    );
+  }, [alumnoDetalleSeleccionado, alumnoSeleccionado, promociones]);
 
   // Modal flotante de transferencias
   const [transferenciaSeleccionada, setTransferenciaSeleccionada] =
@@ -245,6 +284,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
       },
       inscripcion: {
         id_inscripcion: alumno.id_inscripcion,
+        id_plan: alumno.id_plan,
         nombre_plan: alumno.nombre_plan,
         precio_vigente: alumno.precio_vigente,
         situacion_cuota: alumno.situacion_cuota,
@@ -940,6 +980,19 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           onClose={() => setAlumnoSeleccionado(null)}
           alumno={alumnoSeleccionado.alumno}
           inscripcion={alumnoSeleccionado.inscripcion}
+          cotizacion={cotizacionSeleccionada}
+          plan={{
+            id: String(alumnoSeleccionado.inscripcion.id_plan),
+            nombre: alumnoSeleccionado.inscripcion.nombre_plan,
+          }}
+          promociones={promociones.filter(
+            (promocion) =>
+              promocion.estado === "ACTIVA" &&
+              promocion.activo &&
+              promocion.planes.some((plan) => plan.id === String(alumnoSeleccionado.inscripcion.id_plan)),
+          )}
+          cargandoCotizacion={cargandoCotizacion}
+          errorCotizacion={errorCotizacion}
           onExito={handleCobroExitoso}
           onTransferenciaInformada={() => {
             setAlumnoSeleccionado(null);
