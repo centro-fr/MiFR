@@ -23,13 +23,12 @@ function crearHorarioApi(
     fecha_baja: null,
     actividad: {
       id_actividad: id,
+      codigo: `ACT-${id}`,
       nombre: actividadNombre,
-      tipo: "GRUPAL",
-      cupo_sugerido: 10,
-      duracion_minutos: 60,
+      descripcion: null,
+      modalidad: "GRUPAL",
+      cupo_maximo: 10,
       activo: true,
-      fecha_alta: "2026-01-01T00:00:00.000Z",
-      fecha_baja: null,
     },
     profesora: {
       id_profesora: 1,
@@ -43,8 +42,8 @@ function crearHorarioApi(
 }
 
 const profesorasMock: ProfesoraDatos[] = [
-  { id: "1", nombre: "Lucía", apellido: "Gómez", email: "lucia@gym.com" },
-  { id: "2", nombre: "Carla", apellido: "Ruiz", email: "carla@gym.com" },
+  { id: "1", idUsuario: 1, nombre: "Lucía", apellido: "Gómez" },
+  { id: "2", idUsuario: 2, nombre: "Carla", apellido: "Ruiz" },
 ];
 
 describe("SuplenciaDialog", () => {
