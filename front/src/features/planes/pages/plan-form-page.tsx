@@ -1,49 +1,17 @@
-import { type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, SearchX } from "lucide-react";
-import { toast } from "sonner";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { AlertCircle, Loader2, SearchX } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
-import { FormularioPlan } from "@/features/planes/components/formulario-plan";
 import {
   esPlanNoEncontrado,
-  useCrearPlan,
   usePlan,
-  usePlanes,
 } from "@/features/planes/hooks/use-planes";
-import { aCuerpoCreacion, type PlanFormValues } from "@/features/planes/schemas/plan";
 import { estaVigente } from "@/features/planes/utils/planes";
 
 const RUTA_LISTADO = "/app/planes";
-
-function Encabezado({ titulo, detalle, acciones }: { titulo: ReactNode; detalle: string; acciones?: ReactNode }) {
-  return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl">
-          <Link to={RUTA_LISTADO} aria-label="Volver al listado de planes">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
-              {titulo}
-            </h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-            {detalle}
-          </p>
-        </div>
-      </div>
-      {acciones}
-    </header>
-  );
-}
 
 function CargandoFormulario() {
   return (
@@ -90,56 +58,8 @@ function PlanNoDisponible({ titulo, detalle }: { titulo: string; detalle: string
   );
 }
 
-/** Actividades (para el selector) y planes (para el nombre repetido) que necesita el formulario. */
-function useDatosDelFormulario() {
-  const actividades = useActividades();
-  const planes = usePlanes();
-  const consultas = [actividades, planes];
-  return {
-    actividades: actividades.data,
-    planes: planes.data,
-    error: consultas.find((consulta) => consulta.isError)?.error ?? null,
-    reintentar: () => consultas.forEach((consulta) => void consulta.refetch()),
-  };
-}
-
 export function NuevoPlanPage() {
-  const navigate = useNavigate();
-  const crear = useCrearPlan();
-  const { actividades, planes, error, reintentar } = useDatosDelFormulario();
-
-  const guardar = (valores: PlanFormValues) => {
-    crear.mutate(aCuerpoCreacion(valores), {
-      onSuccess: (plan) => {
-        toast.success(`Plan "${plan.nombre}" creado`);
-        navigate(RUTA_LISTADO);
-      },
-    });
-  };
-
-  return (
-    <OwnerLayout>
-      <div className="space-y-6">
-        <Encabezado
-          titulo="Nuevo plan"
-          detalle="Definí el tipo, la frecuencia, la actividad y el precio del plan."
-        />
-        {actividades && planes ? (
-          <FormularioPlan
-            actividades={actividades}
-            planes={planes}
-            guardando={crear.isPending}
-            errorGuardado={crear.isError ? mensajeDeErrorApi(crear.error, "No se pudo crear el plan.") : null}
-            onGuardar={guardar}
-          />
-        ) : error ? (
-          <ErrorDeCarga error={error} onReintentar={reintentar} />
-        ) : (
-          <CargandoFormulario />
-        )}
-      </div>
-    </OwnerLayout>
-  );
+  return <Navigate to="/app/planes?nuevo=1" replace />;
 }
 
 function ContenidoEdicion({ idPlan }: { idPlan: string }) {

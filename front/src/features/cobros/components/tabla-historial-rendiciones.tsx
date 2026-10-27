@@ -36,7 +36,7 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
           No hay rendiciones en el historial
         </h3>
         <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
-          A medida que confirmes la entrega de efectivo de las profesoras, quedarán registradas acá.
+          A medida que confirmes la entrega de efectivo de los profesores, quedarán registradas acá.
         </p>
       </Card>
     );
@@ -53,7 +53,7 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
                 Fecha rendición
               </th>
               <th scope="col" className="px-4 py-3.5">
-                Profesora
+                Profesor/a
               </th>
               <th scope="col" className="px-4 py-3.5">
                 Alumno

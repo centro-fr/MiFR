@@ -2,6 +2,8 @@
 
 Tareas técnicas, secuenciales y verificables para la épica **Honorarios** (US-23 y US-24).
 
+**Regla de cálculo vigente (Sprint 5):** cada profesora recibe el 50 % de los ingresos por cuotas atribuibles a sus alumnos (pagos confirmados dentro del mes), sin mínimo de alumnos. Las suplencias de US-24 ajustan el resultado.
+
 ---
 
 ## Fase 1: Base de Datos y Estructura
@@ -11,8 +13,8 @@ Tareas técnicas, secuenciales y verificables para la épica **Honorarios** (US-
   - Configurar constraints de exclusión y claves foráneas a `clases`, `profesoras` e `inscripciones`.
   - *Criterio de verificación*: Ejecución limpia de migraciones e integridad de claves foráneas.
 
-- [ ] **1.2. Datos semilla y configuración de tarifas**
-  - Cargar parámetros de tarifa de honorarios por inscripto y valor por clase suplida.
+- [ ] **1.2. Datos semilla y configuración del porcentaje de honorarios**
+  - Cargar el parámetro de porcentaje de honorarios sobre los ingresos por cuotas (50 %) y el valor por clase suplida.
   - *Criterio de verificación*: Verificación de parámetros en tabla o archivo de configuración.
 
 ---
@@ -25,10 +27,10 @@ Tareas técnicas, secuenciales y verificables para la épica **Honorarios** (US-
   - *Criterio de verificación*: Test unitario intentando asignar a la misma profesora como ausente y suplente, confirmando rechazo con HTTP 400.
 
 - [ ] **2.2. Algoritmo de Cálculo Mensual de Honorarios (US-23)**
-  - Implementar servicio que agrupe alumnos activos por profesora en el mes calendario.
+  - Implementar servicio que sume, por profesora, los pagos confirmados dentro del mes calendario de sus inscripciones (excluye preinscripciones e inscripciones sin cargo) y aplique el 50 %.
   - Computar suplencias sumando a la suplente y descontando a la titular.
   - Persistir cabecera y detalles en tablas `liquidaciones` y `liquidacion_detalles`.
-  - *Criterio de verificación*: Caso de prueba con 10 alumnos y 1 suplencia, validando los totales matemáticos exactos.
+  - *Criterio de verificación*: Caso de prueba con una profesora con ingresos por cuotas de $200.000 en el mes y 1 suplencia, validando los totales matemáticos exactos ($100.000 más o menos el ajuste de la suplencia).
 
 - [ ] **2.3. Control de Acceso y Exportación**
   - Proteger endpoint global exclusivamente para Propietaria.
@@ -42,7 +44,7 @@ Tareas técnicas, secuenciales y verificables para la épica **Honorarios** (US-
 
 - [ ] **3.1. Panel de Honorarios de la Propietaria (US-23)**
   - Vista `/admin/honorarios` con selector de mes y tarjetas de métricas financieras.
-  - Tabla tipo acordeón por cada profesora con lista de alumnos a cargo y desglose de suplencias.
+  - Tabla tipo acordeón por cada profesora con lista de alumnos a cargo, monto cobrado por alumno y desglose de suplencias.
   - Botones de exportación a PDF y Excel.
   - *Criterio de verificación*: Visualización clara de los honorarios discriminados por profesora con botón funcional de descarga.
 
@@ -58,7 +60,8 @@ Tareas técnicas, secuenciales y verificables para la épica **Honorarios** (US-
 
 ## Fase 4: Validación End-to-End y Criterios de Aceptación
 
-- [ ] **4.1. Verificación CA-01**: Comprobación de que el honorario se calcula por inscripto activo con independencia de asistencias.
+- [ ] **4.1. Verificación CA-01**: Comprobación de que el honorario es el 50 % de los pagos confirmados del mes de la profesora, con independencia de asistencias y de la cantidad de alumnos.
 - [ ] **4.2. Verificación CA-02**: Registro de suplencia y reflejo inmediato en el débito de la titular y crédito de la suplente.
 - [ ] **4.3. Verificación CA-03**: Verificación de bloqueo de permisos para profesoras sobre el informe global.
 - [ ] **4.4. Verificación CA-04**: Generación y descarga de archivo de exportación de honorarios.
+- [ ] **4.5. Verificación de casos borde**: Pagos pendientes o rechazados que no suman, pagos fuera del mes que no suman, bajas que sí cobraron, inscripciones sin cargo y preinscripciones excluidas, y profesora sin ingresos con honorario cero.

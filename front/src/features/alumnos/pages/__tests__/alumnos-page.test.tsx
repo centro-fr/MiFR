@@ -166,6 +166,6 @@ describe("AlumnosPage", () => {
     });
 
     renderListado();
-    expect(screen.queryByLabelText("Profesora")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Profesor/a")).not.toBeInTheDocument();
   });
 });

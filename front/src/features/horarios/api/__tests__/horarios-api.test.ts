@@ -3,6 +3,7 @@ import { apiClient } from "@/api/client";
 import {
   listarProfesoras,
   listarHorarios,
+  listarHorariosDeProfesora,
   crearHorario,
   actualizarHorario,
   darDeBajaHorario,
@@ -55,6 +56,17 @@ describe("API de Horarios", () => {
     it("rechaza si el backend devuelve un formato inesperado", async () => {
       vi.mocked(apiClient.get).mockResolvedValue({ data: { error: "no es un array" } });
       await expect(listarHorarios()).rejects.toThrow();
+    });
+  });
+
+  describe("listarHorariosDeProfesora", () => {
+    it("pasa el id_profesora por query params y valida la respuesta", async () => {
+      const mockData = [crearHorarioMock()];
+      vi.mocked(apiClient.get).mockResolvedValue({ data: mockData });
+
+      const resultado = await listarHorariosDeProfesora(5);
+      expect(resultado).toEqual(mockData);
+      expect(apiClient.get).toHaveBeenCalledWith("/horarios", { params: { id_profesora: "5" } });
     });
   });
 

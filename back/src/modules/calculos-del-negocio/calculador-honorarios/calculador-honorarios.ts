@@ -70,6 +70,10 @@ function totalizar(detalles: DetalleHonorario[]): Map<number, number> {
 
 // Cálculo puro: recibe todo lo que necesita y no lee la base. Cada concepto tiene su fórmula
 // (ALUMNO_A_CARGO, CLASE_SUPLIDA y DESCUENTO_AUSENCIA) y comparten la búsqueda de la tarifa vigente.
+//
+// Regla vigente (Sprint 5): cada profesora recibe un porcentaje (50 %) de lo cobrado en el período por
+// sus alumnos, sin mínimo de alumnos. La tarifa de ALUMNO_A_CARGO solo puede ser de tipo PORCENTAJE; la
+// de HORA_SUPLENCIA sigue siendo un monto fijo por hora.
 export class CalculadorHonorarios implements ICalculoHonorarios {
   calcular(datos: DatosHonorarios): ResultadoHonorarios {
     const detalles: DetalleHonorario[] = [];
@@ -79,21 +83,22 @@ export class CalculadorHonorarios implements ICalculoHonorarios {
       const dia = diaDeLaLinea(inscripcion, datos.finDelPeriodo);
       const { id_profesora, id_plan, id_inscripcion } = inscripcion;
       const tarifa = buscarTarifa(datos.tarifas, id_profesora, "ALUMNO_A_CARGO", id_plan, dia);
-      if (!tarifa) {
+      if (!tarifa || tarifa.tipo_valor === "MONTO_FIJO") {
         advertencias.push({
           id_profesora,
           concepto: "ALUMNO_A_CARGO",
-          motivo: "SIN_TARIFA",
+          motivo: tarifa ? "TARIFA_NO_APLICABLE" : "SIN_TARIFA",
           id_inscripcion,
           id_clase: null,
           fecha: dia,
         });
         continue;
       }
-      const monto =
-        tarifa.tipo_valor === "MONTO_FIJO"
-          ? tarifa.valor
-          : redondearAlCentavo(((datos.cobradoEnElPeriodo.get(id_inscripcion) ?? 0) * tarifa.valor) / 100);
+      const cobrado = datos.cobradoEnElPeriodo.get(id_inscripcion) ?? 0;
+      const monto = redondearAlCentavo((cobrado * tarifa.valor) / 100);
+      // Una inscripción que no cobró nada en el período (por ejemplo, una baja que nunca pagó) no
+      // genera honorarios: no se guarda una línea de 0,00.
+      if (monto === 0) continue;
       detalles.push({
         id_profesora,
         concepto: "ALUMNO_A_CARGO",

@@ -75,14 +75,14 @@ describe("HorariosPage", () => {
     expect(screen.getByRole("button", { name: "+ Nuevo horario" })).toBeInTheDocument();
   });
 
-  it("renderiza los selectores de filtros de Profesora y Actividad", () => {
+  it("renderiza los selectores de filtros de Profesor/a y Actividad", () => {
     render(
       <MemoryRouter>
         <HorariosPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("combobox", { name: "Filtrar por profesora" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Filtrar por profesor/a" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Filtrar por disciplina" })).toBeInTheDocument();
   });
 

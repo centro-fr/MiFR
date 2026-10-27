@@ -24,11 +24,6 @@ function textoActividadCard(plan: Plan): string {
   return `Solo ${plan.actividad.nombre}`;
 }
 
-function textoProfesoraCard(plan: Plan): string {
-  if (!plan.profesoraUnica) return "Con cualquier profesora";
-  return "Solo con la profesora a cargo";
-}
-
 interface AccionesDeLaTarjeta {
   onActualizarPrecio: (plan: Plan) => void;
   onEditarPlan?: (plan: Plan) => void;
@@ -83,7 +78,6 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
         <ul className="flex flex-col gap-1 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 my-2">
           <li>{textoFrecuenciaCard(plan)}</li>
           <li>{textoActividadCard(plan)}</li>
-          <li>{textoProfesoraCard(plan)}</li>
         </ul>
       </div>
 

@@ -5,16 +5,18 @@
 ### 1.1. Backend
 
 - Módulo `actividades` y `horarios` estructurado con arquitectura en capas (Controlador -> Servicio -> Repositorio).
+- **Módulo de Gestión de Profesoras (US-38)**: Arquitectura en capas (`profesor.controller`, `profesor.service`, `profesor.repository`) bajo `gestion-personas/profesor`. Valida que el `id_usuario` exista, esté `ACTIVO`, posea el rol `PROFESORA` asignado y no tenga ya un perfil vinculado.
 - **Validación de Solapamiento Horario**: Algoritmo ejecutado en el `HorarioService` antes de cualquier inserción o actualización:
   $$\text{Existe solapamiento si: } \text{dia\_semana} = D \land \text{id\_profesora} = P \land (\text{nueva\_inicio} < \text{existente\_fin}) \land (\text{nueva\_fin} > \text{existente\_inicio}) \land \text{id\_horario} \neq \text{actual}$$
-- **Soft Deletes**: Inclusión de flags `activo` y marcas temporales `fecha_baja` para actividades y horarios.
-- **Protección de Rutas**: Endpoints protegidos con `requirePermission('configuracion.actividades.gestionar')` y `requirePermission('configuracion.horarios.gestionar')`.
+- **Soft Deletes**: Inclusión de flags `activo` y marcas temporales `fecha_baja` para actividades, horarios y profesoras.
+- **Protección de Rutas**: Endpoints protegidos con permisos `HORARIOS_VER` (lectura) y rol `PROPIETARIA` + `HORARIOS_EDITAR` (alta y baja).
 
 ### 1.2. Frontend
 
-- Interfaz gráfica en React con selector de vista:
+- Interfaz gráfica en React bajo `OwnerLayout`:
   - **Grilla Semanal (Desktop)**: Calendario de columnas (Lunes a Domingo) con bloques horarios posicionados por hora, código de colores por disciplina y avatar de la profesora.
   - **Lista Agrupada (Mobile)**: Acordeón o pestañas por día de la semana.
+  - **Gestión de Plantel Docente (US-38)**: Pestaña/sección de administración de profesoras con tarjeta/tabla de estado, indicador de especialidad y modal de alta flotante centrado.
 - Formulario de alta/edición con lógica reactiva: al seleccionar `tipo = 'PERSONALIZADA'`, el input `cupo_maximo` pasa automáticamente a requerido con validación zod/yup.
 
 ---
@@ -22,6 +24,15 @@
 ## 2. Modelo de Datos (DER MiFR)
 
 ```sql
+-- Plantel de Profesoras (US-38)
+CREATE TABLE profesoras (
+    id_profesora SERIAL PRIMARY KEY,
+    id_usuario INT UNIQUE NOT NULL REFERENCES usuarios(id_usuario) ON DELETE NO ACTION,
+    especialidad VARCHAR(80) NULL,
+    fecha_alta DATE NOT NULL DEFAULT CURRENT_DATE,
+    fecha_baja DATE NULL
+);
+
 -- Catálogo de Actividades
 CREATE TABLE actividades (
     id_actividad SERIAL PRIMARY KEY,
@@ -74,6 +85,18 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
 - `PUT /api/v1/horarios/:id`: Modifica un horario existente.
 - `DELETE /api/v1/horarios/:id`: Desactiva un horario marcando `fecha_baja`.
 
+### 3.3. Plantel de Profesoras (`/api/profesoras` - US-38)
+
+- `GET /api/profesoras`: Retorna listado de profesoras activas (`fecha_baja IS NULL`) con `{ id_profesora, id_usuario, especialidad, fecha_alta, fecha_baja, usuario: { nombre, apellido } }`.
+  - Permiso requerido: `HORARIOS_VER`.
+- `POST /api/profesoras`: Registra un perfil de profesora para un usuario del sistema.
+  - Rol / Permiso requerido: `PROPIETARIA` + `HORARIOS_EDITAR`.
+  - Body: `{ "id_usuario": 2, "especialidad": "Posing" }` (especialidad opcional, máx 80 caracteres).
+  - Validaciones: `400 Bad Request` si el usuario no está `ACTIVO` o no tiene asignado el rol `PROFESORA`; `409 Conflict` si ya tiene perfil de profesora asignado.
+- `DELETE /api/profesoras/:id`: Baja lógica aplicando `fecha_baja = CURRENT_DATE`.
+  - Rol / Permiso requerido: `PROPIETARIA` + `HORARIOS_EDITAR`.
+  - Validaciones: `404 Not Found` si no existe; `409 Conflict` si ya está dada de baja o si posee horarios vigentes asignados.
+
 ---
 
 ## 4. Flujos Principales
@@ -95,10 +118,28 @@ CREATE INDEX idx_horarios_actividad ON horarios(id_actividad) WHERE fecha_baja I
      |<-- 8. Actualiza grilla --|                                |                                 |
 ```
 
+### 4.2. Alta de Profesora con Validación de Rol (US-38)
+
+```text
+[Propietaria]               [Frontend]                     [Backend API]                    [Base de Datos]
+     |                          |                                |                                 |
+     |--- 1. Selecciona usuario->|                                |                                 |
+     |    (id_usuario, espec.)  |--- 2. POST /api/profesoras --->|                                 |
+     |                          |                                |-- 3. Obtiene usuario y estado ->|
+     |                          |                                |-- 4. ¿Está ACTIVO y con rol?   |
+     |                          |                                |    [NO] -> 400 Bad Request      |
+     |                          |                                |-- 5. ¿Perfil preexistente?      |
+     |                          |                                |    [SÍ] -> 409 Conflict         |
+     |                          |                                |-- 6. INSERT INTO profesoras --->|
+     |                          |<-- 7. 201 Created -------------|                                 |
+     |<-- 8. Actualiza lista ---|                                |                                 |
+```
+
 ---
 
 ## 5. Consideraciones de Seguridad y Roles
 
-- Las operaciones de escritura (`POST`, `PUT`, `DELETE`) sobre actividades y horarios están reservadas a la `PROPIETARIA`.
-- Las `PROFESORAS` solo disponen de permisos de lectura para consultar su agenda personal.
+- Las operaciones de escritura (`POST`, `PUT`, `DELETE`) sobre actividades, horarios y profesoras están reservadas a la `PROPIETARIA` con permiso `HORARIOS_EDITAR`.
+- Las consultas sobre actividades, horarios y profesoras requieren el permiso `HORARIOS_VER`.
+- Las `PROFESORAS` solo disponen de permisos de lectura para consultar su agenda personal y horarios asignados.
 - La validación de que `id_profesora` pertenezca a un registro activo en la tabla `profesoras` es obligatoria a nivel de base de datos y regla de servicio.

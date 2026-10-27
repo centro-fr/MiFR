@@ -6,8 +6,8 @@ import { normalizarParaBuscar } from "@/utils/texto";
 // Lógica de la pantalla de planes (US-11). Funciones puras: se testean sin render.
 
 export const ETIQUETA_TIPO_PLAN: Record<TipoPlan, string> = {
-  MENSUAL: "Mensual",
-  CLASE_SUELTA: "Clase suelta",
+  MENSUAL: "Abono mensual",
+  CLASE_SUELTA: "Pase por clase individual",
 };
 
 export function textoFrecuencia(tipo: TipoPlan | "", clasesPorSemana: number | null): string {

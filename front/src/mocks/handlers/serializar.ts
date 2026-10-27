@@ -29,10 +29,19 @@ export function usuarioConRoles(usuario: UsuarioSemilla) {
   };
 }
 
-// Profesora del back: trae el nombre y apellido de su usuario.
+// Profesora del back: trae el nombre, apellido, email, telefono y fecha_nacimiento de su usuario.
 export function profesoraConNombre(profesora: ProfesoraMock) {
   const usuario = db.usuarios.find((u) => u.id_usuario === profesora.id_usuario)!;
-  return { ...profesora, usuario: { nombre: usuario.nombre, apellido: usuario.apellido } };
+  return {
+    ...profesora,
+    usuario: {
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      email: usuario.email,
+      telefono: usuario.telefono ?? null,
+      fecha_nacimiento: usuario.fecha_nacimiento ?? null,
+    },
+  };
 }
 
 // El back guarda las horas como TIME y las serializa sobre el 1970-01-01 en UTC.

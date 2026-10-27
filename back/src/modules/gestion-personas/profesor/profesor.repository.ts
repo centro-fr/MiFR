@@ -25,9 +25,9 @@ export class ProfesorRepository {
     return this.prisma.profesoras.findUnique({ where: { id_usuario: idUsuario }, include: CON_NOMBRE });
   }
 
-  listar(): Promise<Profesora[]> {
+  listar(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
     return this.prisma.profesoras.findMany({
-      where: { fecha_baja: null },
+      where: filtro?.incluirBajas ? undefined : { fecha_baja: null },
       include: CON_NOMBRE,
       orderBy: { id_profesora: "asc" },
     });

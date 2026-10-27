@@ -15,7 +15,7 @@ import type { Profesora } from "../profesor/profesor.types.js";
 
 export interface ILogicaProfesoras {
   crearProfesora(input: CrearProfesoraInput): Promise<Profesora>;
-  listarProfesoras(): Promise<Profesora[]>;
+  listarProfesoras(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]>;
   darDeBajaProfesora(id: number): Promise<Profesora>;
 }
 

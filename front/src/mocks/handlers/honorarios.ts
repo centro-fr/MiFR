@@ -52,11 +52,18 @@ function detallesDe(idLiquidacion: number): LiquidacionDetalleMock[] {
 
 // LiquidacionConProfesora del back.
 function liquidacionConProfesora(liquidacion: LiquidacionMock) {
+  const detalles = detallesDe(liquidacion.id_liquidacion);
+  const lineasAlumnos = detalles.filter((d) => d.concepto === "ALUMNO_A_CARGO");
+  const lineasSuplencias = detalles.filter((d) => d.concepto === "CLASE_SUPLIDA" || d.concepto === "DESCUENTO_AUSENCIA");
+
   return {
     ...liquidacion,
     periodo_desde: diaComoFecha(liquidacion.periodo_desde),
     periodo_hasta: diaComoFecha(liquidacion.periodo_hasta),
     profesora: profesora(liquidacion.id_profesora),
+    cantidad_alumnos: lineasAlumnos.length,
+    subtotal_alumnos: sumarMontos(lineasAlumnos.map((d) => d.monto)),
+    subtotal_suplencias: sumarMontos(lineasSuplencias.map((d) => d.monto)),
   };
 }
 
@@ -73,8 +80,38 @@ function informe(periodo: string) {
 }
 
 function alumnoDeLaLinea(idInscripcion: number) {
-  const inscripcion = INSCRIPCIONES_HONORARIOS.find((i) => i.id_inscripcion === idInscripcion)!;
-  return ALUMNOS_HONORARIOS.find((a) => a.id_alumno === inscripcion.id_alumno)!;
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === idInscripcion);
+  if (inscripcion) {
+    const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
+    const persona = db.usuariosPersonas.find((u) => u.id_usuario === alumno?.id_usuario);
+    if (persona) {
+      return {
+        id_alumno: inscripcion.id_alumno,
+        nombre: persona.nombre,
+        apellido: persona.apellido,
+      };
+    }
+  }
+  const inscripcionMock = INSCRIPCIONES_HONORARIOS.find((i) => i.id_inscripcion === idInscripcion);
+  if (inscripcionMock) {
+    const alumnoMock = ALUMNOS_HONORARIOS.find((a) => a.id_alumno === inscripcionMock.id_alumno);
+    if (alumnoMock) return alumnoMock;
+  }
+  return { id_alumno: 0, nombre: "Alumno", apellido: `#${idInscripcion}` };
+}
+
+function inscripcionDeLaLinea(idInscripcion: number) {
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === idInscripcion);
+  if (!inscripcion) return undefined;
+  const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
+  return {
+    estado: inscripcion.estado as "ACTIVA" | "BAJA",
+    fecha_baja: inscripcion.fecha_baja,
+    plan: {
+      id_plan: inscripcion.id_plan,
+      nombre: plan?.nombre ?? `Plan ${inscripcion.id_plan}`,
+    },
+  };
 }
 
 function claseDeLaLinea(idClase: number) {
@@ -97,6 +134,7 @@ function detalleConDatos(detalle: LiquidacionDetalleMock) {
     id_clase: detalle.id_clase,
     monto: detalle.monto,
     alumno: detalle.id_inscripcion === null ? null : alumnoDeLaLinea(detalle.id_inscripcion),
+    inscripcion: detalle.id_inscripcion === null ? undefined : inscripcionDeLaLinea(detalle.id_inscripcion),
     clase: detalle.id_clase === null ? null : claseDeLaLinea(detalle.id_clase),
   };
 }

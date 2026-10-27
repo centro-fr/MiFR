@@ -106,7 +106,7 @@ export function ResumenPlanCuota({ planData }: Props) {
               {inscripcion?.nombre_profesora && (
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="size-3.5 text-slate-400" aria-hidden="true" />
-                  Profesora: {inscripcion.nombre_profesora}
+                  Profesor/a: {inscripcion.nombre_profesora}
                 </span>
               )}
               {situacion_cuota?.fecha_vencimiento && (

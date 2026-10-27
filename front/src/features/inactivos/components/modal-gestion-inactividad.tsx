@@ -37,21 +37,21 @@ const OPCIONES_ESTADO: Array<{
   icono: typeof Clock;
   colorActivo: string;
 }> = [
-  {
-    valor: "CONTACTADO",
-    titulo: "Contactado",
-    descripcion: "Se envió mensaje o se llamó para conocer el motivo de la inasistencia e incentivar el regreso.",
-    icono: Clock,
-    colorActivo: "border-sky-500 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
-  },
-  {
-    valor: "IGNORADO",
-    titulo: "Ignorar por ahora",
-    descripcion: "Se decide no contactar en este momento. Se oculta del listado principal de alertas.",
-    icono: Ban,
-    colorActivo: "border-slate-500 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200",
-  },
-];
+    {
+      valor: "CONTACTADO",
+      titulo: "Contactado",
+      descripcion: "Se envió mensaje o se llamó para conocer el motivo de la inasistencia e incentivar el regreso.",
+      icono: Clock,
+      colorActivo: "border-sky-500 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
+    },
+    {
+      valor: "IGNORADO",
+      titulo: "Ignorar por ahora",
+      descripcion: "Se decide no contactar en este momento. Se oculta del listado principal de alertas.",
+      icono: Ban,
+      colorActivo: "border-slate-500 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200",
+    },
+  ];
 
 export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
   const registrar = useRegistrarSeguimiento();
@@ -110,11 +110,11 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
         {/* Encabezado con título y botón de cierre */}
         <DialogHeader className="flex flex-row items-start justify-between pb-2 text-left">
           <div className="space-y-1 pr-4">
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Seguimiento de alumno
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Acción proactiva para incentivar el reintegro de alumnos con cuota al día.
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              Acción proactiva para incentivar el reintegro
             </p>
           </div>
           <Button
@@ -139,7 +139,7 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
               </p>
               {contacto.esTutor && (
                 <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 mt-0.5">
-                  Tutor a cargo: {contacto.nombreCompleto} (menor de edad)
+                  Tutor a cargo: {contacto.nombreCompleto}
                 </p>
               )}
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1">

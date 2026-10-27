@@ -2,7 +2,7 @@ import { ConflictError, NotFoundError, ValidationError } from "../../../shared/e
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { RegistrarTarifaInput } from "./tarifa-honorario.schemas.js";
 import type { TarifaHonorarioRepository } from "./tarifa-honorario.repository.js";
-import type { FiltroTarifa, TarifaHonorario } from "./tarifa-honorario.types.js";
+import type { FiltroTarifa, TarifaHonorario, TarifaHonorarioConPlan } from "./tarifa-honorario.types.js";
 
 // Solo lo que el service necesita de los otros módulos.
 export interface ProfesoraLookup {
@@ -19,7 +19,7 @@ export class TarifaHonorarioService {
     private readonly planes: PlanLookup,
   ) {}
 
-  listar(filtro: FiltroTarifa): Promise<TarifaHonorario[]> {
+  listar(filtro: FiltroTarifa): Promise<TarifaHonorarioConPlan[]> {
     return this.repositorio.listar(filtro);
   }
 

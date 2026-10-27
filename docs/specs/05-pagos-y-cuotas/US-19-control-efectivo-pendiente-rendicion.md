@@ -9,103 +9,102 @@
 
 ## 2. Objetivo
 
-Permitir a la propietaria controlar los cobros en efectivo pendientes de rendición por parte de cada profesora, para cerrar la caja de manera consistente.
+Permitir a la Propietaria controlar, verificar y asentar la entrega física de los cobros en efectivo recaudados por las profesoras, soportando rendiciones totales o parciales y manteniendo un historial auditable para el cierre de caja.
 
 ## 3. Descripción
 
-Como propietaria, quiero controlar los cobros en efectivo pendientes de rendición por parte de cada profesora para cerrar la caja de manera consistente.
+Como propietaria, quiero consultar el efectivo recaudado por cada profesora que aún no ha sido entregado en administración, ver el desglose de los cobros individuales y registrar las rendiciones (totales o parciales con selección múltiple), para mantener la caja física del centro cuadrada y con trazabilidad completa.
 
 ## 4. Estados de la pantalla / flujo
 
-- [ ] Loading (cargando cobros pendientes)
-- [ ] Listado de cobros pendientes agrupados por profesora
-- [ ] Detalle de un cobro
-- [ ] Marcar cobro como rendido
-- [ ] Confirmación
-- [ ] Éxito (cobro marcado como rendido)
-- [ ] Error
-- [ ] Empty (no hay cobros pendientes de rendición)
-- [ ] Historial de rendiciones (opcional)
+- [ ] **Acceso en Cobros (`CobrosPage`)**: Subpestaña "Efectivo a rendir" en `/admin/cobros`.
+- [ ] **Panel de Efectivo a Rendir (`PanelEfectivoARendir`)**:
+  - **Tarjeta de Resumen Global**: Muestra el monto total de efectivo pendiente en manos del plantel docente y la cantidad de profesoras con cobros a rendir.
+  - **Subpestaña "Pendientes de rendición"**: Acordeón por docente (`AcordeonProfesoraRendicion`).
+  - **Subpestaña "Historial de rendiciones"**: Tabla de rendiciones históricas completadas (`TablaHistorialRendiciones`).
+- [ ] **Acordeón por Profesora**: Cada tarjeta docente muestra su nombre, avatar, total acumulado y cantidad de pagos; al expandirse, despliega la tabla de cobros con checkboxes para selección individual o total.
+- [ ] **Modal de Confirmación de Rendición (`ModalConfirmarRendicion`)**: Diálogo emergente que detalla el monto exacto a asentar, los cobros seleccionados (rendición parcial o total), campo de observaciones y botón de confirmación.
+- [ ] **Éxito**: Los cobros rendidos desaparecen de la vista de pendientes, descuentan del saldo de la profesora y se incorporan al historial de rendiciones.
+- [ ] **Empty**: Estado visual cuando no hay cobros en efectivo pendientes de rendición en el centro.
 
 ## 5. Datos que necesita
 
-### Datos que muestra (listado)
+### Datos que muestra (Listado de pendientes)
 
-- Profesora (agrupador)
-- Total pendiente por profesora
-- Cantidad de cobros pendientes por profesora
-- Detalle de cada cobro:
-  - Alumno
-  - Monto
-  - Fecha del cobro
-  - Plan / período cubierto
-  - Comprobante asociado (si aplica)
+- **Total general pendiente**: Sumatoria del efectivo en poder de todas las docentes.
+- **Por profesora**:
+  - Nombre y apellido de la docente.
+  - Total a rendir acumulado.
+  - Cantidad de cobros pendientes.
+  - Desglose de cobros:
+    - Alumno que abonó.
+    - Plan / concepto cubierto.
+    - Fecha y hora del cobro.
+    - Monto cobrado.
+    - Checkbox de selección para la rendición.
 
-### Datos que se generan al marcar como rendido
+### Datos del registro de rendición (`ModalConfirmarRendicion`)
 
-- Estado: `rendido`
-- Fecha de rendición
-- Usuario que registró la rendición (la propietaria)
-- Observaciones (opcional)
+- **Profesora**: Docente que rinde el dinero.
+- **Monto total a asentar**: Suma de los cobros seleccionados.
+- **Cobros incluidos**: Lista de identificadores de pago (`pagosIds`).
+- **Observaciones**: Nota opcional de cierre de entrega.
+
+### Datos del historial de rendiciones
+
+- **Fecha y hora de la rendición**.
+- **Profesora que entregó el dinero**.
+- **Monto rendido**.
+- **Cantidad de cobros incluidos**.
+- **Usuario receptor** (la Propietaria autenticada).
+- **Observaciones registradas**.
 
 ## 6. Acciones del usuario
 
-- Ver el listado de cobros pendientes agrupados por profesora
-- Expandir para ver el detalle por profesora
-- Ver el detalle de un cobro individual
-- Marcar un cobro como rendido
-- Marcar todos los cobros de una profesora como rendidos (opcional)
-- Filtrar por profesora o por rango de fechas
-- Ver historial de rendiciones anteriores
+- Ver el resumen general de dinero en poder de las profesoras.
+- Expandir el acordeón de una profesora para auditar sus cobros en efectivo.
+- Seleccionar todos los cobros de una profesora para una rendición total.
+- Marcar cobros específicos mediante checkboxes para realizar una **rendición parcial**.
+- Abrir el modal de confirmación, revisar el importe y asentar la rendición.
+- Consultar la pestaña "Historial de rendiciones" con buscador por profesora o fecha.
 
 ## 7. Reglas de negocio
 
-- Se deben listar los **cobros en efectivo no rendidos**, agrupados por profesora.
-- Cada cobro queda en estado `pendiente de rendición` al registrarse (US-15).
-- La propietaria puede marcar un cobro como `rendido` cuando la profesora le entrega el efectivo.
-- Un cobro marcado como rendido **deja de aparecer** en el listado de pendientes.
-- El historial de rendiciones se conserva para trazabilidad.
-- Se debe mostrar el **total por profesora** para facilitar el cierre de caja.
-- Los cobros registrados por la propietaria misma (no por una profesora) **no requieren rendición** (o se marcan automáticamente como rendidos).
-- Un cobro no puede rendirse dos veces.
-- La rendición queda registrada con fecha y usuario.
+1. **Origen Automático**: Cada cobro en efectivo registrado por una docente en US-15 genera de forma automática un registro en estado `pendiente_rendicion = true`.
+2. **Exclusión de Cobros de Propietaria**: El dinero cobrado directamente por la propietaria no genera pendiente de rendición, ya que se encuentra en la caja central desde su origen.
+3. **Soporte de Rendición Parcial y Total**: La propietaria puede confirmar la entrega de todos los cobros de una docente de una sola vez o seleccionar únicamente los pagos efectivamente entregados en mano.
+4. **Inmutabilidad y Preservación**: Una vez asentada la rendición, los cobros involucrados quedan sellados con `rendido = true`, fecha de rendición y usuario que la recibió; no pueden rendirse nuevamente.
+5. **Historial Permanente**: Las rendiciones pasadas quedan archivadas en el historial de rendiciones para auditorías contables del centro.
 
 ## 8. Criterios de aceptación
 
-- [ ] Listado de efectivo pendiente por profesora → muestra el detalle correcto
-- [ ] Marcado de un cobro como rendido → deja de aparecer como pendiente
-- [ ] El total por profesora se calcula correctamente
-- [ ] Los cobros registrados por la propietaria no aparecen en el listado de rendiciones
-- [ ] El historial de rendiciones conserva los cobros ya rendidos
-- [ ] Un cobro no puede marcarse como rendido dos veces
+- [ ] **CA-01 (Visualización de efectivo a rendir)**: La propietaria visualiza el total acumulado y el listado de docentes con efectivo pendiente.
+- [ ] **CA-02 (Rendición total)**: Seleccionar todos los cobros de una docente y confirmar → el saldo de la docente pasa a $0 y los ítems pasan al historial.
+- [ ] **CA-03 (Rendición parcial)**: Seleccionar 2 de 4 cobros pendientes y confirmar → solo los 2 seleccionados se asientan; el saldo restante sigue visible como pendiente.
+- [ ] **CA-04 (Trazabilidad en historial)**: La rendición asentada se visualiza inmediatamente en `TablaHistorialRendiciones` con fecha, monto y usuario receptor.
+- [ ] **CA-05 (Empty State)**: Cuando todas las docentes tienen sus cajas rendidas, el panel muestra un mensaje visual de caja al día.
 
 ## 9. Casos borde / Errores
 
-- Cobro sin profesora asociada (registrado directamente por la propietaria) → no listar en pendientes
-- Profesora dada de baja con cobros pendientes → mostrar en el listado (para poder rendir igual)
-- Cobro pendiente muy antiguo → destacar visualmente
-- Marcar un cobro como rendido por error → permitir revertir (con permisos especiales, opcional para MVP)
-- Error de red al marcar como rendido
+- Docente que rinde importe en una fecha posterior a la baja lógica → el sistema permite listar y asentar el cobro pendiente normalmente.
+- Intento de enviar una rendición sin seleccionar ningún cobro → el botón "Confirmar rendición" permanece deshabilitado hasta seleccionar al menos un ítem.
 
-## 10. Dependencias
+## 10. Dependencias y Trazabilidad
 
-- US-15 (registro de cobros en efectivo que genera los pendientes)
-- US-23 (honorarios, que consideran los cobros rendidos)
-- US-26 (resumen diario para la propietaria, que incluye efectivo pendiente)
-- US-01, US-02 (permisos: solo la propietaria accede)
-- Backend: endpoint de listado de pendientes + endpoint de marcado como rendido
+- **US-15**: Registro de cobros en efectivo por parte de las docentes que alimenta este módulo.
+- **US-23**: Liquidación de honorarios (el efectivo cobrado se concilia con las liquidaciones docentes).
+- **Backend**:
+  - `GET /api/v1/pagos/pendientes-rendicion`: listado agrupado por profesora.
+  - `POST /api/v1/pagos/rendiciones`: registro de la entrega con lista de pagos e importe.
+  - `GET /api/v1/pagos/rendiciones/historial`: consulta para la tabla histórica.
 
-## 11. Notas de implementación (Front)
+## 11. Notas de implementación (Frontend)
 
-- Se puede implementar completamente con mocks
-- Complejidad: Media
-- Recomendación de UI:
-  - Vista de acordeón: una fila por profesora, expandible para ver el detalle
-  - Cada profesora muestra: nombre, total pendiente, cantidad de cobros
-  - Al expandir, tabla con: alumno, monto, fecha, período, acción (marcar como rendido)
-  - Botón "Marcar todos como rendidos" por profesora (con confirmación)
-  - Contador de pendientes visible en el menú
-  - Historial de rendiciones en pestaña separada
-  - Total general visible al pie (suma de todos los pendientes)
-  - Formato de moneda consistente
-  - Destacar cobros con más de X días pendientes (por ejemplo, 15 días)
+- **Ubicación en UI**: Ruta `/admin/cobros` (pestaña "Efectivo a rendir").
+- **Componentes clave**:
+  - `PanelEfectivoARendir`: Contenedor principal del módulo.
+  - `AcordeonProfesoraRendicion`: Acordeón interactivo con checkboxes de selección y cálculo reactivo de subtotales.
+  - `ModalConfirmarRendicion`: Diálogo flotante centrado de confirmación y observaciones.
+  - `TablaHistorialRendiciones`: Tabla auditable de rendiciones efectuadas.
+  - `useRendiciones`: Hook TanStack Query para sincronización de saldos en tiempo real.
+- **Tests**: `efectivo-a-rendir.test.tsx` (12 tests) y `pagos-rendicion.test.ts`.

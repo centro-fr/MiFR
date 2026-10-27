@@ -389,7 +389,7 @@ function SwitchRoles({
               : "text-slate-400 hover:text-white",
           )}
         >
-          Profesora
+          Profesor/a
         </button>
       </div>
     </div>

@@ -1,5 +1,4 @@
 import { Info, TriangleAlert } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { BadgeModalidad } from "@/features/planes/components/badges-plan";
 import { CampoPlan, SeccionPlan } from "@/features/planes/components/campo-plan";
@@ -157,7 +156,7 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
   const actividad = actividades.find(({ id }) => id === valores.idActividad);
   const grupo = (modalidad: Actividad["modalidad"]) => actividades.filter((a) => a.modalidad === modalidad);
   return (
-    <SeccionPlan titulo="2. Actividad y profesora" color="bg-blue-500">
+    <SeccionPlan titulo="2. Actividad y profesor/a" color="bg-blue-500">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <CampoPlan id="plan-actividad" etiqueta="Actividad" error={errores.idActividad} ayuda="Elegí una si el plan es solo para esa actividad.">
           {(control) => (
@@ -183,16 +182,6 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
         </div>
       </div>
       <AvisoModalidad actividad={actividad} />
-      <label htmlFor="plan-profesora-unica" className="flex min-h-[44px] cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-white/15">
-        <span className="flex flex-col">
-          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Solo con la profesora a cargo</span>
-          <span className="text-sm text-muted-foreground">
-            Activado, todos sus horarios son de la profesora a cargo de su inscripción. Desactivado, pueden ser de otra, pero siempre de
-            una sola.
-          </span>
-        </span>
-        <Switch id="plan-profesora-unica" checked={valores.profesoraUnica} onCheckedChange={(profesoraUnica) => onChange({ profesoraUnica })} />
-      </label>
     </SeccionPlan>
   );
 }

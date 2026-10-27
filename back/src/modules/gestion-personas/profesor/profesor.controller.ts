@@ -4,8 +4,9 @@ import type { CrearProfesoraInput } from "./profesor.schemas.js";
 
 export function createProfesorController(logica: ILogicaProfesoras) {
   return {
-    async listar(_req: Request, res: Response) {
-      res.json(await logica.listarProfesoras());
+    async listar(req: Request, res: Response) {
+      const incluirBajas = req.query.incluirBajas === "true" || req.query.incluir_bajas === "true";
+      res.json(await logica.listarProfesoras({ incluirBajas }));
     },
 
     async crear(req: Request, res: Response) {

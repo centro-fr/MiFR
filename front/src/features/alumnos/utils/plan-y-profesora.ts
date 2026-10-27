@@ -89,3 +89,76 @@ export function profesorasDelPlan(profesoras: ProfesoraDatos[], horarios: Horari
     return grupos.some((g) => g.horarios.length >= requeridas);
   });
 }
+
+export interface ActividadDisponibleParaPlan {
+  id: number;
+  nombre: string;
+}
+
+/**
+ * Devuelve las actividades compatibles con el plan seleccionado y los horarios disponibles.
+ * - Si no hay plan seleccionado, devuelve una lista vacía.
+ * - Si el plan tiene actividad exclusiva, sólo devuelve esa actividad.
+ * - Si el plan es general, excluye las actividades exclusivas de otros planes y verifica
+ *   que al menos una profesora (o la profesora asignada si es fija) ofrezca al menos tantas
+ *   clases en días distintos como las requeridas por el plan.
+ */
+export function actividadesDelPlan(
+  horarios: HorarioApi[],
+  planes: ReglasDelPlan[],
+  planActual: ReglasDelPlan | null,
+  idProfesoraFija?: number | null,
+): ActividadDisponibleParaPlan[] {
+  if (!planActual) return [];
+
+  // 1. Si el plan tiene actividad exclusiva, únicamente esa es válida
+  if (planActual.id_actividad_exclusiva != null) {
+    const horarioExclusivo = horarios.find((h) => h.id_actividad === planActual.id_actividad_exclusiva);
+    if (!horarioExclusivo) return [];
+    return [{ id: horarioExclusivo.id_actividad, nombre: horarioExclusivo.actividad.nombre }];
+  }
+
+  // 2. IDs de actividades exclusivas de OTROS planes (no deben mostrarse en planes generales)
+  const idsExclusivasDeOtros = new Set(
+    planes
+      .filter((p) => p.id_actividad_exclusiva != null)
+      .map((p) => p.id_actividad_exclusiva as number),
+  );
+
+  const requeridas = clasesRequeridasDelPlan(planActual);
+
+  // 3. Agrupar horarios por actividad
+  const mapaActividades = new Map<number, { id: number; nombre: string; horarios: HorarioApi[] }>();
+  for (const h of horarios) {
+    if (idsExclusivasDeOtros.has(h.id_actividad)) continue;
+    let act = mapaActividades.get(h.id_actividad);
+    if (!act) {
+      act = { id: h.id_actividad, nombre: h.actividad.nombre, horarios: [] };
+      mapaActividades.set(h.id_actividad, act);
+    }
+    act.horarios.push(h);
+  }
+
+  // 4. Filtrar actividades que tengan al menos una profesora con suficientes días distintos
+  const resultado: ActividadDisponibleParaPlan[] = [];
+
+  for (const act of mapaActividades.values()) {
+    const profesoresAValidar: number[] =
+      idProfesoraFija != null
+        ? [idProfesoraFija]
+        : Array.from(new Set(act.horarios.map((h) => h.id_profesora)));
+
+    const tieneProfeConSuficientesDias = profesoresAValidar.some((idProf) => {
+      const horariosDeProfe = act.horarios.filter((h) => h.id_profesora === idProf);
+      const diasDistintos = new Set(horariosDeProfe.map((h) => h.dia_semana)).size;
+      return diasDistintos >= requeridas;
+    });
+
+    if (tieneProfeConSuficientesDias) {
+      resultado.push({ id: act.id, nombre: act.nombre });
+    }
+  }
+
+  return resultado.sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+

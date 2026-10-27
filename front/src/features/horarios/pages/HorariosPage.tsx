@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OwnerLayout } from '@/components/layout/owner-layout';
 import { mensajeDeErrorApi } from '@/api/errores';
 import { useHorarios } from '../hooks/useHorarios';
@@ -50,6 +50,17 @@ export const HorariosPage: React.FC = () => {
   } = useHorarios();
 
   const [selectedMobileDay, setSelectedMobileDay] = useState<DiaSemana>('LUNES');
+
+  // Protección para no perder cambios en borrador si se recarga o cierra la ventana
+  useEffect(() => {
+    if (!hayCambiosPendientes) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hayCambiosPendientes]);
 
   // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -203,18 +214,18 @@ export const HorariosPage: React.FC = () => {
         {/* BARRA DE FILTROS RESPONSIVE */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Profesora */}
+            {/* Profesor/a */}
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Profesora</span>
+              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Profesor/a</span>
               <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
                 <SelectTrigger
-                  aria-label="Filtrar por profesora"
+                  aria-label="Filtrar por profesor/a"
                   className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[70px]"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TODAS">Todas</SelectItem>
+                  <SelectItem value="TODAS">Todos</SelectItem>
                   {profesoras.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id}>
                       {prof.nombre} {prof.apellido}

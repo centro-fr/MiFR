@@ -4,6 +4,7 @@ import { cn } from "@/utils/cn";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Label } from "@/components/ui/label";
 import { obtenerLimitesFechaNacimiento } from "../../utils/edad";
+import { actividadesDelPlan, clasesRequeridasDelPlan } from "../../utils/plan-y-profesora";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
@@ -19,6 +20,7 @@ interface Paso2PlanYHorariosProps {
   esSoloProfesora: boolean;
   idsHorarios: number[];
   onToggleHorario: (idHorario: number) => void;
+  onLimpiarHorarios?: () => void;
   clasesRequeridas: number;
   fechaInicio: string;
   onChangeFechaInicio: (fecha: string) => void;
@@ -50,25 +52,27 @@ export function Paso2PlanYHorarios({
   esSoloProfesora,
   idsHorarios,
   onToggleHorario,
+  onLimpiarHorarios,
   clasesRequeridas,
   fechaInicio,
   onChangeFechaInicio,
 }: Paso2PlanYHorariosProps) {
   const limitesFecha = obtenerLimitesFechaNacimiento();
 
-  // 1. Obtener todas las actividades disponibles en los horarios
+  const planActual = useMemo(
+    () => planes.find((p) => p.id_plan === idPlanSeleccionado) ?? null,
+    [planes, idPlanSeleccionado],
+  );
+
+  // 1. Actividades compatibles según el plan seleccionado y los horarios disponibles
   const actividadesDisponibles = useMemo(() => {
-    const mapa = new Map<number, { id: number; nombre: string }>();
-    for (const h of horarios) {
-      if (!mapa.has(h.id_actividad)) {
-        mapa.set(h.id_actividad, {
-          id: h.id_actividad,
-          nombre: h.actividad.nombre,
-        });
-      }
-    }
-    return Array.from(mapa.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [horarios]);
+    return actividadesDelPlan(
+      horarios,
+      planes,
+      planActual,
+      esSoloProfesora ? idProfesoraSeleccionada : null,
+    );
+  }, [horarios, planes, planActual, esSoloProfesora, idProfesoraSeleccionada]);
 
   // Actividad seleccionada explícitamente (o fallback derivado)
   const [actividadElegida, setActividadElegida] = useState<number | null>(() => {
@@ -92,21 +96,32 @@ export function Paso2PlanYHorarios({
     return actividadesDisponibles[0]?.id ?? null;
   }, [actividadElegida, actividadesDisponibles, idsHorarios, horarios]);
 
-  const setIdActividadSeleccionada = setActividadElegida;
+  // Sincronizar actividadElegida si la actual deja de estar disponible
+  useEffect(() => {
+    if (actividadElegida !== null && !actividadesDisponibles.some((a) => a.id === actividadElegida)) {
+      setActividadElegida(actividadesDisponibles[0]?.id ?? null);
+    }
+  }, [actividadesDisponibles, actividadElegida]);
 
-  // 2. Profesoras compatibles que dictan la actividad seleccionada
+  // 2. Profesoras compatibles que dictan la actividad seleccionada y tienen suficientes días para el plan
   const profesorasDeActividad = useMemo(() => {
     if (!idActividadSeleccionada) return profesoras;
-    const idsProfDeAct = new Set(
-      horarios
-        .filter((h) => h.id_actividad === idActividadSeleccionada)
-        .map((h) => h.id_profesora),
-    );
-    const lista = profesoras.filter((p) => idsProfDeAct.has(Number(p.id)));
-    return lista.length > 0 ? lista : profesoras;
-  }, [profesoras, horarios, idActividadSeleccionada]);
+    const requeridas = planActual ? clasesRequeridasDelPlan(planActual) : 0;
 
-  // Si no hay profesora seleccionada o la actual no dicta esta actividad, auto-seleccionar la primera disponible
+    const profesorasValidas = profesoras.filter((prof) => {
+      const idProf = Number(prof.id);
+      const horariosProf = horarios.filter(
+        (h) => h.id_actividad === idActividadSeleccionada && h.id_profesora === idProf,
+      );
+      if (requeridas <= 0) return horariosProf.length > 0;
+      const diasDistintos = new Set(horariosProf.map((h) => h.dia_semana)).size;
+      return diasDistintos >= requeridas;
+    });
+
+    return profesorasValidas.length > 0 ? profesorasValidas : profesoras;
+  }, [profesoras, horarios, idActividadSeleccionada, planActual]);
+
+  // Si no hay profesora seleccionada o la actual no dicta esta actividad con suficientes días, auto-seleccionar la primera disponible
   useEffect(() => {
     if (profesorasDeActividad.length > 0) {
       const actualValida = profesorasDeActividad.some((p) => Number(p.id) === idProfesoraSeleccionada);
@@ -197,33 +212,48 @@ export function Paso2PlanYHorarios({
         <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
           Actividad <span className="text-destructive">*</span>
         </Label>
-        <div className="flex flex-wrap gap-2">
-          {actividadesDisponibles.map((act) => {
-            const isSelected = idActividadSeleccionada === act.id;
-            return (
-              <button
-                type="button"
-                key={act.id}
-                onClick={() => setIdActividadSeleccionada(act.id)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5",
-                  isSelected
-                    ? "border border-primary text-primary bg-primary/5 dark:bg-primary/10 font-bold shadow-xs"
-                    : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-white dark:bg-slate-900",
-                )}
-              >
-                {isSelected && <Check className="size-3.5 stroke-[3] text-primary" />}
-                {act.nombre}
-              </button>
-            );
-          })}
-        </div>
+        {idPlanSeleccionado === null ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+            Seleccioná un plan arriba para ver las actividades disponibles.
+          </p>
+        ) : actividadesDisponibles.length === 0 ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+            No hay actividades disponibles con los días requeridos para este plan.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {actividadesDisponibles.map((act) => {
+              const isSelected = idActividadSeleccionada === act.id;
+              return (
+                <button
+                  type="button"
+                  key={act.id}
+                  onClick={() => {
+                    if (idActividadSeleccionada !== act.id) {
+                      setActividadElegida(act.id);
+                      onLimpiarHorarios?.();
+                    }
+                  }}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5",
+                    isSelected
+                      ? "border border-primary text-primary bg-primary/5 dark:bg-primary/10 font-bold shadow-xs"
+                      : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-white dark:bg-slate-900",
+                  )}
+                >
+                  {isSelected && <Check className="size-3.5 stroke-[3] text-primary" />}
+                  {act.nombre}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* 3. PROFESORA (CHIPS TIPO PÍLDORA) */}
+      {/* 3. PROFESOR/A (CHIPS TIPO PÍLDORA) */}
       <div className="space-y-2.5">
         <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-          Profesora <span className="text-destructive">*</span>
+          Profesor/a <span className="text-destructive">*</span>
         </Label>
         <div className="flex flex-wrap gap-2">
           {profesorasDeActividad.map((prof) => {
@@ -264,93 +294,99 @@ export function Paso2PlanYHorarios({
           </span>
         </div>
 
-        {/* Tabla / Grid Semanal */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 p-2 sm:p-3">
-          {/* Encabezado de Días */}
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 pb-2 text-center border-b border-slate-100 dark:border-slate-800">
-            {DIAS_COLUMNAS.map((dia) => (
-              <span key={dia.numero} className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {dia.label}
-              </span>
-            ))}
+        {idPlanSeleccionado === null ? (
+          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-400">
+            Elegí un plan arriba para ver los horarios disponibles.
           </div>
+        ) : (
+          /* Tabla / Grid Semanal */
+          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 p-2 sm:p-3">
+            {/* Encabezado de Días */}
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 pb-2 text-center border-b border-slate-100 dark:border-slate-800">
+              {DIAS_COLUMNAS.map((dia) => (
+                <span key={dia.numero} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {dia.label}
+                </span>
+              ))}
+            </div>
 
-          {/* Filas de Horarios */}
-          <div className="pt-2.5 space-y-2">
-            {franjasHorarias.length === 0 ? (
-              <div className="py-6 text-center text-xs text-slate-400">
-                No hay horarios disponibles para esta actividad y profesora.
-              </div>
-            ) : (
-              franjasHorarias.map((hora) => (
-                <div key={hora} className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                  {DIAS_COLUMNAS.map((dia) => {
-                    const horarioSlot = horariosFiltrados.find(
-                      (h) => h.dia_semana === dia.numero && extraerHora(h.hora_inicio) === hora,
-                    );
-
-                    if (!horarioSlot) {
-                      return (
-                        <div
-                          key={dia.numero}
-                          className="flex items-center justify-center min-h-[58px] text-xs text-slate-300 dark:text-slate-700 font-semibold"
-                        >
-                          —
-                        </div>
+            {/* Filas de Horarios */}
+            <div className="pt-2.5 space-y-2">
+              {franjasHorarias.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-400">
+                  No hay horarios disponibles para esta actividad y profesor/a.
+                </div>
+              ) : (
+                franjasHorarias.map((hora) => (
+                  <div key={hora} className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    {DIAS_COLUMNAS.map((dia) => {
+                      const horarioSlot = horariosFiltrados.find(
+                        (h) => h.dia_semana === dia.numero && extraerHora(h.hora_inicio) === hora,
                       );
-                    }
 
-                    const cupoTotal = horarioSlot.cupo_maximo_efectivo ?? horarioSlot.cupo_maximo;
-                    const cuposLibres = cupoTotal != null ? cupoTotal : 1;
-                    const estaCompleto = cupoTotal != null && cupoTotal <= 0;
-                    const estaSeleccionado = idsHorarios.includes(horarioSlot.id_horario);
-
-                    if (estaCompleto) {
-                      return (
-                        <div
-                          key={dia.numero}
-                          className="flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/20 text-slate-400 cursor-not-allowed min-h-[58px]"
-                        >
-                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{hora}</span>
-                          <span className="text-[10px] font-semibold text-rose-700 dark:text-rose-400">Completo</span>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <button
-                        type="button"
-                        key={dia.numero}
-                        onClick={() => onToggleHorario(horarioSlot.id_horario)}
-                        className={cn(
-                          "relative flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center min-h-[58px]",
-                          estaSeleccionado
-                            ? "border-primary ring-1 ring-primary bg-pink-50/30 dark:bg-primary/10 text-primary shadow-xs"
-                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200",
-                        )}
-                      >
-                        {estaSeleccionado && (
-                          <div className="absolute top-1 right-1 size-3.5 rounded-full bg-primary text-white flex items-center justify-center">
-                            <Check className="size-2.5 stroke-[3]" />
+                      if (!horarioSlot) {
+                        return (
+                          <div
+                            key={dia.numero}
+                            className="flex items-center justify-center min-h-[58px] text-xs text-slate-300 dark:text-slate-700 font-semibold"
+                          >
+                            —
                           </div>
-                        )}
-                        <span className="text-xs font-bold leading-tight">{hora}</span>
-                        <span
+                        );
+                      }
+
+                      const cupoTotal = horarioSlot.cupo_maximo_efectivo ?? horarioSlot.cupo_maximo;
+                      const cuposLibres = cupoTotal != null ? cupoTotal : 1;
+                      const estaCompleto = cupoTotal != null && cupoTotal <= 0;
+                      const estaSeleccionado = idsHorarios.includes(horarioSlot.id_horario);
+
+                      if (estaCompleto) {
+                        return (
+                          <div
+                            key={dia.numero}
+                            className="flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/20 text-slate-400 cursor-not-allowed min-h-[58px]"
+                          >
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">{hora}</span>
+                            <span className="text-[10px] font-semibold text-rose-700 dark:text-rose-400">Completo</span>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          key={dia.numero}
+                          onClick={() => onToggleHorario(horarioSlot.id_horario)}
                           className={cn(
-                            "text-[10px] font-medium mt-0.5",
-                            estaSeleccionado ? "text-primary font-semibold" : "text-amber-700 dark:text-amber-400",
+                            "relative flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center min-h-[58px]",
+                            estaSeleccionado
+                              ? "border-primary ring-1 ring-primary bg-pink-50/30 dark:bg-primary/10 text-primary shadow-xs"
+                              : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200",
                           )}
                         >
-                          Queda {cuposLibres}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
-            )}
+                          {estaSeleccionado && (
+                            <div className="absolute top-1 right-1 size-3.5 rounded-full bg-primary text-white flex items-center justify-center">
+                              <Check className="size-2.5 stroke-[3]" />
+                            </div>
+                          )}
+                          <span className="text-xs font-bold leading-tight">{hora}</span>
+                          <span
+                            className={cn(
+                              "text-[10px] font-medium mt-0.5",
+                              estaSeleccionado ? "text-primary font-semibold" : "text-amber-700 dark:text-amber-400",
+                            )}
+                          >
+                            Queda {cuposLibres}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 5. FECHA DE INICIO: "Empieza el" */}

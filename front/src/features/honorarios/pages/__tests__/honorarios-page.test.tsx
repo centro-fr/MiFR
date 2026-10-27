@@ -24,9 +24,11 @@ const mockInforme: InformeHonorarios = {
       id: 1,
       profesora: { id: 1, nombre: "Lucía", apellido: "Gómez" },
       montoTotal: 75000,
-      subtotalAlumnos: 60000,
-      subtotalSuplencias: 15000,
-      cantidadAlumnos: 10,
+      desglose: {
+        subtotalAlumnos: 60000,
+        subtotalSuplencias: 15000,
+        cantidadAlumnos: 10,
+      },
       estado: "BORRADOR",
       calculadaEl: "2026-10-20T10:00:00.000Z",
     },
@@ -78,7 +80,7 @@ describe("HonorariosPage", () => {
 
     // Encabezado principal
     expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
-    expect(screen.getByText(/Cuánto le corresponde a cada profesora en el mes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cuánto le corresponde a cada profesor\/a en el mes/i)).toBeInTheDocument();
 
     // Pestañas
     expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();

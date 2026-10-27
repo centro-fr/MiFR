@@ -80,6 +80,7 @@ export function ModalPreinscripcion({
     erroresMedidas,
     idsHorarios,
     toggleHorario,
+    limpiarHorarios,
     clasesRequeridas,
     fechaInicio,
     setFechaInicio,
@@ -134,7 +135,7 @@ export function ModalPreinscripcion({
               onExito?.({
                 idInscripcion: idInscripcionCreada!,
                 idAlumno: idAlumnoCreado ?? undefined,
-                cobrarAhora: datosCobro.yaAbono,
+                cobrarAhora: false,
               });
             }}
           />
@@ -169,6 +170,7 @@ export function ModalPreinscripcion({
                     esSoloProfesora={esSoloProfesora}
                     idsHorarios={idsHorarios}
                     onToggleHorario={toggleHorario}
+                    onLimpiarHorarios={limpiarHorarios}
                     clasesRequeridas={clasesRequeridas}
                     fechaInicio={fechaInicio}
                     onChangeFechaInicio={setFechaInicio}

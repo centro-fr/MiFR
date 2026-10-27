@@ -77,8 +77,8 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.profesoras.crear(input);
   }
 
-  listarProfesoras(): Promise<Profesora[]> {
-    return this.profesoras.listar();
+  listarProfesoras(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
+    return this.profesoras.listar(filtro);
   }
 
   async darDeBajaProfesora(id: number): Promise<Profesora> {

@@ -38,23 +38,79 @@ export interface OrigenTransicion {
   y: number;
 }
 
-// Un cambio de tema tiene que sentirse inmediato: más de 250 ms se percibe como espera.
-const DURACION_REVELADO_MS = 250;
+// Un cambio de tema tiene que sentirse inmediato.
+const DURACION_CIRCULO_MS = 250;
+const DURACION_FADE_MS = 150;
+
+let cacheSoftwareRenderer: boolean | null = null;
+
+export function resetearDeteccionGpuParaTests(): void {
+  cacheSoftwareRenderer = null;
+}
+
+/**
+ * Detecta si el equipo carece de aceleración GPU por hardware o está usando un renderizador
+ * por software (SwiftShader, llvmpipe, Microsoft Basic Render Driver). En estos equipos,
+ * interpolar un clip-path: circle() vectorial sobre la pantalla completa a 60 fps satura la CPU
+ * y genera una animación entrecortada ("a tirones").
+ */
+export function esRenderizadorPorSoftware(): boolean {
+  if (cacheSoftwareRenderer !== null) return cacheSoftwareRenderer;
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    cacheSoftwareRenderer = false;
+    return false;
+  }
+  try {
+    const canvas = document.createElement("canvas");
+    // En jsdom (Vitest) sin paquete canvas nativo, getContext emite una advertencia a consola si no está mockeado
+    if (typeof window !== "undefined" && window.navigator?.userAgent?.includes("jsdom")) {
+      const fn = canvas.getContext as unknown as { _isMockFunction?: boolean };
+      if (!fn._isMockFunction) {
+        cacheSoftwareRenderer = false;
+        return false;
+      }
+    }
+    const gl = (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+    if (!gl) {
+      cacheSoftwareRenderer = "WebGLRenderingContext" in window;
+      return cacheSoftwareRenderer;
+    }
+    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    if (!debugInfo) {
+      cacheSoftwareRenderer = false;
+      return false;
+    }
+
+    const renderer = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string | undefined)?.toLowerCase() ?? "";
+    cacheSoftwareRenderer = /swiftshader|llvmpipe|basic render driver|software rasterizer|gallium/i.test(renderer);
+    return cacheSoftwareRenderer;
+  } catch {
+    cacheSoftwareRenderer = false;
+    return false;
+  }
+}
+
+/** Revelado con fundido suave (fade), óptimo para CPU en equipos sin GPU. */
+function animarFade(): void {
+  document.documentElement.animate(
+    { opacity: [0, 1] },
+    { duration: DURACION_FADE_MS, easing: "ease-out", pseudoElement: "::view-transition-new(root)" },
+  );
+}
 
 /** El tema nuevo crece en círculo desde el origen hasta cubrir la esquina más lejana. */
-function revelarDesde({ x, y }: OrigenTransicion): void {
+function revelarCirculoDesde({ x, y }: OrigenTransicion): void {
   const radio = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
   document.documentElement.animate(
     { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radio}px at ${x}px ${y}px)`] },
-    { duration: DURACION_REVELADO_MS, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
+    { duration: DURACION_CIRCULO_MS, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
   );
 }
 
 /**
- * Revela el tema nuevo con un círculo sobre una captura del viejo. Ni animar el color de cada
- * elemento ni fundir capturas sirve: en ambos casos hay un instante en que fondo y texto quedan
- * en el mismo gris y el contenido desaparece. Con el círculo cada píxel es del tema viejo o del
- * nuevo, nunca una mezcla. Sin View Transitions (o con reduced-motion) el cambio es instantáneo.
+ * Revela el tema nuevo. En equipos con aceleración GPU se expande un círculo desde el botón.
+ * En equipos que renderizan por software (sin placa de video), se utiliza un fade liviano de opacidad.
+ * Sin soporte de View Transitions o con reduced-motion, el cambio es instantáneo.
  */
 function aplicarTemaConTransicion(tema: Tema, origen: OrigenTransicion): void {
   const reactivarTransiciones = pausarTransiciones();
@@ -65,7 +121,13 @@ function aplicarTemaConTransicion(tema: Tema, origen: OrigenTransicion): void {
   }
   const transicion = document.startViewTransition(() => aplicarTema(tema));
   transicion.ready
-    .then(() => revelarDesde(origen))
+    .then(() => {
+      if (esRenderizadorPorSoftware()) {
+        animarFade();
+      } else {
+        revelarCirculoDesde(origen);
+      }
+    })
     .catch(() => {
       // El navegador salteó la animación (p. ej. otro cambio de tema en curso): el tema ya quedó aplicado.
     });

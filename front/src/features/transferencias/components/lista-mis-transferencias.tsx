@@ -138,7 +138,7 @@ export function ListaMisTransferencias({ transferencias }: Props) {
                   Motivo del rechazo:
                 </div>
                 <p className="mt-0.5">{item.motivo_rechazo ?? "No figura en el extracto bancario"}</p>
-                <p className="mt-1.5 font-semibold">Consultalo con la propietaria o con tu profesora.</p>
+                <p className="mt-1.5 font-semibold">Consultalo con la administración o con tu profesor/a.</p>
               </div>
             )}
           </Card>

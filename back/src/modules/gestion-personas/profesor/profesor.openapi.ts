@@ -32,6 +32,14 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
     security,
     summary: "Listar profesoras",
     description: "Requiere el permiso `HORARIOS_VER`.",
+    request: {
+      query: z.object({
+        incluirBajas: z
+          .string()
+          .optional()
+          .openapi({ description: "Si es 'true', incluye también a las profesoras dadas de baja" }),
+      }),
+    },
     responses: {
       200: respuestaJson("Profesoras", z.array(profesoraSchema)),
       ...respuestasDeError(401, 403),

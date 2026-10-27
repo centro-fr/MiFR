@@ -162,7 +162,8 @@ export function inscripcionesSemilla(): InscripcionMock[] {
   ];
 }
 
-function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number): PagoMock {
+function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number, diasAtras = 0): PagoMock {
+  const fecha = diasAtras > 0 ? new Date(Date.now() - diasAtras * UN_DIA_EN_MS).toISOString() : VIGENCIA_PRECIOS;
   return {
     id_pago,
     id_cuota: id_pago,
@@ -170,7 +171,7 @@ function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number):
     forma_pago: "EFECTIVO",
     estado: "CONFIRMADO",
     monto,
-    fecha_pago: VIGENCIA_PRECIOS,
+    fecha_pago: fecha,
     titular_cuenta_origen: null,
     fecha_hora_transferencia: null,
     id_usuario_registra: 1,
@@ -178,7 +179,7 @@ function pagoConfirmado(id_pago: number, id_inscripcion: number, monto: number):
     rendido: true,
     fecha_rendicion: null,
     id_usuario_confirma: 1,
-    fecha_confirmacion: VIGENCIA_PRECIOS,
+    fecha_confirmacion: fecha,
     motivo_rechazo: null,
     observaciones: null,
   };
@@ -286,12 +287,12 @@ export function pagosSemilla(): PagoMock[] {
     pagoConfirmado(119, 19, PRECIOS[2]),
     pagoConfirmado(120, 20, PRECIOS[1]),
 
-    pagoConfirmado(121, 21, PRECIOS[3]),
-    pagoConfirmado(122, 22, PRECIOS[0]),
-    pagoConfirmado(123, 23, PRECIOS[1]),
-    pagoConfirmado(124, 24, PRECIOS[2]),
-    pagoConfirmado(125, 25, PRECIOS[0]),
-    pagoConfirmado(126, 26, PRECIOS[2]),
-    pagoConfirmado(127, 27, PRECIOS[1]),
+    pagoConfirmado(121, 21, PRECIOS[3], 10),
+    pagoConfirmado(122, 22, PRECIOS[0], 8),
+    pagoConfirmado(123, 23, PRECIOS[1], 15),
+    pagoConfirmado(124, 24, PRECIOS[2], 5),
+    pagoConfirmado(125, 25, PRECIOS[0], 12),
+    pagoConfirmado(126, 26, PRECIOS[2], 12),
+    pagoConfirmado(127, 27, PRECIOS[1], 10),
   ];
 }

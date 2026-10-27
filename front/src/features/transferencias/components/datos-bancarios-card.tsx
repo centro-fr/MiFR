@@ -158,8 +158,8 @@ export function DatosBancariosCard({ datos }: Props) {
         <div className="mt-3 flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
           <Info className="mt-0.5 size-4 shrink-0 text-primary dark:text-pink-300" aria-hidden="true" />
           <span>
-            Después de transferir, <strong className="font-bold text-slate-800 dark:text-slate-100">avisale a la propietaria o a tu profesora</strong>:
-            ellas registran tu transferencia.
+            Después de transferir, <strong className="font-bold text-slate-800 dark:text-slate-100">avisale a la administración o a tu profesor/a</strong>:
+            para registrar tu comprobante.
           </span>
         </div>
       </div>

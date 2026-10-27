@@ -59,9 +59,6 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
   { path: "reportes", seccion: "Reportes" },
-  // Menú de la profesora (MENUS.md).
-  { path: "mis-clases", seccion: "Mis clases" },
-  { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
   // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
   // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
@@ -133,6 +130,13 @@ export const router = createBrowserRouter([
         path: "inicio",
         element: guardiaDeSeccion("inicio"),
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
+      },
+      {
+        path: "profesoras",
+        element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
+        ],
       },
       {
         path: "actividades",
@@ -262,6 +266,14 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      {
+        // US-04: cronograma semanal de clases asignadas ("Mis clases"). Actor: Profesora con HORARIOS_VER.
+        path: "mis-clases",
+        element: guardiaDeSeccion("mis-clases", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/horarios/pages/mis-clases-page"), "MisClasesPage") },
         ],
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({

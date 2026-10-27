@@ -3,6 +3,7 @@ import {
   clasesRequeridasDelPlan,
   profesorasDelPlan,
   agruparHorariosPorActividad,
+  actividadesDelPlan,
 } from "../plan-y-profesora";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
@@ -125,4 +126,76 @@ describe("plan-y-profesora utils", () => {
     expect(pilates.viable).toBe(false);
     expect(pilates.horarios).toHaveLength(1);
   });
+
+  describe("actividadesDelPlan", () => {
+    const planesMock = [
+      { tipo: "MENSUAL" as const, clases_por_semana: 5, id_actividad_exclusiva: null },
+      { tipo: "MENSUAL" as const, clases_por_semana: 2, id_actividad_exclusiva: null },
+      { tipo: "MENSUAL" as const, clases_por_semana: 2, id_actividad_exclusiva: 99 }, // Plan exclusivo
+    ];
+
+    it("retorna lista vacia si no hay plan seleccionado", () => {
+      const horarios: HorarioApi[] = [mockHorario(1, 1, 10, "Funcional", 1)];
+      expect(actividadesDelPlan(horarios, planesMock, null)).toEqual([]);
+    });
+
+    it("filtra solo actividades con al menos 5 dias distintos para un plan de 5 dias", () => {
+      const horarios: HorarioApi[] = [
+        // Funcional con Profe 1 (5 dias distintos)
+        mockHorario(1, 1, 10, "Funcional", 1),
+        mockHorario(2, 1, 10, "Funcional", 2),
+        mockHorario(3, 1, 10, "Funcional", 3),
+        mockHorario(4, 1, 10, "Funcional", 4),
+        mockHorario(5, 1, 10, "Funcional", 5),
+        // Training con Profe 1 (solo 3 dias distintos)
+        mockHorario(6, 1, 20, "Training", 1),
+        mockHorario(7, 1, 20, "Training", 3),
+        mockHorario(8, 1, 20, "Training", 5),
+        // GAP con Profe 2 (2 dias distintos)
+        mockHorario(9, 2, 30, "GAP", 2),
+        mockHorario(10, 2, 30, "GAP", 4),
+        // Actividad exclusiva (id 99)
+        mockHorario(11, 2, 99, "Kid Fit", 1),
+      ];
+
+      const plan5Dias = planesMock[0];
+      const resultado = actividadesDelPlan(horarios, planesMock, plan5Dias);
+
+      expect(resultado).toEqual([{ id: 10, nombre: "Funcional" }]);
+    });
+
+    it("incluye actividades de mayor frecuencia para planes de menor frecuencia (ej: 2 dias)", () => {
+      const horarios: HorarioApi[] = [
+        mockHorario(1, 1, 10, "Funcional", 1),
+        mockHorario(2, 1, 10, "Funcional", 2),
+        mockHorario(3, 1, 10, "Funcional", 3),
+        mockHorario(4, 1, 10, "Funcional", 4),
+        mockHorario(5, 1, 10, "Funcional", 5),
+        mockHorario(6, 1, 20, "Training", 1),
+        mockHorario(7, 1, 20, "Training", 3),
+        mockHorario(8, 2, 30, "GAP", 2),
+        mockHorario(9, 2, 30, "GAP", 4),
+        mockHorario(10, 2, 99, "Kid Fit", 1), // exclusiva de otro plan
+      ];
+
+      const plan2Dias = planesMock[1];
+      const resultado = actividadesDelPlan(horarios, planesMock, plan2Dias);
+
+      // Debe incluir Funcional, GAP y Training, pero excluir Kid Fit
+      expect(resultado.map((a) => a.nombre)).toEqual(["Funcional", "GAP", "Training"]);
+    });
+
+    it("retorna exclusivamente la actividad exclusiva cuando el plan la define", () => {
+      const horarios: HorarioApi[] = [
+        mockHorario(1, 1, 10, "Funcional", 1),
+        mockHorario(2, 2, 99, "Kid Fit", 1),
+      ];
+
+      const planExclusivo = planesMock[2];
+      const resultado = actividadesDelPlan(horarios, planesMock, planExclusivo);
+
+      expect(resultado).toEqual([{ id: 99, nombre: "Kid Fit" }]);
+    });
+  });
 });
+

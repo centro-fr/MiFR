@@ -29,9 +29,9 @@ interface PropsEstado {
 }
 
 function mensajeDeEstado(enRevision: number, total: number): string {
-  if (enRevision === 0) return "Los honorarios de todas las profesoras están cerrados: ya no cambian.";
-  if (enRevision < total) return `${enRevision} de ${total} profesoras siguen en revisión.`;
-  return "Se puede recalcular hasta cerrar los honorarios de cada profesora.";
+  if (enRevision === 0) return "Los honorarios de todos los profesores están cerrados: ya no cambian.";
+  if (enRevision < total) return `${enRevision} de ${total} profesores siguen en revisión.`;
+  return "Se puede recalcular hasta cerrar los honorarios de cada profesor/a.";
 }
 
 function EstadoDeLaLiquidacion({ informe, calculando, onRecalcular }: PropsEstado) {

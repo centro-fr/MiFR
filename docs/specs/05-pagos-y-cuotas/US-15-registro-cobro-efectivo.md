@@ -9,115 +9,96 @@
 
 ## 2. Objetivo
 
-Permitir registrar el cobro de una cuota en efectivo, actualizando automáticamente el estado del alumno y generando el comprobante correspondiente.
+Permitir a las profesoras y a la propietaria registrar cobros de cuotas en efectivo de manera ágil, calculando el vuelto en tiempo real, actualizando la habilitación del alumno al instante, generando un comprobante digital auditable y registrando el efectivo a rendir.
 
 ## 3. Descripción
 
-Como profesora o propietaria, quiero registrar el cobro de una cuota en efectivo para actualizar el estado del alumno y generar el comprobante correspondiente.
+Como profesora o propietaria, quiero registrar el cobro en efectivo de una o más cuotas de un alumno, contando con una calculadora de vuelto en el diálogo y visualizando de inmediato el comprobante digital tipo recibo, para entregar una constancia al alumno y mantener la caja y el efectivo pendiente de rendición perfectamente conciliados.
 
 ## 4. Estados de la pantalla / flujo
 
-- [ ] Loading (cargando datos del alumno y cuota)
-- [ ] Formulario de registro de cobro
-- [ ] Confirmación del cobro
-- [ ] Procesando
-- [ ] Éxito (cobro registrado + comprobante generado)
-- [ ] Error de validación
-- [ ] Error de red
-- [ ] Comprobante generado (vista / descarga)
+- [ ] **Pantalla de Cobros (`CobrosPage`)**: Vista principal con navegación por pestañas:
+  - **Pestaña "Cuotas"**: Listado de alumnos con plan, fecha de vencimiento y badge de situación de cuota (Al día, En gracia, Vencida, Cobro adelantado).
+  - **Pestaña "Efectivo a rendir"**: Panel de rendiciones para la propietaria (US-19).
+- [ ] **Modal de Cobro en Efectivo**: Diálogo emergente centrado que muestra los datos de la cuota a cancelar, el importe sugerido y el campo para ingresar con cuánto abona el alumno, calculando el vuelto en vivo.
+- [ ] **Procesando cobro**: Deshabilitación del botón y feedback de guardado asíncrono.
+- [ ] **Modal de Comprobante Digital (`ModalComprobante`)**: Diálogo emergente tipo recibo con diseño profesional, datos fiscales/operativos del centro, número de comprobante, badge `PAGADO` y botón para imprimir o guardar en PDF.
+- [ ] **Actualización inmediata**: El alumno pasa instantáneamente a estado `AL_DIA` y el monto ingresa en la lista de efectivo pendiente de rendición de la docente.
+- [ ] **Error**: Manejo visual de rechazos (ej. cuota ya pagada o importe inválido).
 
 ## 5. Datos que necesita
 
 ### Datos que muestra
 
-- Nombre del alumno
-- Plan actual
-- Estado de cuota actual (al día / por vencer / vencida)
-- Monto de la cuota a cobrar
-- Período que cubre el pago
-- Profesora a cargo (si aplica)
-- Promoción aplicada (si corresponde)
+- **Alumno**: Nombre y apellido.
+- **Plan actual**: Nombre del plan y modalidad de cobro.
+- **Cuota a pagar**: Período mensual cubierto (`AAAA-MM` o concepto de clase).
+- **Situación actual**: Estado de vencimiento e importe adeudado.
 
-### Datos que se cargan
+### Datos que se cargan en el formulario
 
-- Monto cobrado (obligatorio, por defecto el de la cuota)
-- Fecha del cobro (por defecto hoy)
-- Período cubierto (mes, clase suelta, etc.)
-- Observaciones (opcional)
+- **Monto cobrado** (`monto`): Obligatorio. Importe numérico positivo que cancela la cuota.
+- **Paga con** (`pagaCon`): Opcional/Auxiliar en UI. Importe entregado por el cliente para calcular el vuelto.
+- **Observaciones**: Opcional. Nota interna sobre el pago.
 
-### Datos que se generan
+### Datos del comprobante digital generado
 
-- Nuevo estado de cuota: `al día`
-- Fecha de vencimiento actualizada
-- Comprobante de pago (número, fecha, monto, alumno, plan)
-- Registro del cobro en el historial del alumno
-- Registro de efectivo pendiente de rendición (US-19)
+- **Número de comprobante**: Identificador alfanumérico único (ej. `REC-2026-0042`).
+- **Fecha y hora**: Marca de tiempo del registro.
+- **Alumno y Plan**: Datos del titular e inscripción.
+- **Concepto**: Período mensual y detalle del plan.
+- **Monto total**: Importe formateado en moneda argentina.
+- **Forma de pago**: `EFECTIVO`.
+- **Cobrado por**: Nombre y apellido del usuario autenticado que recibió el dinero.
 
 ## 6. Acciones del usuario
 
-- Buscar al alumno por nombre, DNI o desde el listado
-- Ver el estado actual de su cuota
-- Registrar el cobro en efectivo
-- Confirmar el cobro
-- Ver / descargar el comprobante generado
-- Cancelar la operación
+- Buscar alumnos por nombre o DNI en la tabla de cuotas.
+- Filtrar la lista de cuotas por estado (Vencidas, En gracia, Al día).
+- Presionar el botón "Cobrar" sobre la fila o tarjeta del alumno.
+- Ingresar el monto a cobrar y el dinero recibido para comprobar el vuelto en tiempo real.
+- Confirmar el cobro.
+- Visualizar e imprimir el comprobante digital desde el modal emergente.
+- Consultar los cobros realizados en el historial del alumno o en el panel de rendiciones.
 
 ## 7. Reglas de negocio
 
-- El pago en efectivo lo registra **la profesora a cargo o la propietaria**.
-- Al confirmarse el cobro, se debe **actualizar automáticamente el estado de cuota** del alumno (de vencida o por vencer → al día).
-- Se debe **generar un comprobante** con: número, fecha, monto, alumno, plan, período, quién cobró.
-- El cobro en efectivo queda registrado como **pendiente de rendición** por parte de la profesora (US-19).
-- El monto cobrado debe coincidir con el precio vigente del plan (US-12) menos la promoción aplicable (US-13), salvo que se autorice un ajuste manual.
-- Si hay una promoción vigente, se debe aplicar automáticamente al calcular el monto.
-- El comprobante debe poder imprimirse o descargarse (PDF).
-- El cobro no puede registrarse si el alumno está dado de baja (a menos que se reactive primero).
-- El cobro queda asociado al período correspondiente.
+1. **Impacto Inmediato en Habilitación**: Al confirmarse el cobro en efectivo, la cuota pasa a estado `PAGADA` y el alumno queda inmediatamente habilitado (`AL_DIA`) para ingresar a clase (US-18).
+2. **Generación Obligatoria de Comprobante**: Cada cobro en efectivo genera un comprobante digital inmutable disponible para impresión o descarga digital.
+3. **Control de Efectivo a Rendir**: Si el cobro es registrado por una **Profesora**, el importe cobrado incrementa automáticamente su saldo pendiente de rendición hacia la propietaria (US-19).
+4. **Cobro por la Propietaria**: Los cobros cobrados directamente por la usuaria con rol `PROPIETARIA` se consideran automáticamente ingresados a caja central (no generan deuda de rendición).
+5. **Cálculo Preciso de Vuelto**: La interfaz no permite ingresar un valor en "Paga con" inferior al monto cobrado para evitar inconsistencias numéricas.
+6. **Monto Acorde a la Tarifa Vigente**: El monto por defecto corresponde al precio vigente del plan (US-12), con promociones aplicadas si existieran (US-13).
 
 ## 8. Criterios de aceptación
 
-- [ ] Registro de cobro en efectivo de una cuota vencida → el alumno pasa a "al día"
-- [ ] Registro de cobro sin monto ingresado → falla (campo obligatorio)
-- [ ] El comprobante se genera correctamente con todos los datos
-- [ ] El monto cobrado refleja la promoción vigente si corresponde
-- [ ] El cobro queda registrado como pendiente de rendición (US-19)
-- [ ] El historial del alumno refleja el nuevo cobro
+- [ ] **CA-01 (Cobro exitoso de cuota vencida)**: Registrar el cobro en efectivo de una cuota en mora → el alumno pasa a "Cuota al día" y se abre el comprobante.
+- [ ] **CA-02 (Cálculo de vuelto interactivo)**: Ingresar monto a cobrar $30.000 y abono con $40.000 → el diálogo muestra en tiempo real "Vuelto: $10.000".
+- [ ] **CA-03 (Comprobante digital fiel)**: El `ModalComprobante` presenta todos los datos requeridos (número, fecha, alumno, plan, monto y badge de pagado).
+- [ ] **CA-04 (Imputación a rendiciones)**: El cobro realizado por la profesora se refleja inmediatamente en su acordeón de efectivo a rendir (US-19).
+- [ ] **CA-05 (Validación Zod)**: Un importe menor o igual a cero o con formato no numérico es rechazado por el formulario.
 
 ## 9. Casos borde / Errores
 
-- Monto cobrado distinto al de la cuota → advertir y requerir confirmación
-- Alumno con deuda de varios períodos → permitir seleccionar qué período se está pagando
-- Alumno dado de baja → no permitir cobro (o advertir)
-- Alumno con cuota al día que paga adelantado → permitir y registrar
-- Error al generar el comprobante → no confirmar el cobro hasta que se genere correctamente
-- Error de red al guardar
+- Alumno que paga dos cuotas juntas → se registra el cobro de la primera y se habilita la cancelación de la siguiente.
+- Alumno con pago adelantado → se genera la cuota del período venidero y se marca como cobrada anticipadamente.
+- Cierre accidental del modal de comprobante → el comprobante permanece accesible desde el historial del alumno.
 
-## 10. Dependencias
+## 10. Dependencias y Trazabilidad
 
-- US-09, US-10 (búsqueda y ficha del alumno)
-- US-11, US-12, US-13 (plan, precio vigente y promoción)
-- US-18 (estado de habilitación que se actualiza)
-- US-19 (control de efectivo pendiente de rendición)
-- US-23 (honorarios, que consideran los cobros)
-- Backend: endpoint de registro de cobro + generación de comprobante
+- **US-10**: Consulta y listado de alumnos para ubicar a quien abona.
+- **US-11 y US-12**: Planes vigentes y precios aplicados al cobro.
+- **US-18**: Cálculo del estado de habilitación del alumno.
+- **US-19**: Módulo de rendición de efectivo donde se rinde el dinero recaudado.
+- **Backend**:
+  - `POST /api/v1/cuotas/:id/cobros`: registro del cobro en efectivo.
+  - `GET /api/v1/pagos/:id/comprobante`: obtención de datos para el recibo digital.
 
-## 11. Notas de implementación (Front)
+## 11. Notas de implementación (Frontend)
 
-- Se puede implementar completamente con mocks
-- Complejidad: Media
-- Recomendación de UI:
-  - Acceso desde:
-    - Ficha del alumno (botón "Registrar cobro")
-    - Listado de cuotas vencidas
-    - Acceso rápido desde el panel de la profesora
-  - Formulario con:
-    - Alumno (solo lectura, ya seleccionado)
-    - Plan actual (solo lectura)
-    - Monto a cobrar (editable, con validación)
-    - Período cubierto (selector)
-    - Fecha del cobro (por defecto hoy)
-    - Observaciones (opcional)
-  - Confirmación con resumen claro antes de guardar
-  - Al confirmar, mostrar el comprobante generado en un modal con opciones de imprimir/descargar
-  - Indicar visualmente que el cobro queda "pendiente de rendición"
-  - Formato de moneda consistente
+- **Ubicación en UI**: Ruta `/admin/cobros` (pestaña "Estado de cuotas").
+- **Componentes clave**:
+  - `CobrosPage`: Contenedor principal con filtros de búsqueda y pestañas.
+  - `ModalCobroEfectivo`: Diálogo modal con esquema `cobroEfectivoSchema` y calculadora de vuelto.
+  - `ModalComprobante`: Recibo visual estilizado con estilos de impresión CSS (`@media print`).
+- **Tests**: `modal-comprobante.test.tsx`, `cobro-efectivo.schema.test.ts`.
