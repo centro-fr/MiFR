@@ -13,8 +13,7 @@ import {
 import { hoyEnArgentina } from "@/mocks/precios";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 
-// Mock de US-23 con el contrato del back (gestion-honorarios: liquidacion y tarifa-honorario). Los
-// campos que el front le pidió al back y todavía no existen no se mockean: el mock no los inventa.
+// Mock de US-23 con el contrato del back (gestion-honorarios: liquidacion y tarifa-honorario).
 //
 // Los alumnos e inscripciones salen de data/honorarios.ts (copia de la base local), no de los de
 // alumnos.ts: registrar un cobro en otra pantalla del mock no cambia estos honorarios.
@@ -33,9 +32,11 @@ const registrarTarifaSchema = z
     valor: z.number().positive().max(99_999_999.99),
     fecha_vigencia_desde: z.string().date(),
   })
-  // Los CHECK de tarifas_honorario: PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan.
+  // Los CHECK de tarifas_honorario: PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan. Y la regla del
+  // Sprint 5: por alumno, siempre un porcentaje; por hora de suplencia, siempre un monto fijo.
   .refine((t) => t.tipo_valor !== "PORCENTAJE" || t.valor <= 100)
-  .refine((t) => t.concepto === "ALUMNO_A_CARGO" || t.id_plan === null);
+  .refine((t) => t.concepto === "ALUMNO_A_CARGO" || t.id_plan === null)
+  .refine((t) => t.tipo_valor === (t.concepto === "ALUMNO_A_CARGO" ? "PORCENTAJE" : "MONTO_FIJO"));
 
 const diaComoFecha = (dia: string) => `${dia}T00:00:00.000Z`;
 const horaComoFecha = (hora: string) => `1970-01-01T${hora}:00.000Z`;
@@ -121,6 +122,8 @@ function claseDeLaLinea(idClase: number) {
     hora_inicio: horaComoFecha(clase.hora_inicio),
     hora_fin: horaComoFecha(clase.hora_fin),
     actividad: clase.actividad,
+    profesora_titular: profesora(clase.id_prof_ausente),
+    profesora_suplente: profesora(clase.id_prof_suplente),
   };
 }
 
@@ -134,7 +137,7 @@ function detalleConDatos(detalle: LiquidacionDetalleMock) {
     id_clase: detalle.id_clase,
     monto: detalle.monto,
     alumno: detalle.id_inscripcion === null ? null : alumnoDeLaLinea(detalle.id_inscripcion),
-    inscripcion: detalle.id_inscripcion === null ? undefined : inscripcionDeLaLinea(detalle.id_inscripcion),
+    inscripcion: detalle.id_inscripcion === null ? null : inscripcionDeLaLinea(detalle.id_inscripcion),
     clase: detalle.id_clase === null ? null : claseDeLaLinea(detalle.id_clase),
   };
 }

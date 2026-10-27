@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Contrato de US-23: /liquidaciones y /tarifas-honorario (back: gestion-honorarios). Los campos
-// marcados "pedido al back" todavía no llegan: son opcionales y la pantalla se arma sin ellos.
+// marcados "desglose" se agregaron en el back después (dc36b4f): son opcionales para que un back
+// anterior no deje la pantalla en blanco, que se arma igual sin ellos.
 
 // NUMERIC del DER: el back lo suele pasar a number, pero Prisma serializa Decimal como texto.
 const montoSchema = z
@@ -38,7 +39,8 @@ export const liquidacionApiSchema = z.object({
   fecha_liquidacion: z.string(),
   monto_total: montoSchema,
   profesora: profesoraApiSchema,
-  // Pedido al back: el desglose de la tarjeta sin pedir el detalle de cada profesora.
+  // Desglose: lo que muestra la tarjeta sin pedir el detalle de cada profesora. subtotal_suplencias
+  // es el neto de CLASE_SUPLIDA y DESCUENTO_AUSENCIA, así que puede ser negativo.
   cantidad_alumnos: z.number().int().nonnegative().optional(),
   subtotal_alumnos: montoSchema.optional(),
   subtotal_suplencias: montoSchema.optional(),
@@ -88,7 +90,7 @@ const detalleBaseApiSchema = z.object({
 const detalleAlumnoApiSchema = detalleBaseApiSchema.extend({
   concepto: z.literal("ALUMNO_A_CARGO"),
   alumno: z.object({ id_alumno: idSchema, nombre: z.string(), apellido: z.string() }),
-  // Pedido al back: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
+  // Desglose: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
   inscripcion: z
     .object({
       estado: z.enum(["ACTIVA", "BAJA"]),
@@ -105,8 +107,9 @@ const detalleSuplenciaApiSchema = detalleBaseApiSchema.extend({
     hora_inicio: horaSchema,
     hora_fin: horaSchema,
     actividad: z.string(),
-    // Pedido al back: quién faltó (la titular del horario) y quién dictó la clase.
-    profesora_titular: profesoraApiSchema.optional(),
+    // Desglose: quién faltó y quién dictó la clase. La titular sale de la suplencia registrada, así que
+    // llega en null si la suplencia se eliminó con la liquidación todavía en borrador.
+    profesora_titular: profesoraApiSchema.nullish(),
     profesora_suplente: profesoraApiSchema.optional(),
   }),
 });

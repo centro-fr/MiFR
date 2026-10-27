@@ -5,8 +5,9 @@ import { fechaCorta } from "@/features/honorarios/utils/formato-honorarios";
 import type { RegistrarTarifaBody } from "@/features/honorarios/schemas/honorarios";
 
 // Nueva tarifa de una profesora (US-23). Replica los CHECK de tarifas_honorario del DER para avisar
-// antes de enviar: valor > 0, PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan. También la regla del back
-// de que la vigencia no empiece en el pasado: una tarifa no cambia lo ya liquidado. El back valida igual.
+// antes de enviar: valor > 0, PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan. También las reglas del back
+// de que la vigencia no empiece en el pasado (una tarifa no cambia lo ya liquidado) y de que cada
+// concepto tenga un solo tipo de valor. El back valida igual.
 
 /** DECIMAL(10,2) de tarifas_honorario.valor. */
 const VALOR_MAXIMO = 99_999_999.99;
@@ -14,9 +15,15 @@ const VALOR_MAXIMO = 99_999_999.99;
 // "50" o "37,5": como el precio, la coma separa decimales.
 const FORMATO_PORCENTAJE = /^\d{1,3}(?:,\d{1,2})?$/;
 
+// Regla de honorarios del Sprint 5: por alumno se paga un porcentaje de lo cobrado y la hora de
+// suplencia, un monto fijo. El back rechaza cualquier otra combinación, así que no se elige.
+export const TIPO_VALOR_DEL_CONCEPTO: Record<ConceptoTarifa, TipoValorTarifa> = {
+  ALUMNO_A_CARGO: "PORCENTAJE",
+  HORA_SUPLENCIA: "MONTO_FIJO",
+};
+
 export interface TarifaFormValues {
   concepto: ConceptoTarifa;
-  tipoValor: TipoValorTarifa;
   /** Texto como lo escribe la persona: "8.000", "8000,50" o "50". */
   valor: string;
   /** AAAA-MM-DD. */
@@ -58,16 +65,12 @@ export function crearTarifaFormSchema(ultimoInicio: UltimoInicioPorConcepto, hoy
   return z
     .object({
       concepto: z.enum(["ALUMNO_A_CARGO", "HORA_SUPLENCIA"], { required_error: "Elegí por qué se cobra." }),
-      tipoValor: z.enum(["PORCENTAJE", "MONTO_FIJO"], { required_error: "Elegí cómo se calcula." }),
       valor: z.string().trim().min(1, "Ingresá el valor de la tarifa."),
       desde: z.string().min(1, "Elegí desde cuándo rige.").date("Ingresá una fecha válida."),
     })
     .superRefine((valores, ctx) => {
-      // La hora de suplencia no tiene una cuota sobre la que aplicar un porcentaje (CalculadorHonorarios).
-      if (valores.concepto === "HORA_SUPLENCIA" && valores.tipoValor === "PORCENTAJE") {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["tipoValor"], message: "La hora de suplencia solo puede ser un monto fijo." });
-      }
-      const problema = valores.tipoValor === "PORCENTAJE" ? problemaDelPorcentaje(valores.valor) : problemaDelMonto(valores.valor);
+      const esPorcentaje = TIPO_VALOR_DEL_CONCEPTO[valores.concepto] === "PORCENTAJE";
+      const problema = esPorcentaje ? problemaDelPorcentaje(valores.valor) : problemaDelMonto(valores.valor);
       if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["valor"], message: problema });
 
       if (valores.desde && valores.desde < hoy) {
@@ -88,12 +91,13 @@ export function crearTarifaFormSchema(ultimoInicio: UltimoInicioPorConcepto, hoy
 }
 
 export function aRegistrarTarifaBody(idProfesora: number, valores: TarifaFormValues): RegistrarTarifaBody {
+  const tipoValor = TIPO_VALOR_DEL_CONCEPTO[valores.concepto];
   return {
     id_profesora: idProfesora,
     concepto: valores.concepto,
     id_plan: null,
-    tipo_valor: valores.tipoValor,
-    valor: valorDesdeTexto(valores.valor, valores.tipoValor),
+    tipo_valor: tipoValor,
+    valor: valorDesdeTexto(valores.valor, tipoValor),
     fecha_vigencia_desde: valores.desde,
   };
 }

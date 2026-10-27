@@ -85,13 +85,22 @@ export function InformeSinCalcular({ periodo, calculando, onCalcular }: PropsSin
   );
 }
 
+// TARIFA_NO_APLICABLE: la tarifa vigente es del tipo que el concepto ya no admite (por alumno, un
+// porcentaje; por hora de suplencia, un monto fijo). Pasa con tarifas cargadas antes de esa regla.
+const MOTIVO_DE_LA_ADVERTENCIA: Record<AdvertenciaHonorario["concepto"], Record<AdvertenciaHonorario["motivo"], string>> = {
+  ALUMNO_A_CARGO: {
+    SIN_TARIFA: "un alumno no sumó porque no tiene una tarifa por alumno vigente.",
+    TARIFA_NO_APLICABLE: "un alumno no sumó, porque su tarifa por alumno es un monto fijo y tiene que ser un porcentaje de lo cobrado.",
+  },
+  HORA_SUPLENCIA: {
+    SIN_TARIFA: "una clase que cubrió no sumó ni se descontó, porque no tiene una tarifa por hora de suplencia vigente.",
+    TARIFA_NO_APLICABLE: "una clase que cubrió no sumó, porque su tarifa por hora de suplencia no es un monto fijo.",
+  },
+};
+
 function textoDeAdvertencia(advertencia: AdvertenciaHonorario, profesoras: Map<number, string>): string {
   const profesora = profesoras.get(advertencia.idProfesora) ?? "Una profesora";
-  if (advertencia.concepto === "ALUMNO_A_CARGO") return `${profesora}: un alumno no sumó porque no tiene una tarifa por alumno vigente.`;
-  if (advertencia.motivo === "TARIFA_NO_APLICABLE") {
-    return `${profesora}: una clase que cubrió no sumó, porque su tarifa por hora de suplencia no es un monto fijo.`;
-  }
-  return `${profesora}: una clase que cubrió no sumó ni se descontó, porque no tiene una tarifa por hora de suplencia vigente.`;
+  return `${profesora}: ${MOTIVO_DE_LA_ADVERTENCIA[advertencia.concepto][advertencia.motivo]}`;
 }
 
 interface PropsAdvertencias {

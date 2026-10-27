@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRegistrarTarifa, useTarifas } from "@/features/honorarios/hooks/use-honorarios";
 import {
+  TIPO_VALOR_DEL_CONCEPTO,
   aRegistrarTarifaBody,
   crearTarifaFormSchema,
   type TarifaFormValues,
@@ -22,7 +23,7 @@ import {
   ultimaTarifaGeneral,
 } from "@/features/honorarios/utils/formato-honorarios";
 import { esPeriodoEnCurso, etiquetaPeriodo, primerDiaDe, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
-import type { LiquidacionResumen, ProfesoraDeLiquidacion, TarifaHonorario } from "@/types/honorarios";
+import type { ConceptoTarifa, LiquidacionResumen, ProfesoraDeLiquidacion, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
@@ -52,10 +53,10 @@ function mensajeDeTarifaGuardada(periodo: string, desde: string): string {
   return `Tarifa guardada. Si ${etiquetaPeriodo(periodo).toLowerCase()} sigue en revisión, recalculalo para aplicarla.`;
 }
 
-function etiquetaDelValor(concepto: TarifaFormValues["concepto"], tipoValor: TarifaFormValues["tipoValor"]): string {
-  if (tipoValor === "PORCENTAJE") return "Porcentaje";
-  return concepto === "HORA_SUPLENCIA" ? "Monto por hora (ARS)" : "Monto por alumno (ARS)";
-}
+const ETIQUETA_DEL_VALOR: Record<ConceptoTarifa, string> = {
+  ALUMNO_A_CARGO: "Porcentaje de lo cobrado de la cuota",
+  HORA_SUPLENCIA: "Monto por hora (ARS)",
+};
 
 function MensajeError({ id, mensaje }: { id: string; mensaje?: string }) {
   if (!mensaje) return null;
@@ -115,14 +116,13 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
     resolver: zodResolver(crearTarifaFormSchema(ultimoInicio, hoy)),
     defaultValues: {
       concepto: "ALUMNO_A_CARGO",
-      tipoValor: "PORCENTAJE",
       valor: "",
       desde: desdeSugerido(periodo, ultimoInicio.ALUMNO_A_CARGO, hoy),
     },
   });
   const errores = formulario.formState.errors;
-  const [concepto, tipoValor] = useWatch({ control: formulario.control, name: ["concepto", "tipoValor"] });
-  const esPorcentaje = tipoValor === "PORCENTAJE";
+  const concepto = useWatch({ control: formulario.control, name: "concepto" });
+  const esPorcentaje = TIPO_VALOR_DEL_CONCEPTO[concepto] === "PORCENTAJE";
 
   const guardar = formulario.handleSubmit(async (valores) => {
     try {
@@ -135,11 +135,9 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
   });
 
   const registroConcepto = formulario.register("concepto", {
-    // La hora de suplencia solo admite monto fijo, y la última tarifa de cada concepto empieza en otra fecha.
+    // La última tarifa de cada concepto empieza en otra fecha.
     onChange: (evento: { target: { value: TarifaFormValues["concepto"] } }) => {
-      const elegido = evento.target.value;
-      if (elegido === "HORA_SUPLENCIA") formulario.setValue("tipoValor", "MONTO_FIJO");
-      formulario.setValue("desde", desdeSugerido(periodo, ultimoInicio[elegido], hoy));
+      formulario.setValue("desde", desdeSugerido(periodo, ultimoInicio[evento.target.value], hoy));
     },
   });
 
@@ -155,24 +153,9 @@ function FormularioTarifa({ profesora, periodo, tarifas, onListo }: PropsFormula
         ))}
       </fieldset>
 
-      {concepto === "ALUMNO_A_CARGO" && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className={cn(ETIQUETA, "mb-2")}>Cómo se calcula</legend>
-          <label className={OPCION}>
-            <input type="radio" value="PORCENTAJE" {...formulario.register("tipoValor")} className="size-4 shrink-0 accent-primary" />
-            Porcentaje de lo cobrado de la cuota
-          </label>
-          <label className={OPCION}>
-            <input type="radio" value="MONTO_FIJO" {...formulario.register("tipoValor")} className="size-4 shrink-0 accent-primary" />
-            Monto fijo por alumno, asista o no
-          </label>
-          <MensajeError id="tarifa-tipo-error" mensaje={errores.tipoValor?.message} />
-        </fieldset>
-      )}
-
       <div className="flex flex-col gap-1.5">
         <label htmlFor="tarifa-valor" className={ETIQUETA}>
-          {etiquetaDelValor(concepto, tipoValor)} <span aria-hidden="true" className="text-rose-600">*</span>
+          {ETIQUETA_DEL_VALOR[concepto]} <span aria-hidden="true" className="text-rose-600">*</span>
         </label>
         <div className="relative">
           <span aria-hidden="true" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 font-bold text-slate-500", esPorcentaje ? "right-3" : "left-3")}>

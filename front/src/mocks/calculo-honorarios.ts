@@ -109,14 +109,15 @@ function lineasDeAlumnos(
   for (const inscripcion of inscripciones.filter((i) => aCargoEnElPeriodo(i, desde, hasta))) {
     const { id_profesora, id_plan, id_inscripcion } = inscripcion;
     const tarifa = buscarTarifa(tarifas, id_profesora, "ALUMNO_A_CARGO", id_plan, diaDeLaLinea(inscripcion, hasta));
-    if (!tarifa) {
-      advertencias.push({ id_profesora, concepto: "ALUMNO_A_CARGO", motivo: "SIN_TARIFA", id_inscripcion, id_clase: null });
+    // Regla del Sprint 5: por alumno solo se paga un porcentaje de lo cobrado.
+    if (!tarifa || tarifa.tipo_valor === "MONTO_FIJO") {
+      const motivo = tarifa ? "TARIFA_NO_APLICABLE" : "SIN_TARIFA";
+      advertencias.push({ id_profesora, concepto: "ALUMNO_A_CARGO", motivo, id_inscripcion, id_clase: null });
       continue;
     }
-    const monto =
-      tarifa.tipo_valor === "MONTO_FIJO"
-        ? tarifa.valor
-        : redondearAlCentavo(((cobrado.get(id_inscripcion) ?? 0) * tarifa.valor) / 100);
+    const monto = redondearAlCentavo(((cobrado.get(id_inscripcion) ?? 0) * tarifa.valor) / 100);
+    // Como el back: una inscripción que no cobró nada en el período no deja una línea de $ 0.
+    if (monto === 0) continue;
     lineas.push({ id_profesora, concepto: "ALUMNO_A_CARGO", id_tarifa: tarifa.id_tarifa, id_inscripcion, id_clase: null, monto });
   }
   return { lineas, advertencias };
