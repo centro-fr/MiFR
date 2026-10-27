@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { ConfirmarCambioEstado, type CambioDeEstado } from "@/features/honorarios/components/confirmar-cambio-estado";
-import { MenuExportar, SelectorMes } from "@/features/honorarios/components/controles-informe";
+import { MenuExportar } from "@/components/menu-exportar";
+import { SelectorMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoTarifa } from "@/features/honorarios/components/dialogo-tarifa";
 import { EncabezadoHonorarios, PestanasHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
 import {

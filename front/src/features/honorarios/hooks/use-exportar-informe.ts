@@ -2,12 +2,12 @@ import { useState } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import type { FormatoExportacion } from "@/components/menu-exportar";
 import type { DatosImpresion } from "@/features/honorarios/components/informe-imprimible";
 import { useCargarDetalles } from "@/features/honorarios/hooks/use-honorarios";
-import { armarCsvHonorarios, descargarCsv, nombreArchivoHonorarios } from "@/features/honorarios/utils/exportar-csv";
+import { armarCsvHonorarios, nombreArchivoHonorarios } from "@/features/honorarios/utils/exportar-csv";
 import type { InformeHonorarios } from "@/types/honorarios";
-
-export type FormatoExportacion = "pdf" | "csv";
+import { descargarCsv } from "@/utils/csv";
 
 /**
  * Exportar el informe (US-23): el back devuelve los datos y el front arma el archivo, como el

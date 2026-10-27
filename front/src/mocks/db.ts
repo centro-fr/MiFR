@@ -23,6 +23,12 @@ import { liquidarPeriodo } from "@/mocks/calculo-honorarios";
 import type { NotificacionMock } from "@/mocks/data/notificaciones";
 import { parametrosSemilla, type ParametroMock } from "@/mocks/data/parametros";
 import {
+  registrosProgresoSemilla,
+  rutinasSemilla,
+  type RegistroProgresoMock,
+  type RutinaMock,
+} from "@/mocks/data/rutinas";
+import {
   ACTIVIDADES_SEMILLA,
   HORARIOS_SEMILLA,
   ID_USUARIO_SESION_INICIAL,
@@ -85,6 +91,9 @@ interface BaseMock {
   parametros: ParametroMock[];
   // Los avisos de la campana (US-25, US-26). Arranca vacía, como en la base.
   notificaciones: NotificacionMock[];
+  // US-27: rutinas y registros_progreso (cada uno con sus medidas_corporales).
+  rutinas: RutinaMock[];
+  registrosProgreso: RegistroProgresoMock[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
 }
@@ -115,6 +124,8 @@ export const db: BaseMock = {
   liquidacionDetalles: [],
   parametros: parametrosSemilla(),
   notificaciones: [],
+  rutinas: rutinasSemilla(),
+  registrosProgreso: registrosProgresoSemilla(),
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
   idUsuarioSesion: leerUsuarioGuardado() ?? ID_USUARIO_SESION_INICIAL,
