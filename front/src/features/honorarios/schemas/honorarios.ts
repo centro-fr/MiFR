@@ -125,11 +125,12 @@ export const liquidacionDetalleApiSchema = liquidacionApiSchema
     { message: "El total de la liquidación no coincide con la suma de sus detalles", path: ["monto_total"] },
   );
 
+// Tarifa general del estudio: rige igual para todos los profesores, así que no lleva profesora ni plan.
+// Pedido al back: hoy cada tarifa es de una profesora (tarifas_honorario.id_profesora); mientras
+// tanto la usa solo el mock.
 export const tarifaHonorarioApiSchema = z.object({
   id_tarifa: idSchema,
-  id_profesora: idSchema,
   concepto: conceptoTarifaSchema,
-  id_plan: idSchema.nullable(),
   tipo_valor: tipoValorTarifaSchema,
   valor: montoSchema,
   fecha_vigencia_desde: diaSchema,
@@ -142,14 +143,15 @@ export type LiquidacionDetalleApi = z.infer<typeof liquidacionDetalleApiSchema>;
 export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export type TarifaHonorarioApi = z.infer<typeof tarifaHonorarioApiSchema>;
 
-/** Cuerpo de POST /tarifas-honorario. */
+/**
+ * Cuerpo de POST /tarifas-honorario. Los dos valores van juntos porque a cada profesor/a se le pagan
+ * las dos cosas: el back crea las dos tarifas en una transacción y cierra las vigentes.
+ */
 export interface RegistrarTarifaBody {
-  id_profesora: number;
-  concepto: z.infer<typeof conceptoTarifaSchema>;
-  /** Por ahora el formulario solo carga tarifas para todos los planes. */
-  id_plan: null;
-  tipo_valor: z.infer<typeof tipoValorTarifaSchema>;
-  valor: number;
+  /** Porcentaje de lo cobrado de la cuota de cada alumno a cargo: mayor a 0 y hasta 100. */
+  porcentaje_alumno: number;
+  /** ARS por hora de clase cubierta como suplente: mayor a 0. */
+  monto_hora_suplencia: number;
   /** AAAA-MM-DD, desde hoy en adelante: el back no acepta vigencias en el pasado. */
   fecha_vigencia_desde: string;
 }
