@@ -11,6 +11,7 @@ import { registrarDocumentacionReportes } from "./modules/reportes/reportes.open
 import { registrarDocumentacionGestionUsuarios } from "./modules/gestion-usuarios/gestion-usuarios.openapi.js";
 import { GUIA_DE_PRUEBA } from "./openapi-guia.js";
 import { registrarSeguridadBearer } from "./shared/openapi/registro.js";
+import { registrarDocumentacionGestionRutinasYProgreso } from "./modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.openapi.js";
 
 export const CONFIGURACION_DOCUMENTO_API = {
   openapi: "3.0.3",
@@ -37,5 +38,6 @@ export function registrarDocumentacionApi(
   registrarDocumentacionGestionInsignias(registro);
   registrarDocumentacionReportes(registro);
   registrarDocumentacionGestionHonorarios(registro);
+  registrarDocumentacionGestionRutinasYProgreso(registro);
   registrarDocumentacionDifusionPublica(registro);
 }
