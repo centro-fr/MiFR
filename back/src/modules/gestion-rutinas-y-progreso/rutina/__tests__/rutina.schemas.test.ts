@@ -46,7 +46,10 @@ describe("crearRutinaSchema", () => {
     ["observaciones de más de 500 caracteres", { observaciones: "a".repeat(501) }],
     ["sin días", { contenido: { dias: [] } }],
     ["día sin ejercicios", { contenido: { dias: [{ nombre: "Día 1", ejercicios: [] }] } }],
-    ["más de 7 días", { contenido: { dias: Array.from({ length: 8 }, () => ({ nombre: "Día", ejercicios: [EJERCICIO] })) } }],
+    [
+      "más de 7 días",
+      { contenido: { dias: Array.from({ length: 8 }, () => ({ nombre: "Día", ejercicios: [EJERCICIO] })) } },
+    ],
   ])("rechaza %s", (_caso, cambio) => {
     expect(crearRutinaSchema.safeParse({ ...BASE, ...cambio }).success).toBe(false);
   });

@@ -55,7 +55,8 @@ export class RutinaRepository {
       });
       const diaPrevio = new Date(nueva.fecha_desde.getTime() - UN_DIA_EN_MS);
       for (const anterior of anteriores) {
-        const fin = anterior.fecha_hasta ?? (diaPrevio >= anterior.fecha_desde ? diaPrevio : anterior.fecha_desde);
+        const fin =
+          anterior.fecha_hasta ?? (diaPrevio >= anterior.fecha_desde ? diaPrevio : anterior.fecha_desde);
         await transaccion.rutinas.update({
           where: { id_rutina: anterior.id_rutina },
           data: { activa: false, fecha_hasta: fin },

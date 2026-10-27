@@ -75,7 +75,9 @@ describe("RutinaService", () => {
 
       expect(await service.crear(INPUT, PROFESORA)).toEqual(RUTINA);
       expect(repositorio.profesoraTieneAlumno).toHaveBeenCalledWith(10, 5);
-      expect(repositorio.crear).toHaveBeenCalledWith(expect.objectContaining({ id_alumno: 5, id_profesora: 10 }));
+      expect(repositorio.crear).toHaveBeenCalledWith(
+        expect.objectContaining({ id_alumno: 5, id_profesora: 10 }),
+      );
     });
 
     it("una profesora no puede cargar a nombre de otra", async () => {
@@ -151,8 +153,14 @@ describe("RutinaService", () => {
   });
 
   describe.each([
-    ["listarDeAlumno", (s: RutinaService, solicitante: typeof PROPIETARIA) => s.listarDeAlumno(5, solicitante)],
-    ["obtenerVigente", (s: RutinaService, solicitante: typeof PROPIETARIA) => s.obtenerVigente(5, solicitante)],
+    [
+      "listarDeAlumno",
+      (s: RutinaService, solicitante: typeof PROPIETARIA) => s.listarDeAlumno(5, solicitante),
+    ],
+    [
+      "obtenerVigente",
+      (s: RutinaService, solicitante: typeof PROPIETARIA) => s.obtenerVigente(5, solicitante),
+    ],
   ])("%s", (_nombre, consultar) => {
     it.each([
       ["la propietaria", PROPIETARIA],
