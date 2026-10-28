@@ -141,6 +141,27 @@ export class AlumnoService implements IInfoAlumnos {
     return this.repositorio.buscarPorIdUsuarioResponsable(idUsuario);
   }
 
+  async listarAlumnosDelSolicitante(solicitante: Solicitante): Promise<Alumno[]> {
+    const resultados: Alumno[] = [];
+    if (solicitante.esPropietaria) {
+      const { datos } = await this.listarAlumnos({ limit: 1000, offset: 0 }, solicitante);
+      return datos as unknown as Alumno[];
+    }
+    // Buscar si es alumno
+    const propio = await this.repositorio.buscarPorIdUsuario(solicitante.idUsuario);
+    if (propio) {
+      resultados.push(propio);
+    }
+    // Buscar menores a cargo (tutor)
+    const aCargo = await this.repositorio.buscarPorIdUsuarioResponsableTodos(solicitante.idUsuario);
+    for (const a of aCargo) {
+      if (!resultados.find((r) => r.id_alumno === a.id_alumno)) {
+        resultados.push(a);
+      }
+    }
+    return resultados;
+  }
+
   // US-09: se revisa la edad con los datos que resultan del cambio. Si el alumno ya es mayor, el
   // tutor se quita y pasa a necesitar su propio email.
   async actualizar(id: number, input: ActualizarAlumnoInput): Promise<Alumno> {
