@@ -107,7 +107,12 @@ afterEach(() => {
 
 afterAll(() => entorno.cerrar());
 
-async function pedir(metodo: "get" | "post", ruta: string, email?: string, cuerpo?: object) {
+async function pedir(
+  metodo: "get" | "post" | "patch" | "delete",
+  ruta: string,
+  email?: string,
+  cuerpo?: object,
+) {
   const peticion = request(entorno.app)[metodo](`/api/v1${ruta}`);
   if (email) peticion.set("Authorization", `Bearer ${await entorno.iniciarSesion(email)}`);
   return cuerpo ? peticion.send(cuerpo) : peticion;
@@ -128,13 +133,23 @@ describe("PI-83: carga de rutinas y historial (US-27)", () => {
     expect(respuesta.status).toBe(201);
     expect(respuesta.body).toMatchObject({ id_alumno: ana.id_alumno, id_profesora: idPaula, activa: true });
     expect(respuesta.body.contenido).toEqual({
-      dias: [{ nombre: "Día 1", ejercicios: [{ nombre: "Sentadilla", series: 3, repeticiones: "10", notas: null }] }],
+      dias: [
+        {
+          nombre: "Día 1",
+          ejercicios: [{ nombre: "Sentadilla", series: 3, repeticiones: "10", notas: null }],
+        },
+      ],
     });
   });
 
   it("la rutina nueva reemplaza a la vigente, que pasa al historial con su fecha de fin", async () => {
     await pedir("post", "/rutinas", emailPaula, rutina(ana.id_alumno, { nombre: "Mes 1" }));
-    await pedir("post", "/rutinas", emailPaula, rutina(ana.id_alumno, { nombre: "Mes 2", fecha_desde: "2026-12-01" }));
+    await pedir(
+      "post",
+      "/rutinas",
+      emailPaula,
+      rutina(ana.id_alumno, { nombre: "Mes 2", fecha_desde: "2026-12-01" }),
+    );
 
     const historial = await pedir("get", `/alumnos/${ana.id_alumno}/rutinas`, emailPaula);
     const vigente = await pedir("get", `/alumnos/${ana.id_alumno}/rutinas/vigente`, emailPaula);
@@ -156,8 +171,18 @@ describe("PI-83: carga de rutinas y historial (US-27)", () => {
 
   it("dos cargas a la vez dejan una sola rutina vigente", async () => {
     const respuestas = await Promise.all([
-      pedir("post", "/rutinas", emailPaula, rutina(ana.id_alumno, { nombre: "A", fecha_desde: "2026-11-01" })),
-      pedir("post", "/rutinas", emailPaula, rutina(ana.id_alumno, { nombre: "B", fecha_desde: "2026-11-02" })),
+      pedir(
+        "post",
+        "/rutinas",
+        emailPaula,
+        rutina(ana.id_alumno, { nombre: "A", fecha_desde: "2026-11-01" }),
+      ),
+      pedir(
+        "post",
+        "/rutinas",
+        emailPaula,
+        rutina(ana.id_alumno, { nombre: "B", fecha_desde: "2026-11-02" }),
+      ),
     ]);
 
     expect(respuestas.map((r) => r.status)).toEqual([201, 201]);
@@ -197,7 +222,14 @@ describe("PI-83: carga de rutinas y historial (US-27)", () => {
   });
 
   it.each([
-    ["una serie en cero", { contenido: { dias: [{ nombre: "Día 1", ejercicios: [{ nombre: "X", series: 0, repeticiones: "10" }] }] } }],
+    [
+      "una serie en cero",
+      {
+        contenido: {
+          dias: [{ nombre: "Día 1", ejercicios: [{ nombre: "X", series: 0, repeticiones: "10" }] }],
+        },
+      },
+    ],
     ["una fecha de fin anterior al inicio", { fecha_hasta: "2026-10-01" }],
     ["un día sin ejercicios", { contenido: { dias: [{ nombre: "Día 1", ejercicios: [] }] } }],
   ])("rechaza %s y no guarda nada", async (_caso, cambio) => {
@@ -305,7 +337,15 @@ describe("PI-85: registro de la evolución física (US-27, US-28)", () => {
     ["un valor en cero", { medidas: [{ codigo: "PESO", valor: 0 }] }],
     ["un valor negativo", { medidas: [{ codigo: "PESO", valor: -3 }] }],
     ["un peso fuera de rango", { medidas: [{ codigo: "PESO", valor: 900 }] }],
-    ["una medida repetida", { medidas: [{ codigo: "PESO", valor: 60 }, { codigo: "PESO", valor: 61 }] }],
+    [
+      "una medida repetida",
+      {
+        medidas: [
+          { codigo: "PESO", valor: 60 },
+          { codigo: "PESO", valor: 61 },
+        ],
+      },
+    ],
     ["una medida que no existe", { medidas: [{ codigo: "ALTURA", valor: 165 }] }],
     ["una fecha futura", { fecha: "2026-10-28" }],
   ])("rechaza %s y no guarda ningún registro", async (_caso, cambio) => {
@@ -336,7 +376,10 @@ describe("PI-85: registro de la evolución física (US-27, US-28)", () => {
     const respuesta = await pedir("get", `/alumnos/${ana.id_alumno}/progreso`, ana.email);
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.map((r: { fecha: string }) => r.fecha.slice(0, 10))).toEqual(["2026-10-20", "2026-10-01"]);
+    expect(respuesta.body.map((r: { fecha: string }) => r.fecha.slice(0, 10))).toEqual([
+      "2026-10-20",
+      "2026-10-01",
+    ]);
   });
 
   it("el tutor ve la evolución de su menor y nadie ve la de un alumno ajeno", async () => {

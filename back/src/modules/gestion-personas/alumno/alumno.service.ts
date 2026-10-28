@@ -133,6 +133,14 @@ export class AlumnoService implements IInfoAlumnos {
     return ids.length > 0 ? this.repositorio.buscarPorIds(ids) : Promise.resolve([]);
   }
 
+  buscarPorIdUsuario(idUsuario: number): Promise<Alumno | null> {
+    return this.repositorio.buscarPorIdUsuario(idUsuario);
+  }
+
+  buscarPorIdUsuarioResponsable(idUsuario: number): Promise<Alumno | null> {
+    return this.repositorio.buscarPorIdUsuarioResponsable(idUsuario);
+  }
+
   // US-09: se revisa la edad con los datos que resultan del cambio. Si el alumno ya es mayor, el
   // tutor se quita y pasa a necesitar su propio email.
   async actualizar(id: number, input: ActualizarAlumnoInput): Promise<Alumno> {

@@ -116,6 +116,10 @@ export class AlumnoRepository {
     return this.prisma.alumnos.findUnique({ where: { id_usuario: idUsuario }, include: CON_DATOS });
   }
 
+  buscarPorIdUsuarioResponsable(idUsuario: number): Promise<Alumno | null> {
+    return this.prisma.alumnos.findFirst({ where: { id_usuario_responsable: idUsuario }, include: CON_DATOS });
+  }
+
   buscarPorIds(ids: number[]): Promise<Alumno[]> {
     return this.prisma.alumnos.findMany({ where: { id_alumno: { in: ids } }, include: CON_DATOS });
   }

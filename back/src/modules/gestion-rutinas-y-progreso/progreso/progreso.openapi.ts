@@ -8,7 +8,12 @@ import {
   SEGURIDAD_BEARER,
 } from "../../../shared/openapi/registro.js";
 import { CODIGOS_MEDIDA, MEDIDAS } from "./medida.catalogo.js";
-import { alumnoProgresoParamsSchema, registrarProgresoSchema } from "./progreso.schemas.js";
+import {
+  actualizarProgresoSchema,
+  alumnoProgresoParamsSchema,
+  registrarProgresoSchema,
+  registroProgresoParamsSchema,
+} from "./progreso.schemas.js";
 
 const registroSchema = z
   .object({
@@ -17,6 +22,16 @@ const registroSchema = z
     id_profesora: z.number().int().openapi({ description: "La profesora que cargó la medición" }),
     fecha: fechaSchema,
     observaciones: z.string().nullable(),
+    fecha_modificacion: z
+      .string()
+      .datetime()
+      .nullable()
+      .openapi({ description: "Cuándo se corrigió por última vez; null si nunca se corrigió" }),
+    id_usuario_modifica: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: "Quién lo corrigió por última vez; null si nunca se corrigió" }),
     medidas: z.array(
       z.object({
         codigo: z.enum(CODIGOS_MEDIDA),
@@ -79,10 +94,57 @@ export function registrarDocumentacionProgreso(registro: OpenAPIRegistry): void 
       "Requiere RUTINAS_VER (propietaria y profesoras) o RUTINAS_VER_PROPIAS (alumno y tutor). La propietaria ve a " +
       "cualquier alumno; la profesora, a los que tiene a cargo; el alumno, el suyo, y el tutor, el de su menor a " +
       "cargo. Un alumno ajeno o inexistente responde 403 por igual, salvo a la propietaria, que recibe 404. " +
-      "Devuelve las mediciones de la más reciente a la más antigua; lista vacía si todavía no hay ninguna.",
+      "Devuelve las mediciones de la más reciente a la más antigua, sin las dadas de baja; lista vacía si todavía no hay ninguna.",
     request: { params: alumnoProgresoParamsSchema },
     responses: {
       200: respuestaJson("Mediciones del alumno", z.array(registroSchema)),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
+  });
+
+  registro.registerPath({
+    method: "patch",
+    path: "/progreso/{id}",
+    tags,
+    security,
+    summary: "Corregir una medición (US-27)",
+    description:
+      "Requiere RUTINAS_EDITAR. {id} es el id_registro. La propietaria corrige cualquier medición y la profesora, " +
+      "solo las de los alumnos que tiene a cargo (403 si no; también 403 si el registro no existe o ya está dado de " +
+      "baja, salvo a la propietaria, que recibe 404). Va el mismo contenido que al registrar, pero todo es " +
+      "opcional y debe venir al menos un dato: fecha (no futura), observaciones (null o vacía la borra) y medidas. " +
+      "Si vienen medidas, reemplazan a todas las anteriores del registro, con las mismas validaciones y rangos; no " +
+      "se puede cambiar el alumno ni la profesora que lo cargó. Todo se guarda junto o no se guarda nada. Queda " +
+      "registrado quién lo corrigió y cuándo (id_usuario_modifica y fecha_modificacion). Devuelve el registro " +
+      "corregido.",
+    request: {
+      params: registroProgresoParamsSchema,
+      body: cuerpoJson(
+        actualizarProgresoSchema.openapi("ActualizarProgreso", {
+          example: { medidas: [{ codigo: "PESO", valor: 62.4 }] },
+        }),
+      ),
+    },
+    responses: {
+      200: respuestaJson("Medición corregida", registroSchema),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
+  });
+
+  registro.registerPath({
+    method: "delete",
+    path: "/progreso/{id}",
+    tags,
+    security,
+    summary: "Dar de baja una medición (US-27)",
+    description:
+      "Requiere RUTINAS_EDITAR. {id} es el id_registro. Es una baja lógica: el registro y sus medidas quedan en " +
+      "la base con quién y cuándo lo dio de baja, pero dejan de aparecer en GET /alumnos/{id}/progreso y ya no se " +
+      "pueden corregir ni volver a dar de baja. Mismos permisos que PATCH: la propietaria cualquiera y la " +
+      "profesora, solo las de sus alumnos a cargo.",
+    request: { params: registroProgresoParamsSchema },
+    responses: {
+      204: { description: "Medición dada de baja" },
       ...respuestasDeError(400, 401, 403, 404),
     },
   });

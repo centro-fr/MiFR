@@ -4,9 +4,9 @@ import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 import { CODIGOS_MEDIDA, MEDIDAS } from "./medida.catalogo.js";
 
-// ck_medidas_corporales_valor del DER: valor > 0. Además, dos decimales como la columna NUMERIC(6,2) y
+// ck_medidas_corporales_x1 del DER: valor > 0. Además, dos decimales como la columna NUMERIC(6,2) y
 // un rango biológicamente coherente según el tipo de medida.
-const medidaSchema = z
+export const medidaSchema = z
   .object({
     codigo: z.enum(CODIGOS_MEDIDA),
     valor: z
@@ -22,6 +22,12 @@ const medidaSchema = z
     }),
   );
 
+const medidasSchema = z.array(medidaSchema).min(1).max(CODIGOS_MEDIDA.length);
+
+const sinRepetidas = (medidas: { codigo: string }[]) =>
+  new Set(medidas.map(({ codigo }) => codigo)).size === medidas.length;
+const MENSAJE_REPETIDAS = { message: "No se puede repetir una medida", path: ["medidas"] };
+
 // Sin fecha se registra la de hoy; una fecha futura la rechaza el service. id_profesora solo lo manda la
 // propietaria: una profesora carga siempre a su nombre.
 export const registrarProgresoSchema = z
@@ -32,13 +38,27 @@ export const registrarProgresoSchema = z
     observaciones: textoOpcionalSchema(500, { multilinea: true })
       .optional()
       .transform((valor) => valor ?? null),
-    medidas: z.array(medidaSchema).min(1).max(CODIGOS_MEDIDA.length),
+    medidas: medidasSchema,
   })
-  .refine(({ medidas }) => new Set(medidas.map(({ codigo }) => codigo)).size === medidas.length, {
-    message: "No se puede repetir una medida",
-    path: ["medidas"],
-  });
+  .refine(({ medidas }) => sinRepetidas(medidas), MENSAJE_REPETIDAS);
+
+// Corregir un registro: las mismas validaciones, pero todo es opcional y debe venir al menos un cambio. Las
+// medidas reemplazan a las anteriores. observaciones en null (o vacía) la borra. El alumno no se puede cambiar.
+export const actualizarProgresoSchema = z
+  .object({
+    fecha: fecha.optional(),
+    observaciones: textoOpcionalSchema(500, { multilinea: true }).optional(),
+    medidas: medidasSchema.optional(),
+  })
+  .refine(
+    ({ fecha: nueva, observaciones, medidas }) =>
+      nueva !== undefined || observaciones !== undefined || medidas !== undefined,
+    "Indicá al menos un dato para corregir",
+  )
+  .refine(({ medidas }) => medidas === undefined || sinRepetidas(medidas), MENSAJE_REPETIDAS);
 
 export const alumnoProgresoParamsSchema = z.object({ id: idDesdeTextoSchema });
+export const registroProgresoParamsSchema = z.object({ id: idDesdeTextoSchema });
 
 export type RegistrarProgresoInput = z.infer<typeof registrarProgresoSchema>;
+export type ActualizarProgresoInput = z.infer<typeof actualizarProgresoSchema>;

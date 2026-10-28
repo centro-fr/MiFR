@@ -17,5 +17,13 @@ export function createRutinaController(logica: ILogicaRutinas) {
     async vigente(req: Request, res: Response): Promise<void> {
       res.json(await logica.obtenerRutinaVigente(Number(req.params.id), solicitanteDe(req)));
     },
+
+    async miRutina(req: Request, res: Response): Promise<void> {
+      res.json(await logica.obtenerMiRutina(solicitanteDe(req)));
+    },
+
+    async misRutinas(req: Request, res: Response): Promise<void> {
+      res.json(await logica.listarMiRutinas(solicitanteDe(req)));
+    },
   };
 }

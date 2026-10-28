@@ -10,4 +10,9 @@ export const logicaRutinasNoConfigurada = {
   obtenerRutinaVigente: operacionNoConfigurada,
   registrarProgreso: operacionNoConfigurada,
   listarProgresoDeAlumno: operacionNoConfigurada,
+  actualizarProgreso: operacionNoConfigurada,
+  eliminarProgreso: operacionNoConfigurada,
+  obtenerMiRutina: operacionNoConfigurada,
+  listarMiRutinas: operacionNoConfigurada,
+  listarMiProgreso: operacionNoConfigurada,
 } satisfies ILogicaRutinasYProgreso;

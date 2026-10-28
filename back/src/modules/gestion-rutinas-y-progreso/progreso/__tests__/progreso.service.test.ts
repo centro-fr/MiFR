@@ -4,7 +4,13 @@ import type { ProgresoRepository } from "../progreso.repository.js";
 import { ProgresoService } from "../progreso.service.js";
 import type { RegistroDeProgreso } from "../progreso.types.js";
 
-const repositorio = { crear: vi.fn(), listarDeAlumno: vi.fn() };
+const repositorio = {
+  crear: vi.fn(),
+  listarDeAlumno: vi.fn(),
+  buscarPorId: vi.fn(),
+  actualizar: vi.fn(),
+  darDeBaja: vi.fn(),
+};
 const aCargo = { profesoraTieneAlumno: vi.fn() };
 const alumnos = { buscarPorId: vi.fn() };
 const profesoras = { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn() };
@@ -34,6 +40,8 @@ const REGISTRO: RegistroDeProgreso = {
   id_profesora: 10,
   fecha: fecha("2026-10-26"),
   observaciones: null,
+  fecha_modificacion: null,
+  id_usuario_modifica: null,
   medidas: [
     { codigo: "PESO", unidad: "kg", valor: 60 },
     { codigo: "CINTURA", unidad: "cm", valor: 70.5 },
@@ -196,6 +204,106 @@ describe("ProgresoService", () => {
       repositorio.listarDeAlumno.mockResolvedValue([]);
 
       expect(await service.listarDeAlumno(5, EL_ALUMNO)).toEqual([]);
+    });
+  });
+
+  describe.each([
+    ["actualizar", (s: ProgresoService, solicitante: typeof PROPIETARIA) => s.actualizar(1, { observaciones: "ok" }, solicitante)],
+    ["eliminar", (s: ProgresoService, solicitante: typeof PROPIETARIA) => s.eliminar(1, solicitante)],
+  ])("%s: quién puede tocar un registro", (_nombre, operar) => {
+    beforeEach(() => {
+      repositorio.buscarPorId.mockResolvedValue(REGISTRO);
+      repositorio.actualizar.mockResolvedValue(REGISTRO);
+    });
+
+    it("la profesora a cargo del alumno puede", async () => {
+      profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+      aCargo.profesoraTieneAlumno.mockResolvedValue(true);
+
+      await expect(operar(service, PROFESORA)).resolves.not.toThrow();
+      expect(aCargo.profesoraTieneAlumno).toHaveBeenCalledWith(10, 5);
+    });
+
+    it("la propietaria puede con cualquier alumno", async () => {
+      await expect(operar(service, PROPIETARIA)).resolves.not.toThrow();
+    });
+
+    it("responde 403 a una profesora que no tiene al alumno a cargo", async () => {
+      profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+
+      expect(await estado(operar(service, PROFESORA))).toBe(403);
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+      expect(repositorio.darDeBaja).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["el propio alumno", EL_ALUMNO],
+      ["el tutor", EL_TUTOR],
+      ["un ajeno", AJENO],
+    ])("responde 403 a %s", async (_quien, solicitante) => {
+      expect(await estado(operar(service, solicitante))).toBe(403);
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+      expect(repositorio.darDeBaja).not.toHaveBeenCalled();
+    });
+
+    it("responde 404 a la propietaria si el registro no existe o ya está dado de baja", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+
+      expect(await estado(operar(service, PROPIETARIA))).toBe(404);
+    });
+
+    it("responde 403, no 404, a quien no es propietaria si el registro no existe", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+      profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+      aCargo.profesoraTieneAlumno.mockResolvedValue(true);
+
+      expect(await estado(operar(service, PROFESORA))).toBe(403);
+    });
+  });
+
+  describe("actualizar", () => {
+    beforeEach(() => {
+      repositorio.buscarPorId.mockResolvedValue(REGISTRO);
+      repositorio.actualizar.mockResolvedValue(REGISTRO);
+    });
+
+    it("corrige las medidas con la unidad del catálogo y deja quién lo hizo", async () => {
+      expect(await service.actualizar(1, { medidas: [{ codigo: "PESO", valor: 62.4 }] }, PROPIETARIA)).toEqual(
+        REGISTRO,
+      );
+
+      expect(repositorio.actualizar).toHaveBeenCalledWith(
+        1,
+        { fecha: undefined, observaciones: undefined, medidas: [{ codigo: "PESO", unidad: "kg", valor: 62.4 }] },
+        PROPIETARIA.idUsuario,
+      );
+    });
+
+    it("pasa solo lo que se corrige y deja observaciones en null para borrarla", async () => {
+      await service.actualizar(1, { observaciones: null }, PROPIETARIA);
+
+      expect(repositorio.actualizar).toHaveBeenCalledWith(
+        1,
+        { fecha: undefined, observaciones: null, medidas: undefined },
+        PROPIETARIA.idUsuario,
+      );
+    });
+
+    it("acepta una fecha de hoy y rechaza una futura con 400", async () => {
+      await service.actualizar(1, { fecha: fecha("2026-10-26") }, PROPIETARIA);
+
+      expect(await estado(service.actualizar(1, { fecha: fecha("2026-10-27") }, PROPIETARIA))).toBe(400);
+      expect(repositorio.actualizar).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("eliminar", () => {
+    it("da de baja el registro dejando quién lo hizo", async () => {
+      repositorio.buscarPorId.mockResolvedValue(REGISTRO);
+
+      await service.eliminar(1, PROPIETARIA);
+
+      expect(repositorio.darDeBaja).toHaveBeenCalledWith(1, PROPIETARIA.idUsuario);
     });
   });
 });

@@ -38,4 +38,14 @@ export class RutinaService {
     await this.acceso.verificarLectura(idAlumno, solicitante);
     return this.repositorio.buscarVigenteDeAlumno(idAlumno);
   }
+
+  async obtenerVigentePropia(solicitante: Solicitante): Promise<Rutina | null> {
+    const idAlumno = await this.acceso.resolverAlumnoPropio(solicitante);
+    return this.obtenerVigente(idAlumno, solicitante);
+  }
+
+  async listarPropia(solicitante: Solicitante): Promise<Rutina[]> {
+    const idAlumno = await this.acceso.resolverAlumnoPropio(solicitante);
+    return this.listarDeAlumno(idAlumno, solicitante);
+  }
 }

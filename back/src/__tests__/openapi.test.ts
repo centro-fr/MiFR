@@ -115,6 +115,8 @@ const OPERACIONES_ESPERADAS = [
   "get /alumnos/{id}/rutinas",
   "get /alumnos/{id}/rutinas/vigente",
   "post /progreso",
+  "patch /progreso/{id}",
+  "delete /progreso/{id}",
   "get /alumnos/{id}/progreso",
 ];
 

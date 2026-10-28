@@ -34,6 +34,8 @@ export function createRutinaRoutes(logica: ILogicaRutinas, acceso: ControlDeAcce
     validate({ params: alumnoRutinasParamsSchema }),
     controller.vigente,
   );
+  router.get("/rutinas/mi-rutina", acceso.sesion, ver, controller.miRutina);
+  router.get("/rutinas/mis-rutinas", acceso.sesion, ver, controller.misRutinas);
 
   return router;
 }

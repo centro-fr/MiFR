@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { alumnoProgresoParamsSchema, registrarProgresoSchema } from "../progreso.schemas.js";
+import {
+  actualizarProgresoSchema,
+  alumnoProgresoParamsSchema,
+  registrarProgresoSchema,
+  registroProgresoParamsSchema,
+} from "../progreso.schemas.js";
 
 const BASE = { id_alumno: 5, medidas: [{ codigo: "PESO", valor: 62.5 }] };
 
@@ -74,5 +79,57 @@ describe("alumnoProgresoParamsSchema", () => {
 
   it.each(["0", "-1", "1.5", "abc"])("rechaza el id %s", (id) => {
     expect(alumnoProgresoParamsSchema.safeParse({ id }).success).toBe(false);
+  });
+});
+
+describe("actualizarProgresoSchema", () => {
+  it.each([
+    ["solo medidas", { medidas: [{ codigo: "PESO", valor: 62.4 }] }],
+    ["solo fecha", { fecha: "2026-10-20" }],
+    ["solo observaciones", { observaciones: "Control mensual" }],
+    ["borrar las observaciones con null", { observaciones: null }],
+    ["borrar las observaciones con un texto vacío", { observaciones: "" }],
+    ["todo junto", { fecha: "2026-10-20", observaciones: "Corregido", medidas: [{ codigo: "TALLA", valor: 165 }] }],
+  ])("acepta corregir %s", (_caso, cuerpo) => {
+    expect(actualizarProgresoSchema.safeParse(cuerpo).success).toBe(true);
+  });
+
+  it("distingue no tocar las observaciones de borrarlas", () => {
+    const sinTocar = actualizarProgresoSchema.parse({ fecha: "2026-10-20" });
+    const borrada = actualizarProgresoSchema.parse({ observaciones: "" });
+
+    expect(sinTocar.observaciones).toBeUndefined();
+    expect(borrada.observaciones).toBeNull();
+  });
+
+  it.each([
+    ["un cuerpo vacío", {}],
+    ["peso en cero", { medidas: [{ codigo: "PESO", valor: 0 }] }],
+    ["peso fuera de rango", { medidas: [{ codigo: "PESO", valor: 900 }] }],
+    ["más de dos decimales", { medidas: [{ codigo: "PESO", valor: 62.555 }] }],
+    ["una lista de medidas vacía", { medidas: [] }],
+    ["una medida repetida", { medidas: [{ codigo: "PESO", valor: 60 }, { codigo: "PESO", valor: 61 }] }],
+    ["una medida que no existe", { medidas: [{ codigo: "ALTURA", valor: 165 }] }],
+    ["una fecha que no existe", { fecha: "2026-02-30" }],
+    ["observaciones de más de 500 caracteres", { observaciones: "a".repeat(501) }],
+  ])("rechaza corregir con %s", (_caso, cuerpo) => {
+    expect(actualizarProgresoSchema.safeParse(cuerpo).success).toBe(false);
+  });
+
+  it("no deja cambiar el alumno ni la profesora: esos campos se descartan", () => {
+    const resultado = actualizarProgresoSchema.parse({ id_alumno: 9, id_profesora: 3, fecha: "2026-10-20" });
+
+    expect(resultado).not.toHaveProperty("id_alumno");
+    expect(resultado).not.toHaveProperty("id_profesora");
+  });
+});
+
+describe("registroProgresoParamsSchema", () => {
+  it("convierte el id a número", () => {
+    expect(registroProgresoParamsSchema.parse({ id: "7" })).toEqual({ id: 7 });
+  });
+
+  it.each(["0", "-1", "1.5", "abc"])("rechaza el id %s", (id) => {
+    expect(registroProgresoParamsSchema.safeParse({ id }).success).toBe(false);
   });
 });
