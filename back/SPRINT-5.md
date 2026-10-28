@@ -4,9 +4,9 @@ Sprint 5: **Cierre de funcionalidades pendientes**. Este documento reúne el alc
 
 | US | Historia / alcance | Estado en el back | Responsable |
 | --- | --- | --- | --- |
-| US-23 | Informe y liquidación mensual de honorarios | Hecho con la regla del 50 % de lo cobrado; falta confirmar con el equipo las definiciones de [honorarios-pendientes.md](honorarios-pendientes.md) y actualizar los datos de demo | Rosario |
-| US-27 | Carga de rutinas y evolución física | Pendiente | Rosario |
-| US-28 | Consulta de rutina y progreso por alumno/tutor | Pendiente | Rosario |
+| US-23 | Informe y liquidación mensual de honorarios | Hecho con la regla del 50 % de lo cobrado; validación explícita de totales; devolución/reverso documentado en [honorarios-pendientes.md](honorarios-pendientes.md); falta actualizar los datos de demo | Rosario |
+| US-27 | Carga de rutinas y evolución física | Hecho (carga, historial, permisos) | Rosario |
+| US-28 | Consulta de rutina y progreso por alumno/tutor | Hecho (endpoints para alumno/tutor con resolución automática) | Rosario |
 | US-30 | Ranking de asistencia | Hecho | Nicolas |
 | US-31 | Insignias y racha de asistencia | Hecho | Nicolas |
 | US-33 | Informe de asistencia | Hecho (la exportación a PDF y Excel no está en el back) | Nicolas |
@@ -32,20 +32,20 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 ## Honorarios (US-23)
 
 - [x] Actualizar US-23 y el SDD con el 50% de los ingresos por cuotas atribuibles a cada profesora; no aplicar mínimo de alumnos.
-- [ ] Resolver las definiciones abiertas del checklist independiente antes de implementar el cálculo. Quedaron documentadas como propuesta en `honorarios-pendientes.md` (base: pagos confirmados del mes; cuentan las inscripciones activas o dadas de baja que cobraron; pagos parciales por el monto confirmado; atribución a la profesora de la inscripción; suplencias sobre el honorario por cuotas). Falta confirmarlas con el equipo, en especial el tratamiento de las devoluciones.
+- [x] Resolver las definiciones abiertas del checklist independiente antes de implementar el cálculo. Definidas en `honorarios-pendientes.md` (base: pagos confirmados del mes; cuentan las inscripciones activas o dadas de baja que cobraron; pagos parciales por el monto confirmado; atribución a la profesora de la inscripción; suplencias por hora configurable por profesora). Devoluciones/reversos: si está en BORRADOR se resta; si está CERRADA/PAGADA se genera ajuste en el mes siguiente con registro aparte.
 - [x] Completar modelos Prisma, migración, tarifas, liquidaciones y detalle según las decisiones confirmadas. Los modelos ya existían y no requirieron migración: el 50 % se carga como una tarifa de porcentaje por profesora.
 - [x] Implementar y probar el calculador mensual, los créditos y débitos por suplencias y la inmutabilidad de liquidaciones cerradas.
 - [x] Implementar los endpoints de tarifas y liquidaciones descritos en SPRINT-4.md, con roles, permisos y OpenAPI. Se sumaron el desglose por profesora, el plan y la situación de cada alumno, la titular y la suplente de cada clase suplida, y el plan en el listado de tarifas (issue #41).
-- [ ] Validar que el total de cada liquidación coincida con la suma de sus detalles y que el total general coincida con las liquidaciones individuales. Los valores coinciden en los casos R-01 y R-02; falta una aserción explícita de la suma.
+- [x] Validar que el total de cada liquidación coincida con la suma de sus detalles y que el total general coincida con las liquidaciones individuales. Agregada validación explícita en `LiquidacionService`. Los valores coinciden en los casos R-01 y R-02.
 
 ## Rutinas y progreso (US-27 y US-28)
 
-- [ ] Verificar el esquema existente y completar los modelos/migraciones faltantes de rutinas, registros de progreso, tipos de medida y medidas corporales.
-- [ ] Implementar la carga y consulta de rutinas, con historial y asociación al alumno y a la profesora que la registró.
-- [ ] Implementar el registro transaccional de mediciones; rechazar valores no positivos y mantener unidades consistentes.
-- [ ] Implementar endpoints de consulta para alumno y tutor, limitados al alumno propio o al menor a cargo.
-- [ ] Aplicar permisos: profesoras solo para alumnos a su cargo; propietaria para todos; alumno/tutor en modo lectura.
-- [ ] Agregar pruebas de autorización, historial, validación de medidas y casos sin rutina ni mediciones.
+- [x] Verificar el esquema existente y completar los modelos/migraciones faltantes de rutinas, registros de progreso, tipos de medida y medidas corporales. Esquema ya existente en Prisma.
+- [x] Implementar la carga y consulta de rutinas, con historial y asociación al alumno y a la profesora que la registró.
+- [x] Implementar el registro transaccional de mediciones; rechazar valores no positivos y mantener unidades consistentes.
+- [x] Implementar endpoints de consulta para alumno y tutor, limitados al alumno propio o al menor a cargo. Agregados `GET /rutinas/mi-rutina`, `GET /rutinas/mis-rutinas`, `GET /progreso/mi-progreso`.
+- [x] Aplicar permisos: profesoras solo para alumnos a su cargo; propietaria para todos; alumno/tutor en modo lectura.
+- [x] Agregar pruebas de autorización, historial, validación de medidas y casos sin rutina ni mediciones. Tests unitarios y de rutas OK.
 
 ## Ranking e insignias (US-30 y US-31)
 

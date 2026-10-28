@@ -51,6 +51,8 @@ model usuarios {
   suplencias_registradas   suplencias[]
   notificaciones           notificaciones[]
   seguimientos_inactividad seguimientos_inactividad[]
+  progreso_corregido     registros_progreso[]       @relation("registro_progreso_modifica")
+  progreso_dado_de_baja  registros_progreso[]       @relation("registro_progreso_baja")
 }
 
 model roles {
@@ -135,6 +137,7 @@ model profesoras {
   pagos_cobrados     pagos[]
   clases_dictadas    clases[]
   registros_progreso registros_progreso[]
+  rutinas            rutinas[]
   ausencias_suplidas suplencias[]
   tarifas_honorario  tarifas_honorario[]
   liquidaciones      liquidaciones[]
@@ -280,6 +283,7 @@ model alumnos {
   responsable        usuarios?            @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
   inscripciones      inscripciones[]
   registros_progreso registros_progreso[]
+  rutinas            rutinas[]
   asistencias        asistencias[]
   insignias          alumno_insignias[]
 }
@@ -491,20 +495,53 @@ model pagos {
   @@index([id_cuota], map: "IXFK_pagos_cuotas")
 }
 
-// Rutinas y progreso (US-27). Por ahora solo la medición inicial que se carga al pre-inscribir (US-05).
+// Rutinas y progreso (US-27). El registro de progreso es una sesión de medición del alumno con sus medidas. Se
+// corrige con PATCH (queda quién y cuándo) y se da de baja de forma lógica: sigue en la base pero ya no se muestra.
 model registros_progreso {
-  id_registro   Int      @id(map: "PK_registros_progreso") @default(autoincrement())
-  id_alumno     Int
-  id_profesora  Int
-  fecha         DateTime @db.Date
-  observaciones String?  @db.VarChar(500)
+  id_registro         Int       @id(map: "PK_registros_progreso") @default(autoincrement())
+  id_alumno           Int
+  id_profesora        Int
+  fecha               DateTime  @db.Date
+  observaciones       String?   @db.VarChar(500)
+  // la última corrección; NULL si nunca se corrigió
+  fecha_modificacion  DateTime? @db.Timestamp(6)
+  id_usuario_modifica Int?
+  // baja lógica; NULL mientras el registro está vigente
+  fecha_baja          DateTime? @db.Timestamp(6)
+  id_usuario_baja     Int?
 
-  alumno    alumnos              @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_alumnos")
-  profesora profesoras           @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_profesoras")
-  medidas   medidas_corporales[]
+  alumno           alumnos              @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_alumnos")
+  profesora        profesoras           @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_profesoras")
+  usuario_modifica usuarios?            @relation("registro_progreso_modifica", fields: [id_usuario_modifica], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_usuario_modifica")
+  usuario_baja     usuarios?            @relation("registro_progreso_baja", fields: [id_usuario_baja], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_usuario_baja")
+  medidas          medidas_corporales[]
 
   @@index([id_alumno], map: "IXFK_registros_progreso_alumnos")
   @@index([id_profesora], map: "IXFK_registros_progreso_profesoras")
+  @@index([id_usuario_modifica], map: "IXFK_registros_progreso_usuario_modifica")
+  @@index([id_usuario_baja], map: "IXFK_registros_progreso_usuario_baja")
+}
+
+model rutinas {
+  id_rutina     Int       @id(map: "PK_rutinas") @default(autoincrement())
+  id_alumno     Int
+  // la profesora que la cargó
+  id_profesora  Int
+  nombre        String    @db.VarChar(100)
+  fecha_desde   DateTime  @db.Date
+  // >= fecha_desde
+  fecha_hasta   DateTime? @db.Date
+  // días, ejercicios, series y repeticiones
+  contenido     Json
+  observaciones String?   @db.VarChar(500)
+  // solo una vigente por alumno
+  activa        Boolean   @default(true)
+
+  alumno    alumnos    @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_alumnos")
+  profesora profesoras @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_profesoras")
+
+  @@index([id_alumno, activa], map: "IX_rutinas_alumno_activa")
+  @@index([id_profesora], map: "IXFK_rutinas_profesoras")
 }
 
 model tipos_medida {

@@ -2,6 +2,7 @@ import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/l
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
+import { logicaRutinasNoConfigurada } from "../../../../__tests__/fakes/logica-rutinas-no-configurada.js";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,6 +60,7 @@ function crearApp(logica: ReturnType<typeof crearLogicaMock>, autorizacion: IAut
     gestionInsignias: logicaInsigniasNoConfigurada,
     reportes: logicaInformesNoConfigurada,
     gestionHonorarios: logicaHonorariosNoConfigurada,
+    gestionRutinasYProgreso: logicaRutinasNoConfigurada,
     autenticacion,
     autorizacion,
   });

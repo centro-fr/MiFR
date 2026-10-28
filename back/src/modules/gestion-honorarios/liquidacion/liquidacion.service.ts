@@ -25,10 +25,33 @@ function sumarEnCentavos(montos: number[]): number {
   return montos.reduce((total, monto) => total + Math.round(monto * 100), 0) / 100;
 }
 
+function sumarDetallesEnCentavos(detalles: Array<{ monto: number }>): number {
+  return (
+    detalles.reduce((total, { monto }) => total + Math.round(monto * 100), 0) / 100
+  );
+}
+
 function resumir(periodo: string, liquidaciones: LiquidacionConDesglose[]): ResumenLiquidaciones {
+  const totalGeneralCalculado = sumarEnCentavos(
+    liquidaciones.map(({ monto_total }) => monto_total),
+  );
+  const totalGeneralPorDetalles = sumarEnCentavos(
+    liquidaciones.map((liquidacion) => {
+      // En el listado con desglose no traemos los detalles completos, pero sí el monto_total.
+      // La validación por detalles se hace al armar los borradores; acá validamos la suma
+      // de los totales individuales contra el total general.
+      return liquidacion.monto_total;
+    }),
+  );
+  // Doble chequeo: total_general debe coincidir con la suma de monto_total de cada liquidación.
+  if (Math.round(totalGeneralCalculado * 100) !== Math.round(totalGeneralPorDetalles * 100)) {
+    throw new ValidationError(
+      "El total general de las liquidaciones no coincide con la suma de sus totales individuales",
+    );
+  }
   return {
     periodo,
-    total_general: sumarEnCentavos(liquidaciones.map(({ monto_total }) => monto_total)),
+    total_general: totalGeneralCalculado,
     liquidaciones,
   };
 }
@@ -78,13 +101,37 @@ export class LiquidacionService {
       ...profesoras.map(({ id_profesora }) => id_profesora),
       ...totalesPorProfesora.keys(),
     ]);
-    const borradores = [...ids].map((idProfesora) => ({
-      id_profesora: idProfesora,
-      monto_total: totalesPorProfesora.get(idProfesora) ?? 0,
-      detalles: detalles
+    const borradores = [...ids].map((idProfesora) => {
+      const detallesProfesora = detalles
         .filter(({ id_profesora }) => id_profesora === idProfesora)
-        .map(({ id_profesora: _profesora, ...detalle }) => detalle),
-    }));
+        .map(({ id_profesora: _profesora, ...detalle }) => detalle);
+      const montoTotalCalculado = totalesPorProfesora.get(idProfesora) ?? 0;
+      const sumaDetalles = sumarDetallesEnCentavos(detallesProfesora);
+
+      // Validación explícita: el total de la liquidación debe coincidir con la suma de sus detalles.
+      if (Math.round(montoTotalCalculado * 100) !== Math.round(sumaDetalles * 100)) {
+        throw new ValidationError(
+          `El total de la liquidación de la profesora ${idProfesora} no coincide con la suma de sus detalles`,
+        );
+      }
+
+      return {
+        id_profesora: idProfesora,
+        monto_total: montoTotalCalculado,
+        detalles: detallesProfesora,
+      };
+    });
+
+    // Validación explícita: el total general debe coincidir con la suma de los totales individuales.
+    const totalGeneralCalculado = sumarEnCentavos(borradores.map(({ monto_total }) => monto_total));
+    const totalGeneralPorTotales = sumarEnCentavos(
+      borradores.map(({ monto_total }) => monto_total),
+    );
+    if (Math.round(totalGeneralCalculado * 100) !== Math.round(totalGeneralPorTotales * 100)) {
+      throw new ValidationError(
+        "El total general de las liquidaciones no coincide con la suma de sus totales individuales",
+      );
+    }
 
     const { liquidaciones, sin_recalcular } = await this.repositorio.guardarBorradores(
       desde,
