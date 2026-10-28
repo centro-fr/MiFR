@@ -43,7 +43,7 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 - [x] Verificar el esquema existente y completar los modelos/migraciones faltantes de rutinas, registros de progreso, tipos de medida y medidas corporales. Esquema ya existente en Prisma.
 - [x] Implementar la carga y consulta de rutinas, con historial y asociación al alumno y a la profesora que la registró.
 - [x] Implementar el registro transaccional de mediciones; rechazar valores no positivos y mantener unidades consistentes.
-- [x] Implementar endpoints de consulta para alumno y tutor, limitados al alumno propio o al menor a cargo. Agregados `GET /rutinas/mi-rutina`, `GET /rutinas/mis-rutinas`, `GET /progreso/mi-progreso`.
+- [x] Implementar endpoints de consulta para alumno y tutor, limitados al alumno propio o al menor a cargo. Agregados `GET /rutinas/mi-rutina`, `GET /rutinas/mis-rutinas`, `GET /progreso/mi-progreso`. Agregado `GET /alumnos/mios` para descubrir el alumno propio o los menores a cargo (devuelve `id_alumno`, `nombre`, `apellido`, `estado`, `propio`).
 - [x] Aplicar permisos: profesoras solo para alumnos a su cargo; propietaria para todos; alumno/tutor en modo lectura.
 - [x] Agregar pruebas de autorización, historial, validación de medidas y casos sin rutina ni mediciones. Tests unitarios y de rutas OK.
 
