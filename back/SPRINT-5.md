@@ -27,7 +27,7 @@ Verificar cuáles pendientes siguen abiertos al iniciar el sprint; cerrar solo l
 - [x] Completar la notificación diaria del resumen de la propietaria (US-26); el endpoint `GET /resumen-diario` ya está implementado (Francisco).
 - [ ] Reflejar en Enterprise Architect y regenerar los entregables de las dependencias pendientes de US-13, US-20, US-22, US-24, US-25 y US-26.
 - [x] Resolver la regla de suplencias en períodos liquidados de US-24 antes de cerrar esa historia (Nicolas). Decidido el 20/10/2026 (ver "Suplencia en un período liquidado" en SPRINT-4.md): la liquidación cerrada es una foto y la regla la controla la fachada de `GestionHonorarios`. Implementarla espera a las liquidaciones de US-23.
-- [ ] Cerrar los casos de integración y demostración pendientes que se arrastren de SPRINT-3.md y SPRINT-4.md. Los de honorarios (PI-78 a PI-82) ya están escritos y pasan en `honorarios.integration.test.ts`; falta documentarlos en `PRUEBAS-INTEGRACION.md`.
+- [x] Cerrar los casos de integración y demostración pendientes que se arrastren de SPRINT-3.md y SPRINT-4.md. Los de honorarios (PI-78 a PI-82) ya están escritos y pasan en `honorarios.integration.test.ts`; falta documentarlos en `PRUEBAS-INTEGRACION.md`.
 
 ## Honorarios (US-23)
 
