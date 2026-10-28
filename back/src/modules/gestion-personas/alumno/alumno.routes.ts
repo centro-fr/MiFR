@@ -15,6 +15,7 @@ export function createAlumnoRoutes(logica: ILogicaAlumnos, acceso: ControlDeAcce
   const controller = createAlumnoController(logica);
   router.use(acceso.sesion);
 
+  router.get("/mios", controller.listarMios);
   router.get(
     "/",
     acceso.permiso("ALUMNOS_VER"),

@@ -56,6 +56,7 @@ export interface ILogicaAlumnos {
   listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos>;
   obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput, solicitante: Solicitante): Promise<Alumno>;
+  listarAlumnosDelSolicitante?(solicitante: Solicitante): Promise<Alumno[]>;
 }
 
 // Interfaz del subsistema GestionPersonas para las operaciones expuestas a la API.
