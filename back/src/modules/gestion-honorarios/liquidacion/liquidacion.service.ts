@@ -26,15 +26,11 @@ function sumarEnCentavos(montos: number[]): number {
 }
 
 function sumarDetallesEnCentavos(detalles: Array<{ monto: number }>): number {
-  return (
-    detalles.reduce((total, { monto }) => total + Math.round(monto * 100), 0) / 100
-  );
+  return detalles.reduce((total, { monto }) => total + Math.round(monto * 100), 0) / 100;
 }
 
 function resumir(periodo: string, liquidaciones: LiquidacionConDesglose[]): ResumenLiquidaciones {
-  const totalGeneralCalculado = sumarEnCentavos(
-    liquidaciones.map(({ monto_total }) => monto_total),
-  );
+  const totalGeneralCalculado = sumarEnCentavos(liquidaciones.map(({ monto_total }) => monto_total));
   const totalGeneralPorDetalles = sumarEnCentavos(
     liquidaciones.map((liquidacion) => {
       // En el listado con desglose no traemos los detalles completos, pero sí el monto_total.
@@ -124,9 +120,7 @@ export class LiquidacionService {
 
     // Validación explícita: el total general debe coincidir con la suma de los totales individuales.
     const totalGeneralCalculado = sumarEnCentavos(borradores.map(({ monto_total }) => monto_total));
-    const totalGeneralPorTotales = sumarEnCentavos(
-      borradores.map(({ monto_total }) => monto_total),
-    );
+    const totalGeneralPorTotales = sumarEnCentavos(borradores.map(({ monto_total }) => monto_total));
     if (Math.round(totalGeneralCalculado * 100) !== Math.round(totalGeneralPorTotales * 100)) {
       throw new ValidationError(
         "El total general de las liquidaciones no coincide con la suma de sus totales individuales",
