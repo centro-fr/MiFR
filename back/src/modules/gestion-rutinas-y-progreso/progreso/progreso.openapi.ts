@@ -21,7 +21,10 @@ const registroSchema = z
     id_alumno: z.number().int(),
     id_profesora: z.number().int().openapi({ description: "La profesora que cargó la medición" }),
     fecha: fechaSchema,
-    observaciones: z.string().nullable(),
+    observaciones: z.string().nullable().openapi({
+      description:
+        "Notas de la profesora: solo las ven la propietaria y la profesora a cargo; al alumno y al tutor les llega null",
+    }),
     fecha_modificacion: z
       .string()
       .datetime()

@@ -34,12 +34,10 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
   - Ejercicios / actividades
   - Fecha de inicio
   - Profesora que la cargó
-  - Observaciones
 - Historial de mediciones:
   - Fecha
   - Peso
   - Medidas (cintura, cadera, pecho, brazos, piernas)
-  - Observaciones
 - Gráfico de evolución:
   - Peso a lo largo del tiempo
   - Otras medidas (opcional)
@@ -48,7 +46,7 @@ Como alumno, quiero consultar mi rutina y mis registros de progreso físico desd
 
 - Rutinas o mediciones de otros alumnos
 - Datos internos de la profesora
-- Observaciones privadas de la profesora
+- Observaciones de la profesora, de la rutina y de las mediciones: son privadas y solo las ven la profesora a cargo y la propietaria. Las notas de cada ejercicio sí forman parte de la rutina que ve el alumno.
 
 ## 6. Acciones del usuario
 
