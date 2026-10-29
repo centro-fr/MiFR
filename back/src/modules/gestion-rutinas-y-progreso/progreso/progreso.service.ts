@@ -34,7 +34,11 @@ export class ProgresoService {
   }
 
   async registrar(input: RegistrarProgresoInput, solicitante: Solicitante): Promise<RegistroDeProgreso> {
-    const idProfesora = await this.acceso.autorizarEscritura(input.id_alumno, input.id_profesora, solicitante);
+    const idProfesora = await this.acceso.autorizarEscritura(
+      input.id_alumno,
+      input.id_profesora,
+      solicitante,
+    );
 
     const fecha = input.fecha ?? fechaActualArgentina();
     this.validarQueNoSeaFutura(fecha);
@@ -100,6 +104,7 @@ export class ProgresoService {
   }
 
   private validarQueNoSeaFutura(fecha: Date): void {
-    if (fecha > fechaActualArgentina()) throw new ValidationError("La fecha de la medición no puede ser futura");
+    if (fecha > fechaActualArgentina())
+      throw new ValidationError("La fecha de la medición no puede ser futura");
   }
 }
