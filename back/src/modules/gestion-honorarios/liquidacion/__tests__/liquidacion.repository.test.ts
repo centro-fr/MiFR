@@ -208,6 +208,17 @@ describe("LiquidacionRepository", () => {
     });
   });
 
+  it("listarPorPeriodo toma como 0 un concepto sin monto sumado", async () => {
+    prisma.liquidaciones.findMany.mockResolvedValue([fila()]);
+    prisma.liquidacion_detalles.groupBy.mockResolvedValue([
+      { id_liquidacion: 1, concepto: "ALUMNO_A_CARGO", _count: { _all: 2 }, _sum: { monto: null } },
+    ]);
+
+    const [liquidacion] = await repositorio.listarPorPeriodo(DESDE, HASTA);
+
+    expect(liquidacion).toMatchObject({ cantidad_alumnos: 2, subtotal_alumnos: 0 });
+  });
+
   describe("buscarPorId", () => {
     it("devuelve la liquidación con sus detalles por alumno y por clase", async () => {
       prisma.liquidaciones.findUnique.mockResolvedValue({

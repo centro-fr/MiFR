@@ -12,7 +12,7 @@ const repositorio = {
   darDeBaja: vi.fn(),
 };
 const aCargo = { profesoraTieneAlumno: vi.fn() };
-const alumnos = { buscarPorId: vi.fn() };
+const alumnos = { buscarPorId: vi.fn(), buscarPorIdUsuario: vi.fn(), buscarPorIdUsuarioResponsable: vi.fn() };
 const profesoras = { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn() };
 
 const fecha = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -63,6 +63,8 @@ describe("ProgresoService", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-26T15:00:00Z"));
     alumnos.buscarPorId.mockResolvedValue(ALUMNO);
+    alumnos.buscarPorIdUsuario.mockResolvedValue(null);
+    alumnos.buscarPorIdUsuarioResponsable.mockResolvedValue(null);
     profesoras.buscarPorUsuario.mockResolvedValue(null);
     profesoras.buscarPorId.mockResolvedValue({ id_profesora: 10 });
     aCargo.profesoraTieneAlumno.mockResolvedValue(false);
@@ -321,6 +323,20 @@ describe("ProgresoService", () => {
       await service.eliminar(1, PROPIETARIA);
 
       expect(repositorio.darDeBaja).toHaveBeenCalledWith(1, PROPIETARIA.idUsuario);
+    });
+  });
+
+  describe("listarPropio", () => {
+    it("resuelve el alumno de quien pide y le oculta las observaciones", async () => {
+      alumnos.buscarPorIdUsuario.mockResolvedValue({ id_alumno: 5 });
+      repositorio.listarDeAlumno.mockResolvedValue([{ ...REGISTRO, observaciones: "Privada" }]);
+
+      expect(await service.listarPropio(EL_ALUMNO)).toEqual([REGISTRO]);
+      expect(repositorio.listarDeAlumno).toHaveBeenCalledWith(5);
+    });
+
+    it("responde 404 si quien pide no es alumno ni tutor", async () => {
+      expect(await estado(service.listarPropio(AJENO))).toBe(404);
     });
   });
 });
