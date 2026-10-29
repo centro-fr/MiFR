@@ -4,9 +4,8 @@ import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 // Solo lo que se necesita de los otros módulos.
 export interface AlumnoLookup {
   buscarPorId(id: number): Promise<{ id_usuario: number; id_usuario_responsable: number | null } | null>;
-  buscarPorIdUsuario?(
-    idUsuario: number,
-  ): Promise<{ id_alumno: number; id_usuario: number; id_usuario_responsable: number | null } | null>;
+  buscarPorIdUsuario(idUsuario: number): Promise<{ id_alumno: number } | null>;
+  buscarPorIdUsuarioResponsable(idUsuario: number): Promise<{ id_alumno: number } | null>;
 }
 export interface ProfesoraLookup {
   buscarPorId(id: number): Promise<{ id_profesora: number } | null>;
@@ -36,17 +35,14 @@ export class AccesoAAlumno {
     private readonly profesoras: ProfesoraLookup,
   ) {}
 
+  // El alumno de quien pide o, si es tutor, uno de sus menores a cargo. Con varios menores no puede elegir:
+  // para eso el front usa GET /alumnos/mios y las consultas por id_alumno.
   async resolverAlumnoPropio(solicitante: Solicitante): Promise<number> {
-    if (this.alumnos.buscarPorIdUsuario) {
-      const alumno = await this.alumnos.buscarPorIdUsuario(solicitante.idUsuario);
-      if (alumno) return (alumno as any).id_alumno;
-    }
-    const buscarPorResponsable = (this.alumnos as any).buscarPorIdUsuarioResponsable;
-    if (typeof buscarPorResponsable === "function") {
-      const alumno = await buscarPorResponsable.call(this.alumnos, solicitante.idUsuario);
-      if (alumno) return (alumno as any).id_alumno;
-    }
-    throw new NotFoundError("No se encontró un alumno asociado a este usuario");
+    const alumno =
+      (await this.alumnos.buscarPorIdUsuario(solicitante.idUsuario)) ??
+      (await this.alumnos.buscarPorIdUsuarioResponsable(solicitante.idUsuario));
+    if (!alumno) throw new NotFoundError("No se encontró un alumno asociado a este usuario");
+    return alumno.id_alumno;
   }
 
   // La profesora a cargo se resuelve antes que el alumno y el tutor: si también es tutora de su alumno, ve
@@ -94,9 +90,11 @@ export class AccesoAAlumno {
     const idPropia = propia?.id_profesora ?? null;
 
     if (!solicitante.esPropietaria) {
-      const aCargo =
-        alumno !== null && idPropia !== null && (await this.aCargo.profesoraTieneAlumno(idPropia, idAlumno));
-      if (!aCargo || idPropia === null) {
+      if (
+        alumno === null ||
+        idPropia === null ||
+        !(await this.aCargo.profesoraTieneAlumno(idPropia, idAlumno))
+      ) {
         throw new ForbiddenError("Solo podés cargar datos a los alumnos que tenés a cargo");
       }
       return idPropia;
