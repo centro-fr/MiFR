@@ -117,7 +117,10 @@ export class AlumnoRepository {
   }
 
   buscarPorIdUsuarioResponsable(idUsuario: number): Promise<Alumno | null> {
-    return this.prisma.alumnos.findFirst({ where: { id_usuario_responsable: idUsuario }, include: CON_DATOS });
+    return this.prisma.alumnos.findFirst({
+      where: { id_usuario_responsable: idUsuario },
+      include: CON_DATOS,
+    });
   }
 
   // US-28: el alumno del usuario y sus menores a cargo, en una consulta y solo con lo que se muestra.

@@ -89,7 +89,10 @@ describe("actualizarProgresoSchema", () => {
     ["solo observaciones", { observaciones: "Control mensual" }],
     ["borrar las observaciones con null", { observaciones: null }],
     ["borrar las observaciones con un texto vacío", { observaciones: "" }],
-    ["todo junto", { fecha: "2026-10-20", observaciones: "Corregido", medidas: [{ codigo: "TALLA", valor: 165 }] }],
+    [
+      "todo junto",
+      { fecha: "2026-10-20", observaciones: "Corregido", medidas: [{ codigo: "TALLA", valor: 165 }] },
+    ],
   ])("acepta corregir %s", (_caso, cuerpo) => {
     expect(actualizarProgresoSchema.safeParse(cuerpo).success).toBe(true);
   });
@@ -108,7 +111,15 @@ describe("actualizarProgresoSchema", () => {
     ["peso fuera de rango", { medidas: [{ codigo: "PESO", valor: 900 }] }],
     ["más de dos decimales", { medidas: [{ codigo: "PESO", valor: 62.555 }] }],
     ["una lista de medidas vacía", { medidas: [] }],
-    ["una medida repetida", { medidas: [{ codigo: "PESO", valor: 60 }, { codigo: "PESO", valor: 61 }] }],
+    [
+      "una medida repetida",
+      {
+        medidas: [
+          { codigo: "PESO", valor: 60 },
+          { codigo: "PESO", valor: 61 },
+        ],
+      },
+    ],
     ["una medida que no existe", { medidas: [{ codigo: "ALTURA", valor: 165 }] }],
     ["una fecha que no existe", { fecha: "2026-02-30" }],
     ["observaciones de más de 500 caracteres", { observaciones: "a".repeat(501) }],

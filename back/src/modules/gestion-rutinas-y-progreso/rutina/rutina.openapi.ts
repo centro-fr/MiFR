@@ -31,7 +31,9 @@ const rutinaSchema = z
       description:
         "Notas de la profesora: solo las ven la propietaria y la profesora a cargo; al alumno y al tutor les llega null",
     }),
-    activa: z.boolean().openapi({ description: "true en la rutina vigente; las anteriores quedan en el historial" }),
+    activa: z
+      .boolean()
+      .openapi({ description: "true en la rutina vigente; las anteriores quedan en el historial" }),
   })
   .openapi("Rutina");
 
@@ -67,7 +69,9 @@ export function registrarDocumentacionRutina(registro: OpenAPIRegistry): void {
               dias: [
                 {
                   nombre: "Día 1 - Tren inferior",
-                  ejercicios: [{ nombre: "Sentadilla", series: 3, repeticiones: "10", notas: "Con barra libre" }],
+                  ejercicios: [
+                    { nombre: "Sentadilla", series: 3, repeticiones: "10", notas: "Con barra libre" },
+                  ],
                 },
               ],
             },

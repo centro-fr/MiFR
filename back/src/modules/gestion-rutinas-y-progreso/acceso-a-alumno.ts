@@ -4,7 +4,9 @@ import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 // Solo lo que se necesita de los otros módulos.
 export interface AlumnoLookup {
   buscarPorId(id: number): Promise<{ id_usuario: number; id_usuario_responsable: number | null } | null>;
-  buscarPorIdUsuario?(idUsuario: number): Promise<{ id_alumno: number; id_usuario: number; id_usuario_responsable: number | null } | null>;
+  buscarPorIdUsuario?(
+    idUsuario: number,
+  ): Promise<{ id_alumno: number; id_usuario: number; id_usuario_responsable: number | null } | null>;
 }
 export interface ProfesoraLookup {
   buscarPorId(id: number): Promise<{ id_profesora: number } | null>;
