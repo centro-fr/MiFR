@@ -97,12 +97,10 @@ export interface LiquidacionDetalle {
   suplencias: LineaSuplencia[];
 }
 
+/** Una de las dos tarifas del estudio: rige igual para todos los profesores. */
 export interface TarifaHonorario {
   id: number;
-  idProfesora: number;
   concepto: ConceptoTarifa;
-  /** null: rige para todos los planes. */
-  idPlan: number | null;
   tipoValor: TipoValorTarifa;
   valor: number;
   /** AAAA-MM-DD. */

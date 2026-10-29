@@ -85,13 +85,23 @@ export function InformeSinCalcular({ periodo, calculando, onCalcular }: PropsSin
   );
 }
 
+// La tarifa es una sola para todo el estudio. TARIFA_NO_APLICABLE: la vigente es del tipo que el
+// concepto ya no admite (por alumno, un porcentaje; por hora de suplencia, un monto fijo). Pasa con
+// tarifas cargadas antes de esa regla.
+const MOTIVO_DE_LA_ADVERTENCIA: Record<AdvertenciaHonorario["concepto"], Record<AdvertenciaHonorario["motivo"], string>> = {
+  ALUMNO_A_CARGO: {
+    SIN_TARIFA: "un alumno no sumó porque no hay una tarifa por alumno vigente.",
+    TARIFA_NO_APLICABLE: "un alumno no sumó, porque la tarifa por alumno es un monto fijo y tiene que ser un porcentaje de lo cobrado.",
+  },
+  HORA_SUPLENCIA: {
+    SIN_TARIFA: "una clase que cubrió no sumó ni se descontó, porque no hay una tarifa por hora de suplencia vigente.",
+    TARIFA_NO_APLICABLE: "una clase que cubrió no sumó, porque la tarifa por hora de suplencia no es un monto fijo.",
+  },
+};
+
 function textoDeAdvertencia(advertencia: AdvertenciaHonorario, profesoras: Map<number, string>): string {
   const profesora = profesoras.get(advertencia.idProfesora) ?? "Una profesora";
-  if (advertencia.concepto === "ALUMNO_A_CARGO") return `${profesora}: un alumno no sumó porque no tiene una tarifa por alumno vigente.`;
-  if (advertencia.motivo === "TARIFA_NO_APLICABLE") {
-    return `${profesora}: una clase que cubrió no sumó, porque su tarifa por hora de suplencia no es un monto fijo.`;
-  }
-  return `${profesora}: una clase que cubrió no sumó ni se descontó, porque no tiene una tarifa por hora de suplencia vigente.`;
+  return `${profesora}: ${MOTIVO_DE_LA_ADVERTENCIA[advertencia.concepto][advertencia.motivo]}`;
 }
 
 interface PropsAdvertencias {
@@ -118,7 +128,7 @@ export function AvisoAdvertencias({ advertencias, liquidaciones, onCerrar }: Pro
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-sm">Cargá la tarifa que falta y recalculá el mes.</p>
+        <p className="mt-2 text-sm">Cargá la tarifa que falta con "Cambiar tarifa" y recalculá el mes.</p>
       </div>
       <Button type="button" variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar el aviso" className="size-11 shrink-0 rounded-lg pointer-fine:size-9">
         <X aria-hidden="true" className="size-4" />

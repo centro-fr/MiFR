@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Contrato de US-23: /liquidaciones y /tarifas-honorario (back: gestion-honorarios). Los campos
-// marcados "pedido al back" todavía no llegan: son opcionales y la pantalla se arma sin ellos.
+// marcados "desglose" se agregaron en el back después (dc36b4f): son opcionales para que un back
+// anterior no deje la pantalla en blanco, que se arma igual sin ellos.
 
 // NUMERIC del DER: el back lo suele pasar a number, pero Prisma serializa Decimal como texto.
 const montoSchema = z
@@ -38,7 +39,8 @@ export const liquidacionApiSchema = z.object({
   fecha_liquidacion: z.string(),
   monto_total: montoSchema,
   profesora: profesoraApiSchema,
-  // Pedido al back: el desglose de la tarjeta sin pedir el detalle de cada profesora.
+  // Desglose: lo que muestra la tarjeta sin pedir el detalle de cada profesora. subtotal_suplencias
+  // es el neto de CLASE_SUPLIDA y DESCUENTO_AUSENCIA, así que puede ser negativo.
   cantidad_alumnos: z.number().int().nonnegative().optional(),
   subtotal_alumnos: montoSchema.optional(),
   subtotal_suplencias: montoSchema.optional(),
@@ -88,7 +90,7 @@ const detalleBaseApiSchema = z.object({
 const detalleAlumnoApiSchema = detalleBaseApiSchema.extend({
   concepto: z.literal("ALUMNO_A_CARGO"),
   alumno: z.object({ id_alumno: idSchema, nombre: z.string(), apellido: z.string() }),
-  // Pedido al back: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
+  // Desglose: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
   inscripcion: z
     .object({
       estado: z.enum(["ACTIVA", "BAJA"]),
@@ -105,8 +107,9 @@ const detalleSuplenciaApiSchema = detalleBaseApiSchema.extend({
     hora_inicio: horaSchema,
     hora_fin: horaSchema,
     actividad: z.string(),
-    // Pedido al back: quién faltó (la titular del horario) y quién dictó la clase.
-    profesora_titular: profesoraApiSchema.optional(),
+    // Desglose: quién faltó y quién dictó la clase. La titular sale de la suplencia registrada, así que
+    // llega en null si la suplencia se eliminó con la liquidación todavía en borrador.
+    profesora_titular: profesoraApiSchema.nullish(),
     profesora_suplente: profesoraApiSchema.optional(),
   }),
 });
@@ -122,11 +125,12 @@ export const liquidacionDetalleApiSchema = liquidacionApiSchema
     { message: "El total de la liquidación no coincide con la suma de sus detalles", path: ["monto_total"] },
   );
 
+// Tarifa general del estudio: rige igual para todos los profesores, así que no lleva profesora ni plan.
+// Pedido al back: hoy cada tarifa es de una profesora (tarifas_honorario.id_profesora); mientras
+// tanto la usa solo el mock.
 export const tarifaHonorarioApiSchema = z.object({
   id_tarifa: idSchema,
-  id_profesora: idSchema,
   concepto: conceptoTarifaSchema,
-  id_plan: idSchema.nullable(),
   tipo_valor: tipoValorTarifaSchema,
   valor: montoSchema,
   fecha_vigencia_desde: diaSchema,
@@ -139,14 +143,15 @@ export type LiquidacionDetalleApi = z.infer<typeof liquidacionDetalleApiSchema>;
 export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export type TarifaHonorarioApi = z.infer<typeof tarifaHonorarioApiSchema>;
 
-/** Cuerpo de POST /tarifas-honorario. */
+/**
+ * Cuerpo de POST /tarifas-honorario. Los dos valores van juntos porque a cada profesor/a se le pagan
+ * las dos cosas: el back crea las dos tarifas en una transacción y cierra las vigentes.
+ */
 export interface RegistrarTarifaBody {
-  id_profesora: number;
-  concepto: z.infer<typeof conceptoTarifaSchema>;
-  /** Por ahora el formulario solo carga tarifas para todos los planes. */
-  id_plan: null;
-  tipo_valor: z.infer<typeof tipoValorTarifaSchema>;
-  valor: number;
+  /** Porcentaje de lo cobrado de la cuota de cada alumno a cargo: mayor a 0 y hasta 100. */
+  porcentaje_alumno: number;
+  /** ARS por hora de clase cubierta como suplente: mayor a 0. */
+  monto_hora_suplencia: number;
   /** AAAA-MM-DD, desde hoy en adelante: el back no acepta vigencias en el pasado. */
   fecha_vigencia_desde: string;
 }

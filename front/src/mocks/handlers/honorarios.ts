@@ -13,8 +13,9 @@ import {
 import { hoyEnArgentina } from "@/mocks/precios";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 
-// Mock de US-23 con el contrato del back (gestion-honorarios: liquidacion y tarifa-honorario). Los
-// campos que el front le pidió al back y todavía no existen no se mockean: el mock no los inventa.
+// Mock de US-23 con el contrato del back (gestion-honorarios: liquidacion y tarifa-honorario). Las
+// tarifas van con el contrato que le pedimos al back: una sola tarifa para todo el estudio, con los
+// dos valores juntos. El back todavía las tiene por profesora.
 //
 // Los alumnos e inscripciones salen de data/honorarios.ts (copia de la base local), no de los de
 // alumnos.ts: registrar un cobro en otra pantalla del mock no cambia estos honorarios.
@@ -24,18 +25,13 @@ const LIQUIDAR = { rol: "PROPIETARIA", permiso: "HONORARIOS_LIQUIDAR" } as const
 
 const periodoSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 
-const registrarTarifaSchema = z
-  .object({
-    id_profesora: z.number().int().positive(),
-    concepto: z.enum(["ALUMNO_A_CARGO", "HORA_SUPLENCIA"]),
-    id_plan: z.number().int().positive().nullable(),
-    tipo_valor: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
-    valor: z.number().positive().max(99_999_999.99),
-    fecha_vigencia_desde: z.string().date(),
-  })
-  // Los CHECK de tarifas_honorario: PORCENTAJE <= 100 y HORA_SUPLENCIA sin plan.
-  .refine((t) => t.tipo_valor !== "PORCENTAJE" || t.valor <= 100)
-  .refine((t) => t.concepto === "ALUMNO_A_CARGO" || t.id_plan === null);
+// Los CHECK de tarifas_honorario: valor > 0 y PORCENTAJE <= 100. El tipo de cada una sale del concepto
+// (regla del Sprint 5): por alumno, un porcentaje de lo cobrado; por hora de suplencia, un monto fijo.
+const registrarTarifaSchema = z.object({
+  porcentaje_alumno: z.number().positive().max(100),
+  monto_hora_suplencia: z.number().positive().max(99_999_999.99),
+  fecha_vigencia_desde: z.string().date(),
+});
 
 const diaComoFecha = (dia: string) => `${dia}T00:00:00.000Z`;
 const horaComoFecha = (hora: string) => `1970-01-01T${hora}:00.000Z`;
@@ -121,6 +117,8 @@ function claseDeLaLinea(idClase: number) {
     hora_inicio: horaComoFecha(clase.hora_inicio),
     hora_fin: horaComoFecha(clase.hora_fin),
     actividad: clase.actividad,
+    profesora_titular: profesora(clase.id_prof_ausente),
+    profesora_suplente: profesora(clase.id_prof_suplente),
   };
 }
 
@@ -134,7 +132,7 @@ function detalleConDatos(detalle: LiquidacionDetalleMock) {
     id_clase: detalle.id_clase,
     monto: detalle.monto,
     alumno: detalle.id_inscripcion === null ? null : alumnoDeLaLinea(detalle.id_inscripcion),
-    inscripcion: detalle.id_inscripcion === null ? undefined : inscripcionDeLaLinea(detalle.id_inscripcion),
+    inscripcion: detalle.id_inscripcion === null ? null : inscripcionDeLaLinea(detalle.id_inscripcion),
     clase: detalle.id_clase === null ? null : claseDeLaLinea(detalle.id_clase),
   };
 }
@@ -222,9 +220,7 @@ export const honorariosHandlers = [
     await delay(300);
     const denegado = verificarAcceso(request, VER);
     if (denegado) return denegado;
-    const idProfesora = new URL(request.url).searchParams.get("id_profesora");
-    const tarifas = idProfesora ? db.tarifasHonorario.filter((t) => t.id_profesora === Number(idProfesora)) : db.tarifasHonorario;
-    return HttpResponse.json(tarifas.map(tarifaConDatos));
+    return HttpResponse.json(db.tarifasHonorario.map(tarifaConDatos));
   }),
 
   http.post("*/api/v1/tarifas-honorario", async ({ request }) => {
@@ -233,31 +229,26 @@ export const honorariosHandlers = [
     if (denegado) return denegado;
     const cuerpo = registrarTarifaSchema.safeParse(await request.json().catch(() => null));
     if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
-    const nueva = cuerpo.data;
-    if (nueva.fecha_vigencia_desde < hoyEnArgentina()) {
+    const { porcentaje_alumno, monto_hora_suplencia, fecha_vigencia_desde } = cuerpo.data;
+    if (fecha_vigencia_desde < hoyEnArgentina()) {
       return errorApi(400, "VALIDATION_ERROR", "La vigencia no puede empezar en el pasado");
     }
-    if (!db.profesoras.some((p) => p.id_profesora === nueva.id_profesora)) {
-      return errorApi(400, "VALIDATION_ERROR", `La profesora ${nueva.id_profesora} no existe`);
-    }
-    const mismas = db.tarifasHonorario.filter(
-      (t) => t.id_profesora === nueva.id_profesora && t.concepto === nueva.concepto && t.id_plan === nueva.id_plan,
-    );
-    if (mismas.some((t) => t.fecha_vigencia_desde >= nueva.fecha_vigencia_desde)) {
+    if (db.tarifasHonorario.some((t) => t.fecha_vigencia_desde >= fecha_vigencia_desde)) {
       return errorApi(409, "TARIFA_SUPERPUESTA", "Ya hay una tarifa que rige desde esa fecha o después");
     }
-    // Como plan_precios: la nueva cierra la vigente el día anterior a empezar.
-    for (const tarifa of mismas) {
-      if (tarifa.fecha_vigencia_hasta === null || tarifa.fecha_vigencia_hasta >= nueva.fecha_vigencia_desde) {
-        tarifa.fecha_vigencia_hasta = diaAnterior(nueva.fecha_vigencia_desde);
+    // Como plan_precios: las nuevas cierran las vigentes el día anterior a empezar.
+    for (const tarifa of db.tarifasHonorario) {
+      if (tarifa.fecha_vigencia_hasta === null || tarifa.fecha_vigencia_hasta >= fecha_vigencia_desde) {
+        tarifa.fecha_vigencia_hasta = diaAnterior(fecha_vigencia_desde);
       }
     }
-    const tarifa: TarifaHonorarioMock = {
-      id_tarifa: Math.max(0, ...db.tarifasHonorario.map((t) => t.id_tarifa)) + 1,
-      ...nueva,
-      fecha_vigencia_hasta: null,
-    };
-    db.tarifasHonorario.push(tarifa);
-    return HttpResponse.json(tarifaConDatos(tarifa), { status: 201 });
+    const primerId = Math.max(0, ...db.tarifasHonorario.map((t) => t.id_tarifa)) + 1;
+    const vigencia = { fecha_vigencia_desde, fecha_vigencia_hasta: null };
+    const nuevas: TarifaHonorarioMock[] = [
+      { id_tarifa: primerId, concepto: "ALUMNO_A_CARGO", tipo_valor: "PORCENTAJE", valor: porcentaje_alumno, ...vigencia },
+      { id_tarifa: primerId + 1, concepto: "HORA_SUPLENCIA", tipo_valor: "MONTO_FIJO", valor: monto_hora_suplencia, ...vigencia },
+    ];
+    db.tarifasHonorario.push(...nuevas);
+    return HttpResponse.json(nuevas.map(tarifaConDatos), { status: 201 });
   }),
 ];
