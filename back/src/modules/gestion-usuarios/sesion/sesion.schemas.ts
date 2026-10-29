@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 
 // Un id_token de Google ronda los 1,5 KB: el tope corta antes de verificar la firma un texto que no
 // puede ser un token.

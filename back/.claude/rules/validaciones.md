@@ -4,6 +4,8 @@ Toda entrada se valida con **Zod**, en la capa de rutas, con `validate({ body, p
 
 Cada `<x>.schemas.ts` arma sus campos con los esquemas compartidos de `src/shared/utils/`. Si un tipo de campo se repite en dos componentes, el esquema va a `shared/utils/` y no se copia.
 
+`z` se importa siempre de `src/shared/utils/zod.ts`, nunca de `"zod"`. En Zod 4 cada esquema copia sus métodos al crearse, y ese módulo extiende `z` con `.openapi()` antes de que se cree ninguno: un esquema creado con el `z` original no se puede documentar en Swagger. Los tipos (`ZodType`, `ZodError`) sí se importan de `"zod"`.
+
 | Esquema compartido | Archivo | Qué garantiza |
 | --- | --- | --- |
 | `idSchema` | `esquemas-id.ts` | Entero positivo hasta el máximo de `INTEGER` (2.147.483.647). Rechaza `0`, `-0`, negativos y decimales |

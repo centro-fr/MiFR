@@ -1,15 +1,9 @@
-import {
-  extendZodWithOpenApi,
-  type OpenApiGeneratorV3,
-  type OpenAPIRegistry,
-  type ResponseConfig,
-} from "@asteasolutions/zod-to-openapi";
-import { z, type ZodTypeAny } from "zod";
+import type { OpenApiGeneratorV3, OpenAPIRegistry, ResponseConfig } from "@asteasolutions/zod-to-openapi";
+import type { ZodTypeAny } from "zod";
+import { z } from "../utils/zod.js";
 
 // La documentación se arma con los mismos esquemas Zod que validan la entrada en las rutas:
 // así el contrato publicado no puede desincronizarse de lo que el servidor acepta.
-extendZodWithOpenApi(z);
-
 export type DocumentoOpenApi = ReturnType<OpenApiGeneratorV3["generateDocument"]>;
 
 export const SEGURIDAD_BEARER = [{ bearerAuth: [] }];
@@ -20,7 +14,7 @@ const errorSchema = z
       code: z.string().openapi({ example: "VALIDATION_ERROR" }),
       message: z.string().openapi({ example: "Datos inválidos" }),
       details: z
-        .object({ formErrors: z.array(z.string()), fieldErrors: z.record(z.array(z.string())) })
+        .object({ formErrors: z.array(z.string()), fieldErrors: z.record(z.string(), z.array(z.string())) })
         .optional()
         .openapi({ description: "Solo en errores de validación de Zod" }),
     }),

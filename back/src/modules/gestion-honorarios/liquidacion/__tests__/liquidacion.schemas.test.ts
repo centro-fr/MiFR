@@ -35,6 +35,13 @@ describe("período", () => {
     expect(generarLiquidacionesSchema.safeParse({ periodo }).success).toBe(false);
     expect(listarLiquidacionesQuerySchema.safeParse({ periodo }).success).toBe(false);
   });
+
+  it.each<[string, unknown, string]>([
+    ["sin período", undefined, "El período es obligatorio"],
+    ["un número", 202610, "El período debe tener formato AAAA-MM"],
+  ])("%s responde con su mensaje", (_caso, periodo, mensaje) => {
+    expect(generarLiquidacionesSchema.safeParse({ periodo }).error?.issues[0]?.message).toBe(mensaje);
+  });
 });
 
 describe("liquidacionIdParamSchema", () => {

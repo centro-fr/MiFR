@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { enteroNoNegativoSchema, montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { fechaSchema as fecha } from "../../../shared/utils/esquemas-fecha.js";

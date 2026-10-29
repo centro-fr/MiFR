@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 import { paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";
 

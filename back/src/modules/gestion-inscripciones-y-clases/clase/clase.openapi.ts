@@ -1,5 +1,5 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { respuestaJson, respuestasDeError, SEGURIDAD_BEARER } from "../../../shared/openapi/registro.js";
 import { claseIdParamSchema, listarClasesQuerySchema } from "./clase.schemas.js";
 import { claseYAlumnoParamSchema, marcarAsistenciaSchema } from "../asistencia/asistencia.schemas.js";

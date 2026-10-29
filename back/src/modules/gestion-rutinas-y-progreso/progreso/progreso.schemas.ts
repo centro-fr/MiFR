@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { fechaSchema as fecha } from "../../../shared/utils/esquemas-fecha.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
@@ -10,17 +10,20 @@ export const medidaSchema = z
   .object({
     codigo: z.enum(CODIGOS_MEDIDA),
     valor: z
-      .number({ invalid_type_error: "El valor debe ser un número" })
+      .number({ error: "El valor debe ser un número" })
       .positive("El valor debe ser mayor a 0")
       .refine((valor) => Math.abs(valor * 100 - Math.round(valor * 100)) < 1e-6, "Hasta 2 decimales"),
   })
-  .refine(
-    ({ codigo, valor }) => valor >= MEDIDAS[codigo].minimo && valor <= MEDIDAS[codigo].maximo,
-    ({ codigo }) => ({
-      message: `Debe estar entre ${MEDIDAS[codigo].minimo} y ${MEDIDAS[codigo].maximo} ${MEDIDAS[codigo].unidad}`,
-      path: ["valor"],
-    }),
-  );
+  .superRefine(({ codigo, valor }, contexto) => {
+    const { minimo, maximo, unidad } = MEDIDAS[codigo];
+    if (valor < minimo || valor > maximo) {
+      contexto.addIssue({
+        code: "custom",
+        message: `Debe estar entre ${minimo} y ${maximo} ${unidad}`,
+        path: ["valor"],
+      });
+    }
+  });
 
 const medidasSchema = z.array(medidaSchema).min(1).max(CODIGOS_MEDIDA.length);
 

@@ -1,12 +1,12 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 
 // AAAA-MM: se convierte en el primer y el último día del mes. Date.UTC(anio, mes, 0) es el día 0
 // del mes siguiente, o sea el último de este (también en febrero de un año bisiesto).
 export const periodoSchema = z
   .string({
-    required_error: "El período es obligatorio",
-    invalid_type_error: "El período debe tener formato AAAA-MM",
+    error: (issue) =>
+      issue.input === undefined ? "El período es obligatorio" : "El período debe tener formato AAAA-MM",
   })
   .regex(/^20\d{2}-(0[1-9]|1[0-2])$/, "El período debe tener formato AAAA-MM")
   .transform((periodo) => {

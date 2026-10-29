@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./zod.js";
 
 // Postgres rechaza el carácter nulo (0x00) en columnas de texto y Prisma lo devolvía como error
 // interno (500). El resto de los caracteres de control y los invisibles (\p{Cf}, como el espacio

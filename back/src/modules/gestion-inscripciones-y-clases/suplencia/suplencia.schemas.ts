@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { fechaSchema } from "../../../shared/utils/esquemas-fecha.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { paginacionSchema } from "../../../shared/utils/esquemas-paginacion.js";

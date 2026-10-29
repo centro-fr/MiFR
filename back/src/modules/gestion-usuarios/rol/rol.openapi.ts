@@ -1,5 +1,5 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import {
   cuerpoJson,
   respuestaJson,
@@ -25,7 +25,7 @@ const matrizPermisosSchema = z
       }),
     ),
     matriz: z
-      .record(z.array(z.string()))
+      .record(z.string(), z.array(z.string()))
       .openapi({ description: "Códigos de permiso otorgados, por código de rol" }),
   })
   .openapi("MatrizPermisos");
