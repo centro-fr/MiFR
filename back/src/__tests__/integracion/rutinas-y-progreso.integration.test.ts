@@ -14,8 +14,9 @@ import {
 } from "./fabricas.js";
 
 // Casos PI-83 a PI-85: la carga y el historial de rutinas (US-27), su consulta por el alumno, el tutor y la
-// profesora (US-28) y el registro de la evolución física (US-27 y US-28). Ana es una alumna adulta y Caro una
-// menor con su tutor, las dos a cargo de la profesora Paula; Beto es alumno de otra profesora, Pilar.
+// profesora (US-28) y el registro, la corrección y la baja de la evolución física (US-27 y US-28). Ana es una
+// alumna adulta y Caro una menor con su tutor, las dos a cargo de la profesora Paula; Beto es alumno de otra
+// profesora, Pilar.
 const entorno = crearEntornoDeIntegracion();
 const { prisma } = entorno;
 const INICIO = new Date("2026-10-01T00:00:00Z");
@@ -25,10 +26,12 @@ const CONTENIDO = {
 };
 
 let emailPropietaria: string;
+let idUsuarioPropietaria: number;
 let emailPaula: string;
 let emailPilar: string;
 let emailTutor: string;
 let idPaula: number;
+let idUsuarioPaula: number;
 let idPilar: number;
 let ana: { id_alumno: number; email: string };
 let caro: { id_alumno: number };
@@ -50,12 +53,14 @@ beforeEach(async () => {
   vi.setSystemTime(new Date("2026-10-27T15:00:00Z"));
   await reiniciarBase(prisma);
 
-  emailPropietaria = (await crearUsuario(prisma, { roles: ["PROPIETARIA"] })).email;
+  ({ email: emailPropietaria, id_usuario: idUsuarioPropietaria } = await crearUsuario(prisma, {
+    roles: ["PROPIETARIA"],
+  }));
   const tutor = await crearUsuario(prisma, { roles: ["TUTOR"] });
   emailTutor = tutor.email;
   const paula = await crearProfesora(prisma);
   const pilar = await crearProfesora(prisma);
-  ({ id_profesora: idPaula, email: emailPaula } = paula);
+  ({ id_profesora: idPaula, email: emailPaula, id_usuario: idUsuarioPaula } = paula);
   ({ id_profesora: idPilar, email: emailPilar } = pilar);
 
   const { id_actividad } = await crearActividad(prisma);
@@ -403,5 +408,107 @@ describe("PI-85: registro de la evolución física (US-27, US-28)", () => {
 
   it("responde 401 sin sesión", async () => {
     expect((await pedir("get", `/alumnos/${ana.id_alumno}/progreso`)).status).toBe(401);
+  });
+
+  describe("corrección y baja de una medición", () => {
+    let idRegistro: number;
+
+    beforeEach(async () => {
+      const carga = await pedir(
+        "post",
+        "/progreso",
+        emailPaula,
+        medicion(ana.id_alumno, { fecha: "2026-10-20" }),
+      );
+      idRegistro = carga.body.id_registro;
+    });
+
+    it("la profesora a cargo corrige un error de carga y queda quién y cuándo", async () => {
+      const respuesta = await pedir("patch", `/progreso/${idRegistro}`, emailPaula, {
+        medidas: [{ codigo: "PESO", valor: 62.4 }],
+      });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body).toMatchObject({
+        id_registro: idRegistro,
+        id_usuario_modifica: idUsuarioPaula,
+        fecha_modificacion: "2026-10-27T15:00:00.000Z",
+      });
+      expect(respuesta.body.fecha.slice(0, 10)).toBe("2026-10-20");
+      expect(respuesta.body.medidas).toEqual([{ codigo: "PESO", unidad: "kg", valor: 62.4 }]);
+      expect(await prisma.medidas_corporales.count({ where: { id_registro: idRegistro } })).toBe(1);
+    });
+
+    it("la baja es lógica: deja de listarse pero el registro y sus medidas quedan con quién y cuándo", async () => {
+      const respuesta = await pedir("delete", `/progreso/${idRegistro}`, emailPaula);
+      const listado = await pedir("get", `/alumnos/${ana.id_alumno}/progreso`, ana.email);
+
+      const fila = await prisma.registros_progreso.findUniqueOrThrow({ where: { id_registro: idRegistro } });
+      expect(respuesta.status).toBe(204);
+      expect(listado.body).toEqual([]);
+      expect(fila).toMatchObject({
+        id_usuario_baja: idUsuarioPaula,
+        fecha_baja: new Date("2026-10-27T15:00:00Z"),
+      });
+      expect(await prisma.medidas_corporales.count({ where: { id_registro: idRegistro } })).toBe(2);
+    });
+
+    it("la propietaria corrige y da de baja la medición de cualquier alumno", async () => {
+      const deBeto = await pedir("post", "/progreso", emailPilar, medicion(beto.id_alumno));
+
+      const correccion = await pedir("patch", `/progreso/${deBeto.body.id_registro}`, emailPropietaria, {
+        observaciones: "Medida tomada después de entrenar",
+      });
+      const baja = await pedir("delete", `/progreso/${deBeto.body.id_registro}`, emailPropietaria);
+
+      expect(correccion.status).toBe(200);
+      expect(correccion.body.id_usuario_modifica).toBe(idUsuarioPropietaria);
+      expect(baja.status).toBe(204);
+    });
+
+    it.each([
+      ["una profesora que no tiene al alumno a cargo", () => emailPilar],
+      ["el alumno", () => ana.email],
+    ])("%s no puede corregir ni dar de baja", async (_quien, email) => {
+      const correccion = await pedir("patch", `/progreso/${idRegistro}`, email(), { observaciones: "x" });
+      const baja = await pedir("delete", `/progreso/${idRegistro}`, email());
+
+      const fila = await prisma.registros_progreso.findUniqueOrThrow({ where: { id_registro: idRegistro } });
+      expect(correccion.status).toBe(403);
+      expect(baja.status).toBe(403);
+      expect(fila).toMatchObject({ observaciones: null, fecha_modificacion: null, fecha_baja: null });
+    });
+
+    it("una medición dada de baja responde 404 a la propietaria y 403 a la profesora", async () => {
+      await pedir("delete", `/progreso/${idRegistro}`, emailPaula);
+
+      const propietaria = await pedir("patch", `/progreso/${idRegistro}`, emailPropietaria, {
+        observaciones: "x",
+      });
+      const profesora = await pedir("delete", `/progreso/${idRegistro}`, emailPaula);
+
+      expect(propietaria.status).toBe(404);
+      expect(profesora.status).toBe(403);
+    });
+
+    it.each([
+      ["una corrección sin cambios", {}],
+      ["una fecha futura", { fecha: "2026-10-28" }],
+      ["un valor fuera de rango", { medidas: [{ codigo: "PESO", valor: 900 }] }],
+    ])("rechaza %s y deja la medición como estaba", async (_caso, cuerpo) => {
+      const respuesta = await pedir("patch", `/progreso/${idRegistro}`, emailPaula, cuerpo);
+
+      const fila = await prisma.registros_progreso.findUniqueOrThrow({ where: { id_registro: idRegistro } });
+      expect(respuesta.status).toBe(400);
+      expect(fila.fecha_modificacion).toBeNull();
+      expect(await prisma.medidas_corporales.count({ where: { id_registro: idRegistro } })).toBe(2);
+    });
+
+    it("responde 401 sin sesión", async () => {
+      expect(
+        (await pedir("patch", `/progreso/${idRegistro}`, undefined, { observaciones: "x" })).status,
+      ).toBe(401);
+      expect((await pedir("delete", `/progreso/${idRegistro}`)).status).toBe(401);
+    });
   });
 });
