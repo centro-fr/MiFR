@@ -10,7 +10,7 @@ const repositorio = {
   profesoraTieneAlumno: vi.fn(),
   crear: vi.fn(),
 };
-const alumnos = { buscarPorId: vi.fn() };
+const alumnos = { buscarPorId: vi.fn(), buscarPorIdUsuario: vi.fn(), buscarPorIdUsuarioResponsable: vi.fn() };
 const profesoras = { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn() };
 
 const fecha = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -63,6 +63,8 @@ describe("RutinaService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     alumnos.buscarPorId.mockResolvedValue(ALUMNO);
+    alumnos.buscarPorIdUsuario.mockResolvedValue(null);
+    alumnos.buscarPorIdUsuarioResponsable.mockResolvedValue(null);
     profesoras.buscarPorUsuario.mockResolvedValue(null);
     profesoras.buscarPorId.mockResolvedValue({ id_profesora: 10 });
     repositorio.profesoraTieneAlumno.mockResolvedValue(false);
@@ -245,5 +247,33 @@ describe("RutinaService", () => {
     repositorio.buscarVigenteDeAlumno.mockResolvedValue(null);
 
     expect(await service.obtenerVigente(5, EL_ALUMNO)).toBeNull();
+  });
+
+  describe("lo propio, sin indicar el alumno", () => {
+    it("obtenerVigentePropia resuelve el alumno de quien pide y le oculta las observaciones", async () => {
+      alumnos.buscarPorIdUsuario.mockResolvedValue({ id_alumno: 5 });
+      repositorio.buscarVigenteDeAlumno.mockResolvedValue(CON_OBSERVACIONES);
+
+      expect(await service.obtenerVigentePropia(EL_ALUMNO)).toEqual({
+        ...CON_OBSERVACIONES,
+        observaciones: null,
+      });
+      expect(alumnos.buscarPorIdUsuario).toHaveBeenCalledWith(100);
+      expect(alumnos.buscarPorIdUsuarioResponsable).not.toHaveBeenCalled();
+    });
+
+    it("listarPropia resuelve el menor a cargo del tutor", async () => {
+      alumnos.buscarPorIdUsuarioResponsable.mockResolvedValue({ id_alumno: 5 });
+      repositorio.listarDeAlumno.mockResolvedValue([RUTINA]);
+
+      expect(await service.listarPropia(EL_TUTOR)).toEqual([RUTINA]);
+      expect(alumnos.buscarPorIdUsuarioResponsable).toHaveBeenCalledWith(200);
+      expect(repositorio.listarDeAlumno).toHaveBeenCalledWith(5);
+    });
+
+    it("responde 404 si quien pide no es alumno ni tutor", async () => {
+      expect(await estado(service.listarPropia(AJENO))).toBe(404);
+      expect(repositorio.listarDeAlumno).not.toHaveBeenCalled();
+    });
   });
 });
