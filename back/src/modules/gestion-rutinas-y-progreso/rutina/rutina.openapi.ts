@@ -27,7 +27,10 @@ const rutinaSchema = z
     contenido: z.object({
       dias: z.array(z.object({ nombre: z.string(), ejercicios: z.array(ejercicioSchema) })),
     }),
-    observaciones: z.string().nullable(),
+    observaciones: z.string().nullable().openapi({
+      description:
+        "Notas de la profesora: solo las ven la propietaria y la profesora a cargo; al alumno y al tutor les llega null",
+    }),
     activa: z.boolean().openapi({ description: "true en la rutina vigente; las anteriores quedan en el historial" }),
   })
   .openapi("Rutina");

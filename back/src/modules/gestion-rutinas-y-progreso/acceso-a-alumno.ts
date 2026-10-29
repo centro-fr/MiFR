@@ -14,6 +14,15 @@ export interface AlumnosACargo {
   profesoraTieneAlumno(idProfesora: number, idAlumno: number): Promise<boolean>;
 }
 
+// GESTION: la propietaria o la profesora a cargo. PROPIA: el alumno o el tutor de un menor.
+export type AlcanceDeLectura = "GESTION" | "PROPIA";
+
+// US-28: las observaciones son notas de la profesora para quien gestiona al alumno; el alumno y el tutor no
+// las ven. Se mandan en null para que la respuesta tenga la misma forma para todos.
+export function ocultarObservaciones<T extends { observaciones: string | null }>(dato: T): T {
+  return { ...dato, observaciones: null };
+}
+
 // Quién puede ver y quién puede cargar datos de un alumno en GestionRutinasYProgreso (US-27 y US-28):
 // la propietaria a todos, la profesora a los que tiene a cargo, y el alumno y el tutor de un menor solo
 // leen lo propio. A quien no puede ver a un alumno, uno que no existe se le responde igual que uno
@@ -38,21 +47,27 @@ export class AccesoAAlumno {
     throw new NotFoundError("No se encontró un alumno asociado a este usuario");
   }
 
-  async verificarLectura(idAlumno: number, solicitante: Solicitante): Promise<void> {
+  // La profesora a cargo se resuelve antes que el alumno y el tutor: si también es tutora de su alumno, ve
+  // las observaciones como profesora.
+  async verificarLectura(idAlumno: number, solicitante: Solicitante): Promise<AlcanceDeLectura> {
     const alumno = await this.alumnos.buscarPorId(idAlumno);
     if (solicitante.esPropietaria) {
       if (!alumno) throw new NotFoundError("Alumno no encontrado");
-      return;
+      return "GESTION";
     }
-    if (
-      alumno &&
-      (alumno.id_usuario === solicitante.idUsuario || alumno.id_usuario_responsable === solicitante.idUsuario)
-    ) {
-      return;
-    }
+    const sinAcceso = new ForbiddenError(
+      "Solo podés ver lo tuyo, lo de un menor a tu cargo o lo de tus alumnos",
+    );
+    if (!alumno) throw sinAcceso;
     const propia = await this.profesoras.buscarPorUsuario(solicitante.idUsuario);
-    if (alumno && propia && (await this.aCargo.profesoraTieneAlumno(propia.id_profesora, idAlumno))) return;
-    throw new ForbiddenError("Solo podés ver lo tuyo, lo de un menor a tu cargo o lo de tus alumnos");
+    if (propia && (await this.aCargo.profesoraTieneAlumno(propia.id_profesora, idAlumno))) return "GESTION";
+    if (
+      alumno.id_usuario === solicitante.idUsuario ||
+      alumno.id_usuario_responsable === solicitante.idUsuario
+    ) {
+      return "PROPIA";
+    }
+    throw sinAcceso;
   }
 
   // Quién puede corregir o dar de baja lo ya cargado de un alumno: la propietaria y la profesora que lo tiene a
