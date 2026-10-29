@@ -1,5 +1,5 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import {
   cuerpoJson,
   respuestaJson,

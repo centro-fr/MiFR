@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextFunction, Request, Response } from "express";
-import { z, ZodError } from "zod";
+import { ZodError } from "zod";
+import { z } from "../../utils/zod.js";
 import { validate } from "../validate.js";
 
 const res = {} as Response;

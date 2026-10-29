@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./zod.js";
 import { textoSchema } from "./esquemas-texto.js";
 import { fechaActualArgentina } from "./fecha-argentina.js";
 
@@ -52,9 +52,8 @@ function diaIso(fecha: Date): string {
 // y los convertía en 1970-01-01: primero se exige un texto con una fecha que exista en el
 // calendario (date y datetime ya lo validan) y recién después se convierte.
 export const fechaNacimientoSchema = z
-  .union([z.string().date("La fecha no existe"), z.string().datetime({ message: "La fecha no existe" })], {
-    errorMap: () => ({ message: "La fecha debe tener formato AAAA-MM-DD" }),
-  })
+  .string({ error: "La fecha debe tener formato AAAA-MM-DD" })
+  .pipe(z.union([z.string().date(), z.string().datetime()], { error: "La fecha no existe" }))
   .transform((valor) => new Date(valor))
   .refine((fecha) => diaIso(fecha) >= FECHA_NACIMIENTO_MINIMA, {
     message: `La fecha de nacimiento no puede ser anterior a ${FECHA_NACIMIENTO_MINIMA}`,

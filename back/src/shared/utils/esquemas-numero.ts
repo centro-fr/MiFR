@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./zod.js";
 
 const MONTO_MAXIMO = 99_999_999.99;
 
@@ -25,7 +25,7 @@ export function montoSchema(nombre: string) {
 // El nombre va con su artículo ("El peso", "La talla"), porque abre los mensajes.
 export function medidaCorporalSchema(nombre: string, unidad: string, minimo: number, maximo: number) {
   return z
-    .number({ invalid_type_error: `${nombre} tiene que ser un número` })
+    .number({ error: `${nombre} tiene que ser un número` })
     .min(minimo, `${nombre} tiene que estar entre ${minimo} y ${maximo} ${unidad}`)
     .max(maximo, `${nombre} tiene que estar entre ${minimo} y ${maximo} ${unidad}`)
     .refine(tieneComoMaximoDosDecimales, { message: `${nombre} admite como máximo dos decimales` });

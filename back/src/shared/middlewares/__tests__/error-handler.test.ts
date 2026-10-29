@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
-import { z } from "zod";
+import { z } from "../../utils/zod.js";
 import {
   ConflictError,
   ForbiddenError,

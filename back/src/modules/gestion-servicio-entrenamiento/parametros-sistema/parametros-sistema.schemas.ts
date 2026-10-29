@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { enteroNoNegativoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoBusquedaSchema } from "../../../shared/utils/esquemas-texto.js";
 import { CATALOGO_PARAMETROS } from "./parametros-sistema.catalogo.js";
@@ -17,7 +17,7 @@ const VALOR_POR_CLAVE: Record<ClaveParametro, z.ZodType<string | number | boolea
   DATOS_BANCARIOS_CBU: texto,
   DATOS_BANCARIOS_ALIAS: texto,
   DATOS_BANCARIOS_TITULAR: texto,
-  VENCIDOS_PUEDEN_ASISTIR: z.boolean({ invalid_type_error: "Debe ser verdadero o falso" }),
+  VENCIDOS_PUEDEN_ASISTIR: z.boolean({ error: "Debe ser verdadero o falso" }),
   MINUTOS_CIERRE_ASISTENCIA: enteroNoNegativoSchema(1440),
   DIAS_RESERVA_PREINSCRIPCION: enteroNoNegativoSchema(365),
   DIAS_AVISO_VENCIMIENTO: enteroNoNegativoSchema(30),

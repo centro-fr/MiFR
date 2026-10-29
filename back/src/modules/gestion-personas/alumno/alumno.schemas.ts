@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { ESTADOS_HABILITACION } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import {
@@ -28,7 +28,7 @@ function opcionalAnulable<T extends z.ZodTypeAny>(esquema: T) {
 }
 
 const fecha_apto_medico = z
-  .string({ invalid_type_error: "La fecha debe tener formato AAAA-MM-DD" })
+  .string({ error: "La fecha debe tener formato AAAA-MM-DD" })
   .date("La fecha debe tener formato AAAA-MM-DD")
   .transform((valor) => new Date(`${valor}T00:00:00Z`))
   .refine((fecha) => fecha <= fechaActualArgentina(), {
@@ -50,7 +50,7 @@ const tutorNuevoSchema = z
   .strict();
 
 const tutorSchema = z.union([z.object({ id_usuario: idSchema }).strict(), tutorNuevoSchema], {
-  errorMap: () => ({ message: "El tutor se indica con su id_usuario o con sus datos completos" }),
+  error: "El tutor se indica con su id_usuario o con sus datos completos",
 });
 
 // El DNI y el contacto de emergencia son obligatorios en el alta y no se pueden vaciar al editar: el

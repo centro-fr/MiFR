@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
+import { z } from "../zod.js";
 import { LIMITE_MAXIMO, paginacionSchema } from "../esquemas-paginacion.js";
 
 const query = z.object(paginacionSchema(20));

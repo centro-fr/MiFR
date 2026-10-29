@@ -1,5 +1,5 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { ESTADOS_HABILITACION } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import {
   cuerpoJson,
