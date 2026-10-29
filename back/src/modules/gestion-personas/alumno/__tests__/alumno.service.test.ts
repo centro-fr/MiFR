@@ -30,6 +30,7 @@ function crearRepositorioMock() {
     darDeBaja: vi.fn(),
     reactivar: vi.fn(),
     contarAltasPorMes: vi.fn(),
+    listarConsultablesPorUsuario: vi.fn(),
   };
 }
 
@@ -565,6 +566,29 @@ describe("AlumnoService", () => {
 
       expect(resultado).toBe(esperado);
       expect(repositorio.contarAltasPorMes).toHaveBeenCalledWith(filtro);
+    });
+  });
+
+  describe("listarConsultables", () => {
+    it("marca el alumno propio y lo pone antes que los menores a cargo", async () => {
+      repositorio.listarConsultablesPorUsuario.mockResolvedValue([
+        { id_alumno: 5, id_usuario: 51, estado: "ACTIVO", usuario: { nombre: "Caro", apellido: "Acosta" } },
+        { id_alumno: 3, id_usuario: 10, estado: "BAJA", usuario: { nombre: "Ana", apellido: "López" } },
+      ]);
+
+      const alumnos = await servicio.listarConsultables(10);
+
+      expect(repositorio.listarConsultablesPorUsuario).toHaveBeenCalledWith(10);
+      expect(alumnos).toEqual([
+        { id_alumno: 3, nombre: "Ana", apellido: "López", estado: "BAJA", propio: true },
+        { id_alumno: 5, nombre: "Caro", apellido: "Acosta", estado: "ACTIVO", propio: false },
+      ]);
+    });
+
+    it("devuelve una lista vacía si el usuario no es alumno ni tiene menores a cargo", async () => {
+      repositorio.listarConsultablesPorUsuario.mockResolvedValue([]);
+
+      expect(await servicio.listarConsultables(10)).toEqual([]);
     });
   });
 });

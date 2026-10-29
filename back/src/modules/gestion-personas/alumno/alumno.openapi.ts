@@ -151,6 +151,18 @@ const paginaAlumnosSchema = z
   })
   .openapi("PaginaAlumnos");
 
+const alumnoConsultableSchema = z
+  .object({
+    id_alumno: z.number().int(),
+    nombre: z.string(),
+    apellido: z.string(),
+    estado: z.enum(["ACTIVO", "INACTIVO", "BAJA"]),
+    propio: z
+      .boolean()
+      .openapi({ description: "true si es el alumno de quien inició sesión; false si es un menor a cargo" }),
+  })
+  .openapi("AlumnoConsultable");
+
 const reglasDeEdad =
   "Un menor de 18 años lleva tutor y no lleva email (entra al sistema su tutor); un mayor lleva email " +
   "y no lleva tutor. El tutor se indica con `{ id_usuario }` o con sus datos: si ya existe un usuario con " +
@@ -182,6 +194,23 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     responses: {
       200: respuestaJson("Página de alumnos", paginaAlumnosSchema),
       ...respuestasDeError(400, 401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/alumnos/mios",
+    tags,
+    security,
+    summary: "Alumnos que puede consultar quien inició sesión",
+    description:
+      "Requiere el rol `ALUMNO` o `TUTOR`. Devuelve el alumno propio (`propio: true`), primero, y los menores a " +
+      "cargo del tutor (`propio: false`), ordenados por apellido y nombre. Sirve para obtener el `id_alumno` que " +
+      "piden las consultas de rutinas y progreso. Los dados de baja también salen, con `estado: BAJA`. Lista " +
+      "vacía si el usuario no es alumno ni tiene menores a cargo.",
+    responses: {
+      200: respuestaJson("Alumnos consultables", z.array(alumnoConsultableSchema)),
+      ...respuestasDeError(401, 403),
     },
   });
 

@@ -28,6 +28,7 @@ const OPERACIONES_ESPERADAS = [
   "post /profesoras",
   "delete /profesoras/{id}",
   "get /alumnos",
+  "get /alumnos/mios",
   "post /alumnos",
   "get /alumnos/{id}",
   "patch /alumnos/{id}",
