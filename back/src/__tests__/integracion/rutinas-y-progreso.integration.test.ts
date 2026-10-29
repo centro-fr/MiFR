@@ -30,6 +30,7 @@ let idUsuarioPropietaria: number;
 let emailPaula: string;
 let emailPilar: string;
 let emailTutor: string;
+let idUsuarioTutor: number;
 let idPaula: number;
 let idUsuarioPaula: number;
 let idPilar: number;
@@ -57,7 +58,7 @@ beforeEach(async () => {
     roles: ["PROPIETARIA"],
   }));
   const tutor = await crearUsuario(prisma, { roles: ["TUTOR"] });
-  emailTutor = tutor.email;
+  ({ email: emailTutor, id_usuario: idUsuarioTutor } = tutor);
   const paula = await crearProfesora(prisma);
   const pilar = await crearProfesora(prisma);
   ({ id_profesora: idPaula, email: emailPaula, id_usuario: idUsuarioPaula } = paula);
@@ -301,6 +302,39 @@ describe("PI-84: consulta de la rutina por alumno, tutor y profesora (US-28)", (
     expect(respuesta.status).toBe(200);
     expect(respuesta.body).toBeNull();
     expect(historial.body).toEqual([]);
+  });
+
+  it("la alumna descubre su id_alumno en /alumnos/mios y con él ve su rutina", async () => {
+    const mios = await pedir("get", "/alumnos/mios", ana.email);
+    const vigente = await pedir("get", `/alumnos/${mios.body[0].id_alumno}/rutinas/vigente`, ana.email);
+
+    expect(mios.status).toBe(200);
+    expect(mios.body).toEqual([
+      { id_alumno: ana.id_alumno, nombre: "Ana", apellido: "Paz", estado: "ACTIVO", propio: true },
+    ]);
+    expect(vigente.body.nombre).toBe("De Ana");
+  });
+
+  it("el tutor recibe todos sus menores a cargo, también los dados de baja", async () => {
+    const dani = await alumnoDelPortal("Dani", "Acosta", {
+      email: null,
+      fecha_nacimiento: new Date("2015-02-03T00:00:00Z"),
+      id_usuario_responsable: idUsuarioTutor,
+    });
+    await prisma.alumnos.update({ where: { id_alumno: dani.id_alumno }, data: { estado: "BAJA" } });
+
+    const respuesta = await pedir("get", "/alumnos/mios", emailTutor);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual([
+      { id_alumno: dani.id_alumno, nombre: "Dani", apellido: "Acosta", estado: "BAJA", propio: false },
+      { id_alumno: caro.id_alumno, nombre: "Caro", apellido: "Sosa", estado: "ACTIVO", propio: false },
+    ]);
+  });
+
+  it("/alumnos/mios responde 403 a una profesora y 401 sin sesión", async () => {
+    expect((await pedir("get", "/alumnos/mios", emailPaula)).status).toBe(403);
+    expect((await pedir("get", "/alumnos/mios")).status).toBe(401);
   });
 
   it("un alumno inexistente responde 404 a la propietaria y 403 a quien no puede verlo", async () => {

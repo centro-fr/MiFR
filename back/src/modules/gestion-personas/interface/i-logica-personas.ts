@@ -6,7 +6,7 @@ import type {
   ResumenInscripcionAlumno,
 } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "../alumno/alumno.schemas.js";
-import type { Alumno, PaginaAlumnos } from "../alumno/alumno.types.js";
+import type { Alumno, AlumnoConsultable, PaginaAlumnos } from "../alumno/alumno.types.js";
 import type { CrearProfesoraInput } from "../profesor/profesor.schemas.js";
 import type { Profesora } from "../profesor/profesor.types.js";
 
@@ -56,7 +56,7 @@ export interface ILogicaAlumnos {
   listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos>;
   obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput, solicitante: Solicitante): Promise<Alumno>;
-  listarAlumnosDelSolicitante?(solicitante: Solicitante): Promise<Alumno[]>;
+  listarAlumnosConsultables(solicitante: Solicitante): Promise<AlumnoConsultable[]>;
 }
 
 // Interfaz del subsistema GestionPersonas para las operaciones expuestas a la API.

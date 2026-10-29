@@ -15,7 +15,8 @@ export function createAlumnoRoutes(logica: ILogicaAlumnos, acceso: ControlDeAcce
   const controller = createAlumnoController(logica);
   router.use(acceso.sesion);
 
-  router.get("/mios", controller.listarMios);
+  // Alumno y tutor no tienen permisos de alumnos: lo suyo se resuelve por pertenencia, en el service.
+  router.get("/mios", acceso.rol("ALUMNO", "TUTOR"), controller.listarMios);
   router.get(
     "/",
     acceso.permiso("ALUMNOS_VER"),

@@ -129,6 +129,23 @@ describe("AlumnoRepository", () => {
     });
   });
 
+  it("listarConsultablesPorUsuario busca el alumno del usuario y sus menores a cargo en una consulta", async () => {
+    prisma.alumnos.findMany.mockResolvedValue([]);
+
+    await repositorio.listarConsultablesPorUsuario(10);
+
+    expect(prisma.alumnos.findMany).toHaveBeenCalledWith({
+      where: { OR: [{ id_usuario: 10 }, { id_usuario_responsable: 10 }] },
+      select: {
+        id_alumno: true,
+        id_usuario: true,
+        estado: true,
+        usuario: { select: { nombre: true, apellido: true } },
+      },
+      orderBy: [{ usuario: { apellido: "asc" } }, { usuario: { nombre: "asc" } }],
+    });
+  });
+
   describe("listar", () => {
     it("devuelve la página en el orden del SQL y el total", async () => {
       prisma.$queryRaw

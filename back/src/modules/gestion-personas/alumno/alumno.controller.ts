@@ -40,23 +40,7 @@ export function createAlumnoController(logica: ILogicaAlumnos) {
     },
 
     async listarMios(req: Request, res: Response) {
-      if (typeof (logica as any).listarAlumnosDelSolicitante === "function") {
-        const alumnos = await (logica as any).listarAlumnosDelSolicitante(solicitanteDe(req));
-        const solicitante = solicitanteDe(req);
-        const resultado = alumnos.map((alumno: any) => {
-          const propio = alumno.id_usuario === solicitante.idUsuario;
-          return {
-            id_alumno: alumno.id_alumno,
-            nombre: alumno.usuario?.nombre,
-            apellido: alumno.usuario?.apellido,
-            estado: alumno.estado,
-            propio,
-          };
-        });
-        res.json(resultado);
-        return;
-      }
-      res.json([]);
+      res.json(await logica.listarAlumnosConsultables(solicitanteDe(req)));
     },
   };
 }
