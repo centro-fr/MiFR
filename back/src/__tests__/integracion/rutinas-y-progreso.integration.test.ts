@@ -304,6 +304,26 @@ describe("PI-84: consulta de la rutina por alumno, tutor y profesora (US-28)", (
     expect(historial.body).toEqual([]);
   });
 
+  it("las observaciones de la rutina las ve la profesora, no el alumno ni el tutor", async () => {
+    await pedir(
+      "post",
+      "/rutinas",
+      emailPaula,
+      rutina(caro.id_alumno, { nombre: "Con nota", observaciones: "Cuidar la rodilla izquierda" }),
+    );
+
+    const profesora = await pedir("get", `/alumnos/${caro.id_alumno}/rutinas/vigente`, emailPaula);
+    const tutor = await pedir("get", `/alumnos/${caro.id_alumno}/rutinas/vigente`, emailTutor);
+    const historialDelTutor = await pedir("get", `/alumnos/${caro.id_alumno}/rutinas`, emailTutor);
+
+    expect(profesora.body.observaciones).toBe("Cuidar la rodilla izquierda");
+    expect(tutor.body).toMatchObject({ nombre: "Con nota", observaciones: null });
+    expect(historialDelTutor.body.map((r: { observaciones: string | null }) => r.observaciones)).toEqual([
+      null,
+      null,
+    ]);
+  });
+
   it("la alumna descubre su id_alumno en /alumnos/mios y con él ve su rutina", async () => {
     const mios = await pedir("get", "/alumnos/mios", ana.email);
     const vigente = await pedir("get", `/alumnos/${mios.body[0].id_alumno}/rutinas/vigente`, ana.email);
@@ -431,6 +451,23 @@ describe("PI-85: registro de la evolución física (US-27, US-28)", () => {
     expect(tutor.body).toHaveLength(1);
     expect(ajena.status).toBe(403);
     expect(otraProfesora.status).toBe(403);
+  });
+
+  it("las observaciones de una medición las ve la profesora, no el alumno", async () => {
+    await pedir(
+      "post",
+      "/progreso",
+      emailPaula,
+      medicion(ana.id_alumno, { observaciones: "Después de entrenar" }),
+    );
+
+    const profesora = await pedir("get", `/alumnos/${ana.id_alumno}/progreso`, emailPaula);
+    const alumna = await pedir("get", `/alumnos/${ana.id_alumno}/progreso`, ana.email);
+    const propio = await pedir("get", "/progreso/mi-progreso", ana.email);
+
+    expect(profesora.body[0].observaciones).toBe("Después de entrenar");
+    expect(alumna.body[0].observaciones).toBeNull();
+    expect(propio.body[0].observaciones).toBeNull();
   });
 
   it("un alumno sin mediciones responde 200 con una lista vacía", async () => {

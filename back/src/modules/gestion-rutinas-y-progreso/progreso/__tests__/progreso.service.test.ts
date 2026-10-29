@@ -158,23 +158,32 @@ describe("ProgresoService", () => {
   });
 
   describe("listarDeAlumno", () => {
-    it.each([
-      ["la propietaria", PROPIETARIA],
-      ["el propio alumno", EL_ALUMNO],
-      ["el tutor del menor", EL_TUTOR],
-    ])("%s puede consultar", async (_quien, solicitante) => {
-      repositorio.listarDeAlumno.mockResolvedValue([REGISTRO]);
+    const conObservaciones = { ...REGISTRO, observaciones: "Medida tomada después de entrenar" };
 
-      expect(await service.listarDeAlumno(5, solicitante)).toEqual([REGISTRO]);
+    it("la propietaria consulta con las observaciones", async () => {
+      repositorio.listarDeAlumno.mockResolvedValue([conObservaciones]);
+
+      expect(await service.listarDeAlumno(5, PROPIETARIA)).toEqual([conObservaciones]);
       expect(repositorio.listarDeAlumno).toHaveBeenCalledWith(5);
     });
 
-    it("la profesora a cargo del alumno puede consultar", async () => {
+    it.each([
+      ["el propio alumno", EL_ALUMNO],
+      ["el tutor del menor", EL_TUTOR],
+    ])("%s consulta sin las observaciones", async (_quien, solicitante) => {
+      repositorio.listarDeAlumno.mockResolvedValue([conObservaciones]);
+
+      expect(await service.listarDeAlumno(5, solicitante)).toEqual([
+        { ...conObservaciones, observaciones: null },
+      ]);
+    });
+
+    it("la profesora a cargo del alumno consulta con las observaciones", async () => {
       profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
       aCargo.profesoraTieneAlumno.mockResolvedValue(true);
-      repositorio.listarDeAlumno.mockResolvedValue([REGISTRO]);
+      repositorio.listarDeAlumno.mockResolvedValue([conObservaciones]);
 
-      expect(await service.listarDeAlumno(5, PROFESORA)).toEqual([REGISTRO]);
+      expect(await service.listarDeAlumno(5, PROFESORA)).toEqual([conObservaciones]);
     });
 
     it("responde 403 a la profesora que no lo tiene a cargo", async () => {
@@ -208,7 +217,11 @@ describe("ProgresoService", () => {
   });
 
   describe.each([
-    ["actualizar", (s: ProgresoService, solicitante: typeof PROPIETARIA) => s.actualizar(1, { observaciones: "ok" }, solicitante)],
+    [
+      "actualizar",
+      (s: ProgresoService, solicitante: typeof PROPIETARIA) =>
+        s.actualizar(1, { observaciones: "ok" }, solicitante),
+    ],
     ["eliminar", (s: ProgresoService, solicitante: typeof PROPIETARIA) => s.eliminar(1, solicitante)],
   ])("%s: quién puede tocar un registro", (_nombre, operar) => {
     beforeEach(() => {
@@ -268,13 +281,17 @@ describe("ProgresoService", () => {
     });
 
     it("corrige las medidas con la unidad del catálogo y deja quién lo hizo", async () => {
-      expect(await service.actualizar(1, { medidas: [{ codigo: "PESO", valor: 62.4 }] }, PROPIETARIA)).toEqual(
-        REGISTRO,
-      );
+      expect(
+        await service.actualizar(1, { medidas: [{ codigo: "PESO", valor: 62.4 }] }, PROPIETARIA),
+      ).toEqual(REGISTRO);
 
       expect(repositorio.actualizar).toHaveBeenCalledWith(
         1,
-        { fecha: undefined, observaciones: undefined, medidas: [{ codigo: "PESO", unidad: "kg", valor: 62.4 }] },
+        {
+          fecha: undefined,
+          observaciones: undefined,
+          medidas: [{ codigo: "PESO", unidad: "kg", valor: 62.4 }],
+        },
         PROPIETARIA.idUsuario,
       );
     });

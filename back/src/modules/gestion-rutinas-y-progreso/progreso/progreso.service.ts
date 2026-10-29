@@ -3,6 +3,7 @@ import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import {
   AccesoAAlumno,
+  ocultarObservaciones,
   type AlumnoLookup,
   type AlumnosACargo,
   type ProfesoraLookup,
@@ -47,10 +48,12 @@ export class ProgresoService {
     });
   }
 
-  // Lista vacía si todavía no hay mediciones (estado vacío del portal).
+  // Lista vacía si todavía no hay mediciones (estado vacío del portal). El alumno y el tutor no ven las
+  // observaciones (US-28).
   async listarDeAlumno(idAlumno: number, solicitante: Solicitante): Promise<RegistroDeProgreso[]> {
-    await this.acceso.verificarLectura(idAlumno, solicitante);
-    return this.repositorio.listarDeAlumno(idAlumno);
+    const alcance = await this.acceso.verificarLectura(idAlumno, solicitante);
+    const registros = await this.repositorio.listarDeAlumno(idAlumno);
+    return alcance === "GESTION" ? registros : registros.map(ocultarObservaciones);
   }
 
   // Corrige un registro de un alumno a cargo, aunque lo haya cargado otra profesora (un error de carga, por

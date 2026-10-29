@@ -1,5 +1,10 @@
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
-import { AccesoAAlumno, type AlumnoLookup, type ProfesoraLookup } from "../acceso-a-alumno.js";
+import {
+  AccesoAAlumno,
+  ocultarObservaciones,
+  type AlumnoLookup,
+  type ProfesoraLookup,
+} from "../acceso-a-alumno.js";
 import type { CrearRutinaInput } from "./rutina.schemas.js";
 import type { RutinaRepository } from "./rutina.repository.js";
 import type { Rutina } from "./rutina.types.js";
@@ -27,16 +32,18 @@ export class RutinaService {
     return this.repositorio.crear({ ...datos, id_profesora: idProfesora });
   }
 
-  // El historial lo ve quien gestiona al alumno; el alumno y su tutor también (US-28).
+  // El historial lo ve quien gestiona al alumno; el alumno y su tutor también, sin las observaciones (US-28).
   async listarDeAlumno(idAlumno: number, solicitante: Solicitante): Promise<Rutina[]> {
-    await this.acceso.verificarLectura(idAlumno, solicitante);
-    return this.repositorio.listarDeAlumno(idAlumno);
+    const alcance = await this.acceso.verificarLectura(idAlumno, solicitante);
+    const rutinas = await this.repositorio.listarDeAlumno(idAlumno);
+    return alcance === "GESTION" ? rutinas : rutinas.map(ocultarObservaciones);
   }
 
   // null: el alumno todavía no tiene rutina (estado vacío del portal).
   async obtenerVigente(idAlumno: number, solicitante: Solicitante): Promise<Rutina | null> {
-    await this.acceso.verificarLectura(idAlumno, solicitante);
-    return this.repositorio.buscarVigenteDeAlumno(idAlumno);
+    const alcance = await this.acceso.verificarLectura(idAlumno, solicitante);
+    const vigente = await this.repositorio.buscarVigenteDeAlumno(idAlumno);
+    return vigente && alcance === "PROPIA" ? ocultarObservaciones(vigente) : vigente;
   }
 
   async obtenerVigentePropia(solicitante: Solicitante): Promise<Rutina | null> {

@@ -48,6 +48,8 @@ const RUTINA: Rutina = {
   activa: true,
 };
 
+const CON_OBSERVACIONES: Rutina = { ...RUTINA, observaciones: "Cuidar la rodilla izquierda" };
+
 async function estado(promesa: Promise<unknown>): Promise<number | undefined> {
   return promesa.then(
     () => undefined,
@@ -65,6 +67,8 @@ describe("RutinaService", () => {
     profesoras.buscarPorId.mockResolvedValue({ id_profesora: 10 });
     repositorio.profesoraTieneAlumno.mockResolvedValue(false);
     repositorio.crear.mockResolvedValue(RUTINA);
+    repositorio.listarDeAlumno.mockResolvedValue([]);
+    repositorio.buscarVigenteDeAlumno.mockResolvedValue(null);
     service = new RutinaService(repositorio as unknown as RutinaRepository, alumnos, profesoras);
   });
 
@@ -200,17 +204,41 @@ describe("RutinaService", () => {
     });
   });
 
-  it("listarDeAlumno devuelve el historial del repositorio", async () => {
-    repositorio.listarDeAlumno.mockResolvedValue([RUTINA]);
+  it("listarDeAlumno devuelve el historial con las observaciones a la propietaria", async () => {
+    repositorio.listarDeAlumno.mockResolvedValue([CON_OBSERVACIONES]);
 
-    expect(await service.listarDeAlumno(5, EL_ALUMNO)).toEqual([RUTINA]);
+    expect(await service.listarDeAlumno(5, PROPIETARIA)).toEqual([CON_OBSERVACIONES]);
     expect(repositorio.listarDeAlumno).toHaveBeenCalledWith(5);
   });
 
-  it("obtenerVigente devuelve la rutina vigente", async () => {
-    repositorio.buscarVigenteDeAlumno.mockResolvedValue(RUTINA);
+  it("listarDeAlumno le oculta las observaciones al alumno", async () => {
+    repositorio.listarDeAlumno.mockResolvedValue([CON_OBSERVACIONES]);
 
-    expect(await service.obtenerVigente(5, EL_TUTOR)).toEqual(RUTINA);
+    expect(await service.listarDeAlumno(5, EL_ALUMNO)).toEqual([
+      { ...CON_OBSERVACIONES, observaciones: null },
+    ]);
+  });
+
+  it("obtenerVigente le muestra las observaciones a la profesora a cargo", async () => {
+    profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+    repositorio.profesoraTieneAlumno.mockResolvedValue(true);
+    repositorio.buscarVigenteDeAlumno.mockResolvedValue(CON_OBSERVACIONES);
+
+    expect(await service.obtenerVigente(5, PROFESORA)).toEqual(CON_OBSERVACIONES);
+  });
+
+  it("obtenerVigente le oculta las observaciones al tutor", async () => {
+    repositorio.buscarVigenteDeAlumno.mockResolvedValue(CON_OBSERVACIONES);
+
+    expect(await service.obtenerVigente(5, EL_TUTOR)).toEqual({ ...CON_OBSERVACIONES, observaciones: null });
+  });
+
+  it("la profesora a cargo que además es la tutora ve las observaciones", async () => {
+    profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+    repositorio.profesoraTieneAlumno.mockResolvedValue(true);
+    repositorio.buscarVigenteDeAlumno.mockResolvedValue(CON_OBSERVACIONES);
+
+    expect(await service.obtenerVigente(5, EL_TUTOR)).toEqual(CON_OBSERVACIONES);
   });
 
   it("obtenerVigente devuelve null si el alumno todavía no tiene rutina", async () => {
