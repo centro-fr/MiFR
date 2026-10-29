@@ -53,7 +53,8 @@ export class ProgresoService {
     return this.repositorio.listarDeAlumno(idAlumno);
   }
 
-  // Corrige un registro propio de un alumno a cargo (un error de carga, por ejemplo 6,24 kg en vez de 62,4).
+  // Corrige un registro de un alumno a cargo, aunque lo haya cargado otra profesora (un error de carga, por
+  // ejemplo 6,24 kg en vez de 62,4).
   async actualizar(
     idRegistro: number,
     input: ActualizarProgresoInput,
