@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,10 +43,16 @@ function iniciarSesion(permisos: string[]) {
 }
 
 function renderizar() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
   render(
-    <MemoryRouter>
-      <PendientesDeAltaPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <PendientesDeAltaPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

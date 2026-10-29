@@ -70,6 +70,10 @@ describe("SuplenciaDialog", () => {
       />,
     );
 
+    // Fijar fecha en día lunes (dia_semana = 1) para habilitar los horarios cargados
+    const inputFecha = document.querySelector('input[name="fechaClase"]') as HTMLInputElement;
+    fireEvent.change(inputFecha, { target: { value: "2026-10-26" } });
+
     // Abrir el Select de Horario
     const trigger = screen.getByText("Elegí actividad y horario");
     fireEvent.click(trigger);

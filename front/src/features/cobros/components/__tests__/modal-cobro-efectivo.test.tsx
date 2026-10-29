@@ -67,7 +67,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
     expect(inputMonto).toHaveValue("25000");
   });
 
-  it("muestra la acción para crear una promoción nueva cuando la inscripción tiene plan", () => {
+  it("muestra el selector de promoción cuando la inscripción tiene plan", () => {
     render(
       <ModalCobroEfectivo
         abierto={true}
@@ -78,7 +78,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /crear nueva promoción/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/promoción/i)).toBeInTheDocument();
   });
 
   it("registra el cobro exitosamente al confirmar con el precio vigente", async () => {
