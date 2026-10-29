@@ -31,6 +31,7 @@ function crearRepositorioMock() {
     reactivar: vi.fn(),
     contarAltasPorMes: vi.fn(),
     listarConsultablesPorUsuario: vi.fn(),
+    buscarPorIdUsuarioResponsable: vi.fn(),
   };
 }
 
@@ -567,6 +568,16 @@ describe("AlumnoService", () => {
       expect(resultado).toBe(esperado);
       expect(repositorio.contarAltasPorMes).toHaveBeenCalledWith(filtro);
     });
+  });
+
+  it("buscarPorIdUsuario y buscarPorIdUsuarioResponsable delegan en el repositorio", async () => {
+    repositorio.buscarPorIdUsuario.mockResolvedValue(crearAlumno());
+    repositorio.buscarPorIdUsuarioResponsable.mockResolvedValue(menorConTutor);
+
+    expect(await servicio.buscarPorIdUsuario(10)).toEqual(crearAlumno());
+    expect(await servicio.buscarPorIdUsuarioResponsable(20)).toBe(menorConTutor);
+    expect(repositorio.buscarPorIdUsuario).toHaveBeenCalledWith(10);
+    expect(repositorio.buscarPorIdUsuarioResponsable).toHaveBeenCalledWith(20);
   });
 
   describe("listarConsultables", () => {
