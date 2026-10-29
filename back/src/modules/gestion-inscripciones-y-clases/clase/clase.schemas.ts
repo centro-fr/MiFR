@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 
@@ -8,8 +8,8 @@ export const claseIdParamSchema = z.object({ id: idDesdeTextoSchema });
 export const listarClasesQuerySchema = z.object({
   fecha: z
     .string({
-      required_error: "Indique la fecha",
-      invalid_type_error: "La fecha debe tener formato AAAA-MM-DD",
+      error: (issue) =>
+        issue.input === undefined ? "Indique la fecha" : "La fecha debe tener formato AAAA-MM-DD",
     })
     .date("La fecha debe tener formato AAAA-MM-DD")
     .transform((valor) => new Date(`${valor}T00:00:00Z`))

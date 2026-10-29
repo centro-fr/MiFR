@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema } from "../../../shared/utils/esquemas-id.js";
 import { textoOpcionalSchema } from "../../../shared/utils/esquemas-texto.js";
 

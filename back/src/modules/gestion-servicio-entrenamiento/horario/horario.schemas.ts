@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 
 // Horario de atención del centro (US-04): ninguna clase empieza antes ni termina después.

@@ -35,5 +35,12 @@ describe("clase.schemas", () => {
     ])("rechaza %s", (_caso, fecha) => {
       expect(listarClasesQuerySchema.safeParse({ fecha }).success).toBe(false);
     });
+
+    it.each([
+      ["sin fecha", undefined, "Indique la fecha"],
+      ["una fecha que no es texto", 20261012, "La fecha debe tener formato AAAA-MM-DD"],
+    ])("%s responde con su mensaje", (_caso, fecha, mensaje) => {
+      expect(listarClasesQuerySchema.safeParse({ fecha }).error?.issues[0]?.message).toBe(mensaje);
+    });
   });
 });

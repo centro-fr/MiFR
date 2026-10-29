@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../../shared/utils/zod.js";
 import { idDesdeTextoSchema, idSchema } from "../../../shared/utils/esquemas-id.js";
 import { montoSchema } from "../../../shared/utils/esquemas-numero.js";
 import { textoOpcionalSchema, textoSchema } from "../../../shared/utils/esquemas-texto.js";
@@ -13,7 +13,7 @@ const confirmar_monto_distinto = z.boolean().default(false);
 // El momento en que se hizo la transferencia, con su zona horaria (ISO 8601). No puede ser
 // futuro: todavía no pasó.
 const fecha_hora_transferencia = z
-  .string({ invalid_type_error: "La fecha y hora debe tener formato ISO 8601" })
+  .string({ error: "La fecha y hora debe tener formato ISO 8601" })
   .datetime({ offset: true, message: "La fecha y hora debe tener formato ISO 8601, con zona horaria" })
   .transform((valor) => new Date(valor))
   .refine((fecha) => fecha <= new Date(), { message: "La transferencia no puede ser futura" });
@@ -41,7 +41,7 @@ export const registrarTransferenciaRecibidaSchema = informarTransferenciaSchema.
 });
 
 // Aprobar normalmente no lleva cuerpo: sin él, Express 5 deja req.body undefined.
-export const aprobarTransferenciaSchema = z.object({ confirmar_monto_distinto }).default({});
+export const aprobarTransferenciaSchema = z.object({ confirmar_monto_distinto }).prefault({});
 
 // ck_pagos_x2 del DER: el rechazo lleva motivo.
 export const rechazarTransferenciaSchema = z.object({ motivo_rechazo: textoSchema(255) });
@@ -104,11 +104,7 @@ export const rendirLoteSchema = z.union(
       })
       .strict(),
   ],
-  {
-    errorMap: () => ({
-      message: "Indique la profesora (id_profesora) o los cobros (ids_pagos), no las dos cosas",
-    }),
-  },
+  { error: "Indique la profesora (id_profesora) o los cobros (ids_pagos), no las dos cosas" },
 );
 
 export type RegistrarEfectivoInput = z.infer<typeof registrarEfectivoSchema>;
