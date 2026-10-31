@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { Ruler } from "lucide-react";
+import { ConfirmarBajaMedicion } from "@/features/rutinas/components/confirmaciones-medicion";
 import { DialogoMedicion } from "@/features/rutinas/components/dialogo-medicion";
-import { Evolucion } from "@/features/rutinas/components/detalle-evolucion";
+import { Evolucion, type AccionesDeMedicion } from "@/features/rutinas/components/detalle-evolucion";
 import { BotonDeCarga, CargandoTarjeta, ErrorDeCarga, SinDatos, Tarjeta } from "@/features/rutinas/components/tarjeta";
 import { useMedicionesDeAlumno, useNombresDeProfesoras } from "@/features/rutinas/hooks/use-rutinas";
+import type { Medicion } from "@/types/rutinas";
 
 interface PropsTarjetaEvolucion {
   idAlumno: number;
   nombreAlumno: string;
+  /** También habilita corregir y dar de baja: el back pide el mismo permiso y el alumno a cargo. */
   puedeCargar: boolean;
 }
 
@@ -15,10 +18,20 @@ export function TarjetaEvolucion({ idAlumno, nombreAlumno, puedeCargar }: PropsT
   const consulta = useMedicionesDeAlumno(idAlumno, true);
   const nombres = useNombresDeProfesoras();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
+  // No se limpia al cerrar: así el título del diálogo no cambia mientras se va.
+  const [medicionACorregir, setMedicionACorregir] = useState<Medicion | null>(null);
+  const [medicionADarDeBaja, setMedicionADarDeBaja] = useState<Medicion | null>(null);
 
   const mediciones = useMemo(() => consulta.data ?? [], [consulta.data]);
-  const fechasConMedicion = useMemo(() => new Set(mediciones.map((medicion) => medicion.fecha)), [mediciones]);
-  const abrir = () => setDialogoAbierto(true);
+
+  function abrirFormulario(medicion: Medicion | null) {
+    setMedicionACorregir(medicion);
+    setDialogoAbierto(true);
+  }
+  const abrir = () => abrirFormulario(null);
+  const acciones: AccionesDeMedicion | undefined = puedeCargar
+    ? { onCorregir: abrirFormulario, onDarDeBaja: setMedicionADarDeBaja }
+    : undefined;
 
   function contenido() {
     if (consulta.isPending) return <CargandoTarjeta etiqueta="Cargando las mediciones" />;
@@ -40,7 +53,7 @@ export function TarjetaEvolucion({ idAlumno, nombreAlumno, puedeCargar }: PropsT
         />
       );
     }
-    return <Evolucion mediciones={mediciones} nombresDeProfesoras={nombres} />;
+    return <Evolucion mediciones={mediciones} nombresDeProfesoras={nombres} acciones={acciones} />;
   }
 
   return (
@@ -55,9 +68,11 @@ export function TarjetaEvolucion({ idAlumno, nombreAlumno, puedeCargar }: PropsT
         abierto={dialogoAbierto}
         idAlumno={idAlumno}
         nombreAlumno={nombreAlumno}
-        fechasConMedicion={fechasConMedicion}
+        medicion={medicionACorregir}
+        mediciones={mediciones}
         onClose={() => setDialogoAbierto(false)}
       />
+      <ConfirmarBajaMedicion idAlumno={idAlumno} medicion={medicionADarDeBaja} onClose={() => setMedicionADarDeBaja(null)} />
     </Tarjeta>
   );
 }

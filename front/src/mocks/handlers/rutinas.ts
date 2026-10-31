@@ -9,7 +9,7 @@ import { hoyEnArgentina } from "@/mocks/precios";
 import { errorApi, idDeRuta, idInvalido, permisosDeRoles, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 
 // Mock de US-27 con el contrato del back (gestion-rutinas-y-progreso): mismas rutas, validaciones y
-// reglas de AccesoAAlumno.
+// reglas de AccesoAAlumno, incluidas la corrección y la baja lógica de mediciones.
 
 const EDITAR = { permiso: "RUTINAS_EDITAR" } as const;
 const UN_DIA_MS = 86_400_000;
@@ -52,23 +52,36 @@ const crearRutinaSchema = z
   })
   .refine(({ fecha_desde, fecha_hasta }) => !fecha_hasta || fecha_hasta >= fecha_desde);
 
+const medidasSchema = z
+  .array(
+    z
+      .object({ codigo: z.enum(CODIGOS_MEDIDA), valor: z.number().positive() })
+      .refine(({ codigo, valor }) => valor >= MEDIDAS[codigo].minimo && valor <= MEDIDAS[codigo].maximo)
+      .refine(({ valor }) => Math.abs(valor * 100 - Math.round(valor * 100)) < 1e-6),
+  )
+  .min(1)
+  .max(CODIGOS_MEDIDA.length);
+
+type MedidasPedidas = z.infer<typeof medidasSchema>;
+
+const sinRepetidas = (medidas: MedidasPedidas | undefined) =>
+  !medidas || new Set(medidas.map(({ codigo }) => codigo)).size === medidas.length;
+
 const registrarProgresoSchema = z
   .object({
     id_alumno: z.number().int().positive(),
     id_profesora: z.number().int().positive().optional(),
     fecha: fecha.optional(),
     observaciones: textoOpcional(500),
-    medidas: z
-      .array(
-        z
-          .object({ codigo: z.enum(CODIGOS_MEDIDA), valor: z.number().positive() })
-          .refine(({ codigo, valor }) => valor >= MEDIDAS[codigo].minimo && valor <= MEDIDAS[codigo].maximo)
-          .refine(({ valor }) => Math.abs(valor * 100 - Math.round(valor * 100)) < 1e-6),
-      )
-      .min(1)
-      .max(CODIGOS_MEDIDA.length),
+    medidas: medidasSchema,
   })
-  .refine(({ medidas }) => new Set(medidas.map(({ codigo }) => codigo)).size === medidas.length);
+  .refine(({ medidas }) => sinRepetidas(medidas));
+
+// Corregir: lo mismo pero todo opcional y al menos un dato. observaciones en null la borra.
+const actualizarProgresoSchema = z
+  .object({ fecha: fecha.optional(), observaciones: textoOpcional(500), medidas: medidasSchema.optional() })
+  .refine((cambios) => cambios.fecha !== undefined || cambios.observaciones !== undefined || cambios.medidas !== undefined)
+  .refine(({ medidas }) => sinRepetidas(medidas));
 
 const comoFecha = (dia: string) => `${dia}T00:00:00.000Z`;
 
@@ -76,8 +89,17 @@ function rutinaConFechas(rutina: RutinaMock) {
   return { ...rutina, fecha_desde: comoFecha(rutina.fecha_desde), fecha_hasta: rutina.fecha_hasta && comoFecha(rutina.fecha_hasta) };
 }
 
+// Lo que responde el back: sin la marca de baja, que queda solo en la base.
 function registroConFecha(registro: RegistroProgresoMock) {
-  return { ...registro, fecha: comoFecha(registro.fecha) };
+  const { id_registro, id_alumno, id_profesora, observaciones, fecha_modificacion, id_usuario_modifica, medidas } = registro;
+  return { id_registro, id_alumno, id_profesora, fecha: comoFecha(registro.fecha), observaciones, fecha_modificacion, id_usuario_modifica, medidas };
+}
+
+// Como el back: en el orden de tipos_medida y con la unidad del catálogo, no la del pedido.
+function medidasDelCatalogo(medidas: MedidasPedidas): RegistroProgresoMock["medidas"] {
+  return [...medidas]
+    .sort((a, b) => CODIGOS_MEDIDA.indexOf(a.codigo) - CODIGOS_MEDIDA.indexOf(b.codigo))
+    .map(({ codigo, valor }) => ({ codigo, unidad: MEDIDAS[codigo].unidad, valor }));
 }
 
 // ---------- AccesoAAlumno del back ----------
@@ -136,6 +158,21 @@ function profesoraQueCarga(usuario: UsuarioSemilla, idAlumno: number, idPedida: 
   }
   if (propia !== null) return { idProfesora: propia };
   return { error: errorApi(400, "VALIDATION_ERROR", "Indicá la profesora que carga el dato") };
+}
+
+/**
+ * La medición que puede corregir o dar de baja quien inició sesión, o la respuesta de error. La profesora,
+ * solo las de sus alumnos a cargo aunque las haya cargado otra; a ella una inexistente o dada de baja se le
+ * responde igual que una ajena.
+ */
+function registroModificable(usuario: UsuarioSemilla, idRegistro: number) {
+  const registro = db.registrosProgreso.find((r) => r.id_registro === idRegistro && !r.dado_de_baja);
+  if (usuario.roles.includes("PROPIETARIA")) {
+    return registro ? { registro } : { error: errorApi(404, "NOT_FOUND", "Registro de progreso no encontrado") };
+  }
+  const idProfesora = idProfesoraDe(usuario);
+  if (registro && idProfesora !== null && profesoraTieneAlumno(idProfesora, registro.id_alumno)) return { registro };
+  return { error: errorApi(403, "FORBIDDEN", "Solo podés modificar las mediciones de los alumnos que tenés a cargo") };
 }
 
 /** RUTINAS_VER o RUTINAS_VER_PROPIAS abren la consulta; quién ve a cada alumno lo decide errorDeLectura. */
@@ -260,22 +297,59 @@ export const rutinasHandlers = [
       id_profesora: carga.idProfesora,
       fecha: dia,
       observaciones: datos.observaciones ?? null,
-      // Como el back: en el orden de tipos_medida y con la unidad del catálogo, no la del pedido.
-      medidas: [...datos.medidas]
-        .sort((a, b) => CODIGOS_MEDIDA.indexOf(a.codigo) - CODIGOS_MEDIDA.indexOf(b.codigo))
-        .map(({ codigo, valor }) => ({ codigo, unidad: MEDIDAS[codigo].unidad, valor })),
+      medidas: medidasDelCatalogo(datos.medidas),
+      fecha_modificacion: null,
+      id_usuario_modifica: null,
+      dado_de_baja: false,
     };
     db.registrosProgreso.push(nuevo);
     return HttpResponse.json(registroConFecha(nuevo), { status: 201 });
   }),
 
-  // De la medición más reciente a la más antigua.
+  http.patch("*/api/v1/progreso/:id", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, EDITAR);
+    if (denegado) return denegado;
+    const idRegistro = idDeRuta(params.id);
+    if (idRegistro === null) return idInvalido();
+    const cuerpo = actualizarProgresoSchema.safeParse(await request.json().catch(() => null));
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    const usuario = usuarioDeLaSesion(request)!;
+    const modificable = registroModificable(usuario, idRegistro);
+    if ("error" in modificable) return modificable.error;
+
+    const { fecha: dia, observaciones, medidas } = cuerpo.data;
+    if (dia !== undefined && dia > hoyEnArgentina()) {
+      return errorApi(400, "VALIDATION_ERROR", "La fecha de la medición no puede ser futura");
+    }
+    const { registro } = modificable;
+    if (dia !== undefined) registro.fecha = dia;
+    if (observaciones !== undefined) registro.observaciones = observaciones;
+    if (medidas !== undefined) registro.medidas = medidasDelCatalogo(medidas);
+    registro.fecha_modificacion = new Date().toISOString();
+    registro.id_usuario_modifica = usuario.id_usuario;
+    return HttpResponse.json(registroConFecha(registro));
+  }),
+
+  http.delete("*/api/v1/progreso/:id", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, EDITAR);
+    if (denegado) return denegado;
+    const idRegistro = idDeRuta(params.id);
+    if (idRegistro === null) return idInvalido();
+    const modificable = registroModificable(usuarioDeLaSesion(request)!, idRegistro);
+    if ("error" in modificable) return modificable.error;
+    modificable.registro.dado_de_baja = true;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // De la medición más reciente a la más antigua, sin las dadas de baja.
   http.get("*/api/v1/alumnos/:id/progreso", async ({ request, params }) => {
     await delay(300);
     const lectura = lecturaDelAlumno(request, params.id);
     if ("error" in lectura) return lectura.error;
     const registros = db.registrosProgreso
-      .filter((r) => r.id_alumno === lectura.idAlumno)
+      .filter((r) => r.id_alumno === lectura.idAlumno && !r.dado_de_baja)
       .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id_registro - a.id_registro);
     return HttpResponse.json(registros.map(registroConFecha));
   }),

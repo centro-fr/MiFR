@@ -4,6 +4,7 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { CampoFechaDelFormulario } from "@/components/formulario/campo-fecha-del-formulario";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -201,14 +202,15 @@ function FormularioTarifa({ periodo, tarifas, onListo }: PropsFormulario) {
         <label htmlFor="tarifa-desde" className={ETIQUETA}>
           Rige desde <span aria-hidden="true" className="text-rose-600">*</span>
         </label>
-        <input
+        <CampoFechaDelFormulario
+          control={formulario.control}
+          name="desde"
           id="tarifa-desde"
-          type="date"
+          etiquetaCalendario="Abrir calendario para la fecha desde la que rige"
           min={hoy}
           aria-invalid={Boolean(errores.desde)}
           aria-describedby={errores.desde ? "tarifa-desde-error" : "tarifa-desde-ayuda"}
-          {...formulario.register("desde")}
-          className={CONTROL}
+          className={cn(CONTROL, "md:text-base")}
         />
         {errores.desde ? (
           <MensajeError id="tarifa-desde-error" mensaje={errores.desde.message} />

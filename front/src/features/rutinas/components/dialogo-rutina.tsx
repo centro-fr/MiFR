@@ -4,8 +4,9 @@ import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { Info, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { CampoFechaDelFormulario } from "@/components/formulario/campo-fecha-del-formulario";
 import { Button } from "@/components/ui/button";
-import { AREA_DE_TEXTO, CONTROL, ETIQUETA } from "@/features/rutinas/components/estilos-formulario";
+import { AREA_DE_TEXTO, CONTROL, CONTROL_FECHA, ETIQUETA } from "@/features/rutinas/components/estilos-formulario";
 import { DialogoDeCarga, MensajeError, Obligatorio, PieDelFormulario } from "@/features/rutinas/components/formulario";
 import { useCrearRutina } from "@/features/rutinas/hooks/use-rutinas";
 import {
@@ -229,13 +230,14 @@ function FormularioRutina({ idAlumno, vigente, onListo }: PropsFormulario) {
           <label htmlFor="rutina-desde" className={ETIQUETA}>
             Desde <Obligatorio />
           </label>
-          <input
+          <CampoFechaDelFormulario
+            control={formulario.control}
+            name="desde"
             id="rutina-desde"
-            type="date"
+            etiquetaCalendario="Abrir calendario para la fecha de inicio"
+            className={CONTROL_FECHA}
             aria-invalid={Boolean(errores.desde)}
             aria-describedby={errores.desde ? "rutina-desde-error" : undefined}
-            {...formulario.register("desde")}
-            className={CONTROL}
           />
           <MensajeError id="rutina-desde-error" mensaje={errores.desde?.message} />
         </div>
@@ -243,13 +245,14 @@ function FormularioRutina({ idAlumno, vigente, onListo }: PropsFormulario) {
           <label htmlFor="rutina-hasta" className={ETIQUETA}>
             Hasta <span className="font-normal text-muted-foreground">(opcional)</span>
           </label>
-          <input
+          <CampoFechaDelFormulario
+            control={formulario.control}
+            name="hasta"
             id="rutina-hasta"
-            type="date"
+            etiquetaCalendario="Abrir calendario para la fecha de fin"
+            className={CONTROL_FECHA}
             aria-invalid={Boolean(errores.hasta)}
             aria-describedby={errores.hasta ? "rutina-hasta-error" : undefined}
-            {...formulario.register("hasta")}
-            className={CONTROL}
           />
           <MensajeError id="rutina-hasta-error" mensaje={errores.hasta?.message} />
         </div>

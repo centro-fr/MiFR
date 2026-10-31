@@ -51,4 +51,6 @@ export interface Medicion {
   fecha: string;
   observaciones: string | null;
   medidas: MedidaRegistrada[];
+  /** Timestamp ISO de la última corrección; null si nunca se corrigió. */
+  corregidaEl: string | null;
 }

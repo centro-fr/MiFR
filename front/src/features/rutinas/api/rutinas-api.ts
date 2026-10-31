@@ -4,6 +4,7 @@ import {
   medicionApiSchema,
   miAlumnoApiSchema,
   rutinaApiSchema,
+  type CorregirMedicionBody,
   type CrearRutinaBody,
   type MedicionApi,
   type RegistrarMedicionBody,
@@ -12,7 +13,8 @@ import {
 import type { AlumnoConsultable, Medicion, Rutina } from "@/types/rutinas";
 
 // Endpoints de US-27 y US-28. Ver: RUTINAS_VER (la profesora, solo sus alumnos a cargo) o
-// RUTINAS_VER_PROPIAS (el alumno lo suyo y el tutor lo de sus menores). Cargar: RUTINAS_EDITAR.
+// RUTINAS_VER_PROPIAS (el alumno lo suyo y el tutor lo de sus menores). Cargar, corregir y dar de baja:
+// RUTINAS_EDITAR, y la profesora solo sobre sus alumnos a cargo aunque otra haya cargado la medición.
 
 function aRutina(api: RutinaApi): Rutina {
   return {
@@ -34,6 +36,7 @@ function aMedicion(api: MedicionApi): Medicion {
     fecha: api.fecha,
     observaciones: api.observaciones,
     medidas: api.medidas,
+    corregidaEl: api.fecha_modificacion,
   };
 }
 
@@ -74,4 +77,15 @@ export async function listarMisAlumnos(): Promise<AlumnoConsultable[]> {
 export async function registrarMedicion(cuerpo: RegistrarMedicionBody): Promise<Medicion> {
   const { data } = await apiClient.post("/progreso", cuerpo);
   return aMedicion(medicionApiSchema.parse(data));
+}
+
+/** Mismas validaciones que al registrar. 403 a la profesora (404 a la propietaria) si ya no existe. */
+export async function corregirMedicion(idRegistro: number, cuerpo: CorregirMedicionBody): Promise<Medicion> {
+  const { data } = await apiClient.patch(`/progreso/${encodeURIComponent(idRegistro)}`, cuerpo);
+  return aMedicion(medicionApiSchema.parse(data));
+}
+
+/** Baja lógica: deja de aparecer en el historial del alumno y ya no se puede corregir. */
+export async function darDeBajaMedicion(idRegistro: number): Promise<void> {
+  await apiClient.delete(`/progreso/${encodeURIComponent(idRegistro)}`);
 }
