@@ -44,7 +44,7 @@ export const medicionApiSchema = z.object({
   medidas: z.array(z.object({ codigo: z.string(), unidad: z.string(), valor: z.number() })),
 });
 
-// US-28: contrato pedido al back en un issue (todavía no existe). Si lo define distinto, se adapta acá.
+// US-28: GET /alumnos/mios. Los dados de baja también vienen, con estado BAJA.
 export const miAlumnoApiSchema = z.object({
   id_alumno: idSchema,
   nombre: z.string(),

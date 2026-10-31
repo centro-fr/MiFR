@@ -128,15 +128,29 @@ function esMenorACargo(alumno: AlumnoMock, ids: number[]): boolean {
   return alumno.id_usuario_responsable !== null && ids.includes(alumno.id_usuario_responsable);
 }
 
-// Al que no puede ver a un alumno, uno que no existe se le responde igual que uno ajeno.
-function errorDeLectura(usuario: UsuarioSemilla, idAlumno: number) {
+// GESTION: la propietaria o la profesora a cargo. PROPIA: el alumno o el tutor de un menor.
+type AlcanceDeLectura = "GESTION" | "PROPIA";
+type AccesoDeLectura = { alcance: AlcanceDeLectura } | { error: ReturnType<typeof errorApi> };
+
+// Al que no puede ver a un alumno, uno que no existe se le responde igual que uno ajeno. La profesora a
+// cargo va antes que el alumno y el tutor: si también es tutora de su alumno, ve las observaciones.
+function alcanceDeLectura(usuario: UsuarioSemilla, idAlumno: number): AccesoDeLectura {
   const alumno = db.alumnos.find((a) => a.id_alumno === idAlumno);
-  if (usuario.roles.includes("PROPIETARIA")) return alumno ? null : errorApi(404, "NOT_FOUND", "Alumno no encontrado");
-  const ids = idsDeLaPersona(usuario);
-  if (alumno && (esPropio(alumno, ids) || esMenorACargo(alumno, ids))) return null;
+  if (usuario.roles.includes("PROPIETARIA")) {
+    return alumno ? { alcance: "GESTION" } : { error: errorApi(404, "NOT_FOUND", "Alumno no encontrado") };
+  }
+  const sinAcceso = { error: errorApi(403, "FORBIDDEN", "Solo podés ver lo tuyo, lo de un menor a tu cargo o lo de tus alumnos") };
+  if (!alumno) return sinAcceso;
   const idProfesora = idProfesoraDe(usuario);
-  if (alumno && idProfesora !== null && profesoraTieneAlumno(idProfesora, idAlumno)) return null;
-  return errorApi(403, "FORBIDDEN", "Solo podés ver lo tuyo, lo de un menor a tu cargo o lo de tus alumnos");
+  if (idProfesora !== null && profesoraTieneAlumno(idProfesora, idAlumno)) return { alcance: "GESTION" };
+  const ids = idsDeLaPersona(usuario);
+  if (esPropio(alumno, ids) || esMenorACargo(alumno, ids)) return { alcance: "PROPIA" };
+  return sinAcceso;
+}
+
+// US-28: las observaciones son notas de la profesora. Al alumno y al tutor les llegan en null, como en el back.
+function visiblePara<T extends { observaciones: string | null }>(alcance: AlcanceDeLectura, dato: T): T {
+  return alcance === "GESTION" ? dato : { ...dato, observaciones: null };
 }
 
 /** La profesora a cuyo nombre queda lo cargado, o la respuesta de error. */
@@ -175,7 +189,7 @@ function registroModificable(usuario: UsuarioSemilla, idRegistro: number) {
   return { error: errorApi(403, "FORBIDDEN", "Solo podés modificar las mediciones de los alumnos que tenés a cargo") };
 }
 
-/** RUTINAS_VER o RUTINAS_VER_PROPIAS abren la consulta; quién ve a cada alumno lo decide errorDeLectura. */
+/** RUTINAS_VER o RUTINAS_VER_PROPIAS abren la consulta; quién ve a cada alumno lo decide alcanceDeLectura. */
 function lecturaDelAlumno(request: Request, valorId: string | readonly string[] | undefined) {
   const denegado = verificarAcceso(request);
   if (denegado) return { error: denegado };
@@ -186,8 +200,8 @@ function lecturaDelAlumno(request: Request, valorId: string | readonly string[] 
   }
   const idAlumno = idDeRuta(valorId);
   if (idAlumno === null) return { error: idInvalido() };
-  const error = errorDeLectura(usuario, idAlumno);
-  return error ? { error } : { idAlumno };
+  const acceso = alcanceDeLectura(usuario, idAlumno);
+  return "error" in acceso ? acceso : { idAlumno, alcance: acceso.alcance };
 }
 
 // La nueva queda vigente; a la anterior sin fin se le pone el día previo, sin quedar antes de su inicio.
@@ -200,8 +214,8 @@ function cerrarVigentes(idAlumno: number, desde: string): void {
 }
 
 export const rutinasHandlers = [
-  // US-28: contrato pedido al back en un issue, todavía no existe. El alumno recibe el suyo y el tutor,
-  // sus menores a cargo; el resto de los roles no tiene alumnos propios.
+  // US-28: el alumno recibe el suyo, primero, y el tutor sus menores a cargo por apellido y nombre. Los
+  // dados de baja también salen. El resto de los roles no tiene alumnos propios: 403.
   http.get("*/api/v1/alumnos/mios", async ({ request }) => {
     await delay(300);
     const denegado = verificarAcceso(request);
@@ -223,7 +237,12 @@ export const rutinasHandlers = [
           propio: esPropio(alumno, ids),
         };
       })
-      .sort((a, b) => Number(b.propio) - Number(a.propio) || a.nombre.localeCompare(b.nombre, "es"));
+      .sort(
+        (a, b) =>
+          Number(b.propio) - Number(a.propio) ||
+          a.apellido.localeCompare(b.apellido, "es") ||
+          a.nombre.localeCompare(b.nombre, "es"),
+      );
     return HttpResponse.json(mios);
   }),
 
@@ -265,7 +284,7 @@ export const rutinasHandlers = [
     const rutinas = db.rutinas
       .filter((r) => r.id_alumno === lectura.idAlumno)
       .sort((a, b) => b.fecha_desde.localeCompare(a.fecha_desde) || b.id_rutina - a.id_rutina);
-    return HttpResponse.json(rutinas.map(rutinaConFechas));
+    return HttpResponse.json(rutinas.map((rutina) => visiblePara(lectura.alcance, rutinaConFechas(rutina))));
   }),
 
   // Sin rutina responde 200 con null, no 404 (estado vacío del portal del alumno, US-28).
@@ -274,7 +293,7 @@ export const rutinasHandlers = [
     const lectura = lecturaDelAlumno(request, params.id);
     if ("error" in lectura) return lectura.error;
     const vigente = db.rutinas.find((r) => r.id_alumno === lectura.idAlumno && r.activa);
-    return HttpResponse.json(vigente ? rutinaConFechas(vigente) : null);
+    return HttpResponse.json(vigente ? visiblePara(lectura.alcance, rutinaConFechas(vigente)) : null);
   }),
 
   http.post("*/api/v1/progreso", async ({ request }) => {
@@ -351,6 +370,6 @@ export const rutinasHandlers = [
     const registros = db.registrosProgreso
       .filter((r) => r.id_alumno === lectura.idAlumno && !r.dado_de_baja)
       .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id_registro - a.id_registro);
-    return HttpResponse.json(registros.map(registroConFecha));
+    return HttpResponse.json(registros.map((registro) => visiblePara(lectura.alcance, registroConFecha(registro))));
   }),
 ];
