@@ -97,10 +97,12 @@ export interface LiquidacionDetalle {
   suplencias: LineaSuplencia[];
 }
 
-/** Una de las dos tarifas del estudio: rige igual para todos los profesores. */
+/** El porcentaje por alumno rige igual para todos los profesores; la hora de suplencia, una por profesor/a. */
 export interface TarifaHonorario {
   id: number;
   concepto: ConceptoTarifa;
+  /** null en el porcentaje por alumno, que es general. */
+  idProfesora: number | null;
   tipoValor: TipoValorTarifa;
   valor: number;
   /** AAAA-MM-DD. */
@@ -108,6 +110,9 @@ export interface TarifaHonorario {
   /** AAAA-MM-DD; null mientras siga vigente. */
   hasta: string | null;
 }
+
+/** A quién se aplica una tarifa: la de cada alumno a cargo es general; la de suplencia, de un profesor/a. */
+export type AlcanceTarifa = { concepto: "ALUMNO_A_CARGO" } | { concepto: "HORA_SUPLENCIA"; profesora: ProfesoraDeLiquidacion };
 
 /** Una línea que el back no pudo calcular (no se suma) y avisa al recalcular. */
 export interface AdvertenciaHonorario {

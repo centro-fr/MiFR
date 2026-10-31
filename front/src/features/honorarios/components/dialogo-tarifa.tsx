@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type UseFormRegisterReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
@@ -16,21 +16,54 @@ import {
   type TarifaFormValues,
 } from "@/features/honorarios/schemas/tarifa-form";
 import {
-  ETIQUETA_CONCEPTO,
   describirTarifa,
   fechaCorta,
   inicioDeLaUltimaTarifa,
+  nombreCompleto,
   tarifaVigente,
+  tarifasDelAlcance,
 } from "@/features/honorarios/utils/formato-honorarios";
 import { esPeriodoEnCurso, etiquetaPeriodo, primerDiaDe, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
-import type { ConceptoTarifa, TarifaHonorario } from "@/types/honorarios";
+import type { AlcanceTarifa, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
 const CONTROL =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
 const ETIQUETA = "text-sm font-bold text-slate-800 dark:text-slate-200";
-const CONCEPTOS: ConceptoTarifa[] = ["ALUMNO_A_CARGO", "HORA_SUPLENCIA"];
+
+interface TextosDelAlcance {
+  titulo: string;
+  descripcion: string;
+  etiqueta: string;
+  unidad: "%" | "$";
+  placeholder: string;
+  ayuda: string;
+  ayudaDesde: string;
+}
+
+function textosDelAlcance(alcance: AlcanceTarifa): TextosDelAlcance {
+  if (alcance.concepto === "ALUMNO_A_CARGO") {
+    return {
+      titulo: "Porcentaje por alumno a cargo",
+      descripcion: "Es el mismo para todos los profesores.",
+      etiqueta: "Por cada alumno a cargo",
+      unidad: "%",
+      placeholder: "50",
+      ayuda: "De lo que pagó de la cuota en el mes. Mayor a 0 y hasta 100; podés usar coma para decimales.",
+      ayudaDesde: "Reemplaza al porcentaje actual desde ese día, para todos los profesores. Los honorarios ya cerrados no cambian.",
+    };
+  }
+  return {
+    titulo: `Hora de suplencia de ${nombreCompleto(alcance.profesora)}`,
+    descripcion: "Lo que cobra por cada hora de clase que cubre. Cada profesor/a tiene la suya.",
+    etiqueta: "Por cada hora de suplencia",
+    unidad: "$",
+    placeholder: "5.000",
+    ayuda: "Monto fijo por hora. A quien faltó se le descuenta lo mismo. Punto para miles y coma para decimales.",
+    ayudaDesde: "Reemplaza a su monto actual desde ese día. Los honorarios ya cerrados no cambian.",
+  };
+}
 
 function diaSiguiente(dia: string): string {
   return new Date(new Date(`${dia}T00:00:00.000Z`).getTime() + 86_400_000).toISOString().slice(0, 10);
@@ -52,18 +85,6 @@ function mensajeDeTarifaGuardada(periodo: string, desde: string): string {
   return `Tarifa guardada. Si ${etiquetaPeriodo(periodo).toLowerCase()} sigue en revisión, recalculalo para aplicarla.`;
 }
 
-// Parte de la última tarifa cargada: casi siempre se cambia uno solo de los dos valores.
-function valoresIniciales(tarifas: TarifaHonorario[], ultimoInicio: string | null, desde: string): TarifaFormValues {
-  const ultima = (concepto: ConceptoTarifa) => (ultimoInicio ? tarifaVigente(tarifas, concepto, ultimoInicio) : undefined);
-  const porAlumno = ultima("ALUMNO_A_CARGO");
-  const porHora = ultima("HORA_SUPLENCIA");
-  return {
-    porcentaje: porAlumno ? valorComoTexto(porAlumno.valor) : "",
-    montoPorHora: porHora ? valorComoTexto(porHora.valor) : "",
-    desde,
-  };
-}
-
 function MensajeError({ id, mensaje }: { id: string; mensaje?: string }) {
   if (!mensaje) return null;
   return (
@@ -73,97 +94,50 @@ function MensajeError({ id, mensaje }: { id: string; mensaje?: string }) {
   );
 }
 
-function TarifasVigentes({ tarifas, dia }: { tarifas: TarifaHonorario[]; dia: string }) {
-  const vigentes = CONCEPTOS.map((concepto) => ({ concepto, tarifa: tarifaVigente(tarifas, concepto, dia) }));
+function TarifaQueRige({ alcance, tarifa, dia }: { alcance: AlcanceTarifa; tarifa: TarifaHonorario | undefined; dia: string }) {
   return (
     <section aria-label="Tarifa vigente" className="rounded-2xl border border-border bg-slate-50 p-4 dark:bg-white/5">
       <h3 className="text-xs font-extrabold tracking-wide text-slate-500 uppercase dark:text-slate-400">Rige al {fechaCorta(dia)}</h3>
-      {vigentes.every(({ tarifa }) => !tarifa) ? (
-        <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">Todavía no hay tarifa: los honorarios no suman nada.</p>
+      {tarifa ? (
+        <p className="mt-2 text-sm font-bold text-slate-900 dark:text-white">
+          {describirTarifa(tarifa, alcance.concepto)} <span className="font-normal text-muted-foreground">desde {fechaCorta(tarifa.desde)}</span>
+        </p>
       ) : (
-        <ul className="mt-2 space-y-1.5">
-          {vigentes.map(({ concepto, tarifa }) => (
-            <li key={concepto} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-              <span className="text-slate-600 dark:text-slate-300">{ETIQUETA_CONCEPTO[concepto]}</span>
-              {tarifa ? (
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {describirTarifa(tarifa, concepto)} <span className="font-normal text-muted-foreground">desde {fechaCorta(tarifa.desde)}</span>
-                </span>
-              ) : (
-                <span className="font-bold text-amber-800 dark:text-amber-200">Sin cargar</span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <p className="mt-2 text-sm font-semibold text-amber-800 dark:text-amber-200">
+          {alcance.concepto === "ALUMNO_A_CARGO"
+            ? "Sin cargar: los alumnos a cargo no suman nada."
+            : "Sin cargar: las clases que cubra no suman ni se descuentan."}
+        </p>
       )}
     </section>
   );
 }
 
-interface PropsCampoValor {
-  id: string;
-  etiqueta: string;
-  unidad: "%" | "$";
-  placeholder: string;
-  ayuda: string;
-  error?: string;
-  registro: UseFormRegisterReturn;
-}
-
-function CampoValor({ id, etiqueta, unidad, placeholder, ayuda, error, registro }: PropsCampoValor) {
-  const esPorcentaje = unidad === "%";
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={ETIQUETA}>
-        {etiqueta} <span aria-hidden="true" className="text-rose-600">*</span>
-      </label>
-      <div className="relative">
-        <span aria-hidden="true" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 font-bold text-slate-500", esPorcentaje ? "right-3" : "left-3")}>
-          {unidad}
-        </span>
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          maxLength={14}
-          placeholder={placeholder}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : `${id}-ayuda`}
-          {...registro}
-          className={cn(CONTROL, esPorcentaje ? "pr-8" : "pl-8")}
-        />
-      </div>
-      {error ? (
-        <MensajeError id={`${id}-error`} mensaje={error} />
-      ) : (
-        <p id={`${id}-ayuda`} className="text-sm text-muted-foreground">
-          {ayuda}
-        </p>
-      )}
-    </div>
-  );
-}
-
 interface PropsFormulario {
+  alcance: AlcanceTarifa;
   periodo: string;
+  /** Las del mismo alcance. */
   tarifas: TarifaHonorario[];
   onListo: () => void;
 }
 
-function FormularioTarifa({ periodo, tarifas, onListo }: PropsFormulario) {
+function FormularioTarifa({ alcance, periodo, tarifas, onListo }: PropsFormulario) {
   const registrar = useRegistrarTarifa();
   const hoy = fechaActualArgentina();
   const ultimoInicio = useMemo(() => inicioDeLaUltimaTarifa(tarifas), [tarifas]);
+  // Parte de la última cargada: casi siempre se ajusta un poco el valor que ya había.
+  const ultima = ultimoInicio ? tarifaVigente(tarifas, ultimoInicio) : undefined;
   const formulario = useForm<TarifaFormValues>({
-    resolver: zodResolver(crearTarifaFormSchema(ultimoInicio, hoy)),
-    defaultValues: valoresIniciales(tarifas, ultimoInicio, desdeSugerido(periodo, ultimoInicio, hoy)),
+    resolver: zodResolver(crearTarifaFormSchema(alcance.concepto, ultimoInicio, hoy)),
+    defaultValues: { valor: ultima ? valorComoTexto(ultima.valor) : "", desde: desdeSugerido(periodo, ultimoInicio, hoy) },
   });
   const errores = formulario.formState.errors;
+  const textos = textosDelAlcance(alcance);
+  const esPorcentaje = textos.unidad === "%";
 
   const guardar = formulario.handleSubmit(async (valores) => {
     try {
-      await registrar.mutateAsync(aRegistrarTarifaBody(valores));
+      await registrar.mutateAsync(aRegistrarTarifaBody(alcance, valores));
       toast.success(mensajeDeTarifaGuardada(periodo, valores.desde));
       onListo();
     } catch (error) {
@@ -173,30 +147,35 @@ function FormularioTarifa({ periodo, tarifas, onListo }: PropsFormulario) {
 
   return (
     <form onSubmit={(evento) => void guardar(evento)} noValidate className="flex flex-col gap-5">
-      <fieldset aria-describedby="tarifa-conceptos-ayuda" className="flex flex-col gap-4">
-        <legend className={ETIQUETA}>Qué cobra cada profesor/a</legend>
-        <p id="tarifa-conceptos-ayuda" className="text-sm text-muted-foreground">
-          Las dos cosas a la vez: se suman en sus honorarios del mes.
-        </p>
-        <CampoValor
-          id="tarifa-porcentaje"
-          etiqueta="Por cada alumno a cargo"
-          unidad="%"
-          placeholder="50"
-          ayuda="De lo que pagó de la cuota en el mes. Mayor a 0 y hasta 100; podés usar coma para decimales."
-          error={errores.porcentaje?.message}
-          registro={formulario.register("porcentaje")}
-        />
-        <CampoValor
-          id="tarifa-monto-hora"
-          etiqueta="Por cada hora de suplencia"
-          unidad="$"
-          placeholder="5.000"
-          ayuda="Monto fijo por hora de clase que cubre. Punto para miles y coma para decimales."
-          error={errores.montoPorHora?.message}
-          registro={formulario.register("montoPorHora")}
-        />
-      </fieldset>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="tarifa-valor" className={ETIQUETA}>
+          {textos.etiqueta} <span aria-hidden="true" className="text-rose-600">*</span>
+        </label>
+        <div className="relative">
+          <span aria-hidden="true" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 font-bold text-slate-500", esPorcentaje ? "right-3" : "left-3")}>
+            {textos.unidad}
+          </span>
+          <input
+            id="tarifa-valor"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            maxLength={14}
+            placeholder={textos.placeholder}
+            aria-invalid={Boolean(errores.valor)}
+            aria-describedby={errores.valor ? "tarifa-valor-error" : "tarifa-valor-ayuda"}
+            {...formulario.register("valor")}
+            className={cn(CONTROL, esPorcentaje ? "pr-8" : "pl-8")}
+          />
+        </div>
+        {errores.valor ? (
+          <MensajeError id="tarifa-valor-error" mensaje={errores.valor.message} />
+        ) : (
+          <p id="tarifa-valor-ayuda" className="text-sm text-muted-foreground">
+            {textos.ayuda}
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="tarifa-desde" className={ETIQUETA}>
@@ -216,7 +195,7 @@ function FormularioTarifa({ periodo, tarifas, onListo }: PropsFormulario) {
           <MensajeError id="tarifa-desde-error" mensaje={errores.desde.message} />
         ) : (
           <p id="tarifa-desde-ayuda" className="text-sm text-muted-foreground">
-            Reemplaza a la tarifa actual desde ese día, para todos los profesores. Los honorarios ya cerrados no cambian.
+            {textos.ayudaDesde}
           </p>
         )}
       </div>
@@ -236,8 +215,9 @@ function FormularioTarifa({ periodo, tarifas, onListo }: PropsFormulario) {
   );
 }
 
-function ContenidoDialogo({ periodo, onClose }: { periodo: string; onClose: () => void }) {
-  const { data: tarifas, isPending, isError, error, refetch, isFetching } = useTarifas();
+function ContenidoDialogo({ alcance, periodo, onClose }: { alcance: AlcanceTarifa; periodo: string; onClose: () => void }) {
+  const { data: todas, isPending, isError, error, refetch, isFetching } = useTarifas();
+  const tarifas = useMemo(() => tarifasDelAlcance(todas ?? [], alcance), [todas, alcance]);
   if (isPending) {
     return (
       <div aria-busy="true" aria-label="Cargando la tarifa" className="space-y-3">
@@ -259,10 +239,11 @@ function ContenidoDialogo({ periodo, onClose }: { periodo: string; onClose: () =
       </div>
     );
   }
+  const dia = ultimoDiaDe(periodo);
   return (
     <div className="flex flex-col gap-5">
-      <TarifasVigentes tarifas={tarifas} dia={ultimoDiaDe(periodo)} />
-      <FormularioTarifa periodo={periodo} tarifas={tarifas} onListo={onClose} />
+      <TarifaQueRige alcance={alcance} tarifa={tarifaVigente(tarifas, dia)} dia={dia} />
+      <FormularioTarifa alcance={alcance} periodo={periodo} tarifas={tarifas} onListo={onClose} />
     </div>
   );
 }
@@ -271,20 +252,21 @@ interface PropsDialogo {
   abierto: boolean;
   /** El mes del informe: de ahí sale la tarifa que se muestra y desde cuándo se sugiere la nueva. */
   periodo: string;
+  /** Qué tarifa se cambia. Se conserva al cerrar, para que el título no cambie mientras el diálogo se va. */
+  alcance: AlcanceTarifa | null;
   onClose: () => void;
 }
 
-export function DialogoTarifa({ abierto, periodo, onClose }: PropsDialogo) {
+export function DialogoTarifa({ abierto, periodo, alcance, onClose }: PropsDialogo) {
+  const textos = alcance ? textosDelAlcance(alcance) : null;
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
       <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-border bg-white p-0 sm:max-w-lg dark:bg-surface-low">
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
           <div className="min-w-0 pr-2">
             <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
-            <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">Tarifa de honorarios</DialogTitle>
-            <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
-              Es la misma para todos los profesores.
-            </DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">{textos?.titulo}</DialogTitle>
+            <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{textos?.descripcion}</DialogDescription>
           </div>
           <Button
             type="button"
@@ -298,7 +280,7 @@ export function DialogoTarifa({ abierto, periodo, onClose }: PropsDialogo) {
           </Button>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
-          {abierto && <ContenidoDialogo periodo={periodo} onClose={onClose} />}
+          {abierto && alcance && <ContenidoDialogo alcance={alcance} periodo={periodo} onClose={onClose} />}
         </div>
       </DialogContent>
     </Dialog>

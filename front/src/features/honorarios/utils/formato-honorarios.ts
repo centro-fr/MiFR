@@ -1,4 +1,5 @@
 import type {
+  AlcanceTarifa,
   ConceptoTarifa,
   EstadoLiquidacion,
   LineaAlumno,
@@ -82,14 +83,18 @@ export function fechaHora(instante: string): string {
   });
 }
 
-/** La tarifa de un concepto que rige un día (AAAA-MM-DD). */
-export function tarifaVigente(tarifas: TarifaHonorario[], concepto: ConceptoTarifa, dia: string): TarifaHonorario | undefined {
-  return tarifas.find(
-    (tarifa) => tarifa.concepto === concepto && tarifa.desde <= dia && (tarifa.hasta === null || tarifa.hasta >= dia),
-  );
+/** Las tarifas de un alcance: el porcentaje general por alumno o la hora de suplencia de una profesora. */
+export function tarifasDelAlcance(tarifas: TarifaHonorario[], alcance: AlcanceTarifa): TarifaHonorario[] {
+  const idProfesora = alcance.concepto === "HORA_SUPLENCIA" ? alcance.profesora.id : null;
+  return tarifas.filter((tarifa) => tarifa.concepto === alcance.concepto && tarifa.idProfesora === idProfesora);
 }
 
-/** Desde cuándo rige la última tarifa cargada, vigente o programada: una nueva tiene que empezar después. */
+/** La que rige un día (AAAA-MM-DD) entre las tarifas de un mismo alcance. */
+export function tarifaVigente(tarifas: TarifaHonorario[], dia: string): TarifaHonorario | undefined {
+  return tarifas.find((tarifa) => tarifa.desde <= dia && (tarifa.hasta === null || tarifa.hasta >= dia));
+}
+
+/** Desde cuándo rige la última tarifa de un alcance, vigente o programada: una nueva tiene que empezar después. */
 export function inicioDeLaUltimaTarifa(tarifas: TarifaHonorario[]): string | null {
   return tarifas.map((tarifa) => tarifa.desde).sort().at(-1) ?? null;
 }

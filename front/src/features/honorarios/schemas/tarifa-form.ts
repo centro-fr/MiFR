@@ -2,11 +2,12 @@ import { z } from "zod";
 import { precioDesdeTexto } from "@/features/planes/schemas/plan";
 import { fechaCorta } from "@/features/honorarios/utils/formato-honorarios";
 import type { RegistrarTarifaBody } from "@/features/honorarios/schemas/honorarios";
+import type { AlcanceTarifa, ConceptoTarifa } from "@/types/honorarios";
 
-// Nueva tarifa general del estudio (US-23): lo que cobra cada profesor/a por alumno a cargo y por hora
-// de suplencia, que van siempre juntos. Replica los CHECK de tarifas_honorario del DER para avisar
-// antes de enviar (valor > 0 y porcentaje <= 100) y la regla del back de que la vigencia no empiece
-// en el pasado: una tarifa no cambia lo ya liquidado. El back valida igual.
+// Nueva tarifa de US-23: el porcentaje por alumno a cargo, igual para todos, o lo que cobra un profesor/a
+// por hora de suplencia. Replica los CHECK de tarifas_honorario del DER para avisar antes de enviar
+// (valor > 0 y porcentaje <= 100) y la regla del back de que la vigencia no empiece en el pasado: una
+// tarifa no cambia lo ya liquidado. El back valida igual.
 
 /** DECIMAL(10,2) de tarifas_honorario.valor. */
 const VALOR_MAXIMO = 99_999_999.99;
@@ -17,10 +18,8 @@ const FORMATO_PORCENTAJE = /^\d{1,3}(?:,\d{1,2})?$/;
 const FORMATO_DECIMAL = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
 
 export interface TarifaFormValues {
-  /** Texto como lo escribe la persona: "50" o "37,5". */
-  porcentaje: string;
-  /** "5.000", "5000" o "5000,50". */
-  montoPorHora: string;
+  /** Texto como lo escribe la persona: un porcentaje ("50" o "37,5") o un monto ("5.000" o "5000,50"). */
+  valor: string;
   /** AAAA-MM-DD. */
   desde: string;
 }
@@ -62,29 +61,42 @@ export function valorComoTexto(valor: number): string {
   return FORMATO_DECIMAL.format(valor);
 }
 
-/** `hoy` es AAAA-MM-DD en Argentina: la vigencia puede empezar desde ese día. */
-export function crearTarifaFormSchema(inicioUltimaTarifa: string | null, hoy: string) {
+const VALOR_POR_CONCEPTO: Record<ConceptoTarifa, { faltante: string; problema: (texto: string) => string | null }> = {
+  ALUMNO_A_CARGO: { faltante: "Ingresá el porcentaje por alumno.", problema: problemaDelPorcentaje },
+  HORA_SUPLENCIA: { faltante: "Ingresá el monto por hora.", problema: problemaDelMonto },
+};
+
+/**
+ * `inicioUltimaTarifa` es el de la última del mismo alcance y `hoy`, AAAA-MM-DD en Argentina: la vigencia
+ * puede empezar desde ese día.
+ */
+export function crearTarifaFormSchema(concepto: ConceptoTarifa, inicioUltimaTarifa: string | null, hoy: string) {
+  const { faltante, problema } = VALOR_POR_CONCEPTO[concepto];
   return z
     .object({
-      porcentaje: z.string().trim().min(1, "Ingresá el porcentaje por alumno."),
-      montoPorHora: z.string().trim().min(1, "Ingresá el monto por hora."),
+      valor: z.string().trim().min(1, faltante),
       desde: z.string().min(1, "Elegí desde cuándo rige.").date("Ingresá una fecha válida."),
     })
     .superRefine((valores, ctx) => {
-      const agregar = (campo: keyof TarifaFormValues, problema: string | null) => {
-        if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [campo], message: problema });
+      const agregar = (campo: keyof TarifaFormValues, mensaje: string | null) => {
+        if (mensaje) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [campo], message: mensaje });
       };
       // Un campo vacío ya tiene su error: no se le suma otro.
-      if (valores.porcentaje) agregar("porcentaje", problemaDelPorcentaje(valores.porcentaje));
-      if (valores.montoPorHora) agregar("montoPorHora", problemaDelMonto(valores.montoPorHora));
+      if (valores.valor) agregar("valor", problema(valores.valor));
       if (valores.desde) agregar("desde", problemaDeLaVigencia(valores.desde, inicioUltimaTarifa, hoy));
     });
 }
 
-export function aRegistrarTarifaBody(valores: TarifaFormValues): RegistrarTarifaBody {
+export function aRegistrarTarifaBody(alcance: AlcanceTarifa, valores: TarifaFormValues): RegistrarTarifaBody {
+  const fecha_vigencia_desde = valores.desde;
+  if (alcance.concepto === "ALUMNO_A_CARGO") {
+    return { concepto: "ALUMNO_A_CARGO", tipo_valor: "PORCENTAJE", valor: porcentajeDesdeTexto(valores.valor.trim()), fecha_vigencia_desde };
+  }
   return {
-    porcentaje_alumno: porcentajeDesdeTexto(valores.porcentaje.trim()),
-    monto_hora_suplencia: precioDesdeTexto(valores.montoPorHora),
-    fecha_vigencia_desde: valores.desde,
+    concepto: "HORA_SUPLENCIA",
+    id_profesora: alcance.profesora.id,
+    tipo_valor: "MONTO_FIJO",
+    valor: precioDesdeTexto(valores.valor),
+    fecha_vigencia_desde,
   };
 }
