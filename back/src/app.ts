@@ -28,6 +28,8 @@ import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handle
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
+import type { ILogicaRutinasYProgreso } from "./modules/gestion-rutinas-y-progreso/interface/i-logica-rutinas-y-progreso.js";
+import { createGestionRutinasYProgresoRoutes } from "./modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.routes.js";
 
 export interface AppDependencies {
   gestionUsuarios: ILogicaUsuarios;
@@ -37,6 +39,7 @@ export interface AppDependencies {
   gestionCuotasYPagos: ILogicaCuotasPagos;
   gestionNotificaciones: ILogicaNotificaciones;
   gestionInsignias: ILogicaInsignias;
+  gestionRutinasYProgreso: ILogicaRutinasYProgreso;
   reportes: ILogicaInformes;
   gestionHonorarios: ILogicaHonorarios;
   difusionPublica: ILogicaDifusionPublica;
@@ -77,13 +80,12 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   );
   api.use(createGestionPersonasRoutes(deps.gestionPersonas, acceso));
   api.use(createGestionInsigniasRoutes(deps.gestionInsignias, acceso));
+  api.use(createGestionRutinasYProgresoRoutes(deps.gestionRutinasYProgreso, acceso));
   api.use(createGestionServicioEntrenamientoRoutes(deps.gestionServicioEntrenamiento, acceso));
-  // Va después de GestionPersonas y GestionInsignias: su /alumnos exige rol PROPIETARIA a todo lo que
   // le llega, y montado antes bloquearía las rutas de alumnos que esos dos abren a otros roles.
   api.use(createGestionInscripcionesYClasesRoutes(deps.gestionInscripcionesYClases, acceso));
   api.use(createGestionCuotasYPagosRoutes(deps.gestionCuotasYPagos, acceso));
   api.use(createGestionNotificacionesRoutes(deps.gestionNotificaciones, acceso));
-  // Va después de GestionInsignias: su /reportes exige rol PROPIETARIA, y bloquearía el ranking.
   api.use(createReportesRoutes(deps.reportes, acceso));
   api.use(createGestionHonorariosRoutes(deps.gestionHonorarios, acceso));
   app.use("/api/v1", api);

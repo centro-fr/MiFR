@@ -64,6 +64,16 @@ describe("ProfesorRepository", () => {
     });
   });
 
+  it("listar con incluirBajas trae también las dadas de baja", async () => {
+    await repositorio.listar({ incluirBajas: true });
+
+    expect(prisma.profesoras.findMany).toHaveBeenCalledWith({
+      where: undefined,
+      include: CON_NOMBRE,
+      orderBy: { id_profesora: "asc" },
+    });
+  });
+
   it("darDeBaja registra la fecha de hoy en Argentina sin borrar el perfil", async () => {
     await repositorio.darDeBaja(3);
 

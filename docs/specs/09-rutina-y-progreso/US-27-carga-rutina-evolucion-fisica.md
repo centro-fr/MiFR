@@ -44,7 +44,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Ejercicios / actividades (texto libre o estructurado)
 - Fecha de inicio (obligatoria)
 - Duración o período (opcional)
-- Observaciones (opcional)
+- Observaciones (opcional; privadas: solo las ven la profesora a cargo y la propietaria, no el alumno ni el tutor)
 
 ### Datos que se cargan (medición)
 
@@ -52,7 +52,7 @@ Como profesora, quiero cargar la rutina y el registro de evolución física (pes
 - Fecha (obligatoria, por defecto hoy)
 - Peso (obligatorio)
 - Medidas: cintura, cadera, pecho, brazos, piernas (opcionales según disciplina)
-- Observaciones (opcional)
+- Observaciones (opcional; privadas: solo las ven la profesora a cargo y la propietaria, no el alumno ni el tutor)
 
 ### Datos que se generan
 
