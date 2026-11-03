@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { renderHook } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
+import { ITEMS_ALUMNO, ITEMS_PROFESORA, ITEMS_PROPIETARIA, rolesConAcceso } from "@/components/layout/owner-navigation";
 import { useOwnerNavigation, type ContadoresMenu } from "@/components/layout/use-owner-navigation";
 
 function navegacionEn(ruta: string, contadores: ContadoresMenu = {}) {
@@ -46,5 +47,20 @@ describe("useOwnerNavigation: contadores", () => {
 
   it("sin dato no hay contador", () => {
     expect(buscarItem("/app/dashboard", "Cobros y Cuotas").contador).toBeUndefined();
+  });
+});
+
+// US-30: la propietaria ve el ranking como pestaña de Reportes; los demás roles, en su sección Ranking.
+describe("Menú: ranking de asistencia", () => {
+  const rutas = (items: { to?: string }[]) => items.map((item) => item.to);
+
+  it("la propietaria no tiene una sección aparte para el ranking", () => {
+    expect(rutas(ITEMS_PROPIETARIA)).not.toContain("/app/ranking");
+  });
+
+  it("la profesora, el alumno y el tutor tienen la sección Ranking", () => {
+    expect(ITEMS_PROFESORA.find((item) => item.to === "/app/ranking")?.etiqueta).toBe("Ranking");
+    expect(ITEMS_ALUMNO.find((item) => item.to === "/app/ranking")?.etiqueta).toBe("Ranking");
+    expect(rolesConAcceso("/app/ranking")).toEqual(["PROFESORA", "ALUMNO", "TUTOR"]);
   });
 });

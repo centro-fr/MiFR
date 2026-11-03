@@ -60,7 +60,6 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 const SECCIONES_EN_CONSTRUCCION = [
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
   // US-31: racha e insignias del alumno o menor a cargo.
-  // US-30: ranking de asistencia para los cuatro roles autorizados.
   // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
   // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
   { path: "mi-plan", seccion: "Mi plan" },
@@ -159,7 +158,9 @@ export const router = createBrowserRouter([
           { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
           // US-33: informe de asistencia.
           { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
-          ...["planes", "ocupacion", "ranking", "cobranza", "cuotas-vencidas"].map((path) => ({
+          // US-30: ranking de asistencia, el mismo que ven los demás roles en su sección Ranking.
+          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-page"), "RankingPage") },
+          ...["planes", "ocupacion", "cobranza", "cuotas-vencidas"].map((path) => ({
             path,
             lazy: paginaPerezosa(() => import("@/features/reportes/pages/reporte-en-construccion-page"), "ReporteEnConstruccionPage"),
           })),
@@ -172,9 +173,10 @@ export const router = createBrowserRouter([
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
       },
       {
-        // US-30: ranking de asistencia visible para todos los roles autorizados.
-        path: "comunidad",
-        element: guardiaDeSeccion("comunidad", "REPORTES_RANKING_VER"),
+        // US-30: ranking de asistencia de la profesora, el alumno y el tutor. La propietaria lo ve en
+        // Reportes > Ranking.
+        path: "ranking",
+        element: guardiaDeSeccion("ranking", "REPORTES_RANKING_VER"),
         children: [
           {
             index: true,

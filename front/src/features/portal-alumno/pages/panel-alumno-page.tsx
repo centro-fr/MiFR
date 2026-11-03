@@ -167,7 +167,7 @@ function Vacio({ mensaje }: { mensaje: string }) {
   return <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">{mensaje}</div>;
 }
 
-function AccesosComunidad() {
+function AccesosRanking() {
   return (
     <Card className="rounded-3xl border-slate-200 bg-slate-900 p-5 text-white shadow-sm dark:border-slate-800 sm:p-6">
       <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ function AccesosComunidad() {
       <p className="mt-1 text-sm text-slate-300">Próximamente vas a poder consultar tu racha, insignias y posición en el ranking.</p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <Button asChild variant="secondary" className="min-h-[44px] rounded-xl font-extrabold">
-          <Link to="/app/comunidad"><Trophy aria-hidden="true" className="mr-2 size-4" /> Comunidad</Link>
+          <Link to="/app/ranking"><Trophy aria-hidden="true" className="mr-2 size-4" /> Ranking</Link>
         </Button>
         <Button asChild variant="outline" className="min-h-[44px] rounded-xl border-white/20 bg-transparent font-extrabold text-white hover:bg-white/10">
           <Link to="/app/progreso">Ver mi progreso</Link>
@@ -227,7 +227,7 @@ export function PanelAlumnoPage() {
           <ProximasClases clases={panel.proximas_clases} />
           <HistorialAsistencias asistencias={panel.historial_asistencias} />
         </div>
-        <AccesosComunidad />
+        <AccesosRanking />
       </div>
     </OwnerLayout>
   );
