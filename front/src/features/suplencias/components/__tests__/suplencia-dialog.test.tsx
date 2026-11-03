@@ -66,7 +66,7 @@ describe("SuplenciaDialog", () => {
 
     const fecha = screen.getByRole("dialog").querySelector('input[name="fechaClase"]');
     expect(fecha).not.toBeNull();
-    fireEvent.change(fecha, { target: { value: "2026-10-26" } });
+    fireEvent.change(fecha!, { target: { value: "2026-10-26" } });
     fireEvent.click(screen.getByText("Elegí actividad y horario"));
 
     const opciones = screen.getAllByRole("option").map((opcion) => opcion.textContent);
