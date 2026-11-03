@@ -33,16 +33,18 @@ export const rutinaApiSchema = z.object({
   activa: z.boolean(),
 });
 
-// NUMERIC(6,2): el back lo entrega como number.
+// NUMERIC(6,2): el back lo entrega como number. El default de fecha_modificacion tolera un back anterior a
+// las correcciones: sin él, el historial dejaría de cargar en vez de solo no marcar las corregidas.
 export const medicionApiSchema = z.object({
   id_registro: idSchema,
   id_profesora: idSchema,
   fecha: diaSchema,
   observaciones: z.string().nullable(),
+  fecha_modificacion: z.string().nullable().default(null),
   medidas: z.array(z.object({ codigo: z.string(), unidad: z.string(), valor: z.number() })),
 });
 
-// US-28: contrato pedido al back en un issue (todavía no existe). Si lo define distinto, se adapta acá.
+// US-28: GET /alumnos/mios. Los dados de baja también vienen, con estado BAJA.
 export const miAlumnoApiSchema = z.object({
   id_alumno: idSchema,
   nombre: z.string(),
@@ -78,3 +80,9 @@ export interface RegistrarMedicionBody {
   observaciones: string | null;
   medidas: { codigo: CodigoMedida; valor: number }[];
 }
+
+/**
+ * Cuerpo de PATCH /progreso/:id. Va completo aunque el back acepte uno parcial: las medidas reemplazan a
+ * todas las anteriores y observaciones en null la borra, así queda exactamente lo que se ve en el formulario.
+ */
+export type CorregirMedicionBody = Omit<RegistrarMedicionBody, "id_alumno">;

@@ -56,4 +56,13 @@ describe("catálogo de permisos", () => {
   it("los exclusivos de la propietaria también son críticos", () => {
     for (const exclusivo of PERMISOS_EXCLUSIVOS_PROPIETARIA) expect(PERMISOS_CRITICOS).toContain(exclusivo);
   });
+
+  it("alumno y tutor arrancan con la rutina propia y la profesora con la gestión de rutinas (US-27, US-28)", () => {
+    expect(MATRIZ_INICIAL.ALUMNO).toContain("RUTINAS_VER_PROPIAS");
+    expect(MATRIZ_INICIAL.TUTOR).toContain("RUTINAS_VER_PROPIAS");
+    expect(MATRIZ_INICIAL.ALUMNO).not.toContain("RUTINAS_EDITAR");
+    expect(MATRIZ_INICIAL.TUTOR).not.toContain("RUTINAS_EDITAR");
+    expect(MATRIZ_INICIAL.PROFESORA).toContain("RUTINAS_EDITAR");
+    expect(MATRIZ_INICIAL.PROFESORA).not.toContain("RUTINAS_VER_PROPIAS");
+  });
 });

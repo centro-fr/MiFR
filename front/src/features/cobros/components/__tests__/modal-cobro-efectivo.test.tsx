@@ -78,7 +78,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
       />,
     );
 
-    expect(screen.getByLabelText(/promoción/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Promoción" })).toBeInTheDocument();
   });
 
   it("registra el cobro exitosamente al confirmar con el precio vigente", async () => {

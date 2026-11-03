@@ -34,6 +34,8 @@ export const CATALOGO_PERMISOS: PermisoCatalogo[] = [
   { codigo: "RUTINAS_EDITAR", modulo: "RUTINAS", descripcion: "Crear y modificar rutinas de alumnos" },
   { codigo: "RUTINAS_VER_PROPIAS", modulo: "RUTINAS", descripcion: "Ver la rutina y el progreso propios o de un menor a cargo" },
   { codigo: "REPORTES_COBRANZA_VER", modulo: "REPORTES", descripcion: "Ver los reportes de cobranza" },
+  { codigo: "REPORTES_RANKING_VER", modulo: "REPORTES", descripcion: "Ver el ranking de asistencia" },
+  { codigo: "INSIGNIAS_VER_PROPIAS", modulo: "INSIGNIAS", descripcion: "Ver la racha y las insignias propias o de un menor a cargo" },
 ];
 
 export const PERMISOS_EXCLUSIVOS_PROPIETARIA = new Set([
@@ -81,9 +83,10 @@ export function matrizInicial(): Record<RoleCode, string[]> {
       "RUTINAS_VER",
       "RUTINAS_EDITAR",
       "HONORARIOS_VER_PROPIOS",
+      "REPORTES_RANKING_VER",
     ],
-    // US-28: el alumno ve su rutina y su progreso; el tutor, los de sus menores.
-    ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS"],
-    TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS"],
+    // US-28 y US-30/31: el alumno y el tutor consultan progreso, ranking e insignias.
+    ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
+    TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
   };
 }

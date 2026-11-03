@@ -15,7 +15,7 @@ import {
 } from "@/features/honorarios/components/estados-informe";
 import { InformeImprimible } from "@/features/honorarios/components/informe-imprimible";
 import { ResumenDelMes } from "@/features/honorarios/components/resumen-del-mes";
-import { TarifaDelMes } from "@/features/honorarios/components/tarifa-del-mes";
+import { TarifasDelMes } from "@/features/honorarios/components/tarifas-del-mes";
 import { TarjetaProfesora } from "@/features/honorarios/components/tarjeta-profesora";
 import { useExportarInforme } from "@/features/honorarios/hooks/use-exportar-informe";
 import { useCalcularLiquidaciones, useInformeHonorarios } from "@/features/honorarios/hooks/use-honorarios";
@@ -98,7 +98,7 @@ export function HonorariosPage() {
           }
         />
         <PestanasHonorarios />
-        <TarifaDelMes periodo={periodo} />
+        <TarifasDelMes periodo={periodo} />
         <LiquidacionDelMes key={periodo} periodo={periodo} />
       </div>
       {impresion && <InformeImprimible {...impresion} />}

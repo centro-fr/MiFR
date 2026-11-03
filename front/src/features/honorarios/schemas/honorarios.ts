@@ -125,11 +125,12 @@ export const liquidacionDetalleApiSchema = liquidacionApiSchema
     { message: "El total de la liquidación no coincide con la suma de sus detalles", path: ["monto_total"] },
   );
 
-// Tarifa general del estudio: rige igual para todos los profesores, así que no lleva profesora ni plan.
-// Pedido al back: hoy cada tarifa es de una profesora (tarifas_honorario.id_profesora); mientras
-// tanto la usa solo el mock.
+// El porcentaje por alumno es uno solo para todo el estudio (id_profesora null) y la hora de suplencia,
+// una por profesora. Pedido al back: hoy toda tarifa lleva profesora, así que el porcentaje general lo
+// usa solo el mock.
 export const tarifaHonorarioApiSchema = z.object({
   id_tarifa: idSchema,
+  id_profesora: idSchema.nullable(),
   concepto: conceptoTarifaSchema,
   tipo_valor: tipoValorTarifaSchema,
   valor: montoSchema,
@@ -144,14 +145,10 @@ export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export type TarifaHonorarioApi = z.infer<typeof tarifaHonorarioApiSchema>;
 
 /**
- * Cuerpo de POST /tarifas-honorario. Los dos valores van juntos porque a cada profesor/a se le pagan
- * las dos cosas: el back crea las dos tarifas en una transacción y cierra las vigentes.
+ * Cuerpo de POST /tarifas-honorario. El tipo lo fija el concepto: por alumno, un porcentaje de lo cobrado
+ * (mayor a 0 y hasta 100); por hora de suplencia, ARS por hora. La vigencia es AAAA-MM-DD, desde hoy en
+ * adelante, y la nueva cierra la vigente del mismo alcance el día anterior.
  */
-export interface RegistrarTarifaBody {
-  /** Porcentaje de lo cobrado de la cuota de cada alumno a cargo: mayor a 0 y hasta 100. */
-  porcentaje_alumno: number;
-  /** ARS por hora de clase cubierta como suplente: mayor a 0. */
-  monto_hora_suplencia: number;
-  /** AAAA-MM-DD, desde hoy en adelante: el back no acepta vigencias en el pasado. */
-  fecha_vigencia_desde: string;
-}
+export type RegistrarTarifaBody =
+  | { concepto: "ALUMNO_A_CARGO"; tipo_valor: "PORCENTAJE"; valor: number; fecha_vigencia_desde: string }
+  | { concepto: "HORA_SUPLENCIA"; id_profesora: number; tipo_valor: "MONTO_FIJO"; valor: number; fecha_vigencia_desde: string };

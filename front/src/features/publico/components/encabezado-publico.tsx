@@ -40,6 +40,9 @@ export function EncabezadoPublico() {
           </span>
         </a>
         <nav aria-label="Principal" className="flex items-center gap-1 sm:gap-2">
+          <Button asChild variant="ghost" className="hidden rounded-xl font-bold sm:inline-flex">
+            <Link to="/disponibilidad">Disponibilidad</Link>
+          </Button>
           <ThemeToggle compacto />
           <AccesoAlSistema />
         </nav>

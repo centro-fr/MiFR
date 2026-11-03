@@ -24,6 +24,15 @@ export type Alumno = alumnos & {
   responsable: DatosPersonales | null;
 };
 
+// US-28: un alumno que puede consultar quien inició sesión. propio dice si es el suyo o el de un menor a cargo.
+export interface AlumnoConsultable {
+  id_alumno: number;
+  nombre: string;
+  apellido: string;
+  estado: EstadoAlumno;
+  propio: boolean;
+}
+
 export interface FiltroAlumno {
   busqueda?: string;
   dni?: string;

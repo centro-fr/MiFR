@@ -2,8 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { pagosHandlers } from "@/mocks/handlers/pagos";
 import { MOCK_JWT } from "@/mocks/handlers/respuestas";
-import { db } from "@/mocks/db";
-
 import { notificacionesHandlers } from "@/mocks/handlers/notificaciones";
 
 const server = setupServer(...pagosHandlers, ...notificacionesHandlers);

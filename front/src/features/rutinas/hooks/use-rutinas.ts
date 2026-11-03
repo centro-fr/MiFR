@@ -3,20 +3,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import {
+  corregirMedicion,
   crearRutina,
+  darDeBajaMedicion,
   listarMedicionesDeAlumno,
   listarMisAlumnos,
   listarRutinasDeAlumno,
   registrarMedicion,
 } from "@/features/rutinas/api/rutinas-api";
-import type { CrearRutinaBody, RegistrarMedicionBody } from "@/features/rutinas/schemas/rutinas";
+import type { CorregirMedicionBody, CrearRutinaBody, RegistrarMedicionBody } from "@/features/rutinas/schemas/rutinas";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 
 const RUTINAS_QUERY_KEY = ["rutinas"] as const;
 const rutinasKey = (idAlumno: number) => [...RUTINAS_QUERY_KEY, "alumno", idAlumno, "rutinas"] as const;
 const medicionesKey = (idAlumno: number) => [...RUTINAS_QUERY_KEY, "alumno", idAlumno, "mediciones"] as const;
 
-// Solo cambian cuando alguien carga una rutina o una medición, y eso invalida la consulta.
+// Solo cambian cuando alguien carga una rutina o carga, corrige o da de baja una medición, y eso invalida
+// la consulta.
 const UN_MINUTO = 60_000;
 
 /** US-28: el alumno de la sesión o los menores del tutor. Cambia solo si cambia quién está a cargo. */
@@ -56,6 +59,25 @@ export function useRegistrarMedicion(idAlumno: number) {
   return useMutation({
     mutationFn: (cuerpo: RegistrarMedicionBody) => registrarMedicion(cuerpo),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: medicionesKey(idAlumno) }),
+  });
+}
+
+// Corregir y dar de baja refrescan el historial aunque fallen: si otra persona ya dio de baja la medición,
+// el back responde 403 o 404 y así deja de verse.
+
+export function useCorregirMedicion(idAlumno: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idRegistro, cuerpo }: { idRegistro: number; cuerpo: CorregirMedicionBody }) => corregirMedicion(idRegistro, cuerpo),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: medicionesKey(idAlumno) }),
+  });
+}
+
+export function useDarDeBajaMedicion(idAlumno: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idRegistro: number) => darDeBajaMedicion(idRegistro),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: medicionesKey(idAlumno) }),
   });
 }
 

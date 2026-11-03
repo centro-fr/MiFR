@@ -1,4 +1,4 @@
-import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import { formatearDiaDeTimestamp, formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { CODIGOS_MEDIDA, MEDIDAS, esCodigoMedida } from "@/features/rutinas/schemas/medidas";
 import type { EjercicioDeRutina, Medicion, MedidaRegistrada, Rutina } from "@/types/rutinas";
 
@@ -45,6 +45,15 @@ export function resumenDeMedidas(medidas: MedidaRegistrada[]): string {
   return enOrden(medidas)
     .map(({ codigo, valor, unidad }) => `${etiquetaDeMedida(codigo)} ${formatearMedida(valor, unidad)}`)
     .join(" · ");
+}
+
+/** "Cargó Lucía Gómez · corregida el 31/10/2026". Vacío si no se conoce a la profesora ni se corrigió. */
+export function origenDeLaMedicion({ idProfesora, corregidaEl }: Medicion, nombresDeProfesoras: Map<number, string>): string {
+  const profesora = nombresDeProfesoras.get(idProfesora);
+  const cargo = profesora ? `Cargó ${profesora}` : "";
+  if (!corregidaEl) return cargo;
+  const dia = formatearDiaDeTimestamp(corregidaEl);
+  return cargo ? `${cargo} · corregida el ${dia}` : `Corregida el ${dia}`;
 }
 
 export interface EvolucionDeMedida {

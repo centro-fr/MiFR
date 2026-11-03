@@ -72,9 +72,9 @@ function estaVigente(tarifa: TarifaHonorarioMock, dia: string): boolean {
   return tarifa.fecha_vigencia_desde <= dia && (tarifa.fecha_vigencia_hasta === null || tarifa.fecha_vigencia_hasta >= dia);
 }
 
-// La tarifa es la misma para todos los profesores: alcanza con el concepto y el día.
-function buscarTarifa(tarifas: TarifaHonorarioMock[], concepto: TarifaHonorarioMock["concepto"], dia: string) {
-  return tarifas.find((t) => t.concepto === concepto && estaVigente(t, dia));
+// El porcentaje por alumno es general (sin profesora) y la hora de suplencia, de cada profesora.
+function buscarTarifa(tarifas: TarifaHonorarioMock[], concepto: TarifaHonorarioMock["concepto"], idProfesora: number | null, dia: string) {
+  return tarifas.find((t) => t.concepto === concepto && t.id_profesora === idProfesora && estaVigente(t, dia));
 }
 
 // Se liquida al día en que terminó su período: el fin del mes, o el de la baja si fue antes.
@@ -101,7 +101,7 @@ function lineasDeAlumnos(
   const cobrado = cobradoEnElPeriodo(pagos, desde, hasta);
   for (const inscripcion of inscripciones.filter((i) => aCargoEnElPeriodo(i, desde, hasta))) {
     const { id_profesora, id_inscripcion } = inscripcion;
-    const tarifa = buscarTarifa(tarifas, "ALUMNO_A_CARGO", diaDeLaLinea(inscripcion, hasta));
+    const tarifa = buscarTarifa(tarifas, "ALUMNO_A_CARGO", null, diaDeLaLinea(inscripcion, hasta));
     // Regla del Sprint 5: por alumno solo se paga un porcentaje de lo cobrado.
     if (!tarifa || tarifa.tipo_valor === "MONTO_FIJO") {
       const motivo = tarifa ? "TARIFA_NO_APLICABLE" : "SIN_TARIFA";
@@ -116,13 +116,13 @@ function lineasDeAlumnos(
   return { lineas, advertencias };
 }
 
-// Cada clase suplida suma a la suplente y resta a la ausente, a la tarifa por hora.
+// Cada clase suplida suma a la suplente y resta a la ausente lo mismo, a la tarifa por hora de la suplente.
 function lineasDeSuplencias(tarifas: TarifaHonorarioMock[], desde: string, hasta: string) {
   const lineas: LineaCalculada[] = [];
   const advertencias: AdvertenciaCalculada[] = [];
   for (const clase of CLASES_SUPLIDAS_HONORARIOS.filter((c) => c.fecha_clase >= desde && c.fecha_clase <= hasta)) {
     const { id_clase, id_prof_suplente, id_prof_ausente } = clase;
-    const tarifa = buscarTarifa(tarifas, "HORA_SUPLENCIA", clase.fecha_clase);
+    const tarifa = buscarTarifa(tarifas, "HORA_SUPLENCIA", id_prof_suplente, clase.fecha_clase);
     if (!tarifa || tarifa.tipo_valor === "PORCENTAJE") {
       const motivo = tarifa ? "TARIFA_NO_APLICABLE" : "SIN_TARIFA";
       advertencias.push({ id_profesora: id_prof_suplente, concepto: "HORA_SUPLENCIA", motivo, id_inscripcion: null, id_clase });

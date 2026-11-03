@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { CODIGOS_MEDIDA, MEDIDAS, type CodigoMedida } from "@/features/rutinas/schemas/medidas";
-import type { RegistrarMedicionBody } from "@/features/rutinas/schemas/rutinas";
+import { CODIGOS_MEDIDA, MEDIDAS, esCodigoMedida, type CodigoMedida } from "@/features/rutinas/schemas/medidas";
+import type { CorregirMedicionBody, RegistrarMedicionBody } from "@/features/rutinas/schemas/rutinas";
 import { problemaDelTexto, textoOpcional } from "@/features/rutinas/schemas/texto-libre";
+import type { Medicion } from "@/types/rutinas";
 
-// Nueva medición de un alumno (US-27). Replica registrarProgresoSchema del back: al menos una medida,
-// cada una dentro de su rango y con hasta dos decimales, y la fecha no puede ser futura.
+// Medición nueva o corregida de un alumno (US-27). Replica registrarProgresoSchema del back: al menos una
+// medida, cada una dentro de su rango y con hasta dos decimales, y la fecha no puede ser futura.
 
 const OBSERVACIONES_MAXIMO = 500;
 
@@ -70,11 +71,23 @@ export function crearMedicionFormSchema(hoy: string) {
     });
 }
 
-export function aRegistrarMedicionBody(idAlumno: number, valores: MedicionFormValues): RegistrarMedicionBody {
+/** Lo que ya tiene la medición, para corregirla. */
+export function valoresDeMedicion(medicion: Medicion): MedicionFormValues {
+  const medidas = { ...MEDIDAS_VACIAS };
+  for (const { codigo, valor } of medicion.medidas) {
+    if (esCodigoMedida(codigo)) medidas[codigo] = String(valor).replace(".", ",");
+  }
+  return { fecha: medicion.fecha, medidas, observaciones: medicion.observaciones ?? "" };
+}
+
+export function aCorregirMedicionBody(valores: MedicionFormValues): CorregirMedicionBody {
   return {
-    id_alumno: idAlumno,
     fecha: valores.fecha,
     observaciones: textoOpcional(valores.observaciones),
     medidas: medidasCargadas(valores.medidas).map(([codigo, texto]) => ({ codigo, valor: valorDesdeTexto(texto) })),
   };
+}
+
+export function aRegistrarMedicionBody(idAlumno: number, valores: MedicionFormValues): RegistrarMedicionBody {
+  return { id_alumno: idAlumno, ...aCorregirMedicionBody(valores) };
 }

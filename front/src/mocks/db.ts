@@ -89,7 +89,7 @@ interface BaseMock {
   liquidacionDetalles: LiquidacionDetalleMock[];
   // parametros_sistema: lo que lee y modifica la configuración (US-25, US-26).
   parametros: ParametroMock[];
-  // Los avisos de la campana (US-25, US-26). Arranca vacía, como en la base.
+  // Avisos iniciales para poder probar la campana y la bandeja sin depender del reloj del mock.
   notificaciones: NotificacionMock[];
   // US-27: rutinas y registros_progreso (cada uno con sus medidas_corporales).
   rutinas: RutinaMock[];
@@ -123,7 +123,53 @@ export const db: BaseMock = {
   liquidaciones: [],
   liquidacionDetalles: [],
   parametros: parametrosSemilla(),
-  notificaciones: [],
+  notificaciones: [
+    {
+      id_notificacion: 1,
+      id_usuario: 3,
+      tipo: "RESUMEN_DIARIO",
+      id_cuota: null,
+      mensaje: "Resumen diario: 2 transferencias por confirmar ($55000).",
+      fecha_generacion: new Date().toISOString(),
+      leida: false,
+    },
+    {
+      id_notificacion: 2,
+      id_usuario: 3,
+      tipo: "CUOTA_VENCIDA",
+      id_cuota: 901,
+      mensaje: "La cuota de Camila venció y requiere seguimiento.",
+      fecha_generacion: new Date(Date.now() - 60_000).toISOString(),
+      leida: false,
+    },
+    {
+      id_notificacion: 3,
+      id_usuario: 1,
+      tipo: "CLASE_CANCELADA",
+      id_cuota: null,
+      mensaje: "La clase de prueba fue modificada. Revisá tu cronograma.",
+      fecha_generacion: new Date().toISOString(),
+      leida: false,
+    },
+    {
+      id_notificacion: 4,
+      id_usuario: 4,
+      tipo: "CUOTA_POR_VENCER",
+      id_cuota: 902,
+      mensaje: "Tu cuota vence próximamente.",
+      fecha_generacion: new Date().toISOString(),
+      leida: false,
+    },
+    {
+      id_notificacion: 5,
+      id_usuario: 8,
+      tipo: "CUOTA_POR_VENCER",
+      id_cuota: 903,
+      mensaje: "La cuota de Camila vence próximamente.",
+      fecha_generacion: new Date().toISOString(),
+      leida: false,
+    },
+  ],
   rutinas: rutinasSemilla(),
   registrosProgreso: registrosProgresoSemilla(),
   matriz: matrizInicial(),

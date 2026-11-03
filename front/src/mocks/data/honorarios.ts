@@ -52,9 +52,11 @@ export interface ClaseSuplidaMock {
   id_prof_suplente: number;
 }
 
-// Tarifa general del estudio, como se la pedimos al back: sin profesora ni plan.
+// Como se la pedimos al back: el porcentaje por alumno sin profesora (es general) y la hora de
+// suplencia, de cada profesora. Ninguna lleva plan.
 export interface TarifaHonorarioMock {
   id_tarifa: number;
+  id_profesora: number | null;
   concepto: "ALUMNO_A_CARGO" | "HORA_SUPLENCIA";
   tipo_valor: "PORCENTAJE" | "MONTO_FIJO";
   valor: number;
@@ -139,24 +141,21 @@ export const CLASES_SUPLIDAS_HONORARIOS: ClaseSuplidaMock[] = [
 const INICIO_DE_ANIO = "2026-01-01";
 
 // No están en la base: la regla acordada (back/honorarios-pendientes.md) es el 50% de lo cobrado de
-// cada cuota. La hora de suplencia no tiene un valor acordado: $ 5.000 es de ejemplo.
+// cada cuota para todas. La hora de suplencia es de cada profesora y no tiene valores acordados: estos
+// son de ejemplo, y la profesora 2 queda sin cargar para ver ese caso (no cubre ninguna clase).
 export function tarifasSemilla(): TarifaHonorarioMock[] {
+  const vigencia = { fecha_vigencia_desde: INICIO_DE_ANIO, fecha_vigencia_hasta: null };
+  const porHora = (id_tarifa: number, id_profesora: number, valor: number): TarifaHonorarioMock => ({
+    id_tarifa,
+    id_profesora,
+    concepto: "HORA_SUPLENCIA",
+    tipo_valor: "MONTO_FIJO",
+    valor,
+    ...vigencia,
+  });
   return [
-    {
-      id_tarifa: 1,
-      concepto: "ALUMNO_A_CARGO",
-      tipo_valor: "PORCENTAJE",
-      valor: 50,
-      fecha_vigencia_desde: INICIO_DE_ANIO,
-      fecha_vigencia_hasta: null,
-    },
-    {
-      id_tarifa: 2,
-      concepto: "HORA_SUPLENCIA",
-      tipo_valor: "MONTO_FIJO",
-      valor: 5000,
-      fecha_vigencia_desde: INICIO_DE_ANIO,
-      fecha_vigencia_hasta: null,
-    },
+    { id_tarifa: 1, id_profesora: null, concepto: "ALUMNO_A_CARGO", tipo_valor: "PORCENTAJE", valor: 50, ...vigencia },
+    porHora(2, 1, 5000),
+    porHora(3, 3, 6000),
   ];
 }

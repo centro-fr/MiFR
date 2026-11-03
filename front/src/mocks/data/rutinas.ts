@@ -27,6 +27,10 @@ export interface RegistroProgresoMock {
   fecha: string;
   observaciones: string | null;
   medidas: { codigo: string; unidad: string; valor: number }[];
+  fecha_modificacion: string | null;
+  id_usuario_modifica: number | null;
+  /** Baja lógica, como el back: deja de listarse y ya no se puede corregir. */
+  dado_de_baja: boolean;
 }
 
 const ejercicio = (nombre: string, series: number, repeticiones: string, notas: string | null = null): EjercicioMock => ({
@@ -115,6 +119,7 @@ export function rutinasSemilla(): RutinaMock[] {
 export function registrosProgresoSemilla(): RegistroProgresoMock[] {
   const peso = (valor: number) => ({ codigo: "PESO", unidad: "kg", valor });
   const cm = (codigo: string, valor: number) => ({ codigo, unidad: "cm", valor });
+  const sinCorregir = { fecha_modificacion: null, id_usuario_modifica: null, dado_de_baja: false };
   return [
     { id_registro: 1, id_alumno: 3, id_profesora: 1, fecha: "2026-03-02", observaciones: "Medición inicial", medidas: [peso(64), cm("TALLA", 165), cm("CINTURA", 77)] },
     { id_registro: 2, id_alumno: 3, id_profesora: 1, fecha: "2026-05-04", observaciones: null, medidas: [peso(63.6), cm("CINTURA", 76)] },
@@ -130,5 +135,5 @@ export function registrosProgresoSemilla(): RegistroProgresoMock[] {
     { id_registro: 5, id_alumno: 13, id_profesora: 3, fecha: "2026-09-15", observaciones: null, medidas: [peso(81.2), cm("TALLA", 178)] },
     { id_registro: 6, id_alumno: 4, id_profesora: 1, fecha: "2026-09-01", observaciones: null, medidas: [peso(58.5), cm("CINTURA", 70)] },
     { id_registro: 7, id_alumno: 4, id_profesora: 1, fecha: "2026-10-20", observaciones: null, medidas: [peso(57.8), cm("CINTURA", 68.5)] },
-  ];
+  ].map((registro) => ({ ...registro, ...sinCorregir }));
 }

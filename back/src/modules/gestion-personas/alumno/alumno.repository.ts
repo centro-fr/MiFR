@@ -116,6 +116,27 @@ export class AlumnoRepository {
     return this.prisma.alumnos.findUnique({ where: { id_usuario: idUsuario }, include: CON_DATOS });
   }
 
+  buscarPorIdUsuarioResponsable(idUsuario: number): Promise<Alumno | null> {
+    return this.prisma.alumnos.findFirst({
+      where: { id_usuario_responsable: idUsuario },
+      include: CON_DATOS,
+    });
+  }
+
+  // US-28: el alumno del usuario y sus menores a cargo, en una consulta y solo con lo que se muestra.
+  listarConsultablesPorUsuario(idUsuario: number) {
+    return this.prisma.alumnos.findMany({
+      where: { OR: [{ id_usuario: idUsuario }, { id_usuario_responsable: idUsuario }] },
+      select: {
+        id_alumno: true,
+        id_usuario: true,
+        estado: true,
+        usuario: { select: { nombre: true, apellido: true } },
+      },
+      orderBy: [{ usuario: { apellido: "asc" } }, { usuario: { nombre: "asc" } }],
+    });
+  }
+
   buscarPorIds(ids: number[]): Promise<Alumno[]> {
     return this.prisma.alumnos.findMany({ where: { id_alumno: { in: ids } }, include: CON_DATOS });
   }

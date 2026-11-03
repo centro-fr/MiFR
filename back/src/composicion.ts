@@ -67,6 +67,11 @@ import { InsigniaService } from "./modules/gestion-insignias/insignia/insignia.s
 import { CalculadorHonorarios } from "./modules/calculos-del-negocio/calculador-honorarios/calculador-honorarios.js";
 import { LiquidacionRepository } from "./modules/gestion-honorarios/liquidacion/liquidacion.repository.js";
 import { LiquidacionService } from "./modules/gestion-honorarios/liquidacion/liquidacion.service.js";
+import { GestionRutinasYProgresoService } from "./modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.service.js";
+import { RutinaRepository } from "./modules/gestion-rutinas-y-progreso/rutina/rutina.repository.js";
+import { RutinaService } from "./modules/gestion-rutinas-y-progreso/rutina/rutina.service.js";
+import { ProgresoRepository } from "./modules/gestion-rutinas-y-progreso/progreso/progreso.repository.js";
+import { ProgresoService } from "./modules/gestion-rutinas-y-progreso/progreso/progreso.service.js";
 
 export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
@@ -205,6 +210,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     profesorService,
   );
   const gestionHonorarios = new GestionHonorariosService(tarifaHonorarioService, liquidacionService);
+  const rutinaRepository = new RutinaRepository(prisma);
   return {
     dependencias: {
       gestionUsuarios,
@@ -235,6 +241,10 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
           asistenciaService,
           horarioService,
         ),
+      ),
+      gestionRutinasYProgreso: new GestionRutinasYProgresoService(
+        new RutinaService(rutinaRepository, alumnoService, profesorService),
+        new ProgresoService(new ProgresoRepository(prisma), rutinaRepository, alumnoService, profesorService),
       ),
       gestionHonorarios,
       difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),

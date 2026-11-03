@@ -1,18 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
 import { useActividadesParaFiltro, useProfesorasParaFiltro } from "@/features/reportes/hooks/use-reportes";
 import { filtrosIniciales, type FiltrosDescritos } from "@/features/reportes/utils/formato-informe";
 import type { FiltrosInformeAsistencia } from "@/types/reportes";
+import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
 // Filtros del informe (US-33): se combinan libremente y se aplican con "Generar informe".
 
 const CONTROL =
   "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer";
+const CONTROL_FECHA = cn(CONTROL, "pr-11 md:text-sm font-semibold");
 const ETIQUETA = "text-xs font-bold text-slate-700 dark:text-slate-300";
+const FECHA_COMPLETA = /^\d{4}-\d{2}-\d{2}$/;
 const TODAS = "";
 
 interface Borrador {
@@ -31,6 +35,7 @@ function borradorInicial(hoy: string): Borrador {
 
 function problemaDelPeriodo({ desde, hasta }: Borrador): string | null {
   if (!desde || !hasta) return "Elegí las dos fechas del período.";
+  if (!FECHA_COMPLETA.test(desde) || !FECHA_COMPLETA.test(hasta)) return "Ingresá fechas válidas, como 01/10/2026.";
   return hasta < desde ? "La fecha de fin no puede ser anterior a la de inicio." : null;
 }
 
@@ -90,15 +95,15 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
             <label htmlFor="informe-desde" className={ETIQUETA}>
               Desde
             </label>
-            <input
+            <CampoFecha
               id="informe-desde"
-              type="date"
+              etiquetaCalendario="Abrir calendario para el inicio del período"
               max={hoy}
               value={borrador.desde}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "informe-periodo-error" : undefined}
-              onChange={(evento) => cambiar({ desde: evento.target.value })}
-              className={CONTROL}
+              onChange={(desde) => cambiar({ desde })}
+              className={CONTROL_FECHA}
             />
           </div>
 
@@ -106,14 +111,14 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
             <label htmlFor="informe-hasta" className={ETIQUETA}>
               Hasta
             </label>
-            <input
+            <CampoFecha
               id="informe-hasta"
-              type="date"
+              etiquetaCalendario="Abrir calendario para el fin del período"
               value={borrador.hasta}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "informe-periodo-error" : undefined}
-              onChange={(evento) => cambiar({ hasta: evento.target.value })}
-              className={CONTROL}
+              onChange={(hasta) => cambiar({ hasta })}
+              className={CONTROL_FECHA}
             />
           </div>
 
