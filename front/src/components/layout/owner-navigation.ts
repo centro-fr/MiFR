@@ -90,7 +90,6 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
   { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_CENTRO, to: "/app/honorarios" },
   { etiqueta: "Reportes", icono: BarChart3, seccion: SECCION_CENTRO, to: "/app/reportes" },
-  { etiqueta: "Comunidad", icono: Trophy, seccion: SECCION_CENTRO, to: "/app/comunidad" },
 ];
 
 const PERFIL: ItemMenu = { etiqueta: "Perfil", icono: UserRound, to: "/app/perfil" };
@@ -104,7 +103,7 @@ export const ITEMS_PROFESORA: ItemMenu[] = [
   ...CLASES_PROFESORA,
   { etiqueta: "Alumnos", icono: Users, to: "/app/alumnos/listado", subrutasDe: SUBRUTAS_DE_ALUMNOS },
   { etiqueta: "Cobros", icono: Banknote, to: "/app/cobros" },
-  { etiqueta: "Comunidad", icono: Trophy, to: "/app/comunidad" },
+  { etiqueta: "Ranking", icono: Trophy, to: "/app/ranking" },
   PERFIL,
 ];
 
@@ -112,7 +111,7 @@ const PANEL_ALUMNO: ItemMenu[] = [
   { etiqueta: "Inicio", icono: House, to: "/app/inicio" },
   { etiqueta: "Mi plan", icono: CreditCard, to: "/app/mi-plan" },
   { etiqueta: "Progreso", icono: TrendingUp, to: "/app/progreso" },
-  { etiqueta: "Comunidad", icono: Trophy, to: "/app/comunidad" },
+  { etiqueta: "Ranking", icono: Trophy, to: "/app/ranking" },
 ];
 
 export const ITEMS_ALUMNO: ItemMenu[] = [...PANEL_ALUMNO, PERFIL];
