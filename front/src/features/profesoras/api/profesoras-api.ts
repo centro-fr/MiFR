@@ -3,8 +3,11 @@ import { apiClient } from "@/api/client";
 import {
   normalizarProfesora,
   profesoraApiSchema,
+  usuarioDetalleProfesoraSchema,
+  type ActualizarDatosProfesoraInput,
   type CrearProfesoraInput,
   type Profesora,
+  type UsuarioDetalleProfesora,
 } from "@/features/profesoras/schemas/profesora";
 
 const usuarioCreadoSchema = z.object({
@@ -49,4 +52,25 @@ export async function crearProfesora(input: CrearProfesoraInput): Promise<Profes
 export async function darDeBajaProfesora(id: number): Promise<Profesora> {
   const { data } = await apiClient.delete(`/profesoras/${id}`);
   return normalizarProfesora(profesoraApiSchema.parse(data));
+}
+
+export async function obtenerUsuarioDeProfesora(idUsuario: number): Promise<UsuarioDetalleProfesora> {
+  const { data } = await apiClient.get(`/usuarios/${idUsuario}`);
+  return usuarioDetalleProfesoraSchema.parse(data);
+}
+
+export async function actualizarDatosProfesora(
+  idUsuario: number,
+  datos: ActualizarDatosProfesoraInput,
+): Promise<UsuarioDetalleProfesora> {
+  const cuerpo: Record<string, unknown> = {
+    nombre: datos.nombre,
+    apellido: datos.apellido,
+    telefono: datos.telefono.trim(),
+    fecha_nacimiento: datos.fecha_nacimiento,
+    dni: datos.dni && datos.dni.trim().length > 0 ? datos.dni.trim() : null,
+    direccion: datos.direccion && datos.direccion.trim().length > 0 ? datos.direccion.trim() : null,
+  };
+  const { data } = await apiClient.patch(`/usuarios/${idUsuario}`, cuerpo);
+  return usuarioDetalleProfesoraSchema.parse(data);
 }

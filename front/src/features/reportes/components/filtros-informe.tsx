@@ -8,12 +8,11 @@ import { filtrosIniciales, type FiltrosDescritos } from "@/features/reportes/uti
 import type { FiltrosInformeAsistencia } from "@/types/reportes";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-// Filtros del informe (US-33): se combinan libremente y se aplican con "Generar informe", no al tocar
-// cada uno, para no pedir un informe por cada fecha que se escribe.
+// Filtros del informe (US-33): se combinan libremente y se aplican con "Generar informe".
 
 const CONTROL =
-  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
-const ETIQUETA = "text-sm font-bold text-slate-800 dark:text-slate-200";
+  "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer";
+const ETIQUETA = "text-xs font-bold text-slate-700 dark:text-slate-300";
 const TODAS = "";
 
 interface Borrador {
@@ -84,9 +83,9 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
   }
 
   return (
-    <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-700/80 dark:bg-slate-900">
-      <form onSubmit={alEnviar} noValidate aria-label="Filtros del informe" className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <Card className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-slate-900/60">
+      <form onSubmit={alEnviar} noValidate aria-label="Filtros del informe" className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="informe-desde" className={ETIQUETA}>
               Desde
@@ -102,6 +101,7 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
               className={CONTROL}
             />
           </div>
+
           <div className="flex flex-col gap-1.5">
             <label htmlFor="informe-hasta" className={ETIQUETA}>
               Hasta
@@ -116,9 +116,10 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
               className={CONTROL}
             />
           </div>
-          <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
+
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="informe-profesora" className={ETIQUETA}>
-              Profesora
+              Profesor/a
             </label>
             <select
               id="informe-profesora"
@@ -126,13 +127,14 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
               onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
               className={CONTROL}
             >
-              <option value={TODAS}>Todas</option>
+              <option value={TODAS}>Todo el equipo</option>
               {profesoras.data?.map((p) => (
                 <option key={p.id} value={p.id}>{`${p.nombre} ${p.apellido}`}</option>
               ))}
             </select>
           </div>
-          <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
+
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="informe-actividad" className={ETIQUETA}>
               Actividad
             </label>
@@ -142,7 +144,7 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
               onChange={(evento) => cambiar({ idActividad: evento.target.value })}
               className={CONTROL}
             >
-              <option value={TODAS}>Todas</option>
+              <option value={TODAS}>Todas las actividades</option>
               {actividades.data?.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.nombre}
@@ -150,37 +152,54 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
               ))}
             </select>
           </div>
-          <div className="col-span-2 flex flex-col gap-1.5">
+
+          <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
             <label htmlFor="informe-alumno" className={ETIQUETA}>
-              Alumno
+              Alumno (opcional)
             </label>
-            <BuscadorAlumno id="informe-alumno" elegido={borrador.alumno} onElegir={(alumno) => cambiar({ alumno })} className={CONTROL} />
+            <BuscadorAlumno
+              id="informe-alumno"
+              elegido={borrador.alumno}
+              onElegir={(alumno) => cambiar({ alumno })}
+              className={CONTROL}
+            />
           </div>
         </div>
 
         {error && (
-          <p id="informe-periodo-error" role="alert" className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+          <p id="informe-periodo-error" role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
             {error}
           </p>
         )}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             <input
               type="checkbox"
               checked={borrador.incluirBajas}
               onChange={(evento) => cambiar({ incluirBajas: evento.target.checked })}
-              className="size-5 shrink-0 accent-primary"
+              className="size-4.5 rounded shrink-0 accent-primary"
             />
             Incluir alumnos dados de baja
           </label>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
-            <Button type="button" variant="outline" onClick={limpiar} disabled={generando} className="min-h-11 rounded-xl font-bold">
-              <RotateCcw aria-hidden="true" />
+
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={limpiar}
+              disabled={generando}
+              className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+            >
+              <RotateCcw aria-hidden="true" className="size-4 mr-1.5" />
               Limpiar filtros
             </Button>
-            <Button type="submit" disabled={generando} className="min-h-11 rounded-xl bg-primary font-extrabold text-white hover:bg-primary-dark">
-              {generando && <Loader2 aria-hidden="true" className="animate-spin" />}
+            <Button
+              type="submit"
+              disabled={generando}
+              className="min-h-[44px] rounded-xl bg-primary px-5 font-extrabold text-white shadow-md shadow-primary/25 hover:bg-primary-dark transition-all"
+            >
+              {generando && <Loader2 aria-hidden="true" className="animate-spin size-4 mr-1.5" />}
               Generar informe
             </Button>
           </div>

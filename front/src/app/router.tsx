@@ -157,6 +157,7 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesora-detalle-page"), "ProfesoraDetallePage") },
         ],
       },
       {

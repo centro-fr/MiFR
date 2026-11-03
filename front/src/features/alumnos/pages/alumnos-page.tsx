@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   ChevronLeft,
@@ -158,6 +158,7 @@ interface ListadoDeAlumnosProps {
 }
 
 function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosProps) {
+  const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [filtros, setFiltros] = useState<FiltrosDeLaPantalla>(FILTROS_INICIALES);
@@ -667,16 +668,25 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {itemsVisibles.map((alumno) => (
-                    <tr key={alumno.id_alumno} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+                    <tr
+                      key={alumno.id_alumno}
+                      onClick={() => navigate(`/app/alumnos/${alumno.id_alumno}`)}
+                      className="group cursor-pointer transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
+                    >
                       {/* Alumno: Avatar circular + Nombre */}
                       <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
                             {iniciales(alumno.nombre_completo)}
                           </span>
-                          <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          <Link
+                            to={`/app/alumnos/${alumno.id_alumno}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded-sm font-bold text-sm text-slate-900 transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white dark:group-hover:text-pink-300"
+                          >
                             {alumno.nombre_completo}
-                          </span>
+                            <span className="sr-only"> · Ver ficha</span>
+                          </Link>
                           <span className={cn("hidden", colorEstado(alumno.estado))}>
                             {etiquetaEstado(alumno.estado)}
                           </span>
@@ -703,15 +713,12 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                         {alumno.telefono ?? "Sin teléfono"}
                       </td>
 
-                      {/* Botón Ver Ficha */}
+                      {/* Indicador de navegación a la ficha */}
                       <td className="px-6 py-3.5 text-right">
-                        <Button
-                          asChild
-                          variant="outline"
-                          className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          <Link to={`/app/alumnos/${alumno.id_alumno}`}>Ver ficha</Link>
-                        </Button>
+                        <ChevronRight
+                          aria-hidden="true"
+                          className="ml-auto size-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary dark:text-slate-600 dark:group-hover:text-pink-400"
+                        />
                       </td>
                     </tr>
                   ))}

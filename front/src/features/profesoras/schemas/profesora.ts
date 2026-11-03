@@ -84,3 +84,67 @@ export function normalizarProfesora(api: ProfesoraApi): Profesora {
     activa: api.fecha_baja === null,
   };
 }
+
+export const usuarioDetalleProfesoraSchema = z.object({
+  id_usuario: z.number().int(),
+  email: z.string().nullable().optional(),
+  nombre: z.string(),
+  apellido: z.string(),
+  dni: z.string().nullable().optional(),
+  telefono: z.string().nullable().optional(),
+  fecha_nacimiento: z.string().nullable().optional(),
+  direccion: z.string().nullable().optional(),
+  estado: z.string().optional(),
+});
+
+export type UsuarioDetalleProfesora = z.infer<typeof usuarioDetalleProfesoraSchema>;
+
+export const actualizarDatosProfesoraSchema = z.object({
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(60),
+  apellido: z.string().trim().min(2, "El apellido debe tener al menos 2 caracteres").max(60),
+  dni: z
+    .string()
+    .trim()
+    .regex(/^\d{7,8}$/, "El DNI debe tener entre 7 y 8 dígitos")
+    .optional()
+    .or(z.literal("")),
+  telefono: z
+    .string()
+    .trim()
+    .min(1, "El teléfono de contacto es obligatorio")
+    .max(20, "Máximo 20 caracteres")
+    .regex(telefonoRegex, "El teléfono solo puede contener dígitos, espacios, paréntesis y guiones")
+    .refine((val) => {
+      const digits = val.replace(/\D/g, "").length;
+      return digits >= 7 && digits <= 15;
+    }, "El teléfono debe tener entre 7 y 15 dígitos"),
+  fecha_nacimiento: z
+    .string()
+    .min(1, "La fecha de nacimiento es obligatoria")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ingresá una fecha válida (aaaa-mm-dd)")
+    .refine((val) => {
+      const d = new Date(`${val}T00:00:00`);
+      return !isNaN(d.getTime()) && d <= new Date();
+    }, "La fecha de nacimiento no puede ser futura")
+    .refine((val) => !esMenorDeEdad(val), "La profesora debe ser mayor de edad (al menos 18 años)"),
+  direccion: z
+    .string()
+    .trim()
+    .max(120, "La dirección no puede superar los 120 caracteres")
+    .optional()
+    .or(z.literal("")),
+});
+
+export type ActualizarDatosProfesoraInput = z.infer<typeof actualizarDatosProfesoraSchema>;
+
+export function parsearEspecialidades(especialidad: string | null | undefined): string[] {
+  if (!especialidad) return [];
+  return especialidad
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
+export function formatearEspecialidades(actividades: string[]): string {
+  return actividades.map((a) => a.trim()).filter(Boolean).join(", ");
+}
