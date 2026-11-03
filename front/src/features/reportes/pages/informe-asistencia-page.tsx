@@ -3,6 +3,7 @@ import { AlertCircle, CalendarX } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { MenuExportar } from "@/components/menu-exportar";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FiltrosInforme } from "@/features/reportes/components/filtros-informe";
 import { InformeAsistenciaImprimible } from "@/features/reportes/components/informe-asistencia-imprimible";
@@ -10,12 +11,16 @@ import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
 import { PorAlumno, PorProfesora, ResumenDelInforme } from "@/features/reportes/components/resultado-informe";
 import { useExportarAsistencia } from "@/features/reportes/hooks/use-exportar-asistencia";
 import { useInformeAsistencia } from "@/features/reportes/hooks/use-reportes";
-import { filtrosAplicados, filtrosIniciales, periodoDelInforme, type FiltrosDescritos } from "@/features/reportes/utils/formato-informe";
+import {
+  filtrosAplicados,
+  filtrosIniciales,
+  periodoDelInforme,
+  type FiltrosDescritos,
+} from "@/features/reportes/utils/formato-informe";
 import type { FiltrosInformeAsistencia, InformeAsistencia } from "@/types/reportes";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-// US-33: pestaña "Asistencia" de Reportes. Arranca con el mes en curso y se rehace con los filtros.
-// Es solo informativo: no modifica datos.
+// US-33: pestaña "Asistencia" de Reportes.
 
 const SIN_FILTROS: FiltrosDescritos = { alumno: null, profesora: null, actividad: null, incluirBajas: false };
 
@@ -35,23 +40,40 @@ function Cargando() {
 
 function SinDatos() {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 px-6 py-10 text-center dark:border-slate-700">
-      <CalendarX aria-hidden="true" className="size-8 text-slate-400" />
-      <p className="font-bold text-slate-900 dark:text-white">Sin datos para estos filtros</p>
-      <p className="max-w-sm text-sm text-slate-600 dark:text-slate-300">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl shadow-xs">
+      <span
+        aria-hidden="true"
+        className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
+      >
+        <CalendarX className="size-7" />
+      </span>
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+        Sin datos para estos filtros
+      </h2>
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
         No hay clases dictadas con asistencia registrada en el período. Probá con otras fechas o sacá algún filtro.
       </p>
-    </div>
+    </Card>
   );
 }
 
-function Informe({ informe, cargandoPagina, onCambiarPagina }: { informe: InformeAsistencia; cargandoPagina: boolean; onCambiarPagina: (offset: number) => void }) {
+function Informe({
+  informe,
+  cargandoPagina,
+  onCambiarPagina,
+}: {
+  informe: InformeAsistencia;
+  cargandoPagina: boolean;
+  onCambiarPagina: (offset: number) => void;
+}) {
   if (informe.resumen.clasesDictadas === 0 && informe.totalAlumnos === 0) return <SinDatos />;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <ResumenDelInforme informe={informe} />
       {informe.porProfesora.length > 0 && <PorProfesora profesoras={informe.porProfesora} />}
-      {informe.totalAlumnos > 0 && <PorAlumno informe={informe} cargando={cargandoPagina} onCambiarPagina={onCambiarPagina} />}
+      {informe.totalAlumnos > 0 && (
+        <PorAlumno informe={informe} cargando={cargandoPagina} onCambiarPagina={onCambiarPagina} />
+      )}
     </div>
   );
 }
@@ -71,18 +93,25 @@ export function InformeAsistenciaPage() {
     setFiltros(nuevos);
     setDescripcion(nuevaDescripcion);
     setOffset(0);
-    // Con los mismos filtros, "Generar" trae los datos más recientes (spec: actualizado al generarlo).
     if (JSON.stringify(nuevos) === JSON.stringify(filtros) && offset === 0) void consulta.refetch();
   }
 
   return (
     <PaginaReportes
-      acciones={<MenuExportar disabled={!conDatos || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
+      acciones={
+        <MenuExportar
+          disabled={!conDatos || consulta.isFetching}
+          preparando={preparando}
+          onExportar={(formato) => void exportar(formato)}
+        />
+      }
     >
-      <div className="flex flex-col gap-5">
+      <div className="space-y-6 min-w-0">
         <div>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Informe de asistencia</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Informe de asistencia
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {informe ? periodoDelInforme(informe.desde, informe.hasta) : periodoDelInforme(filtros.desde, filtros.hasta)}
             {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}
           </p>
@@ -91,20 +120,39 @@ export function InformeAsistenciaPage() {
         <FiltrosInforme generando={consulta.isFetching && !consulta.isPlaceholderData} onGenerar={generar} />
 
         {consulta.isPending && <Cargando />}
+
         {consulta.isError && (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
-            <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
-              <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
+          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl shadow-xs">
+            <AlertCircle className="size-8 text-rose-500" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Error al generar el informe
+            </h3>
+            <p role="alert" className="text-xs text-slate-500 max-w-sm">
               {mensajeDeErrorApi(consulta.error, "No se pudo generar el informe.")}
             </p>
-            <Button type="button" variant="outline" disabled={consulta.isFetching} onClick={() => void consulta.refetch()} className="min-h-11 rounded-xl font-bold">
+            <Button
+              type="button"
+              disabled={consulta.isFetching}
+              onClick={() => void consulta.refetch()}
+              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold px-5"
+            >
               Reintentar
             </Button>
-          </div>
+          </Card>
         )}
-        {informe && <Informe informe={informe} cargandoPagina={consulta.isPlaceholderData} onCambiarPagina={setOffset} />}
+
+        {informe && (
+          <Informe informe={informe} cargandoPagina={consulta.isPlaceholderData} onCambiarPagina={setOffset} />
+        )}
       </div>
-      {impresion && <InformeAsistenciaImprimible informe={impresion.datos} descripcion={descripcion} generadoEl={impresion.generadoEl} />}
+
+      {impresion && (
+        <InformeAsistenciaImprimible
+          informe={impresion.datos}
+          descripcion={descripcion}
+          generadoEl={impresion.generadoEl}
+        />
+      )}
     </PaginaReportes>
   );
 }

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectorEspecialidades } from "@/features/profesoras/components/selector-especialidades";
 import {
   crearProfesoraSchema,
+  formatearEspecialidades,
   type CrearProfesoraInput,
 } from "@/features/profesoras/schemas/profesora";
 
@@ -28,7 +30,7 @@ export function ModalFormProfesora({
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
-  const [especialidad, setEspecialidad] = useState("");
+  const [actividadesSeleccionadas, setActividadesSeleccionadas] = useState<string[]>([]);
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
 
   // Fecha máxima permitida (al menos 18 años cumplidos)
@@ -41,13 +43,15 @@ export function ModalFormProfesora({
     e.preventDefault();
     setErrorValidacion(null);
 
+    const especialidadFormateada = formatearEspecialidades(actividadesSeleccionadas);
+
     const res = crearProfesoraSchema.safeParse({
       nombre,
       apellido,
       email,
       telefono,
       fecha_nacimiento: fechaNacimiento,
-      especialidad: especialidad.trim() || undefined,
+      especialidad: especialidadFormateada || undefined,
     });
 
     if (!res.success) {
@@ -193,24 +197,15 @@ export function ModalFormProfesora({
             </div>
           </div>
 
-          {/* Especialidad */}
+          {/* Selector de Especialidades por Actividades */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="especialidad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Especialidad o disciplina principal
-              </Label>
-              <span className="text-[11px] font-semibold text-slate-400">
-                {especialidad.length}/80
-              </span>
-            </div>
-            <Input
-              id="especialidad"
-              value={especialidad}
-              onChange={(e) => setEspecialidad(e.target.value.slice(0, 80))}
-              placeholder="Ej: Pilates Reformer, Funcional, Musculación..."
-              maxLength={80}
+            <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+              Actividades especializadas
+            </Label>
+            <SelectorEspecialidades
+              seleccionadas={actividadesSeleccionadas}
+              onCambiar={setActividadesSeleccionadas}
               disabled={guardando}
-              className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
             />
           </div>
 

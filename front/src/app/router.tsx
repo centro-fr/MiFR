@@ -59,10 +59,11 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
+  // US-31: racha e insignias del alumno o menor a cargo.
+  // US-30: ranking de asistencia para los cuatro roles autorizados.
   // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
   // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
   { path: "mi-plan", seccion: "Mi plan" },
-  { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
 ];
 
@@ -73,6 +74,15 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     ...carga,
     lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
+  {
+    path: "/disponibilidad",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(
+      () => import("@/features/publico/pages/disponibilidad-page"),
+      "DisponibilidadPage",
+    ),
   },
   { path: "/seguridad/permisos", element: <Navigate to="/app/dashboard" replace /> },
   {
@@ -127,7 +137,16 @@ export const router = createBrowserRouter([
       {
         path: "inicio",
         element: guardiaDeSeccion("inicio"),
-        children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/portal-alumno/pages/panel-alumno-page"), "PanelAlumnoPage") },
+        ],
+      },
+      {
+        path: "mi-plan",
+        element: guardiaDeSeccion("mi-plan"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
+        ],
       },
       {
         // Reportes: una pestaña por informe (US-33 a US-37 y cobranza). El back los reserva a la
@@ -153,10 +172,25 @@ export const router = createBrowserRouter([
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
       },
       {
+        // US-30: ranking de asistencia visible para todos los roles autorizados.
+        path: "comunidad",
+        element: guardiaDeSeccion("comunidad", "REPORTES_RANKING_VER"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/ranking-asistencia-page"),
+              "RankingAsistenciaPage",
+            ),
+          },
+        ],
+      },
+      {
         path: "profesoras",
         element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesora-detalle-page"), "ProfesoraDetallePage") },
         ],
       },
       {
@@ -302,6 +336,19 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion(path),
         children: [{ index: true, lazy: paginaEnConstruccion(seccion) }],
       })),
+      {
+        path: "progreso",
+        element: guardiaDeSeccion("progreso", "INSIGNIAS_VER_PROPIAS"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/insignias-page"),
+              "InsigniasPage",
+            ),
+          },
+        ],
+      },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

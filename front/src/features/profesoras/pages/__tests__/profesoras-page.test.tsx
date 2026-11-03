@@ -10,6 +10,18 @@ vi.mock("@/components/layout/owner-layout", () => ({
   OwnerLayout: ({ children }: { children: ReactNode }) => <div data-testid="layout">{children}</div>,
 }));
 
+vi.mock("@/features/actividades/hooks/use-actividades", () => ({
+  useActividades: () => ({
+    data: [
+      { id: "1", codigo: "FUNCIONAL", nombre: "Funcional", modalidad: "GRUPAL", activo: true },
+      { id: "2", codigo: "GAP", nombre: "GAP", modalidad: "GRUPAL", activo: true },
+      { id: "3", codigo: "HIIT", nombre: "HIIT", modalidad: "GRUPAL", activo: true },
+    ],
+    isPending: false,
+    isError: false,
+  }),
+}));
+
 const mockProfesoras: Profesora[] = [
   {
     id: 1,
@@ -20,7 +32,7 @@ const mockProfesoras: Profesora[] = [
     email: "lucia.gomez@example.com",
     telefono: "1144556677",
     fechaNacimiento: "1992-05-10",
-    especialidad: "Funcional",
+    especialidad: "Funcional, HIIT",
     fechaAlta: "2026-01-01T00:00:00.000Z",
     fechaBaja: null,
     activa: true,
@@ -42,7 +54,6 @@ const mockProfesoras: Profesora[] = [
 ];
 
 const mockMutateCrear = vi.fn();
-const mockMutateDarDeBaja = vi.fn();
 let mockHorariosActivos: Array<{ id_profesora: number; actividad: { nombre: string } }> = [];
 
 vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
@@ -59,13 +70,6 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     error: null,
     reset: vi.fn(),
     mutate: mockMutateCrear,
-  }),
-  useDarDeBajaProfesora: () => ({
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: vi.fn(),
-    mutate: mockMutateDarDeBaja,
   }),
   useHorariosActivos: () => ({
     data: mockHorariosActivos,
@@ -137,20 +141,7 @@ describe("ProfesorasPage (US-38)", () => {
     expect(screen.queryByRole("heading", { level: 2, name: "Dar de alta profesor/a" })).not.toBeInTheDocument();
   });
 
-  it("abre el diálogo de confirmación de baja al hacer clic en 'Dar de baja'", () => {
-    renderizar();
-    const botonesBaja = screen.getAllByRole("button", { name: /Dar de baja/i });
-    fireEvent.click(botonesBaja[0]);
-
-    expect(screen.getByText("¿Dar de baja a este/a profesor/a?")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Confirmar baja" })).toBeInTheDocument();
-
-    const btnCancelarBaja = screen.getByRole("button", { name: "Cancelar" });
-    fireEvent.click(btnCancelarBaja);
-    expect(screen.queryByText("¿Dar de baja a este/a profesor/a?")).not.toBeInTheDocument();
-  });
-
-  it("permite completar el formulario de alta directa y enviar los datos", () => {
+  it("permite completar el formulario de alta seleccionando actividades como especialidad", () => {
     renderizar();
     fireEvent.click(screen.getByRole("button", { name: "+ Nuevo/a profesor/a" }));
 
@@ -159,7 +150,10 @@ describe("ProfesorasPage (US-38)", () => {
     fireEvent.change(screen.getByPlaceholderText("ejemplo@gmail.com"), { target: { value: "laura@example.com" } });
     fireEvent.change(screen.getByPlaceholderText("Ej: 11 2345-6789"), { target: { value: "1144556677" } });
     fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/i), { target: { value: "1994-06-15" } });
-    fireEvent.change(screen.getByPlaceholderText(/Pilates Reformer/i), { target: { value: "Pilates" } });
+
+    // Seleccionar actividades con el selector
+    fireEvent.click(screen.getByRole("button", { name: "Funcional" }));
+    fireEvent.click(screen.getByRole("button", { name: "HIIT" }));
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar profesor/a" }));
 
@@ -170,27 +164,21 @@ describe("ProfesorasPage (US-38)", () => {
         email: "laura@example.com",
         telefono: "1144556677",
         fecha_nacimiento: "1994-06-15",
-        especialidad: "Pilates",
+        especialidad: "Funcional, HIIT",
       },
       expect.any(Object),
     );
   });
 
-  it("advierte si la profesora tiene clases activas a su cargo y ofrece ir a Horarios", () => {
-    mockHorariosActivos = [
-      { id_profesora: 1, actividad: { nombre: "Funcional" } },
-      { id_profesora: 1, actividad: { nombre: "HIIT" } },
-    ];
+  it("no muestra botones destructivos directos en la lista ni datos redundantes de contacto en la celda", () => {
     renderizar();
+    // No hay botones "Dar de baja" directos en la tabla
+    expect(screen.queryByRole("button", { name: /Dar de baja/i })).not.toBeInTheDocument();
+  });
 
-    expect(screen.getAllByText("2 clases").length).toBeGreaterThan(0);
-
-    const botonesBaja = screen.getAllByRole("button", { name: /Dar de baja/i });
-    fireEvent.click(botonesBaja[0]);
-
-    expect(screen.getByText(/Tiene 2 clases semanales asignadas/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ir a Horarios" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Confirmar baja" })).not.toBeInTheDocument();
+  it("enlaza a la ficha de cada profesora mediante su enlace accesible", () => {
+    renderizar();
+    const enlacesFicha = screen.getAllByRole("link", { name: /Lucía Gómez/i });
+    expect(enlacesFicha.some((link) => link.getAttribute("href") === "/app/profesoras/1")).toBe(true);
   });
 });
-

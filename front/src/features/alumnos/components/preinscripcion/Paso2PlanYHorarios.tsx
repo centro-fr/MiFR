@@ -96,13 +96,6 @@ export function Paso2PlanYHorarios({
     return actividadesDisponibles[0]?.id ?? null;
   }, [actividadElegida, actividadesDisponibles, idsHorarios, horarios]);
 
-  // Sincronizar actividadElegida si la actual deja de estar disponible
-  useEffect(() => {
-    if (actividadElegida !== null && !actividadesDisponibles.some((a) => a.id === actividadElegida)) {
-      setActividadElegida(actividadesDisponibles[0]?.id ?? null);
-    }
-  }, [actividadesDisponibles, actividadElegida]);
-
   // 2. Profesoras compatibles que dictan la actividad seleccionada y tienen suficientes días para el plan
   const profesorasDeActividad = useMemo(() => {
     if (!idActividadSeleccionada) return profesoras;

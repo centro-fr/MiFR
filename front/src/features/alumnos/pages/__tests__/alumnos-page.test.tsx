@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, act } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import type { QueryObserverSuccessResult } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAlumnos } from "../../hooks/use-alumnos";
@@ -95,8 +95,11 @@ function renderListado() {
   queryClient.setQueryData(["profesoras"], []);
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <AlumnosPage />
+      <MemoryRouter initialEntries={["/app/alumnos/listado"]}>
+        <Routes>
+          <Route path="/app/alumnos/listado" element={<AlumnosPage />} />
+          <Route path="/app/alumnos/:id" element={<h1>Ficha del alumno</h1>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -167,5 +170,14 @@ describe("AlumnosPage", () => {
 
     renderListado();
     expect(screen.queryByLabelText("Profesor/a")).not.toBeInTheDocument();
+  });
+
+  it("navega a la ficha del alumno al hacer clic en la fila de la tabla", () => {
+    renderListado();
+
+    const celdaDni = screen.getByRole("cell", { name: "35.123.456" });
+    fireEvent.click(celdaDni.closest("tr")!);
+
+    expect(screen.getByRole("heading", { name: "Ficha del alumno" })).toBeInTheDocument();
   });
 });

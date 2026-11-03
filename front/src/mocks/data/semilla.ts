@@ -30,14 +30,38 @@ export interface HorarioSemilla {
 }
 
 export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
-  { id_usuario: 1, email: "lucia.gomez@example.com", nombre: "Lucía", apellido: "Gómez", roles: ["PROFESORA"] },
-  { id_usuario: 2, email: "carla.ruiz@example.com", nombre: "Carla", apellido: "Ruiz", roles: ["PROFESORA"] },
+  {
+    id_usuario: 1,
+    email: "lucia.gomez@example.com",
+    nombre: "Lucía",
+    apellido: "Gómez",
+    roles: ["PROFESORA"],
+    dni: "32111222",
+    telefono: "11 4455-6677",
+    fecha_nacimiento: "1992-05-10",
+    direccion: "Av. Corrientes 1234",
+  },
+  {
+    id_usuario: 2,
+    email: "carla.ruiz@example.com",
+    nombre: "Carla",
+    apellido: "Ruiz",
+    roles: ["PROFESORA"],
+    dni: "34888999",
+    telefono: "11 5566-7788",
+    fecha_nacimiento: "1994-08-20",
+    direccion: "Belgrano 567",
+  },
   {
     id_usuario: 3,
     email: "marina.sosa@example.com",
     nombre: "Marina",
     apellido: "Sosa",
     roles: ["PROPIETARIA", "PROFESORA"],
+    dni: "29444555",
+    telefono: "11 6677-8899",
+    fecha_nacimiento: "1988-03-15",
+    direccion: "San Martín 890",
   },
   { id_usuario: 4, email: "camila.perez@example.com", nombre: "Camila", apellido: "Pérez", roles: ["ALUMNO"] },
   { id_usuario: 5, email: "valentina.lopez@example.com", nombre: "Valentina", apellido: "López", roles: ["ALUMNO"] },
@@ -51,6 +75,10 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
     apellido: "Martínez",
     roles: ["PROFESORA"],
     estado: "ACTIVO",
+    dni: "36777888",
+    telefono: "11 3344-5566",
+    fecha_nacimiento: "1996-11-25",
+    direccion: "Mitre 432",
   },
 ];
 
@@ -60,12 +88,12 @@ export const ID_USUARIO_SESION_INICIAL = 3;
 const FECHA_ALTA = "2026-01-01T00:00:00.000Z";
 
 export const PROFESORAS_SEMILLA: Omit<ProfesoraApi, "usuario">[] = [
-  { id_profesora: 1, id_usuario: 1, especialidad: "Entrenamiento funcional", fecha_alta: FECHA_ALTA, fecha_baja: null },
-  { id_profesora: 2, id_usuario: 2, especialidad: "Clases infantiles y GAP", fecha_alta: FECHA_ALTA, fecha_baja: null },
+  { id_profesora: 1, id_usuario: 1, especialidad: "Funcional, HIIT", fecha_alta: FECHA_ALTA, fecha_baja: null },
+  { id_profesora: 2, id_usuario: 2, especialidad: "GAP, Kid Fit", fecha_alta: FECHA_ALTA, fecha_baja: null },
   {
     id_profesora: 3,
     id_usuario: 3,
-    especialidad: "Entrenamiento personalizado",
+    especialidad: "Personalizado",
     fecha_alta: FECHA_ALTA,
     fecha_baja: null,
   },

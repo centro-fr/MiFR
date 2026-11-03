@@ -2,6 +2,7 @@ import { http, HttpResponse, delay } from "msw";
 import { db } from "@/mocks/db";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { profesoraConNombre } from "@/mocks/handlers/serializar";
+import type { RoleCode } from "@/types/auth";
 
 // Mock de profesoras y usuarios (US-38)
 
@@ -106,6 +107,80 @@ export const personasHandlers = [
     );
   }),
 
+  http.get("*/api/v1/usuarios/:id", async ({ request, params }) => {
+    await delay(150);
+    const denegado = verificarAcceso(request, { permiso: "USUARIOS_VER" });
+    if (denegado) return denegado;
+
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
+
+    const usuario = db.usuarios.find((u) => u.id_usuario === id);
+    if (!usuario) return errorApi(404, "NOT_FOUND", "Usuario no encontrado");
+
+    return HttpResponse.json({
+      id_usuario: usuario.id_usuario,
+      google_id: null,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      dni: usuario.dni ?? null,
+      telefono: usuario.telefono ?? null,
+      fecha_nacimiento: usuario.fecha_nacimiento ?? "1990-01-01",
+      direccion: usuario.direccion ?? null,
+      estado: usuario.estado ?? "ACTIVO",
+      fecha_alta: "2026-01-01T00:00:00.000Z",
+      fecha_actualizacion: "2026-01-01T00:00:00.000Z",
+      roles: usuario.roles,
+    });
+  }),
+
+  http.patch("*/api/v1/usuarios/:id", async ({ request, params }) => {
+    await delay(250);
+    const denegado = verificarAcceso(request, { permiso: "USUARIOS_EDITAR" });
+    if (denegado) return denegado;
+
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
+
+    const usuario = db.usuarios.find((u) => u.id_usuario === id);
+    if (!usuario) return errorApi(404, "NOT_FOUND", "Usuario no encontrado");
+
+    const cuerpo = (await request.json().catch(() => ({}))) as {
+      nombre?: string;
+      apellido?: string;
+      dni?: string | null;
+      telefono?: string | null;
+      fecha_nacimiento?: string;
+      direccion?: string | null;
+      estado?: "ACTIVO" | "INACTIVO";
+    };
+
+    if (cuerpo.nombre !== undefined) usuario.nombre = cuerpo.nombre.trim();
+    if (cuerpo.apellido !== undefined) usuario.apellido = cuerpo.apellido.trim();
+    if (cuerpo.dni !== undefined) usuario.dni = cuerpo.dni ? cuerpo.dni.trim() : null;
+    if (cuerpo.telefono !== undefined) usuario.telefono = cuerpo.telefono ? cuerpo.telefono.trim() : null;
+    if (cuerpo.fecha_nacimiento !== undefined) usuario.fecha_nacimiento = cuerpo.fecha_nacimiento;
+    if (cuerpo.direccion !== undefined) usuario.direccion = cuerpo.direccion ? cuerpo.direccion.trim() : null;
+    if (cuerpo.estado !== undefined) usuario.estado = cuerpo.estado;
+
+    return HttpResponse.json({
+      id_usuario: usuario.id_usuario,
+      google_id: null,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      dni: usuario.dni ?? null,
+      telefono: usuario.telefono ?? null,
+      fecha_nacimiento: usuario.fecha_nacimiento ?? "1990-01-01",
+      direccion: usuario.direccion ?? null,
+      estado: usuario.estado ?? "ACTIVO",
+      fecha_alta: "2026-01-01T00:00:00.000Z",
+      fecha_actualizacion: new Date().toISOString(),
+      roles: usuario.roles,
+    });
+  }),
+
   http.post("*/api/v1/usuarios", async ({ request }) => {
     await delay(300);
     const denegado = verificarAcceso(request, { permiso: "USUARIOS_EDITAR" });
@@ -157,11 +232,16 @@ export const personasHandlers = [
 
     const cuerpo = (await request.json().catch(() => ({}))) as { rol?: string };
     if (!cuerpo.rol) return errorApi(400, "VALIDATION_ERROR", "Rol inválido");
-
-    if (!usuario.roles.includes(cuerpo.rol as any)) {
-      usuario.roles.push(cuerpo.rol as any);
+    const rolesValidos: RoleCode[] = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
+    if (!rolesValidos.includes(cuerpo.rol as RoleCode)) {
+      return errorApi(400, "VALIDATION_ERROR", "Rol inválido");
     }
 
-    return HttpResponse.json({ id_usuario: id, rol: cuerpo.rol }, { status: 201 });
+    const rol = cuerpo.rol as RoleCode;
+    if (!usuario.roles.includes(rol)) {
+      usuario.roles.push(rol);
+    }
+
+    return HttpResponse.json({ id_usuario: id, rol }, { status: 201 });
   }),
 ];

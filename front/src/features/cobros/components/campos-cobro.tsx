@@ -157,7 +157,7 @@ interface BotonesDeCobroProps {
 /** Pie de los formularios de cobro: cancelar y la acción principal, que es el envío del form. */
 export function BotonesDeCobro({ onCancelar, enviando, texto, textoEnviando }: BotonesDeCobroProps) {
   return (
-    <div className="flex flex-row items-center justify-end gap-2 pt-2">
+    <div className="sticky bottom-0 z-10 flex flex-row items-center justify-end gap-2 bg-background/95 pt-3 pb-1 backdrop-blur-sm">
       <Button
         type="button"
         variant="outline"

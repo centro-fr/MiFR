@@ -34,6 +34,65 @@ function idClase(fecha: string, idHorario: number): number {
   return Number(fecha.replaceAll("-", "")) * 10 + idHorario;
 }
 
+function horaArgentina(instante: Date): string {
+  const partes = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instante);
+  const hora = partes.find((parte) => parte.type === "hour")?.value ?? "00";
+  const minuto = partes.find((parte) => parte.type === "minute")?.value ?? "00";
+  return `${hora}:${minuto}`;
+}
+
+function asegurarClasesDisponiblesParaPrueba(): void {
+  const dia = numeroDia(hoyEnArgentina());
+  const horaInicio = horaArgentina(new Date(Date.now() - 10 * 60_000));
+  const horaFin = horaArgentina(new Date(Date.now() + 50 * 60_000));
+  const horariosDePrueba: HorarioMock[] = [
+    {
+      id_horario: 9001,
+      id_actividad: 1,
+      id_profesora: 1,
+      dia_semana: dia,
+      hora_inicio: horaInicio,
+      hora_fin: horaFin,
+      cupo_maximo: 15,
+      fecha_alta: "2026-01-01T00:00:00.000Z",
+      fecha_baja: null,
+    },
+    {
+      id_horario: 9002,
+      id_actividad: 2,
+      id_profesora: 3,
+      dia_semana: dia,
+      hora_inicio: horaInicio,
+      hora_fin: horaFin,
+      cupo_maximo: 15,
+      fecha_alta: "2026-01-01T00:00:00.000Z",
+      fecha_baja: null,
+    },
+  ];
+
+  for (const horario of horariosDePrueba) {
+    if (!db.horarios.some((existente) => existente.id_horario === horario.id_horario)) {
+      db.horarios.push(horario);
+    }
+  }
+
+  const inscripcionDePrueba = [
+    { id_inscripcion: 3, id_horario: 9001 },
+    { id_inscripcion: 23, id_horario: 9002 },
+  ];
+  for (const asignacion of inscripcionDePrueba) {
+    const inscripcion = db.inscripciones.find((item) => item.id_inscripcion === asignacion.id_inscripcion);
+    if (inscripcion && !inscripcion.ids_horarios.includes(asignacion.id_horario)) {
+      inscripcion.ids_horarios.push(asignacion.id_horario);
+    }
+  }
+}
+
 function claseDeHorario(fecha: string, horario: HorarioMock): ClaseAsistenciaMock {
   const id = idClase(fecha, horario.id_horario);
   let clase = db.clases.find((candidata) => candidata.id_clase === id);
@@ -55,9 +114,17 @@ function horarioDeClase(clase: ClaseAsistenciaMock): HorarioMock | undefined {
   return db.horarios.find((horario) => horario.id_horario === clase.id_horario);
 }
 
+function esClaseDePrueba(clase: ClaseAsistenciaMock): boolean {
+  return clase.id_horario === 9001 || clase.id_horario === 9002;
+}
+
 function inscriptosDeClase(clase: ClaseAsistenciaMock) {
+  const horario = horarioDeClase(clase);
   return db.inscripciones.flatMap((inscripcion) => {
-    if (inscripcion.estado !== "ACTIVA" || !inscripcion.ids_horarios.includes(clase.id_horario)) return [];
+    const correspondeAlHorario = esClaseDePrueba(clase)
+      ? horario?.id_profesora === inscripcion.id_profesora
+      : inscripcion.ids_horarios.includes(clase.id_horario);
+    if (inscripcion.estado !== "ACTIVA" || !correspondeAlHorario) return [];
     const alumno = db.alumnos.find((candidato) => candidato.id_alumno === inscripcion.id_alumno);
     const usuario = alumno && db.usuariosPersonas.find((candidato) => candidato.id_usuario === alumno.id_usuario);
     if (!alumno || alumno.estado !== "ACTIVO" || !usuario) return [];
@@ -152,6 +219,7 @@ function procesarCierresAutomaticos(): void {
 }
 
 function listaDeFecha(fecha: string) {
+  if (fecha === hoyEnArgentina()) asegurarClasesDisponiblesParaPrueba();
   const idUsuario = db.idUsuarioSesion;
   const usuario = db.usuarios.find((candidato) => candidato.id_usuario === idUsuario);
   const profesora = usuario && db.profesoras.find((candidata) => candidata.id_usuario === usuario.id_usuario);

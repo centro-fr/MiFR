@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Calendar, Clock, GraduationCap, Loader2, Phone, Search, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  AlertCircle,
+  Calendar,
+  ChevronRight,
+  Clock,
+  GraduationCap,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -14,15 +23,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ModalBajaProfesora } from "@/features/profesoras/components/modal-baja-profesora";
 import { ModalFormProfesora } from "@/features/profesoras/components/modal-form-profesora";
 import {
   useCrearProfesora,
-  useDarDeBajaProfesora,
   useHorariosActivos,
   useProfesoras,
 } from "@/features/profesoras/hooks/use-profesoras";
-import type { CrearProfesoraInput, Profesora } from "@/features/profesoras/schemas/profesora";
+import {
+  parsearEspecialidades,
+  type CrearProfesoraInput,
+} from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
 
 type PestanaEstado = "ACTIVAS" | "TODAS";
@@ -38,6 +48,7 @@ function formatearFecha(iso: string): string {
 }
 
 export function ProfesorasPage() {
+  const navigate = useNavigate();
   const { data: profesoras = [], isPending, isError, error, refetch } = useProfesoras();
   const { data: horarios = [] } = useHorariosActivos();
 
@@ -52,37 +63,14 @@ export function ProfesorasPage() {
   }, [horarios]);
 
   const crearMutation = useCrearProfesora();
-  const darDeBajaMutation = useDarDeBajaProfesora();
 
   const [formAbierto, setFormAbierto] = useState(false);
-  const [profesoraBaja, setProfesoraBaja] = useState<Profesora | null>(null);
-  const [errorBaja, setErrorBaja] = useState<string | null>(null);
-
   const [pestana, setPestana] = useState<PestanaEstado>("ACTIVAS");
   const [busqueda, setBusqueda] = useState("");
 
   const abrirNueva = () => {
     crearMutation.reset();
     setFormAbierto(true);
-  };
-
-  const abrirConfirmacionBaja = (profesora: Profesora) => {
-    setErrorBaja(null);
-    setProfesoraBaja(profesora);
-  };
-
-  const handleConfirmarBaja = () => {
-    if (!profesoraBaja) return;
-    setErrorBaja(null);
-    darDeBajaMutation.mutate(profesoraBaja.id, {
-      onSuccess: () => {
-        setProfesoraBaja(null);
-        toast.info(`Profesor/a "${profesoraBaja.nombreCompleto}" dado/a de baja`);
-      },
-      onError: (err) => {
-        setErrorBaja(mensajeDeErrorApi(err, "No se pudo dar de baja al/a la profesor/a."));
-      },
-    });
   };
 
   const handleGuardarNueva = (datos: CrearProfesoraInput) => {
@@ -105,131 +93,112 @@ export function ProfesorasPage() {
     return profesoras.filter((p) => {
       if (pestana === "ACTIVAS" && !p.activa) return false;
       if (!q) return true;
-      return (
-        p.nombreCompleto.toLowerCase().includes(q) ||
-        (p.especialidad && p.especialidad.toLowerCase().includes(q)) ||
-        (p.email && p.email.toLowerCase().includes(q)) ||
-        (p.telefono && p.telefono.includes(q))
-      );
+      const coincideNombre = p.nombreCompleto.toLowerCase().includes(q);
+      const coincideEspecialidad = p.especialidad ? p.especialidad.toLowerCase().includes(q) : false;
+      return coincideNombre || coincideEspecialidad;
     });
   }, [profesoras, pestana, busqueda]);
 
-  const hayFiltrosActivos = busqueda.trim().length > 0;
+  const hayFiltrosActivos = busqueda.trim().length > 0 || pestana !== "ACTIVAS";
 
   return (
     <OwnerLayout>
       <div className="space-y-6 min-w-0">
-        {/* ENCABEZADO PRINCIPAL */}
+        {/* ENCABEZADO */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl xl:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
               Plantel de Profesores
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-              Equipo docente del centro, especialidades asignadas y disponibilidad para dictado de disciplinas.
+              Equipo docente del centro, disciplinas a cargo y acceso a su ficha de datos personales.
             </p>
           </div>
-
           <Button
             type="button"
             onClick={abrirNueva}
-            className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
+            className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0 self-start sm:self-auto"
           >
             + Nuevo/a profesor/a
           </Button>
         </div>
 
-        {/* PESTAÑAS SUPERIORES DE NAVEGACIÓN (TABS) */}
-        <div className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setPestana("ACTIVAS")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              pestana === "ACTIVAS"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-            )}
-          >
-            <span>Activas</span>
-            <span
+        {/* PESTAÑAS DE ESTADO + BUSCADOR */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-none pt-1">
+            <button
+              type="button"
+              onClick={() => setPestana("ACTIVAS")}
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+                "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
                 pestana === "ACTIVAS"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                  ? "border-primary text-slate-900 dark:text-white"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
               )}
             >
-              {conteoActivas}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPestana("TODAS")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              pestana === "TODAS"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-            )}
-          >
-            <span>Historial completo</span>
-            <span
+              <span>Activas</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+                  pestana === "ACTIVAS"
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                )}
+              >
+                {conteoActivas}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPestana("TODAS")}
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+                "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
                 pestana === "TODAS"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                  ? "border-primary text-slate-900 dark:text-white"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
               )}
             >
-              {conteoTotal}
-            </span>
-          </button>
-        </div>
+              <span>Historial completo</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
+                  pestana === "TODAS"
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                )}
+              >
+                {conteoTotal}
+              </span>
+            </button>
+          </div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-          <div className="relative flex-1 min-w-0 sm:min-w-[260px] max-w-sm">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
-            />
+          {/* Buscador */}
+          <div className="relative w-full md:w-80 pb-3 md:pb-2">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
             <Input
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por nombre o especialidad..."
-              className="h-10 rounded-xl pl-9 pr-3 text-xs sm:text-sm font-medium border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+              className="h-10 pl-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium shadow-2xs placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
-
-          {hayFiltrosActivos && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setBusqueda("")}
-              className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark self-start sm:self-auto"
-            >
-              Limpiar búsqueda
-            </Button>
-          )}
         </div>
 
-        {/* CONTENIDO PRINCIPAL SEGÚN ESTADO DE QUERY */}
+        {/* CONTENIDO PRINCIPAL */}
         {isPending ? (
-          <div
-            role="status"
-            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-          >
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
+          <div role="status" className="flex min-h-64 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
+            <Loader2 className="size-5 animate-spin text-primary" />
             Cargando plantel de profesores...
           </div>
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
-            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(error, "No se pudo cargar el listado de profesores.")}
+          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl">
+            <AlertCircle className="size-8 text-rose-500" />
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              Error al cargar profesores
+            </h2>
+            <p className="text-xs text-slate-500 max-w-sm">
+              {mensajeDeErrorApi(error, "No se pudo consultar el listado.")}
             </p>
             <Button
               type="button"
@@ -285,7 +254,7 @@ export function ProfesorasPage() {
                       Incorporación
                     </TableHead>
                     <TableHead className="py-3.5 pr-6 text-right font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      Acciones
+                      <span className="sr-only">Acciones</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -293,12 +262,14 @@ export function ProfesorasPage() {
                   {listaFiltrada.map((prof) => {
                     const clases = horariosPorProfesora.get(prof.id) ?? [];
                     const conteoHorarios = clases.length;
+                    const especialidades = parsearEspecialidades(prof.especialidad);
 
                     return (
                       <TableRow
                         key={prof.id}
+                        onClick={() => navigate(`/app/profesoras/${prof.id}`)}
                         className={cn(
-                          "border-b border-slate-100 dark:border-slate-800/80 transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30",
+                          "group cursor-pointer border-b border-slate-100 dark:border-slate-800/80 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/40",
                           !prof.activa && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
                         )}
                       >
@@ -308,27 +279,28 @@ export function ProfesorasPage() {
                               {prof.nombre.charAt(0)}
                               {prof.apellido.charAt(0)}
                             </div>
-                            <div>
-                              <span className="font-bold text-sm text-slate-900 dark:text-white block">
-                                {prof.nombreCompleto}
-                              </span>
-                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
-                                {prof.email && <span>{prof.email}</span>}
-                                {prof.telefono && (
-                                  <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                                    <Phone className="size-3 text-slate-400" />
-                                    {prof.telefono}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                            <Link
+                              to={`/app/profesoras/${prof.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="font-bold text-sm text-slate-900 dark:text-white block group-hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                            >
+                              {prof.nombreCompleto}
+                              <span className="sr-only"> · Ver ficha</span>
+                            </Link>
                           </div>
                         </TableCell>
                         <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                          {prof.especialidad ? (
-                            <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                              {prof.especialidad}
-                            </span>
+                          {especialidades.length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {especialidades.map((esp) => (
+                                <span
+                                  key={esp}
+                                  className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                >
+                                  {esp}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-slate-400 italic text-xs">Sin especialidad</span>
                           )}
@@ -350,20 +322,10 @@ export function ProfesorasPage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
-                          {prof.activa ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => abrirConfirmacionBaja(prof)}
-                              className="rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30 font-bold text-xs h-9 px-3"
-                            >
-                              <Trash2 className="size-3.5 mr-1.5" />
-                              Dar de baja
-                            </Button>
-                          ) : (
-                            <span className="text-xs font-semibold text-slate-400 italic">Dada de baja</span>
-                          )}
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="inline-block size-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary dark:text-slate-600 dark:group-hover:text-pink-400"
+                          />
                         </TableCell>
                       </TableRow>
                     );
@@ -377,46 +339,54 @@ export function ProfesorasPage() {
               {listaFiltrada.map((prof) => {
                 const clases = horariosPorProfesora.get(prof.id) ?? [];
                 const conteoHorarios = clases.length;
+                const especialidades = parsearEspecialidades(prof.especialidad);
 
                 return (
                   <div
                     key={prof.id}
+                    onClick={() => navigate(`/app/profesoras/${prof.id}`)}
                     className={cn(
-                      "flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3",
+                      "group cursor-pointer flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3.5 transition-colors hover:border-pink-300 dark:hover:border-pink-500",
                       !prof.activa && "opacity-75 bg-muted/30",
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
-                        {prof.nombre.charAt(0)}
-                        {prof.apellido.charAt(0)}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                          {prof.nombre.charAt(0)}
+                          {prof.apellido.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            to={`/app/profesoras/${prof.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors block truncate"
+                          >
+                            {prof.nombreCompleto}
+                            <span className="sr-only"> · Ver ficha</span>
+                          </Link>
+                        </div>
                       </div>
-                      <div>
-                        <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                          {prof.nombreCompleto}
-                        </h2>
-                        {prof.email && (
-                          <p className="text-xs text-muted-foreground">{prof.email}</p>
-                        )}
-                      </div>
+                      <ChevronRight className="size-4 text-slate-300 shrink-0 group-hover:text-primary dark:text-slate-600" />
                     </div>
 
-                    <div className="space-y-1.5 text-xs">
-                      {prof.telefono && (
-                        <p className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                          <Phone className="size-3 text-slate-400" />
-                          <span className="font-semibold">{prof.telefono}</span>
-                        </p>
-                      )}
-                      {prof.especialidad && (
-                        <p className="font-semibold text-slate-800 dark:text-slate-200">
-                          Especialidad:{" "}
-                          <span className="font-normal text-slate-600 dark:text-slate-400">
-                            {prof.especialidad}
+                    <div className="space-y-2 text-xs">
+                      {especialidades.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 mr-1">
+                            Especialidad:
                           </span>
-                        </p>
+                          {especialidades.map((esp) => (
+                            <span
+                              key={esp}
+                              className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                            >
+                              {esp}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                      <p className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 pt-1">
                         <span>Clases semanales:</span>
                         {conteoHorarios > 0 ? (
                           <span className="font-bold text-primary flex items-center gap-1">
@@ -426,29 +396,11 @@ export function ProfesorasPage() {
                         ) : (
                           <span className="text-slate-400 italic">Sin clases</span>
                         )}
-                      </p>
+                      </div>
                       <p className="text-muted-foreground">
                         Incorporación: {formatearFecha(prof.fechaAlta)}
                       </p>
                     </div>
-
-                    {prof.activa ? (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => abrirConfirmacionBaja(prof)}
-                          className="w-full h-10 rounded-xl border-rose-200 text-rose-600 dark:border-rose-900/40 dark:text-rose-400 font-bold text-xs hover:bg-rose-50"
-                        >
-                          <Trash2 className="size-3.5 mr-1.5" />
-                          Dar de baja
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
-                        <span className="text-xs font-semibold text-slate-400 italic">Dado/a de baja</span>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -469,24 +421,6 @@ export function ProfesorasPage() {
             onSave={handleGuardarNueva}
           />
         )}
-
-        {/* MODAL DE CONFIRMACIÓN DE BAJA */}
-        {profesoraBaja && (() => {
-          const clases = horariosPorProfesora.get(profesoraBaja.id) ?? [];
-          const nombres = Array.from(new Set(clases.map((c) => c.actividad.nombre)));
-
-          return (
-            <ModalBajaProfesora
-              profesora={profesoraBaja}
-              cantidadHorarios={clases.length}
-              actividadesNombres={nombres}
-              dandoDeBaja={darDeBajaMutation.isPending}
-              errorBaja={errorBaja}
-              onClose={() => setProfesoraBaja(null)}
-              onConfirm={handleConfirmarBaja}
-            />
-          );
-        })()}
       </div>
     </OwnerLayout>
   );

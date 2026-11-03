@@ -47,7 +47,7 @@ export function SuplenciasPage() {
   );
   const consultaSuplencias = useSuplencias(filtros);
 
-  const horarios = consultaHorarios.data ?? [];
+  const horarios = useMemo(() => consultaHorarios.data ?? [], [consultaHorarios.data]);
   const profesoras = consultaProfesoras.data ?? [];
   const actividades = useMemo(
     () =>

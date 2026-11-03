@@ -1,15 +1,10 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SuplenciaDialog } from "../suplencia-dialog";
-import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
+import type { HorarioApi } from "@/features/horarios/schemas/horario";
 
-function crearHorarioApi(
-  id: number,
-  actividadNombre: string,
-  horaInicio: string,
-  diaSemana = 1,
-): HorarioApi {
+function crearHorarioApi(id: number, actividadNombre: string, horaInicio: string, diaSemana = 1): HorarioApi {
   return {
     id_horario: id,
     id_actividad: id,
@@ -23,13 +18,12 @@ function crearHorarioApi(
     fecha_baja: null,
     actividad: {
       id_actividad: id,
+      codigo: `ACT-${id}`,
       nombre: actividadNombre,
-      tipo: "GRUPAL",
-      cupo_sugerido: 10,
-      duracion_minutos: 60,
+      descripcion: null,
+      modalidad: "GRUPAL",
+      cupo_maximo: 10,
       activo: true,
-      fecha_alta: "2026-01-01T00:00:00.000Z",
-      fecha_baja: null,
     },
     profesora: {
       id_profesora: 1,
@@ -37,30 +31,29 @@ function crearHorarioApi(
       especialidad: null,
       fecha_alta: "2026-01-01T00:00:00.000Z",
       fecha_baja: null,
-      usuario: { nombre: "Lucía", apellido: "Gómez" },
+      usuario: { nombre: "Lucia", apellido: "Gomez" },
     },
   };
 }
 
 const profesorasMock: ProfesoraDatos[] = [
-  { id: "1", nombre: "Lucía", apellido: "Gómez", email: "lucia@gym.com" },
-  { id: "2", nombre: "Carla", apellido: "Ruiz", email: "carla@gym.com" },
+  { id: "1", idUsuario: 1, nombre: "Lucía", apellido: "Gómez" },
+  { id: "2", idUsuario: 2, nombre: "Carla", apellido: "Ruiz" },
 ];
 
 describe("SuplenciaDialog", () => {
   it("ordena los horarios disponibles alfabéticamente por actividad y luego por hora", () => {
-    // 2026-10-26 es Lunes (dia_semana = 1)
     const horariosDesordenados: HorarioApi[] = [
-      crearHorarioApi(1, "Funcional", "21:00", 1),
-      crearHorarioApi(2, "Acondicionamiento físico", "09:00", 1),
-      crearHorarioApi(3, "Power", "14:00", 1),
-      crearHorarioApi(4, "Funcional", "08:00", 1),
-      crearHorarioApi(5, "HIIT", "16:00", 1),
+      crearHorarioApi(1, "Funcional", "21:00"),
+      crearHorarioApi(2, "Acondicionamiento físico", "09:00"),
+      crearHorarioApi(3, "Power", "14:00"),
+      crearHorarioApi(4, "Funcional", "08:00"),
+      crearHorarioApi(5, "HIIT", "16:00"),
     ];
 
     render(
       <SuplenciaDialog
-        abierto={true}
+        abierto
         suplencia={null}
         horarios={horariosDesordenados}
         profesoras={profesorasMock}
@@ -71,15 +64,14 @@ describe("SuplenciaDialog", () => {
       />,
     );
 
-    // Abrir el Select de Horario
-    const trigger = screen.getByText("Elegí actividad y horario");
-    fireEvent.click(trigger);
+    const fecha = screen.getByRole("dialog").querySelector('input[name="fechaClase"]');
+    expect(fecha).not.toBeNull();
+    fireEvent.change(fecha!, { target: { value: "2026-10-26" } });
+    fireEvent.click(screen.getByText("Elegí actividad y horario"));
 
-    // Los SelectItem renderizan con rol "option"
-    const opciones = screen.getAllByRole("option");
-    const textos = opciones.map((opcion) => opcion.textContent);
+    const opciones = screen.getAllByRole("option").map((opcion) => opcion.textContent);
 
-    expect(textos).toEqual([
+    expect(opciones).toEqual([
       expect.stringContaining("Acondicionamiento físico · 09:00 hs"),
       expect.stringContaining("Funcional · 08:00 hs"),
       expect.stringContaining("Funcional · 21:00 hs"),

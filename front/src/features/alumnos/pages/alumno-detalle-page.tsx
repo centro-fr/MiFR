@@ -528,7 +528,6 @@ export function AlumnoDetallePage() {
                 }}
                 onExito={() => {
                   setModalCobroAbierto(false);
-                  toast.success("Cobro registrado con éxito.");
                   void consulta.refetch();
                 }}
                 onTransferenciaInformada={() => {

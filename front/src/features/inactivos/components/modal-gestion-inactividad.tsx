@@ -63,6 +63,7 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
   useEffect(() => {
     if (alumno) {
       if (alumno.gestion.estado === "IGNORADO") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEstadoSeleccionado("IGNORADO");
       } else {
         setEstadoSeleccionado("CONTACTADO");
@@ -139,7 +140,7 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
               </p>
               {contacto.esTutor && (
                 <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 mt-0.5">
-                  Tutor a cargo: {contacto.nombreCompleto}
+                  Tutor a cargo: {contacto.nombreCompleto} (menor de edad)
                 </p>
               )}
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1">
