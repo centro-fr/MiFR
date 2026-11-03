@@ -8,30 +8,14 @@ import {
   quienDeLaSuplencia,
   situacionDeLaLinea,
 } from "@/features/honorarios/utils/formato-honorarios";
+import { celdaDeNumero, celdaDeTexto, documentoCsv } from "@/utils/csv";
 
-// Planilla del informe (US-23): CSV que abre Excel sin sumar una librería. Excel en español usa
-// ";" para separar columnas y "," para los decimales.
-
-const SEPARADOR = ";";
-const FIN_DE_LINEA = "\r\n";
-// Sin la marca BOM, Excel lee el archivo como Latin-1 y rompe las tildes.
-const BOM = "﻿";
+// Planilla del informe (US-23): CSV que abre Excel. Los montos van con dos decimales.
 
 type Celda = string | number;
 
-// Inyección de fórmulas (OWASP "CSV Injection"): un nombre que empieza con =, +, -, @ o un tab se
-// ejecutaría como fórmula al abrirlo. Se antepone un apóstrofo para que quede como texto.
-function texto(valor: string): string {
-  const neutralizado = /^[=+\-@\t\r]/.test(valor) ? `'${valor}` : valor;
-  return `"${neutralizado.replace(/"/g, '""')}"`;
-}
-
-function numero(valor: number): string {
-  return valor.toFixed(2).replace(".", ",");
-}
-
-function fila(celdas: Celda[]): string {
-  return celdas.map((celda) => (typeof celda === "number" ? numero(celda) : texto(celda))).join(SEPARADOR);
+function fila(celdas: Celda[]) {
+  return celdas.map((celda) => (typeof celda === "number" ? celdaDeNumero(celda, 2) : celdaDeTexto(celda)));
 }
 
 const ENCABEZADO = ["Período", "Profesora", "Estado", "Concepto", "Detalle", "Plan", "Situación", "Tarifa", "Monto"];
@@ -75,19 +59,9 @@ export function armarCsvHonorarios(informe: InformeHonorarios, detalles: Liquida
     ...detalles.flatMap((detalle) => filasDeLaProfesora(periodo, detalle)),
     [periodo, "", "", "Total general", "", "", "", "", informe.totalGeneral],
   ];
-  return BOM + filas.map(fila).join(FIN_DE_LINEA);
+  return documentoCsv(filas.map(fila));
 }
 
 export function nombreArchivoHonorarios(periodo: string): string {
   return `honorarios-${periodo}.csv`;
-}
-
-export function descargarCsv(contenido: string, nombreArchivo: string): void {
-  const url = URL.createObjectURL(new Blob([contenido], { type: "text/csv;charset=utf-8" }));
-  const enlace = document.createElement("a");
-  enlace.href = url;
-  enlace.download = nombreArchivo;
-  enlace.click();
-  // Se libera después del click: si se revoca antes, algunos navegadores cancelan la descarga.
-  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

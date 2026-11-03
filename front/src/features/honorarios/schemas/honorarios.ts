@@ -125,11 +125,13 @@ export const liquidacionDetalleApiSchema = liquidacionApiSchema
     { message: "El total de la liquidación no coincide con la suma de sus detalles", path: ["monto_total"] },
   );
 
+// El porcentaje por alumno es uno solo para todo el estudio (id_profesora null) y la hora de suplencia,
+// una por profesora. Pedido al back: hoy toda tarifa lleva profesora, así que el porcentaje general lo
+// usa solo el mock.
 export const tarifaHonorarioApiSchema = z.object({
   id_tarifa: idSchema,
-  id_profesora: idSchema,
+  id_profesora: idSchema.nullable(),
   concepto: conceptoTarifaSchema,
-  id_plan: idSchema.nullable(),
   tipo_valor: tipoValorTarifaSchema,
   valor: montoSchema,
   fecha_vigencia_desde: diaSchema,
@@ -142,14 +144,11 @@ export type LiquidacionDetalleApi = z.infer<typeof liquidacionDetalleApiSchema>;
 export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export type TarifaHonorarioApi = z.infer<typeof tarifaHonorarioApiSchema>;
 
-/** Cuerpo de POST /tarifas-honorario. */
-export interface RegistrarTarifaBody {
-  id_profesora: number;
-  concepto: z.infer<typeof conceptoTarifaSchema>;
-  /** Por ahora el formulario solo carga tarifas para todos los planes. */
-  id_plan: null;
-  tipo_valor: z.infer<typeof tipoValorTarifaSchema>;
-  valor: number;
-  /** AAAA-MM-DD, desde hoy en adelante: el back no acepta vigencias en el pasado. */
-  fecha_vigencia_desde: string;
-}
+/**
+ * Cuerpo de POST /tarifas-honorario. El tipo lo fija el concepto: por alumno, un porcentaje de lo cobrado
+ * (mayor a 0 y hasta 100); por hora de suplencia, ARS por hora. La vigencia es AAAA-MM-DD, desde hoy en
+ * adelante, y la nueva cierra la vigente del mismo alcance el día anterior.
+ */
+export type RegistrarTarifaBody =
+  | { concepto: "ALUMNO_A_CARGO"; tipo_valor: "PORCENTAJE"; valor: number; fecha_vigencia_desde: string }
+  | { concepto: "HORA_SUPLENCIA"; id_profesora: number; tipo_valor: "MONTO_FIJO"; valor: number; fecha_vigencia_desde: string };

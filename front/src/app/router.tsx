@@ -58,12 +58,10 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "reportes", seccion: "Reportes" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
   // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
   // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
   { path: "mi-plan", seccion: "Mi plan" },
-  { path: "progreso", seccion: "Progreso" },
   { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
 ];
@@ -130,6 +128,29 @@ export const router = createBrowserRouter([
         path: "inicio",
         element: guardiaDeSeccion("inicio"),
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
+      },
+      {
+        // Reportes: una pestaña por informe (US-33 a US-37 y cobranza). El back los reserva a la
+        // propietaria con este permiso. Las pestañas sin informe todavía muestran "en construcción".
+        path: "reportes",
+        element: guardiaDeSeccion("reportes", "REPORTES_COBRANZA_VER"),
+        children: [
+          { index: true, element: <Navigate to="/app/reportes/inscripciones" replace /> },
+          // US-35: inscriptos por mes.
+          { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
+          // US-33: informe de asistencia.
+          { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
+          ...["planes", "ocupacion", "ranking", "cobranza", "cuotas-vencidas"].map((path) => ({
+            path,
+            lazy: paginaPerezosa(() => import("@/features/reportes/pages/reporte-en-construccion-page"), "ReporteEnConstruccionPage"),
+          })),
+        ],
+      },
+      {
+        // US-28: el alumno consulta su rutina y su progreso; el tutor, los de sus menores.
+        path: "progreso",
+        element: guardiaDeSeccion("progreso", "RUTINAS_VER_PROPIAS"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
       },
       {
         path: "profesoras",
