@@ -10,7 +10,7 @@ import type { TarifaHonorarioService } from "../tarifa-honorario/tarifa-honorari
 import type { LiquidacionRepository } from "./liquidacion.repository.js";
 import type {
   EstadoLiquidacion,
-  LiquidacionConProfesora,
+  LiquidacionConDesglose,
   LiquidacionDetallada,
   PeriodoLiquidacion,
   ResultadoGeneracion,
@@ -25,7 +25,7 @@ function sumarEnCentavos(montos: number[]): number {
   return montos.reduce((total, monto) => total + Math.round(monto * 100), 0) / 100;
 }
 
-function resumir(periodo: string, liquidaciones: LiquidacionConProfesora[]): ResumenLiquidaciones {
+function resumir(periodo: string, liquidaciones: LiquidacionConDesglose[]): ResumenLiquidaciones {
   return {
     periodo,
     total_general: sumarEnCentavos(liquidaciones.map(({ monto_total }) => monto_total)),
@@ -78,13 +78,27 @@ export class LiquidacionService {
       ...profesoras.map(({ id_profesora }) => id_profesora),
       ...totalesPorProfesora.keys(),
     ]);
-    const borradores = [...ids].map((idProfesora) => ({
-      id_profesora: idProfesora,
-      monto_total: totalesPorProfesora.get(idProfesora) ?? 0,
-      detalles: detalles
+    const borradores = [...ids].map((idProfesora) => {
+      const detallesProfesora = detalles
         .filter(({ id_profesora }) => id_profesora === idProfesora)
-        .map(({ id_profesora: _profesora, ...detalle }) => detalle),
-    }));
+        .map(({ id_profesora: _profesora, ...detalle }) => detalle);
+      const montoTotalCalculado = totalesPorProfesora.get(idProfesora) ?? 0;
+      const sumaDetalles = sumarEnCentavos(detallesProfesora.map(({ monto }) => monto));
+
+      // Si el calculador devuelve un total que no es la suma de sus detalles, es un error interno: no se guarda
+      // una liquidación que no cierra.
+      if (Math.round(montoTotalCalculado * 100) !== Math.round(sumaDetalles * 100)) {
+        throw new Error(
+          `El total de la liquidación de la profesora ${idProfesora} no coincide con la suma de sus detalles`,
+        );
+      }
+
+      return {
+        id_profesora: idProfesora,
+        monto_total: montoTotalCalculado,
+        detalles: detallesProfesora,
+      };
+    });
 
     const { liquidaciones, sin_recalcular } = await this.repositorio.guardarBorradores(
       desde,

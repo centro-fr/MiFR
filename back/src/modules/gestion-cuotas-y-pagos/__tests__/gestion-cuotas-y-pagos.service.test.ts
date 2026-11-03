@@ -171,6 +171,31 @@ describe("GestionCuotasYPagosService", () => {
     ]);
   });
 
+  it.each([
+    [
+      "el cobro en efectivo",
+      (g: GestionCuotasYPagosService) =>
+        g.registrarCobroEfectivo({ ...efectivo, id_promocion: 5 }, solicitante),
+    ],
+    [
+      "la transferencia informada",
+      (g: GestionCuotasYPagosService) =>
+        g.informarTransferencia({ ...transferencia, id_promocion: 5 }, profesora),
+    ],
+    [
+      "la transferencia recibida",
+      (g: GestionCuotasYPagosService) =>
+        g.registrarTransferenciaRecibida(
+          { ...transferencia, confirmar_monto_distinto: false, id_promocion: 5 },
+          solicitante,
+        ),
+    ],
+  ])("%s prepara la cuota con la promoción elegida", async (_caso, cobrar) => {
+    await cobrar(gestion);
+
+    expect(mocks.cuotas.prepararCobro).toHaveBeenCalledWith(inscripcion, 5);
+  });
+
   it("aprobar valida y después da el alta y confirma el pago en una transacción", async () => {
     await gestion.aprobarTransferencia(7, { confirmar_monto_distinto: false }, solicitante);
 

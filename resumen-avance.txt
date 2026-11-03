@@ -1,0 +1,144 @@
+﻿=== RAMA ===
+rosario
+=== COMMITS QUE DEV TODAVIA NO TIENE ===
+e7968bf test(rutinas): agregar tests del service y los schemas de rutina
+4b05472 feat(rutinas): cargar y consultar rutinas de alumnos (US-27, US-28)
+7509430 feat(rutinas): agregar permiso RUTINAS_VER_PROPIAS para alumno y tutor
+1ed2e41 fix(rutinas): quitar CHECK duplicado de medidas_corporales
+61b96f8 feat(rutinas): agregar modelo de rutinas y sus checks
+=== ARCHIVOS CON CAMBIOS SIN COMMITEAR (M = modificado, ?? = nuevo) ===
+ M back/src/__tests__/fakes/logica-rutinas-no-configurada.ts
+ M back/src/composicion.ts
+ M back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.routes.ts
+ M back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.service.ts
+ M back/src/modules/gestion-rutinas-y-progreso/interface/i-logica-rutinas-y-progreso.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.schemas.test.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.service.test.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.controller.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.repository.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.routes.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.schemas.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.service.ts
+ M back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.types.ts
+?? back/src/modules/gestion-rutinas-y-progreso/acceso-a-alumno.ts
+?? back/src/modules/gestion-rutinas-y-progreso/cualquiera-de.ts
+?? back/src/modules/gestion-rutinas-y-progreso/progreso/
+?? montar-honorarios.mjs
+?? resumen-avance.txt
+=== TAMAÑO DE LOS CAMBIOS SIN COMMITEAR ===
+ back/src/__tests__/fakes/logica-rutinas-no-configurada.ts                            |  4 +++-
+ back/src/composicion.ts                                                              |  6 ++++-
+ back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.routes.ts     |  4 +++-
+ back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.service.ts    | 18 +++++++++++++--
+ back/src/modules/gestion-rutinas-y-progreso/interface/i-logica-rutinas-y-progreso.ts | 13 ++++++++---
+ back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.schemas.test.ts  |  7 ++++--
+ back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.service.test.ts  | 16 +++++++++----
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.controller.ts              |  2 +-
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.repository.ts              |  5 ++--
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.routes.ts                  | 24 +++----------------
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.schemas.ts                 |  2 +-
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.service.ts                 | 86 +++++++++++++++-----------------------------------------------------
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.types.ts                   |  2 +-
+ 13 files changed, 81 insertions(+), 108 deletions(-)
+=== ARCHIVOS DE LOS COMMITS QUE DEV NO TIENE ===
+ back/prisma/migrations/20261025232124_agregar_rutinas/migration.sql                                  |  26 +++++++
+ back/prisma/migrations/20261025232638_agregar_checks_rutinas/migration.sql                           |   9 +++
+ back/prisma/schema.prisma                                                                            |  24 ++++++
+ back/src/__tests__/fakes/logica-rutinas-no-configurada.ts                                            |  11 +++
+ back/src/app.ts                                                                                      |   6 +-
+ back/src/composicion.ts                                                                              |   6 ++
+ back/src/modules/gestion-cuotas-y-pagos/pago/__tests__/pago.routes.test.ts                           |   2 +
+ back/src/modules/gestion-honorarios/liquidacion/__tests__/liquidacion.routes.test.ts                 |   2 +
+ back/src/modules/gestion-honorarios/tarifa-honorario/__tests__/tarifa-honorario.routes.test.ts       |   2 +
+ back/src/modules/gestion-inscripciones-y-clases/clase/__tests__/clase.routes.test.ts                 |   2 +
+ back/src/modules/gestion-inscripciones-y-clases/inscripcion/__tests__/inscripcion.routes.test.ts     |   2 +
+ back/src/modules/gestion-inscripciones-y-clases/suplencia/__tests__/suplencia.routes.test.ts         |   2 +
+ back/src/modules/gestion-personas/alumno/__tests__/alumno.routes.test.ts                             |   2 +
+ back/src/modules/gestion-personas/profesor/__tests__/profesor.routes.test.ts                         |   2 +
+ back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.routes.ts                     |  15 ++++
+ back/src/modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.service.ts                    |  22 ++++++
+ back/src/modules/gestion-rutinas-y-progreso/interface/i-logica-rutinas-y-progreso.ts                 |  15 ++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.schemas.test.ts                  |  74 ++++++++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/__tests__/rutina.service.test.ts                  | 213 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.controller.ts                              |  21 +++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.repository.ts                              |  71 +++++++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.routes.ts                                  |  57 ++++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.schemas.ts                                 |  55 +++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.service.ts                                 |  91 ++++++++++++++++++++++
+ back/src/modules/gestion-rutinas-y-progreso/rutina/rutina.types.ts                                   |  16 ++++
+ back/src/modules/gestion-servicio-entrenamiento/actividad/__tests__/actividad.routes.test.ts         |   2 +
+ back/src/modules/gestion-servicio-entrenamiento/horario/__tests__/horario.routes.test.ts             |   2 +
+ .../gestion-servicio-entrenamiento/parametros-sistema/__tests__/parametros-sistema.routes.test.ts    |   2 +
+ back/src/modules/gestion-servicio-entrenamiento/plan/__tests__/plan.routes.test.ts                   |   2 +
+ back/src/modules/gestion-servicio-entrenamiento/promocion/__tests__/promocion.routes.test.ts         |   2 +
+ back/src/modules/gestion-usuarios/rol/__tests__/rol.catalogo.test.ts                                 |   9 +++
+ back/src/modules/gestion-usuarios/rol/__tests__/rol.routes.test.ts                                   |   3 +
+ back/src/modules/gestion-usuarios/rol/rol.catalogo.ts                                                |  17 +++-
+ back/src/modules/gestion-usuarios/sesion/__tests__/sesion.routes.test.ts                             |   3 +
+ back/src/modules/gestion-usuarios/usuario/__tests__/usuario.routes.test.ts                           |   3 +
+ 35 files changed, 789 insertions(+), 4 deletions(-)
+=== ULTIMAS MIGRACIONES ===
+20261018210739_agregar_checks_seguimientos_inactividad
+20261018230545_contacto_emergencia_obligatorio
+20261020030000_agregar_honorarios
+20261020030001_agregar_checks_honorarios
+20261020194429_agregar_insignias
+20261020194500_agregar_checks_insignias
+20261025232124_agregar_rutinas
+20261025232638_agregar_checks_rutinas
+=== MODULOS DE RUTINAS Y HONORARIOS ===
+acceso-a-alumno.ts
+cualquiera-de.ts
+gestion-rutinas-y-progreso.routes.ts
+gestion-rutinas-y-progreso.service.ts
+interface\i-logica-rutinas-y-progreso.ts
+progreso\medida.catalogo.ts
+progreso\progreso.controller.ts
+progreso\progreso.repository.ts
+progreso\progreso.routes.ts
+progreso\progreso.schemas.ts
+progreso\progreso.service.ts
+progreso\progreso.types.ts
+progreso\__tests__\progreso.schemas.test.ts
+progreso\__tests__\progreso.service.test.ts
+registro-progreso\registro-progreso.repository.ts
+registro-progreso\registro-progreso.service.ts
+registro-progreso\registro-progreso.types.ts
+registro-progreso\interface\i-info-progreso.ts
+registro-progreso\__tests__\registro-progreso.repository.test.ts
+registro-progreso\__tests__\registro-progreso.service.test.ts
+rutina\rutina.controller.ts
+rutina\rutina.repository.ts
+rutina\rutina.routes.ts
+rutina\rutina.schemas.ts
+rutina\rutina.service.ts
+rutina\rutina.types.ts
+rutina\__tests__\rutina.schemas.test.ts
+rutina\__tests__\rutina.service.test.ts
+gestion-honorarios.openapi.ts
+gestion-honorarios.routes.ts
+gestion-honorarios.service.ts
+interface\i-logica-honorarios.ts
+liquidacion\liquidacion.controller.ts
+liquidacion\liquidacion.openapi.ts
+liquidacion\liquidacion.repository.ts
+liquidacion\liquidacion.routes.ts
+liquidacion\liquidacion.schemas.ts
+liquidacion\liquidacion.service.ts
+liquidacion\liquidacion.types.ts
+liquidacion\__tests__\liquidacion.repository.test.ts
+liquidacion\__tests__\liquidacion.routes.test.ts
+liquidacion\__tests__\liquidacion.schemas.test.ts
+liquidacion\__tests__\liquidacion.service.test.ts
+tarifa-honorario\tarifa-honorario.controller.ts
+tarifa-honorario\tarifa-honorario.openapi.ts
+tarifa-honorario\tarifa-honorario.repository.ts
+tarifa-honorario\tarifa-honorario.routes.ts
+tarifa-honorario\tarifa-honorario.schemas.ts
+tarifa-honorario\tarifa-honorario.service.ts
+tarifa-honorario\tarifa-honorario.types.ts
+tarifa-honorario\__tests__\tarifa-honorario.repository.test.ts
+tarifa-honorario\__tests__\tarifa-honorario.routes.test.ts
+tarifa-honorario\__tests__\tarifa-honorario.schemas.test.ts
+tarifa-honorario\__tests__\tarifa-honorario.service.test.ts
+__tests__\gestion-honorarios.service.test.ts

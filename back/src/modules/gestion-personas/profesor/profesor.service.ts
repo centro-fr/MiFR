@@ -43,8 +43,8 @@ export class ProfesorService implements IInfoProfesores {
     return usuario.estado === "ACTIVO" && this.autorizacion.tieneRol(usuario, "PROFESORA") ? profesora : null;
   }
 
-  listar(): Promise<Profesora[]> {
-    return this.repositorio.listar();
+  listar(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
+    return this.repositorio.listar(filtro);
   }
 
   async darDeBaja(id: number): Promise<Profesora> {

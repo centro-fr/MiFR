@@ -4,6 +4,7 @@ import { createApp } from "../../../../app.js";
 import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
 import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
+import { logicaRutinasNoConfigurada } from "../../../../__tests__/fakes/logica-rutinas-no-configurada.js";
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
@@ -70,6 +71,7 @@ describe("rutas de tarifas de honorarios", () => {
       gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,
       gestionHonorarios: { ...logicaHonorariosNoConfigurada, ...logica },
+      gestionRutinasYProgreso: logicaRutinasNoConfigurada,
       autenticacion,
       autorizacion,
     });

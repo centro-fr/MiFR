@@ -38,5 +38,9 @@ export function createAlumnoController(logica: ILogicaAlumnos) {
       });
       res.json(alumno);
     },
+
+    async listarMios(req: Request, res: Response) {
+      res.json(await logica.listarAlumnosConsultables(solicitanteDe(req)));
+    },
   };
 }

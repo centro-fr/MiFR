@@ -16,6 +16,8 @@ import { personasHandlers } from "@/mocks/handlers/personas";
 import { planesHandlers } from "@/mocks/handlers/planes";
 import { publicoHandlers } from "@/mocks/handlers/publico";
 import { rankingAsistenciaHandlers } from "@/mocks/handlers/ranking-asistencia";
+import { reportesHandlers } from "@/mocks/handlers/reportes";
+import { rutinasHandlers } from "@/mocks/handlers/rutinas";
 import { seguridadHandlers } from "@/mocks/handlers/seguridad";
 
 export const worker = setupWorker(
@@ -25,6 +27,8 @@ export const worker = setupWorker(
   ...actividadesHandlers,
   ...personasHandlers,
   ...horariosHandlers,
+  // Antes que alumnos: si no, GET /alumnos/:id atrapa a GET /alumnos/mios.
+  ...rutinasHandlers,
   ...alumnosHandlers,
   ...inscripcionesHandlers,
   ...planesHandlers,
@@ -37,4 +41,5 @@ export const worker = setupWorker(
   ...notificacionesHandlers,
   ...inactivosHandlers,
   ...insigniasHandlers,
+  ...reportesHandlers,
 );

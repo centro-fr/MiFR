@@ -113,9 +113,8 @@ function aDetalle(api: LiquidacionDetalleApi, tarifas: TarifaHonorario[]): Liqui
 function aTarifa(api: TarifaHonorarioApi): TarifaHonorario {
   return {
     id: api.id_tarifa,
-    idProfesora: api.id_profesora,
     concepto: api.concepto,
-    idPlan: api.id_plan,
+    idProfesora: api.id_profesora,
     tipoValor: api.tipo_valor,
     valor: api.valor,
     desde: api.fecha_vigencia_desde,
@@ -172,7 +171,10 @@ export async function listarTarifas(): Promise<TarifaHonorario[]> {
   return z.array(tarifaHonorarioApiSchema).parse(data).map(aTarifa);
 }
 
-/** Cierra la vigente del mismo concepto, profesora y plan el día anterior. 400 si empieza en el pasado. */
+/**
+ * Crea el porcentaje general por alumno o la hora de suplencia de una profesora, y cierra la vigente del
+ * mismo alcance el día anterior. 400 si empieza en el pasado; 409 si ya hay una que empieza ese día o después.
+ */
 export async function registrarTarifa(cuerpo: RegistrarTarifaBody): Promise<TarifaHonorario> {
   const { data } = await apiClient.post("/tarifas-honorario", cuerpo);
   return aTarifa(tarifaHonorarioApiSchema.parse(data));

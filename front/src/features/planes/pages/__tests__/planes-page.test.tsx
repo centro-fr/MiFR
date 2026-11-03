@@ -88,6 +88,10 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useCrearPlan: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
   useActualizarPlan: () => ({
     mutate: vi.fn(),
     isPending: false,
@@ -158,6 +162,22 @@ describe("PlanesPage", () => {
     expect(screen.getByLabelText("Fecha de vigencia *")).toBeInTheDocument();
   });
 
+  it("abre el modal centrado de Nuevo plan al presionar '+ Nuevo plan'", async () => {
+    renderPlanesPage();
+
+    const btnNuevoPlan = screen.getByRole("button", { name: "+ Nuevo plan" });
+    fireEvent.click(btnNuevoPlan);
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nuevo plan" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Nombre \*/i)).toBeInTheDocument();
+    expect(screen.getByText("Abono mensual")).toBeInTheDocument();
+    expect(screen.getByText("Pase por clase individual")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio inicial \*/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crear plan" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+  });
+
   it("abre el modal centrado de Editar plan al presionar Editar", async () => {
     renderPlanesPage();
 
@@ -171,3 +191,4 @@ describe("PlanesPage", () => {
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
   });
 });
+

@@ -8,7 +8,11 @@ import type {
 } from "./liquidacion/liquidacion.types.js";
 import type { CerrarTarifaInput, RegistrarTarifaInput } from "./tarifa-honorario/tarifa-honorario.schemas.js";
 import type { TarifaHonorarioService } from "./tarifa-honorario/tarifa-honorario.service.js";
-import type { FiltroTarifa, TarifaHonorario } from "./tarifa-honorario/tarifa-honorario.types.js";
+import type {
+  FiltroTarifa,
+  TarifaHonorario,
+  TarifaHonorarioConPlan,
+} from "./tarifa-honorario/tarifa-honorario.types.js";
 
 // Fachada del subsistema GestionHonorarios: solo delega en el componente que corresponde.
 export class GestionHonorariosService implements ILogicaHonorarios {
@@ -17,7 +21,7 @@ export class GestionHonorariosService implements ILogicaHonorarios {
     private readonly liquidaciones: LiquidacionService,
   ) {}
 
-  listarTarifas(filtro: FiltroTarifa): Promise<TarifaHonorario[]> {
+  listarTarifas(filtro: FiltroTarifa): Promise<TarifaHonorarioConPlan[]> {
     return this.tarifas.listar(filtro);
   }
 

@@ -32,6 +32,7 @@ export const CATALOGO_PERMISOS: PermisoCatalogo[] = [
   { codigo: "ASISTENCIAS_MARCAR", modulo: "ASISTENCIAS", descripcion: "Tomar asistencia en las clases" },
   { codigo: "RUTINAS_VER", modulo: "RUTINAS", descripcion: "Ver las rutinas y el progreso de los alumnos" },
   { codigo: "RUTINAS_EDITAR", modulo: "RUTINAS", descripcion: "Crear y modificar rutinas de alumnos" },
+  { codigo: "RUTINAS_VER_PROPIAS", modulo: "RUTINAS", descripcion: "Ver la rutina y el progreso propios o de un menor a cargo" },
   { codigo: "REPORTES_COBRANZA_VER", modulo: "REPORTES", descripcion: "Ver los reportes de cobranza" },
   { codigo: "REPORTES_RANKING_VER", modulo: "REPORTES", descripcion: "Ver el ranking de asistencia" },
   { codigo: "INSIGNIAS_VER_PROPIAS", modulo: "INSIGNIAS", descripcion: "Ver la racha y las insignias propias o de un menor a cargo" },
@@ -84,7 +85,8 @@ export function matrizInicial(): Record<RoleCode, string[]> {
       "HONORARIOS_VER_PROPIOS",
       "REPORTES_RANKING_VER",
     ],
-    ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
-    TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
+    // US-28 y US-30/31: el alumno y el tutor consultan progreso, ranking e insignias.
+    ALUMNO: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
+    TUTOR: ["ACTIVIDADES_VER", "HORARIOS_VER", "RUTINAS_VER_PROPIAS", "REPORTES_RANKING_VER", "INSIGNIAS_VER_PROPIAS"],
   };
 }

@@ -18,6 +18,7 @@ import type {
 import type { ActualizarAlumnoInput, CrearAlumnoInput, TutorInput } from "./alumno.schemas.js";
 import type {
   Alumno,
+  AlumnoConsultable,
   ConteoAltasMes,
   EstadoAlReactivar,
   FiltroAltasPorMes,
@@ -131,6 +132,29 @@ export class AlumnoService implements IInfoAlumnos {
 
   buscarPorIds(ids: number[]): Promise<Alumno[]> {
     return ids.length > 0 ? this.repositorio.buscarPorIds(ids) : Promise.resolve([]);
+  }
+
+  buscarPorIdUsuario(idUsuario: number): Promise<Alumno | null> {
+    return this.repositorio.buscarPorIdUsuario(idUsuario);
+  }
+
+  buscarPorIdUsuarioResponsable(idUsuario: number): Promise<Alumno | null> {
+    return this.repositorio.buscarPorIdUsuarioResponsable(idUsuario);
+  }
+
+  // US-28: el front no conoce el id_alumno de quien inició sesión ni los de sus menores a cargo. El propio va
+  // primero; los dados de baja también salen, con su estado, para que el front muestre el aviso (US-08).
+  async listarConsultables(idUsuario: number): Promise<AlumnoConsultable[]> {
+    const filas = await this.repositorio.listarConsultablesPorUsuario(idUsuario);
+    return filas
+      .map(({ id_alumno, id_usuario, estado, usuario }) => ({
+        id_alumno,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        estado,
+        propio: id_usuario === idUsuario,
+      }))
+      .sort((a, b) => Number(b.propio) - Number(a.propio));
   }
 
   // US-09: se revisa la edad con los datos que resultan del cambio. Si el alumno ya es mayor, el

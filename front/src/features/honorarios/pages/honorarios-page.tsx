@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { ConfirmarCambioEstado, type CambioDeEstado } from "@/features/honorarios/components/confirmar-cambio-estado";
-import { MenuExportar, SelectorMes } from "@/features/honorarios/components/controles-informe";
-import { DialogoTarifa } from "@/features/honorarios/components/dialogo-tarifa";
+import { MenuExportar } from "@/components/menu-exportar";
+import { SelectorMes } from "@/features/honorarios/components/controles-informe";
 import { EncabezadoHonorarios, PestanasHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
 import {
   AvisoAdvertencias,
@@ -15,19 +15,18 @@ import {
 } from "@/features/honorarios/components/estados-informe";
 import { InformeImprimible } from "@/features/honorarios/components/informe-imprimible";
 import { ResumenDelMes } from "@/features/honorarios/components/resumen-del-mes";
+import { TarifasDelMes } from "@/features/honorarios/components/tarifas-del-mes";
 import { TarjetaProfesora } from "@/features/honorarios/components/tarjeta-profesora";
 import { useExportarInforme } from "@/features/honorarios/hooks/use-exportar-informe";
-import { useCalcularLiquidaciones, useInformeHonorarios, useTarifas } from "@/features/honorarios/hooks/use-honorarios";
-import { periodoDesdeParametro, ultimoDiaDe } from "@/features/honorarios/utils/periodo";
-import type { AdvertenciaHonorario, LiquidacionResumen } from "@/types/honorarios";
+import { useCalcularLiquidaciones, useInformeHonorarios } from "@/features/honorarios/hooks/use-honorarios";
+import { periodoDesdeParametro } from "@/features/honorarios/utils/periodo";
+import type { AdvertenciaHonorario } from "@/types/honorarios";
 
 function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const { data: informe, isPending, isError, error, refetch, isFetching } = useInformeHonorarios(periodo);
-  const { data: tarifas } = useTarifas();
   const calcular = useCalcularLiquidaciones(periodo);
   // Lo informa solo el POST: se muestra hasta cerrarlo o cambiar de mes (la key del padre lo reinicia).
   const [advertencias, setAdvertencias] = useState<AdvertenciaHonorario[]>([]);
-  const [tarifaDe, setTarifaDe] = useState<LiquidacionResumen | null>(null);
   const [cambio, setCambio] = useState<CambioDeEstado | null>(null);
 
   async function calcularMes() {
@@ -52,19 +51,15 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
       {advertencias.length > 0 && (
         <AvisoAdvertencias advertencias={advertencias} liquidaciones={informe.liquidaciones} onCerrar={() => setAdvertencias([])} />
       )}
-      <section aria-label="Honorarios por profesora" className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section aria-label="Honorarios por profesor/a" className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
         {informe.liquidaciones.map((liquidacion) => (
           <TarjetaProfesora
             key={liquidacion.id}
             liquidacion={liquidacion}
-            tarifas={tarifas}
-            diaDeReferencia={ultimoDiaDe(periodo)}
-            onCambiarTarifa={setTarifaDe}
             onCambiarEstado={(fila, accion) => setCambio({ liquidacion: fila, accion })}
           />
         ))}
       </section>
-      <DialogoTarifa key={tarifaDe?.id ?? "sin-tarifa"} liquidacion={tarifaDe} periodo={periodo} onClose={() => setTarifaDe(null)} />
       <ConfirmarCambioEstado cambio={cambio} periodo={periodo} onClose={() => setCambio(null)} />
     </>
   );
@@ -103,6 +98,7 @@ export function HonorariosPage() {
           }
         />
         <PestanasHonorarios />
+        <TarifasDelMes periodo={periodo} />
         <LiquidacionDelMes key={periodo} periodo={periodo} />
       </div>
       {impresion && <InformeImprimible {...impresion} />}

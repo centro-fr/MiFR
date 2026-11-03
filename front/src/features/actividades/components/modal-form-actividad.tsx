@@ -276,7 +276,7 @@ export function ModalFormActividad({
             />
             <p className="text-xs text-muted-foreground font-medium">
               {modalidad === "GRUPAL"
-                ? "Opcional en grupales: cuántos alumnos entran a la vez con la profesora."
+                ? "Opcional en grupales: cuántos alumnos entran a la vez con el/la profesor/a."
                 : "Obligatorio en personalizadas: máximo de alumnos por rutina."}
             </p>
             {errores.cupoMaximo && (

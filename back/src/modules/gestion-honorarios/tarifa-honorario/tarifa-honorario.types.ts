@@ -19,6 +19,12 @@ export interface TarifaHonorario {
   fecha_vigencia_hasta: Date | null;
 }
 
+// Lo que devuelve el listado: la tarifa con el plan al que aplica (null: todos los planes), para que
+// quien la muestra no tenga que pedir cada plan por separado. Sigue siendo una TarifaHonorario.
+export interface TarifaHonorarioConPlan extends TarifaHonorario {
+  plan: { id_plan: number; nombre: string } | null;
+}
+
 export interface FiltroTarifa {
   id_profesora?: number | undefined;
   // Las que rigen hoy o empiezan más adelante; sin esto también trae el historial.

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
-import { precioVigenteDePlan } from "@/mocks/precios";
+import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi } from "@/mocks/handlers/respuestas";
 import { reservaDe } from "@/mocks/handlers/serializar";
@@ -80,7 +80,7 @@ export function guardarInscripcion(
   idAlumno: number,
   datos: PlanYHorarios,
   estado: InscripcionMock["estado"],
-  fechaInicio = new Date().toISOString().slice(0, 10),
+  fechaInicio = hoyEnArgentina(),
 ): InscripcionMock {
   const precio = precioVigenteDePlan(datos.id_plan)!;
   const inscripcion: InscripcionMock = {

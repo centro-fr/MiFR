@@ -58,13 +58,13 @@ function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObje
 // Secciones sin funcionalidad real: pantalla genérica "En construcción" dentro del layout
 // normal (con sidebar). Al implementar cada sección, reemplazar su ruta por la página real.
 const SECCIONES_EN_CONSTRUCCION = [
-  { path: "reportes", seccion: "Reportes" },
-  // Menú de la profesora (MENUS.md).
-  { path: "mis-clases", seccion: "Mis clases" },
-  { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
   // US-31: racha e insignias del alumno o menor a cargo.
   // US-30: ranking de asistencia para los cuatro roles autorizados.
+  // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
+  // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
+  { path: "mi-plan", seccion: "Mi plan" },
+  { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
 ];
 
@@ -147,6 +147,36 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("mi-plan"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
+        ],
+      },
+      {
+        // Reportes: una pestaña por informe (US-33 a US-37 y cobranza). El back los reserva a la
+        // propietaria con este permiso. Las pestañas sin informe todavía muestran "en construcción".
+        path: "reportes",
+        element: guardiaDeSeccion("reportes", "REPORTES_COBRANZA_VER"),
+        children: [
+          { index: true, element: <Navigate to="/app/reportes/inscripciones" replace /> },
+          // US-35: inscriptos por mes.
+          { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
+          // US-33: informe de asistencia.
+          { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
+          ...["planes", "ocupacion", "ranking", "cobranza", "cuotas-vencidas"].map((path) => ({
+            path,
+            lazy: paginaPerezosa(() => import("@/features/reportes/pages/reporte-en-construccion-page"), "ReporteEnConstruccionPage"),
+          })),
+        ],
+      },
+      {
+        // US-28: el alumno consulta su rutina y su progreso; el tutor, los de sus menores.
+        path: "progreso",
+        element: guardiaDeSeccion("progreso", "RUTINAS_VER_PROPIAS"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
+      },
+      {
+        path: "profesoras",
+        element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
         ],
       },
       {
@@ -277,6 +307,14 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      {
+        // US-04: cronograma semanal de clases asignadas ("Mis clases"). Actor: Profesora con HORARIOS_VER.
+        path: "mis-clases",
+        element: guardiaDeSeccion("mis-clases", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/horarios/pages/mis-clases-page"), "MisClasesPage") },
         ],
       },
       ...SECCIONES_EN_CONSTRUCCION.map(({ path, seccion }) => ({

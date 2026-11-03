@@ -178,17 +178,17 @@ export function SuplenciasPage() {
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
                 <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  Profesora:
+                  Profesor/a:
                 </span>
                 <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
                   <SelectTrigger
-                    aria-label="Filtrar por profesora"
+                    aria-label="Filtrar por profesor/a"
                     className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[140px]"
                   >
-                    <SelectValue placeholder="Todas las profesoras" />
+                    <SelectValue placeholder="Todos los profesores" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="TODAS">Todas las profesoras</SelectItem>
+                    <SelectItem value="TODAS">Todos los profesores</SelectItem>
                     {profesoras.map((profesora) => (
                       <SelectItem key={profesora.id} value={profesora.id}>
                         {profesora.nombre} {profesora.apellido}
@@ -243,12 +243,12 @@ export function SuplenciasPage() {
                   <Users className="size-7" />
                 </span>
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                  {filtroProfesora === "TODAS" ? "Todavía no hay suplencias" : "No hay suplencias para esta profesora"}
+                  {filtroProfesora === "TODAS" ? "Todavía no hay suplencias" : "No hay suplencias para este/a profesor/a"}
                 </h2>
                 <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
                   {filtroProfesora === "TODAS"
                     ? "Registrá quién cubrió una clase para que el informe de honorarios refleje correctamente la suplencia."
-                    : "No se encontraron suplencias registradas con la profesora seleccionada."}
+                    : "No se encontraron suplencias registradas con el/la profesor/a seleccionado/a."}
                 </p>
                 {filtroProfesora === "TODAS" ? (
                   <Button

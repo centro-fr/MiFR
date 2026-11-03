@@ -8,7 +8,7 @@ import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/insc
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "./alumno/alumno.service.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno/alumno.schemas.js";
-import type { Alumno, FiltroAlumno, PaginaAlumnos } from "./alumno/alumno.types.js";
+import type { Alumno, AlumnoConsultable, FiltroAlumno, PaginaAlumnos } from "./alumno/alumno.types.js";
 import type {
   AlumnoDadoDeAlta,
   AlumnoEnListado,
@@ -77,8 +77,8 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.profesoras.crear(input);
   }
 
-  listarProfesoras(): Promise<Profesora[]> {
-    return this.profesoras.listar();
+  listarProfesoras(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
+    return this.profesoras.listar(filtro);
   }
 
   async darDeBajaProfesora(id: number): Promise<Profesora> {
@@ -146,6 +146,10 @@ export class GestionPersonasService implements ILogicaPersonas {
       await this.verificarQueLoTieneACargo(await this.inscripciones.listarVigentesDeAlumno(id), solicitante);
     }
     return this.alumnos.actualizar(id, input);
+  }
+
+  listarAlumnosConsultables(solicitante: Solicitante): Promise<AlumnoConsultable[]> {
+    return this.alumnos.listarConsultables(solicitante.idUsuario);
   }
 
   // Los alumnos que dejan ver los filtros por inscripción y lo que tiene a cargo quien pide (US-10):

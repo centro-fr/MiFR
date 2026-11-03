@@ -328,7 +328,7 @@ export function ClasesDelDia({
                   type="search"
                   placeholder={
                     propietaria
-                      ? "Buscar por actividad, horario o profesora..."
+                      ? "Buscar por actividad, horario o profesor/a..."
                       : "Buscar por actividad u horario..."
                   }
                   value={busqueda}
@@ -477,7 +477,7 @@ export function ClasesDelDia({
                     <tr>
                       <th scope="col" className="w-[18%] px-5 py-4">Horario</th>
                       <th scope="col" className="w-[28%] px-5 py-4">Actividad</th>
-                      {propietaria && <th scope="col" className="w-[18%] px-5 py-4">Profesora</th>}
+                      {propietaria && <th scope="col" className="w-[18%] px-5 py-4">Profesor/a</th>}
                       <th scope="col" className={propietaria ? "w-[16%] px-5 py-4" : "w-[22%] px-5 py-4"}>Inscriptos</th>
                       <th scope="col" className={propietaria ? "w-[12%] px-5 py-4" : "w-[14%] px-5 py-4"}>Estado</th>
                       <th scope="col" className="w-[18%] px-5 py-4 text-right">Acción</th>

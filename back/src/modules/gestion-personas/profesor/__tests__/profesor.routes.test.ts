@@ -2,6 +2,7 @@ import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/l
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
+import { logicaRutinasNoConfigurada } from "../../../../__tests__/fakes/logica-rutinas-no-configurada.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../../../../app.js";
@@ -50,6 +51,7 @@ describe("rutas de profesoras", () => {
       gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,
       gestionHonorarios: logicaHonorariosNoConfigurada,
+      gestionRutinasYProgreso: logicaRutinasNoConfigurada,
       autenticacion,
       autorizacion,
     });

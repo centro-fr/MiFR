@@ -48,7 +48,7 @@ export function ListaSuplencias({
 
             <div className="mt-4 grid grid-cols-1 gap-2.5 border-y border-slate-100 dark:border-slate-800/80 py-3.5 text-sm sm:grid-cols-2">
               <Dato label="Titular ausente" valor={`${suplencia.titular.nombre} ${suplencia.titular.apellido}`} />
-              <Dato label="Profesora suplente" valor={`${suplencia.suplente.nombre} ${suplencia.suplente.apellido}`} destacado />
+              <Dato label="Profesor/a suplente" valor={`${suplencia.suplente.nombre} ${suplencia.suplente.apellido}`} destacado />
               {suplencia.motivo && <Dato label="Motivo" valor={suplencia.motivo} />}
             </div>
           </div>

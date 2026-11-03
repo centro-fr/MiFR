@@ -1,4 +1,5 @@
 import type {
+  AlcanceTarifa,
   ConceptoTarifa,
   EstadoLiquidacion,
   LineaAlumno,
@@ -82,43 +83,20 @@ export function fechaHora(instante: string): string {
   });
 }
 
-/** Tarifa que rige un día (AAAA-MM-DD) para todos los planes; la de un plan puntual no cuenta acá. */
-export function tarifaGeneralVigente(
-  tarifas: TarifaHonorario[],
-  idProfesora: number,
-  concepto: ConceptoTarifa,
-  dia: string,
-): TarifaHonorario | undefined {
-  return tarifas.find(
-    (tarifa) =>
-      tarifa.idProfesora === idProfesora &&
-      tarifa.concepto === concepto &&
-      tarifa.idPlan === null &&
-      tarifa.desde <= dia &&
-      (tarifa.hasta === null || tarifa.hasta >= dia),
-  );
+/** Las tarifas de un alcance: el porcentaje general por alumno o la hora de suplencia de una profesora. */
+export function tarifasDelAlcance(tarifas: TarifaHonorario[], alcance: AlcanceTarifa): TarifaHonorario[] {
+  const idProfesora = alcance.concepto === "HORA_SUPLENCIA" ? alcance.profesora.id : null;
+  return tarifas.filter((tarifa) => tarifa.concepto === alcance.concepto && tarifa.idProfesora === idProfesora);
 }
 
-/** Las tarifas de un plan puntual que rigen ese día: ganan a la general para ese plan. */
-export function tarifasPorPlanVigentes(tarifas: TarifaHonorario[], idProfesora: number, dia: string): TarifaHonorario[] {
-  return tarifas.filter(
-    (tarifa) =>
-      tarifa.idProfesora === idProfesora &&
-      tarifa.idPlan !== null &&
-      tarifa.desde <= dia &&
-      (tarifa.hasta === null || tarifa.hasta >= dia),
-  );
+/** La que rige un día (AAAA-MM-DD) entre las tarifas de un mismo alcance. */
+export function tarifaVigente(tarifas: TarifaHonorario[], dia: string): TarifaHonorario | undefined {
+  return tarifas.find((tarifa) => tarifa.desde <= dia && (tarifa.hasta === null || tarifa.hasta >= dia));
 }
 
-/** La última tarifa cargada para todos los planes, rija ya o esté programada: una nueva tiene que empezar después. */
-export function ultimaTarifaGeneral(
-  tarifas: TarifaHonorario[],
-  idProfesora: number,
-  concepto: ConceptoTarifa,
-): TarifaHonorario | undefined {
-  return tarifas
-    .filter((tarifa) => tarifa.idProfesora === idProfesora && tarifa.concepto === concepto && tarifa.idPlan === null)
-    .sort((a, b) => b.desde.localeCompare(a.desde))[0];
+/** Desde cuándo rige la última tarifa de un alcance, vigente o programada: una nueva tiene que empezar después. */
+export function inicioDeLaUltimaTarifa(tarifas: TarifaHonorario[]): string | null {
+  return tarifas.map((tarifa) => tarifa.desde).sort().at(-1) ?? null;
 }
 
 /** Alumnos a cargo de todo el mes; null si alguna liquidación llegó sin desglose. */

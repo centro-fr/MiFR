@@ -2,6 +2,7 @@ import { logicaNotificacionesNoConfigurada } from "../../../../__tests__/fakes/l
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
 import { logicaInformesNoConfigurada } from "../../../../__tests__/fakes/logica-informes-no-configurada.js";
 import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
+import { logicaRutinasNoConfigurada } from "../../../../__tests__/fakes/logica-rutinas-no-configurada.js";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
@@ -26,12 +27,19 @@ const alta = {
   cont_emerg_telefono: "3794 401122",
 };
 
+const ROLES_POR_TOKEN: Record<string, { usuarioId: number; roles: string[] }> = {
+  propietaria: { usuarioId: 1, roles: ["PROPIETARIA"] },
+  alumno: { usuarioId: 3, roles: ["ALUMNO"] },
+  tutor: { usuarioId: 4, roles: ["TUTOR"] },
+};
+
 function crearLogicaMock() {
   return {
     crearAlumno: vi.fn(),
     listarAlumnos: vi.fn(),
     obtenerAlumnoPorId: vi.fn(),
     actualizarAlumno: vi.fn(),
+    listarAlumnosConsultables: vi.fn(),
   };
 }
 
@@ -47,8 +55,8 @@ describe("rutas de alumnos", () => {
     autorizacion = { tienePermiso: vi.fn(async () => true) } as unknown as IAutorizacion;
     const autenticacion = {
       validarSesion: async (token: string) => ({
-        usuarioId: token === "propietaria" ? 1 : 2,
-        roles: token === "propietaria" ? ["PROPIETARIA"] : ["PROFESORA"],
+        usuarioId: ROLES_POR_TOKEN[token]?.usuarioId ?? 2,
+        roles: ROLES_POR_TOKEN[token]?.roles ?? ["PROFESORA"],
       }),
     } as unknown as IAutenticacion;
 
@@ -63,6 +71,7 @@ describe("rutas de alumnos", () => {
       gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,
       gestionHonorarios: logicaHonorariosNoConfigurada,
+      gestionRutinasYProgreso: logicaRutinasNoConfigurada,
       autenticacion,
       autorizacion,
     });
@@ -109,6 +118,28 @@ describe("rutas de alumnos", () => {
       { idUsuario: 1, esPropietaria: true },
     );
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(1, "ALUMNOS_VER");
+  });
+
+  it.each([
+    ["el alumno", "alumno", 3],
+    ["el tutor", "tutor", 4],
+  ])("%s lista los alumnos que puede consultar sin pedir permisos", async (_quien, token, idUsuario) => {
+    const consultables = [{ id_alumno: 3, nombre: "Ana", apellido: "López", estado: "ACTIVO", propio: true }];
+    logica.listarAlumnosConsultables.mockResolvedValue(consultables);
+
+    const respuesta = await request(app).get("/api/v1/alumnos/mios").set("Authorization", `Bearer ${token}`);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual(consultables);
+    expect(logica.listarAlumnosConsultables).toHaveBeenCalledWith({ idUsuario, esPropietaria: false });
+    expect(autorizacion.tienePermiso).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/mios responde 403 a quien no es alumno ni tutor", async () => {
+    const respuesta = await request(app).get("/api/v1/alumnos/mios").set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.listarAlumnosConsultables).not.toHaveBeenCalled();
   });
 
   it("devuelve la ficha de un alumno", async () => {

@@ -28,6 +28,7 @@ const OPERACIONES_ESPERADAS = [
   "post /profesoras",
   "delete /profesoras/{id}",
   "get /alumnos",
+  "get /alumnos/mios",
   "post /alumnos",
   "get /alumnos/{id}",
   "patch /alumnos/{id}",
@@ -111,6 +112,13 @@ const OPERACIONES_ESPERADAS = [
   "get /liquidaciones/{id}",
   "post /liquidaciones/{id}/cerrar",
   "post /liquidaciones/{id}/pagar",
+  "post /rutinas",
+  "get /alumnos/{id}/rutinas",
+  "get /alumnos/{id}/rutinas/vigente",
+  "post /progreso",
+  "patch /progreso/{id}",
+  "delete /progreso/{id}",
+  "get /alumnos/{id}/progreso",
 ];
 
 function listarOperaciones(documento: DocumentoOpenApi): string[] {

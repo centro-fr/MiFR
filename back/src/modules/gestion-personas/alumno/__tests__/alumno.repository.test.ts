@@ -11,7 +11,7 @@ const transaccion = {
 const prisma = {
   $transaction: vi.fn((operacion: (tx: unknown) => unknown) => operacion(prismaDentroDeTransaccion())),
   $queryRaw: vi.fn(),
-  alumnos: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+  alumnos: { findUnique: vi.fn(), findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
 };
 
 const actualizarEnTransaccion = {
@@ -126,6 +126,32 @@ describe("AlumnoRepository", () => {
     expect(prisma.alumnos.findMany).toHaveBeenCalledWith({
       where: { id_alumno: { in: [1, 2] } },
       include: CON_DATOS,
+    });
+  });
+
+  it("buscarPorIdUsuarioResponsable trae un menor a cargo del tutor con los datos personales", async () => {
+    await repositorio.buscarPorIdUsuarioResponsable(20);
+
+    expect(prisma.alumnos.findFirst).toHaveBeenCalledWith({
+      where: { id_usuario_responsable: 20 },
+      include: CON_DATOS,
+    });
+  });
+
+  it("listarConsultablesPorUsuario busca el alumno del usuario y sus menores a cargo en una consulta", async () => {
+    prisma.alumnos.findMany.mockResolvedValue([]);
+
+    await repositorio.listarConsultablesPorUsuario(10);
+
+    expect(prisma.alumnos.findMany).toHaveBeenCalledWith({
+      where: { OR: [{ id_usuario: 10 }, { id_usuario_responsable: 10 }] },
+      select: {
+        id_alumno: true,
+        id_usuario: true,
+        estado: true,
+        usuario: { select: { nombre: true, apellido: true } },
+      },
+      orderBy: [{ usuario: { apellido: "asc" } }, { usuario: { nombre: "asc" } }],
     });
   });
 

@@ -213,6 +213,30 @@ describe("LiquidacionService", () => {
       );
     });
 
+    it("no guarda nada si el total del calculador no es la suma de los detalles de la profesora", async () => {
+      inscripciones.aCargoEnPeriodo.mockResolvedValue([]);
+      cuotas.cobradoEnPeriodo.mockResolvedValue(new Map());
+      calculador.calcular.mockReturnValue({
+        detalles: [
+          {
+            id_profesora: 10,
+            concepto: "ALUMNO_A_CARGO",
+            id_tarifa: 3,
+            id_inscripcion: 1,
+            id_clase: null,
+            monto: 7000,
+          },
+        ],
+        advertencias: [],
+        totalesPorProfesora: new Map([[10, 8000]]),
+      });
+
+      await expect(service.generar(PERIODO)).rejects.toThrow(
+        "El total de la liquidación de la profesora 10 no coincide con la suma de sus detalles",
+      );
+      expect(repositorio.guardarBorradores).not.toHaveBeenCalled();
+    });
+
     it("rechaza un período que todavía no empezó, sin consultar nada", async () => {
       const proximo = { periodo: "2026-11", desde: dia("2026-11-01"), hasta: dia("2026-11-30") };
 

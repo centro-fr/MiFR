@@ -209,14 +209,14 @@ export function AusentesPage() {
 
         {/* Filtros Compactos en Píldoras */}
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          {/* Selector de Profesora */}
+          {/* Selector de Profesor/a */}
           <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
             <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Profesora:
+              Profesor/a:
             </span>
             <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
               <SelectTrigger
-                aria-label="Filtrar por profesora"
+                aria-label="Filtrar por profesor/a"
                 className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[90px]"
               >
                 <SelectValue />
@@ -363,7 +363,7 @@ export function AusentesPage() {
                         </p>
                         {contacto.esTutor && (
                           <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 truncate">
-                            Tutor: {contacto.nombreCompleto} (menor)
+                            Tutor: {contacto.nombreCompleto}
                           </p>
                         )}
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -419,7 +419,7 @@ export function AusentesPage() {
                         Alumno / Contacto
                       </th>
                       <th scope="col" className="px-6 py-3.5">
-                        Plan y Profesora
+                        Plan y Profesor/a
                       </th>
                       <th scope="col" className="px-6 py-3.5 text-center">
                         Faltas seguidas
@@ -452,7 +452,7 @@ export function AusentesPage() {
                               </p>
                               {contacto.esTutor && (
                                 <p className="text-xs font-semibold text-pink-600 dark:text-pink-400">
-                                  Tutor: {contacto.nombreCompleto} (menor)
+                                  Tutor: {contacto.nombreCompleto}
                                 </p>
                               )}
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">

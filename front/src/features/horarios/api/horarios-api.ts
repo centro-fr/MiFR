@@ -36,6 +36,12 @@ export async function listarHorarios(): Promise<HorarioApi[]> {
   return z.array(horarioApiSchema).parse(data);
 }
 
+// Horarios asignados a una profesora específica.
+export async function listarHorariosDeProfesora(idProfesora: string | number): Promise<HorarioApi[]> {
+  const { data } = await apiClient.get("/horarios", { params: { id_profesora: String(idProfesora) } });
+  return z.array(horarioApiSchema).parse(data);
+}
+
 export async function crearHorario(cuerpo: GuardarHorarioBody): Promise<HorarioApi> {
   const { data } = await apiClient.post("/horarios", cuerpo);
   return horarioApiSchema.parse(data);

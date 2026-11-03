@@ -5,15 +5,15 @@
 - **Épica:** Honorarios
 - **Prioridad:** Media
 - **Actor principal:** Propietaria
-- **Sprint sugerido:** Sprint 4
+- **Sprint sugerido:** Sprint 4 (regla de cálculo actualizada en el Sprint 5)
 
 ## 2. Objetivo
 
-Generar automáticamente un informe mensual con los honorarios de cada profesora según sus alumnos a cargo y sus suplencias, para agilizar la liquidación sin cálculos manuales.
+Generar automáticamente un informe mensual con los honorarios de cada profesora según sus alumnos a cargo (calculados sobre el 50 % de los ingresos por cuotas) y sus suplencias, para agilizar la liquidación sin cálculos manuales.
 
 ## 3. Descripción
 
-Como propietaria, quiero generar un informe mensual automático con los honorarios de cada profesora según sus alumnos a cargo para agilizar la liquidación sin cálculos manuales.
+Como propietaria, quiero generar un informe mensual automático con los honorarios de cada profesora, calculados como el 50 % de los ingresos por cuotas de sus alumnos, para agilizar la liquidación sin cálculos manuales.
 
 ## 4. Estados de la pantalla / flujo
 
@@ -22,8 +22,8 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
 - [ ] Mes sin calcular: "Todavía no se calcularon los honorarios de …", con el botón "Calcular honorarios"
 - [ ] Informe calculado: total del mes, estado de los honorarios y una tarjeta por profesora
 - [ ] Detalle expandido de una profesora (alumnos a cargo y suplencias)
-- [ ] Avisos del cálculo: lo que no se pudo calcular (por ejemplo, una profesora sin tarifa)
-- [ ] Cambio de tarifa de una profesora (diálogo)
+- [ ] Avisos del cálculo: lo que no se pudo calcular (por ejemplo, una profesora sin monto por hora de suplencia)
+- [ ] Tarifas del mes: el porcentaje por alumno (general) y el monto por hora de suplencia de cada profesora, con el diálogo para cambiarlos
 - [ ] Confirmación al cerrar los honorarios o marcarlos como abonados
 - [ ] Exportar informe (PDF / Excel)
 - [ ] Éxito
@@ -41,20 +41,18 @@ Como propietaria, quiero generar un informe mensual automático con los honorari
   - Estado: en revisión / cerrada / abonada
   - Total a liquidar
   - Tarifa vigente
-  - Cantidad de alumnos y subtotales de alumnos y de suplencias (cuando el back los mande en el listado)
+  - Cantidad de alumnos a cargo y subtotales de alumnos y de suplencias (cuando el back los mande en el listado)
   - Detalle de alumnos a cargo: nombre, monto y cómo se calculó (ej: "$ 30.000 × 50%"). El plan y la situación de la inscripción se muestran cuando el back los mande.
   - Suplencias del mes (US-24): si cubrió una clase o se la cubrieron, actividad, fecha, horario y monto (suma o resta)
 
 ### Datos de configuración (tarifas)
 
-Cada profesora tiene sus tarifas, con fecha de vigencia:
+Lo decidió la propietaria: el porcentaje por alumno es uno solo para todo el estudio y el monto por hora de suplencia es de cada profesora. Las dos tarifas tienen fecha de vigencia:
 
-- **Por alumno a cargo**, de una de dos formas:
-  - porcentaje de lo cobrado de la cuota del alumno en el mes
-  - monto fijo por alumno, asista o no
-- **Por hora de suplencia:** monto fijo por hora.
-- "Rige desde": no puede ser una fecha pasada. Una tarifa nueva cierra la vigente del mismo concepto.
-- El back también admite una tarifa para un plan puntual, que gana a la general; la pantalla la muestra como "Según el plan", pero desde ahí solo se cargan las generales.
+- **Por alumno a cargo (general):** porcentaje de lo cobrado de la cuota del alumno en el mes (50 %, configurable por la propietaria). Rige igual para todas las profesoras.
+- **Por hora de suplencia (de cada profesora):** monto fijo por hora. Cada profesora tiene el suyo.
+- "Rige desde": no puede ser una fecha pasada. Una tarifa nueva cierra la vigente del mismo alcance: el porcentaje general o la hora de esa profesora.
+- El back también admite una tarifa para un plan puntual, que gana a la general; desde la pantalla solo se carga la general.
 
 ### Datos que se generan
 
@@ -68,7 +66,7 @@ Cada profesora tiene sus tarifas, con fecha de vigencia:
 - Calcular o recalcular el mes
 - Ver el informe consolidado
 - Expandir el detalle por profesora ("Ver detalle")
-- Cambiar la tarifa de una profesora
+- Cambiar el porcentaje por alumno (general) o el monto por hora de suplencia de una profesora
 - Cerrar los honorarios de una profesora
 - Marcarlos como abonados (solo deja registro: el sistema no mueve dinero)
 - Exportar el informe (PDF / Excel)
@@ -78,15 +76,18 @@ Cada profesora tiene sus tarifas, con fecha de vigencia:
 
 - El informe es **solo informativo** y **visible únicamente por la propietaria**. Verlo pide `HONORARIOS_VER_TODOS`; calcular, cambiar tarifas, cerrar y marcar como abonados piden además `HONORARIOS_LIQUIDAR`.
 - Se calcula por **mes calendario**. El mes en curso se puede calcular y recalcular; los meses futuros, no.
-- **Regla acordada** (`back/honorarios-pendientes.md`): cada profesora recibe el **50 % de lo cobrado** de las cuotas de sus alumnos, sin mínimo de alumnos. Se carga como tarifa "porcentaje de lo cobrado" de 50 %. El sistema también admite un monto fijo por alumno.
+- **Regla acordada** (`back/honorarios-pendientes.md`): cada profesora recibe el **50 % de lo cobrado** de las cuotas de sus alumnos, sin mínimo de alumnos. Se carga una sola vez, como tarifa "porcentaje de lo cobrado" de 50 % para todo el estudio.
+  - Ejemplo: si los ingresos por cuotas atribuibles a una profesora suman $200.000, sus honorarios son $200.000 × 50 % = $100.000.
+  - El porcentaje de honorarios es configurable por la propietaria.
 - **Se cuenta cada inscripto, asista o no**: una línea por cada inscripción que estuvo a cargo de la profesora algún día del mes.
   - No generan honorarios las pre-inscripciones, las inscripciones sin cargo (bonificadas) ni las bajas que nunca pagaron una cuota.
-  - Los alumnos dados de baja durante el mes se cuentan.
+  - Los alumnos dados de baja durante el mes se cuentan si cobraron.
   - Los alumnos con clase suelta también se cuentan.
-- Con tarifa por porcentaje, la base es lo cobrado (pagos confirmados) de las cuotas de esa inscripción con fecha de pago dentro del mes. Un alumno que no pagó en el mes figura en $ 0. Con monto fijo, suma igual aunque no haya pagado.
+- Con tarifa por porcentaje, la base es lo cobrado (**pagos confirmados**) de las cuotas de esa inscripción con fecha de pago dentro del mes. Los pagos pendientes o rechazados no cuentan. Un alumno que no pagó en el mes figura en $ 0.
+- Los pagos parciales cuentan por el monto efectivamente confirmado en el mes.
 - La tarifa que se aplica es la vigente el **último día del mes**, o el día de la baja si el alumno se dio de baja antes. Un cambio de tarifa a mitad de mes se aplica a todo el mes al recalcular.
-- Una profesora sin tarifa: sus líneas no se generan (no suman) y el cálculo lo avisa.
-- Las **suplencias** (US-24): la suplente suma las horas de la clase por su tarifa por hora, y a la titular se le resta lo mismo.
+- Sin porcentaje vigente, las líneas de los alumnos no se generan (no suman). Si la suplente no tiene monto por hora, la clase que cubrió no suma ni se descuenta. En los dos casos el cálculo lo avisa.
+- Las **suplencias** (US-24): la suplente suma las horas de la clase por su monto por hora, y a la titular se le resta lo mismo (con el monto de la suplente).
 - Si un alumno cambia de profesora en el mes, cada inscripción se liquida a su profesora. Si las dos estuvieron activas en el mes, el alumno cuenta para las dos.
 - Estados de los honorarios de cada profesora:
   - **En revisión** (`BORRADOR`): se recalculan cada vez que se calcula el mes.
@@ -101,13 +102,14 @@ Cada profesora tiene sus tarifas, con fecha de vigencia:
 
 ## 8. Criterios de aceptación
 
-- [ ] Cálculo de honorarios de una profesora con alumnos inscriptos que faltaron → se cuentan igual
+- [ ] Profesora con ingresos por cuotas de $200.000 en el mes → honorarios de $100.000 (50 %), sin importar la cantidad de alumnos
 - [ ] Acceso de una profesora al informe de honorarios → falla (acceso restringido)
 - [ ] El informe muestra el detalle por profesora y por alumno
 - [ ] Se puede exportar el informe a PDF / Excel
 - [ ] Las suplencias suman a la suplente y se descuentan a la titular
 - [ ] El total general coincide con la suma de los honorarios individuales
 - [ ] El informe refleja solo el período seleccionado
+- [ ] Los pagos pendientes o rechazados no suman a los ingresos
 - [ ] Recalcular el mes no cambia los honorarios ya cerrados
 - [ ] Profesora sin tarifa → el cálculo lo avisa y sus alumnos no suman
 
@@ -115,9 +117,10 @@ Cada profesora tiene sus tarifas, con fecha de vigencia:
 
 - Profesora sin alumnos ni suplencias en el período → honorario cero
 - Alumno que cambió de profesora en el medio del mes → cada inscripción se liquida a su profesora
-- Alumno que se dio de baja durante el mes → se cuenta, con la tarifa vigente el día de la baja
+- Alumno que se dio de baja durante el mes → se cuenta, con la tarifa vigente el día de la baja (cuenta si cobró)
 - Pre-inscripto que todavía no pagó → no se cuenta
-- Suplencia no registrada → el informe no la refleja
+- Pago que cubre más de una cuota → cuenta por el monto confirmado en el mes del pago
+- Suplencia no registrada → el informe no la refleja (requiere que US-24 esté registrada)
 - Suplencia cargada o editada después de cerrar los honorarios → no cambia lo cerrado
 - Cambio de tarifa a mitad de mes → se aplica a todo el mes; para que no afecte al mes en curso, tiene que regir desde el 1 del mes siguiente
 - Mes futuro → no se puede calcular
@@ -145,11 +148,13 @@ Cada profesora tiene sus tarifas, con fecha de vigencia:
 - UI:
   - Acceso desde el menú de la propietaria (sección "Centro" → "Honorarios"), con dos pestañas: "Honorarios del mes" y "Suplencias" (US-24)
   - Selector de mes; el mes queda en la URL (`?mes=AAAA-MM`) para volver a un informe anterior o compartirlo
-  - Una tarjeta por profesora con el total, el estado, la tarifa y el botón "Cambiar"; "Ver detalle" pide el detalle recién al abrirla
+  - Bloque "Tarifas del mes" arriba de todo: el porcentaje general y la lista de profesoras con su monto por hora, cada uno con "Cambiar" (o "Cargar" si falta). Se ve aunque el mes no esté calculado.
+  - Una tarjeta por profesora con el total y el estado; "Ver detalle" pide el detalle recién al abrirla
   - Total del mes y estado de los honorarios arriba de las tarjetas, con "Recalcular" mientras haya alguno en revisión
   - Botón "Exportar" con opciones PDF / Excel. El back devuelve los datos y el front arma el PDF (impresión) y el CSV.
   - Los honorarios se muestran con formato de moneda consistente
   - Restricción de acceso: solo propietaria (reforzado por permisos)
   - Manejar el caso de "sin calcular" para el período seleccionado
+- Pendiente del back: aceptar el porcentaje por alumno sin profesora (general). La hora de suplencia por profesora ya funciona con el contrato actual.
 - Pendiente del back: mandar en el listado la cantidad de alumnos y los subtotales, en cada alumno su plan y la situación de la inscripción, y en cada suplencia quién faltó y quién la cubrió. El front ya los muestra cuando llegan.
 - Pendiente de definir con el equipo: si la profesora ve sus propios honorarios cerrados o abonados (el catálogo tiene `HONORARIOS_VER_PROPIOS`, pero hoy solo accede la propietaria).

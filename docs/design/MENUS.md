@@ -31,7 +31,7 @@ Una misma persona puede tener más de un rol (ej: propietaria que también dicta
 | 2 | **Mi plan** | tarjeta | Estado del plan y renovación (US-14, US-29) |
 | 3 | **Progreso** | gráfico | Rutina y evolución física (US-27, US-28) |
 | 4 | **Comunidad** | trofeo | Ranking e insignias (US-30, US-31) |
-| 5 | **Perfil** | usuario | Datos personales y configuración |
+| 5 | **Perfil** | usuario | Datos personales y configuración (US-39) |
 
 ### Desktop (sidebar, 5 ítems + secundarios)
 
@@ -41,7 +41,7 @@ Una misma persona puede tener más de un rol (ej: propietaria que también dicta
 | 2 | Mi plan | tarjeta | Estado del plan |
 | 3 | Progreso | gráfico | Rutina y evolución |
 | 4 | Comunidad | trofeo | Ranking e insignias |
-| 5 | Perfil | usuario | Datos personales |
+| 5 | Perfil | usuario | Datos personales (US-39) |
 | — | Configuración | engranaje | (al pie del sidebar) |
 | — | Cerrar sesión | salir | (al pie del sidebar) |
 
@@ -63,20 +63,20 @@ Acceso a opciones secundarias (esquina superior derecha):
 | # | Ítem | Ícono | Pantalla que abre |
 | --- | ------ | ------- | ------------------- |
 | 1 | **Hoy** | reloj/calendario | Clases del día (US-20 y US-21) |
-| 2 | **Mis clases** | libro/lista | Historial de clases y asistencias |
+| 2 | **Mis clases** | libro/lista | Cronograma semanal de clases asignadas y cupos (US-04) |
 | 3 | **Alumnos** | usuarios | Alumnos a su cargo (US-10) |
 | 4 | **Cobros** | dinero | Cobro de la cuota de sus alumnos, en efectivo o por transferencia (US-15, US-16) |
-| 5 | **Perfil** | usuario | Datos personales |
+| 5 | **Perfil** | usuario | Datos personales (US-39) |
 
 ### Desktop (sidebar, 5 ítems + secundarios)
 
 | # | Ítem | Ícono | Pantalla que abre |
 | --- | ------ | ------- | ------------------- |
 | 1 | Hoy | reloj | Clases del día |
-| 2 | Mis clases | libro | Historial |
+| 2 | Mis clases | libro | Cronograma semanal (US-04) |
 | 3 | Alumnos | usuarios | Alumnos a cargo |
 | 4 | Cobros | dinero | Registro de cobros |
-| 5 | Perfil | usuario | Datos personales |
+| 5 | Perfil | usuario | Datos personales (US-39) |
 | — | Configuración | engranaje | (al pie) |
 | — | Cerrar sesión | salir | (al pie) |
 

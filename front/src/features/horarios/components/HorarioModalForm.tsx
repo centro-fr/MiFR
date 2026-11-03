@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { X, AlertCircle } from 'lucide-react';
@@ -191,37 +192,65 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   ref={primerCampoRef}
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
-                  <SelectValue placeholder="Seleccionar actividad" />
+                  <SelectValue placeholder={actividades.length === 0 ? "Sin actividades activas" : "Seleccionar actividad"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {actividades.map((act) => (
-                    <SelectItem key={act.id} value={act.id}>
-                      {act.nombre}
-                    </SelectItem>
-                  ))}
+                  {actividades.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground">
+                      No hay actividades activas.
+                    </div>
+                  ) : (
+                    actividades.map((act) => (
+                      <SelectItem key={act.id} value={act.id}>
+                        {act.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {actividades.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  No hay actividades.{" "}
+                  <Link to="/app/actividades" className="font-bold underline hover:text-amber-700">
+                    Crear actividad
+                  </Link>
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="horario-profesora" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Profesora <span className="text-destructive">*</span>
+                Profesor/a <span className="text-destructive">*</span>
               </Label>
               <Select value={profesoraId} onValueChange={setProfesoraId}>
                 <SelectTrigger
                   id="horario-profesora"
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                 >
-                  <SelectValue placeholder="Seleccionar profesora" />
+                  <SelectValue placeholder={profesoras.length === 0 ? "Sin profesores activos" : "Seleccionar profesor/a"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {profesoras.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.nombre} {prof.apellido}
-                    </SelectItem>
-                  ))}
+                  {profesoras.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground">
+                      No hay profesores activos.
+                    </div>
+                  ) : (
+                    profesoras.map((prof) => (
+                      <SelectItem key={prof.id} value={prof.id}>
+                        {prof.nombre} {prof.apellido}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {profesoras.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  No hay profesores.{" "}
+                  <Link to="/app/profesoras" className="font-bold underline hover:text-amber-700">
+                    Crear profesor/a
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
 

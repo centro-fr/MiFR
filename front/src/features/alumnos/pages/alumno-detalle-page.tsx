@@ -5,12 +5,10 @@ import {
   CalendarClock,
   CalendarDays,
   CreditCard,
-  Dumbbell,
   Loader2,
   Mail,
   MoreHorizontal,
   PenSquare,
-  Ruler,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +35,7 @@ import {
 } from "@/features/alumnos/utils/formato-ficha";
 import { HistorialCobrosAlumno } from "@/features/cobros/components/historial-cobros-alumno";
 import { ModalRegistrarCobro } from "@/features/cobros/components/modal-registrar-cobro";
+import { RutinaYProgreso } from "@/features/rutinas/components/rutina-y-progreso";
 
 type SeccionFicha = "datos" | "plan" | "progreso" | "cobros" | "asistencia";
 
@@ -308,9 +307,9 @@ export function AlumnoDetallePage() {
                 </p>
               </Card>
 
-              {/* KPI 2: Profesora */}
+              {/* KPI 2: Profesor/a */}
               <Card className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Profesora</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Profesor/a</span>
                 <p className="mt-1 text-lg font-black text-slate-900 dark:text-white truncate">
                   {profesoraNombre}
                 </p>
@@ -492,26 +491,7 @@ export function AlumnoDetallePage() {
               )}
 
               {seccion === "progreso" && (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
-                      <Dumbbell aria-hidden="true" className="size-5 text-primary" />
-                      Rutina
-                    </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                      Todavía no hay una rutina registrada para este alumno.
-                    </p>
-                  </Card>
-                  <Card className="rounded-2xl border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-                    <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
-                      <Ruler aria-hidden="true" className="size-5 text-primary" />
-                      Evolución y mediciones
-                    </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                      El historial de peso y talla aparecerá acá cuando se registren mediciones.
-                    </p>
-                  </Card>
-                </div>
+                <RutinaYProgreso idAlumno={alumno.id_alumno} nombreAlumno={nombreCompleto} admiteCargas={alumno.estado !== "BAJA"} />
               )}
             </section>
 
@@ -658,7 +638,7 @@ function DetalleInscripcion({ inscripcion }: { inscripcion: InscripcionDeAlumno 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <DatoFicha etiqueta="Plan asignado" valor={inscripcion.plan.nombre} />
         <DatoFicha etiqueta="Precio al inscribirse" valor={formatearPrecio(inscripcion.plan.precio)} />
-        <DatoFicha etiqueta="Profesora a cargo" valor={inscripcion.profesora} />
+        <DatoFicha etiqueta="Profesor/a a cargo" valor={inscripcion.profesora} />
         <DatoFicha etiqueta="Estado de inscripción" valor={textoEstado(inscripcion.estado)} />
         <DatoFicha etiqueta="Inicio" valor={fechaLegible(inscripcion.fecha_inicio)} />
       </div>

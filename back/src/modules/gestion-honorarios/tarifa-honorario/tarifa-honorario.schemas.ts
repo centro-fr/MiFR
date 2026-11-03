@@ -7,7 +7,8 @@ const concepto = z.enum(["ALUMNO_A_CARGO", "HORA_SUPLENCIA"]);
 const tipo_valor = z.enum(["MONTO_FIJO", "PORCENTAJE"]);
 
 // ck_tarifas_honorario_x1 a x3 del DER: valor mayor a 0, hasta 100 si es porcentaje, y solo
-// ALUMNO_A_CARGO puede ir atada a un plan.
+// ALUMNO_A_CARGO puede ir atada a un plan. Además, por la regla de honorarios del Sprint 5, lo que se
+// cobra por alumno es siempre un porcentaje de lo cobrado y la hora de suplencia, siempre un monto fijo.
 export const registrarTarifaSchema = z
   .object({
     id_profesora: idSchema,
@@ -27,7 +28,21 @@ export const registrarTarifaSchema = z
   .refine(({ concepto: concepto_, id_plan }) => concepto_ === "ALUMNO_A_CARGO" || id_plan === null, {
     message: "Las tarifas de HORA_SUPLENCIA no llevan plan",
     path: ["id_plan"],
-  });
+  })
+  .refine(
+    ({ concepto: concepto_, tipo_valor: tipo }) => concepto_ !== "ALUMNO_A_CARGO" || tipo === "PORCENTAJE",
+    {
+      message: "Las tarifas de ALUMNO_A_CARGO son un porcentaje de lo cobrado",
+      path: ["tipo_valor"],
+    },
+  )
+  .refine(
+    ({ concepto: concepto_, tipo_valor: tipo }) => concepto_ !== "HORA_SUPLENCIA" || tipo === "MONTO_FIJO",
+    {
+      message: "Las tarifas de HORA_SUPLENCIA son un monto fijo por hora",
+      path: ["tipo_valor"],
+    },
+  );
 
 export const tarifaIdParamSchema = z.object({
   id: idDesdeTextoSchema,

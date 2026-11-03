@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ClasesDeHoyPage } from "../asistencia-page";
 import type { ClaseDelDiaApi } from "@/features/asistencia/schemas/asistencia";
 
@@ -113,9 +113,15 @@ const renderClasesDeHoyPage = () => {
 describe("ClasesDeHoyPage (Rol Profesora)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-14T08:00:00.000Z"));
     clasesMock = mockClases;
     isPendingMock = false;
     isErrorMock = false;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renderiza el encabezado estándar con título Hoy y la píldora de conteo", () => {

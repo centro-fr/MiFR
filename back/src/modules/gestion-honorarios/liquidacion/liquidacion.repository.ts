@@ -4,15 +4,18 @@ import type {
   BorradorLiquidacion,
   DetalleLiquidacion,
   EstadoLiquidacion,
+  LiquidacionConDesglose,
   LiquidacionConProfesora,
   LiquidacionDetallada,
   ResultadoGuardado,
 } from "./liquidacion.types.js";
 
+const DATOS_PROFESORA = {
+  select: { id_profesora: true, usuario: { select: { nombre: true, apellido: true } } },
+} satisfies { select: Prisma.profesorasSelect };
+
 const CON_PROFESORA = {
-  profesora: {
-    select: { id_profesora: true, usuario: { select: { nombre: true, apellido: true } } },
-  },
+  profesora: DATOS_PROFESORA,
 } satisfies Prisma.liquidacionesInclude;
 
 const CON_DETALLE = {
@@ -22,6 +25,9 @@ const CON_DETALLE = {
     include: {
       inscripcion: {
         select: {
+          estado: true,
+          fecha_baja: true,
+          plan: { select: { id_plan: true, nombre: true } },
           alumno: {
             select: { id_alumno: true, usuario: { select: { nombre: true, apellido: true } } },
           },
@@ -33,6 +39,9 @@ const CON_DETALLE = {
           horario: {
             select: { hora_inicio: true, hora_fin: true, actividad: { select: { nombre: true } } },
           },
+          // Quien dictó la clase (la suplente) y, por la suplencia registrada, quien faltó.
+          profesora: DATOS_PROFESORA,
+          suplencias: { select: { profesora_ausente: DATOS_PROFESORA }, take: 1 },
         },
       },
     },
@@ -44,6 +53,48 @@ type FilaDetallada = Prisma.liquidacionesGetPayload<{ include: typeof CON_DETALL
 
 function aLiquidacion({ monto_total, ...resto }: FilaConProfesora): LiquidacionConProfesora {
   return { ...resto, monto_total: monto_total.toNumber() };
+}
+
+// El desglose de varias liquidaciones sale de una sola consulta agrupada por liquidación y concepto, en
+// vez de una por profesora. Se suma en centavos para no arrastrar errores de coma flotante.
+async function conDesglose(
+  cliente: Pick<Prisma.TransactionClient, "liquidacion_detalles">,
+  filas: FilaConProfesora[],
+): Promise<LiquidacionConDesglose[]> {
+  if (filas.length === 0) return [];
+  const grupos = await cliente.liquidacion_detalles.groupBy({
+    by: ["id_liquidacion", "concepto"],
+    where: { id_liquidacion: { in: filas.map(({ id_liquidacion }) => id_liquidacion) } },
+    _count: { _all: true },
+    _sum: { monto: true },
+  });
+
+  const porLiquidacion = new Map<number, { cantidad: number; alumnos: number; suplencias: number }>();
+  for (const { id_liquidacion, concepto, _count, _sum } of grupos) {
+    const desglose = porLiquidacion.get(id_liquidacion) ?? { cantidad: 0, alumnos: 0, suplencias: 0 };
+    const centavos = Math.round((_sum.monto?.toNumber() ?? 0) * 100);
+    if (concepto === "ALUMNO_A_CARGO") {
+      desglose.cantidad += _count._all;
+      desglose.alumnos += centavos;
+    } else {
+      desglose.suplencias += centavos;
+    }
+    porLiquidacion.set(id_liquidacion, desglose);
+  }
+
+  return filas.map((fila) => {
+    const { cantidad, alumnos, suplencias } = porLiquidacion.get(fila.id_liquidacion) ?? {
+      cantidad: 0,
+      alumnos: 0,
+      suplencias: 0,
+    };
+    return {
+      ...aLiquidacion(fila),
+      cantidad_alumnos: cantidad,
+      subtotal_alumnos: alumnos / 100,
+      subtotal_suplencias: suplencias / 100,
+    };
+  });
 }
 
 function aDetalle(fila: FilaDetallada["detalles"][number]): DetalleLiquidacion {
@@ -60,11 +111,18 @@ function aDetalle(fila: FilaDetallada["detalles"][number]): DetalleLiquidacion {
       nombre: inscripcion.alumno.usuario.nombre,
       apellido: inscripcion.alumno.usuario.apellido,
     },
+    inscripcion: inscripcion && {
+      estado: inscripcion.estado,
+      fecha_baja: inscripcion.fecha_baja,
+      plan: inscripcion.plan,
+    },
     clase: clase && {
       fecha_clase: clase.fecha_clase,
       hora_inicio: clase.horario.hora_inicio,
       hora_fin: clase.horario.hora_fin,
       actividad: clase.horario.actividad.nombre,
+      profesora_titular: clase.suplencias[0]?.profesora_ausente ?? null,
+      profesora_suplente: clase.profesora,
     },
   };
 }
@@ -121,17 +179,17 @@ export class LiquidacionRepository {
         include: CON_PROFESORA,
         orderBy: { id_profesora: "asc" },
       });
-      return { liquidaciones: filas.map(aLiquidacion), sin_recalcular };
+      return { liquidaciones: await conDesglose(transaccion, filas), sin_recalcular };
     });
   }
 
-  async listarPorPeriodo(desde: Date, hasta: Date): Promise<LiquidacionConProfesora[]> {
+  async listarPorPeriodo(desde: Date, hasta: Date): Promise<LiquidacionConDesglose[]> {
     const filas = await this.prisma.liquidaciones.findMany({
       where: { periodo_desde: desde, periodo_hasta: hasta },
       include: CON_PROFESORA,
       orderBy: { id_profesora: "asc" },
     });
-    return filas.map(aLiquidacion);
+    return conDesglose(this.prisma, filas);
   }
 
   async buscarPorId(id: number): Promise<LiquidacionDetallada | null> {

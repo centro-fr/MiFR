@@ -26,6 +26,11 @@ function tarifa(parcial: Partial<TarifaDeHonorario> = {}): TarifaDeHonorario {
   };
 }
 
+// La tarifa de la regla vigente: el 50 % de lo cobrado por cada alumno.
+function tarifaAlumno(parcial: Partial<TarifaDeHonorario> = {}): TarifaDeHonorario {
+  return tarifa({ tipo_valor: "PORCENTAJE", valor: 50, ...parcial });
+}
+
 function inscripcion(parcial: Partial<InscripcionACargo> = {}): InscripcionACargo {
   return {
     id_inscripcion: 100,
@@ -74,12 +79,15 @@ describe("CalculadorHonorarios", () => {
   });
 
   describe("ALUMNO_A_CARGO", () => {
-    it("con MONTO_FIJO paga el valor entero por cada inscripción, haya cobrado algo en el mes o no", () => {
+    it("paga el porcentaje de lo cobrado en el mes por cada inscripción", () => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion(), inscripcion({ id_inscripcion: 101, id_alumno: 2, id_plan: 8 })],
-          cobradoEnElPeriodo: new Map([[101, 32000]]),
-          tarifas: [tarifa()],
+          cobradoEnElPeriodo: new Map([
+            [100, 20000],
+            [101, 32000],
+          ]),
+          tarifas: [tarifaAlumno()],
         }),
       );
 
@@ -90,7 +98,7 @@ describe("CalculadorHonorarios", () => {
           id_tarifa: 1,
           id_inscripcion: 100,
           id_clase: null,
-          monto: 5000,
+          monto: 10000,
         },
         {
           id_profesora: 10,
@@ -98,7 +106,7 @@ describe("CalculadorHonorarios", () => {
           id_tarifa: 1,
           id_inscripcion: 101,
           id_clase: null,
-          monto: 5000,
+          monto: 16000,
         },
       ]);
       expect(resultado.advertencias).toEqual([]);
@@ -109,13 +117,12 @@ describe("CalculadorHonorarios", () => {
       ["la mitad con centavos", 32000.5, 50, 16000.25],
       ["redondea al centavo", 100.1, 33.33, 33.36],
       ["el cien por ciento", 32000, 100, 32000],
-      ["no cobró nada", 0, 50, 0],
-    ])("con PORCENTAJE aplica el valor sobre lo cobrado: %s", (_caso, cobrado, valor, esperado) => {
+    ])("aplica el valor sobre lo cobrado: %s", (_caso, cobrado, valor, esperado) => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion()],
           cobradoEnElPeriodo: new Map([[100, cobrado]]),
-          tarifas: [tarifa({ tipo_valor: "PORCENTAJE", valor })],
+          tarifas: [tarifaAlumno({ valor })],
         }),
       );
 
@@ -123,22 +130,41 @@ describe("CalculadorHonorarios", () => {
       expect(resultado.detalles[0]?.monto).toBe(esperado);
     });
 
-    it("con PORCENTAJE genera la línea en 0 si la inscripción no figura entre lo cobrado", () => {
+    it.each<[string, ReadonlyMap<number, number>]>([
+      ["cobró 0", new Map([[100, 0]])],
+      ["no figura entre lo cobrado", new Map()],
+    ])("una inscripción que %s no genera línea ni advertencia", (_caso, cobrado) => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion()],
-          tarifas: [tarifa({ tipo_valor: "PORCENTAJE", valor: 50 })],
+          cobradoEnElPeriodo: cobrado,
+          tarifas: [tarifaAlumno()],
         }),
       );
 
-      expect(resultado.detalles).toEqual([
+      expect(resultado.detalles).toEqual([]);
+      expect(resultado.advertencias).toEqual([]);
+      expect(resultado.totalesPorProfesora.size).toBe(0);
+    });
+
+    it("una tarifa de MONTO_FIJO ya no se aplica a los alumnos: no genera la línea y la advierte", () => {
+      const resultado = calculador.calcular(
+        datos({
+          inscripciones: [inscripcion()],
+          cobradoEnElPeriodo: new Map([[100, 20000]]),
+          tarifas: [tarifa()],
+        }),
+      );
+
+      expect(resultado.detalles).toEqual([]);
+      expect(resultado.advertencias).toEqual([
         {
           id_profesora: 10,
           concepto: "ALUMNO_A_CARGO",
-          id_tarifa: 1,
+          motivo: "TARIFA_NO_APLICABLE",
           id_inscripcion: 100,
           id_clase: null,
-          monto: 0,
+          fecha: FIN_DEL_PERIODO,
         },
       ]);
     });
@@ -146,9 +172,13 @@ describe("CalculadorHonorarios", () => {
     it.each<[string, Partial<InscripcionACargo>]>([
       ["la inscripción sin cargo", { sin_cargo: true }],
       ["la pre-inscripción", { estado: "PREINSCRIPTA" }],
-    ])("no genera honorarios por %s ni la advierte", (_caso, parcial) => {
+    ])("no genera honorarios por %s ni la advierte, aunque tenga pagos", (_caso, parcial) => {
       const resultado = calculador.calcular(
-        datos({ inscripciones: [inscripcion(parcial)], tarifas: [tarifa()] }),
+        datos({
+          inscripciones: [inscripcion(parcial)],
+          cobradoEnElPeriodo: new Map([[100, 20000]]),
+          tarifas: [tarifaAlumno()],
+        }),
       );
 
       expect(resultado.detalles).toEqual([]);
@@ -159,31 +189,43 @@ describe("CalculadorHonorarios", () => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion()],
-          tarifas: [tarifa({ id_tarifa: 1, valor: 5000 }), tarifa({ id_tarifa: 2, id_plan: 7, valor: 8000 })],
+          cobradoEnElPeriodo: new Map([[100, 20000]]),
+          tarifas: [
+            tarifaAlumno({ id_tarifa: 1, valor: 50 }),
+            tarifaAlumno({ id_tarifa: 2, id_plan: 7, valor: 10 }),
+          ],
         }),
       );
 
-      expect(resultado.detalles[0]).toMatchObject({ id_tarifa: 2, monto: 8000 });
+      expect(resultado.detalles[0]).toMatchObject({ id_tarifa: 2, monto: 2000 });
     });
 
     it("sin tarifa de su plan usa la de todos los planes", () => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion({ id_plan: 9 })],
-          tarifas: [tarifa({ id_tarifa: 1, valor: 5000 }), tarifa({ id_tarifa: 2, id_plan: 7, valor: 8000 })],
+          cobradoEnElPeriodo: new Map([[100, 20000]]),
+          tarifas: [
+            tarifaAlumno({ id_tarifa: 1, valor: 50 }),
+            tarifaAlumno({ id_tarifa: 2, id_plan: 7, valor: 10 }),
+          ],
         }),
       );
 
-      expect(resultado.detalles[0]).toMatchObject({ id_tarifa: 1, monto: 5000 });
+      expect(resultado.detalles[0]).toMatchObject({ id_tarifa: 1, monto: 10000 });
     });
 
     it.each<[string, TarifaDeHonorario]>([
-      ["de otro plan", tarifa({ id_plan: 8 })],
-      ["de otra profesora", tarifa({ id_profesora: 99 })],
-      ["de otro concepto", tarifa({ concepto: "HORA_SUPLENCIA" })],
+      ["de otro plan", tarifaAlumno({ id_plan: 8 })],
+      ["de otra profesora", tarifaAlumno({ id_profesora: 99 })],
+      ["de otro concepto", tarifaAlumno({ concepto: "HORA_SUPLENCIA" })],
     ])("una tarifa %s no aplica: no genera la línea y la advierte", (_caso, tarifaAjena) => {
       const resultado = calculador.calcular(
-        datos({ inscripciones: [inscripcion()], tarifas: [tarifaAjena] }),
+        datos({
+          inscripciones: [inscripcion()],
+          cobradoEnElPeriodo: new Map([[100, 20000]]),
+          tarifas: [tarifaAjena],
+        }),
       );
 
       expect(resultado.detalles).toEqual([]);
@@ -203,7 +245,11 @@ describe("CalculadorHonorarios", () => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion(), inscripcion({ id_inscripcion: 101, id_profesora: 11 })],
-          tarifas: [tarifa()],
+          cobradoEnElPeriodo: new Map([
+            [100, 20000],
+            [101, 20000],
+          ]),
+          tarifas: [tarifaAlumno()],
         }),
       );
 
@@ -224,8 +270,9 @@ describe("CalculadorHonorarios", () => {
         const resultado = calculador.calcular(
           datos({
             inscripciones: [inscripcion()],
+            cobradoEnElPeriodo: new Map([[100, 20000]]),
             tarifas: [
-              tarifa({
+              tarifaAlumno({
                 fecha_vigencia_desde: fecha(desde),
                 fecha_vigencia_hasta: hasta ? fecha(hasta) : null,
               }),
@@ -239,7 +286,8 @@ describe("CalculadorHonorarios", () => {
     });
 
     describe("baja en el medio del mes (se busca el día de la baja, en Argentina)", () => {
-      const tarifaHastaEl14 = tarifa({ fecha_vigencia_hasta: fecha("2026-10-14") });
+      const tarifaHastaEl14 = tarifaAlumno({ fecha_vigencia_hasta: fecha("2026-10-14") });
+      const cobrado = new Map([[100, 20000]]);
 
       it.each<[string, string, boolean]>([
         ["el 10, con la tarifa vigente hasta el 14", "2026-10-10T15:00:00Z", true],
@@ -250,6 +298,7 @@ describe("CalculadorHonorarios", () => {
         const resultado = calculador.calcular(
           datos({
             inscripciones: [inscripcion({ estado: "BAJA", fecha_baja: new Date(instante) })],
+            cobradoEnElPeriodo: cobrado,
             tarifas: [tarifaHastaEl14],
           }),
         );
@@ -259,7 +308,7 @@ describe("CalculadorHonorarios", () => {
 
       it("sin la baja, la misma tarifa ya no aplicaría al fin del período", () => {
         const resultado = calculador.calcular(
-          datos({ inscripciones: [inscripcion()], tarifas: [tarifaHastaEl14] }),
+          datos({ inscripciones: [inscripcion()], cobradoEnElPeriodo: cobrado, tarifas: [tarifaHastaEl14] }),
         );
 
         expect(resultado.detalles).toEqual([]);
@@ -269,7 +318,8 @@ describe("CalculadorHonorarios", () => {
         const resultado = calculador.calcular(
           datos({
             inscripciones: [inscripcion({ estado: "BAJA", fecha_baja: new Date("2026-10-10T15:00:00Z") })],
-            tarifas: [tarifa({ fecha_vigencia_desde: fecha("2026-10-11") })],
+            cobradoEnElPeriodo: cobrado,
+            tarifas: [tarifaAlumno({ fecha_vigencia_desde: fecha("2026-10-11") })],
           }),
         );
 
@@ -280,11 +330,24 @@ describe("CalculadorHonorarios", () => {
         const resultado = calculador.calcular(
           datos({
             inscripciones: [inscripcion({ estado: "BAJA", fecha_baja: new Date("2026-11-05T15:00:00Z") })],
-            tarifas: [tarifa({ fecha_vigencia_hasta: FIN_DEL_PERIODO })],
+            cobradoEnElPeriodo: cobrado,
+            tarifas: [tarifaAlumno({ fecha_vigencia_hasta: FIN_DEL_PERIODO })],
           }),
         );
 
         expect(resultado.detalles).toHaveLength(1);
+      });
+
+      it("una baja que no cobró nada en el mes no genera honorarios", () => {
+        const resultado = calculador.calcular(
+          datos({
+            inscripciones: [inscripcion({ estado: "BAJA", fecha_baja: new Date("2026-10-10T15:00:00Z") })],
+            tarifas: [tarifaHastaEl14],
+          }),
+        );
+
+        expect(resultado.detalles).toEqual([]);
+        expect(resultado.advertencias).toEqual([]);
       });
     });
   });
@@ -426,6 +489,26 @@ describe("CalculadorHonorarios", () => {
   });
 
   describe("totales por profesora", () => {
+    it("el ejemplo de US-23: $200.000 cobrados por varios alumnos dan $100.000 de honorarios", () => {
+      const resultado = calculador.calcular(
+        datos({
+          inscripciones: [
+            inscripcion(),
+            inscripcion({ id_inscripcion: 101, id_alumno: 2 }),
+            inscripcion({ id_inscripcion: 102, id_alumno: 3 }),
+          ],
+          cobradoEnElPeriodo: new Map([
+            [100, 80000],
+            [101, 70000],
+            [102, 50000],
+          ]),
+          tarifas: [tarifaAlumno()],
+        }),
+      );
+
+      expect(resultado.totalesPorProfesora.get(10)).toBe(100000);
+    });
+
     it("suma los detalles de cada profesora, con los descuentos", () => {
       const resultado = calculador.calcular(
         datos({
@@ -434,10 +517,15 @@ describe("CalculadorHonorarios", () => {
             inscripcion({ id_inscripcion: 101, id_alumno: 2 }),
             inscripcion({ id_inscripcion: 102, id_alumno: 3, id_profesora: 20 }),
           ],
+          cobradoEnElPeriodo: new Map([
+            [100, 10000],
+            [101, 10000],
+            [102, 6000],
+          ]),
           suplencias: [suplida()],
           tarifas: [
-            tarifa({ id_tarifa: 1, id_profesora: 10, valor: 5000 }),
-            tarifa({ id_tarifa: 2, id_profesora: 20, valor: 3000 }),
+            tarifaAlumno({ id_tarifa: 1, id_profesora: 10 }),
+            tarifaAlumno({ id_tarifa: 2, id_profesora: 20 }),
             tarifa({ id_tarifa: 3, id_profesora: 20, concepto: "HORA_SUPLENCIA", valor: 4000 }),
           ],
         }),
@@ -464,10 +552,15 @@ describe("CalculadorHonorarios", () => {
       const resultado = calculador.calcular(
         datos({
           inscripciones: [inscripcion(), inscripcion({ id_inscripcion: 101, id_alumno: 2, id_plan: 8 })],
-          tarifas: [tarifa({ id_tarifa: 1, valor: 0.1 }), tarifa({ id_tarifa: 2, id_plan: 8, valor: 0.2 })],
+          cobradoEnElPeriodo: new Map([
+            [100, 0.2],
+            [101, 0.4],
+          ]),
+          tarifas: [tarifaAlumno()],
         }),
       );
 
+      // 0,10 + 0,20 deben dar 0,30 y no 0,30000000000000004
       expect(resultado.totalesPorProfesora.get(10)).toBe(0.3);
     });
   });

@@ -80,7 +80,7 @@ describe("HonorariosPage", () => {
 
     // Encabezado principal
     expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
-    expect(screen.getByText(/Cuánto le corresponde a cada profesora en el mes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cuánto le corresponde a cada profesor\/a en el mes/i)).toBeInTheDocument();
 
     // Pestañas
     expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();

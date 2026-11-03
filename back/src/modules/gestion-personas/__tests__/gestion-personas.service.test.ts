@@ -54,6 +54,7 @@ function crearMocks() {
       buscarPorIds: vi.fn(async (ids: number[]) => ids.map((id_alumno) => ({ id_alumno }))),
       obtenerPorId: vi.fn().mockResolvedValue({ id_alumno: 4 }),
       actualizar: vi.fn().mockResolvedValue({ id_alumno: 4 }),
+      listarConsultables: vi.fn().mockResolvedValue([]),
     },
     inscripciones: {
       obtenerIdsDeAlumnos: vi.fn().mockResolvedValue([4]),
@@ -393,6 +394,14 @@ describe("GestionPersonasService", () => {
       );
       expect(mocks.alumnos.actualizar).not.toHaveBeenCalled();
     });
+  });
+
+  it("listarAlumnosConsultables llega al componente Alumno con el usuario de quien pide", async () => {
+    const consultables = [{ id_alumno: 4, nombre: "Ana", apellido: "López", estado: "ACTIVO", propio: true }];
+    mocks.alumnos.listarConsultables.mockResolvedValue(consultables);
+
+    expect(await servicio.listarAlumnosConsultables(PROFESORA)).toBe(consultables);
+    expect(mocks.alumnos.listarConsultables).toHaveBeenCalledWith(PROFESORA.idUsuario);
   });
 
   describe("crearAlumno", () => {
