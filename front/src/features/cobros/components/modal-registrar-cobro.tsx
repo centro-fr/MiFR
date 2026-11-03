@@ -162,7 +162,9 @@ export function ModalRegistrarCobro({
   const [forma, setForma] = useState<FormaDeCobro>("EFECTIVO");
   const [monto, setMonto] = useState(String(inscripcion.precio_vigente));
   const [promocionSeleccionada, setPromocionSeleccionada] = useState("SIN_PROMOCION");
+  // La cotización llega de forma asíncrona y debe sincronizar el selector local del formulario.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPromocionSeleccionada(cotizacion?.promocion ? String(cotizacion.promocion.id_promocion) : "SIN_PROMOCION");
   }, [cotizacion?.promocion]);
 
@@ -175,7 +177,9 @@ export function ModalRegistrarCobro({
     },
     promociones,
   );
+  // El monto editable se actualiza al cambiar la promoción o la cotización vigente.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMonto(String(cotizacionActual.monto));
   }, [cotizacionActual.monto]);
 

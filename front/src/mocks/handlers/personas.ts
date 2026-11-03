@@ -2,6 +2,7 @@ import { http, HttpResponse, delay } from "msw";
 import { db } from "@/mocks/db";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { profesoraConNombre } from "@/mocks/handlers/serializar";
+import type { RoleCode } from "@/types/auth";
 
 // Mock de profesoras y usuarios (US-38)
 
@@ -157,11 +158,16 @@ export const personasHandlers = [
 
     const cuerpo = (await request.json().catch(() => ({}))) as { rol?: string };
     if (!cuerpo.rol) return errorApi(400, "VALIDATION_ERROR", "Rol inválido");
-
-    if (!usuario.roles.includes(cuerpo.rol as any)) {
-      usuario.roles.push(cuerpo.rol as any);
+    const rolesValidos: RoleCode[] = ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
+    if (!rolesValidos.includes(cuerpo.rol as RoleCode)) {
+      return errorApi(400, "VALIDATION_ERROR", "Rol inválido");
     }
 
-    return HttpResponse.json({ id_usuario: id, rol: cuerpo.rol }, { status: 201 });
+    const rol = cuerpo.rol as RoleCode;
+    if (!usuario.roles.includes(rol)) {
+      usuario.roles.push(rol);
+    }
+
+    return HttpResponse.json({ id_usuario: id, rol }, { status: 201 });
   }),
 ];

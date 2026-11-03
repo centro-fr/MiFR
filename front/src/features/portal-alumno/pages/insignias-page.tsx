@@ -117,48 +117,54 @@ function Insignia({ insignia }: { insignia: FichaInsignias["insignias"][number] 
   );
 }
 
-export function InsigniasPage() {
+export function InsigniasContenido() {
   const panel = usePanelAlumno();
   const consulta = useInsignias(panel.data?.id_alumno);
 
   if (panel.isPending || consulta.isPending) {
-    return <OwnerLayout><div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />Cargando tus logros...</div></OwnerLayout>;
+    return <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />Cargando tus logros...</div>;
   }
 
   const error = panel.error ?? consulta.error;
   if (error) {
-    return <OwnerLayout><Card className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border-slate-200 p-6 text-center dark:border-slate-800"><AlertCircle aria-hidden="true" className="size-8 text-rose-600" /><p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">{mensajeDeErrorApi(error, "No se pudieron cargar tus logros.")}</p><Button type="button" onClick={() => void consulta.refetch()} className="min-h-[44px] rounded-xl bg-primary font-bold text-white">Reintentar</Button></Card></OwnerLayout>;
+    return <Card className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border-slate-200 p-6 text-center dark:border-slate-800"><AlertCircle aria-hidden="true" className="size-8 text-rose-600" /><p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">{mensajeDeErrorApi(error, "No se pudieron cargar tus logros.")}</p><Button type="button" onClick={() => void consulta.refetch()} className="min-h-[44px] rounded-xl bg-primary font-bold text-white">Reintentar</Button></Card>;
   }
 
   const ficha = consulta.data;
   if (!ficha) {
-    return <OwnerLayout><Card className="rounded-3xl border-slate-200 p-8 text-center text-sm font-semibold text-slate-600 dark:border-slate-800 dark:text-slate-300">Todavía no hay logros para mostrar.</Card></OwnerLayout>;
+    return <Card className="rounded-3xl border-slate-200 p-8 text-center text-sm font-semibold text-slate-600 dark:border-slate-800 dark:text-slate-300">Todavía no hay logros para mostrar.</Card>;
   }
 
   return (
-    <OwnerLayout>
-      <div className="min-w-0 space-y-6">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">Mis logros</h1>
-          <p className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">Mantené tu constancia y celebrá cada avance.</p>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <TarjetaRacha ficha={ficha} />
-          <Hitos ficha={ficha} />
-        </div>
-        <section className="space-y-3">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Mis insignias</h2>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">Desbloqueá nuevos logros con tu asistencia.</p>
-            </div>
-            <Badge className="rounded-full bg-primary px-3 py-1 font-black text-white">{ficha.insignias.filter((item) => item.obtenida).length}/{ficha.insignias.length}</Badge>
-          </div>
-          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {ficha.insignias.map((insignia) => <Insignia key={insignia.codigo} insignia={insignia} />)}
-          </ul>
-        </section>
+    <div className="min-w-0 space-y-6">
+      <div>
+        <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">Mis logros</h2>
+        <p className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">Mantené tu constancia y celebrá cada avance.</p>
       </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <TarjetaRacha ficha={ficha} />
+        <Hitos ficha={ficha} />
+      </div>
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Mis insignias</h2>
+            <p className="mt-1 text-sm font-medium text-muted-foreground">Desbloqueá nuevos logros con tu asistencia.</p>
+          </div>
+          <Badge className="rounded-full bg-primary px-3 py-1 font-black text-white">{ficha.insignias.filter((item) => item.obtenida).length}/{ficha.insignias.length}</Badge>
+        </div>
+        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {ficha.insignias.map((insignia) => <Insignia key={insignia.codigo} insignia={insignia} />)}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+export function InsigniasPage() {
+  return (
+    <OwnerLayout>
+      <InsigniasContenido />
     </OwnerLayout>
   );
 }

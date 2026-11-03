@@ -14,6 +14,7 @@ import {
 } from "@/features/rutinas/hooks/use-rutinas";
 import type { AlumnoConsultable } from "@/types/rutinas";
 import { cn } from "@/utils/cn";
+import { InsigniasContenido } from "@/features/portal-alumno/pages/insignias-page";
 
 // US-28: el alumno consulta su rutina y su evolución física; el tutor, las de sus menores. Solo lectura:
 // lo carga la profesora desde la ficha (US-27).
@@ -156,6 +157,7 @@ function ContenidoDeLaPagina() {
         <div key={elegido.id} className="flex flex-col gap-4">
           <MiRutina alumno={elegido} />
           <MiProgreso alumno={elegido} />
+          <InsigniasContenido />
         </div>
       )}
     </>

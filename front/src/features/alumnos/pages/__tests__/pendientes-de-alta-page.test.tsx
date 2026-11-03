@@ -16,6 +16,9 @@ vi.mock("../../hooks/use-alta-definitiva", () => ({
   usePreInscripcionesPendientes: vi.fn(),
   useConfirmarAltaDefinitiva: vi.fn(),
 }));
+vi.mock("@/features/promociones/hooks/use-promociones", () => ({
+  usePromociones: () => [],
+}));
 
 vi.stubGlobal("ResizeObserver", class {
   observe() {}

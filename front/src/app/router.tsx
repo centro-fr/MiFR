@@ -64,7 +64,6 @@ const SECCIONES_EN_CONSTRUCCION = [
   // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
   // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
   { path: "mi-plan", seccion: "Mi plan" },
-  { path: "comunidad", seccion: "Comunidad" },
   { path: "perfil", seccion: "Perfil" },
 ];
 
@@ -171,6 +170,20 @@ export const router = createBrowserRouter([
         path: "progreso",
         element: guardiaDeSeccion("progreso", "RUTINAS_VER_PROPIAS"),
         children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
+      },
+      {
+        // US-30: ranking de asistencia visible para todos los roles autorizados.
+        path: "comunidad",
+        element: guardiaDeSeccion("comunidad", "REPORTES_RANKING_VER"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/ranking-asistencia-page"),
+              "RankingAsistenciaPage",
+            ),
+          },
+        ],
       },
       {
         path: "profesoras",
@@ -331,19 +344,6 @@ export const router = createBrowserRouter([
             lazy: paginaPerezosa(
               () => import("@/features/portal-alumno/pages/insignias-page"),
               "InsigniasPage",
-            ),
-          },
-        ],
-      },
-      {
-        path: "comunidad",
-        element: guardiaDeSeccion("comunidad", "REPORTES_RANKING_VER"),
-        children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(
-              () => import("@/features/portal-alumno/pages/ranking-asistencia-page"),
-              "RankingAsistenciaPage",
             ),
           },
         ],
