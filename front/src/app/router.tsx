@@ -63,11 +63,8 @@ const SECCIONES_EN_CONSTRUCCION = [
   { path: "mis-clases", seccion: "Mis clases" },
   { path: "cobros", seccion: "Cobros" },
   // Menú del alumno y del tutor (MENUS.md). Perfil lo comparten con la profesora.
-  // US-16: la pantalla ya está hecha (features/transferencias/pages/mi-plan-page.tsx), pero el back
-  // todavía no tiene GET /alumnos/mi-plan y responde 403. Cuando lo tenga, vuelve a su ruta propia.
-  { path: "mi-plan", seccion: "Mi plan" },
-  { path: "progreso", seccion: "Progreso" },
-  { path: "comunidad", seccion: "Comunidad" },
+  // US-31: racha e insignias del alumno o menor a cargo.
+  // US-30: ranking de asistencia para los cuatro roles autorizados.
   { path: "perfil", seccion: "Perfil" },
 ];
 
@@ -78,6 +75,15 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
     ...carga,
     lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
+  {
+    path: "/disponibilidad",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(
+      () => import("@/features/publico/pages/disponibilidad-page"),
+      "DisponibilidadPage",
+    ),
   },
   { path: "/seguridad/permisos", element: <Navigate to="/app/dashboard" replace /> },
   {
@@ -132,7 +138,16 @@ export const router = createBrowserRouter([
       {
         path: "inicio",
         element: guardiaDeSeccion("inicio"),
-        children: [{ index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-provisorio-page"), "StudentHomePage") }],
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/portal-alumno/pages/panel-alumno-page"), "PanelAlumnoPage") },
+        ],
+      },
+      {
+        path: "mi-plan",
+        element: guardiaDeSeccion("mi-plan"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/transferencias/pages/mi-plan-page"), "MiPlanPage") },
+        ],
       },
       {
         path: "actividades",
@@ -269,6 +284,32 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion(path),
         children: [{ index: true, lazy: paginaEnConstruccion(seccion) }],
       })),
+      {
+        path: "progreso",
+        element: guardiaDeSeccion("progreso", "INSIGNIAS_VER_PROPIAS"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/insignias-page"),
+              "InsigniasPage",
+            ),
+          },
+        ],
+      },
+      {
+        path: "comunidad",
+        element: guardiaDeSeccion("comunidad", "REPORTES_RANKING_VER"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/ranking-asistencia-page"),
+              "RankingAsistenciaPage",
+            ),
+          },
+        ],
+      },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

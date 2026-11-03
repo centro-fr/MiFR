@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from "msw";
 import { z } from "zod";
 import { bajaAlumnoBodySchema, type AlumnoApi } from "@/features/alumnos/schemas/alumno";
-import { db, siguienteId } from "@/mocks/db";
+import { db, siguienteId, type HorarioMock } from "@/mocks/db";
 import type { AlumnoMock, UsuarioPersonaMock } from "@/mocks/data/alumnos";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
@@ -322,6 +322,108 @@ function esSoloProfesora(request: Request): boolean {
   return roles.includes("PROFESORA") && !roles.includes("PROPIETARIA");
 }
 
+function alumnoDeLaSesion(request: Request): AlumnoMock | undefined {
+  const usuario = usuarioDeLaSesion(request);
+  if (!usuario) return undefined;
+  const persona = db.usuariosPersonas.find(
+    (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
+  );
+  const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+  return db.alumnos.find(
+    (alumno) =>
+      idsCandidatos.includes(alumno.id_usuario) ||
+      (alumno.id_usuario_responsable !== null && idsCandidatos.includes(alumno.id_usuario_responsable)),
+  );
+}
+
+function diaDeSemana(fecha: Date): number {
+  const dia = fecha.getDay();
+  return dia === 0 ? 7 : dia;
+}
+
+function nombreProfesora(idProfesora: number): string {
+  const profesora = db.profesoras.find((item) => item.id_profesora === idProfesora);
+  const usuario = profesora && db.usuarios.find((item) => item.id_usuario === profesora.id_usuario);
+  return usuario ? `${usuario.nombre} ${usuario.apellido}` : "Profesora sin asignar";
+}
+
+function panelAlumnoDe(alumno: AlumnoMock) {
+  const persona = datosPersonales(alumno.id_usuario);
+  const [inscripcion] = vigentesDe(alumno.id_alumno);
+  const plan = inscripcion ? db.planes.find((item) => item.id_plan === inscripcion.id_plan) : undefined;
+  const situacion = inscripcion ? situacionCuotaDe(inscripcion) : null;
+  const estadoCuota =
+    situacion?.estado === "POR_VENCER"
+      ? "EN_GRACIA"
+      : situacion?.estado === "AL_DIA"
+        ? "AL_DIA"
+        : "VENCIDA";
+  const horarios = inscripcion
+    ? inscripcion.ids_horarios
+        .map((id) => db.horarios.find((horario) => horario.id_horario === id))
+        .filter((horario): horario is HorarioMock => horario !== undefined && horario.fecha_baja === null)
+    : [];
+  const hoy = new Date();
+  const proximasClases = [];
+
+  for (let offset = 0; offset < 14 && proximasClases.length < 4; offset += 1) {
+    const fecha = new Date(hoy);
+    fecha.setHours(12, 0, 0, 0);
+    fecha.setDate(hoy.getDate() + offset);
+    const fechaTexto = fecha.toISOString().slice(0, 10);
+    for (const horario of horarios) {
+      if (horario.dia_semana !== diaDeSemana(fecha)) continue;
+      const actividad = db.actividades.find((item) => item.id_actividad === horario.id_actividad);
+      if (!actividad) continue;
+      proximasClases.push({
+        id: Number(fechaTexto.replaceAll("-", "")) * 100 + horario.id_horario,
+        fecha: fechaTexto,
+        hora_inicio: horario.hora_inicio,
+        hora_fin: horario.hora_fin,
+        actividad: actividad.nombre,
+        profesora: nombreProfesora(horario.id_profesora),
+        cupo_disponible: horario.cupo_maximo,
+      });
+    }
+  }
+
+  const historialAsistencias = db.asistencias
+    .filter((registro) => registro.id_alumno === alumno.id_alumno)
+    .map((registro) => {
+      const clase = db.clases.find((item) => item.id_clase === registro.id_clase);
+      const horario = clase && db.horarios.find((item) => item.id_horario === clase.id_horario);
+      const actividad = horario && db.actividades.find((item) => item.id_actividad === horario.id_actividad);
+      if (!clase || !horario || !actividad) return null;
+      return {
+        id: registro.id_clase,
+        fecha: clase.fecha_clase.slice(0, 10),
+        actividad: actividad.nombre,
+        profesora: nombreProfesora(horario.id_profesora),
+        estado: registro.asistio ? "PRESENTE" : "AUSENTE",
+      };
+    })
+    .filter((registro): registro is NonNullable<typeof registro> => registro !== null)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  return {
+    id_alumno: alumno.id_alumno,
+    alumno: { nombre: persona.nombre, apellido: persona.apellido },
+    plan: plan && situacion
+      ? {
+          nombre: plan.nombre,
+          tipo: plan.tipo,
+          clases_por_semana: plan.clases_por_semana,
+          profesora: nombreProfesora(inscripcion.id_profesora),
+          estado_cuota: estadoCuota,
+          fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? "",
+          dias_restantes: situacion.dias_restantes ?? 0,
+        }
+      : null,
+    proximas_clases: proximasClases.sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`)),
+    historial_asistencias: historialAsistencias,
+  };
+}
+
 export const alumnosHandlers = [
   http.get("*/api/v1/alumnos", async ({ request }) => {
     await delay(300);
@@ -431,6 +533,15 @@ export const alumnosHandlers = [
         : null,
       datos_bancarios: datosBancarios,
     });
+  }),
+
+  // US-29: contrato consolidado provisional para el panel del alumno. Se reemplaza por el
+  // endpoint del backend cuando esté disponible.
+  http.get("*/api/v1/alumnos/mi-panel", async ({ request }) => {
+    await delay(300);
+    const alumno = alumnoDeLaSesion(request) ?? db.alumnos.find((item) => item.estado !== "BAJA");
+    if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno asociado");
+    return HttpResponse.json(panelAlumnoDe(alumno));
   }),
 
   http.get("*/api/v1/alumnos/:id", async ({ request, params }) => {
