@@ -172,7 +172,7 @@ export function TablaAltasPorMes({
         {transcurridos.map((mes, indice) => (
           <li
             key={mes.mes}
-            className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 transition-colors hover:border-pink-200"
+            className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-4"
           >
             <div className="min-w-0">
               <p className="font-bold text-base text-slate-900 dark:text-white">{mes.nombre}</p>
@@ -191,7 +191,7 @@ export function TablaAltasPorMes({
       </ul>
 
       {/* VISTA DESKTOP: TABLA */}
-      <div className="mt-4 hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="mt-4 hidden md:block">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-slate-50/70 dark:bg-slate-800/40">

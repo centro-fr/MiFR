@@ -31,50 +31,43 @@ function FiltroPeriodo({ onAplicar }: { onAplicar: (filtros: FiltrosRankingAsist
   };
 
   return (
-    <Card className="rounded-3xl border-slate-200 p-4 shadow-sm dark:border-slate-800 sm:p-5">
-      <form
-        className="flex flex-col gap-3 sm:flex-row sm:items-end"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onAplicar({ desde: desde || undefined, hasta: hasta || undefined });
-        }}
-      >
-        <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-          Desde
-          <input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className={CAMPO_FECHA} />
-        </label>
-        <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-          Hasta
-          <input type="date" value={hasta} onChange={(event) => setHasta(event.target.value)} className={CAMPO_FECHA} />
-        </label>
-        <Button type="submit" className="min-h-[44px] rounded-xl bg-primary font-bold text-white">
-          Aplicar período
+    <form
+      aria-label="Período del ranking"
+      className="flex flex-col gap-3 sm:flex-row sm:items-end"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onAplicar({ desde: desde || undefined, hasta: hasta || undefined });
+      }}
+    >
+      <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+        Desde
+        <input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className={CAMPO_FECHA} />
+      </label>
+      <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+        Hasta
+        <input type="date" value={hasta} onChange={(event) => setHasta(event.target.value)} className={CAMPO_FECHA} />
+      </label>
+      <Button type="submit" className="min-h-[44px] rounded-xl bg-primary font-bold text-white">
+        Aplicar período
+      </Button>
+      {desde || hasta ? (
+        <Button type="button" variant="ghost" className="min-h-[44px] rounded-xl font-bold text-primary" onClick={restablecer}>
+          Restablecer
         </Button>
-        {desde || hasta ? (
-          <Button type="button" variant="ghost" className="min-h-[44px] rounded-xl font-bold text-primary" onClick={restablecer}>
-            Restablecer
-          </Button>
-        ) : null}
-      </form>
-    </Card>
+      ) : null}
+    </form>
   );
 }
 
 function FilaRanking({ fila }: { fila: Ranking["datos"][number] }) {
   const esPodio = fila.posicion <= 3;
   return (
-    <li
-      className={`rounded-2xl border p-4 ${
-        fila.es_propia
-          ? "border-primary/50 bg-pink-50/70 shadow-sm dark:bg-primary/10"
-          : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      }`}
-    >
+    <li className={`rounded-2xl p-4 ${fila.es_propia ? "bg-pink-50 dark:bg-primary/10" : "bg-slate-50 dark:bg-slate-800/40"}`}>
       <div className="flex items-center gap-3">
         <div
           aria-label={`Puesto ${fila.posicion}`}
           className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
-            esPodio ? MEDALLA[fila.posicion - 1] : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            esPodio ? MEDALLA[fila.posicion - 1] : "bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300"
           }`}
         >
           {esPodio ? <Medal aria-hidden="true" className="size-5" /> : fila.posicion}

@@ -316,63 +316,61 @@ export function ClasesDelDia({
           )}
 
           {/* BARRA DE BÚSQUEDA Y FILTROS */}
-          <Card className="rounded-xl border-border bg-white p-4 shadow-sm dark:bg-surface-low">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              {/* Campo de búsqueda */}
-              <div className="relative flex-1">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  type="search"
-                  placeholder={
-                    propietaria
-                      ? "Buscar por actividad, horario o profesor/a..."
-                      : "Buscar por actividad u horario..."
-                  }
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="h-10 w-full rounded-lg border-border bg-slate-50/50 pl-9 text-sm transition-colors focus:bg-white dark:bg-canvas dark:focus:bg-surface-low"
-                />
-              </div>
-
-              {/* Chips de filtro */}
-              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtros de estado de clase">
-                {OPCIONES_FILTRO.map((opcion) => {
-                  const activo = filtroEstado === opcion.id;
-                  return (
-                    <Button
-                      key={opcion.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => setFiltroEstado(opcion.id)}
-                      className={cn(
-                        "h-9 rounded-lg px-3 text-xs font-bold transition-all",
-                        activo
-                          ? "border-primary bg-primary text-white hover:bg-primary-dark hover:text-white dark:border-primary dark:bg-primary dark:text-white"
-                          : "border-border bg-transparent text-slate-700 hover:bg-slate-100 hover:text-dark dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-                      )}
-                    >
-                      {opcion.etiqueta}
-                    </Button>
-                  );
-                })}
-
-                {hayFiltros && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={limpiarFiltros}
-                    className="h-9 px-2.5 text-xs font-bold text-muted-foreground hover:text-dark dark:hover:text-white"
-                  >
-                    <X className="mr-1 size-3.5" />
-                    Limpiar
-                  </Button>
-                )}
-              </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {/* Campo de búsqueda */}
+            <div className="relative flex-1">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="search"
+                placeholder={
+                  propietaria
+                    ? "Buscar por actividad, horario o profesor/a..."
+                    : "Buscar por actividad u horario..."
+                }
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="h-10 w-full rounded-lg border-border bg-slate-50/50 pl-9 text-sm transition-colors focus:bg-white dark:bg-canvas dark:focus:bg-surface-low"
+              />
             </div>
-          </Card>
+
+            {/* Chips de filtro */}
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtros de estado de clase">
+              {OPCIONES_FILTRO.map((opcion) => {
+                const activo = filtroEstado === opcion.id;
+                return (
+                  <Button
+                    key={opcion.id}
+                    type="button"
+                    variant="outline"
+                    onClick={() => setFiltroEstado(opcion.id)}
+                    className={cn(
+                      "h-9 rounded-lg px-3 text-xs font-bold transition-all",
+                      activo
+                        ? "border-primary bg-primary text-white hover:bg-primary-dark hover:text-white dark:border-primary dark:bg-primary dark:text-white"
+                        : "border-border bg-transparent text-slate-700 hover:bg-slate-100 hover:text-dark dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                    )}
+                  >
+                    {opcion.etiqueta}
+                  </Button>
+                );
+              })}
+
+              {hayFiltros && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={limpiarFiltros}
+                  className="h-9 px-2.5 text-xs font-bold text-muted-foreground hover:text-dark dark:hover:text-white"
+                >
+                  <X className="mr-1 size-3.5" />
+                  Limpiar
+                </Button>
+              )}
+            </div>
+          </div>
 
           {/* LISTADO DE CLASES O ESTADO VACÍO */}
           {clases.length === 0 ? (

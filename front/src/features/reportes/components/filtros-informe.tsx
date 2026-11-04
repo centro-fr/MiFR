@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
 import { useActividadesParaFiltro, useProfesorasParaFiltro } from "@/features/reportes/hooks/use-reportes";
 import { filtrosIniciales, type FiltrosDescritos } from "@/features/reportes/utils/formato-informe";
@@ -88,128 +87,126 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
   }
 
   return (
-    <Card className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-slate-900/60">
-      <form onSubmit={alEnviar} noValidate aria-label="Filtros del informe" className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="informe-desde" className={ETIQUETA}>
-              Desde
-            </label>
-            <CampoFecha
-              id="informe-desde"
-              etiquetaCalendario="Abrir calendario para el inicio del período"
-              max={hoy}
-              value={borrador.desde}
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? "informe-periodo-error" : undefined}
-              onChange={(desde) => cambiar({ desde })}
-              className={CONTROL_FECHA}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="informe-hasta" className={ETIQUETA}>
-              Hasta
-            </label>
-            <CampoFecha
-              id="informe-hasta"
-              etiquetaCalendario="Abrir calendario para el fin del período"
-              value={borrador.hasta}
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? "informe-periodo-error" : undefined}
-              onChange={(hasta) => cambiar({ hasta })}
-              className={CONTROL_FECHA}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="informe-profesora" className={ETIQUETA}>
-              Profesor/a
-            </label>
-            <select
-              id="informe-profesora"
-              value={borrador.idProfesora}
-              onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
-              className={CONTROL}
-            >
-              <option value={TODAS}>Todo el equipo</option>
-              {profesoras.data?.map((p) => (
-                <option key={p.id} value={p.id}>{`${p.nombre} ${p.apellido}`}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="informe-actividad" className={ETIQUETA}>
-              Actividad
-            </label>
-            <select
-              id="informe-actividad"
-              value={borrador.idActividad}
-              onChange={(evento) => cambiar({ idActividad: evento.target.value })}
-              className={CONTROL}
-            >
-              <option value={TODAS}>Todas las actividades</option>
-              {actividades.data?.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
-            <label htmlFor="informe-alumno" className={ETIQUETA}>
-              Alumno (opcional)
-            </label>
-            <BuscadorAlumno
-              id="informe-alumno"
-              elegido={borrador.alumno}
-              onElegir={(alumno) => cambiar({ alumno })}
-              className={CONTROL}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <p id="informe-periodo-error" role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-            {error}
-          </p>
-        )}
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-            <input
-              type="checkbox"
-              checked={borrador.incluirBajas}
-              onChange={(evento) => cambiar({ incluirBajas: evento.target.checked })}
-              className="size-4.5 rounded shrink-0 accent-primary"
-            />
-            Incluir alumnos dados de baja
+    <form onSubmit={alEnviar} noValidate aria-label="Filtros del informe" className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="informe-desde" className={ETIQUETA}>
+            Desde
           </label>
-
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={limpiar}
-              disabled={generando}
-              className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-            >
-              <RotateCcw aria-hidden="true" className="size-4 mr-1.5" />
-              Limpiar filtros
-            </Button>
-            <Button
-              type="submit"
-              disabled={generando}
-              className="min-h-[44px] rounded-xl bg-primary px-5 font-extrabold text-white shadow-md shadow-primary/25 hover:bg-primary-dark transition-all"
-            >
-              {generando && <Loader2 aria-hidden="true" className="animate-spin size-4 mr-1.5" />}
-              Generar informe
-            </Button>
-          </div>
+          <CampoFecha
+            id="informe-desde"
+            etiquetaCalendario="Abrir calendario para el inicio del período"
+            max={hoy}
+            value={borrador.desde}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "informe-periodo-error" : undefined}
+            onChange={(desde) => cambiar({ desde })}
+            className={CONTROL_FECHA}
+          />
         </div>
-      </form>
-    </Card>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="informe-hasta" className={ETIQUETA}>
+            Hasta
+          </label>
+          <CampoFecha
+            id="informe-hasta"
+            etiquetaCalendario="Abrir calendario para el fin del período"
+            value={borrador.hasta}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "informe-periodo-error" : undefined}
+            onChange={(hasta) => cambiar({ hasta })}
+            className={CONTROL_FECHA}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="informe-profesora" className={ETIQUETA}>
+            Profesor/a
+          </label>
+          <select
+            id="informe-profesora"
+            value={borrador.idProfesora}
+            onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
+            className={CONTROL}
+          >
+            <option value={TODAS}>Todo el equipo</option>
+            {profesoras.data?.map((p) => (
+              <option key={p.id} value={p.id}>{`${p.nombre} ${p.apellido}`}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="informe-actividad" className={ETIQUETA}>
+            Actividad
+          </label>
+          <select
+            id="informe-actividad"
+            value={borrador.idActividad}
+            onChange={(evento) => cambiar({ idActividad: evento.target.value })}
+            className={CONTROL}
+          >
+            <option value={TODAS}>Todas las actividades</option>
+            {actividades.data?.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
+          <label htmlFor="informe-alumno" className={ETIQUETA}>
+            Alumno (opcional)
+          </label>
+          <BuscadorAlumno
+            id="informe-alumno"
+            elegido={borrador.alumno}
+            onElegir={(alumno) => cambiar({ alumno })}
+            className={CONTROL}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <p id="informe-periodo-error" role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+          {error}
+        </p>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+          <input
+            type="checkbox"
+            checked={borrador.incluirBajas}
+            onChange={(evento) => cambiar({ incluirBajas: evento.target.checked })}
+            className="size-4.5 rounded shrink-0 accent-primary"
+          />
+          Incluir alumnos dados de baja
+        </label>
+
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={limpiar}
+            disabled={generando}
+            className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+          >
+            <RotateCcw aria-hidden="true" className="size-4 mr-1.5" />
+            Limpiar filtros
+          </Button>
+          <Button
+            type="submit"
+            disabled={generando}
+            className="min-h-[44px] rounded-xl bg-primary px-5 font-extrabold text-white shadow-md shadow-primary/25 hover:bg-primary-dark transition-all"
+          >
+            {generando && <Loader2 aria-hidden="true" className="animate-spin size-4 mr-1.5" />}
+            Generar informe
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }
