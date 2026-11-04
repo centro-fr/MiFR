@@ -14,8 +14,9 @@ import {
   type PlanDePrueba,
 } from "./fabricas.js";
 
-// Casos PI-78 a PI-82: las liquidaciones y las tarifas de honorarios (US-23). El reloj queda fijo el
-// lunes 12/10/2026 a las 15:00 de Argentina y se liquida septiembre, un mes ya cerrado.
+// Casos PI-78 a PI-82 y PI-86: las liquidaciones, las tarifas y el cierre mensual de los honorarios
+// (US-23). El reloj queda fijo el lunes 12/10/2026 a las 15:00 de Argentina y se liquida septiembre, un
+// mes ya cerrado. Para que listar no cierre septiembre solo, el día de cierre queda en 28 salvo en PI-86.
 //
 // Regla vigente: cada profesora recibe un porcentaje (50 %) de lo cobrado en el mes por sus alumnos; la
 // hora de suplencia es un monto fijo. Escenario de septiembre (tarifas desde el 01/01/2026):
@@ -60,6 +61,7 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(AHORA);
   await reiniciarBase(prisma);
+  await fijarDiaDeCierre(28);
   escenario = await armarEscenario();
 });
 
@@ -78,6 +80,13 @@ async function pedir(
   const token = await entorno.iniciarSesion(email);
   const pedido = request(entorno.app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
   return cuerpo ? pedido.send(cuerpo) : pedido;
+}
+
+async function fijarDiaDeCierre(dia: number): Promise<void> {
+  await prisma.parametros_sistema.update({
+    where: { clave: "DIA_CIERRE_HONORARIOS" },
+    data: { valor: String(dia) },
+  });
 }
 
 function generar(periodo: string = SEPTIEMBRE, email?: string) {
@@ -680,5 +689,51 @@ describe("PI-82: las tarifas de honorarios", () => {
       where: { id_tarifa: escenario.tarifa.luciaGeneral },
     });
     expect(intacta.fecha_vigencia_hasta).toBeNull();
+  });
+});
+
+describe("PI-86: el cierre mensual automático de los honorarios", () => {
+  it("R-17 desde el día de cierre recalcula y cierra el mes anterior; lo que ya estaba pagado no se toca", async () => {
+    await fijarDiaDeCierre(5);
+    const { liquidaciones } = (await generar()).body;
+    const lucia = deLaProfesora(liquidaciones, escenario.lucia).id_liquidacion;
+    await pedir("post", `/liquidaciones/${lucia}/cerrar`);
+    await pedir("post", `/liquidaciones/${lucia}/pagar`);
+    // Cada entorno es un proceso nuevo: no recuerda si ya cerró el mes.
+    const proceso = crearEntornoDeIntegracion();
+
+    const resumen = await proceso.cierreMensualHonorarios.cerrarMesAnterior(AHORA);
+    const otraVez = await proceso.cierreMensualHonorarios.cerrarMesAnterior(AHORA);
+    await proceso.cerrar();
+
+    expect(resumen).toEqual({ periodo: SEPTIEMBRE, cerradas: 2 });
+    expect(otraVez).toBeNull();
+    const filas = await prisma.liquidaciones.findMany();
+    expect(filas).toHaveLength(3);
+    expect(filas.find((fila) => fila.id_liquidacion === lucia)?.estado).toBe("PAGADA");
+    expect(filas.filter((fila) => fila.estado === "CERRADA")).toHaveLength(2);
+    const deCarla = filas.find((fila) => fila.id_profesora === escenario.carla.id_profesora);
+    expect(Number(deCarla?.monto_total)).toBe(17500);
+  });
+
+  it("R-18 antes del día de cierre no calcula nada; al llegar, listar el mes ya lo devuelve cerrado", async () => {
+    await fijarDiaDeCierre(15);
+    const proceso = crearEntornoDeIntegracion();
+
+    const antes = await proceso.cierreMensualHonorarios.cerrarMesAnterior(AHORA);
+    await proceso.cerrar();
+
+    expect(antes).toBeNull();
+    expect(await prisma.liquidaciones.count()).toBe(0);
+
+    await fijarDiaDeCierre(12);
+    const listado = await pedir("get", `/liquidaciones?periodo=${SEPTIEMBRE}`);
+
+    expect(listado.status).toBe(200);
+    expect(listado.body.liquidaciones).toHaveLength(3);
+    expect(listado.body.total_general).toBe(38000);
+    expect(listado.body.liquidaciones.every(({ estado }: { estado: string }) => estado === "CERRADA")).toBe(
+      true,
+    );
   });
 });

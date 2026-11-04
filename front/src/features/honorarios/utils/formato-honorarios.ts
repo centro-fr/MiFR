@@ -13,8 +13,9 @@ import { formatearPrecio } from "@/utils/moneda";
 const FORMATO_PORCENTAJE = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
 
 export const ETIQUETA_ESTADO: Record<EstadoLiquidacion, string> = {
-  BORRADOR: "En revisión",
-  CERRADA: "Cerrada",
+  // El mes abierto se recalcula solo; al cerrarse queda fijo y falta abonarlo.
+  BORRADOR: "En curso",
+  CERRADA: "Para abonar",
   // Glosario: el sistema no procesa pagos. "Abonada" solo registra que se le abonó por fuera.
   PAGADA: "Abonada",
 };
@@ -128,4 +129,9 @@ export function ultimoCalculo(liquidaciones: LiquidacionResumen[]): string | nul
   const enRevision = liquidaciones.filter((fila) => fila.estado === "BORRADOR");
   const filas = enRevision.length > 0 ? enRevision : liquidaciones;
   return filas.map((fila) => fila.calculadaEl).sort().at(-1) ?? null;
+}
+
+/** "1 alumno" o "3 alumnos". */
+export function cantidadDeAlumnos(cantidad: number): string {
+  return `${cantidad} ${cantidad === 1 ? "alumno" : "alumnos"}`;
 }

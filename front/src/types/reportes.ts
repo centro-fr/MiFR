@@ -80,3 +80,127 @@ export interface InformeAsistencia {
   totalAlumnos: number;
   offset: number;
 }
+
+// ---------- Planes más elegidos (US-36) ----------
+
+export interface FiltrosPlanesReporte {
+  idActividad: number | null;
+  idProfesora: number | null;
+}
+
+export interface PlanDelReporte {
+  id: number;
+  nombre: string;
+  tipo: "MENSUAL" | "CLASE_SUELTA";
+  actividad: string | null;
+  alumnos: number;
+  porcentaje: number;
+  precioVigente: number | null;
+  ingresoEstimado: number;
+}
+
+export interface EstadisticasPlanes {
+  alumnosActivos: number;
+  ingresoEstimado: number;
+  totalPlanes: number;
+  planes: PlanDelReporte[];
+}
+
+// ---------- Ocupación de horarios (US-37) ----------
+
+export type NivelOcupacion = "LIBRE" | "MODERADO" | "CASI_LLENO" | "COMPLETO" | "SIN_CUPO";
+
+export interface FiltrosOcupacion {
+  idActividad: number | null;
+  idProfesora: number | null;
+  modalidad: "GRUPAL" | "PERSONALIZADA" | null;
+}
+
+export interface HorarioOcupado {
+  id: number;
+  /** 1 = lunes … 7 = domingo, como el back. */
+  diaSemana: number;
+  horaInicio: string;
+  horaFin: string;
+  actividad: string;
+  modalidad: "GRUPAL" | "PERSONALIZADA";
+  profesora: string;
+  cupo: number | null;
+  inscriptos: number;
+  porcentaje: number | null;
+  nivel: NivelOcupacion;
+}
+
+export interface InformeOcupacion {
+  totalHorarios: number;
+  ocupacionTotal: number;
+  porNivel: Record<NivelOcupacion, number>;
+  horarios: HorarioOcupado[];
+}
+
+// ---------- Cobranza ----------
+
+export interface FiltrosCobranza {
+  desde: string;
+  hasta: string;
+  formaPago: "EFECTIVO" | "TRANSFERENCIA" | null;
+  idProfesora: number | null;
+}
+
+export interface PagoDelReporte {
+  id: number;
+  fecha: string;
+  monto: number;
+  formaPago: "EFECTIVO" | "TRANSFERENCIA";
+  alumno: string;
+  plan: string;
+  cobro: string | null;
+}
+
+export interface InformeCobranza {
+  desde: string;
+  hasta: string;
+  totalCobrado: number;
+  totalEfectivo: number;
+  totalTransferencia: number;
+  cantidadPagos: number;
+  pagos: PagoDelReporte[];
+  total: number;
+  offset: number;
+}
+
+// ---------- Cuotas vencidas (US-34) ----------
+
+export interface FiltrosCuotasVencidas {
+  idProfesora: number | null;
+  idPlan: number | null;
+}
+
+export interface CuotaVencida {
+  idInscripcion: number;
+  alumno: string;
+  telefono: string | null;
+  email: string | null;
+  plan: string;
+  profesora: string;
+  vencio: string;
+  diasVencida: number;
+  monto: number;
+}
+
+export interface DeudaDeProfesora {
+  id: number;
+  nombre: string;
+  alumnos: number;
+  monto: number;
+}
+
+export interface InformeCuotasVencidas {
+  alumnosConDeuda: number;
+  totalAdeudado: number;
+  promedioPorAlumno: number;
+  porProfesora: DeudaDeProfesora[];
+  cuotas: CuotaVencida[];
+  total: number;
+  offset: number;
+}

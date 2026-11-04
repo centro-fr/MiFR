@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InscripcionesPage } from "../inscripciones-page";
 import { InformeAsistenciaPage } from "../informe-asistencia-page";
-import { ReporteEnConstruccionPage } from "../reporte-en-construccion-page";
 
 // Mock de ResizeObserver para entorno jsdom
 globalThis.ResizeObserver = class ResizeObserver {
@@ -160,11 +159,10 @@ describe("Páginas de Reportes (Estandarización)", () => {
     expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
   });
 
-  it("renderiza un reporte en construcción con tarjeta de estado vacío moderna", () => {
-    renderizarConRuta("/app/reportes/planes", <ReporteEnConstruccionPage />);
+  it("compara las altas de cada mes con el mismo mes del año anterior", () => {
+    renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
-    expect(screen.getByText(/en construcción/i)).toBeInTheDocument();
-    expect(screen.getByText(/Este informe todavía no está disponible/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "2026 comparado con 2025" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "2025" })).toBeInTheDocument();
   });
 });

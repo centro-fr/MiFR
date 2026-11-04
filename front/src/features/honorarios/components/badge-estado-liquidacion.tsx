@@ -3,10 +3,10 @@ import { ETIQUETA_ESTADO } from "@/features/honorarios/utils/formato-honorarios"
 import type { EstadoLiquidacion } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 
-// En revisión en ámbar (falta cerrarla), cerrada en azul y abonada en verde.
+// En curso en gris (todavía cambia), para abonar en ámbar (falta hacer algo) y abonada en verde.
 const ESTILO: Record<EstadoLiquidacion, string> = {
-  BORRADOR: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200",
-  CERRADA: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-200",
+  BORRADOR: "border-slate-200 bg-slate-50 text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-200",
+  CERRADA: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200",
   PAGADA: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200",
 };
 

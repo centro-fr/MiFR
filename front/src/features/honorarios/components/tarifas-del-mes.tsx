@@ -115,14 +115,14 @@ function HorasDeSuplencia({ tarifas, dia, onCambiar }: PropsGrupo) {
   );
 }
 
-function GruposDeTarifas(props: PropsGrupo) {
+function GruposDeTarifas({ enUnaColumna = false, ...props }: PropsGrupo & { enUnaColumna?: boolean }) {
   return (
-    <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+    <div className={enUnaColumna ? "grid gap-y-6" : "grid gap-x-8 gap-y-4 md:grid-cols-2"}>
       <section aria-labelledby="tarifa-por-alumno">
         <h3 id="tarifa-por-alumno" className={SUBTITULO}>
           Por alumno a cargo
         </h3>
-        <p className="text-sm text-muted-foreground">Uno solo para todo el estudio.</p>
+        <p className="text-sm text-muted-foreground">De lo que pagan sus alumnos. Uno solo para todo el estudio.</p>
         <ul>
           <FilaDeTarifa nombre="Todos" alcance={{ concepto: "ALUMNO_A_CARGO" }} {...props} />
         </ul>
@@ -138,7 +138,8 @@ function GruposDeTarifas(props: PropsGrupo) {
   );
 }
 
-export function TarifasDelMes({ periodo }: { periodo: string }) {
+/** `embebido`: sin tarjeta ni título propio, para ir dentro de la configuración. */
+export function TarifasDelMes({ periodo, embebido = false }: { periodo: string; embebido?: boolean }) {
   const { data: tarifas, isPending, isError, error, refetch, isFetching } = useTarifas();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   // No se limpia al cerrar: así el título del diálogo no cambia mientras se va.
@@ -156,7 +157,22 @@ export function TarifasDelMes({ periodo }: { periodo: string }) {
     if (isError) {
       return <Reintentar error={error} mensaje="No se pudieron cargar las tarifas." reintentando={isFetching} onReintentar={() => void refetch()} />;
     }
-    return <GruposDeTarifas tarifas={tarifas} dia={dia} onCambiar={cambiar} />;
+    return <GruposDeTarifas tarifas={tarifas} dia={dia} onCambiar={cambiar} enUnaColumna={embebido} />;
+  }
+
+  const dialogo = (
+    <Can permission="HONORARIOS_LIQUIDAR">
+      <DialogoTarifa abierto={dialogoAbierto} periodo={periodo} alcance={alcance} onClose={() => setDialogoAbierto(false)} />
+    </Can>
+  );
+
+  if (embebido) {
+    return (
+      <>
+        {contenido()}
+        {dialogo}
+      </>
+    );
   }
 
   return (
@@ -168,9 +184,7 @@ export function TarifasDelMes({ periodo }: { periodo: string }) {
         <p className="text-sm text-muted-foreground">Las que rigen el {fechaCorta(dia)}: son las que usa el cálculo.</p>
       </div>
       {contenido()}
-      <Can permission="HONORARIOS_LIQUIDAR">
-        <DialogoTarifa abierto={dialogoAbierto} periodo={periodo} alcance={alcance} onClose={() => setDialogoAbierto(false)} />
-      </Can>
+      {dialogo}
     </section>
   );
 }

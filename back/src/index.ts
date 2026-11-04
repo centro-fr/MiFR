@@ -21,15 +21,21 @@ if (!resultado.valida) {
 const { configuracion } = resultado;
 
 const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
-const { dependencias, cierreAsistencia, planificadorNotificaciones, resumenDiario, cierreMensualInsignias } =
-  construirSistema({
-    prisma,
-    googleAuth: new GoogleAutenticacion(
-      new OAuth2Client(configuracion.googleClientId),
-      configuracion.googleClientId ?? "",
-    ),
-    jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
-  });
+const {
+  dependencias,
+  cierreAsistencia,
+  planificadorNotificaciones,
+  resumenDiario,
+  cierreMensualInsignias,
+  cierreMensualHonorarios,
+} = construirSistema({
+  prisma,
+  googleAuth: new GoogleAutenticacion(
+    new OAuth2Client(configuracion.googleClientId),
+    configuracion.googleClientId ?? "",
+  ),
+  jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
+});
 
 // US-21: Render duerme el proceso sin tráfico, así que esto no es la única vía de cierre; las rutas
 // de clases también cierran las ventanas vencidas al leerlas (decisión de SPRINT-3.md). unref() no
@@ -63,6 +69,14 @@ setInterval(() => {
 setInterval(() => {
   cierreMensualInsignias.cerrarMesAnterior().catch((error: unknown) => {
     console.error("No se pudo cerrar el mes de las insignias", error);
+  });
+}, MILISEGUNDOS_ENTRE_AVISOS).unref();
+
+// US-23: con el mismo enfoque, el mes anterior de honorarios se cierra también al listar las
+// liquidaciones. Corre a lo sumo una vez por mes, desde DIA_CIERRE_HONORARIOS.
+setInterval(() => {
+  cierreMensualHonorarios.cerrarMesAnterior().catch((error: unknown) => {
+    console.error("No se pudo cerrar el mes de los honorarios", error);
   });
 }, MILISEGUNDOS_ENTRE_AVISOS).unref();
 
