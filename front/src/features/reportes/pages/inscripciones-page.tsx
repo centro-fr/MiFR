@@ -10,6 +10,7 @@ import {
   ResumenDeInscripciones,
   TablaAltasPorMes,
 } from "@/features/reportes/components/estadisticas-inscripciones";
+import { ComparacionAnual } from "@/features/reportes/components/comparacion-anual";
 import { GraficoAltasPorMes } from "@/features/reportes/components/grafico-altas-por-mes";
 import { InscripcionesImprimible } from "@/features/reportes/components/inscripciones-imprimible";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
@@ -72,7 +73,7 @@ function SinAltas({ anio }: { anio: number }) {
   );
 }
 
-function Estadisticas({ estadisticas, hoy }: { estadisticas: EstadisticasInscripciones; hoy: string }) {
+function Estadisticas({ estadisticas, filtros, hoy }: { estadisticas: EstadisticasInscripciones; filtros: FiltrosInscripciones; hoy: string }) {
   const transcurridos = mesesTranscurridos(estadisticas.meses, hoy);
   if (estadisticas.totalAltas === 0) return <SinAltas anio={estadisticas.anio} />;
   const enCurso = estadisticas.anio === Number(hoy.slice(0, 4));
@@ -97,6 +98,8 @@ function Estadisticas({ estadisticas, hoy }: { estadisticas: EstadisticasInscrip
           <GraficoAltasPorMes meses={estadisticas.meses} hoy={hoy} />
         </div>
       </Card>
+
+      <ComparacionAnual filtros={filtros} transcurridos={transcurridos} />
 
       <TablaAltasPorMes estadisticas={estadisticas} transcurridos={transcurridos} />
     </div>
@@ -167,7 +170,7 @@ export function InscripcionesPage() {
           </Card>
         )}
 
-        {consulta.data && <Estadisticas estadisticas={consulta.data} hoy={hoy} />}
+        {consulta.data && <Estadisticas estadisticas={consulta.data} filtros={filtros} hoy={hoy} />}
       </div>
 
       {impresion && (
