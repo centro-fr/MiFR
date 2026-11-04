@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
+import { MapaOcupacion } from "@/features/reportes/components/mapa-ocupacion";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
 import {
   BarraPorcentaje,
@@ -25,8 +26,9 @@ import type { TablaExportable } from "@/features/reportes/utils/tabla-exportable
 import type { FiltrosOcupacion, HorarioOcupado, InformeOcupacion, NivelOcupacion } from "@/types/reportes";
 import { cn } from "@/utils/cn";
 
-// US-37: pestaña "Ocupación" de Reportes. Cada horario con sus inscriptos sobre el cupo, de más lleno
-// a más vacío: los de arriba piden otro horario y los de abajo, difusión.
+// US-37: pestaña "Ocupación" de Reportes. El mapa de la semana (el mismo del Dashboard) y cada horario
+// con sus inscriptos sobre el cupo, de más lleno a más vacío: los de arriba piden otro horario y los de
+// abajo, difusión.
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -202,6 +204,7 @@ export function OcupacionReportePage() {
               ]}
               aclaracion="Inscriptos activos sobre el cupo de cada horario. Libre: menos del 60 %; moderado: hasta 84 %; casi lleno: hasta 99 %."
             />
+            <MapaOcupacion horarios={horarios} />
             <TablaOcupacion horarios={horarios} />
           </div>
         )}
