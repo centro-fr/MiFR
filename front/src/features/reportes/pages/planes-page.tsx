@@ -14,7 +14,7 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  TarjetaDeFiltros,
+  GrupoDeFiltros,
   TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
@@ -129,7 +129,7 @@ export function PlanesReportePage() {
     <PaginaReportes acciones={<MenuExportar disabled={!conDatos} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}>
       <div className="min-w-0 space-y-6">
         <TituloDelReporte titulo="Planes más elegidos" detalle={detalle} />
-        <TarjetaDeFiltros>
+        <GrupoDeFiltros>
           <SelectFiltro
             id="planes-profesora"
             etiqueta="Profesor/a"
@@ -146,7 +146,7 @@ export function PlanesReportePage() {
             opciones={(actividades.data ?? []).map((a) => ({ valor: String(a.id), texto: a.nombre }))}
             onChange={(valor) => setFiltros((actual) => ({ ...actual, idActividad: valor ? Number(valor) : null }))}
           />
-        </TarjetaDeFiltros>
+        </GrupoDeFiltros>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}

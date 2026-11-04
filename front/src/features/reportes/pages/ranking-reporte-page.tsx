@@ -17,7 +17,7 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  TarjetaDeFiltros,
+  GrupoDeFiltros,
   TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
@@ -26,8 +26,9 @@ import { formatearPorcentaje, periodoDelInforme } from "@/features/reportes/util
 import type { TablaExportable } from "@/features/reportes/utils/tabla-exportable";
 import { cn } from "@/utils/cn";
 
-// US-30: pestaña "Ranking" de Reportes. Lo mismo que ve la comunidad (puesto, clases, asistencia y
-// racha), en una tabla para la propietaria. El podio lleva medallas de oro, plata y bronce, igual que en la comunidad.
+// US-30: pestaña "Ranking" de Reportes. Lo mismo que ven profesora, alumno y tutor en su sección Ranking
+// (puesto, clases, asistencia y racha), en una tabla para la propietaria. El podio lleva medallas de oro,
+// plata y bronce, igual que en esa sección.
 
 type Fila = RankingAsistencia["datos"][number];
 
@@ -59,7 +60,7 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
   return (
     <SeccionReporte
       id="titulo-ranking"
-      titulo={`Comunidad MiFR (${ranking.total})`}
+      titulo={`Ranking (${ranking.total})`}
       descripcion={`Solo alumnos activos con al menos ${ranking.minimo_clases} clases previstas en el período.`}
     >
       <div className="overflow-x-auto">
@@ -114,14 +115,14 @@ export function RankingReportePage() {
     >
       <div className="min-w-0 space-y-6">
         <TituloDelReporte titulo="Ranking de asistencia" detalle={detalle} />
-        <TarjetaDeFiltros>
+        <GrupoDeFiltros>
           <FiltroPeriodo
             prefijo="ranking"
             desde={filtros.desde ?? ""}
             hasta={filtros.hasta ?? ""}
             onCambiar={(periodo) => setFiltros(periodo)}
           />
-        </TarjetaDeFiltros>
+        </GrupoDeFiltros>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}
@@ -141,7 +142,7 @@ export function RankingReportePage() {
                 { etiqueta: "Racha más larga", valor: rachaMasLarga === 0 ? "—" : `${rachaMasLarga} clases` },
                 { etiqueta: "Asistencia promedio", valor: formatearPorcentaje(promedio) },
               ]}
-              aclaracion="Es el mismo ranking que ve la comunidad. Si empatan en porcentaje, va primero quien vino a más clases."
+              aclaracion="Es el mismo ranking que ven alumnos y profesores. Si empatan en porcentaje, va primero quien vino a más clases."
             />
             <TablaRanking ranking={ranking} />
           </div>

@@ -195,10 +195,8 @@ export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }:
   );
 }
 
-export function TarjetaDeFiltros({ children }: { children: ReactNode }) {
-  return (
-    <Card className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-slate-900/60">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
-    </Card>
-  );
+// Los filtros van sobre el fondo de la página: una tarjeta alrededor de inputs con borde se ve como
+// un doble borde.
+export function GrupoDeFiltros({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
 }

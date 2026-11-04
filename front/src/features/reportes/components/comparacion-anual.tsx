@@ -59,7 +59,7 @@ export function ComparacionAnual({ filtros, transcurridos }: Props) {
         {totalAhora} altas contra {totalAntes}
         {hastaDonde}: <strong className={cn("font-extrabold", colorDe(total))}>{diferencia(total)}</strong>
       </p>
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[420px] border-collapse text-sm">
           <thead>
             <tr className="bg-slate-50/70 dark:bg-slate-800/40">

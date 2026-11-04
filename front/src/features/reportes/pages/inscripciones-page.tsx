@@ -142,7 +142,7 @@ export function InscripcionesPage() {
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Altas definitivas de {filtros.anio}
-            {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}. No computan pre-inscripciones ni reactivaciones.
+            {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}. No se cuentan las pre-inscripciones ni las reactivaciones.
           </p>
         </div>
 

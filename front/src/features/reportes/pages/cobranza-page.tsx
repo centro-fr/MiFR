@@ -16,7 +16,7 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  TarjetaDeFiltros,
+  GrupoDeFiltros,
   TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
@@ -117,7 +117,7 @@ export function CobranzaReportePage() {
     >
       <div className="min-w-0 space-y-6">
         <TituloDelReporte titulo="Cobranza" detalle={detalle} />
-        <TarjetaDeFiltros>
+        <GrupoDeFiltros>
           <FiltroPeriodo prefijo="cobranza" desde={filtros.desde} hasta={filtros.hasta} onCambiar={filtrar} />
           <SelectFiltro
             id="cobranza-forma"
@@ -138,7 +138,7 @@ export function CobranzaReportePage() {
             opciones={(profesoras.data ?? []).map((p) => ({ valor: String(p.id), texto: `${p.nombre} ${p.apellido}` }))}
             onChange={(valor) => filtrar({ idProfesora: valor ? Number(valor) : null })}
           />
-        </TarjetaDeFiltros>
+        </GrupoDeFiltros>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}

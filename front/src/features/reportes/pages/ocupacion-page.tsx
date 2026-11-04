@@ -14,7 +14,7 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  TarjetaDeFiltros,
+  GrupoDeFiltros,
   TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
@@ -156,7 +156,7 @@ export function OcupacionReportePage() {
     <PaginaReportes acciones={<MenuExportar disabled={horarios.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}>
       <div className="min-w-0 space-y-6">
         <TituloDelReporte titulo="Ocupación de horarios" detalle={detalle} />
-        <TarjetaDeFiltros>
+        <GrupoDeFiltros>
           <SelectFiltro
             id="ocupacion-profesora"
             etiqueta="Profesor/a"
@@ -184,7 +184,7 @@ export function OcupacionReportePage() {
             ]}
             onChange={(valor) => setFiltros((actual) => ({ ...actual, modalidad: valor === "GRUPAL" || valor === "PERSONALIZADA" ? valor : null }))}
           />
-        </TarjetaDeFiltros>
+        </GrupoDeFiltros>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}
