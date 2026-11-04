@@ -15,7 +15,7 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  TarjetaDeFiltros,
+  GrupoDeFiltros,
   TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
@@ -151,7 +151,7 @@ export function CuotasVencidasReportePage() {
     >
       <div className="min-w-0 space-y-6">
         <TituloDelReporte titulo="Cuotas vencidas" detalle={detalle} />
-        <TarjetaDeFiltros>
+        <GrupoDeFiltros>
           <SelectFiltro
             id="vencidas-profesora"
             etiqueta="Profesor/a"
@@ -168,7 +168,7 @@ export function CuotasVencidasReportePage() {
             opciones={(planes.data ?? []).map((p) => ({ valor: String(p.id), texto: p.nombre }))}
             onChange={(valor) => filtrar({ idPlan: valor ? Number(valor) : null })}
           />
-        </TarjetaDeFiltros>
+        </GrupoDeFiltros>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}
