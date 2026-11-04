@@ -1,3 +1,5 @@
+import { registrarError } from "../../shared/utils/registro-errores.js";
+import type { CierreMensualHonorariosService } from "./cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import type { ILogicaHonorarios } from "./interface/i-logica-honorarios.js";
 import type { LiquidacionService } from "./liquidacion/liquidacion.service.js";
 import type {
@@ -14,11 +16,13 @@ import type {
   TarifaHonorarioConPlan,
 } from "./tarifa-honorario/tarifa-honorario.types.js";
 
-// Fachada del subsistema GestionHonorarios: solo delega en el componente que corresponde.
+// Fachada del subsistema GestionHonorarios: delega en el componente que corresponde. Al listar las
+// liquidaciones, antes cierra el mes anterior si ya le tocaba y el proceso dormido no llegó a hacerlo.
 export class GestionHonorariosService implements ILogicaHonorarios {
   constructor(
     private readonly tarifas: TarifaHonorarioService,
     private readonly liquidaciones: LiquidacionService,
+    private readonly cierreMensual: CierreMensualHonorariosService,
   ) {}
 
   listarTarifas(filtro: FiltroTarifa): Promise<TarifaHonorarioConPlan[]> {
@@ -37,7 +41,8 @@ export class GestionHonorariosService implements ILogicaHonorarios {
     return this.liquidaciones.generar(periodo);
   }
 
-  listarLiquidaciones(periodo: PeriodoLiquidacion): Promise<ResumenLiquidaciones> {
+  async listarLiquidaciones(periodo: PeriodoLiquidacion): Promise<ResumenLiquidaciones> {
+    await this.cerrarMesPendiente();
     return this.liquidaciones.listar(periodo);
   }
 
@@ -51,5 +56,14 @@ export class GestionHonorariosService implements ILogicaHonorarios {
 
   pagarLiquidacion(id: number): Promise<LiquidacionDetallada> {
     return this.liquidaciones.pagar(id);
+  }
+
+  // Si el cierre falla, el listado igual responde: el intervalo lo vuelve a intentar.
+  private async cerrarMesPendiente(): Promise<void> {
+    try {
+      await this.cierreMensual.cerrarMesAnterior();
+    } catch (error) {
+      registrarError("CIERRE_MENSUAL_HONORARIOS", error);
+    }
   }
 }

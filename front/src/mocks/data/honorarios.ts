@@ -142,7 +142,7 @@ const INICIO_DE_ANIO = "2026-01-01";
 
 // No están en la base: la regla acordada (back/honorarios-pendientes.md) es el 50% de lo cobrado de
 // cada cuota para todas. La hora de suplencia es de cada profesora y no tiene valores acordados: estos
-// son de ejemplo, y la profesora 2 queda sin cargar para ver ese caso (no cubre ninguna clase).
+// son de ejemplo.
 export function tarifasSemilla(): TarifaHonorarioMock[] {
   const vigencia = { fecha_vigencia_desde: INICIO_DE_ANIO, fecha_vigencia_hasta: null };
   const porHora = (id_tarifa: number, id_profesora: number, valor: number): TarifaHonorarioMock => ({
@@ -157,5 +157,6 @@ export function tarifasSemilla(): TarifaHonorarioMock[] {
     { id_tarifa: 1, id_profesora: null, concepto: "ALUMNO_A_CARGO", tipo_valor: "PORCENTAJE", valor: 50, ...vigencia },
     porHora(2, 1, 5000),
     porHora(3, 3, 6000),
+    porHora(4, 2, 4500),
   ];
 }

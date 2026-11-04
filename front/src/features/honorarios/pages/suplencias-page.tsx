@@ -1,348 +1,216 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Users, X } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Settings, Users } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { HORARIOS_QUERY_KEY, PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
+import { SelectorMes } from "@/features/honorarios/components/controles-informe";
+import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
 import { EncabezadoHonorarios, PestanasHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
-import { ListaSuplencias } from "@/features/suplencias/components/lista-suplencias";
-import { SuplenciaDialog } from "@/features/suplencias/components/suplencia-dialog";
+import { useTarifas } from "@/features/honorarios/hooks/use-honorarios";
 import {
-  useActualizarSuplencia,
-  useEliminarSuplencia,
-  useRegistrarSuplencia,
-  useSuplencias,
-} from "@/features/suplencias/hooks/use-suplencias";
+  esPeriodoEnCurso,
+  etiquetaPeriodo,
+  mesSigueAbierto,
+  periodoDesdeParametro,
+  primerDiaDe,
+  ultimoDiaDe,
+} from "@/features/honorarios/utils/periodo";
+import { ConfirmarEliminarSuplencia } from "@/features/suplencias/components/confirmar-eliminar-suplencia";
+import { EstadoSuplencias, ResumenSuplencias } from "@/features/suplencias/components/resumen-suplencias";
+import { SuplenciaDialog } from "@/features/suplencias/components/suplencia-dialog";
+import { TablaSuplencias } from "@/features/suplencias/components/tabla-suplencias";
+import { useActualizarSuplencia, useRegistrarSuplencia, useSuplencias } from "@/features/suplencias/hooks/use-suplencias";
 import type { SuplenciaFormValues } from "@/features/suplencias/schemas/suplencia";
+import { montoDeLaSuplencia } from "@/features/suplencias/utils/monto-suplencia";
 import type { Suplencia } from "@/types/suplencia";
+import { fechaActualArgentina } from "@/utils/fecha";
 
+function SuplenciasCargando() {
+  return (
+    <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+      <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
+      Cargando suplencias…
+    </div>
+  );
+}
+
+function SuplenciasConError({ error, onReintentar }: { error: unknown; onReintentar: () => void }) {
+  return (
+    <Card className="flex flex-col items-center gap-3 rounded-2xl border-border px-5 py-12 text-center">
+      <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
+      <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+        {mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
+      </p>
+      <Button type="button" onClick={onReintentar} className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark">
+        Reintentar
+      </Button>
+    </Card>
+  );
+}
+
+function SinSuplencias({ periodo, abierto, onRegistrar }: { periodo: string; abierto: boolean; onRegistrar: () => void }) {
+  return (
+    <Card className="flex flex-col items-center gap-3 rounded-2xl border-border px-5 py-14 text-center">
+      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
+        <Users className="size-7" />
+      </span>
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">No hubo suplencias en {etiquetaPeriodo(periodo).toLowerCase()}</h2>
+      <p className="max-w-md text-sm text-muted-foreground">
+        {abierto
+          ? "Cuando alguien cubra una clase, registralo acá: se le paga a quien la cubrió y se le descuenta a quien faltó."
+          : "Ese mes nadie cubrió clases de otro profesor/a."}
+      </p>
+      {abierto && (
+        <Button type="button" onClick={onRegistrar} className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark">
+          <Plus aria-hidden="true" className="size-4" />
+          Registrar suplencia
+        </Button>
+      )}
+    </Card>
+  );
+}
+
+// US-24: las suplencias del mes, dentro de Honorarios. Se registran y corrigen mientras el mes sigue
+// abierto; cuando se cierran los honorarios quedan fijas, igual que la liquidación.
 export function SuplenciasPage() {
+  const [parametros, setParametros] = useSearchParams();
+  const periodo = periodoDesdeParametro(parametros.get("mes"));
+  const abierto = mesSigueAbierto(periodo);
+  const filtros = useMemo(() => ({ desde: primerDiaDe(periodo), hasta: ultimoDiaDe(periodo) }), [periodo]);
+  const consultaSuplencias = useSuplencias(filtros);
+  const consultaTarifas = useTarifas();
   const consultaHorarios = useQuery({ queryKey: HORARIOS_QUERY_KEY, queryFn: listarHorarios, staleTime: 5 * 60_000 });
   const consultaProfesoras = useQuery({ queryKey: PROFESORAS_QUERY_KEY, queryFn: listarProfesoras, staleTime: 5 * 60_000 });
   const registrar = useRegistrarSuplencia();
   const actualizar = useActualizarSuplencia();
-  const eliminar = useEliminarSuplencia();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
-  const [suplenciaEditando, setSuplenciaEditando] = useState<Suplencia | null>(null);
-  const [suplenciaAEliminar, setSuplenciaAEliminar] = useState<Suplencia | null>(null);
-  const [filtroDesde, setFiltroDesde] = useState("");
-  const [filtroHasta, setFiltroHasta] = useState("");
-  const [filtroProfesora, setFiltroProfesora] = useState("TODAS");
-  const [filtroActividad, setFiltroActividad] = useState("TODAS");
+  const [editando, setEditando] = useState<Suplencia | null>(null);
+  const [aEliminar, setAEliminar] = useState<Suplencia | null>(null);
+  const [configAbierta, setConfigAbierta] = useState(false);
 
-  const filtros = useMemo(
-    () => ({
-      desde: filtroDesde || undefined,
-      hasta: filtroHasta || undefined,
-      idProfesora: filtroProfesora === "TODAS" ? undefined : filtroProfesora,
-      idActividad: filtroActividad === "TODAS" ? undefined : filtroActividad,
-    }),
-    [filtroActividad, filtroDesde, filtroHasta, filtroProfesora],
-  );
-  const consultaSuplencias = useSuplencias(filtros);
+  const suplencias = useMemo(() => consultaSuplencias.data ?? [], [consultaSuplencias.data]);
+  const montos = useMemo(() => {
+    const tarifas = consultaTarifas.data ?? [];
+    return new Map(suplencias.map((suplencia) => [suplencia.idClase, montoDeLaSuplencia(suplencia, tarifas)]));
+  }, [suplencias, consultaTarifas.data]);
 
-  const horarios = useMemo(() => consultaHorarios.data ?? [], [consultaHorarios.data]);
-  const profesoras = consultaProfesoras.data ?? [];
-  const actividades = useMemo(
-    () =>
-      [...new Map(horarios.map((horario) => [String(horario.actividad.id_actividad), horario.actividad])).values()].sort(
-        (a, b) => a.nombre.localeCompare(b.nombre),
-      ),
-    [horarios],
-  );
-  const suplencias = consultaSuplencias.data ?? [];
-  const cargando = consultaSuplencias.isPending || consultaHorarios.isPending || consultaProfesoras.isPending;
-  const error = consultaSuplencias.error ?? consultaHorarios.error ?? consultaProfesoras.error;
-  const hayFiltrosActivos = Boolean(filtroDesde || filtroHasta || filtroProfesora !== "TODAS" || filtroActividad !== "TODAS");
+  function cambiarPeriodo(nuevo: string) {
+    setParametros((actuales) => {
+      const siguientes = new URLSearchParams(actuales);
+      siguientes.set("mes", nuevo);
+      return siguientes;
+    });
+  }
 
-  const abrirNueva = () => {
+  function abrirDialogo(suplencia: Suplencia | null) {
     registrar.reset();
-    setSuplenciaEditando(null);
-    setDialogoAbierto(true);
-  };
-
-  const abrirEdicion = (suplencia: Suplencia) => {
     actualizar.reset();
-    setSuplenciaEditando(suplencia);
+    setEditando(suplencia);
     setDialogoAbierto(true);
-  };
+  }
 
-  const guardar = (datos: SuplenciaFormValues) => {
+  function guardar(datos: SuplenciaFormValues) {
     const motivo = datos.motivo.trim() || undefined;
-    if (suplenciaEditando) {
+    const alTerminar = (mensaje: string) => () => {
+      setDialogoAbierto(false);
+      toast.success(mensaje);
+    };
+    if (editando) {
       actualizar.mutate(
-        {
-          idClase: suplenciaEditando.idClase,
-          cambios: { id_profesora_suplente: Number(datos.idProfesoraSuplente), motivo },
-        },
-        {
-          onSuccess: () => {
-            setDialogoAbierto(false);
-            toast.success("Suplencia actualizada");
-          },
-        },
+        { idClase: editando.idClase, cambios: { id_profesora_suplente: Number(datos.idProfesoraSuplente), motivo } },
+        { onSuccess: alTerminar("Suplencia actualizada.") },
       );
       return;
     }
-
     registrar.mutate(
-      {
-        id_horario: Number(datos.idHorario),
-        fecha_clase: datos.fechaClase,
-        id_profesora_suplente: Number(datos.idProfesoraSuplente),
-        motivo,
-      },
+      { id_horario: Number(datos.idHorario), fecha_clase: datos.fechaClase, id_profesora_suplente: Number(datos.idProfesoraSuplente), motivo },
       {
         onSuccess: (resultado) => {
-          setDialogoAbierto(false);
-          toast.success("Suplencia registrada");
+          alTerminar("Suplencia registrada.")();
           if (resultado.advertencia) toast.info(resultado.advertencia);
         },
       },
     );
-  };
+  }
+
+  function contenido() {
+    if (consultaSuplencias.isPending) return <SuplenciasCargando />;
+    if (consultaSuplencias.isError) return <SuplenciasConError error={consultaSuplencias.error} onReintentar={() => void consultaSuplencias.refetch()} />;
+    if (suplencias.length === 0) return <SinSuplencias periodo={periodo} abierto={abierto} onRegistrar={() => abrirDialogo(null)} />;
+    return (
+      <>
+        <ResumenSuplencias suplencias={suplencias} montos={montos} />
+        <TablaSuplencias suplencias={suplencias} montos={montos} editables={abierto} onEditar={abrirDialogo} onEliminar={setAEliminar} />
+        <p className="text-sm text-muted-foreground">
+          Le paga el valor por hora de quien cubrió por la duración de la clase. Con el mes cerrado ya no se pueden cambiar.
+        </p>
+      </>
+    );
+  }
 
   return (
     <OwnerLayout>
-      <div className="space-y-6 min-w-0">
+      <div className="min-w-0 space-y-6">
         <EncabezadoHonorarios
-          titulo="Honorarios"
-          descripcion="Registro de suplencias docentes para el cálculo de honorarios."
+          descripcion="Quién cubrió cada clase del mes. Se le paga a quien la cubrió y se le descuenta a quien faltó."
           acciones={
-            <Button
-              type="button"
-              onClick={abrirNueva}
-              className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
-            >
-              + Nueva suplencia
-            </Button>
-          }
-        />
-        <PestanasHonorarios cantidadSuplencias={suplencias.length} />
-
-        {cargando ? (
-          <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            Cargando suplencias...
-          </div>
-        ) : error ? (
-          <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 dark:border-slate-800 px-5 py-12 text-center">
-            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
-            </p>
-            <Button
-              type="button"
-              onClick={() => {
-                void consultaSuplencias.refetch();
-                void consultaHorarios.refetch();
-                void consultaProfesoras.refetch();
-              }}
-              className="min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark transition-transform active:scale-95"
-            >
-              Reintentar
-            </Button>
-          </Card>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-                <label htmlFor="suplencias-desde" className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  Desde
-                </label>
-                <input
-                  id="suplencias-desde"
-                  type="date"
-                  value={filtroDesde}
-                  onChange={(event) => setFiltroDesde(event.target.value)}
-                  className="h-7 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-slate-100"
-                />
-              </div>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-                <label htmlFor="suplencias-hasta" className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  Hasta
-                </label>
-                <input
-                  id="suplencias-hasta"
-                  type="date"
-                  value={filtroHasta}
-                  onChange={(event) => setFiltroHasta(event.target.value)}
-                  className="h-7 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-slate-100"
-                />
-              </div>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-                <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  Profesor/a:
-                </span>
-                <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
-                  <SelectTrigger
-                    aria-label="Filtrar por profesor/a"
-                    className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[140px]"
-                  >
-                    <SelectValue placeholder="Todos los profesores" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TODAS">Todos los profesores</SelectItem>
-                    {profesoras.map((profesora) => (
-                      <SelectItem key={profesora.id} value={profesora.id}>
-                        {profesora.nombre} {profesora.apellido}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-                <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-                Actividad:
-                </span>
-                <Select value={filtroActividad} onValueChange={setFiltroActividad}>
-                <SelectTrigger
-                  aria-label="Filtrar por actividad"
-                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[140px]"
-                >
-                  <SelectValue placeholder="Todas las actividades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODAS">Todas las actividades</SelectItem>
-                  {actividades.map((actividad) => (
-                    <SelectItem key={actividad.id_actividad} value={String(actividad.id_actividad)}>
-                      {actividad.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-                </Select>
-              </div>
-
-              {hayFiltrosActivos && (
-                <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setFiltroDesde("");
-                  setFiltroHasta("");
-                  setFiltroProfesora("TODAS");
-                  setFiltroActividad("TODAS");
-                }}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-                >
-                Limpiar filtros
-                </Button>
-              )}
-            </div>
-
-            {suplencias.length === 0 ? (
-              <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 dark:border-slate-800 px-5 py-14 text-center">
-                <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-                  <Users className="size-7" />
-                </span>
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                  {filtroProfesora === "TODAS" ? "Todavía no hay suplencias" : "No hay suplencias para este/a profesor/a"}
-                </h2>
-                <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
-                  {filtroProfesora === "TODAS"
-                    ? "Registrá quién cubrió una clase para que el informe de honorarios refleje correctamente la suplencia."
-                    : "No se encontraron suplencias registradas con el/la profesor/a seleccionado/a."}
-                </p>
-                {filtroProfesora === "TODAS" ? (
-                  <Button
-                    type="button"
-                    onClick={abrirNueva}
-                    className="min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark transition-transform active:scale-95 shadow-md shadow-primary/20"
-                  >
-                    + Nueva suplencia
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setFiltroProfesora("TODAS")}
-                    className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 px-5"
-                  >
-                    Ver todas las suplencias
-                  </Button>
-                )}
-              </Card>
-            ) : (
-              <ListaSuplencias suplencias={suplencias} onEditar={abrirEdicion} onEliminar={setSuplenciaAEliminar} />
-            )}
-          </>
-        )}
-
-        <SuplenciaDialog
-          key={suplenciaEditando?.idClase ?? "nueva-suplencia"}
-          abierto={dialogoAbierto}
-          suplencia={suplenciaEditando}
-          horarios={horarios}
-          profesoras={profesoras}
-          guardando={registrar.isPending || actualizar.isPending}
-          error={
-            registrar.isError
-              ? mensajeDeErrorApi(registrar.error, "No se pudo registrar la suplencia.")
-              : actualizar.isError
-                ? mensajeDeErrorApi(actualizar.error, "No se pudo actualizar la suplencia.")
-                : null
-          }
-          onClose={() => setDialogoAbierto(false)}
-          onSubmit={guardar}
-        />
-
-        <Dialog open={suplenciaAEliminar !== null} onOpenChange={(open) => !open && setSuplenciaAEliminar(null)}>
-          <DialogContent hideClose className="w-[96vw] sm:w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border-slate-200 dark:border-slate-800">
-            <DialogHeader className="flex flex-row items-center justify-between pb-2 text-left">
-              <DialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-                ¿Eliminar suplencia?
-              </DialogTitle>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setSuplenciaAEliminar(null)}
-                aria-label="Cerrar modal"
-                className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <X className="size-4" />
-              </Button>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              La clase volverá a quedar a cargo de la titular y ya no afectará los honorarios. ¿Confirmás?
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
+            <>
+              <SelectorMes periodo={periodo} onChange={cambiarPeriodo} />
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setSuplenciaAEliminar(null)}
-                disabled={eliminar.isPending}
-                className="h-11 px-6 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800"
+                aria-haspopup="dialog"
+                onClick={() => setConfigAbierta(true)}
+                className="h-11 rounded-xl border-border bg-white px-4 font-bold text-dark dark:bg-surface-low dark:text-white"
               >
-                Cancelar
+                <Settings aria-hidden="true" className="size-4" />
+                Configuración
               </Button>
-              <Button
-                type="button"
-                disabled={eliminar.isPending}
-                onClick={() => {
-                  if (!suplenciaAEliminar) return;
-                  eliminar.mutate(suplenciaAEliminar.idClase, {
-                    onSuccess: () => {
-                      setSuplenciaAEliminar(null);
-                      toast.success("Suplencia eliminada");
-                    },
-                  });
-                }}
-                className="h-11 px-6 rounded-xl bg-rose-600 font-bold text-sm text-white hover:bg-rose-700 transition-colors shadow-xs"
-              >
-                {eliminar.isPending ? "Eliminando..." : "Eliminar"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+              {abierto && (
+                <Button
+                  type="button"
+                  aria-haspopup="dialog"
+                  onClick={() => abrirDialogo(null)}
+                  className="h-11 rounded-xl bg-primary px-4 font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"
+                >
+                  <Plus aria-hidden="true" className="size-4" />
+                  Registrar suplencia
+                </Button>
+              )}
+            </>
+          }
+        />
+        <PestanasHonorarios cantidadSuplencias={consultaSuplencias.data?.length} />
+        <EstadoSuplencias periodo={periodo} />
+        {contenido()}
       </div>
+
+      <SuplenciaDialog
+        key={editando?.idClase ?? "nueva-suplencia"}
+        abierto={dialogoAbierto}
+        suplencia={editando}
+        horarios={consultaHorarios.data ?? []}
+        profesoras={consultaProfesoras.data ?? []}
+        guardando={registrar.isPending || actualizar.isPending}
+        error={
+          registrar.isError
+            ? mensajeDeErrorApi(registrar.error, "No se pudo registrar la suplencia.")
+            : actualizar.isError
+              ? mensajeDeErrorApi(actualizar.error, "No se pudo actualizar la suplencia.")
+              : null
+        }
+        onClose={() => setDialogoAbierto(false)}
+        onSubmit={guardar}
+        fechaSugerida={esPeriodoEnCurso(periodo) ? fechaActualArgentina() : ultimoDiaDe(periodo)}
+      />
+      <ConfirmarEliminarSuplencia suplencia={aEliminar} onClose={() => setAEliminar(null)} />
+      <DialogoConfiguracion abierto={configAbierta} periodo={periodo} onClose={() => setConfigAbierta(false)} />
     </OwnerLayout>
   );
 }

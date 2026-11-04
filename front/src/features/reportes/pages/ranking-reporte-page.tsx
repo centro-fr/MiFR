@@ -1,0 +1,154 @@
+import { useState } from "react";
+import { Trophy } from "lucide-react";
+import { MenuExportar } from "@/components/menu-exportar";
+import { MedallaPuesto } from "@/features/portal-alumno/components/medalla-puesto";
+import { useRankingAsistencia } from "@/features/portal-alumno/hooks/use-ranking-asistencia";
+import type { RankingAsistencia } from "@/features/portal-alumno/schemas/ranking-asistencia";
+import { FiltroPeriodo } from "@/features/reportes/components/filtro-periodo";
+import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
+import {
+  BarraPorcentaje,
+  CargandoReporte,
+  ErrorDelReporte,
+  ReporteVacio,
+  ResumenEnTarjetas,
+  SeccionReporte,
+  TD,
+  TD_NUMERO,
+  TH,
+  TH_NUMERO,
+  GrupoDeFiltros,
+  TituloDelReporte,
+} from "@/features/reportes/components/piezas-reporte";
+import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
+import { useExportarTabla } from "@/features/reportes/hooks/use-exportar-tabla";
+import { formatearPorcentaje, periodoDelInforme } from "@/features/reportes/utils/formato-informe";
+import type { TablaExportable } from "@/features/reportes/utils/tabla-exportable";
+import { cn } from "@/utils/cn";
+
+// US-30: pestaña "Ranking" de Reportes. Lo mismo que ven profesora, alumno y tutor en su sección Ranking
+// (puesto, clases, asistencia y racha), en una tabla para la propietaria. El podio lleva medallas de oro,
+// plata y bronce, igual que en esa sección.
+
+type Fila = RankingAsistencia["datos"][number];
+
+function clases(fila: Fila): string {
+  return `${fila.clases_asistidas} de ${fila.clases_previstas}`;
+}
+
+function racha(fila: Fila): string {
+  if (fila.racha_actual === 0) return "—";
+  return `${fila.racha_actual} ${fila.racha_actual === 1 ? "clase" : "clases"}`;
+}
+
+function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
+  return {
+    titulo: "Ranking de asistencia",
+    detalle,
+    resumen: [
+      ["Participantes", String(ranking.total)],
+      ["Mínimo de clases", String(ranking.minimo_clases)],
+    ],
+    columnas: [{ titulo: "Puesto", decimales: 0 }, { titulo: "Alumno" }, { titulo: "Clases" }, { titulo: "Asistencia %", decimales: 1 }, { titulo: "Racha actual" }],
+    filas: ranking.datos.map((fila) => [fila.posicion, `${fila.nombre} ${fila.apellido}`, clases(fila), fila.porcentaje_asistencia, racha(fila)]),
+    pie: "Ordenado por porcentaje de asistencia; si empatan, primero quien vino a más clases.",
+    nombreArchivo: `ranking-asistencia-${ranking.periodo.desde.slice(0, 10)}`,
+  };
+}
+
+function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
+  return (
+    <SeccionReporte
+      id="titulo-ranking"
+      titulo={`Ranking (${ranking.total})`}
+      descripcion={`Solo alumnos activos con al menos ${ranking.minimo_clases} clases previstas en el período.`}
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr>
+              <th scope="col" className={cn(TH, "w-20")}>Puesto</th>
+              <th scope="col" className={TH}>Alumno</th>
+              <th scope="col" className={TH_NUMERO}>Clases</th>
+              <th scope="col" className={TH_NUMERO}>Asistencia</th>
+              <th scope="col" className={TH_NUMERO}>Racha actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranking.datos.map((fila) => (
+              <tr key={fila.id_alumno} className={fila.posicion <= 3 ? "bg-amber-50/40 dark:bg-amber-400/5" : undefined}>
+                <td className={TD}>
+                  <MedallaPuesto posicion={fila.posicion} tamanio="chico" />
+                </td>
+                <th scope="row" className={`${TD} text-left font-semibold text-slate-900 dark:text-white`}>
+                  {fila.nombre} {fila.apellido}
+                </th>
+                <td className={`${TD_NUMERO} text-slate-700 dark:text-slate-300`}>{clases(fila)}</td>
+                <td className={TD_NUMERO}>
+                  <BarraPorcentaje valor={fila.porcentaje_asistencia} texto={formatearPorcentaje(fila.porcentaje_asistencia)} />
+                </td>
+                <td className={`${TD_NUMERO} text-slate-700 dark:text-slate-300`}>{racha(fila)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SeccionReporte>
+  );
+}
+
+export function RankingReportePage() {
+  const [filtros, setFiltros] = useState<{ desde?: string; hasta?: string }>({});
+  const consulta = useRankingAsistencia(filtros);
+  const ranking = consulta.data;
+  const detalle = ranking ? periodoDelInforme(ranking.periodo.desde.slice(0, 10), ranking.periodo.hasta.slice(0, 10)) : "Mes en curso";
+  const { exportar, preparando, impresion } = useExportarTabla(() =>
+    ranking ? Promise.resolve(aTabla(ranking, detalle)) : Promise.reject(new Error("El ranking todavía no cargó.")),
+  );
+  const perfectos = ranking?.datos.filter((fila) => fila.clases_asistidas === fila.clases_previstas).length ?? 0;
+  const promedio = ranking && ranking.datos.length > 0 ? ranking.datos.reduce((total, fila) => total + fila.porcentaje_asistencia, 0) / ranking.datos.length : 0;
+  const rachaMasLarga = ranking ? Math.max(0, ...ranking.datos.map((fila) => fila.racha_actual)) : 0;
+
+  return (
+    <PaginaReportes
+      acciones={<MenuExportar disabled={!ranking || ranking.datos.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
+    >
+      <div className="min-w-0 space-y-6">
+        <TituloDelReporte titulo="Ranking de asistencia" detalle={detalle} />
+        <GrupoDeFiltros>
+          <FiltroPeriodo
+            prefijo="ranking"
+            desde={filtros.desde ?? ""}
+            hasta={filtros.hasta ?? ""}
+            onCambiar={(periodo) => setFiltros(periodo)}
+          />
+        </GrupoDeFiltros>
+
+        {consulta.isPending && <CargandoReporte />}
+        {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}
+        {ranking && ranking.datos.length === 0 && (
+          <ReporteVacio
+            icono={<Trophy className="size-7" />}
+            titulo="Todavía no hay ranking"
+            texto={`Se necesitan al menos ${ranking.minimo_clases} clases previstas en el período para aparecer.`}
+          />
+        )}
+        {ranking && ranking.datos.length > 0 && (
+          <div className="flex flex-col gap-5">
+            <ResumenEnTarjetas
+              datos={[
+                { etiqueta: "Participantes", valor: String(ranking.total) },
+                { etiqueta: "Asistencia perfecta", valor: String(perfectos), nota: "Vinieron a todas sus clases" },
+                { etiqueta: "Racha más larga", valor: rachaMasLarga === 0 ? "—" : `${rachaMasLarga} clases` },
+                { etiqueta: "Asistencia promedio", valor: formatearPorcentaje(promedio) },
+              ]}
+              aclaracion="Es el mismo ranking que ven alumnos y profesores. Si empatan en porcentaje, va primero quien vino a más clases."
+            />
+            <TablaRanking ranking={ranking} />
+          </div>
+        )}
+      </div>
+      {impresion && <TablaImprimible tabla={impresion.datos} generadoEl={impresion.generadoEl} />}
+    </PaginaReportes>
+  );
+}

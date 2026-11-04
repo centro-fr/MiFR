@@ -82,7 +82,7 @@ export function ErrorDeCarga({ error, mensaje, reintentando, onReintentar }: Pro
 /** Estado vacío: qué falta y, si se puede, el botón para cargarlo. */
 export function SinDatos({ texto, accion }: { texto: string; accion: ReactNode }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
+    <div className="flex flex-col items-start gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/40">
       <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{texto}</p>
       {accion}
     </div>

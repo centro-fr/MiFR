@@ -75,7 +75,7 @@ export function PorProfesora({ profesoras }: { profesoras: AsistenciaDeProfesora
     <Seccion id="titulo-por-profesora" titulo="Por profesora">
       <ul className="flex flex-col gap-2 md:hidden">
         {profesoras.map((p) => (
-          <li key={p.id} className="rounded-xl border border-border p-3">
+          <li key={p.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
             <div className="flex items-baseline justify-between gap-3">
               <p className="font-bold text-slate-900 dark:text-white">{`${p.nombre} ${p.apellido}`}</p>
               <p className="font-black text-slate-900 tabular-nums dark:text-white">{formatearPorcentaje(p.porcentajePromedio)}</p>
@@ -179,7 +179,7 @@ export function PorAlumno({ informe, cargando, onCambiarPagina }: PropsPorAlumno
       <div aria-busy={cargando} className={cargando ? "opacity-60 transition-opacity" : undefined}>
         <ul className="flex flex-col gap-2 md:hidden">
           {alumnos.map((a) => (
-            <li key={a.id} className="rounded-xl border border-border p-3">
+            <li key={a.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
               <div className="flex items-baseline justify-between gap-3">
                 <p className="font-bold text-slate-900 dark:text-white">
                   <NombreDelAlumno alumno={a} />

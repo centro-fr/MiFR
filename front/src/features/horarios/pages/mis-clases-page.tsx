@@ -220,7 +220,7 @@ function ContenidoMisClases({ idProfesora }: { idProfesora: string }) {
                 return (
                   <div
                     key={dia.id}
-                    className="flex flex-col rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 p-3 min-h-[300px]"
+                    className="flex flex-col rounded-2xl bg-slate-100/70 dark:bg-slate-900/40 p-3 min-h-[300px]"
                   >
                     {/* Encabezado del Día */}
                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/60 dark:border-slate-800/60">

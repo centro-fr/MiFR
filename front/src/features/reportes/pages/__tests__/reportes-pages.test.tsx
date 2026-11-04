@@ -5,8 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InscripcionesPage } from "../inscripciones-page";
 import { InformeAsistenciaPage } from "../informe-asistencia-page";
-import { RankingPage } from "../ranking-page";
-import { ReporteEnConstruccionPage } from "../reporte-en-construccion-page";
 
 // Mock de ResizeObserver para entorno jsdom
 globalThis.ResizeObserver = class ResizeObserver {
@@ -96,32 +94,6 @@ vi.mock("@/features/reportes/hooks/use-reportes", () => ({
   }),
 }));
 
-vi.mock("@/features/portal-alumno/hooks/use-ranking-asistencia", () => ({
-  useRankingAsistencia: () => ({
-    data: {
-      total: 1,
-      minimo_clases: 4,
-      datos: [
-        {
-          id_alumno: 10,
-          posicion: 1,
-          nombre: "Sofía",
-          apellido: "Ruiz",
-          clases_asistidas: 6,
-          clases_previstas: 7,
-          porcentaje_asistencia: 85.71,
-          racha_actual: 3,
-          es_propia: false,
-        },
-      ],
-    },
-    isPending: false,
-    isError: false,
-    error: null,
-    refetch: vi.fn(),
-  }),
-}));
-
 vi.mock("@/features/reportes/hooks/use-exportar-reporte", () => ({
   useExportarReporte: () => ({
     exportar: vi.fn(),
@@ -187,21 +159,10 @@ describe("Páginas de Reportes (Estandarización)", () => {
     expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
   });
 
-  it("muestra el ranking de asistencia dentro de Reportes, con su pestaña marcada", () => {
-    renderizarConRuta("/app/reportes/ranking", <RankingPage />);
+  it("compara las altas de cada mes con el mismo mes del año anterior", () => {
+    renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ranking" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "Aplicar período" })).toBeInTheDocument();
-    expect(screen.getByText("Sofía Ruiz")).toBeInTheDocument();
-    expect(screen.getByText("1 participantes")).toBeInTheDocument();
-  });
-
-  it("renderiza un reporte en construcción con tarjeta de estado vacío moderna", () => {
-    renderizarConRuta("/app/reportes/planes", <ReporteEnConstruccionPage />);
-
-    expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
-    expect(screen.getByText(/en construcción/i)).toBeInTheDocument();
-    expect(screen.getByText(/Este informe todavía no está disponible/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "2026 comparado con 2025" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "2025" })).toBeInTheDocument();
   });
 });

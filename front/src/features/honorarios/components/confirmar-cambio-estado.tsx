@@ -11,12 +11,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { AccionDeEstado } from "@/features/honorarios/components/tarjeta-profesora";
 import { useCerrarLiquidacion, useMarcarLiquidacionAbonada } from "@/features/honorarios/hooks/use-honorarios";
 import { nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
 import type { LiquidacionResumen } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
+
+export type AccionDeEstado = "cerrar" | "abonar";
 
 export interface CambioDeEstado {
   liquidacion: LiquidacionResumen;

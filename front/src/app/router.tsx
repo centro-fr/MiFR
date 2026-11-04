@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
+import { createBrowserRouter, Outlet, redirect, type RouteObject } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-route";
 import { PermissionGuard } from "@/components/guards/permission-guard";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
@@ -16,6 +16,13 @@ function paginaPerezosa<Modulo extends Record<string, unknown>>(
   nombre: keyof Modulo,
 ): NonNullable<RouteObject["lazy"]> {
   return async () => ({ Component: (await importar())[nombre] as ComponentType });
+}
+
+// Redirige en el loader y no con <Navigate>: así el router cambia de ruta antes de dibujar y la
+// página anterior sigue visible mientras baja el chunk de la nueva. <Navigate> se dibuja primero
+// (vacío) y redirige después, y eso dejaba la pantalla en blanco al entrar, por ejemplo, a Reportes.
+function redirigirA(ruta: string): NonNullable<RouteObject["loader"]> {
+  return () => redirect(ruta);
 }
 
 // Mientras baja el chunk de la primera ruta se muestra el splash de sesión, no una pantalla en blanco.
@@ -83,7 +90,7 @@ export const router = createBrowserRouter([
       "DisponibilidadPage",
     ),
   },
-  { path: "/seguridad/permisos", element: <Navigate to="/app/dashboard" replace /> },
+  { path: "/seguridad/permisos", loader: redirigirA("/app/dashboard") },
   {
     path: "/login",
     element: (
@@ -117,7 +124,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "asistencia",
-        element: <Navigate to="/app/ausentes" replace />,
+        loader: redirigirA("/app/ausentes"),
       },
       {
         // Grupo "Profesora" que suma a su menú la propietaria que también dicta clases.
@@ -148,22 +155,25 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Reportes: una pestaña por informe (US-33 a US-37 y cobranza). El back los reserva a la
-        // propietaria con este permiso. Las pestañas sin informe todavía muestran "en construcción".
+        // Reportes: una pestaña por informe (US-30, US-33 a US-37 y cobranza). El back los reserva a la
+        // propietaria con este permiso.
         path: "reportes",
         element: guardiaDeSeccion("reportes", "REPORTES_COBRANZA_VER"),
         children: [
-          { index: true, element: <Navigate to="/app/reportes/inscripciones" replace /> },
+          { index: true, loader: redirigirA("/app/reportes/inscripciones") },
           // US-35: inscriptos por mes.
           { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
           // US-33: informe de asistencia.
           { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
-          // US-30: ranking de asistencia, el mismo que ven los demás roles en su sección Ranking.
-          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-page"), "RankingPage") },
-          ...["planes", "ocupacion", "cobranza", "cuotas-vencidas"].map((path) => ({
-            path,
-            lazy: paginaPerezosa(() => import("@/features/reportes/pages/reporte-en-construccion-page"), "ReporteEnConstruccionPage"),
-          })),
+          // US-36: planes más elegidos.
+          { path: "planes", lazy: paginaPerezosa(() => import("@/features/reportes/pages/planes-page"), "PlanesReportePage") },
+          // US-37: ocupación de horarios.
+          { path: "ocupacion", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ocupacion-page"), "OcupacionReportePage") },
+          // US-30: ranking de asistencia, en tabla. Los demás roles lo ven en su sección Ranking.
+          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-reporte-page"), "RankingReportePage") },
+          { path: "cobranza", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cobranza-page"), "CobranzaReportePage") },
+          // US-34: cuotas vencidas.
+          { path: "cuotas-vencidas", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cuotas-vencidas-page"), "CuotasVencidasReportePage") },
         ],
       },
       {
@@ -223,7 +233,7 @@ export const router = createBrowserRouter([
       {
         // Redirección de la ruta histórica de pendientes de alta hacia Cobros y Cuotas
         path: "alumnos/pendientes",
-        element: <Navigate to="/app/pagos?tab=transferencias" replace />,
+        loader: redirigirA("/app/pagos?tab=transferencias"),
       },
       {
         // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
@@ -263,11 +273,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "cuotas",
-            element: <Navigate to="/app/pagos?tab=cuotas" replace />,
+            loader: redirigirA("/app/pagos?tab=cuotas"),
           },
           {
             path: "transferencias",
-            element: <Navigate to="/app/pagos?tab=transferencias" replace />,
+            loader: redirigirA("/app/pagos?tab=transferencias"),
           },
         ],
       },
@@ -315,7 +325,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "seguridad/permisos",
-        element: <Navigate to="/app/dashboard" replace />,
+        loader: redirigirA("/app/dashboard"),
       },
       {
         // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.

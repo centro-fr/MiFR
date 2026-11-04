@@ -45,7 +45,7 @@ export function DatosBancariosCard({ datos }: Props) {
       <div className="p-5">
         <div className="space-y-3">
           {/* ALIAS */}
-          <div className="group flex items-center justify-between gap-3 rounded-xl border border-pink-200/70 bg-gradient-to-r from-pink-50/70 via-rose-50/30 to-transparent p-3.5 transition-all hover:border-pink-300 dark:border-pink-900/40 dark:from-pink-950/30 dark:via-pink-950/10 dark:to-transparent">
+          <div className="group flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-pink-50/70 via-rose-50/30 to-transparent p-3.5 dark:from-pink-950/30 dark:via-pink-950/10 dark:to-transparent">
             <div className="min-w-0 flex-1">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-pink-700 dark:text-pink-300">
                 Alias
@@ -79,7 +79,7 @@ export function DatosBancariosCard({ datos }: Props) {
           </div>
 
           {/* CBU */}
-          <div className="group flex items-center justify-between gap-3 rounded-xl border border-pink-200/70 bg-gradient-to-r from-pink-50/70 via-rose-50/30 to-transparent p-3.5 transition-all hover:border-pink-300 dark:border-pink-900/40 dark:from-pink-950/30 dark:via-pink-950/10 dark:to-transparent">
+          <div className="group flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-pink-50/70 via-rose-50/30 to-transparent p-3.5 dark:from-pink-950/30 dark:via-pink-950/10 dark:to-transparent">
             <div className="min-w-0 flex-1">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-pink-700 dark:text-pink-300">
                 CBU
@@ -114,7 +114,7 @@ export function DatosBancariosCard({ datos }: Props) {
         </div>
 
         {/* Info extra: Banco, Titular, CUIT */}
-        <div className="mt-4 grid gap-3 rounded-xl border border-slate-200/60 bg-slate-50/70 p-3.5 text-xs text-slate-600 sm:grid-cols-3 dark:border-slate-800/80 dark:bg-slate-800/40 dark:text-slate-300">
+        <div className="mt-4 grid gap-3 rounded-xl bg-slate-50/70 p-3.5 text-xs text-slate-600 sm:grid-cols-3 dark:bg-slate-800/40 dark:text-slate-300">
           <div className="min-w-0">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Banco
