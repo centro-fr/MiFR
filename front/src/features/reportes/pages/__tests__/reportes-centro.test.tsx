@@ -132,6 +132,14 @@ describe("Reportes del centro", () => {
     expect(within(filas[2]).getByText("Libre")).toBeInTheDocument();
   });
 
+  it("ocupación: el mapa de la semana ubica cada horario en su día y su hora, con el nivel", () => {
+    renderizar(<OcupacionReportePage />);
+    const mapa = screen.getByRole("region", { name: "Mapa de la semana" });
+    expect(within(mapa).getByRole("img", { name: /^Miércoles 18:00: Completo, 100 %/ })).toHaveTextContent("100%");
+    expect(within(mapa).getByRole("img", { name: /^Lunes 08:00: Libre, 50 %/ })).toHaveTextContent("50%");
+    expect(within(mapa).getByRole("img", { name: "Martes 08:00: sin actividad" })).toBeInTheDocument();
+  });
+
   it("cobranza: totales por forma de pago y el detalle de cada pago", () => {
     renderizar(<CobranzaReportePage />);
     expect(screen.getByText("$ 55.000")).toBeInTheDocument();
