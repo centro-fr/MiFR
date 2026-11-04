@@ -17,6 +17,7 @@ import { planesHandlers } from "@/mocks/handlers/planes";
 import { publicoHandlers } from "@/mocks/handlers/publico";
 import { rankingAsistenciaHandlers } from "@/mocks/handlers/ranking-asistencia";
 import { reportesHandlers } from "@/mocks/handlers/reportes";
+import { reportesCentroHandlers } from "@/mocks/handlers/reportes-centro";
 import { rutinasHandlers } from "@/mocks/handlers/rutinas";
 import { seguridadHandlers } from "@/mocks/handlers/seguridad";
 
@@ -42,4 +43,5 @@ export const worker = setupWorker(
   ...inactivosHandlers,
   ...insigniasHandlers,
   ...reportesHandlers,
+  ...reportesCentroHandlers,
 );
