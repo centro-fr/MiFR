@@ -148,8 +148,8 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Reportes: una pestaña por informe (US-33 a US-37 y cobranza). El back los reserva a la
-        // propietaria con este permiso. Las pestañas sin informe todavía muestran "en construcción".
+        // Reportes: una pestaña por informe (US-30, US-33 a US-37 y cobranza). El back los reserva a la
+        // propietaria con este permiso.
         path: "reportes",
         element: guardiaDeSeccion("reportes", "REPORTES_COBRANZA_VER"),
         children: [
@@ -158,12 +158,15 @@ export const router = createBrowserRouter([
           { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
           // US-33: informe de asistencia.
           { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
-          // US-30: ranking de asistencia, el mismo que ven los demás roles en su sección Ranking.
-          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-page"), "RankingPage") },
-          ...["planes", "ocupacion", "cobranza", "cuotas-vencidas"].map((path) => ({
-            path,
-            lazy: paginaPerezosa(() => import("@/features/reportes/pages/reporte-en-construccion-page"), "ReporteEnConstruccionPage"),
-          })),
+          // US-36: planes más elegidos.
+          { path: "planes", lazy: paginaPerezosa(() => import("@/features/reportes/pages/planes-page"), "PlanesReportePage") },
+          // US-37: ocupación de horarios.
+          { path: "ocupacion", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ocupacion-page"), "OcupacionReportePage") },
+          // US-30: ranking de asistencia, en tabla. Los demás roles lo ven en su sección Ranking.
+          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-reporte-page"), "RankingReportePage") },
+          { path: "cobranza", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cobranza-page"), "CobranzaReportePage") },
+          // US-34: cuotas vencidas.
+          { path: "cuotas-vencidas", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cuotas-vencidas-page"), "CuotasVencidasReportePage") },
         ],
       },
       {

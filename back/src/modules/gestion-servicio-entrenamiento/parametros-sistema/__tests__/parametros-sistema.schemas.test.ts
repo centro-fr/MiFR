@@ -73,6 +73,7 @@ describe("valorDelParametro", () => {
     "DIAS_AVISO_VENCIMIENTO",
     "INASISTENCIAS_CONSECUTIVAS_INACTIVO",
     "RANKING_MINIMO_CLASES",
+    "DIA_CIERRE_HONORARIOS",
   ] as const)("%s rechaza negativos, -0, decimales y textos", (clave) => {
     for (const valor of [-1, -0, 1.5, "3", true, null]) {
       expect(() => valorDelParametro(clave, valor)).toThrow();
@@ -90,6 +91,8 @@ describe("valorDelParametro", () => {
     ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 30, "30"],
     ["RANKING_MINIMO_CLASES", 0, "0"],
     ["RANKING_MINIMO_CLASES", 100, "100"],
+    ["DIA_CIERRE_HONORARIOS", 1, "1"],
+    ["DIA_CIERRE_HONORARIOS", 28, "28"],
   ] as const)("%s acepta %j y lo guarda como %j", (clave, valor, guardado) => {
     expect(valorDelParametro(clave, valor)).toBe(guardado);
   });
@@ -100,12 +103,17 @@ describe("valorDelParametro", () => {
     ["DIAS_AVISO_VENCIMIENTO", 31],
     ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 31],
     ["RANKING_MINIMO_CLASES", 101],
+    ["DIA_CIERRE_HONORARIOS", 29],
   ] as const)("%s rechaza %j, por encima del tope", (clave, valor) => {
     expect(() => valorDelParametro(clave, valor)).toThrow();
   });
 
   it("INASISTENCIAS_CONSECUTIVAS_INACTIVO rechaza 0: todos los alumnos serían inactivos", () => {
     expect(() => valorDelParametro("INASISTENCIAS_CONSECUTIVAS_INACTIVO", 0)).toThrow();
+  });
+
+  it("DIA_CIERRE_HONORARIOS rechaza 0: no habría día de cierre", () => {
+    expect(() => valorDelParametro("DIA_CIERRE_HONORARIOS", 0)).toThrow();
   });
 
   it.each(["20:00", "00:00", "23:59", " 08:30 "])(

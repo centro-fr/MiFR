@@ -98,3 +98,9 @@ export interface ResultadoGeneracion extends ResumenLiquidaciones {
   advertencias: AdvertenciaHonorario[];
   sin_recalcular: number[];
 }
+
+// Lo que deja el cierre de un mes: cuántas liquidaciones pasaron de BORRADOR a CERRADA.
+export interface ResumenCierreHonorarios {
+  periodo: string;
+  cerradas: number;
+}

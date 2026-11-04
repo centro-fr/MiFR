@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { CierreMensualHonorariosService } from "../cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import { GestionHonorariosService } from "../gestion-honorarios.service.js";
 import type { LiquidacionService } from "../liquidacion/liquidacion.service.js";
 import type { TarifaHonorarioService } from "../tarifa-honorario/tarifa-honorario.service.js";
@@ -18,11 +19,13 @@ function crearServicio() {
     cerrar: vi.fn(),
     pagar: vi.fn(),
   };
+  const cierreMensual = { cerrarMesAnterior: vi.fn().mockResolvedValue(null) };
   const servicio = new GestionHonorariosService(
     tarifas as unknown as TarifaHonorarioService,
     liquidaciones as unknown as LiquidacionService,
+    cierreMensual as unknown as CierreMensualHonorariosService,
   );
-  return { servicio, tarifas, liquidaciones };
+  return { servicio, tarifas, liquidaciones, cierreMensual };
 }
 
 describe("GestionHonorariosService", () => {
@@ -74,6 +77,35 @@ describe("GestionHonorariosService", () => {
 
       expect(await servicio.listarLiquidaciones(PERIODO)).toBe(resultado);
       expect(liquidaciones.listar).toHaveBeenCalledWith(PERIODO);
+    });
+
+    it("listarLiquidaciones cierra antes el mes anterior si ya le tocaba", async () => {
+      const { servicio, liquidaciones, cierreMensual } = crearServicio();
+      const orden: string[] = [];
+      cierreMensual.cerrarMesAnterior.mockImplementation(async () => {
+        orden.push("cierre");
+        return null;
+      });
+      liquidaciones.listar.mockImplementation(async () => {
+        orden.push("listado");
+        return { periodo: "2026-10", liquidaciones: [] };
+      });
+
+      await servicio.listarLiquidaciones(PERIODO);
+
+      expect(orden).toEqual(["cierre", "listado"]);
+    });
+
+    it("listarLiquidaciones responde aunque el cierre falle, y deja el error en el log", async () => {
+      const { servicio, liquidaciones, cierreMensual } = crearServicio();
+      const consola = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      cierreMensual.cerrarMesAnterior.mockRejectedValue(new Error("base caída"));
+      const resultado = { periodo: "2026-10", liquidaciones: [] };
+      liquidaciones.listar.mockResolvedValue(resultado);
+
+      expect(await servicio.listarLiquidaciones(PERIODO)).toBe(resultado);
+      expect(consola).toHaveBeenCalled();
+      consola.mockRestore();
     });
 
     it("obtenerLiquidacion delega en el componente con el id", async () => {

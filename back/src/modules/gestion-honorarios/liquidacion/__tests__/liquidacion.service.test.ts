@@ -319,4 +319,45 @@ describe("LiquidacionService", () => {
       await expect(service[operacion](99)).rejects.toThrow(NotFoundError);
     });
   });
+
+  describe("cerrarMes", () => {
+    it("recalcula el mes y cierra solo los borradores", async () => {
+      repositorio.guardarBorradores.mockResolvedValue({
+        liquidaciones: [
+          liquidacion(10, 5000),
+          { ...liquidacion(11, 3000), estado: "PAGADA" },
+          liquidacion(12, 0),
+        ],
+        sin_recalcular: [],
+      });
+      repositorio.transicionar.mockResolvedValue(true);
+
+      await expect(service.cerrarMes(PERIODO)).resolves.toEqual({ periodo: "2026-10", cerradas: 2 });
+
+      expect(repositorio.guardarBorradores).toHaveBeenCalledWith(
+        PERIODO.desde,
+        PERIODO.hasta,
+        expect.any(Array),
+      );
+      expect(repositorio.transicionar.mock.calls).toEqual([
+        [10, "BORRADOR", "CERRADA"],
+        [12, "BORRADOR", "CERRADA"],
+      ]);
+    });
+
+    it("no cuenta la que otro pedido cerró mientras tanto", async () => {
+      repositorio.guardarBorradores.mockResolvedValue({
+        liquidaciones: [liquidacion(10, 5000), liquidacion(11, 3000)],
+        sin_recalcular: [],
+      });
+      repositorio.transicionar.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+
+      await expect(service.cerrarMes(PERIODO)).resolves.toEqual({ periodo: "2026-10", cerradas: 1 });
+    });
+
+    it("sin liquidaciones no cierra nada", async () => {
+      await expect(service.cerrarMes(PERIODO)).resolves.toEqual({ periodo: "2026-10", cerradas: 0 });
+      expect(repositorio.transicionar).not.toHaveBeenCalled();
+    });
+  });
 });

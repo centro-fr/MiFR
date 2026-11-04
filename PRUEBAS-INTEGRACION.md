@@ -202,7 +202,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49, PI-55, PI-56                             | Sí                                                                                     |
 | US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50, PI-53, PI-56                             | Sí                                                                                     |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    | PI-69, PI-70                                                  | Sí                                                                                     |
-| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82 | Sí: el 50 % de lo cobrado, el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
+| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82, PI-86 | Sí: el 50 % de lo cobrado, el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
 | US-24 | Registro de suplencias entre profesoras                   |   4    | PI-60 a PI-63                                                 | Sí; no editar una suplencia de un período liquidado queda para US-23 (sección 9)       |
 | US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar), PI-67, PI-68                  | Sí: los avisos, su destinatario, que no se dupliquen y las notificaciones propias por la API |
 | US-26 | Resumen diario para la propietaria                        |   4    | PI-65                                                         | Parcial: los tres bloques por la API (`GET /resumen-diario`); la notificación diaria `RESUMEN_DIARIO` espera a `Notificacion` (US-25) |
@@ -301,8 +301,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-80         | Recalcular, cerrar y pagar una liquidación                          | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 | PI-81         | Los períodos y los permisos de las liquidaciones                    | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 | PI-82         | Las tarifas de honorarios                                           | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
+| PI-86         | El cierre mensual automático de los honorarios                      | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo, `DIA_CIERRE_HONORARIOS` | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026).
 
 ### 6.2 Detalle
 
@@ -1412,6 +1413,18 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (R-13 a R-16).
 
+#### PI-86 — El cierre mensual automático de los honorarios
+
+**US:** US-23 · **Precondición:** la de PI-78; sesión de la propietaria. El reloj está en el 12/10/2026.
+
+1. Con `DIA_CIERRE_HONORARIOS` en 5, la propietaria genera septiembre, cierra y paga la liquidación de Lucía; después corre el proceso de cierre mensual dos veces.
+2. Con `DIA_CIERRE_HONORARIOS` en 15 corre el proceso de cierre mensual sin haber generado septiembre.
+3. Con `DIA_CIERRE_HONORARIOS` en 12, la propietaria lista septiembre.
+
+**Resultado esperado:** en el paso 1 la primera corrida cierra septiembre con 2 liquidaciones cerradas (Carla, con $17.500, y Rita), la de Lucía sigue PAGADA y la segunda corrida no hace nada. En el paso 2 no se calcula ninguna liquidación, porque todavía no llegó el día de cierre. En el paso 3 el listado responde 200 con las 3 liquidaciones CERRADA y un total general de $38.000: listar cierra el mes si el proceso no llegó a hacerlo.
+
+**Automatizado:** Sí (R-17 y R-18).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1785,3 +1798,4 @@ Los defectos se numeran D-01, D-02…
 |   2.29  | 18/10/2026 | PI-15 suma los pasos 5 y 6 (DNI y contacto de emergencia obligatorios en el alta) y los tests E-24 y E-25; PI-16, PI-17, PI-31 y PI-64 mandan ahora altas completas | Francisco Andrade |
 |   2.30  | 20/10/2026 | Casos PI-71 a PI-73 (racha e insignias, ranking de asistencia y cierre mensual) y archivo P con P-01 a P-10; casos PI-74 a PI-77 (informe de asistencia y ocupación de horarios) y archivo Q con Q-01 a Q-06. US-30, US-31 y US-37 pasan a automatizadas y US-33 a parcial (sin la exportación). Fábricas `darRol`, `crearProfesora`, `crearActividad` y `crearClase` | Nicolas |
 |   2.31  | 24/10/2026 | Casos PI-78 a PI-82 (las liquidaciones y las tarifas de honorarios, US-23) y archivo R con R-01 a R-16; el honorario pasa a ser el 50 % de lo cobrado en el mes, las tarifas de alumno a cargo son un porcentaje y las de hora de suplencia, un monto fijo; US-23 pasa a automatizada | Rosario Mendoza |
+|   2.32  | 04/11/2026 | Caso PI-86 (el cierre mensual automático de los honorarios desde `DIA_CIERRE_HONORARIOS`) y tests R-17 y R-18; el resto del archivo R corre con el día de cierre en 28 para que listar no cierre septiembre solo | Francisco Andrade |

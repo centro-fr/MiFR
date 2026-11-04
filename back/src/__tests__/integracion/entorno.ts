@@ -3,6 +3,7 @@ import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../../app.js";
 import { construirSistema } from "../../composicion.js";
+import type { CierreMensualHonorariosService } from "../../modules/gestion-honorarios/cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import type { CierreMensualInsigniasService } from "../../modules/gestion-insignias/cierre-mensual-insignias/cierre-mensual-insignias.service.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
@@ -32,6 +33,8 @@ export interface EntornoDeIntegracion {
   planificadorNotificaciones: PlanificadorNotificacionesService;
   // El cierre mensual de insignias (US-31), para correrlo con el día que pide cada caso.
   cierreMensualInsignias: CierreMensualInsigniasService;
+  // El cierre mensual de honorarios (US-23), para correrlo con el día que pide cada caso.
+  cierreMensualHonorarios: CierreMensualHonorariosService;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
@@ -45,6 +48,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     cierreAsistencia,
     planificadorNotificaciones,
     cierreMensualInsignias,
+    cierreMensualHonorarios,
   } = construirSistema({
     prisma,
     googleAuth: googleSimulado,
@@ -71,6 +75,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     cierreAsistencia,
     planificadorNotificaciones,
     cierreMensualInsignias,
+    cierreMensualHonorarios,
     iniciarSesion,
     cerrar: () => prisma.$disconnect(),
   };

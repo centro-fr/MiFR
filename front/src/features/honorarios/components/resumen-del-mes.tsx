@@ -1,80 +1,92 @@
-import { Loader2, RefreshCw } from "lucide-react";
-import { Can } from "@/components/guards/can";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { BadgeEstadoLiquidacion } from "@/features/honorarios/components/badge-estado-liquidacion";
-import { alumnosDelMes, estadoDelMes, fechaHora, leyendaDelTotal, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
-import { esPeriodoEnCurso } from "@/features/honorarios/utils/periodo";
+import { alumnosDelMes, fechaHora, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
+import { diaDeCierreLegible, esPeriodoEnCurso, etiquetaPeriodo, mesSigueAbierto } from "@/features/honorarios/utils/periodo";
 import type { InformeHonorarios } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
 
 const TARJETA = "rounded-2xl border-border bg-white p-5 shadow-sm dark:bg-surface-low";
+const ETIQUETA = "text-sm font-semibold text-muted-foreground";
+const VALOR = "mt-1 text-3xl font-black tracking-tight text-dark tabular-nums dark:text-white";
+const NOTA = "mt-1 text-sm text-muted-foreground";
 
-function TotalDelMes({ informe }: { informe: InformeHonorarios }) {
+function textoDelMes(informe: InformeHonorarios): { titulo: string; detalle: string; abierto: boolean } {
+  const { periodo, liquidaciones } = informe;
+  const mes = etiquetaPeriodo(periodo).split(" ")[0];
+  const cierre = diaDeCierreLegible(periodo);
+  if (mesSigueAbierto(periodo)) {
+    return {
+      titulo: `${mes} se sigue actualizando.`,
+      detalle: esPeriodoEnCurso(periodo)
+        ? `Suma cada cuota que se cobra. Se cierra solo el ${cierre} y ahí quedan los montos para abonar.`
+        : `Todavía pueden entrar transferencias del mes. Se cierra solo el ${cierre}.`,
+      abierto: true,
+    };
+  }
+  if (liquidaciones.some(({ estado }) => estado === "BORRADOR")) {
+    return { titulo: `${mes} se está cerrando.`, detalle: "En un momento quedan los montos para abonar.", abierto: true };
+  }
+  if (liquidaciones.length > 0 && liquidaciones.every(({ estado }) => estado === "PAGADA")) {
+    return { titulo: `${mes} está cerrado y abonado.`, detalle: "Los montos ya no cambian.", abierto: false };
+  }
+  return {
+    titulo: `${mes} está cerrado.`,
+    detalle: `Se cerró solo el ${cierre}: los montos ya no cambian. Marcá a cada profesor/a cuando le abones.`,
+    abierto: false,
+  };
+}
+
+/** La línea de arriba: si el mes todavía cambia o ya quedó fijo, y cuándo se cierra. */
+export function EstadoDelMes({ informe, procesando }: { informe: InformeHonorarios; procesando: boolean }) {
+  const { titulo, detalle, abierto } = textoDelMes(informe);
+  const calculadoEl = ultimoCalculo(informe.liquidaciones);
   return (
-    <Card className={TARJETA}>
-      <h2 className="text-sm font-semibold text-muted-foreground">Total del mes</h2>
-      <p className="mt-1 text-3xl font-black tracking-tight text-dark tabular-nums dark:text-white">
-        {formatearPrecio(informe.totalGeneral)}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">{leyendaDelTotal(alumnosDelMes(informe.liquidaciones))}</p>
-    </Card>
-  );
-}
-
-interface PropsEstado {
-  informe: InformeHonorarios;
-  calculando: boolean;
-  onRecalcular: () => void;
-}
-
-function mensajeDeEstado(enRevision: number, total: number): string {
-  if (enRevision === 0) return "Los honorarios de todos los profesores están cerrados: ya no cambian.";
-  if (enRevision < total) return `${enRevision} de ${total} profesores siguen en revisión.`;
-  return "Se puede recalcular hasta cerrar los honorarios de cada profesor/a.";
-}
-
-function EstadoDeLaLiquidacion({ informe, calculando, onRecalcular }: PropsEstado) {
-  const { liquidaciones } = informe;
-  const estado = estadoDelMes(liquidaciones);
-  const calculadoEl = ultimoCalculo(liquidaciones);
-  const enRevision = liquidaciones.filter((fila) => fila.estado === "BORRADOR").length;
-  return (
-    <Card className={`${TARJETA} flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between`}>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">Estado de los honorarios</h2>
-          <BadgeEstadoLiquidacion estado={estado} />
-        </div>
-        <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{mensajeDeEstado(enRevision, liquidaciones.length)}</p>
-        {calculadoEl && <p className="mt-1 text-sm text-muted-foreground">Calculado el {fechaHora(calculadoEl)}</p>}
-        {enRevision > 0 && esPeriodoEnCurso(informe.periodo) && (
-          <p className="mt-1 text-sm text-muted-foreground">El mes está en curso: lo que se cobre se suma al recalcular.</p>
-        )}
-      </div>
-      {enRevision > 0 && (
-        <Can permission="HONORARIOS_LIQUIDAR">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onRecalcular}
-            disabled={calculando}
-            className="min-h-11 shrink-0 rounded-xl font-bold"
-          >
-            {calculando ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <RefreshCw aria-hidden="true" className="size-4" />}
-            {calculando ? "Recalculando…" : "Recalcular"}
-          </Button>
-        </Can>
+    <p role="status" className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+      {procesando ? (
+        <Loader2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground" />
+      ) : (
+        <span aria-hidden="true" className={abierto ? "mt-1.5 size-2 shrink-0 rounded-full bg-slate-400" : "mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500"} />
       )}
-    </Card>
+      <span>
+        <strong className="font-bold text-slate-900 dark:text-white">{procesando ? "Actualizando los honorarios…" : titulo}</strong>
+        {!procesando && ` ${detalle}`}
+        {!procesando && abierto && calculadoEl && <span className="text-muted-foreground"> Actualizado el {fechaHora(calculadoEl)}</span>}
+      </span>
+    </p>
   );
 }
 
-export function ResumenDelMes(props: PropsEstado) {
+function cantidad(numero: number, singular: string, plural: string): string {
+  return `${numero} ${numero === 1 ? singular : plural}`;
+}
+
+export function ResumenDelMes({ informe }: { informe: InformeHonorarios }) {
+  const { liquidaciones } = informe;
+  const alumnos = alumnosDelMes(liquidaciones);
+  const abonadas = liquidaciones.filter(({ estado }) => estado === "PAGADA").length;
   return (
-    <section aria-label="Resumen del mes" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <TotalDelMes informe={props.informe} />
-      <EstadoDeLaLiquidacion {...props} />
+    <section aria-label="Resumen del mes" className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Card className={TARJETA}>
+        <h2 className={ETIQUETA}>Total para profesores</h2>
+        <p className={VALOR}>{formatearPrecio(informe.totalGeneral)}</p>
+        <p className={NOTA}>Entre {cantidad(liquidaciones.length, "profesor/a", "profesores")}</p>
+      </Card>
+      <Card className={TARJETA}>
+        <h2 className={ETIQUETA}>Alumnos a cargo</h2>
+        <p className={VALOR}>{alumnos ?? "—"}</p>
+        <p className={NOTA}>Cada profesor/a cobra un porcentaje de lo que pagaron sus alumnos</p>
+      </Card>
+      <Card className={TARJETA}>
+        <h2 className={ETIQUETA}>Abonados</h2>
+        <p className={VALOR}>
+          {abonadas} de {liquidaciones.length}
+        </p>
+        <p className={NOTA}>
+          {mesSigueAbierto(informe.periodo)
+            ? "Se abonan cuando el mes se cierra"
+            : cantidad(liquidaciones.length - abonadas, "profesor/a por abonar", "profesores por abonar")}
+        </p>
+      </Card>
     </section>
   );
 }
