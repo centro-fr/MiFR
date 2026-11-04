@@ -7,6 +7,7 @@ import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/in
 import type { InscripcionACargo } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoProfesores } from "../../gestion-personas/profesor/interface/i-info-profesores.js";
 import type { TarifaHonorarioService } from "../tarifa-honorario/tarifa-honorario.service.js";
+import type { ICierreLiquidaciones } from "./interface/i-cierre-liquidaciones.js";
 import type { LiquidacionRepository } from "./liquidacion.repository.js";
 import type {
   EstadoLiquidacion,
@@ -14,6 +15,7 @@ import type {
   LiquidacionDetallada,
   PeriodoLiquidacion,
   ResultadoGeneracion,
+  ResumenCierreHonorarios,
   ResumenLiquidaciones,
 } from "./liquidacion.types.js";
 
@@ -35,7 +37,7 @@ function resumir(periodo: string, liquidaciones: LiquidacionConDesglose[]): Resu
 
 // US-23: junta los datos del mes, llama al calculador puro y guarda el resultado. Una liquidación
 // CERRADA es una foto: se genera y se recalcula solo mientras es BORRADOR.
-export class LiquidacionService {
+export class LiquidacionService implements ICierreLiquidaciones {
   constructor(
     private readonly repositorio: LiquidacionRepository,
     private readonly tarifas: Pick<TarifaHonorarioService, "listar">,
@@ -124,6 +126,19 @@ export class LiquidacionService {
 
   pagar(id: number): Promise<LiquidacionDetallada> {
     return this.cambiarEstado(id, "CERRADA", "PAGADA", "pagar una liquidación CERRADA");
+  }
+
+  // Antes de cerrar se recalcula, para que la foto incluya todo lo cobrado en el mes. Las que ya
+  // estaban CERRADA o PAGADA no se tocan; si otro pedido cerró una en el medio, no cuenta como cerrada.
+  async cerrarMes(periodo: PeriodoLiquidacion): Promise<ResumenCierreHonorarios> {
+    const { liquidaciones } = await this.generar(periodo);
+    const borradores = liquidaciones.filter(({ estado }) => estado === "BORRADOR");
+    const cerradas = await Promise.all(
+      borradores.map(({ id_liquidacion }) =>
+        this.repositorio.transicionar(id_liquidacion, "BORRADOR", "CERRADA"),
+      ),
+    );
+    return { periodo: periodo.periodo, cerradas: cerradas.filter(Boolean).length };
   }
 
   // El DER no guarda cuándo se activó una inscripción: una BAJA puede ser una pre-inscripción que

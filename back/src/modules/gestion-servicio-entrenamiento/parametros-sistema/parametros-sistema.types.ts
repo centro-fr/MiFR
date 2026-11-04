@@ -15,6 +15,7 @@ export interface ValoresParametros {
   INASISTENCIAS_CONSECUTIVAS_INACTIVO: number;
   HORA_RESUMEN_DIARIO: string;
   RANKING_MINIMO_CLASES: number;
+  DIA_CIERRE_HONORARIOS: number;
 }
 
 export type ClaveParametro = keyof ValoresParametros;

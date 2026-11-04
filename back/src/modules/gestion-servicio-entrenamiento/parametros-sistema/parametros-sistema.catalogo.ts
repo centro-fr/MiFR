@@ -55,4 +55,9 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
     valor_inicial: "4",
     descripcion: "Cantidad mínima de clases en el período para figurar en el ranking de asistencia",
   },
+  DIA_CIERRE_HONORARIOS: {
+    tipo_dato: "ENTERO",
+    valor_inicial: "5",
+    descripcion: "Día del mes desde el que se cierran solos los honorarios del mes anterior (1 a 28)",
+  },
 };
