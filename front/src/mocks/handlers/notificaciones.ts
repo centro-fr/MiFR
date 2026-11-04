@@ -242,6 +242,7 @@ const VALOR_POR_CLAVE: Record<string, z.ZodTypeAny> = {
   DIAS_AVISO_VENCIMIENTO: entero(0, 30),
   INASISTENCIAS_CONSECUTIVAS_INACTIVO: entero(1, 30),
   HORA_RESUMEN_DIARIO: z.string().trim().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
+  DIA_CIERRE_HONORARIOS: entero(1, 28),
 };
 
 const EDITAR_PARAMETROS = { rol: "PROPIETARIA", permiso: "PARAMETROS_EDITAR" } as const;

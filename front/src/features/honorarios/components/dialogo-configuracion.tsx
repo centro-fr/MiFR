@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TarifasDelMes } from "@/features/honorarios/components/tarifas-del-mes";
-import { DIA_DE_CIERRE } from "@/features/honorarios/utils/periodo";
+import { useDiaDeCierre } from "@/features/honorarios/hooks/use-dia-de-cierre";
 
 interface Props {
   abierto: boolean;
@@ -10,9 +11,21 @@ interface Props {
   onClose: () => void;
 }
 
+function CierreDelMes() {
+  const { diaDeCierre, isPending, isError } = useDiaDeCierre();
+  if (isPending) return <Skeleton className="mt-2 h-10 w-full rounded-lg" />;
+  if (isError) return <p className="mt-1 text-sm text-muted-foreground">No se pudo leer el día de cierre. Probá de nuevo en un momento.</p>;
+  return (
+    <p className="mt-1 text-sm text-muted-foreground">
+      Se cierra solo el día {diaDeCierre} del mes siguiente. Hasta ese día podés actualizarlo, para que entren las transferencias
+      que se aprueban tarde. Al cerrarse se calcula por última vez y los montos quedan fijos.
+    </p>
+  );
+}
+
 /**
- * Lo que se configura una sola vez: el porcentaje (uno para todos), la hora de suplencia de cada
- * profesor/a y cuándo se cierra el mes. Con eso, cada mes se calcula y se cierra solo.
+ * Lo que se configura una sola vez: el porcentaje (uno para todos) y la hora de suplencia de cada
+ * profesor/a. También informa cuándo se cierra cada mes.
  */
 export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
   return (
@@ -23,7 +36,7 @@ export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
             <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
             <DialogTitle className="text-lg font-black tracking-tight text-slate-900 sm:text-xl dark:text-white">Configuración</DialogTitle>
             <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
-              Se carga una vez. Después cada mes se calcula y se cierra solo.
+              Se carga una vez. Después cada mes se cierra solo.
             </DialogDescription>
           </div>
           <Button
@@ -38,15 +51,12 @@ export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
           </Button>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-5 sm:p-6">
-          {abierto && <TarifasDelMes periodo={periodo} embebido />}
+          <TarifasDelMes periodo={periodo} embebido />
           <section aria-labelledby="config-cierre" className="border-t border-border pt-5">
             <h3 id="config-cierre" className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
               Cierre del mes
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Se cierra solo el día {DIA_DE_CIERRE} del mes siguiente. Hasta ese día se sigue actualizando, para que entren las
-              transferencias que se aprueban tarde. Después los montos quedan fijos.
-            </p>
+            <CierreDelMes />
           </section>
         </div>
       </DialogContent>

@@ -153,12 +153,6 @@ export async function calcularLiquidaciones(periodo: string): Promise<ResultadoC
   };
 }
 
-/** BORRADOR → CERRADA: queda como foto y ya no se recalcula. 409 si no estaba en borrador. */
-export async function cerrarLiquidacion(id: number): Promise<LiquidacionResumen> {
-  const { data } = await apiClient.post(`/liquidaciones/${encodeURIComponent(id)}/cerrar`);
-  return aResumen(liquidacionApiSchema.parse(data));
-}
-
 /** CERRADA → PAGADA: solo registra que se le abonó por fuera. 409 si no estaba cerrada. */
 export async function marcarLiquidacionAbonada(id: number): Promise<LiquidacionResumen> {
   const { data } = await apiClient.post(`/liquidaciones/${encodeURIComponent(id)}/pagar`);

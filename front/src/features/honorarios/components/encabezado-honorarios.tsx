@@ -14,17 +14,20 @@ export function EncabezadoHonorarios({
   descripcion = "Cuánto le corresponde a cada profesor/a en el mes. Es solo informativo: El sistema no mueve dinero.",
   acciones,
 }: PropsEncabezado) {
+  // Título y controles van lado a lado solo si entran: se mide el contenido (sin el menú lateral), no la pantalla.
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="min-w-0">
-        <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          {titulo}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-          {descripcion}
-        </p>
+    <div className="@container">
+      <div className="flex flex-col gap-4 @3xl:flex-row @3xl:items-center @3xl:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            {titulo}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+            {descripcion}
+          </p>
+        </div>
+        {acciones && <div className="flex flex-wrap items-center gap-2 @3xl:shrink-0">{acciones}</div>}
       </div>
-      {acciones && <div className="flex shrink-0 flex-wrap items-center gap-2">{acciones}</div>}
     </div>
   );
 }

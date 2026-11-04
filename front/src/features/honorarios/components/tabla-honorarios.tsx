@@ -61,11 +61,14 @@ function Acciones({ liquidacion, onVerDetalle, onAbonar }: Omit<Props, "liquidac
   );
 }
 
-/** Una fila por profesor/a. En el celular y la tablet, una tarjeta por cada una. */
+/**
+ * Una fila por profesor/a. Si no entra la tabla, una tarjeta por cada una. Se decide por el ancho del
+ * contenido y no de la pantalla: con el menú lateral abierto, una tablet deja el lugar de un celular.
+ */
 export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props) {
   return (
-    <>
-      <ul aria-label="Honorarios por profesor/a" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
+    <div className="@container">
+      <ul aria-label="Honorarios por profesor/a" className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:hidden">
         {liquidaciones.map((liquidacion) => (
           <li key={liquidacion.id}>
             <Card className="flex flex-col gap-3 rounded-2xl border-border bg-white p-4 shadow-sm dark:bg-surface-low">
@@ -91,7 +94,7 @@ export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props
         ))}
       </ul>
 
-      <Card className="hidden overflow-hidden rounded-2xl border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+      <Card className="hidden overflow-hidden rounded-2xl border-slate-200/80 bg-white shadow-2xs @4xl:block dark:border-slate-800 dark:bg-slate-900">
         <Table className="w-full text-left text-sm">
           <TableHeader>
             <TableRow className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/60">
@@ -135,6 +138,6 @@ export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props
           </TableBody>
         </Table>
       </Card>
-    </>
+    </div>
   );
 }

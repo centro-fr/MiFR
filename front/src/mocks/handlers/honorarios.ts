@@ -164,13 +164,16 @@ function diaAnterior(dia: string): string {
   return new Date(new Date(diaComoFecha(dia)).getTime() - 86_400_000).toISOString().slice(0, 10);
 }
 
-// Como CierreMensualHonorarios del back: desde el día 5 (DIA_CIERRE_HONORARIOS) el mes anterior se
-// recalcula y se cierra solo, aunque nadie lo haya calculado. Lo pagado no se toca.
-const DIA_CIERRE_HONORARIOS = 5;
+// Como CierreMensualHonorarios del back: desde el día DIA_CIERRE_HONORARIOS (5 al principio) el mes
+// anterior se recalcula y se cierra solo, aunque nadie lo haya calculado. Lo pagado no se toca.
+function diaDeCierre(): number {
+  const valor = db.parametros.find(({ clave }) => clave === "DIA_CIERRE_HONORARIOS")?.valor;
+  return typeof valor === "number" ? valor : 5;
+}
 
 function cerrarMesAnteriorSiCorresponde(): void {
   const hoy = hoyEnArgentina();
-  if (Number(hoy.slice(8, 10)) < DIA_CIERRE_HONORARIOS) return;
+  if (Number(hoy.slice(8, 10)) < diaDeCierre()) return;
   const [anio = 0, mes = 0] = hoy.slice(0, 7).split("-").map(Number);
   const anterior = new Date(Date.UTC(anio, mes - 2, 1)).toISOString().slice(0, 7);
   const { desde } = limitesDelPeriodo(anterior);

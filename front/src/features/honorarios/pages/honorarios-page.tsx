@@ -4,7 +4,7 @@ import { AlertCircle, Settings } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { MenuExportar } from "@/components/menu-exportar";
 import { Button } from "@/components/ui/button";
-import { ConfirmarCambioEstado, type CambioDeEstado } from "@/features/honorarios/components/confirmar-cambio-estado";
+import { ConfirmarAbono } from "@/features/honorarios/components/confirmar-abono";
 import { SelectorMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
 import { DialogoDetalle } from "@/features/honorarios/components/dialogo-detalle";
@@ -13,55 +13,75 @@ import { AvisoAdvertencias, InformeCargando, InformeConError, InformeVacio } fro
 import { InformeImprimible } from "@/features/honorarios/components/informe-imprimible";
 import { EstadoDelMes, ResumenDelMes } from "@/features/honorarios/components/resumen-del-mes";
 import { TablaHonorarios } from "@/features/honorarios/components/tabla-honorarios";
-import { useActualizarMesAbierto } from "@/features/honorarios/hooks/use-actualizar-mes-abierto";
+import { useDiaDeCierre } from "@/features/honorarios/hooks/use-dia-de-cierre";
 import { useExportarInforme } from "@/features/honorarios/hooks/use-exportar-informe";
 import { useInformeHonorarios } from "@/features/honorarios/hooks/use-honorarios";
-import { periodoDesdeParametro } from "@/features/honorarios/utils/periodo";
-import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { useRecalcularMes } from "@/features/honorarios/hooks/use-recalcular-mes";
+import { mesSigueAbierto, periodoDesdeParametro } from "@/features/honorarios/utils/periodo";
 import type { LiquidacionResumen } from "@/types/honorarios";
 
-function LiquidacionDelMes({ periodo }: { periodo: string }) {
-  const { data: informe, isPending, isError, error, refetch, isFetching } = useInformeHonorarios(periodo);
-  const { hasPermission } = usePermissions();
-  // Se calcula al entrar y se cierra solo pasado el día de cierre: no hay botones para eso.
-  const actualizacion = useActualizarMesAbierto(periodo, informe, hasPermission("HONORARIOS_LIQUIDAR"));
-  const [detalle, setDetalle] = useState<LiquidacionResumen | null>(null);
-  const [detalleAbierto, setDetalleAbierto] = useState(false);
-  const [cambio, setCambio] = useState<CambioDeEstado | null>(null);
+/** Un diálogo que conserva su fila al cerrarse, para que el contenido no desaparezca durante la animación de salida. */
+function useDialogoDeFila() {
+  const [fila, setFila] = useState<LiquidacionResumen | null>(null);
+  const [abierto, setAbierto] = useState(false);
+  return {
+    fila,
+    abierto,
+    abrir: (nueva: LiquidacionResumen) => {
+      setFila(nueva);
+      setAbierto(true);
+    },
+    cerrar: () => setAbierto(false),
+  };
+}
 
-  if (isPending) return <InformeCargando />;
-  if (isError) return <InformeConError error={error} reintentando={isFetching} onReintentar={() => void refetch()} />;
-  if (informe.liquidaciones.length === 0) return <InformeVacio periodo={periodo} procesando={actualizacion.procesando} />;
+function LiquidacionDelMes({ periodo }: { periodo: string }) {
+  const informe = useInformeHonorarios(periodo);
+  // Sin el día de cierre no se sabe si el mes sigue abierto: se espera junto con el informe.
+  const cierre = useDiaDeCierre();
+  const recalculo = useRecalcularMes(periodo);
+  const detalle = useDialogoDeFila();
+  const abono = useDialogoDeFila();
+
+  if (informe.isPending || cierre.isPending) return <InformeCargando />;
+  if (informe.isError) {
+    return <InformeConError error={informe.error} reintentando={informe.isFetching} onReintentar={() => void informe.refetch()} />;
+  }
+  if (cierre.isError) {
+    return <InformeConError error={cierre.error} reintentando={cierre.isFetching} onReintentar={() => void cierre.refetch()} />;
+  }
+
+  const { liquidaciones } = informe.data;
+  const mesAbierto = mesSigueAbierto(periodo, cierre.diaDeCierre);
+  const recalcular = () => void recalculo.recalcular();
+
+  if (liquidaciones.length === 0) {
+    return <InformeVacio periodo={periodo} mesAbierto={mesAbierto} procesando={recalculo.procesando} onCalcular={recalcular} />;
+  }
 
   return (
     <>
-      <EstadoDelMes informe={informe} procesando={actualizacion.procesando} />
-      {actualizacion.error && (
+      <EstadoDelMes informe={informe.data} diaDeCierre={cierre.diaDeCierre} procesando={recalculo.procesando} onActualizar={recalcular} />
+      {recalculo.error && (
         <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
           <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
-          {actualizacion.error}
+          {recalculo.error}
         </p>
       )}
-      {actualizacion.advertencias.length > 0 && (
-        <AvisoAdvertencias advertencias={actualizacion.advertencias} liquidaciones={informe.liquidaciones} onCerrar={actualizacion.descartarAdvertencias} />
+      {recalculo.advertencias.length > 0 && (
+        <AvisoAdvertencias advertencias={recalculo.advertencias} liquidaciones={liquidaciones} onCerrar={recalculo.descartarAdvertencias} />
       )}
-      <ResumenDelMes informe={informe} />
-      <TablaHonorarios
-        liquidaciones={informe.liquidaciones}
-        onVerDetalle={(fila) => {
-          setDetalle(fila);
-          setDetalleAbierto(true);
-        }}
-        onAbonar={(fila) => setCambio({ liquidacion: fila, accion: "abonar" })}
-      />
-      <DialogoDetalle liquidacion={detalle} abierto={detalleAbierto} periodo={periodo} onClose={() => setDetalleAbierto(false)} />
-      <ConfirmarCambioEstado cambio={cambio} periodo={periodo} onClose={() => setCambio(null)} />
+      <ResumenDelMes informe={informe.data} mesAbierto={mesAbierto} />
+      <TablaHonorarios liquidaciones={liquidaciones} onVerDetalle={detalle.abrir} onAbonar={abono.abrir} />
+      <DialogoDetalle liquidacion={detalle.fila} abierto={detalle.abierto} periodo={periodo} onClose={detalle.cerrar} />
+      <ConfirmarAbono liquidacion={abono.fila} abierto={abono.abierto} periodo={periodo} onClose={abono.cerrar} />
     </>
   );
 }
 
-// US-23: honorarios del mes. Solo la propietaria (HONORARIOS_VER_TODOS en el router). Cada mes se
-// calcula al entrar y se cierra solo; lo único manual es marcar a quién ya se le abonó.
+// US-23: honorarios del mes. Solo la propietaria (HONORARIOS_VER_TODOS en el router). Mientras el mes
+// sigue abierto se actualiza con un botón; se cierra solo (lo hace el back) y lo único manual después
+// es marcar a quién ya se le abonó.
 export function HonorariosPage() {
   const [parametros, setParametros] = useSearchParams();
   // El mes vive en la URL (?mes=2026-10): se puede volver a un informe anterior o compartir el enlace.
@@ -82,7 +102,7 @@ export function HonorariosPage() {
     <OwnerLayout>
       <div className="min-w-0 space-y-6">
         <EncabezadoHonorarios
-          descripcion="Se calculan solos con lo que pagan los alumnos de cada profesor/a y las suplencias del mes. El sistema no mueve dinero."
+          descripcion="Se calculan con lo que pagan los alumnos de cada profesor/a y las suplencias del mes. El sistema no mueve dinero."
           acciones={
             <>
               <SelectorMes periodo={periodo} onChange={cambiarPeriodo} />
