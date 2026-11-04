@@ -96,6 +96,21 @@ function useCambioDeEstado(periodo: string, cambiar: (id: number) => Promise<unk
   });
 }
 
+/**
+ * Cierra de una vez todas las que siguen en borrador. Lo usa el cierre automático del mes: el back
+ * todavía no cierra solo, así que lo dispara la pantalla al entrar pasado el día de cierre.
+ */
+export function useCerrarMes(periodo: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: number[]) => Promise.all(ids.map((id) => cerrarLiquidacion(id))),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: informeKey(periodo) });
+      void queryClient.invalidateQueries({ queryKey: LIQUIDACIONES_KEY });
+    },
+  });
+}
+
 export function useCerrarLiquidacion(periodo: string) {
   return useCambioDeEstado(periodo, cerrarLiquidacion);
 }

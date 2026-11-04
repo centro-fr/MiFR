@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -35,6 +36,19 @@ const mockInforme: InformeHonorarios = {
   ],
 };
 
+const mockCalcular = vi.fn();
+const mockCerrarMes = vi.fn();
+
+vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
+  usePermissions: () => ({ hasPermission: () => true }),
+}));
+
+// El mes del informe tiene que seguir abierto para probar el recálculo al entrar.
+vi.mock("@/features/honorarios/utils/periodo", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/features/honorarios/utils/periodo")>();
+  return { ...real, periodoActual: () => "2026-10", periodoDesdeParametro: () => "2026-10", mesSigueAbierto: () => true };
+});
+
 vi.mock("@/features/honorarios/hooks/use-honorarios", () => ({
   useInformeHonorarios: () => ({
     data: mockInforme,
@@ -45,7 +59,9 @@ vi.mock("@/features/honorarios/hooks/use-honorarios", () => ({
     isFetching: false,
   }),
   useTarifas: () => ({ data: [] }),
-  useCalcularLiquidaciones: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useCalcularLiquidaciones: () => ({ isPending: false, mutateAsync: mockCalcular }),
+  useCerrarMes: () => ({ isPending: false, mutateAsync: mockCerrarMes }),
+  useLiquidacion: () => ({ data: undefined, isPending: true, isError: false }),
   useRegistrarTarifa: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useCerrarLiquidacion: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useMarcarLiquidacionAbonada: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -73,6 +89,7 @@ function renderizar() {
 describe("HonorariosPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCalcular.mockResolvedValue({ informe: mockInforme, advertencias: [] });
   });
 
   it("renderiza el encabezado y pestañas sin breadcrumbs locales duplicados", () => {
@@ -80,7 +97,7 @@ describe("HonorariosPage", () => {
 
     // Encabezado principal
     expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
-    expect(screen.getByText(/Cuánto le corresponde a cada profesor\/a en el mes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Se calculan solos con lo que pagan los alumnos/i)).toBeInTheDocument();
 
     // Pestañas
     expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();
@@ -96,9 +113,26 @@ describe("HonorariosPage", () => {
     expect(screen.getByRole("button", { name: /Exportar/i })).toBeInTheDocument();
   });
 
-  it("renderiza el resumen del mes y la tarjeta de la profesora", () => {
+  it("muestra el resumen y una fila por profesor/a con su estado", () => {
     renderizar();
-    expect(screen.getByRole("heading", { level: 2, name: "Total del mes" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Lucía Gómez" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Total para profesores" })).toBeInTheDocument();
+    const tabla = screen.getByRole("table");
+    const fila = within(tabla).getByRole("row", { name: /Lucía Gómez/ });
+    expect(within(fila).getByText("En curso")).toBeInTheDocument();
+    expect(within(fila).getByRole("button", { name: "Ver el detalle de Lucía Gómez" })).toBeInTheDocument();
+  });
+
+  it("recalcula solo al entrar mientras el mes sigue abierto, sin cerrar nada", async () => {
+    renderizar();
+    await vi.waitFor(() => expect(mockCalcular).toHaveBeenCalledTimes(1));
+    expect(mockCerrarMes).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Calcular honorarios|Recalcular/i })).not.toBeInTheDocument();
+  });
+
+  it("abre la configuración en un diálogo centrado", async () => {
+    renderizar();
+    fireEvent.click(screen.getByRole("button", { name: "Configuración" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Configuración" });
+    expect(within(dialogo).getByRole("heading", { name: "Cierre del mes" })).toBeInTheDocument();
   });
 });
