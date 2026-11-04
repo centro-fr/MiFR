@@ -53,8 +53,8 @@ export function esPeriodoEnCurso(periodo: string): boolean {
 
 /**
  * Día del mes siguiente en que el mes se cierra solo. Hasta ese día se sigue recalculando, para que
- * entren las transferencias del fin de mes que se aprueban tarde. Cuando el back tenga el parámetro
- * DIA_CIERRE_HONORARIOS, este valor tiene que salir de ahí.
+ * entren las transferencias del fin de mes que se aprueban tarde. El cierre lo hace el back con el
+ * parámetro DIA_CIERRE_HONORARIOS; este valor es su valor inicial y solo se usa para los textos.
  */
 export const DIA_DE_CIERRE = 5;
 

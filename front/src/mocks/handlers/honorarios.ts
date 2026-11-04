@@ -164,6 +164,25 @@ function diaAnterior(dia: string): string {
   return new Date(new Date(diaComoFecha(dia)).getTime() - 86_400_000).toISOString().slice(0, 10);
 }
 
+// Como CierreMensualHonorarios del back: desde el día 5 (DIA_CIERRE_HONORARIOS) el mes anterior se
+// recalcula y se cierra solo, aunque nadie lo haya calculado. Lo pagado no se toca.
+const DIA_CIERRE_HONORARIOS = 5;
+
+function cerrarMesAnteriorSiCorresponde(): void {
+  const hoy = hoyEnArgentina();
+  if (Number(hoy.slice(8, 10)) < DIA_CIERRE_HONORARIOS) return;
+  const [anio = 0, mes = 0] = hoy.slice(0, 7).split("-").map(Number);
+  const anterior = new Date(Date.UTC(anio, mes - 2, 1)).toISOString().slice(0, 7);
+  const { desde } = limitesDelPeriodo(anterior);
+  const delMes = () => db.liquidaciones.filter((l) => l.periodo_desde === desde);
+  if (delMes().some((l) => l.estado === "BORRADOR") || delMes().length === 0) {
+    liquidarPeriodo(db, anterior, db.profesoras.filter((p) => p.fecha_baja === null).map((p) => p.id_profesora));
+  }
+  for (const liquidacion of delMes()) {
+    if (liquidacion.estado === "BORRADOR") liquidacion.estado = "CERRADA";
+  }
+}
+
 function buscarLiquidacion(valor: string | readonly string[] | undefined) {
   const id = idDeRuta(valor);
   return id === null ? undefined : db.liquidaciones.find((l) => l.id_liquidacion === id);
@@ -191,6 +210,7 @@ export const honorariosHandlers = [
     if (denegado) return denegado;
     const periodo = periodoSchema.safeParse(new URL(request.url).searchParams.get("periodo"));
     if (!periodo.success) return errorApi(400, "VALIDATION_ERROR", "El período tiene que ser AAAA-MM");
+    cerrarMesAnteriorSiCorresponde();
     return HttpResponse.json(informe(periodo.data));
   }),
 
