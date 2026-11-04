@@ -61,7 +61,7 @@ function Hitos({ ficha }: { ficha: FichaInsignias }) {
     <Card className="rounded-3xl border-slate-200 p-5 shadow-sm dark:border-slate-800 sm:p-6">
       <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Próximos hitos</h2>
       <div className="mt-4 space-y-3">
-        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+        <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/40">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-extrabold text-slate-900 dark:text-white">Racha</p>
             <Badge variant="outline" className="rounded-full font-bold">
@@ -72,7 +72,7 @@ function Hitos({ ficha }: { ficha: FichaInsignias }) {
             {ficha.racha.proximo_hito ? `Llegá a ${ficha.racha.proximo_hito.umbral} clases seguidas` : "Alcanzaste todos los hitos de racha"}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+        <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/40">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-extrabold text-slate-900 dark:text-white">Clases asistidas</p>
             <Badge variant="outline" className="rounded-full font-bold">
