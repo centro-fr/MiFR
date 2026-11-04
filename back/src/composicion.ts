@@ -67,6 +67,7 @@ import { InsigniaService } from "./modules/gestion-insignias/insignia/insignia.s
 import { CalculadorHonorarios } from "./modules/calculos-del-negocio/calculador-honorarios/calculador-honorarios.js";
 import { LiquidacionRepository } from "./modules/gestion-honorarios/liquidacion/liquidacion.repository.js";
 import { LiquidacionService } from "./modules/gestion-honorarios/liquidacion/liquidacion.service.js";
+import { CierreMensualHonorariosService } from "./modules/gestion-honorarios/cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import { GestionRutinasYProgresoService } from "./modules/gestion-rutinas-y-progreso/gestion-rutinas-y-progreso.service.js";
 import { RutinaRepository } from "./modules/gestion-rutinas-y-progreso/rutina/rutina.repository.js";
 import { RutinaService } from "./modules/gestion-rutinas-y-progreso/rutina/rutina.service.js";
@@ -82,7 +83,8 @@ export interface PiezasDeInfraestructura {
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
 // tests de integración dan el alta definitiva sin pasar por un cobro; y los procesos que index.ts
 // corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
-// (US-21), los avisos de cuota (US-25), el resumen diario (US-26) y el cierre mensual de insignias (US-31).
+// (US-21), los avisos de cuota (US-25), el resumen diario (US-26), el cierre mensual de insignias (US-31)
+// y el de honorarios (US-23).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
@@ -91,6 +93,7 @@ export interface Sistema {
   planificadorNotificaciones: PlanificadorNotificacionesService;
   resumenDiario: ResumenDiarioPropietariaService;
   cierreMensualInsignias: CierreMensualInsigniasService;
+  cierreMensualHonorarios: CierreMensualHonorariosService;
 }
 
 // Parte del composition root: arma el grafo de componentes sobre las piezas de infraestructura
@@ -209,7 +212,12 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     cuotaService,
     profesorService,
   );
-  const gestionHonorarios = new GestionHonorariosService(tarifaHonorarioService, liquidacionService);
+  const cierreMensualHonorarios = new CierreMensualHonorariosService(liquidacionService, parametrosService);
+  const gestionHonorarios = new GestionHonorariosService(
+    tarifaHonorarioService,
+    liquidacionService,
+    cierreMensualHonorarios,
+  );
   const rutinaRepository = new RutinaRepository(prisma);
   return {
     dependencias: {
@@ -257,5 +265,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     planificadorNotificaciones,
     resumenDiario,
     cierreMensualInsignias,
+    cierreMensualHonorarios,
   };
 }

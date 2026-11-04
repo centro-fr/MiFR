@@ -13,7 +13,7 @@ import { AvisoAdvertencias, InformeCargando, InformeConError, InformeVacio } fro
 import { InformeImprimible } from "@/features/honorarios/components/informe-imprimible";
 import { EstadoDelMes, ResumenDelMes } from "@/features/honorarios/components/resumen-del-mes";
 import { TablaHonorarios } from "@/features/honorarios/components/tabla-honorarios";
-import { useAsegurarMes } from "@/features/honorarios/hooks/use-asegurar-mes";
+import { useActualizarMesAbierto } from "@/features/honorarios/hooks/use-actualizar-mes-abierto";
 import { useExportarInforme } from "@/features/honorarios/hooks/use-exportar-informe";
 import { useInformeHonorarios } from "@/features/honorarios/hooks/use-honorarios";
 import { periodoDesdeParametro } from "@/features/honorarios/utils/periodo";
@@ -24,26 +24,26 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const { data: informe, isPending, isError, error, refetch, isFetching } = useInformeHonorarios(periodo);
   const { hasPermission } = usePermissions();
   // Se calcula al entrar y se cierra solo pasado el día de cierre: no hay botones para eso.
-  const asegurar = useAsegurarMes(periodo, informe, hasPermission("HONORARIOS_LIQUIDAR"));
+  const actualizacion = useActualizarMesAbierto(periodo, informe, hasPermission("HONORARIOS_LIQUIDAR"));
   const [detalle, setDetalle] = useState<LiquidacionResumen | null>(null);
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const [cambio, setCambio] = useState<CambioDeEstado | null>(null);
 
   if (isPending) return <InformeCargando />;
   if (isError) return <InformeConError error={error} reintentando={isFetching} onReintentar={() => void refetch()} />;
-  if (informe.liquidaciones.length === 0) return <InformeVacio periodo={periodo} procesando={asegurar.procesando} />;
+  if (informe.liquidaciones.length === 0) return <InformeVacio periodo={periodo} procesando={actualizacion.procesando} />;
 
   return (
     <>
-      <EstadoDelMes informe={informe} procesando={asegurar.procesando} />
-      {asegurar.error && (
+      <EstadoDelMes informe={informe} procesando={actualizacion.procesando} />
+      {actualizacion.error && (
         <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
           <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
-          {asegurar.error}
+          {actualizacion.error}
         </p>
       )}
-      {asegurar.advertencias.length > 0 && (
-        <AvisoAdvertencias advertencias={asegurar.advertencias} liquidaciones={informe.liquidaciones} onCerrar={asegurar.descartarAdvertencias} />
+      {actualizacion.advertencias.length > 0 && (
+        <AvisoAdvertencias advertencias={actualizacion.advertencias} liquidaciones={informe.liquidaciones} onCerrar={actualizacion.descartarAdvertencias} />
       )}
       <ResumenDelMes informe={informe} />
       <TablaHonorarios

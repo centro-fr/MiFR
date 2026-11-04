@@ -37,7 +37,6 @@ const mockInforme: InformeHonorarios = {
 };
 
 const mockCalcular = vi.fn();
-const mockCerrarMes = vi.fn();
 
 vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => ({ hasPermission: () => true }),
@@ -60,7 +59,6 @@ vi.mock("@/features/honorarios/hooks/use-honorarios", () => ({
   }),
   useTarifas: () => ({ data: [] }),
   useCalcularLiquidaciones: () => ({ isPending: false, mutateAsync: mockCalcular }),
-  useCerrarMes: () => ({ isPending: false, mutateAsync: mockCerrarMes }),
   useLiquidacion: () => ({ data: undefined, isPending: true, isError: false }),
   useRegistrarTarifa: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useCerrarLiquidacion: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -122,10 +120,9 @@ describe("HonorariosPage", () => {
     expect(within(fila).getByRole("button", { name: "Ver el detalle de Lucía Gómez" })).toBeInTheDocument();
   });
 
-  it("recalcula solo al entrar mientras el mes sigue abierto, sin cerrar nada", async () => {
+  it("recalcula solo al entrar mientras el mes sigue abierto, sin botones para calcular", async () => {
     renderizar();
     await vi.waitFor(() => expect(mockCalcular).toHaveBeenCalledTimes(1));
-    expect(mockCerrarMes).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /Calcular honorarios|Recalcular/i })).not.toBeInTheDocument();
   });
 
