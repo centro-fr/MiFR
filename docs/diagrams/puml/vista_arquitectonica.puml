@@ -353,12 +353,15 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   package "GestionHonorarios" as GestionHonorarios <<subsystem>> {
     component "Liquidacion"     as Liquidacion
     component "TarifaHonorario" as TarifaHonorario
+    component "CierreMensualHonorarios" as CierreMensualHonorarios <<process>>
     interface "ICalculoHonorarios" as R_GH_CalculoHonorarios
     interface "IInfoClases"        as R_GH_InfoClases
     interface "IInfoInscripciones" as R_GH_InfoInscripciones
     interface "IInfoCuotas"        as R_GH_InfoCuotas
     interface "IInfoPlanes"        as R_GH_InfoPlanes
     interface "IInfoProfesores"    as R_GH_InfoProfesores
+    interface "IInfoParametros"    as R_GH_InfoParametros
+    interface "ICierreLiquidaciones" as I_CierreLiquidaciones
 
     Liquidacion     -left-( R_GH_CalculoHonorarios
     Liquidacion     -left-( R_GH_InfoClases
@@ -368,6 +371,11 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     TarifaHonorario -right-( R_GH_InfoPlanes
     TarifaHonorario -right-( R_GH_InfoProfesores
     Liquidacion ..> TarifaHonorario
+    Liquidacion -down- I_CierreLiquidaciones
+    CierreMensualHonorarios -up-( I_CierreLiquidaciones
+    CierreMensualHonorarios -left-( R_GH_InfoParametros
+    CierreMensualHonorarios ..> Liquidacion
+    Liquidacion -[hidden]down-> CierreMensualHonorarios
   }
   interface "ILogicaHonorarios" as I_LogicaHonorarios
   interface "IAutorizacion"     as R_GH_Autz
