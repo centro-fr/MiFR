@@ -1,22 +1,16 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { AlertCircle, ArrowLeft, Medal, Trophy, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Trophy, Loader2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MedallaPuesto } from "../components/medalla-puesto";
 import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
 import type { RankingAsistencia } from "../schemas/ranking-asistencia";
 
-const MEDALLA = [
-  "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-  "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-  "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300",
-];
-
 function FilaRanking({ fila }: { fila: RankingAsistencia["datos"][number] }) {
-  const esPodio = fila.posicion <= 3;
   return (
     <li
       className={`rounded-2xl border p-4 ${
@@ -26,14 +20,7 @@ function FilaRanking({ fila }: { fila: RankingAsistencia["datos"][number] }) {
       }`}
     >
       <div className="flex items-center gap-3">
-        <div
-          aria-label={`Puesto ${fila.posicion}`}
-          className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
-            esPodio ? MEDALLA[fila.posicion - 1] : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-          }`}
-        >
-          {esPodio ? <Medal aria-hidden="true" className="size-5" /> : fila.posicion}
-        </div>
+        <MedallaPuesto posicion={fila.posicion} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{fila.nombre} {fila.apellido}</p>

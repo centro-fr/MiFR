@@ -146,11 +146,11 @@ describe("Reportes del centro", () => {
     expect(within(fila).getByRole("link", { name: "11 4455-1205" })).toHaveAttribute("href", "tel:114455-1205");
   });
 
-  it("ranking: tabla con el mismo contenido y corona para el primero", () => {
+  it("ranking: tabla con el mismo contenido y medalla para el podio", () => {
     renderizar(<RankingReportePage />);
     const tabla = screen.getByRole("region", { name: /Comunidad MiFR/ });
     const primera = within(tabla).getByRole("row", { name: /Valentina Herrera/ });
-    expect(within(primera).getByLabelText("Primer puesto")).toBeInTheDocument();
+    expect(within(primera).getByLabelText("Puesto 1")).toBeInTheDocument();
     expect(within(primera).getByText("11 de 11")).toBeInTheDocument();
     expect(within(primera).getByText("23 clases")).toBeInTheDocument();
   });

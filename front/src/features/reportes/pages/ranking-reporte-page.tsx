@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Crown, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
+import { MedallaPuesto } from "@/features/portal-alumno/components/medalla-puesto";
 import { useRankingAsistencia } from "@/features/portal-alumno/hooks/use-ranking-asistencia";
 import type { RankingAsistencia } from "@/features/portal-alumno/schemas/ranking-asistencia";
 import { FiltroPeriodo } from "@/features/reportes/components/filtro-periodo";
@@ -26,7 +27,7 @@ import type { TablaExportable } from "@/features/reportes/utils/tabla-exportable
 import { cn } from "@/utils/cn";
 
 // US-30: pestaña "Ranking" de Reportes. Lo mismo que ve la comunidad (puesto, clases, asistencia y
-// racha), en una tabla para la propietaria. El 1.º va con corona y número dorado.
+// racha), en una tabla para la propietaria. El podio lleva medallas de oro, plata y bronce, igual que en la comunidad.
 
 type Fila = RankingAsistencia["datos"][number];
 
@@ -54,15 +55,6 @@ function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
   };
 }
 
-function Puesto({ posicion }: { posicion: number }) {
-  if (posicion !== 1) return <span className="font-bold text-slate-500 tabular-nums dark:text-slate-400">{posicion}</span>;
-  return (
-    <span className="inline-flex items-center gap-1 font-black text-amber-600 tabular-nums dark:text-amber-300">
-      <Crown aria-label="Primer puesto" className="size-4 fill-amber-400 text-amber-600 dark:text-amber-300" />1
-    </span>
-  );
-}
-
 function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
   return (
     <SeccionReporte
@@ -85,7 +77,7 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
             {ranking.datos.map((fila) => (
               <tr key={fila.id_alumno} className={fila.posicion <= 3 ? "bg-amber-50/40 dark:bg-amber-400/5" : undefined}>
                 <td className={TD}>
-                  <Puesto posicion={fila.posicion} />
+                  <MedallaPuesto posicion={fila.posicion} tamanio="chico" />
                 </td>
                 <th scope="row" className={`${TD} text-left font-semibold text-slate-900 dark:text-white`}>
                   {fila.nombre} {fila.apellido}
