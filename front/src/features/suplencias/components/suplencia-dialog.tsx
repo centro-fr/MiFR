@@ -12,6 +12,7 @@ import { suplenciaFormSchema, type SuplenciaFormValues } from "@/features/suplen
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { Suplencia } from "@/types/suplencia";
+import { fechaActualArgentina } from "@/utils/fecha";
 
 interface Props {
   abierto: boolean;
@@ -22,26 +23,38 @@ interface Props {
   error: string | null;
   onClose: () => void;
   onSubmit: (datos: SuplenciaFormValues) => void;
+  /** AAAA-MM-DD con el que arranca una suplencia nueva: un día del mes que se está mirando. */
+  fechaSugerida?: string;
 }
 
-function valoresIniciales(suplencia: Suplencia | null): SuplenciaFormValues {
+function valoresIniciales(suplencia: Suplencia | null, fechaSugerida: string): SuplenciaFormValues {
   return suplencia
     ? { fechaClase: suplencia.fechaClase.slice(0, 10), idHorario: suplencia.idHorario, idProfesoraSuplente: suplencia.suplente.id, motivo: suplencia.motivo ?? "" }
-    : { fechaClase: new Date().toISOString().slice(0, 10), idHorario: "", idProfesoraSuplente: "", motivo: "" };
+    : { fechaClase: fechaSugerida, idHorario: "", idProfesoraSuplente: "", motivo: "" };
 }
 
-export function SuplenciaDialog({ abierto, suplencia, horarios, profesoras, guardando, error, onClose, onSubmit }: Props) {
+export function SuplenciaDialog({
+  abierto,
+  suplencia,
+  horarios,
+  profesoras,
+  guardando,
+  error,
+  onClose,
+  onSubmit,
+  fechaSugerida = fechaActualArgentina(),
+}: Props) {
   const formulario = useForm<SuplenciaFormValues>({
     resolver: zodResolver(suplenciaFormSchema),
-    defaultValues: valoresIniciales(suplencia),
+    defaultValues: valoresIniciales(suplencia, fechaSugerida),
   });
   const fecha = useWatch({ control: formulario.control, name: "fechaClase" });
   const idHorario = useWatch({ control: formulario.control, name: "idHorario" });
   const idProfesoraSuplente = useWatch({ control: formulario.control, name: "idProfesoraSuplente" });
 
   useEffect(() => {
-    formulario.reset(valoresIniciales(suplencia));
-  }, [formulario, suplencia]);
+    formulario.reset(valoresIniciales(suplencia, fechaSugerida));
+  }, [formulario, suplencia, fechaSugerida]);
 
   const dia = fecha ? new Date(`${fecha}T12:00:00`).getDay() || 7 : 0;
   const horariosDisponibles = useMemo(() => {
