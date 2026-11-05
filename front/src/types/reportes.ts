@@ -17,11 +17,34 @@ export interface AltasDelMes {
   diferencia: number | null;
   /** % de variación con el mes anterior; null si es el primero o si el anterior tuvo 0. */
   variacion: number | null;
+  /** Alumnos que se dieron de baja en el mes. */
+  bajas: number;
+  /** Alumnos activos al terminar el mes; null si el mes todavía no empezó. */
+  activosAlCierre: number | null;
+}
+
+export type MotivoBaja = "ABANDONO" | "MUDANZA" | "SALUD" | "ECONOMICO" | "CAMBIO_PLAN" | "OTRO";
+
+/** Por qué se fueron y cuánto se quedaron los que se dieron de baja en el año. */
+export interface BajasDelAnio {
+  /** De más a menos. El motivo es null en bajas viejas, de antes de que fuera obligatorio. */
+  motivos: { motivo: MotivoBaja | null; cantidad: number }[];
+  permanencia: {
+    cantidad: number;
+    /** Meses promedio entre el alta y la baja; null si nadie se fue. */
+    promedioMeses: number | null;
+    /** Cuántos se fueron antes de cumplir 90 días. */
+    primerosTresMeses: number;
+  };
 }
 
 export interface EstadisticasInscripciones {
   anio: number;
   totalAltas: number;
+  totalBajas: number;
+  /** Alumnos activos al empezar el año. */
+  activosAlInicio: number;
+  bajas: BajasDelAnio;
   /** El mes con más altas; null si no hubo ninguna. */
   mesPico: Pick<AltasDelMes, "mes" | "anio" | "nombre" | "cantidad"> | null;
   meses: AltasDelMes[];

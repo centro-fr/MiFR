@@ -26,9 +26,11 @@ import type {
 import type { InscripcionRepository } from "./inscripcion.repository.js";
 import type { IInfoInscripciones } from "./interface/i-info-inscripciones.js";
 import type {
+  ConteoBajasPorMotivo,
+  EstadoInscripcion,
   FechasDeBaja,
   FiltroAlumnosPorInscripcion,
-  EstadoInscripcion,
+  FiltroBajasPorMotivo,
   FiltroInscripciones,
   FiltroInscripcionesParaInactividad,
   InscripcionACargo,
@@ -381,6 +383,10 @@ export class InscripcionService implements IInfoInscripciones {
     id_actividad?: number;
   }): Promise<Map<number, number>> {
     return this.repositorio.contarActivasPorPlan(filtro);
+  }
+
+  contarBajasPorMotivo(filtro: FiltroBajasPorMotivo): Promise<ConteoBajasPorMotivo[]> {
+    return this.repositorio.contarBajasPorMotivo(filtro);
   }
 
   async contarLugaresOcupados(idsHorarios: number[]): Promise<Map<number, number>> {

@@ -124,6 +124,12 @@ const itemEstadisticaMesSchema = z
     cantidad: z.number().int(),
     diferencia_mes_anterior: z.number().int().nullable(),
     porcentaje_variacion: z.number().nullable(),
+    bajas: z.number().int().openapi({ description: "Alumnos que se dieron de baja en el mes" }),
+    activos_al_cierre: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: "Alumnos activos al terminar el mes; null si el mes todavía no empezó" }),
   })
   .openapi("ItemEstadisticaMes");
 
@@ -132,6 +138,8 @@ const estadisticasInscripcionesSchema = z
     periodo: z.object({ desde: z.string(), hasta: z.string(), anio: z.number().int().nullable() }),
     resumen: z.object({
       total_altas: z.number().int(),
+      total_bajas: z.number().int(),
+      activos_al_inicio: z.number().int().openapi({ description: "Alumnos activos al empezar el período" }),
       promedio_mensual: z.number(),
       mes_pico: z
         .object({
@@ -143,6 +151,23 @@ const estadisticasInscripcionesSchema = z
         .nullable(),
     }),
     meses: z.array(itemEstadisticaMesSchema),
+    bajas: z.object({
+      motivos: z
+        .array(
+          z.object({
+            motivo: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]).nullable(),
+            cantidad: z.number().int(),
+          }),
+        )
+        .openapi({ description: "Inscripciones dadas de baja en el período, por motivo, de más a menos" }),
+      permanencia: z
+        .object({
+          cantidad: z.number().int(),
+          promedio_meses: z.number().nullable(),
+          primeros_tres_meses: z.number().int(),
+        })
+        .openapi({ description: "Cuánto llevaban los alumnos que se dieron de baja en el período" }),
+    }),
   })
   .openapi("EstadisticasInscripciones");
 
@@ -289,8 +314,9 @@ export function registrarDocumentacionGeneradorInformes(registro: OpenAPIRegistr
     security,
     summary: "Estadísticas de nuevas inscripciones por mes (US-35)",
     description:
-      `${soloPropietaria} Agrupa las altas definitivas de alumnos mes a mes en el año o período seleccionado, ` +
-      "con comparativas intermensuales de crecimiento y mes pico.",
+      `${soloPropietaria} Agrupa las altas definitivas y las bajas de alumnos mes a mes en el año o período ` +
+      "seleccionado, con los activos al cierre de cada mes, el mes pico, los motivos de baja y cuánto se " +
+      "quedaron los que se fueron. Para comparar años se pide un año por vez.",
     request: { query: estadisticasInscripcionesQuerySchema },
     responses: {
       200: respuestaJson("Estadísticas de inscripciones", estadisticasInscripcionesSchema),

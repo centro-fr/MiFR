@@ -365,4 +365,68 @@ describe("AlumnoRepository", () => {
       expect(prisma.$queryRaw).toHaveBeenCalled();
     });
   });
+
+  describe("bajas y activos para el reporte de inscripciones (US-35)", () => {
+    const inicio = new Date("2026-01-01T03:00:00Z");
+    const fin = new Date("2027-01-01T03:00:00Z");
+
+    function sqlDeLaConsulta(): string {
+      const [partes] = prisma.$queryRaw.mock.calls[0] as [TemplateStringsArray];
+      return partes.join("?");
+    }
+
+    it("contarBajasPorMes agrupa por la fecha de baja de los alumnos dados de baja", async () => {
+      prisma.$queryRaw.mockResolvedValue([{ anio: 2026, mes: 4, total: 5n }]);
+
+      const resultado = await repositorio.contarBajasPorMes({ inicio, fin, id_plan: 2 });
+
+      expect(resultado).toEqual([{ anio: 2026, mes: 4, total: 5 }]);
+      expect(sqlDeLaConsulta()).toContain("a.estado = 'BAJA'");
+      expect(sqlDeLaConsulta()).toContain("a.fecha_baja >=");
+    });
+
+    it("contarActivosAl cuenta a los que ya tenían el alta y todavía no se habían ido", async () => {
+      prisma.$queryRaw.mockResolvedValue([{ total: 37n }]);
+
+      const resultado = await repositorio.contarActivosAl({ instante: inicio, id_profesora: 4 });
+
+      expect(resultado).toBe(37);
+      expect(sqlDeLaConsulta()).toContain("a.fecha_baja IS NULL OR a.fecha_baja >=");
+    });
+
+    it("contarActivosAl devuelve 0 si la consulta no trae filas", async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      expect(await repositorio.contarActivosAl({ instante: inicio })).toBe(0);
+    });
+
+    it("permanenciaDeBajas devuelve la cantidad, el promedio en días y cuántos se fueron en 90 días", async () => {
+      prisma.$queryRaw.mockResolvedValue([{ cantidad: 8n, promedio_dias: "225.5", hasta_90_dias: 3n }]);
+
+      const resultado = await repositorio.permanenciaDeBajas({ inicio, fin });
+
+      expect(resultado).toEqual({ cantidad: 8, promedio_dias: 225.5, hasta_90_dias: 3 });
+      expect(sqlDeLaConsulta()).toContain("INTERVAL '90 days'");
+    });
+
+    it("permanenciaDeBajas sin bajas no tiene promedio", async () => {
+      prisma.$queryRaw.mockResolvedValue([{ cantidad: 0, promedio_dias: null, hasta_90_dias: 0 }]);
+
+      expect(await repositorio.permanenciaDeBajas({ inicio, fin })).toEqual({
+        cantidad: 0,
+        promedio_dias: null,
+        hasta_90_dias: 0,
+      });
+    });
+
+    it("permanenciaDeBajas devuelve todo en 0 si la consulta no trae filas", async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      expect(await repositorio.permanenciaDeBajas({ inicio, fin })).toEqual({
+        cantidad: 0,
+        promedio_dias: null,
+        hasta_90_dias: 0,
+      });
+    });
+  });
 });

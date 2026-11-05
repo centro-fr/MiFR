@@ -24,7 +24,10 @@ import type {
 
 // Reportes de la propietaria (US-33 y US-35). El back los reserva a la PROPIETARIA con REPORTES_COBRANZA_VER.
 
-/** US-35: altas definitivas de cada mes del año. Los meses que todavía no llegaron vienen en 0. */
+/**
+ * US-35: altas definitivas, bajas y activos de cada mes del año, y por qué se fueron los que se dieron de
+ * baja. Los meses que todavía no llegaron vienen en 0 y sin activos. Para comparar años se pide uno por vez.
+ */
 export async function obtenerEstadisticasInscripciones(filtros: FiltrosInscripciones): Promise<EstadisticasInscripciones> {
   const params: Record<string, number> = { anio: filtros.anio };
   if (filtros.idPlan !== null) params.id_plan = filtros.idPlan;
@@ -35,6 +38,16 @@ export async function obtenerEstadisticasInscripciones(filtros: FiltrosInscripci
   return {
     anio: api.periodo.anio ?? filtros.anio,
     totalAltas: api.resumen.total_altas,
+    totalBajas: api.resumen.total_bajas,
+    activosAlInicio: api.resumen.activos_al_inicio,
+    bajas: {
+      motivos: api.bajas.motivos,
+      permanencia: {
+        cantidad: api.bajas.permanencia.cantidad,
+        promedioMeses: api.bajas.permanencia.promedio_meses,
+        primerosTresMeses: api.bajas.permanencia.primeros_tres_meses,
+      },
+    },
     mesPico: pico && { mes: pico.mes, anio: pico.anio, nombre: pico.nombre_mes, cantidad: pico.cantidad },
     meses: api.meses.map((mes) => ({
       mes: mes.mes,
@@ -43,6 +56,8 @@ export async function obtenerEstadisticasInscripciones(filtros: FiltrosInscripci
       cantidad: mes.cantidad,
       diferencia: mes.diferencia_mes_anterior,
       variacion: mes.porcentaje_variacion,
+      bajas: mes.bajas,
+      activosAlCierre: mes.activos_al_cierre,
     })),
   };
 }

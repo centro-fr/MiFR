@@ -104,6 +104,7 @@ function crearMocks() {
       contarInscriptosParaAsistencia: vi.fn().mockResolvedValue(new Map([[8, 2]])),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map([[8, 1]])),
       contarActivasPorPlan: vi.fn().mockResolvedValue(new Map([[1, 5]])),
+      contarBajasPorMotivo: vi.fn().mockResolvedValue([{ motivo: "ABANDONO", cantidad: 2 }]),
     },
     alumnos: {
       buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO" }),
@@ -833,6 +834,20 @@ describe("InscripcionService", () => {
 
       expect(resultado).toEqual(new Map([[1, 5]]));
       expect(mocks.repositorio.contarActivasPorPlan).toHaveBeenCalledWith(filtro);
+    });
+  });
+
+  describe("contarBajasPorMotivo", () => {
+    it("delega al repositorio con el filtro", async () => {
+      const filtro = {
+        inicio: new Date("2026-01-01T03:00:00Z"),
+        fin: new Date("2027-01-01T03:00:00Z"),
+        id_plan: 2,
+      };
+      const resultado = await servicio.contarBajasPorMotivo(filtro);
+
+      expect(resultado).toEqual([{ motivo: "ABANDONO", cantidad: 2 }]);
+      expect(mocks.repositorio.contarBajasPorMotivo).toHaveBeenCalledWith(filtro);
     });
   });
 });

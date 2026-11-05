@@ -2,6 +2,7 @@ import type { modalidad_actividad } from "@prisma/client";
 import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 import type { FormaPago } from "../../gestion-cuotas-y-pagos/pago/pago.types.js";
 import type { EstadoAlumno } from "../../gestion-personas/alumno/alumno.types.js";
+import type { MotivoBaja } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { TipoPlan } from "../../gestion-servicio-entrenamiento/plan/plan.types.js";
 
 // ============================================================
@@ -173,6 +174,25 @@ export interface ItemEstadisticaMes {
   cantidad: number;
   diferencia_mes_anterior: number | null;
   porcentaje_variacion: number | null;
+  bajas: number;
+  // null en los meses que todavía no empezaron.
+  activos_al_cierre: number | null;
+}
+
+export interface MotivoDeBajas {
+  motivo: MotivoBaja | null;
+  cantidad: number;
+}
+
+// US-35: por qué se fueron (motivo de las inscripciones dadas de baja) y cuánto se quedaron los alumnos
+// que se dieron de baja en el período.
+export interface BajasDelPeriodo {
+  motivos: MotivoDeBajas[];
+  permanencia: {
+    cantidad: number;
+    promedio_meses: number | null;
+    primeros_tres_meses: number;
+  };
 }
 
 export interface EstadisticasInscripciones {
@@ -183,6 +203,8 @@ export interface EstadisticasInscripciones {
   };
   resumen: {
     total_altas: number;
+    total_bajas: number;
+    activos_al_inicio: number;
     promedio_mensual: number;
     mes_pico: {
       mes: number;
@@ -192,6 +214,7 @@ export interface EstadisticasInscripciones {
     } | null;
   };
   meses: ItemEstadisticaMes[];
+  bajas: BajasDelPeriodo;
 }
 
 // ============================================================
