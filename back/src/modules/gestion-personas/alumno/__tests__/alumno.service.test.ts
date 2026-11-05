@@ -30,6 +30,9 @@ function crearRepositorioMock() {
     darDeBaja: vi.fn(),
     reactivar: vi.fn(),
     contarAltasPorMes: vi.fn(),
+    contarBajasPorMes: vi.fn(),
+    contarActivosAl: vi.fn(),
+    permanenciaDeBajas: vi.fn(),
     listarConsultablesPorUsuario: vi.fn(),
     buscarPorIdUsuarioResponsable: vi.fn(),
   };
@@ -550,6 +553,38 @@ describe("AlumnoService", () => {
       repositorio.buscarPorId.mockResolvedValue(crearAlumno({ estado: "ACTIVO" }));
 
       await expect(servicio.reactivar(1, "ACTIVO")).rejects.toThrow(ConflictError);
+    });
+  });
+
+  describe("bajas y activos para el reporte de inscripciones (US-35)", () => {
+    const alcance = {
+      inicio: new Date("2026-01-01T03:00:00Z"),
+      fin: new Date("2027-01-01T03:00:00Z"),
+      id_profesora: 3,
+    };
+
+    it("contarBajasPorMes delega al repositorio con el filtro", async () => {
+      const esperado = [{ anio: 2026, mes: 4, total: 5 }];
+      repositorio.contarBajasPorMes.mockResolvedValue(esperado);
+
+      expect(await servicio.contarBajasPorMes(alcance)).toBe(esperado);
+      expect(repositorio.contarBajasPorMes).toHaveBeenCalledWith(alcance);
+    });
+
+    it("contarActivosAl delega al repositorio con el instante", async () => {
+      repositorio.contarActivosAl.mockResolvedValue(42);
+      const filtro = { instante: alcance.inicio, id_plan: 2 };
+
+      expect(await servicio.contarActivosAl(filtro)).toBe(42);
+      expect(repositorio.contarActivosAl).toHaveBeenCalledWith(filtro);
+    });
+
+    it("permanenciaDeBajas delega al repositorio con el filtro", async () => {
+      const esperado = { cantidad: 3, promedio_dias: 120, hasta_90_dias: 1 };
+      repositorio.permanenciaDeBajas.mockResolvedValue(esperado);
+
+      expect(await servicio.permanenciaDeBajas(alcance)).toBe(esperado);
+      expect(repositorio.permanenciaDeBajas).toHaveBeenCalledWith(alcance);
     });
   });
 

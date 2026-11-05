@@ -48,12 +48,16 @@ export function useInformeAsistencia(filtros: FiltrosInformeAsistencia, offset: 
   });
 }
 
-/** US-35. Sin placeholderData al cambiar de año o de filtro, por lo mismo que el de asistencia. */
-export function useEstadisticasInscripciones(filtros: FiltrosInscripciones) {
+/**
+ * US-35. Sin placeholderData al cambiar de año o de filtro, por lo mismo que el de asistencia. Para
+ * comparar años se usa uno por año; `habilitado` evita pedir los años que no se están mirando.
+ */
+export function useEstadisticasInscripciones(filtros: FiltrosInscripciones, habilitado = true) {
   return useQuery({
     queryKey: [...REPORTES_QUERY_KEY, "inscripciones", filtros],
     queryFn: () => obtenerEstadisticasInscripciones(filtros),
     staleTime: CINCO_MINUTOS,
+    enabled: habilitado,
   });
 }
 

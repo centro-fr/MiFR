@@ -15,8 +15,14 @@ describe("GeneradorInformesService", () => {
   let inscripciones: {
     contarActivasPorPlan: ReturnType<typeof vi.fn>;
     contarInscriptosParaAsistencia: ReturnType<typeof vi.fn>;
+    contarBajasPorMotivo: ReturnType<typeof vi.fn>;
   };
-  let alumnos: { contarAltasPorMes: ReturnType<typeof vi.fn> };
+  let alumnos: {
+    contarAltasPorMes: ReturnType<typeof vi.fn>;
+    contarBajasPorMes: ReturnType<typeof vi.fn>;
+    contarActivosAl: ReturnType<typeof vi.fn>;
+    permanenciaDeBajas: ReturnType<typeof vi.fn>;
+  };
   let asistencias: {
     resumirPorAlumno: ReturnType<typeof vi.fn>;
     resumirPorProfesora: ReturnType<typeof vi.fn>;
@@ -28,8 +34,17 @@ describe("GeneradorInformesService", () => {
     cuotas = { cuotasVencidasDetalladas: vi.fn() };
     pagos = { obtenerCobranza: vi.fn() };
     planes = { listarVigentes: vi.fn(), precioVigente: vi.fn() };
-    inscripciones = { contarActivasPorPlan: vi.fn(), contarInscriptosParaAsistencia: vi.fn() };
-    alumnos = { contarAltasPorMes: vi.fn() };
+    inscripciones = {
+      contarActivasPorPlan: vi.fn(),
+      contarInscriptosParaAsistencia: vi.fn(),
+      contarBajasPorMotivo: vi.fn().mockResolvedValue([]),
+    };
+    alumnos = {
+      contarAltasPorMes: vi.fn(),
+      contarBajasPorMes: vi.fn().mockResolvedValue([]),
+      contarActivosAl: vi.fn().mockResolvedValue(0),
+      permanenciaDeBajas: vi.fn().mockResolvedValue({ cantidad: 0, promedio_dias: null, hasta_90_dias: 0 }),
+    };
     asistencias = {
       resumirPorAlumno: vi.fn().mockResolvedValue([]),
       resumirPorProfesora: vi.fn().mockResolvedValue([]),
@@ -461,6 +476,72 @@ describe("GeneradorInformesService", () => {
 
       expect(resultado.meses).toHaveLength(0);
       expect(resultado.resumen.promedio_mensual).toBe(0);
+    });
+
+    it("suma las bajas de cada mes y arrastra los activos desde los que había al empezar", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-03-15T15:00:00Z"));
+      alumnos.contarAltasPorMes.mockResolvedValue([
+        { anio: 2026, mes: 1, total: 10 },
+        { anio: 2026, mes: 3, total: 4 },
+      ]);
+      alumnos.contarBajasPorMes.mockResolvedValue([
+        { anio: 2026, mes: 1, total: 2 },
+        { anio: 2026, mes: 2, total: 3 },
+      ]);
+      alumnos.contarActivosAl.mockResolvedValue(50);
+
+      const resultado = await servicio.estadisticasInscripciones({ anio: 2026, id_plan: 2, id_profesora: 3 });
+
+      expect(resultado.resumen).toMatchObject({ total_altas: 14, total_bajas: 5, activos_al_inicio: 50 });
+      expect(
+        resultado.meses.slice(0, 4).map(({ bajas, activos_al_cierre }) => [bajas, activos_al_cierre]),
+      ).toEqual([
+        [2, 58],
+        [3, 55],
+        [0, 59],
+        [0, null],
+      ]);
+      const alcance = expect.objectContaining({ id_plan: 2, id_profesora: 3 });
+      expect(alumnos.contarBajasPorMes).toHaveBeenCalledWith(alcance);
+      expect(alumnos.permanenciaDeBajas).toHaveBeenCalledWith(alcance);
+      expect(inscripciones.contarBajasPorMotivo).toHaveBeenCalledWith(alcance);
+      expect(alumnos.contarActivosAl).toHaveBeenCalledWith({
+        instante: new Date("2026-01-01T03:00:00Z"),
+        id_plan: 2,
+        id_profesora: 3,
+      });
+    });
+
+    it("informa por qué se fueron y cuántos meses llevaban, con un decimal", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([]);
+      inscripciones.contarBajasPorMotivo.mockResolvedValue([
+        { motivo: "ABANDONO", cantidad: 6 },
+        { motivo: "ECONOMICO", cantidad: 2 },
+      ]);
+      alumnos.permanenciaDeBajas.mockResolvedValue({ cantidad: 8, promedio_dias: 225, hasta_90_dias: 3 });
+
+      const resultado = await servicio.estadisticasInscripciones({ anio: 2025 });
+
+      expect(resultado.bajas).toEqual({
+        motivos: [
+          { motivo: "ABANDONO", cantidad: 6 },
+          { motivo: "ECONOMICO", cantidad: 2 },
+        ],
+        permanencia: { cantidad: 8, promedio_meses: 7.4, primeros_tres_meses: 3 },
+      });
+    });
+
+    it("sin bajas en el período la permanencia no tiene promedio", async () => {
+      alumnos.contarAltasPorMes.mockResolvedValue([]);
+
+      const resultado = await servicio.estadisticasInscripciones({ anio: 2025 });
+
+      expect(resultado.bajas.permanencia).toEqual({
+        cantidad: 0,
+        promedio_meses: null,
+        primeros_tres_meses: 0,
+      });
     });
   });
 

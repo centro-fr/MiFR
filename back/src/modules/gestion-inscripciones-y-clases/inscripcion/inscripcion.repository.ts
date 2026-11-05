@@ -7,14 +7,16 @@ import type {
   DarDeBajaAlumnoInput,
 } from "./inscripcion.schemas.js";
 import {
-  INCLUIR_DATOS_COBRO,
-  INCLUIR_DATOS_INSCRIPCION,
-  type InscripcionACobrar,
+  type ConteoBajasPorMotivo,
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
+  type FiltroBajasPorMotivo,
   type FiltroInscripciones,
   type FiltroInscripcionesParaInactividad,
+  INCLUIR_DATOS_COBRO,
+  INCLUIR_DATOS_INSCRIPCION,
   type InscripcionACargo,
+  type InscripcionACobrar,
   type InscripcionGuardada,
   type InscripcionParaInactividad,
   type InscriptoDeHorario,
@@ -707,5 +709,22 @@ export class InscripcionRepository {
       _count: { id_inscripcion: true },
     });
     return new Map(agrupados.map((g) => [g.id_plan, g._count.id_inscripcion]));
+  }
+
+  // US-35: por qué se fueron. Cuenta las inscripciones que pasaron a BAJA en el período, por motivo.
+  async contarBajasPorMotivo(filtro: FiltroBajasPorMotivo): Promise<ConteoBajasPorMotivo[]> {
+    const agrupados = await this.prisma.inscripciones.groupBy({
+      by: ["motivo_baja"],
+      where: {
+        estado: "BAJA",
+        fecha_baja: { gte: filtro.inicio, lt: filtro.fin },
+        ...(filtro.id_plan !== undefined ? { id_plan: filtro.id_plan } : {}),
+        ...(filtro.id_profesora !== undefined ? { id_profesora: filtro.id_profesora } : {}),
+      },
+      _count: { id_inscripcion: true },
+    });
+    return agrupados
+      .map((g) => ({ motivo: g.motivo_baja, cantidad: g._count.id_inscripcion }))
+      .sort((a, b) => b.cantidad - a.cantidad);
   }
 }

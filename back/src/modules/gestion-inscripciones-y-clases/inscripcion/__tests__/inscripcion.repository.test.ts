@@ -758,4 +758,41 @@ describe("InscripcionRepository", () => {
       });
     });
   });
+
+  describe("contarBajasPorMotivo", () => {
+    const inicio = new Date("2026-01-01T03:00:00Z");
+    const fin = new Date("2027-01-01T03:00:00Z");
+
+    it("agrupa las bajas del período por motivo, de más a menos, con el plan y la profesora", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([
+        { motivo_baja: "MUDANZA", _count: { id_inscripcion: 1 } },
+        { motivo_baja: "ABANDONO", _count: { id_inscripcion: 4 } },
+        { motivo_baja: null, _count: { id_inscripcion: 2 } },
+      ]);
+
+      const resultado = await repositorio.contarBajasPorMotivo({ inicio, fin, id_plan: 2, id_profesora: 3 });
+
+      expect(resultado).toEqual([
+        { motivo: "ABANDONO", cantidad: 4 },
+        { motivo: null, cantidad: 2 },
+        { motivo: "MUDANZA", cantidad: 1 },
+      ]);
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["motivo_baja"],
+        where: { estado: "BAJA", fecha_baja: { gte: inicio, lt: fin }, id_plan: 2, id_profesora: 3 },
+        _count: { id_inscripcion: true },
+      });
+    });
+
+    it("sin plan ni profesora cuenta todas las bajas del período", async () => {
+      prisma.inscripciones.groupBy.mockResolvedValue([]);
+
+      expect(await repositorio.contarBajasPorMotivo({ inicio, fin })).toEqual([]);
+      expect(prisma.inscripciones.groupBy).toHaveBeenCalledWith({
+        by: ["motivo_baja"],
+        where: { estado: "BAJA", fecha_baja: { gte: inicio, lt: fin } },
+        _count: { id_inscripcion: true },
+      });
+    });
+  });
 });
