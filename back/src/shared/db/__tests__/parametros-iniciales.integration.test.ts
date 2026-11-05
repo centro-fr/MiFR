@@ -10,12 +10,16 @@ afterAll(() => prisma.$disconnect());
 
 describe("cargarParametrosIniciales", () => {
   it("deja cada parámetro del catálogo con su tipo y su valor inicial", async () => {
-    const filas = await prisma.parametros_sistema.findMany({ orderBy: { clave: "asc" } });
+    const filas = await prisma.parametros_sistema.findMany();
+    // Se ordenan los dos lados acá: la intercalación de la base puede ordenar "DIAS_" y "DIA_C" distinto
+    // que JavaScript, y eso no es lo que se prueba.
+    const porClave = (a: { clave: string }, b: { clave: string }) =>
+      a.clave < b.clave ? -1 : a.clave > b.clave ? 1 : 0;
 
-    expect(filas.map(({ clave, tipo_dato, valor }) => ({ clave, tipo_dato, valor }))).toEqual(
+    expect(filas.map(({ clave, tipo_dato, valor }) => ({ clave, tipo_dato, valor })).sort(porClave)).toEqual(
       Object.entries(CATALOGO_PARAMETROS)
         .map(([clave, { tipo_dato, valor_inicial }]) => ({ clave, tipo_dato, valor: valor_inicial }))
-        .sort((a, b) => a.clave.localeCompare(b.clave)),
+        .sort(porClave),
     );
     expect(filas.every(({ fecha_actualizacion }) => fecha_actualizacion instanceof Date)).toBe(true);
   });
