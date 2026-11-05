@@ -444,10 +444,7 @@ export function aCuerpoEdicion(alumno: AlumnoDetalle, valores: EdicionAlumnoValo
 
 // darDeBajaAlumnoSchema del back: el enum inscripciones.motivo_baja del DER sin CAMBIO_PLAN,
 // que lo pone solo el cambio de plan (un alumno que se va no cambia de plan).
-export const motivoBajaSchema = z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"], {
-  required_error: "Elegí el motivo de la baja.",
-  invalid_type_error: "Elegí el motivo de la baja.",
-});
+export const motivoBajaSchema = z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "OTRO"], { error: "Elegí el motivo de la baja." });
 
 // Texto libre que acompaña a "Otro motivo" (inscripciones.detalle_baja, hasta 200 caracteres).
 export const LARGO_MAXIMO_DETALLE_BAJA = 200;

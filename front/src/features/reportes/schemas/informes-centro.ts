@@ -33,7 +33,7 @@ export const informeOcupacionApiSchema = z.object({
   resumen: z.object({
     total_horarios: entero,
     ocupacion_total: z.number(),
-    por_nivel: z.record(nivel, entero),
+    por_nivel: z.partialRecord(nivel, entero),
   }),
   datos: z.array(
     z.object({
