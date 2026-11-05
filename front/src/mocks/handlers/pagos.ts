@@ -144,7 +144,7 @@ function cobroEnEfectivo(
 }
 
 async function leerCuerpo<T extends z.ZodTypeAny>(request: Request, esquema: T) {
-  return esquema.safeParse(await request.json().catch(() => null)) as z.SafeParseReturnType<unknown, z.infer<T>>;
+  return esquema.safeParse(await request.json().catch(() => null)) as z.ZodSafeParseResult<z.infer<T>>;
 }
 
 // ---------- US-17: revisión de transferencias ----------
@@ -162,7 +162,7 @@ const listarTransferenciasQuerySchema = z.object({
 });
 
 // Aprobar normalmente no lleva cuerpo (aprobarTransferenciaSchema).
-const aprobarSchema = z.object({ confirmar_monto_distinto: z.boolean().default(false) }).default({});
+const aprobarSchema = z.object({ confirmar_monto_distinto: z.boolean().default(false) }).default({ confirmar_monto_distinto: false });
 
 // textoSchema(255) del back: obligatorio, con alguna letra y sin caracteres de control.
 const rechazarSchema = z.object({

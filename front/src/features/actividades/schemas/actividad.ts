@@ -23,7 +23,7 @@ export const CUPO_MAXIMO_PERSONALIZADA = 40;
 export const CUPO_MAXIMO_GRUPAL = 60;
 
 const cupoMaximoSchema = z
-  .number({ invalid_type_error: "El cupo tiene que ser un número" })
+  .number({ error: (issue) => (issue.input === undefined ? undefined : "El cupo tiene que ser un número") })
   .int("El cupo tiene que ser un número entero")
   .positive("El cupo tiene que ser mayor a cero")
   .max(CUPO_MAXIMO_GRUPAL, `El cupo máximo no puede superar los ${CUPO_MAXIMO_GRUPAL} alumnos`)

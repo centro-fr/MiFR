@@ -18,10 +18,7 @@ const LETRA = /\p{L}/u;
 const ZONA_ARGENTINA = "-03:00";
 
 export const primerPagoFormSchema = z.object({
-  formaPago: z.enum(["EFECTIVO", "TRANSFERENCIA"], {
-    required_error: "Elegí cómo abonó.",
-    invalid_type_error: "Elegí cómo abonó.",
-  }),
+  formaPago: z.enum(["EFECTIVO", "TRANSFERENCIA"], { error: "Elegí cómo abonó." }),
   monto: z.string().trim(),
   fechaHoraTransferencia: z.string(),
   titularCuentaOrigen: z.string().trim(),

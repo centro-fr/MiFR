@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const seleccionPlanSchema = z.object({
-  id_plan: z.number({ required_error: "Debes seleccionar un plan" }).int().positive(),
-  id_profesora: z.number({ required_error: "Debes seleccionar una profesora" }).int().positive(),
+  id_plan: z.number({ error: (issue) => (issue.input === undefined ? "Debes seleccionar un plan" : undefined) }).int().positive(),
+  id_profesora: z.number({ error: (issue) => (issue.input === undefined ? "Debes seleccionar una profesora" : undefined) }).int().positive(),
   ids_horarios: z
     .array(z.number().int().positive())
     .min(1, "Debes seleccionar al menos un horario"),

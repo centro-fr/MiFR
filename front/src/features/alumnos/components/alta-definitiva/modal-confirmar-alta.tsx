@@ -33,8 +33,8 @@ import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-defi
 
 type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 
-function erroresDe(issues: { path: (string | number)[]; message: string }[]): Errores {
-  return Object.fromEntries(issues.map((issue) => [issue.path[0], issue.message]));
+function erroresDe(issues: { path: PropertyKey[]; message: string }[]): Errores {
+  return Object.fromEntries(issues.map((issue) => [String(issue.path[0]), issue.message]));
 }
 
 function ResumenPreInscripcion({ pendiente }: { pendiente: PreInscripcionPendiente }) {
