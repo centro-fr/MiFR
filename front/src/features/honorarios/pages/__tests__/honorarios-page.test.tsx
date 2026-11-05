@@ -42,7 +42,12 @@ vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => ({ hasPermission: () => true }),
 }));
 
-// El mes del informe tiene que seguir abierto para probar el recálculo al entrar.
+// El día de cierre sale de los parámetros del sistema: acá rige el valor inicial.
+vi.mock("@/features/honorarios/hooks/use-dia-de-cierre", () => ({
+  useDiaDeCierre: () => ({ diaDeCierre: 5, isPending: false, isError: false, error: null, refetch: vi.fn(), isFetching: false }),
+}));
+
+// El mes del informe tiene que seguir abierto para probar el botón Actualizar.
 vi.mock("@/features/honorarios/utils/periodo", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/features/honorarios/utils/periodo")>();
   return { ...real, periodoActual: () => "2026-10", periodoDesdeParametro: () => "2026-10", mesSigueAbierto: () => true };
@@ -95,7 +100,7 @@ describe("HonorariosPage", () => {
 
     // Encabezado principal
     expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
-    expect(screen.getByText(/Se calculan solos con lo que pagan los alumnos/i)).toBeInTheDocument();
+    expect(screen.getByText(/Se calculan con lo que pagan los alumnos/i)).toBeInTheDocument();
 
     // Pestañas
     expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();
@@ -120,10 +125,13 @@ describe("HonorariosPage", () => {
     expect(within(fila).getByRole("button", { name: "Ver el detalle de Lucía Gómez" })).toBeInTheDocument();
   });
 
-  it("recalcula solo al entrar mientras el mes sigue abierto, sin botones para calcular", async () => {
+  it("no recalcula por entrar: con el mes abierto, recalcula cuando se toca Actualizar", async () => {
     renderizar();
+    expect(mockCalcular).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+
     await vi.waitFor(() => expect(mockCalcular).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole("button", { name: /Calcular honorarios|Recalcular/i })).not.toBeInTheDocument();
   });
 
   it("abre la configuración en un diálogo centrado", async () => {

@@ -59,5 +59,12 @@ export function parametrosSemilla(): ParametroMock[] {
       descripcion: "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
       fecha_actualizacion: null,
     },
+    {
+      clave: "DIA_CIERRE_HONORARIOS",
+      tipo_dato: "ENTERO",
+      valor: 5,
+      descripcion: "Día del mes desde el que se cierran solos los honorarios del mes anterior (1 a 28)",
+      fecha_actualizacion: null,
+    },
   ];
 }

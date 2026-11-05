@@ -75,3 +75,17 @@ export interface ConteoAltasMes {
   mes: number;
   total: number;
 }
+
+// US-35: los alumnos activos en un instante, con los mismos filtros que las altas.
+export interface FiltroActivosAl {
+  instante: Date;
+  id_plan?: number;
+  id_profesora?: number;
+}
+
+// US-35: cuánto llevaban en el centro los alumnos que se dieron de baja en un período.
+export interface PermanenciaDeBajas {
+  cantidad: number;
+  promedio_dias: number | null;
+  hasta_90_dias: number;
+}

@@ -1,5 +1,7 @@
 import type {
+  ConteoBajasPorMotivo,
   FiltroAlumnosPorInscripcion,
+  FiltroBajasPorMotivo,
   FiltroInscripcionesParaInactividad,
   InscripcionACargo,
   InscripcionACobrar,
@@ -50,4 +52,6 @@ export interface IInfoInscripciones {
     id_profesora?: number;
     id_actividad?: number;
   }): Promise<Map<number, number>>;
+  // US-35: las inscripciones dadas de baja en el período, agrupadas por motivo, de más a menos.
+  contarBajasPorMotivo(filtro: FiltroBajasPorMotivo): Promise<ConteoBajasPorMotivo[]>;
 }

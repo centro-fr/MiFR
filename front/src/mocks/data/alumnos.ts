@@ -27,7 +27,8 @@ export interface AlumnoMock {
   fecha_baja: string | null;
 }
 
-const FECHA_ALTA = "2026-01-01T00:00:00.000Z";
+// Al mediodía de Argentina: a las 00:00 UTC todavía es 31 de diciembre allá y el alta caería en 2025.
+const FECHA_ALTA = "2026-01-01T15:00:00.000Z";
 
 // Ids desde 101 para no chocar con los usuarios de semilla.ts (staff con sesión).
 export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [

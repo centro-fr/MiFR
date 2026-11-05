@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   calcularLiquidaciones,
-  cerrarLiquidacion,
   listarTarifas,
   marcarLiquidacionAbonada,
   obtenerInforme,
@@ -85,23 +84,15 @@ export function useCalcularLiquidaciones(periodo: string) {
   });
 }
 
-function useCambioDeEstado(periodo: string, cambiar: (id: number) => Promise<unknown>) {
+export function useMarcarLiquidacionAbonada(periodo: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: cambiar,
+    mutationFn: marcarLiquidacionAbonada,
     onSuccess: (_resultado, id) => {
       void queryClient.invalidateQueries({ queryKey: informeKey(periodo) });
       void queryClient.invalidateQueries({ queryKey: liquidacionKey(id) });
     },
   });
-}
-
-export function useCerrarLiquidacion(periodo: string) {
-  return useCambioDeEstado(periodo, cerrarLiquidacion);
-}
-
-export function useMarcarLiquidacionAbonada(periodo: string) {
-  return useCambioDeEstado(periodo, marcarLiquidacionAbonada);
 }
 
 export function useRegistrarTarifa() {

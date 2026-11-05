@@ -52,11 +52,10 @@ export function esPeriodoEnCurso(periodo: string): boolean {
 }
 
 /**
- * Día del mes siguiente en que el mes se cierra solo. Hasta ese día se sigue recalculando, para que
- * entren las transferencias del fin de mes que se aprueban tarde. El cierre lo hace el back con el
- * parámetro DIA_CIERRE_HONORARIOS; este valor es su valor inicial y solo se usa para los textos.
+ * Valor inicial del parámetro DIA_CIERRE_HONORARIOS del back: el día del mes siguiente en que cada mes
+ * se cierra solo. Honorarios lee el valor real (useDiaDeCierre); este solo lo usa quien todavía no lo lee.
  */
-export const DIA_DE_CIERRE = 5;
+export const DIA_CIERRE_INICIAL = 5;
 
 /** El primer mes posterior a `periodo` (AAAA-MM). */
 export function mesSiguiente(periodo: string): string {
@@ -64,19 +63,22 @@ export function mesSiguiente(periodo: string): string {
 }
 
 /** AAAA-MM-DD del día en que `periodo` se cierra solo. */
-export function diaDeCierre(periodo: string): string {
-  return `${mesSiguiente(periodo)}-${String(DIA_DE_CIERRE).padStart(2, "0")}`;
+function fechaDeCierre(periodo: string, diaDeCierre: number): string {
+  return `${mesSiguiente(periodo)}-${String(diaDeCierre).padStart(2, "0")}`;
 }
 
-/** Abierto: el mes en curso, o el anterior hasta el día de cierre. Se recalcula cada vez que se entra. */
-export function mesSigueAbierto(periodo: string, hoy = fechaActualArgentina()): boolean {
-  return hoy < diaDeCierre(periodo);
+/**
+ * Abierto: el mes en curso, o el anterior hasta el día de cierre. Hasta ese día los montos todavía
+ * pueden cambiar, para que entren las transferencias de fin de mes que se aprueban tarde.
+ */
+export function mesSigueAbierto(periodo: string, diaDeCierre = DIA_CIERRE_INICIAL, hoy = fechaActualArgentina()): boolean {
+  return hoy < fechaDeCierre(periodo, diaDeCierre);
 }
 
 /** "5 de noviembre". */
-export function diaDeCierreLegible(periodo: string): string {
+export function diaDeCierreLegible(periodo: string, diaDeCierre = DIA_CIERRE_INICIAL): string {
   const [anio, mes] = mesSiguiente(periodo).split("-").map(Number);
   return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", timeZone: "UTC" }).format(
-    new Date(Date.UTC(anio, mes - 1, DIA_DE_CIERRE)),
+    new Date(Date.UTC(anio, mes - 1, diaDeCierre)),
   );
 }

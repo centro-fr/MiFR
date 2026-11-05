@@ -133,3 +133,17 @@ export interface InscripcionParaInactividad {
   plan: { id_plan: number; nombre: string };
   profesora: { id_profesora: number; nombre: string; apellido: string };
 }
+
+// US-35: las inscripciones dadas de baja en un período, con el plan o la profesora que filtran el reporte.
+export interface FiltroBajasPorMotivo {
+  inicio: Date;
+  fin: Date;
+  id_plan?: number;
+  id_profesora?: number;
+}
+
+export interface ConteoBajasPorMotivo {
+  // null en las bajas viejas, de antes de que el motivo fuera obligatorio.
+  motivo: MotivoBaja | null;
+  cantidad: number;
+}

@@ -29,6 +29,9 @@ import type {
   TotalPorFormaPago,
 } from "./generador-informes.types.js";
 
+// Un mes promedio, para pasar a meses los días que llevaba quien se dio de baja.
+const DIAS_POR_MES = 30.44;
+
 const NOMBRES_MESES = [
   "Enero",
   "Febrero",
@@ -363,17 +366,23 @@ export class GeneradorInformesService {
     }
 
     const { inicio, fin } = rangoDeDiasArgentinos(desde, hasta);
-    const conteos = await this.alumnos.contarAltasPorMes({
-      inicio,
-      fin,
-      id_plan: filtro.id_plan,
-      id_profesora: filtro.id_profesora,
-    });
+    const alcance = { inicio, fin, id_plan: filtro.id_plan, id_profesora: filtro.id_profesora };
+    const [altas, bajas, activosAlInicio, permanencia, motivos] = await Promise.all([
+      this.alumnos.contarAltasPorMes(alcance),
+      this.alumnos.contarBajasPorMes(alcance),
+      this.alumnos.contarActivosAl({
+        instante: inicio,
+        id_plan: filtro.id_plan,
+        id_profesora: filtro.id_profesora,
+      }),
+      this.alumnos.permanenciaDeBajas(alcance),
+      this.inscripciones.contarBajasPorMotivo(alcance),
+    ]);
 
-    const conteoPorClave = new Map<string, number>();
-    for (const c of conteos) {
-      conteoPorClave.set(`${c.anio}-${c.mes}`, c.total);
-    }
+    const porClave = (conteos: { anio: number; mes: number; total: number }[]) =>
+      new Map(conteos.map((c) => [`${c.anio}-${c.mes}`, c.total]));
+    const altasPorClave = porClave(altas);
+    const bajasPorClave = porClave(bajas);
 
     const meses: ItemEstadisticaMes[] = [];
     let curAnio = desde.getUTCFullYear();
@@ -383,11 +392,17 @@ export class GeneradorInformesService {
 
     let prevCantidad: number | null = null;
     let totalAltas = 0;
+    let totalBajas = 0;
+    let activos = activosAlInicio;
     let mesPico: { mes: number; anio: number; nombre_mes: string; cantidad: number } | null = null;
 
     while (curAnio < finAnio || (curAnio === finAnio && curMes <= finMes)) {
-      const cantidad = conteoPorClave.get(`${curAnio}-${curMes}`) ?? 0;
+      const clave = `${curAnio}-${curMes}`;
+      const cantidad = altasPorClave.get(clave) ?? 0;
+      const bajasDelMes = bajasPorClave.get(clave) ?? 0;
       totalAltas += cantidad;
+      totalBajas += bajasDelMes;
+      activos += cantidad - bajasDelMes;
 
       const nombre_mes = NOMBRES_MESES[curMes - 1];
 
@@ -406,6 +421,7 @@ export class GeneradorInformesService {
         }
       }
 
+      const empezo = Date.UTC(curAnio, curMes - 1, 1) <= hoy.getTime();
       meses.push({
         mes: curMes,
         anio: curAnio,
@@ -413,6 +429,8 @@ export class GeneradorInformesService {
         cantidad,
         diferencia_mes_anterior,
         porcentaje_variacion,
+        bajas: bajasDelMes,
+        activos_al_cierre: empezo ? activos : null,
       });
 
       prevCantidad = cantidad;
@@ -434,10 +452,23 @@ export class GeneradorInformesService {
       },
       resumen: {
         total_altas: totalAltas,
+        total_bajas: totalBajas,
+        activos_al_inicio: activosAlInicio,
         promedio_mensual: promedio,
         mes_pico: mesPico,
       },
       meses,
+      bajas: {
+        motivos,
+        permanencia: {
+          cantidad: permanencia.cantidad,
+          promedio_meses:
+            permanencia.promedio_dias === null
+              ? null
+              : Math.round((permanencia.promedio_dias / DIAS_POR_MES) * 10) / 10,
+          primeros_tres_meses: permanencia.hasta_90_dias,
+        },
+      },
     };
   }
 

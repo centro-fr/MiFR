@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 import { AlertCircle, AlertTriangle, Calculator, Loader2, X } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,17 +48,41 @@ export function InformeConError({ error, reintentando, onReintentar }: { error: 
   );
 }
 
-/** Un mes viejo que nunca se calculó (por ejemplo, de antes de usar el sistema). */
-export function InformeVacio({ periodo, procesando }: { periodo: string; procesando: boolean }) {
+interface PropsVacio {
+  periodo: string;
+  /** Solo un mes abierto se puede calcular: uno ya cerrado que nunca se calculó es de antes de usar el sistema. */
+  mesAbierto: boolean;
+  procesando: boolean;
+  onCalcular: () => void;
+}
+
+/** El back solo tiene liquidaciones de un mes después de calcularlo (POST /liquidaciones). */
+export function InformeVacio({ periodo, mesAbierto, procesando, onCalcular }: PropsVacio) {
+  const mes = etiquetaPeriodo(periodo);
   return (
     <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
       <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        {procesando ? <Loader2 aria-hidden="true" className="size-7 animate-spin" /> : <Calculator aria-hidden="true" className="size-7" />}
+        <Calculator aria-hidden="true" className="size-7" />
       </span>
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-        {procesando ? `Calculando los honorarios de ${etiquetaPeriodo(periodo)}…` : `No hay honorarios de ${etiquetaPeriodo(periodo)}`}
+        {mesAbierto ? `Todavía no se calcularon los honorarios de ${mes}` : `No hay honorarios de ${mes}`}
       </h2>
-      {!procesando && <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">Ese mes no se llegó a calcular.</p>}
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+        {mesAbierto ? "Se calculan con lo que pagaron los alumnos de cada profesor/a y las suplencias del mes." : "Ese mes no se llegó a calcular."}
+      </p>
+      {mesAbierto && (
+        <Can permission="HONORARIOS_LIQUIDAR" fallback={<p className="text-sm text-muted-foreground">Cuando se calculen, el informe va a aparecer acá.</p>}>
+          <Button
+            type="button"
+            onClick={onCalcular}
+            disabled={procesando}
+            className="mt-2 min-h-11 rounded-xl bg-primary px-5 font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"
+          >
+            {procesando && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}
+            {procesando ? "Calculando…" : "Calcular honorarios"}
+          </Button>
+        </Can>
+      )}
     </Card>
   );
 }
@@ -105,7 +130,7 @@ export function AvisoAdvertencias({ advertencias, liquidaciones, onCerrar }: Pro
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-sm">Cargá lo que falta en Configuración: se aplica sola la próxima vez que entres.</p>
+        <p className="mt-2 text-sm">Cargá lo que falta en Configuración y volvé a tocar Actualizar.</p>
       </div>
       <Button type="button" variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar el aviso" className="size-11 shrink-0 rounded-lg pointer-fine:size-9">
         <X aria-hidden="true" className="size-4" />

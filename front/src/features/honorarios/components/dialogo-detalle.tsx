@@ -64,7 +64,7 @@ export function DialogoDetalle({ liquidacion, abierto, periodo, onClose }: Props
               </div>
             </dl>
           )}
-          {abierto && liquidacion && <DetalleLiquidacion id={liquidacion.id} />}
+          {liquidacion && <DetalleLiquidacion id={liquidacion.id} />}
         </div>
       </DialogContent>
     </Dialog>
