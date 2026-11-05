@@ -1,25 +1,19 @@
 import { useState } from "react";
-import { AlertCircle, CalendarX } from "lucide-react";
-import { mensajeDeErrorApi } from "@/api/errores";
+import { CalendarX } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  FiltrosDeInscripciones,
-  ResumenDeInscripciones,
-  TablaAltasPorMes,
-} from "@/features/reportes/components/estadisticas-inscripciones";
-import { ComparacionAnual } from "@/features/reportes/components/comparacion-anual";
-import { GraficoAltasPorMes } from "@/features/reportes/components/grafico-altas-por-mes";
+import { FiltrosDeInscripciones } from "@/features/reportes/components/estadisticas-inscripciones";
+import { BajasDelAnioSeccion, MesAMes } from "@/features/reportes/components/inscripciones-anios";
 import { InscripcionesImprimible } from "@/features/reportes/components/inscripciones-imprimible";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
+import { ErrorDelReporte, ReporteVacio, ResumenEnTarjetas, type DatoResumen } from "@/features/reportes/components/piezas-reporte";
 import { useExportarReporte } from "@/features/reportes/hooks/use-exportar-reporte";
 import {
   useEstadisticasInscripciones,
   usePlanesParaFiltro,
   useProfesorasParaFiltro,
 } from "@/features/reportes/hooks/use-reportes";
+import { conSigno, type Metrica } from "@/features/reportes/utils/comparacion-anios";
 import {
   armarCsvInscripciones,
   describirFiltrosInscripciones,
@@ -30,8 +24,9 @@ import { mesesTranscurridos } from "@/features/reportes/utils/formato-inscripcio
 import type { EstadisticasInscripciones, FiltrosInscripciones } from "@/types/reportes";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-// US-35: pestaña "Inscripciones" de Reportes. Altas definitivas de cada mes del año elegido, con la
-// comparación con el mes anterior. Arranca con el año en curso.
+// US-35: pestaña "Inscripciones" de Reportes. Altas, bajas y activos del año elegido mes a mes, contra
+// hasta dos años anteriores, y por qué se van y cuánto se quedan los que se dan de baja. Arranca con el
+// año en curso.
 
 function useDescripcion(filtros: FiltrosInscripciones): FiltrosInscripcionesDescritos {
   const planes = usePlanesParaFiltro();
@@ -44,8 +39,8 @@ function useDescripcion(filtros: FiltrosInscripciones): FiltrosInscripcionesDesc
 function Cargando() {
   return (
     <div aria-busy="true" aria-label="Cargando las estadísticas" className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[0, 1, 2].map((indice) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((indice) => (
           <Skeleton key={indice} className="h-24 rounded-2xl" />
         ))}
       </div>
@@ -54,54 +49,95 @@ function Cargando() {
   );
 }
 
-function SinAltas({ anio }: { anio: number }) {
+function SinMovimientos({ anio }: { anio: number }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl shadow-xs">
-      <span
-        aria-hidden="true"
-        className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
-      >
-        <CalendarX className="size-7" />
-      </span>
-      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-        Sin altas en {anio}
-      </h2>
-      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
-        No hubo altas definitivas con los filtros seleccionados. Probá eligiendo otro año o limpiando los filtros.
-      </p>
-    </Card>
+    <ReporteVacio
+      icono={<CalendarX className="size-7" />}
+      titulo={`Sin altas ni bajas en ${anio}`}
+      texto="No hubo movimiento de alumnos con los filtros elegidos. Probá con otro año o limpiando los filtros."
+    />
   );
 }
 
-function Estadisticas({ estadisticas, filtros, hoy }: { estadisticas: EstadisticasInscripciones; filtros: FiltrosInscripciones; hoy: string }) {
-  const transcurridos = mesesTranscurridos(estadisticas.meses, hoy);
-  if (estadisticas.totalAltas === 0) return <SinAltas anio={estadisticas.anio} />;
-  const enCurso = estadisticas.anio === Number(hoy.slice(0, 4));
+function compararCon(diferencia: number, referencia: string): string {
+  return diferencia === 0 ? `Igual que ${referencia}` : `${conSigno(diferencia)} que ${referencia}`;
+}
+
+/** Las cuatro tarjetas: lo que va del año contra lo mismo del año anterior. */
+function resumenDelAnio(actual: EstadisticasInscripciones, anterior: EstadisticasInscripciones | undefined, hoy: string): DatoResumen[] {
+  const transcurridos = mesesTranscurridos(actual.meses, hoy);
+  const cuantos = transcurridos.length;
+  const sumar = (anio: EstadisticasInscripciones, campo: "cantidad" | "bajas") =>
+    anio.meses.slice(0, cuantos).reduce((total, mes) => total + mes[campo], 0);
+  const altas = sumar(actual, "cantidad");
+  const bajas = sumar(actual, "bajas");
+  const cierre = transcurridos.at(-1);
+  const activos = cierre?.activosAlCierre ?? actual.activosAlInicio;
+  const referencia = anterior && (cuantos < 12 ? `a esta altura de ${anterior.anio}` : `en ${anterior.anio}`);
+  const activosAntes = anterior && cierre ? anterior.meses[cierre.mes - 1]?.activosAlCierre : null;
+  return [
+    { etiqueta: `Altas en ${actual.anio}`, valor: String(altas), nota: referencia && compararCon(altas - sumar(anterior, "cantidad"), referencia) },
+    { etiqueta: `Bajas en ${actual.anio}`, valor: String(bajas), nota: referencia && compararCon(bajas - sumar(anterior, "bajas"), referencia) },
+    {
+      etiqueta: "Crecimiento en el año",
+      valor: conSigno(altas - bajas),
+      nota: referencia && compararCon(altas - bajas - (sumar(anterior, "cantidad") - sumar(anterior, "bajas")), referencia),
+    },
+    {
+      etiqueta: "Activos al cierre",
+      valor: String(activos),
+      nota: activosAntes == null ? undefined : compararCon(activos - activosAntes, "hace un año"),
+    },
+  ];
+}
+
+function Estadisticas({ filtros, hoy }: { filtros: FiltrosInscripciones; hoy: string }) {
+  const [metrica, setMetrica] = useState<Metrica>("altas");
+  // Cuántos años antes del elegido se comparan: 1 es el año anterior y 2, el de antes.
+  const [atras, setAtras] = useState<number[]>([1]);
+  const [tablaAbierta, setTablaAbierta] = useState(false);
+  const actual = useEstadisticasInscripciones(filtros);
+  const anterior = useEstadisticasInscripciones({ ...filtros, anio: filtros.anio - 1 });
+  const dosAtras = useEstadisticasInscripciones({ ...filtros, anio: filtros.anio - 2 }, atras.includes(2));
+
+  if (actual.isPending) return <Cargando />;
+  if (actual.isError) return <ErrorDelReporte error={actual.error} reintentando={actual.isFetching} onReintentar={() => void actual.refetch()} />;
+  if (actual.data.totalAltas === 0 && actual.data.totalBajas === 0) return <SinMovimientos anio={filtros.anio} />;
+
+  const anios = [filtros.anio - 2, filtros.anio - 1, filtros.anio];
+  const elegidos = anios.filter((anio) => anio === filtros.anio || atras.includes(filtros.anio - anio));
+  const porAnio = new Map<number, EstadisticasInscripciones | undefined>([
+    [filtros.anio, actual.data],
+    [filtros.anio - 1, anterior.data],
+    [filtros.anio - 2, dosAtras.data],
+  ]);
+  const datos = elegidos.flatMap((anio) => {
+    const delAnio = porAnio.get(anio);
+    return delAnio ? [delAnio] : [];
+  });
+  const cargandoAnios = (atras.includes(1) && anterior.isPending) || (atras.includes(2) && dosAtras.isPending);
 
   return (
     <div className="flex flex-col gap-5">
-      <ResumenDeInscripciones estadisticas={estadisticas} transcurridos={transcurridos} />
-
-      <Card
-        role="region"
-        aria-labelledby="titulo-altas-por-mes"
-        className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-slate-900/60"
-      >
-        <h3 id="titulo-altas-por-mes" className="text-base font-extrabold text-slate-900 dark:text-white">
-          Altas por mes
-        </h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-          {estadisticas.anio}
-          {enCurso && " · el mes en curso va resaltado"}
-        </p>
-        <div className="mt-4">
-          <GraficoAltasPorMes meses={estadisticas.meses} hoy={hoy} />
-        </div>
-      </Card>
-
-      <ComparacionAnual filtros={filtros} transcurridos={transcurridos} />
-
-      <TablaAltasPorMes estadisticas={estadisticas} transcurridos={transcurridos} />
+      <ResumenEnTarjetas datos={resumenDelAnio(actual.data, anterior.data, hoy)} />
+      <MesAMes
+        metrica={metrica}
+        onMetrica={setMetrica}
+        anios={anios}
+        elegidos={elegidos}
+        anioElegido={filtros.anio}
+        onAlternarAnio={(anio) => {
+          if (anio === filtros.anio) return;
+          const distancia = filtros.anio - anio;
+          setAtras((previos) => (previos.includes(distancia) ? previos.filter((d) => d !== distancia) : [...previos, distancia]));
+        }}
+        datos={datos}
+        cargando={cargandoAnios}
+        hoy={hoy}
+        tablaAbierta={tablaAbierta}
+        onAlternarTabla={() => setTablaAbierta((abierta) => !abierta)}
+      />
+      <BajasDelAnioSeccion actual={actual.data} anterior={anterior.data} />
     </div>
   );
 }
@@ -110,6 +146,7 @@ export function InscripcionesPage() {
   const hoy = fechaActualArgentina();
   const anioActual = Number(hoy.slice(0, 4));
   const [filtros, setFiltros] = useState<FiltrosInscripciones>({ anio: anioActual, idPlan: null, idProfesora: null });
+  // La misma consulta que usa Estadisticas: se comparte por la caché.
   const consulta = useEstadisticasInscripciones(filtros);
   const descripcion = useDescripcion(filtros);
   const { exportar, preparando, impresion } = useExportarReporte({
@@ -123,64 +160,28 @@ export function InscripcionesPage() {
     }),
   });
   const aplicados = describirFiltrosInscripciones(descripcion);
-  const conDatos = (consulta.data?.totalAltas ?? 0) > 0;
+  const conDatos = (consulta.data?.totalAltas ?? 0) + (consulta.data?.totalBajas ?? 0) > 0;
 
   return (
     <PaginaReportes
-      acciones={
-        <MenuExportar
-          disabled={!conDatos || consulta.isFetching}
-          preparando={preparando}
-          onExportar={(formato) => void exportar(formato)}
-        />
-      }
+      acciones={<MenuExportar disabled={!conDatos || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
-      <div className="space-y-6 min-w-0">
+      <div className="min-w-0 space-y-6">
         <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Inscriptos por mes
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Altas definitivas de {filtros.anio}
+          <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl dark:text-white">Inscripciones</h2>
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            Altas y bajas de {filtros.anio}
             {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}. No se cuentan las pre-inscripciones ni las reactivaciones.
           </p>
         </div>
 
         <FiltrosDeInscripciones filtros={filtros} anioActual={anioActual} onCambiar={setFiltros} />
 
-        {consulta.isPending && <Cargando />}
-
-        {consulta.isError && (
-          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl shadow-xs">
-            <AlertCircle className="size-8 text-rose-500" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Error al cargar estadísticas
-            </h3>
-            <p role="alert" className="text-xs text-slate-500 max-w-sm">
-              {mensajeDeErrorApi(consulta.error, "No se pudieron cargar las estadísticas.")}
-            </p>
-            <Button
-              type="button"
-              disabled={consulta.isFetching}
-              onClick={() => void consulta.refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold px-5"
-            >
-              Reintentar
-            </Button>
-          </Card>
-        )}
-
-        {consulta.data && <Estadisticas estadisticas={consulta.data} filtros={filtros} hoy={hoy} />}
+        {/* Con otro año o filtro la comparación arranca de nuevo, con el año anterior. */}
+        <Estadisticas key={JSON.stringify(filtros)} filtros={filtros} hoy={hoy} />
       </div>
 
-      {impresion && (
-        <InscripcionesImprimible
-          estadisticas={impresion.datos}
-          descripcion={descripcion}
-          hoy={hoy}
-          generadoEl={impresion.generadoEl}
-        />
-      )}
+      {impresion && <InscripcionesImprimible estadisticas={impresion.datos} descripcion={descripcion} hoy={hoy} generadoEl={impresion.generadoEl} />}
     </PaginaReportes>
   );
 }

@@ -25,42 +25,6 @@ export function mesesTranscurridos(meses: AltasDelMes[], hoy: string): AltasDelM
   return meses.filter((mes) => !esMesFuturo(mes, hoy));
 }
 
-/**
- * Promedio sobre los meses que ya empezaron. El back divide por los 12 meses del año, y en el año en
- * curso eso daría un promedio más bajo del real.
- */
-export function promedioMensual(transcurridos: AltasDelMes[]): number {
-  if (transcurridos.length === 0) return 0;
-  return transcurridos.reduce((total, mes) => total + mes.cantidad, 0) / transcurridos.length;
-}
-
 export function formatearDecimal(valor: number): string {
   return FORMATO_DECIMAL.format(valor);
-}
-
-/** Total acumulado del año hasta cada mes. */
-export function acumulados(meses: AltasDelMes[]): number[] {
-  let total = 0;
-  return meses.map(({ cantidad }) => (total += cantidad));
-}
-
-export type Tendencia = "sube" | "baja" | "igual" | "sin-dato";
-
-export function tendencia({ diferencia }: Pick<AltasDelMes, "diferencia">): Tendencia {
-  if (diferencia === null) return "sin-dato";
-  return diferencia > 0 ? "sube" : diferencia < 0 ? "baja" : "igual";
-}
-
-/** "+3 (+27,3 %)", "−2 (−20 %)", "+3" si el mes anterior tuvo 0, "Igual" o "—" en el primer mes. */
-export function describirComparacion({ diferencia, variacion }: Pick<AltasDelMes, "diferencia" | "variacion">): string {
-  if (diferencia === null) return "—";
-  if (diferencia === 0) return "Igual";
-  const signo = diferencia > 0 ? "+" : "−";
-  const cantidad = `${signo}${Math.abs(diferencia)}`;
-  return variacion === null ? cantidad : `${cantidad} (${signo}${FORMATO_DECIMAL.format(Math.abs(variacion))} %)`;
-}
-
-/** "1 alta" o "12 altas". */
-export function cantidadDeAltas(cantidad: number): string {
-  return `${cantidad} ${cantidad === 1 ? "alta" : "altas"}`;
 }

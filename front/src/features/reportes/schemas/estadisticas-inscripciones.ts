@@ -11,6 +11,8 @@ export const estadisticasInscripcionesApiSchema = z.object({
   periodo: z.object({ desde: z.string(), hasta: z.string(), anio: z.number().int().nullable() }),
   resumen: z.object({
     total_altas: enteroSchema,
+    total_bajas: enteroSchema,
+    activos_al_inicio: enteroSchema,
     promedio_mensual: z.number(),
     mes_pico: mesPicoApiSchema.nullable(),
   }),
@@ -22,8 +24,23 @@ export const estadisticasInscripcionesApiSchema = z.object({
       cantidad: enteroSchema,
       diferencia_mes_anterior: z.number().int().nullable(),
       porcentaje_variacion: z.number().nullable(),
+      bajas: enteroSchema,
+      activos_al_cierre: enteroSchema.nullable(),
     }),
   ),
+  bajas: z.object({
+    motivos: z.array(
+      z.object({
+        motivo: z.enum(["ABANDONO", "MUDANZA", "SALUD", "ECONOMICO", "CAMBIO_PLAN", "OTRO"]).nullable(),
+        cantidad: enteroSchema,
+      }),
+    ),
+    permanencia: z.object({
+      cantidad: enteroSchema,
+      promedio_meses: z.number().nonnegative().nullable(),
+      primeros_tres_meses: enteroSchema,
+    }),
+  }),
 });
 
 export type EstadisticasInscripcionesApi = z.infer<typeof estadisticasInscripcionesApiSchema>;

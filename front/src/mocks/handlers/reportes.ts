@@ -52,11 +52,17 @@ function diaArgentino(instante: string): string {
   return new Date(Date.parse(instante) - 3 * 3_600_000).toISOString().slice(0, 10);
 }
 
+interface Movimiento {
+  alta: string;
+  baja: { fecha: string; motivo: string | null } | null;
+}
+
 /**
- * Las altas definitivas como las cuenta el back (contarAltasPorMes): alumnos que no son INACTIVO
- * (pre-inscriptos), por su fecha de alta, y con plan o profesora si alguna inscripción suya los tiene.
+ * Los alumnos como los cuenta el back (contarAltasPorMes, contarBajasPorMes): los que no son INACTIVO
+ * (pre-inscriptos), con su fecha de alta y de baja, y con plan o profesora si alguna inscripción suya
+ * los tiene.
  */
-function fechasDeAlta(idPlan: number | undefined, idProfesora: number | undefined): string[] {
+function movimientos(idPlan: number | undefined, idProfesora: number | undefined): Movimiento[] {
   const deDb = db.alumnos
     .filter((alumno) => alumno.estado !== "INACTIVO")
     .filter((alumno) =>
@@ -67,24 +73,60 @@ function fechasDeAlta(idPlan: number | undefined, idProfesora: number | undefine
           (idProfesora === undefined || i.id_profesora === idProfesora),
       ) || (idPlan === undefined && idProfesora === undefined),
     )
-    .map((alumno) => diaArgentino(alumno.fecha_alta));
+    .map((alumno) => {
+      const inscripcion = db.inscripciones.find((i) => i.id_alumno === alumno.id_alumno && i.estado === "BAJA");
+      return {
+        alta: diaArgentino(alumno.fecha_alta),
+        baja:
+          alumno.estado === "BAJA" && alumno.fecha_baja
+            ? { fecha: diaArgentino(alumno.fecha_baja), motivo: inscripcion?.motivo_baja ?? null }
+            : null,
+      };
+    });
   const historicas = ALTAS_HISTORICAS.filter(
     (alta) => (idPlan === undefined || alta.id_plan === idPlan) && (idProfesora === undefined || alta.id_profesora === idProfesora),
-  ).map((alta) => alta.fecha);
+  ).map((alta) => ({ alta: alta.fecha, baja: alta.baja }));
   return [...deDb, ...historicas];
+}
+
+const DIAS_POR_MES = 30.44;
+
+/** Lo que el back suma para el período: los activos al empezar, por qué se fueron y cuánto se quedaron. */
+function bajasDelPeriodo(lista: Movimiento[], desde: string, hasta: string) {
+  const seFueron = lista.filter((m) => m.baja && m.baja.fecha >= desde && m.baja.fecha <= hasta);
+  const porMotivo = new Map<string | null, number>();
+  for (const m of seFueron) porMotivo.set(m.baja?.motivo ?? null, (porMotivo.get(m.baja?.motivo ?? null) ?? 0) + 1);
+  const dias = seFueron.map((m) => (Date.parse(m.baja?.fecha ?? m.alta) - Date.parse(m.alta)) / 86_400_000);
+  return {
+    motivos: [...porMotivo.entries()].map(([motivo, cantidad]) => ({ motivo, cantidad })).sort((a, b) => b.cantidad - a.cantidad),
+    permanencia: {
+      cantidad: seFueron.length,
+      promedio_meses: dias.length === 0 ? null : Math.round((dias.reduce((a, d) => a + d, 0) / dias.length / DIAS_POR_MES) * 10) / 10,
+      primeros_tres_meses: dias.filter((d) => d < 90).length,
+    },
+  };
 }
 
 const claveDeMes = (anio: number, mes: number) => `${anio}-${String(mes).padStart(2, "0")}`;
 
 /** Un elemento por mes del período, también los que no tuvieron altas, como ItemEstadisticaMes del back. */
-function mesesDelPeriodo(desde: string, hasta: string, fechas: string[]) {
-  const porMes = new Map<string, number>();
-  for (const fecha of fechas.filter((f) => f >= desde && f <= hasta)) porMes.set(fecha.slice(0, 7), (porMes.get(fecha.slice(0, 7)) ?? 0) + 1);
+function mesesDelPeriodo(desde: string, hasta: string, lista: Movimiento[], activosAlInicio: number) {
+  const contar = (fechas: string[]) => {
+    const porMes = new Map<string, number>();
+    for (const fecha of fechas.filter((f) => f >= desde && f <= hasta)) porMes.set(fecha.slice(0, 7), (porMes.get(fecha.slice(0, 7)) ?? 0) + 1);
+    return porMes;
+  };
+  const porMes = contar(lista.map((m) => m.alta));
+  const bajasPorMes = contar(lista.flatMap((m) => (m.baja ? [m.baja.fecha] : [])));
+  const mesActual = hoyEnArgentina().slice(0, 7);
+  let activos = activosAlInicio;
   const meses = [];
   let anterior: number | null = null;
   let [anio, mes] = [Number(desde.slice(0, 4)), Number(desde.slice(5, 7))];
   while (claveDeMes(anio, mes) <= hasta.slice(0, 7)) {
     const cantidad = porMes.get(claveDeMes(anio, mes)) ?? 0;
+    const bajas = bajasPorMes.get(claveDeMes(anio, mes)) ?? 0;
+    activos += cantidad - bajas;
     meses.push({
       mes,
       anio,
@@ -92,6 +134,8 @@ function mesesDelPeriodo(desde: string, hasta: string, fechas: string[]) {
       cantidad,
       diferencia_mes_anterior: anterior === null ? null : cantidad - anterior,
       porcentaje_variacion: anterior === null || anterior === 0 ? null : Math.round(((cantidad - anterior) / anterior) * 10000) / 100,
+      bajas,
+      activos_al_cierre: claveDeMes(anio, mes) <= mesActual ? activos : null,
     });
     anterior = cantidad;
     if (mes === 12) {
@@ -213,7 +257,9 @@ export const reportesHandlers = [
     const conRango = desdePedido !== undefined && hastaPedido !== undefined;
     const desde = conRango ? desdePedido : `${anio}-01-01`;
     const hasta = conRango ? hastaPedido : `${anio}-12-31`;
-    const meses = mesesDelPeriodo(desde, hasta, fechasDeAlta(id_plan, id_profesora));
+    const lista = movimientos(id_plan, id_profesora);
+    const activosAlInicio = lista.filter((m) => m.alta < desde && (!m.baja || m.baja.fecha >= desde)).length;
+    const meses = mesesDelPeriodo(desde, hasta, lista, activosAlInicio);
     const total = meses.reduce((suma, mes) => suma + mes.cantidad, 0);
     const pico = meses.reduce<(typeof meses)[number] | null>((mejor, mes) => (mes.cantidad > 0 && (!mejor || mes.cantidad > mejor.cantidad) ? mes : mejor), null);
 
@@ -221,10 +267,13 @@ export const reportesHandlers = [
       periodo: { desde, hasta, anio: conRango ? (anioPedido ?? null) : anio },
       resumen: {
         total_altas: total,
+        total_bajas: meses.reduce((suma, mes) => suma + mes.bajas, 0),
+        activos_al_inicio: activosAlInicio,
         promedio_mensual: meses.length > 0 ? Math.round((total / meses.length) * 100) / 100 : 0,
         mes_pico: pico && { mes: pico.mes, anio: pico.anio, nombre_mes: pico.nombre_mes, cantidad: pico.cantidad },
       },
       meses,
+      bajas: bajasDelPeriodo(lista, desde, hasta),
     });
   }),
 

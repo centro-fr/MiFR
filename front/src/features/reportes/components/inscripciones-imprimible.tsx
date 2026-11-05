@@ -1,7 +1,8 @@
 import { createPortal } from "react-dom";
 import { fechaHora } from "@/features/honorarios/utils/formato-honorarios";
 import { describirFiltrosInscripciones, type FiltrosInscripcionesDescritos } from "@/features/reportes/utils/exportar-inscripciones";
-import { acumulados, describirComparacion, formatearDecimal, mesesTranscurridos, promedioMensual } from "@/features/reportes/utils/formato-inscripciones";
+import { conSigno, motivosPrincipales } from "@/features/reportes/utils/comparacion-anios";
+import { formatearDecimal, mesesTranscurridos } from "@/features/reportes/utils/formato-inscripciones";
 import type { EstadisticasInscripciones } from "@/types/reportes";
 
 // Versión para imprimir o "Guardar como PDF" (US-35), como la de honorarios y la de asistencia.
@@ -19,58 +20,76 @@ const CELDA_NUMERO = `${CELDA} text-right tabular-nums`;
 
 export function InscripcionesImprimible({ estadisticas, descripcion, hoy, generadoEl }: PropsImprimible) {
   const meses = mesesTranscurridos(estadisticas.meses, hoy);
-  const acumulado = acumulados(meses);
+  const altas = meses.reduce((total, mes) => total + mes.cantidad, 0);
+  const bajas = meses.reduce((total, mes) => total + mes.bajas, 0);
+  const activos = meses.at(-1)?.activosAlCierre ?? estadisticas.activosAlInicio;
+  const { permanencia } = estadisticas.bajas;
+  const resumen: [string, string][] = [
+    ["Altas", String(altas)],
+    ["Bajas", String(bajas)],
+    ["Crecimiento", conSigno(altas - bajas)],
+    ["Activos al cierre", String(activos)],
+  ];
   const filtros = describirFiltrosInscripciones(descripcion);
   return createPortal(
     <div className="informe-impresion bg-white font-sans text-slate-900">
       <header className="border-b border-slate-300 pb-3">
         <p className="text-sm font-semibold text-slate-600">Centro de Entrenamiento FR · MiFR</p>
-        <h1 className="mt-1 text-2xl font-bold">Inscriptos por mes · {estadisticas.anio}</h1>
+        <h1 className="mt-1 text-2xl font-bold">Inscripciones · {estadisticas.anio}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {filtros.length > 0 ? filtros.join(" · ") : "Todos los planes y profesoras"} · Generado el {fechaHora(generadoEl)}
         </p>
       </header>
-      <dl className="mt-4 grid grid-cols-3 gap-3">
-        <div className="rounded border border-slate-300 p-2">
-          <dt className="text-xs text-slate-600">Altas del año</dt>
-          <dd className="text-lg font-bold tabular-nums">{estadisticas.totalAltas}</dd>
-        </div>
-        <div className="rounded border border-slate-300 p-2">
-          <dt className="text-xs text-slate-600">Mes con más altas</dt>
-          <dd className="text-lg font-bold">{estadisticas.mesPico ? `${estadisticas.mesPico.nombre} (${estadisticas.mesPico.cantidad})` : "—"}</dd>
-        </div>
-        <div className="rounded border border-slate-300 p-2">
-          <dt className="text-xs text-slate-600">Promedio por mes</dt>
-          <dd className="text-lg font-bold tabular-nums">{formatearDecimal(promedioMensual(meses))}</dd>
-        </div>
+      <dl className="mt-4 grid grid-cols-4 gap-3">
+        {resumen.map(([etiqueta, valor]) => (
+          <div key={etiqueta} className="rounded border border-slate-300 p-2">
+            <dt className="text-xs text-slate-600">{etiqueta}</dt>
+            <dd className="text-lg font-bold tabular-nums">{valor}</dd>
+          </div>
+        ))}
       </dl>
       <table className="mt-6 w-full border-collapse text-sm">
         <thead>
           <tr className="text-xs uppercase text-slate-600">
             <th className={CELDA}>Mes</th>
             <th className={`${CELDA} text-right`}>Altas</th>
-            <th className={CELDA}>Vs. mes anterior</th>
-            <th className={`${CELDA} text-right`}>Acumulado</th>
+            <th className={`${CELDA} text-right`}>Bajas</th>
+            <th className={`${CELDA} text-right`}>Activos al cierre</th>
           </tr>
         </thead>
         <tbody>
-          {meses.map((mes, indice) => (
+          {meses.map((mes) => (
             <tr key={mes.mes}>
               <td className={CELDA}>{mes.nombre}</td>
               <td className={CELDA_NUMERO}>{mes.cantidad}</td>
-              <td className={CELDA}>{describirComparacion(mes)}</td>
-              <td className={CELDA_NUMERO}>{acumulado[indice]}</td>
+              <td className={CELDA_NUMERO}>{mes.bajas}</td>
+              <td className={CELDA_NUMERO}>{mes.activosAlCierre ?? "—"}</td>
             </tr>
           ))}
           <tr className="font-bold">
-            <td className={CELDA}>Total del año</td>
-            <td className={CELDA_NUMERO}>{estadisticas.totalAltas}</td>
-            <td className={CELDA} colSpan={2} />
+            <td className={CELDA}>Total</td>
+            <td className={CELDA_NUMERO}>{altas}</td>
+            <td className={CELDA_NUMERO}>{bajas}</td>
+            <td className={CELDA} />
           </tr>
         </tbody>
       </table>
+      {permanencia.cantidad > 0 && (
+        <section className="mt-6">
+          <h2 className="text-base font-bold">Bajas del año</h2>
+          <p className="mt-1 text-sm">
+            {motivosPrincipales(estadisticas.bajas.motivos)
+              .map(({ nombre, cantidad }) => `${nombre}: ${cantidad}`)
+              .join(" · ")}
+          </p>
+          <p className="mt-1 text-sm">
+            Se quedan en promedio {permanencia.promedioMeses === null ? "—" : `${formatearDecimal(permanencia.promedioMeses)} meses`} ·{" "}
+            {Math.round((permanencia.primerosTresMeses / permanencia.cantidad) * 100)} % se va en los primeros 3 meses
+          </p>
+        </section>
+      )}
       <footer className="mt-8 border-t border-slate-300 pt-2 text-xs text-slate-600">
-        Cuentan las altas definitivas por su fecha de alta. Las pre-inscripciones y las reactivaciones no suman.
+        Cuentan las altas definitivas por su fecha de alta y las bajas por su fecha de baja. Las pre-inscripciones y las reactivaciones no suman.
       </footer>
     </div>,
     document.body,
