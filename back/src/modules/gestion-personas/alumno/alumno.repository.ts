@@ -4,8 +4,10 @@ import type {
   Alumno,
   ConteoAltasMes,
   EstadoAlReactivar,
+  FiltroActivosAl,
   FiltroAltasPorMes,
   FiltroAlumno,
+  PermanenciaDeBajas,
   TutorResuelto,
 } from "./alumno.types.js";
 
@@ -86,6 +88,24 @@ async function idDelTutor(transaccion: Prisma.TransactionClient, tutor: TutorRes
 // Alumno y tutor son filas de usuarios (DER: alumnos.id_usuario NOT NULL). Se crean en la misma
 // transacción que el alumno: separados, un fallo dejaría un usuario huérfano con el email o el
 // DNI tomados, y el reintento del alta chocaría con él.
+// US-35: el plan o la profesora filtran a los alumnos que tuvieron alguna inscripción con ellos.
+function filtroDeInscripcion(filtro: { id_plan?: number; id_profesora?: number }): Prisma.Sql {
+  const condiciones: Prisma.Sql[] = [];
+  if (filtro.id_plan !== undefined) condiciones.push(Prisma.sql`i.id_plan = ${filtro.id_plan}`);
+  if (filtro.id_profesora !== undefined)
+    condiciones.push(Prisma.sql`i.id_profesora = ${filtro.id_profesora}`);
+  if (condiciones.length === 0) return Prisma.empty;
+  return Prisma.sql`AND EXISTS (
+    SELECT 1 FROM inscripciones i
+    WHERE i.id_alumno = a.id_alumno
+      AND ${Prisma.join(condiciones, " AND ")}
+  )`;
+}
+
+function aConteos(filas: { anio: number; mes: number; total: bigint | number }[]): ConteoAltasMes[] {
+  return filas.map((f) => ({ anio: f.anio, mes: f.mes, total: Number(f.total) }));
+}
+
 export class AlumnoRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -234,23 +254,6 @@ export class AlumnoRepository {
 
   // US-35: cuenta altas definitivas (alumnos que pasaron a ACTIVO/BAJA) agrupadas por año y mes.
   async contarAltasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
-    const condicionesInscripcion: Prisma.Sql[] = [];
-    if (filtro.id_plan !== undefined) {
-      condicionesInscripcion.push(Prisma.sql`i.id_plan = ${filtro.id_plan}`);
-    }
-    if (filtro.id_profesora !== undefined) {
-      condicionesInscripcion.push(Prisma.sql`i.id_profesora = ${filtro.id_profesora}`);
-    }
-
-    const filtroInscripcion =
-      condicionesInscripcion.length > 0
-        ? Prisma.sql`AND EXISTS (
-            SELECT 1 FROM inscripciones i
-            WHERE i.id_alumno = a.id_alumno
-              AND ${Prisma.join(condicionesInscripcion, " AND ")}
-          )`
-        : Prisma.empty;
-
     const filas = await this.prisma.$queryRaw<{ anio: number; mes: number; total: bigint | number }[]>`
       SELECT
         EXTRACT(YEAR FROM a.fecha_alta AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS anio,
@@ -260,14 +263,61 @@ export class AlumnoRepository {
       WHERE a.estado != 'INACTIVO'
         AND a.fecha_alta >= ${filtro.inicio}
         AND a.fecha_alta < ${filtro.fin}
-        ${filtroInscripcion}
+        ${filtroDeInscripcion(filtro)}
       GROUP BY anio, mes
       ORDER BY anio ASC, mes ASC`;
+    return aConteos(filas);
+  }
 
-    return filas.map((f) => ({
-      anio: f.anio,
-      mes: f.mes,
-      total: Number(f.total),
-    }));
+  // US-35: bajas de alumnos agrupadas por año y mes de su fecha de baja.
+  async contarBajasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
+    const filas = await this.prisma.$queryRaw<{ anio: number; mes: number; total: bigint | number }[]>`
+      SELECT
+        EXTRACT(YEAR FROM a.fecha_baja AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS anio,
+        EXTRACT(MONTH FROM a.fecha_baja AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS mes,
+        COUNT(a.id_alumno)::int AS total
+      FROM alumnos a
+      WHERE a.estado = 'BAJA'
+        AND a.fecha_baja >= ${filtro.inicio}
+        AND a.fecha_baja < ${filtro.fin}
+        ${filtroDeInscripcion(filtro)}
+      GROUP BY anio, mes
+      ORDER BY anio ASC, mes ASC`;
+    return aConteos(filas);
+  }
+
+  // US-35: alumnos con alta definitiva antes del instante que todavía no se habían ido. Una pre-inscripción
+  // sin pagar (INACTIVO) no cuenta, igual que en las altas.
+  async contarActivosAl(filtro: FiltroActivosAl): Promise<number> {
+    const [fila] = await this.prisma.$queryRaw<{ total: bigint | number }[]>`
+      SELECT COUNT(a.id_alumno)::int AS total
+      FROM alumnos a
+      WHERE a.estado != 'INACTIVO'
+        AND a.fecha_alta < ${filtro.instante}
+        AND (a.fecha_baja IS NULL OR a.fecha_baja >= ${filtro.instante})
+        ${filtroDeInscripcion(filtro)}`;
+    return Number(fila?.total ?? 0);
+  }
+
+  // US-35: de los alumnos que se dieron de baja en el período, cuántos días llevaban y cuántos se fueron
+  // en los primeros 90.
+  async permanenciaDeBajas(filtro: FiltroAltasPorMes): Promise<PermanenciaDeBajas> {
+    const [fila] = await this.prisma.$queryRaw<
+      { cantidad: bigint | number; promedio_dias: number | string | null; hasta_90_dias: bigint | number }[]
+    >`
+      SELECT
+        COUNT(a.id_alumno)::int AS cantidad,
+        AVG(EXTRACT(EPOCH FROM (a.fecha_baja - a.fecha_alta)) / 86400)::float AS promedio_dias,
+        COUNT(a.id_alumno) FILTER (WHERE a.fecha_baja - a.fecha_alta < INTERVAL '90 days')::int AS hasta_90_dias
+      FROM alumnos a
+      WHERE a.estado = 'BAJA'
+        AND a.fecha_baja >= ${filtro.inicio}
+        AND a.fecha_baja < ${filtro.fin}
+        ${filtroDeInscripcion(filtro)}`;
+    return {
+      cantidad: Number(fila?.cantidad ?? 0),
+      promedio_dias: fila?.promedio_dias == null ? null : Number(fila.promedio_dias),
+      hasta_90_dias: Number(fila?.hasta_90_dias ?? 0),
+    };
   }
 }

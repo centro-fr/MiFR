@@ -21,9 +21,11 @@ import type {
   AlumnoConsultable,
   ConteoAltasMes,
   EstadoAlReactivar,
+  FiltroActivosAl,
   FiltroAltasPorMes,
   FiltroAlumno,
   PaginaAlumnos,
+  PermanenciaDeBajas,
   TutorResuelto,
 } from "./alumno.types.js";
 import type { IInfoAlumnos } from "./interface/i-info-alumnos.js";
@@ -224,6 +226,18 @@ export class AlumnoService implements IInfoAlumnos {
   // US-35: cuenta altas definitivas agrupadas por año y mes.
   contarAltasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
     return this.repositorio.contarAltasPorMes(filtro);
+  }
+
+  contarBajasPorMes(filtro: FiltroAltasPorMes): Promise<ConteoAltasMes[]> {
+    return this.repositorio.contarBajasPorMes(filtro);
+  }
+
+  contarActivosAl(filtro: FiltroActivosAl): Promise<number> {
+    return this.repositorio.contarActivosAl(filtro);
+  }
+
+  permanenciaDeBajas(filtro: FiltroAltasPorMes): Promise<PermanenciaDeBajas> {
+    return this.repositorio.permanenciaDeBajas(filtro);
   }
 
   // El DNI ya registrado en un alumno tiene su propio código, para que el front ofrezca abrir esa
