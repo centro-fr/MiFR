@@ -22,8 +22,8 @@ const consultaSchema = z
     id_profesora: id.optional(),
     id_actividad: id.optional(),
     incluir_bajas: z.enum(["true", "false"]).default("false"),
-    limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default("50"),
-    offset: z.string().regex(/^\d+$/).transform(Number).default("0"),
+    limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(50),
+    offset: z.string().regex(/^\d+$/).transform(Number).default(0),
   })
   .refine(({ desde, hasta }) => !desde || !hasta || desde <= hasta);
 

@@ -47,14 +47,14 @@ export interface MiPlanRespuesta {
 }
 
 export const informarTransferenciaFormSchema = z.object({
-  id_inscripcion: z.number({ required_error: "Inscripción no válida" }).int().positive(),
+  id_inscripcion: z.number({ error: (issue) => (issue.input === undefined ? "Inscripción no válida" : undefined) }).int().positive(),
   id_promocion: z.number().int().positive().optional(),
   monto: z
-    .number({ required_error: "Ingresá el monto de la transferencia" })
+    .number({ error: (issue) => (issue.input === undefined ? "Ingresá el monto de la transferencia" : undefined) })
     .positive("El monto debe ser mayor a 0")
     .max(99_999_999.99, "El monto no puede superar $99.999.999"),
   fecha_hora_transferencia: z
-    .string({ required_error: "Ingresá cuándo hiciste la transferencia" })
+    .string({ error: (issue) => (issue.input === undefined ? "Ingresá cuándo hiciste la transferencia" : undefined) })
     .min(1, "Ingresá cuándo hiciste la transferencia")
     .refine((val) => !isNaN(new Date(val).getTime()), "Fecha y hora inválida")
     .refine((val) => new Date(val) <= new Date(), "La transferencia no puede ser futura"),

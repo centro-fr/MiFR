@@ -32,7 +32,7 @@ const rolMatrizSchema = z.object({
 export const matrizResponseSchema = z.object({
   roles: z.array(rolMatrizSchema),
   modulos: z.array(moduloMatrizSchema),
-  matriz: z.record(z.array(z.string())),
+  matriz: z.record(z.string(), z.array(z.string())),
 });
 
 // Espejo del PUT del back (actualizarMatrizSchema): cambios no vacíos, sin

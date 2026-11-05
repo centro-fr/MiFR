@@ -63,7 +63,7 @@ export const horarioFormSchema = z
     horaInicio,
     horaFin,
     cupoPropio: z
-      .number({ invalid_type_error: "El cupo tiene que ser un número." })
+      .number({ error: (issue) => (issue.input === undefined ? undefined : "El cupo tiene que ser un número.") })
       .int("El cupo tiene que ser un número entero.")
       .positive("El cupo tiene que ser mayor a cero.")
       .max(32767, "El cupo es demasiado grande.")

@@ -146,7 +146,7 @@ describe("horarioFormSchema", () => {
       const resultado = horarioFormSchema.safeParse({ ...datosValidos, diaSemana: "FERIADO" });
       expect(resultado.success).toBe(false);
       if (!resultado.success) {
-        expect(resultado.error.issues[0].message).toMatch(/Invalid enum value/);
+        expect(resultado.error.issues[0].path).toEqual(["diaSemana"]);
       }
     });
   });
