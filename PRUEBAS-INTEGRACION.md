@@ -214,7 +214,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-32 | Panel público de disponibilidad                           |   5    | PI-46                                                         | Parcial: las actividades y sus días; los horarios, los cupos y la próxima clase quedan con sesión (decidido el 12/10/2026); la promoción, pendiente |
 | US-33 | Informe de asistencia                                     |   5    | PI-74, PI-75                                                  | Parcial: el informe por la API; la exportación a PDF y Excel no está en el back        |
 | US-34 | Informe de cuotas vencidas                                |   5    |                                                               |                                                                                        |
-| US-35 | Reportes de inscriptos por mes                            |   5    |                                                               |                                                                                        |
+| US-35 | Reportes de inscriptos por mes                            |   5    | PI-87                                                         | Sí: altas, bajas y activos por mes, motivos de baja y permanencia; la comparación entre años la arma el front pidiendo un año por vez |
 | US-36 | Reportes de planes más elegidos                           |   5    |                                                               |                                                                                        |
 | US-37 | Mapa de calor de ocupación de horarios                    |   5    | PI-76, PI-77                                                  | Sí: los datos de cada celda y su nivel; los colores y la grilla son del front          |
 
@@ -302,8 +302,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-81         | Los períodos y los permisos de las liquidaciones                    | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 | PI-82         | Las tarifas de honorarios                                           | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 | PI-86         | El cierre mensual automático de los honorarios                      | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo, `DIA_CIERRE_HONORARIOS` | Sí           |
+| PI-87         | El movimiento de alumnos del año en el reporte de Inscripciones     | US-35               | Servicios          | Fábricas, fechas de alta y baja fijadas en la base         | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026).
 
 ### 6.2 Detalle
 
@@ -1425,6 +1426,17 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (R-17 y R-18).
 
+#### PI-87 — El movimiento de alumnos del año en el reporte de Inscripciones
+
+**US:** US-35 · **Precondición:** sesión de la propietaria; dos profesoras, un plan y un horario de la primera. Ana (alta el 10/06/2024) sigue activa; Beto (alta el 01/03/2024) se da de baja el 15/04/2025 por mudanza; Caro entra el 10/02/2025; Dani entra el 05/03/2025 y se va el 20/04/2025 por abandono; Eva está pre-inscripta desde el 01/03/2025. Todas las inscripciones son con la primera profesora.
+
+1. La propietaria pide el reporte de 2025.
+2. Pide 2025 filtrando por la otra profesora y después pide 2024.
+
+**Resultado esperado:** en el paso 1 hay 2 altas y 2 bajas, 2 activos al empezar el año y los activos al cierre de enero a mayo son 2, 3, 4, 2 y 2 (diciembre también 2). Los motivos son una mudanza y un abandono, y la permanencia es de 2 bajas con 7,5 meses en promedio y 1 en los primeros tres meses. Eva no cuenta en nada. En el paso 2, con la otra profesora todo da 0 y la permanencia no tiene promedio; en 2024 hay 2 altas (Ana y Beto), ninguna baja y 2 activos al cierre de diciembre.
+
+**Automatizado:** Sí (S-01 a S-03).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1799,3 +1811,4 @@ Los defectos se numeran D-01, D-02…
 |   2.30  | 20/10/2026 | Casos PI-71 a PI-73 (racha e insignias, ranking de asistencia y cierre mensual) y archivo P con P-01 a P-10; casos PI-74 a PI-77 (informe de asistencia y ocupación de horarios) y archivo Q con Q-01 a Q-06. US-30, US-31 y US-37 pasan a automatizadas y US-33 a parcial (sin la exportación). Fábricas `darRol`, `crearProfesora`, `crearActividad` y `crearClase` | Nicolas |
 |   2.31  | 24/10/2026 | Casos PI-78 a PI-82 (las liquidaciones y las tarifas de honorarios, US-23) y archivo R con R-01 a R-16; el honorario pasa a ser el 50 % de lo cobrado en el mes, las tarifas de alumno a cargo son un porcentaje y las de hora de suplencia, un monto fijo; US-23 pasa a automatizada | Rosario Mendoza |
 |   2.32  | 04/11/2026 | Caso PI-86 (el cierre mensual automático de los honorarios desde `DIA_CIERRE_HONORARIOS`) y tests R-17 y R-18; el resto del archivo R corre con el día de cierre en 28 para que listar no cierre septiembre solo | Francisco Andrade |
+|   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
