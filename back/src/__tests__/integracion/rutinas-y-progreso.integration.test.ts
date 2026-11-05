@@ -176,6 +176,9 @@ describe("PI-83: carga de rutinas y historial (US-27)", () => {
   });
 
   it("dos cargas a la vez dejan una sola rutina vigente", async () => {
+    // El primer login vincula la cuenta de Google: si los dos pedidos lo hacen a la vez, el segundo
+    // choca con el primero y responde 401. Lo que se prueba acá es la carga en paralelo, no el login.
+    await entorno.iniciarSesion(emailPaula);
     const respuestas = await Promise.all([
       pedir(
         "post",
