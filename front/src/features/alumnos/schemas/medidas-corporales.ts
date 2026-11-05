@@ -16,7 +16,7 @@ function medida(nombre: string, unidad: string, minimo: number, maximo: number) 
     .transform((valor) => Number(valor.replace(",", ".")))
     .pipe(
       z
-        .number({ invalid_type_error: `${nombre} tiene que ser un número` })
+        .number({ error: (issue) => (issue.input === undefined ? undefined : `${nombre} tiene que ser un número`) })
         .min(minimo, fueraDeRango)
         .max(maximo, fueraDeRango)
         .refine(tieneComoMaximoDosDecimales, `${nombre} admite como máximo dos decimales`),

@@ -107,7 +107,7 @@ export function crearPlanFormSchema({ editando }: { editando: boolean }) {
     .object({
       nombre: nombreSchema,
       descripcion: descripcionSchema,
-      tipo: z.enum(["MENSUAL", "CLASE_SUELTA"], { errorMap: () => ({ message: "Elegí el tipo de plan." }) }),
+      tipo: z.enum(["MENSUAL", "CLASE_SUELTA"], { error: "Elegí el tipo de plan." }),
       precio: z.string(),
       idActividad: z.string().regex(/^(\d+)?$/),
       profesoraUnica: z.boolean(),
@@ -171,7 +171,7 @@ function validarFrecuenciaYGracia({ frecuencia, diasGracia }: { frecuencia: stri
 export type ErroresPlanForm = Partial<Record<keyof PlanFormValues, string>>;
 
 export function erroresDe(error: z.ZodError): ErroresPlanForm {
-  const { fieldErrors } = error.flatten();
+  const { fieldErrors } = z.flattenError(error) as { fieldErrors: Record<string, string[] | undefined> };
   return Object.fromEntries(Object.entries(fieldErrors).map(([campo, mensajes]) => [campo, mensajes?.[0]]));
 }
 

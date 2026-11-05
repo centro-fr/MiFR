@@ -55,7 +55,7 @@ export function ModalFormProfesora({
     });
 
     if (!res.success) {
-      setErrorValidacion(res.error.errors[0]?.message ?? "Datos inválidos");
+      setErrorValidacion(res.error.issues[0]?.message ?? "Datos inválidos");
       return;
     }
 
