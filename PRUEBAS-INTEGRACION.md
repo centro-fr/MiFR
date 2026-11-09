@@ -217,6 +217,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-35 | Reportes de inscriptos por mes                            |   5    | PI-87                                                         | Sí: altas, bajas y activos por mes, motivos de baja y permanencia; la comparación entre años la arma el front pidiendo un año por vez |
 | US-36 | Reportes de planes más elegidos                           |   5    |                                                               |                                                                                        |
 | US-37 | Mapa de calor de ocupación de horarios                    |   5    | PI-76, PI-77                                                  | Sí: los datos de cada celda y su nivel; los colores y la grilla son del front          |
+| US-38 | Gestión del plantel de profesoras                         |  4/5   | PI-88, PI-89                                                  | Sí: edición, reincorporación y contacto solo para la propietaria                       |
 
 ## 6. Casos de prueba
 
@@ -303,8 +304,10 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-82         | Las tarifas de honorarios                                           | US-23, US-02        | Servicios          | Fábricas, `crearClase`, reloj fijo                         | Sí           |
 | PI-86         | El cierre mensual automático de los honorarios                      | US-23               | Servicios          | Fábricas, `crearClase`, reloj fijo, `DIA_CIERRE_HONORARIOS` | Sí           |
 | PI-87         | El movimiento de alumnos del año en el reporte de Inscripciones     | US-35               | Servicios          | Fábricas, fechas de alta y baja fijadas en la base         | Sí           |
+| PI-88         | Edición y reincorporación de profesoras                              | US-38, US-02        | Servicios          | Fábricas, sesiones, baja lógica                             | Sí           |
+| PI-89         | Contacto y privacidad en el listado de profesoras                    | US-38, US-02        | Servicios          | Fábricas, datos de usuario                                  | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026).
 
 ### 6.2 Detalle
 
@@ -1182,7 +1185,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-261 tests en diecisiete archivos (la L, de suplencias, todavía no está en la tabla):
+335 tests en veintiún archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1197,11 +1200,16 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
+|    L    | `back/src/__tests__/integracion/suplencias.integration.test.ts`                 | 15 (L-01 a L-15) | PI-60 a PI-63                     |
 |    M    | `back/src/__tests__/integracion/resumen-diario.integration.test.ts`             | 3 (M-01 a M-03)  | PI-65                             |
 |    N    | `back/src/__tests__/integracion/notificaciones.integration.test.ts`             | 6 (N-01 a N-06)  | PI-67, PI-68                      |
 |    O    | `back/src/__tests__/integracion/alumnos-inactivos.integration.test.ts`          | 7 (O-01 a O-07)  | PI-69, PI-70                      |
 |    P    | `back/src/__tests__/integracion/insignias-y-ranking.integration.test.ts`        | 10 (P-01 a P-10) | PI-71 a PI-73                     |
 |    Q    | `back/src/__tests__/integracion/reportes-asistencia-y-ocupacion.integration.test.ts` | 6 (Q-01 a Q-06) | PI-74 a PI-77                |
+|    R    | `back/src/__tests__/integracion/honorarios.integration.test.ts`                 | 18 (R-01 a R-18) | PI-78 a PI-82, PI-86              |
+|    S    | `back/src/__tests__/integracion/reportes-inscripciones.integration.test.ts`     | 3 (S-01 a S-03)  | PI-87                             |
+|    T    | `back/src/modules/gestion-personas/profesor/__tests__/profesor.integration.test.ts` | 5 (T-01 a T-05) | PI-88, PI-89                   |
+|    U    | `back/src/__tests__/integracion/rutinas-y-progreso.integration.test.ts`          | 48 (U-01 a U-48) | PI-83 a PI-85                     |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -1352,6 +1360,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | Q-04        | Inscriptos activos contra el cupo del horario o de la actividad, sin pre-inscriptos, bajas ni horarios dados de baja, con su nivel | PI-76 |
 | Q-05        | Filtros por modalidad, actividad y profesora | PI-77 |
 | Q-06        | La profesora recibe 403 | PI-77 |
+| T-01        | La propietaria da de baja y reincorpora el perfil existente, actualizando especialidad sin duplicar usuario ni profesora | PI-88 |
+| T-02        | Reincorporar una profesora activa responde 409 y no cambia la base | PI-88 |
+| T-03, T-04  | La profesora con `HORARIOS_EDITAR` delegado y la propietaria sin ese permiso reciben 403; la base no cambia | PI-88 |
+| T-05        | La propietaria ve email, teléfono y fecha de nacimiento; otros roles no reciben esos datos y el filtro de bajas se respeta | PI-89 |
 
 #### PI-78 — El cálculo de los honorarios del mes
 
@@ -1436,6 +1448,31 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 **Resultado esperado:** en el paso 1 hay 2 altas y 2 bajas, 2 activos al empezar el año y los activos al cierre de enero a mayo son 2, 3, 4, 2 y 2 (diciembre también 2). Los motivos son una mudanza y un abandono, y la permanencia es de 2 bajas con 7,5 meses en promedio y 1 en los primeros tres meses. Eva no cuenta en nada. En el paso 2, con la otra profesora todo da 0 y la permanencia no tiene promedio; en 2024 hay 2 altas (Ana y Beto), ninguna baja y 2 activos al cierre de diciembre.
 
 **Automatizado:** Sí (S-01 a S-03).
+
+#### PI-88 — Edición y reincorporación de profesoras
+
+**US:** US-38, US-02 · **Precondición:** sesión de la propietaria con `HORARIOS_EDITAR`; una profesora activa y otra dada de baja lógica, cada una con su usuario y su perfil docente.
+
+1. La propietaria da de baja a la profesora activa.
+2. Envía `PATCH /profesoras/:id` con `{ "especialidad": "Posing", "reactivar": true }`.
+3. Repite el PATCH sobre una profesora activa con `{ "reactivar": true }`.
+4. Una profesora con `HORARIOS_EDITAR` delegado intenta el PATCH; después la propietaria sin ese permiso.
+
+**Resultado esperado:** en el paso 2 responde 200 con la misma `id_profesora` e `id_usuario`, `especialidad` "Posing" y `fecha_baja` null; no se duplica el usuario ni el perfil. En el paso 3 responde 409 y la base no cambia. En el paso 4 ambos reciben 403 y la base no cambia.
+
+**Automatizado:** Sí (T-01 a T-04).
+
+#### PI-89 — Contacto y privacidad en el listado de profesoras
+
+**US:** US-38, US-02 · **Precondición:** una profesora activa y otra dada de baja, ambas con email, teléfono y fecha de nacimiento cargados en su usuario.
+
+1. La propietaria pide `GET /profesoras`.
+2. Pide `GET /profesoras?incluirBajas=true`.
+3. Una profesora pide `GET /profesoras?incluirBajas=true`.
+
+**Resultado esperado:** en el paso 1 recibe solo la activa y, dentro de `usuario`, el email, el teléfono y la fecha de nacimiento. En el paso 2 recibe las dos, con los mismos datos. En el paso 3 recibe las dos pero sin email, teléfono ni fecha de nacimiento.
+
+**Automatizado:** Sí (T-05).
 
 ### 7.1 Verificación de que los tests detectan fallas
 
@@ -1572,6 +1609,10 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Los resúmenes de asistencia incluyen a los dados de baja sin pedirlo                    | Q-01, Q-02                                                                                                 |
 | La ocupación cuenta los lugares ocupados (con reservas y bajas) en lugar de los inscriptos activos | Q-04                                                                                            |
 | Una falta no corta la racha al buscar cuándo se alcanzó un umbral                       | Solo los unitarios del calculador: en P-01 la racha de 3 se completa antes de la falta                     |
+| El PATCH de profesoras no exige `HORARIOS_EDITAR`                                       | T-04                                                                                                       |
+| Reincorporar una profesora activa no responde 409                                       | T-02 y un unitario del service                                                                             |
+| El listado de profesoras incluye el contacto para cualquier rol                         | T-05 y un unitario de las rutas                                                                            |
+| El PATCH reincorpora sin limpiar `fecha_baja`                                           | T-01 y dos unitarios del service                                                                           |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1626,6 +1667,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 18/10/2026 | Detección y gestión de alumnos inactivos (PI-69, PI-70)               | 243 | 243 aprobados | 46,3 s | Pasaron también los 1964 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. De las 7 fallas provocadas, 6 las detectan O-01 a O-07; la séptima (las rutas sin `acceso.rol("PROPIETARIA")`) solo los unitarios de las rutas |
 | 18/10/2026 | DNI y contacto de emergencia obligatorios en el alta (PI-15)          | 245 | 245 aprobados | 295,7 s | Corrida sobre `dev` con notificaciones e inactividad ya integradas. La migración `contacto_emergencia_obligatorio` se aplicó sobre la base de prueba después de las de notificaciones. 17 tests de PI-15 a PI-17, PI-31 y PI-64 se adaptaron: mandaban altas sin DNI o sin contacto. Pasaron también los 1973 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas |
 | 20/10/2026 | Ranking, insignias y los informes de asistencia y ocupación (PI-71 a PI-77) | 261 | 261 aprobados | 51,8 s | Pasaron también los 2179 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las migraciones `agregar_insignias` y `agregar_checks_insignias` se aplicaron sobre la base nueva. De las 9 fallas provocadas, 7 las detectaron los de integración en la primera versión; los resúmenes que contaban clases abiertas, después de sumar una clase abierta con marcas, y la falta en el logro de racha, los unitarios del calculador |
+| 09/11/2026 | Edición, reincorporación y contacto del plantel de profesoras (PI-88, PI-89) | 335 | 335 aprobados | 145,7 s | Pasaron también los 2651 tests unitarios; chequeo de tipos, formato y build correctos. Las 4 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1684,6 +1726,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-80         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-07 a R-10; sin defectos                                                  |
 | PI-81         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-11 y R-12; sin defectos                                                  |
 | PI-82         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-13 a R-16; sin defectos                                                  |
+| PI-88         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasan T-01 a T-04; sin defectos                                                  |
+| PI-89         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasa T-05; sin defectos                                                          |
 
 ### 8.3 Defectos
 
@@ -1812,3 +1856,4 @@ Los defectos se numeran D-01, D-02…
 |   2.31  | 24/10/2026 | Casos PI-78 a PI-82 (las liquidaciones y las tarifas de honorarios, US-23) y archivo R con R-01 a R-16; el honorario pasa a ser el 50 % de lo cobrado en el mes, las tarifas de alumno a cargo son un porcentaje y las de hora de suplencia, un monto fijo; US-23 pasa a automatizada | Rosario Mendoza |
 |   2.32  | 04/11/2026 | Caso PI-86 (el cierre mensual automático de los honorarios desde `DIA_CIERRE_HONORARIOS`) y tests R-17 y R-18; el resto del archivo R corre con el día de cierre en 28 para que listar no cierre septiembre solo | Francisco Andrade |
 |   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
+|   2.34  | 09/11/2026 | Casos PI-88 (edición y reincorporación de profesoras) y PI-89 (contacto y privacidad del listado), con T-01 a T-05; US-38 pasa a automatizada. Se completa la tabla de tests con los archivos L, R, S y U | Francisco Andrade |
