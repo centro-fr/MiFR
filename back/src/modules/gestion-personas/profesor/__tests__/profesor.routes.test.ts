@@ -21,6 +21,7 @@ function crearLogicaMock() {
     crearProfesora: vi.fn(),
     listarProfesoras: vi.fn(),
     darDeBajaProfesora: vi.fn(),
+    actualizarProfesora: vi.fn(),
   };
 }
 
@@ -64,6 +65,16 @@ describe("rutas de profesoras", () => {
 
     expect(respuesta.status).toBe(200);
     expect(autorizacion.tienePermiso).toHaveBeenCalledWith(1, "HORARIOS_VER");
+    expect(logica.listarProfesoras).toHaveBeenCalledWith({ incluirBajas: false }, true);
+  });
+
+  it("no solicita datos de contacto para quien no es propietaria", async () => {
+    logica.listarProfesoras.mockResolvedValue([]);
+
+    const respuesta = await request(app).get("/api/v1/profesoras").set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.listarProfesoras).toHaveBeenCalledWith({ incluirBajas: false }, false);
   });
 
   it("crea el perfil para la propietaria", async () => {
@@ -128,5 +139,37 @@ describe("rutas de profesoras", () => {
 
     expect(respuesta.status).toBe(400);
     expect(logica.crearProfesora).not.toHaveBeenCalled();
+  });
+
+  it("actualiza la especialidad para la propietaria", async () => {
+    logica.actualizarProfesora.mockResolvedValue({ id_profesora: 3, especialidad: "Posing" });
+
+    const respuesta = await request(app)
+      .patch("/api/v1/profesoras/3")
+      .set("Authorization", "Bearer propietaria")
+      .send({ especialidad: "Posing" });
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.actualizarProfesora).toHaveBeenCalledWith(3, { especialidad: "Posing" });
+  });
+
+  it("rechaza actualizar para otros roles aunque tengan el permiso", async () => {
+    const respuesta = await request(app)
+      .patch("/api/v1/profesoras/3")
+      .set("Authorization", "Bearer profesora")
+      .send({ reactivar: true });
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.actualizarProfesora).not.toHaveBeenCalled();
+  });
+
+  it("responde 400 si la actualización no contiene cambios", async () => {
+    const respuesta = await request(app)
+      .patch("/api/v1/profesoras/3")
+      .set("Authorization", "Bearer propietaria")
+      .send({});
+
+    expect(respuesta.status).toBe(400);
+    expect(logica.actualizarProfesora).not.toHaveBeenCalled();
   });
 });
