@@ -1,10 +1,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
-import type { CrearProfesoraInput } from "./profesor.schemas.js";
+import type { ActualizarProfesoraInput, CrearProfesoraInput } from "./profesor.schemas.js";
 import type { Profesora } from "./profesor.types.js";
 
 const CON_NOMBRE = {
   usuario: { select: { nombre: true, apellido: true } },
+} satisfies Prisma.profesorasInclude;
+
+const CON_DATOS_DE_CONTACTO = {
+  usuario: { select: { nombre: true, apellido: true, email: true, telefono: true, fecha_nacimiento: true } },
 } satisfies Prisma.profesorasInclude;
 
 export class ProfesorRepository {
@@ -25,10 +29,10 @@ export class ProfesorRepository {
     return this.prisma.profesoras.findUnique({ where: { id_usuario: idUsuario }, include: CON_NOMBRE });
   }
 
-  listar(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
+  listar(filtro?: { incluirBajas?: boolean }, incluirDatosContacto = false): Promise<Profesora[]> {
     return this.prisma.profesoras.findMany({
       where: filtro?.incluirBajas ? undefined : { fecha_baja: null },
-      include: CON_NOMBRE,
+      include: incluirDatosContacto ? CON_DATOS_DE_CONTACTO : CON_NOMBRE,
       orderBy: { id_profesora: "asc" },
     });
   }
@@ -37,6 +41,17 @@ export class ProfesorRepository {
     return this.prisma.profesoras.update({
       where: { id_profesora: id },
       data: { fecha_baja: fechaActualArgentina() },
+      include: CON_NOMBRE,
+    });
+  }
+
+  actualizar(
+    id: number,
+    input: Pick<ActualizarProfesoraInput, "especialidad"> & { fecha_baja?: null },
+  ): Promise<Profesora> {
+    return this.prisma.profesoras.update({
+      where: { id_profesora: id },
+      data: input,
       include: CON_NOMBRE,
     });
   }

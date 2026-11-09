@@ -1,7 +1,7 @@
 import { ConflictError, NotFoundError, ValidationError } from "../../../shared/errors/app-error.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
-import type { CrearProfesoraInput } from "./profesor.schemas.js";
+import type { ActualizarProfesoraInput, CrearProfesoraInput } from "./profesor.schemas.js";
 import type { IInfoProfesores } from "./interface/i-info-profesores.js";
 import type { ProfesorRepository } from "./profesor.repository.js";
 import type { Profesora } from "./profesor.types.js";
@@ -43,8 +43,8 @@ export class ProfesorService implements IInfoProfesores {
     return usuario.estado === "ACTIVO" && this.autorizacion.tieneRol(usuario, "PROFESORA") ? profesora : null;
   }
 
-  listar(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
-    return this.repositorio.listar(filtro);
+  listar(filtro?: { incluirBajas?: boolean }, incluirDatosContacto = false): Promise<Profesora[]> {
+    return this.repositorio.listar(filtro, incluirDatosContacto);
   }
 
   async darDeBaja(id: number): Promise<Profesora> {
@@ -52,5 +52,18 @@ export class ProfesorService implements IInfoProfesores {
     if (!profesora) throw new NotFoundError("Profesora no encontrada");
     if (profesora.fecha_baja !== null) throw new ConflictError("La profesora ya está dada de baja");
     return this.repositorio.darDeBaja(id);
+  }
+
+  async actualizar(id: number, input: ActualizarProfesoraInput): Promise<Profesora> {
+    const profesora = await this.repositorio.buscarPorId(id);
+    if (!profesora) throw new NotFoundError("Profesora no encontrada");
+    if (input.reactivar && profesora.fecha_baja === null) {
+      throw new ConflictError("La profesora no está dada de baja");
+    }
+
+    const datos: { especialidad?: string | null; fecha_baja?: null } = {};
+    if (input.especialidad !== undefined) datos.especialidad = input.especialidad;
+    if (input.reactivar) datos.fecha_baja = null;
+    return this.repositorio.actualizar(id, datos);
   }
 }

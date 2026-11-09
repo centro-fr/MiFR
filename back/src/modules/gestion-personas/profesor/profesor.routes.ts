@@ -3,7 +3,11 @@ import type { ILogicaProfesoras } from "../interface/i-logica-personas.js";
 import type { ControlDeAcceso } from "../../../shared/middlewares/auth.js";
 import { validate } from "../../../shared/middlewares/validate.js";
 import { createProfesorController } from "./profesor.controller.js";
-import { crearProfesoraSchema, profesoraIdParamSchema } from "./profesor.schemas.js";
+import {
+  actualizarProfesoraSchema,
+  crearProfesoraSchema,
+  profesoraIdParamSchema,
+} from "./profesor.schemas.js";
 
 export function createProfesorRoutes(logica: ILogicaProfesoras, acceso: ControlDeAcceso): Router {
   const router = Router();
@@ -24,6 +28,13 @@ export function createProfesorRoutes(logica: ILogicaProfesoras, acceso: ControlD
     acceso.permiso("HORARIOS_EDITAR"),
     validate({ params: profesoraIdParamSchema }),
     controller.darDeBaja,
+  );
+  router.patch(
+    "/:id",
+    acceso.rol("PROPIETARIA"),
+    acceso.permiso("HORARIOS_EDITAR"),
+    validate({ params: profesoraIdParamSchema, body: actualizarProfesoraSchema }),
+    controller.actualizar,
   );
 
   return router;

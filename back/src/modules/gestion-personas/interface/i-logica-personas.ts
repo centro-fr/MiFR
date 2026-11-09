@@ -7,7 +7,7 @@ import type {
 } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "../alumno/alumno.schemas.js";
 import type { Alumno, AlumnoConsultable, PaginaAlumnos } from "../alumno/alumno.types.js";
-import type { CrearProfesoraInput } from "../profesor/profesor.schemas.js";
+import type { ActualizarProfesoraInput, CrearProfesoraInput } from "../profesor/profesor.schemas.js";
 import type { Profesora } from "../profesor/profesor.types.js";
 
 // Las partes de ILogicaPersonas, una por componente: cada controller depende solo de la suya.
@@ -15,8 +15,9 @@ import type { Profesora } from "../profesor/profesor.types.js";
 
 export interface ILogicaProfesoras {
   crearProfesora(input: CrearProfesoraInput): Promise<Profesora>;
-  listarProfesoras(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]>;
+  listarProfesoras(filtro?: { incluirBajas?: boolean }, incluirDatosContacto?: boolean): Promise<Profesora[]>;
   darDeBajaProfesora(id: number): Promise<Profesora>;
+  actualizarProfesora(id: number, input: ActualizarProfesoraInput): Promise<Profesora>;
 }
 
 // US-10 y US-18: si la inscripción está al día, por vencer o vencida. Sale de Cuota (IInfoCuotas) y
