@@ -54,6 +54,11 @@ export async function darDeBajaProfesora(id: number): Promise<Profesora> {
   return normalizarProfesora(profesoraApiSchema.parse(data));
 }
 
+export async function reactivarProfesora(id: number): Promise<Profesora> {
+  const { data } = await apiClient.patch(`/profesoras/${id}`, { reactivar: true });
+  return normalizarProfesora(profesoraApiSchema.parse(data));
+}
+
 export async function obtenerUsuarioDeProfesora(idUsuario: number): Promise<UsuarioDetalleProfesora> {
   const { data } = await apiClient.get(`/usuarios/${idUsuario}`);
   return usuarioDetalleProfesoraSchema.parse(data);

@@ -54,6 +54,7 @@ const mockProfesoras: Profesora[] = [
 ];
 
 const mockMutateCrear = vi.fn();
+const mockMutateReactivar = vi.fn();
 let mockHorariosActivos: Array<{ id_profesora: number; actividad: { nombre: string } }> = [];
 
 vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
@@ -70,6 +71,12 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     error: null,
     reset: vi.fn(),
     mutate: mockMutateCrear,
+  }),
+  useReactivarProfesora: () => ({
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: mockMutateReactivar,
   }),
   useHorariosActivos: () => ({
     data: mockHorariosActivos,
@@ -111,14 +118,18 @@ describe("ProfesorasPage (US-38)", () => {
     expect(screen.queryByText("Carla Ruiz")).not.toBeInTheDocument();
   });
 
-  it("muestra todas las profesoras al cambiar a la pestaña 'Historial completo'", () => {
+  it("muestra únicamente las profesoras dadas de baja al cambiar a la pestaña 'Dados de baja' y permite reincorporarlas", () => {
     renderizar();
-    const tabTodas = screen.getAllByRole("button", { name: /Historial completo/i })[0];
-    fireEvent.click(tabTodas);
+    const tabBajas = screen.getAllByRole("button", { name: /Dados de baja/i })[0];
+    fireEvent.click(tabBajas);
 
-    expect(screen.getAllByText("Lucía Gómez").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Lucía Gómez")).not.toBeInTheDocument();
     expect(screen.getAllByText("Carla Ruiz").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Limpiar filtros/i })).not.toBeInTheDocument();
+
+    const btnReincorporar = screen.getAllByRole("button", { name: "Reincorporar" })[0];
+    fireEvent.click(btnReincorporar);
+    expect(mockMutateReactivar).toHaveBeenCalledWith(2, expect.any(Object));
   });
 
   it("permite filtrar por búsqueda de texto", () => {

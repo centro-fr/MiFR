@@ -4,4 +4,5 @@ export type Actividad = actividades;
 
 export interface FiltroActividad {
   busqueda?: string;
+  incluirBajas?: boolean;
 }

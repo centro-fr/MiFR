@@ -5,6 +5,7 @@ import {
   darDeBajaProfesora,
   listarProfesoras,
   obtenerUsuarioDeProfesora,
+  reactivarProfesora,
 } from "@/features/profesoras/api/profesoras-api";
 import { listarHorarios } from "@/features/horarios/api/horarios-api";
 import type {
@@ -36,6 +37,16 @@ export function useDarDeBajaProfesora() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => darDeBajaProfesora(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROFESORAS_QUERY_KEY });
+    },
+  });
+}
+
+export function useReactivarProfesora() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => reactivarProfesora(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROFESORAS_QUERY_KEY });
     },

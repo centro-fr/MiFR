@@ -15,7 +15,9 @@ export class ActividadRepository {
   }
 
   async listar(filtro: FiltroActividad): Promise<Actividad[]> {
-    const where: Prisma.actividadesWhereInput = { activo: true };
+    const where: Prisma.actividadesWhereInput = {
+      ...(filtro.incluirBajas ? {} : { activo: true }),
+    };
 
     if (filtro.busqueda) {
       where.OR = [
@@ -42,7 +44,10 @@ export class ActividadRepository {
     });
   }
 
-  async actualizar(id: number, input: ActualizarActividadInput): Promise<Actividad> {
+  async actualizar(
+    id: number,
+    input: Omit<ActualizarActividadInput, "reactivar"> & { activo?: boolean },
+  ): Promise<Actividad> {
     return this.prisma.actividades.update({
       where: { id_actividad: id },
       data: input,

@@ -30,6 +30,8 @@ interface AccionesDeLaTarjeta {
   onActualizarPrecio: (plan: Plan) => void;
   onEditarPlan?: (plan: Plan) => void;
   onVerHistorial?: (plan: Plan) => void;
+  onReactivarPlan?: (plan: Plan) => void;
+  reactivandoPlan?: boolean;
 }
 
 export function ListaPlanes({
@@ -39,6 +41,8 @@ export function ListaPlanes({
   onActualizarPrecio,
   onEditarPlan,
   onVerHistorial,
+  onReactivarPlan,
+  reactivandoPlan,
 }: {
   planes: Plan[];
   total: number;
@@ -126,6 +130,20 @@ export function ListaPlanes({
                             Historial
                           </Button>
                         )}
+                        {!vigente && onReactivarPlan && (
+                          <Can permission="PLANES_EDITAR">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={reactivandoPlan}
+                              onClick={() => onReactivarPlan(plan)}
+                              className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                            >
+                              Reincorporar
+                              <span className="sr-only"> {plan.nombre}</span>
+                            </Button>
+                          </Can>
+                        )}
                         {vigente && (
                           <>
                             <Button
@@ -208,6 +226,20 @@ export function ListaPlanes({
                     >
                       Historial
                     </Button>
+                  )}
+                  {!vigente && onReactivarPlan && (
+                    <Can permission="PLANES_EDITAR">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={reactivandoPlan}
+                        onClick={() => onReactivarPlan(plan)}
+                        className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                      >
+                        Reincorporar
+                        <span className="sr-only"> {plan.nombre}</span>
+                      </Button>
+                    </Can>
                   )}
                   {vigente && (
                     <>

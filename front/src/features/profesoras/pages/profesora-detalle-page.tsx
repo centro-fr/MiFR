@@ -37,6 +37,7 @@ import {
   useDarDeBajaProfesora,
   useHorariosActivos,
   useProfesoras,
+  useReactivarProfesora,
   useUsuarioProfesora,
 } from "@/features/profesoras/hooks/use-profesoras";
 import {
@@ -82,6 +83,7 @@ export function ProfesoraDetallePage() {
 
   const actualizarMutation = useActualizarDatosProfesora(idProfesora);
   const darDeBajaMutation = useDarDeBajaProfesora();
+  const reactivarMutation = useReactivarProfesora();
 
   const [editando, setEditando] = useState(false);
   const [modalBajaAbierto, setModalBajaAbierto] = useState(false);
@@ -248,7 +250,7 @@ export function ProfesoraDetallePage() {
                 Editar datos
               </Button>
 
-              {profesora.activa && (
+              {profesora.activa ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -260,6 +262,25 @@ export function ProfesoraDetallePage() {
                 >
                   <Trash2 className="size-3.5 mr-1.5" />
                   Dar de baja
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={reactivarMutation.isPending}
+                  onClick={() => {
+                    reactivarMutation.mutate(profesora.id, {
+                      onSuccess: () => {
+                        toast.success(`Profesor/a "${nombreCompleto}" reincorporado/a como vigente`);
+                      },
+                      onError: (err) => {
+                        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar al/a la profesor/a."));
+                      },
+                    });
+                  }}
+                  className="h-10 rounded-xl border-emerald-200 bg-emerald-50/70 px-3.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+                >
+                  Reincorporar a vigente
                 </Button>
               )}
             </div>

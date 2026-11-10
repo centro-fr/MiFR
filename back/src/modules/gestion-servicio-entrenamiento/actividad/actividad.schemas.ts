@@ -47,6 +47,7 @@ export const actualizarActividadSchema = z
     modalidad: modalidad.optional(),
     cupo_maximo: cupo_maximo.optional(),
     requiere_medidas,
+    reactivar: z.literal(true).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Debe enviar al menos un campo para actualizar",
@@ -58,6 +59,10 @@ export const actividadIdParamSchema = z.object({
 
 export const listarActividadQuerySchema = z.object({
   busqueda: textoBusquedaSchema(60).optional(),
+  incluirBajas: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
 });
 
 export type CrearActividadInput = z.infer<typeof crearActividadSchema>;

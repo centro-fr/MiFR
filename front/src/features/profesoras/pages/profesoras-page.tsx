@@ -24,14 +24,16 @@ import {
   useCrearProfesora,
   useHorariosActivos,
   useProfesoras,
+  useReactivarProfesora,
 } from "@/features/profesoras/hooks/use-profesoras";
 import {
   parsearEspecialidades,
   type CrearProfesoraInput,
+  type Profesora,
 } from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
 
-type PestanaEstado = "ACTIVAS" | "TODAS";
+type PestanaEstado = "ACTIVAS" | "BAJAS";
 
 function formatearFecha(iso: string): string {
   try {
@@ -59,6 +61,7 @@ export function ProfesorasPage() {
   }, [horarios]);
 
   const crearMutation = useCrearProfesora();
+  const reactivarMutation = useReactivarProfesora();
 
   const [formAbierto, setFormAbierto] = useState(false);
   const [pestana, setPestana] = useState<PestanaEstado>("ACTIVAS");
@@ -81,13 +84,25 @@ export function ProfesorasPage() {
     });
   };
 
+  const handleReincorporar = (prof: Profesora) => {
+    reactivarMutation.mutate(prof.id, {
+      onSuccess: () => {
+        toast.success(`Profesor/a "${prof.nombreCompleto}" reincorporado/a como vigente`);
+      },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar al/a la profesor/a."));
+      },
+    });
+  };
+
   const conteoActivas = useMemo(() => profesoras.filter((p) => p.activa).length, [profesoras]);
-  const conteoTotal = profesoras.length;
+  const conteoBajas = useMemo(() => profesoras.filter((p) => !p.activa).length, [profesoras]);
 
   const listaFiltrada = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return profesoras.filter((p) => {
       if (pestana === "ACTIVAS" && !p.activa) return false;
+      if (pestana === "BAJAS" && p.activa) return false;
       if (!q) return true;
       const coincideNombre = p.nombreCompleto.toLowerCase().includes(q);
       const coincideEspecialidad = p.especialidad ? p.especialidad.toLowerCase().includes(q) : false;
@@ -167,17 +182,17 @@ export function ProfesorasPage() {
           </button>
           <button
             type="button"
-            onClick={() => setPestana("TODAS")}
+            onClick={() => setPestana("BAJAS")}
             className={cn(
               "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-              pestana === "TODAS"
+              pestana === "BAJAS"
                 ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
                 : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
             )}
           >
-            Historial completo{" "}
-            <span className={cn(pestana === "TODAS" ? "text-primary font-black" : "text-slate-500")}>
-              {conteoTotal}
+            Dados de baja{" "}
+            <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
+              {conteoBajas}
             </span>
           </button>
         </div>
@@ -219,24 +234,24 @@ export function ProfesorasPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setPestana("TODAS")}
+                onClick={() => setPestana("BAJAS")}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  pestana === "TODAS"
+                  pestana === "BAJAS"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
                 )}
               >
-                <span>Historial completo</span>
+                <span>Dados de baja</span>
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    pestana === "TODAS"
+                    pestana === "BAJAS"
                       ? "bg-primary text-white"
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
                   )}
                 >
-                  {conteoTotal}
+                  {conteoBajas}
                 </span>
               </button>
             </div>
@@ -249,14 +264,20 @@ export function ProfesorasPage() {
                 <GraduationCap className="size-7" />
               </span>
               <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                {hayFiltrosActivos ? "Sin resultados para tu búsqueda" : "No hay profesores registrados"}
+                {hayFiltrosActivos
+                  ? "Sin resultados para tu búsqueda"
+                  : pestana === "BAJAS"
+                    ? "No hay profesores dados de baja"
+                    : "No hay profesores registrados"}
               </h2>
               <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
                 {hayFiltrosActivos
                   ? "Probá ajustando el término de búsqueda para encontrar profesores o especialidades."
-                  : "Agregá el/la primer/a profesor/a asociando una cuenta con rol PROFESORA para armar el equipo."}
+                  : pestana === "BAJAS"
+                    ? "Todos los profesores del plantel se encuentran vigentes."
+                    : "Agregá el/la primer/a profesor/a asociando una cuenta con rol PROFESORA para armar el equipo."}
               </p>
-              {!hayFiltrosActivos && (
+              {!hayFiltrosActivos && pestana === "ACTIVAS" && (
                 <Button
                   type="button"
                   onClick={abrirNueva}
@@ -297,24 +318,24 @@ export function ProfesorasPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPestana("TODAS")}
+                  onClick={() => setPestana("BAJAS")}
                   className={cn(
                     "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                    pestana === "TODAS"
+                    pestana === "BAJAS"
                       ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
                   )}
                 >
-                  <span>Historial completo</span>
+                  <span>Dados de baja</span>
                   <span
                     className={cn(
                       "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                      pestana === "TODAS"
+                      pestana === "BAJAS"
                         ? "bg-primary text-white"
                         : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
                     )}
                   >
-                    {conteoTotal}
+                    {conteoBajas}
                   </span>
                 </button>
               </div>
@@ -399,17 +420,33 @@ export function ProfesorasPage() {
                           {formatearFecha(prof.fechaAlta)}
                         </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/app/profesoras/${prof.id}`);
-                            }}
-                            className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
-                            Ver perfil
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            {!prof.activa && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={reactivarMutation.isPending}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReincorporar(prof);
+                                }}
+                                className="h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                              >
+                                Reincorporar
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/app/profesoras/${prof.id}`);
+                              }}
+                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Ver perfil
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -483,6 +520,22 @@ export function ProfesorasPage() {
                       <p className="text-muted-foreground">
                         Incorporación: {formatearFecha(prof.fechaAlta)}
                       </p>
+                      {!prof.activa && (
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={reactivarMutation.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReincorporar(prof);
+                            }}
+                            className="w-full h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                          >
+                            Reincorporar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

@@ -90,7 +90,10 @@ export class PlanRepository {
     return cantidad > 0;
   }
 
-  async actualizar(id: number, input: ActualizarPlanInput): Promise<Plan> {
+  async actualizar(
+    id: number,
+    input: Omit<ActualizarPlanInput, "reactivar"> & { fecha_baja?: null },
+  ): Promise<Plan> {
     const hoy = fechaActualArgentina();
     const plan = await this.prisma.planes.update({
       where: { id_plan: id },

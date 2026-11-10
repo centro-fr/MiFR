@@ -58,6 +58,7 @@ export const actualizarPlanSchema = z
     dias_gracia: dias_gracia.optional(),
     id_actividad_exclusiva,
     profesora_unica: profesora_unica.optional(),
+    reactivar: z.literal(true).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Debe enviar al menos un campo para actualizar",

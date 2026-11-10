@@ -53,6 +53,20 @@ const mockPlanes: Plan[] = [
     },
     fechaBaja: null,
   },
+  {
+    id: "3",
+    nombre: "Plan Antiguo",
+    descripcion: null,
+    tipo: "MENSUAL",
+    clasesPorSemana: 1,
+    diasGracia: 5,
+    actividad: null,
+    profesoraUnica: false,
+    precioVigente: 15000,
+    precioVigenteDesde: "2025-01-01T00:00:00.000Z",
+    precioProgramado: null,
+    fechaBaja: "2026-01-01T00:00:00.000Z",
+  },
 ];
 
 vi.mock("@/features/actividades/hooks/use-actividades", () => ({
@@ -62,6 +76,8 @@ vi.mock("@/features/actividades/hooks/use-actividades", () => ({
     isError: false,
   }),
 }));
+
+const mockReactivarMutate = vi.fn();
 
 vi.mock("@/features/planes/hooks/use-planes", () => ({
   usePlanes: () => ({
@@ -100,6 +116,10 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
     reset: vi.fn(),
+  }),
+  useReactivarPlan: () => ({
+    mutate: mockReactivarMutate,
+    isPending: false,
   }),
 }));
 
@@ -186,6 +206,23 @@ describe("PlanesPage", () => {
     expect(screen.getByLabelText(/Nombre \*/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Clases por semana \*/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
+  });
+
+  it("muestra únicamente los planes dados de baja en la pestaña 'Dados de baja' y permite reincorporarlos", () => {
+    renderPlanesPage();
+
+    expect(screen.queryByRole("heading", { name: "Plan Antiguo" })).not.toBeInTheDocument();
+
+    const pestanasBajas = screen.getAllByRole("button", { name: /Dados de baja/i });
+    fireEvent.click(pestanasBajas[0]);
+
+    expect(screen.getByRole("heading", { name: "Plan Antiguo" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Básico" })).not.toBeInTheDocument();
+
+    const botonesReincorporar = screen.getAllByRole("button", { name: /Reincorporar/i });
+    fireEvent.click(botonesReincorporar[0]);
+
+    expect(mockReactivarMutate).toHaveBeenCalledWith("3", expect.any(Object));
   });
 });
 

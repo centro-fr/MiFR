@@ -50,9 +50,11 @@ export const actividadesHandlers = [
     const denegado = verificarAcceso(request, { permiso: "ACTIVIDADES_VER" });
     if (denegado) return denegado;
 
-    const busqueda = new URL(request.url).searchParams.get("busqueda")?.trim().toLowerCase();
+    const url = new URL(request.url);
+    const busqueda = url.searchParams.get("busqueda")?.trim().toLowerCase();
+    const incluirBajas = url.searchParams.get("incluirBajas") === "true";
     const activas = db.actividades
-      .filter((actividad) => actividad.activo)
+      .filter((actividad) => incluirBajas || actividad.activo)
       .filter(
         (actividad) =>
           !busqueda ||
@@ -109,9 +111,15 @@ export const actividadesHandlers = [
 
     const actividad = buscarActividad(id);
     if (!actividad) return errorApi(404, "NOT_FOUND", "Actividad no encontrada");
-    if (!actividad.activo) return errorApi(404, "NOT_FOUND", "Actividad no encontrada o inactiva");
 
-    const cambios = (await request.json()) as Partial<CrearActividadBody>;
+    const cambios = (await request.json()) as Partial<CrearActividadBody> & { reactivar?: boolean };
+    if (cambios.reactivar === true) {
+      if (actividad.activo) return errorApi(409, "CONFLICT", "La actividad no está dada de baja");
+      actividad.activo = true;
+    } else if (!actividad.activo) {
+      return errorApi(404, "NOT_FOUND", "Actividad no encontrada o inactiva");
+    }
+
     const modalidad = cambios.modalidad ?? actividad.modalidad;
     const cupo = cambios.cupo_maximo !== undefined ? cambios.cupo_maximo : actividad.cupo_maximo;
     const errorCupoPatch = validarCupoActividad(modalidad, cupo);

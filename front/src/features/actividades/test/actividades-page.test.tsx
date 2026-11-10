@@ -30,7 +30,19 @@ const mockActividades: Actividad[] = [
     requiereMedidas: true,
     activo: true,
   },
+  {
+    id: "3",
+    codigo: "ZUMBA",
+    nombre: "Zumba Fitness",
+    descripcion: "Baile aeróbico",
+    modalidad: "GRUPAL",
+    cupoMaximo: 25,
+    requiereMedidas: false,
+    activo: false,
+  },
 ];
+
+const mockReactivarMutate = vi.fn();
 
 vi.mock("@/features/actividades/hooks/use-actividades", () => ({
   useActividades: () => ({
@@ -54,6 +66,11 @@ vi.mock("@/features/actividades/hooks/use-actividades", () => ({
   }),
   useDarDeBajaActividad: () => ({
     mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+  }),
+  useReactivarActividad: () => ({
+    mutate: mockReactivarMutate,
     isPending: false,
     isError: false,
   }),
@@ -123,5 +140,22 @@ describe("ActividadesPage", () => {
     fireEvent.click(botonesEditar[0]);
 
     expect(screen.getByRole("heading", { name: /Editar/i })).toBeInTheDocument();
+  });
+
+  it("muestra únicamente las actividades dadas de baja en la pestaña 'Dados de baja' y permite reincorporarlas", () => {
+    renderConProviders();
+
+    expect(screen.queryByText("Zumba Fitness")).not.toBeInTheDocument();
+
+    const pestanasBajas = screen.getAllByRole("button", { name: /Dados de baja/i });
+    fireEvent.click(pestanasBajas[0]);
+
+    expect(screen.getAllByText("Zumba Fitness").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("Funcional Grupal")).not.toBeInTheDocument();
+
+    const botonesReincorporar = screen.getAllByRole("button", { name: /Reincorporar/i });
+    fireEvent.click(botonesReincorporar[0]);
+
+    expect(mockReactivarMutate).toHaveBeenCalledWith("3", expect.any(Object));
   });
 });

@@ -23,6 +23,7 @@ import {
   useActualizarActividad,
   useCrearActividad,
   useDarDeBajaActividad,
+  useReactivarActividad,
 } from "@/features/actividades/hooks/use-actividades";
 import type { ActividadFormData } from "@/features/actividades/schemas/actividad";
 import { listarHorarios } from "@/features/horarios/api/horarios-api";
@@ -31,6 +32,7 @@ import type { Actividad, ModalidadActividad } from "@/types/actividad";
 import { cn } from "@/utils/cn";
 
 type ModalidadFiltro = "TODAS" | ModalidadActividad;
+type PestanaEstadoActividad = "VIGENTES" | "BAJAS";
 
 function textoModalidad(modalidad: ModalidadActividad): string {
   return modalidad === "GRUPAL" ? "Grupal" : "Personalizada";
@@ -49,7 +51,7 @@ function textoCupoActividad(cupo: number | null): string {
 }
 
 export function ActividadesPage() {
-  const { data: actividades = [], isPending, isError, error, refetch } = useActividades();
+  const { data: actividades = [], isPending, isError, error, refetch } = useActividades({ incluirBajas: true });
   const { data: horarios = [] } = useQuery({
     queryKey: HORARIOS_QUERY_KEY,
     queryFn: listarHorarios,
@@ -58,12 +60,14 @@ export function ActividadesPage() {
   const crear = useCrearActividad();
   const actualizar = useActualizarActividad();
   const darDeBaja = useDarDeBajaActividad();
+  const reactivar = useReactivarActividad();
 
   const [formAbierto, setFormAbierto] = useState(false);
   const [actividadEditar, setActividadEditar] = useState<Actividad | null>(null);
   const [actividadBaja, setActividadBaja] = useState<Actividad | null>(null);
   const [errorBaja, setErrorBaja] = useState<string | null>(null);
 
+  const [pestana, setPestana] = useState<PestanaEstadoActividad>("VIGENTES");
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<ModalidadFiltro>("TODAS");
 
@@ -147,9 +151,25 @@ export function ActividadesPage() {
     setFiltroModalidad("TODAS");
   };
 
+  const handleReactivar = (actividad: Actividad) => {
+    reactivar.mutate(actividad.id, {
+      onSuccess: () => {
+        toast.success(`Actividad "${actividad.nombre}" reincorporada a vigente.`);
+      },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar la actividad."));
+      },
+    });
+  };
+
+  const conteoVigentes = useMemo(() => actividades.filter((a) => a.activo).length, [actividades]);
+  const conteoBajas = useMemo(() => actividades.filter((a) => !a.activo).length, [actividades]);
+
   const listaFiltrada = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return actividades.filter((a) => {
+      if (pestana === "VIGENTES" && !a.activo) return false;
+      if (pestana === "BAJAS" && a.activo) return false;
       if (filtroModalidad !== "TODAS" && a.modalidad !== filtroModalidad) {
         return false;
       }
@@ -160,7 +180,56 @@ export function ActividadesPage() {
         a.codigo.toLowerCase().includes(q)
       );
     });
-  }, [actividades, busqueda, filtroModalidad]);
+  }, [actividades, pestana, busqueda, filtroModalidad]);
+
+  const cabeceraPestanasDesktop = (
+    <div className="hidden xl:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <button
+        type="button"
+        onClick={() => setPestana("VIGENTES")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestana === "VIGENTES"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Vigentes</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestana === "VIGENTES"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {conteoVigentes}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setPestana("BAJAS")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestana === "BAJAS"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Dados de baja</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestana === "BAJAS"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {conteoBajas}
+        </span>
+      </button>
+    </div>
+  );
 
   return (
     <OwnerLayout>
@@ -237,20 +306,58 @@ export function ActividadesPage() {
           </div>
         </section>
 
+        {/* Pestañas de estado para mobile / tablet */}
+        <div className="flex xl:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+          <button
+            type="button"
+            onClick={() => setPestana("VIGENTES")}
+            className={cn(
+              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+              pestana === "VIGENTES"
+                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+            )}
+          >
+            Vigentes{" "}
+            <span className={cn(pestana === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
+              {conteoVigentes}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPestana("BAJAS")}
+            className={cn(
+              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+              pestana === "BAJAS"
+                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+            )}
+          >
+            Dados de baja{" "}
+            <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
+              {conteoBajas}
+            </span>
+          </button>
+        </div>
+
         {/* Contenido de lista */}
         {isPending ? (
-          <TablaSkeleton ariaLabel="Cargando actividades" cantidadPestanas={3} filas={5} />
+          <TablaSkeleton ariaLabel="Cargando actividades" cantidadPestanas={2} filas={5} />
         ) : isError ? (
           <EstadoErrorCarga
             mensaje={mensajeDeErrorApi(error, "No se pudieron cargar las actividades.")}
             onReintentar={() => void refetch()}
           />
         ) : listaFiltrada.length === 0 ? (
-          <EmptyActividades
-            onNuevo={abrirNueva}
-            esFiltro={hayFiltrosActivos}
-            onLimpiarFiltros={limpiarFiltros}
-          />
+          <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            {cabeceraPestanasDesktop}
+            <EmptyActividades
+              onNuevo={abrirNueva}
+              esFiltro={hayFiltrosActivos}
+              esBajas={pestana === "BAJAS"}
+              onLimpiarFiltros={limpiarFiltros}
+            />
+          </div>
         ) : (
           <>
             {/* Mobile Cards */}
@@ -260,7 +367,10 @@ export function ActividadesPage() {
                 return (
                   <Card
                     key={actividad.id}
-                    className="w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3"
+                    className={cn(
+                      "w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3",
+                      !actividad.activo && "opacity-70 bg-slate-50/40 dark:bg-slate-900/40",
+                    )}
                   >
                     <div className="flex items-start justify-between gap-2 min-w-0">
                       <div className="min-w-0 flex-1">
@@ -305,22 +415,35 @@ export function ActividadesPage() {
                     </div>
 
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => abrirEdicion(actividad)}
-                        className="w-full h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                      >
-                        Editar
-                      </Button>
+                      {actividad.activo ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => abrirEdicion(actividad)}
+                          className="w-full h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          Editar
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={reactivar.isPending}
+                          onClick={() => handleReactivar(actividad)}
+                          className="w-full h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                        >
+                          Reincorporar
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 );
               })}
             </div>
 
-            {/* Desktop Table exactamente como en image.png */}
+            {/* Desktop Table */}
             <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+              {cabeceraPestanasDesktop}
               <Table className="w-full text-left text-sm">
                 <TableHeader>
                   <TableRow className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
@@ -337,7 +460,13 @@ export function ActividadesPage() {
                   {listaFiltrada.map((actividad) => {
                     const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                     return (
-                      <TableRow key={actividad.id} className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40">
+                      <TableRow
+                        key={actividad.id}
+                        className={cn(
+                          "hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40",
+                          !actividad.activo && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                        )}
+                      >
                         {/* Actividad */}
                         <TableCell className="px-6 py-4 align-middle">
                           <div className="font-extrabold text-sm text-slate-900 dark:text-white">
@@ -378,14 +507,26 @@ export function ActividadesPage() {
 
                         {/* Botón de acción */}
                         <TableCell className="px-6 py-4 text-right align-middle">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => abrirEdicion(actividad)}
-                            className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
-                            Editar
-                          </Button>
+                          {actividad.activo ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => abrirEdicion(actividad)}
+                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Editar
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={reactivar.isPending}
+                              onClick={() => handleReactivar(actividad)}
+                              className="h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                            >
+                              Reincorporar
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -434,14 +575,16 @@ export function ActividadesPage() {
 function EmptyActividades({
   onNuevo,
   esFiltro,
+  esBajas,
   onLimpiarFiltros,
 }: {
   onNuevo: () => void;
   esFiltro?: boolean;
+  esBajas?: boolean;
   onLimpiarFiltros?: () => void;
 }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-lg">
+    <Card className="flex flex-col items-center gap-3 border-0 shadow-none px-5 py-14 text-center rounded-lg">
       <span
         aria-hidden="true"
         className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
@@ -451,12 +594,16 @@ function EmptyActividades({
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
         {esFiltro
           ? "No se encontraron actividades con los filtros seleccionados"
-          : "Todavía no hay actividades cargadas"}
+          : esBajas
+            ? "No hay actividades dadas de baja"
+            : "Todavía no hay actividades cargadas"}
       </h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
         {esFiltro
           ? "Probá cambiando el término de búsqueda o restableciendo los filtros de modalidad."
-          : "Creá la primera disciplina del centro para empezar a diagramar horarios y planes."}
+          : esBajas
+            ? "Las actividades que des de baja aparecerán acá por si necesitás reincorporarlas."
+            : "Creá la primera disciplina del centro para empezar a diagramar horarios y planes."}
       </p>
       {esFiltro ? (
         <Button
@@ -467,7 +614,7 @@ function EmptyActividades({
         >
           Limpiar filtros
         </Button>
-      ) : (
+      ) : !esBajas ? (
         <Button
           type="button"
           onClick={onNuevo}
@@ -475,7 +622,7 @@ function EmptyActividades({
         >
           + Nueva actividad
         </Button>
-      )}
+      ) : null}
     </Card>
   );
 }

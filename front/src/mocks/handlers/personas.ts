@@ -90,6 +90,38 @@ export const personasHandlers = [
     return HttpResponse.json(profesoraConNombre(profesora));
   }),
 
+  http.patch("*/api/v1/profesoras/:id", async ({ request, params }) => {
+    await delay(300);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "HORARIOS_EDITAR" });
+    if (denegado) return denegado;
+
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
+
+    const profesora = db.profesoras.find((p) => p.id_profesora === id);
+    if (!profesora) {
+      return errorApi(404, "NOT_FOUND", "Profesora no encontrada");
+    }
+
+    const cuerpo = (await request.json().catch(() => ({}))) as {
+      especialidad?: string | null;
+      reactivar?: boolean;
+    };
+
+    if (cuerpo.reactivar) {
+      if (profesora.fecha_baja === null) {
+        return errorApi(409, "CONFLICT", "La profesora no está dada de baja");
+      }
+      profesora.fecha_baja = null;
+    }
+
+    if (cuerpo.especialidad !== undefined) {
+      profesora.especialidad = cuerpo.especialidad?.trim() || null;
+    }
+
+    return HttpResponse.json(profesoraConNombre(profesora));
+  }),
+
   http.get("*/api/v1/usuarios", async ({ request }) => {
     await delay(200);
     const denegado = verificarAcceso(request, { permiso: "USUARIOS_VER" });

@@ -34,18 +34,27 @@ export class ActividadService implements IInfoActividades {
 
   async actualizar(id: number, input: ActualizarActividadInput): Promise<Actividad> {
     const actividad = await this.obtenerPorId(id);
-    if (!actividad.activo) {
+    const { reactivar, ...campos } = input;
+
+    if (reactivar) {
+      if (actividad.activo) {
+        throw new ConflictError("La actividad no está dada de baja");
+      }
+    } else if (!actividad.activo) {
       throw new NotFoundError("Actividad no encontrada o inactiva");
     }
 
-    const nuevaModalidad = input.modalidad ?? actividad.modalidad;
-    const nuevoCupo = input.cupo_maximo !== undefined ? input.cupo_maximo : actividad.cupo_maximo;
+    const nuevaModalidad = campos.modalidad ?? actividad.modalidad;
+    const nuevoCupo = campos.cupo_maximo !== undefined ? campos.cupo_maximo : actividad.cupo_maximo;
 
     if (nuevaModalidad === "PERSONALIZADA" && nuevoCupo == null) {
       throw new ValidationError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
     }
 
-    return this.repositorio.actualizar(id, input);
+    return this.repositorio.actualizar(id, {
+      ...campos,
+      ...(reactivar ? { activo: true } : {}),
+    });
   }
 
   async darDeBaja(id: number): Promise<Actividad> {

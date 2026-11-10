@@ -4,16 +4,18 @@ import {
   crearActividad,
   darDeBajaActividad,
   listarActividades,
+  reactivarActividad,
 } from "@/features/actividades/api/actividades-api";
 import type { ActividadFormData } from "@/features/actividades/schemas/actividad";
 
 export const ACTIVIDADES_QUERY_KEY = ["actividades"] as const;
 
 // El catálogo cambia poco: se reutiliza unos minutos entre pantallas (actividades y horarios).
-export function useActividades() {
+export function useActividades(opciones?: { incluirBajas?: boolean }) {
+  const incluirBajas = Boolean(opciones?.incluirBajas);
   return useQuery({
-    queryKey: ACTIVIDADES_QUERY_KEY,
-    queryFn: listarActividades,
+    queryKey: incluirBajas ? [...ACTIVIDADES_QUERY_KEY, "con-bajas"] : ACTIVIDADES_QUERY_KEY,
+    queryFn: () => listarActividades({ incluirBajas }),
     staleTime: 5 * 60_000,
   });
 }
@@ -48,6 +50,14 @@ export function useDarDeBajaActividad() {
   const invalidar = useInvalidarActividades();
   return useMutation({
     mutationFn: (id: string) => darDeBajaActividad(id),
+    onSuccess: invalidar,
+  });
+}
+
+export function useReactivarActividad() {
+  const invalidar = useInvalidarActividades();
+  return useMutation({
+    mutationFn: (id: string) => reactivarActividad(id),
     onSuccess: invalidar,
   });
 }

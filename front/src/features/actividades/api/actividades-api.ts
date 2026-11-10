@@ -45,9 +45,11 @@ function aCuerpo(datos: ActividadFormData): ActualizarActividadBody {
   };
 }
 
-// GET /actividades devuelve solo las activas.
-export async function listarActividades(): Promise<Actividad[]> {
-  const { data } = await apiClient.get("/actividades");
+// GET /actividades devuelve solo las activas salvo que se indique incluirBajas.
+export async function listarActividades(opciones?: { incluirBajas?: boolean }): Promise<Actividad[]> {
+  const { data } = await apiClient.get("/actividades", {
+    params: opciones?.incluirBajas ? { incluirBajas: "true" } : undefined,
+  });
   return z.array(actividadApiSchema).parse(data).map(aActividad);
 }
 
@@ -66,4 +68,9 @@ export async function actualizarActividad(id: string, datos: ActividadFormData):
 // Baja lógica. El back responde 409 si la actividad todavía tiene horarios activos.
 export async function darDeBajaActividad(id: string): Promise<void> {
   await apiClient.delete(`/actividades/${id}`);
+}
+
+export async function reactivarActividad(id: string): Promise<Actividad> {
+  const { data } = await apiClient.patch(`/actividades/${id}`, { reactivar: true });
+  return aActividad(actividadApiSchema.parse(data));
 }

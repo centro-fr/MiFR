@@ -12,14 +12,15 @@ import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog"
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
 import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
-import { usePlanes } from "@/features/planes/hooks/use-planes";
+import { usePlanes, useReactivarPlan } from "@/features/planes/hooks/use-planes";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { PromocionesPanel } from "@/features/promociones/components/promociones-panel";
 import { cn } from "@/utils/cn";
+import { toast } from "sonner";
 import { normalizarParaBuscar } from "@/utils/texto";
 
-type PestanaEstadoPlan = "VIGENTES" | "TODOS";
+type PestanaEstadoPlan = "VIGENTES" | "BAJAS";
 
 function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
   return (
@@ -63,6 +64,7 @@ export function PlanesPage() {
   const { pathname } = useLocation();
   const enPromociones = pathname.endsWith("/promociones");
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
+  const reactivarMutation = useReactivarPlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState("");
   const [pestanaEstado, setPestanaEstado] = useState<PestanaEstadoPlan>("VIGENTES");
@@ -78,17 +80,29 @@ export function PlanesPage() {
     }
   };
 
+  const handleReactivarPlan = (plan: Plan) => {
+    reactivarMutation.mutate(plan.id, {
+      onSuccess: () => {
+        toast.success(`"${plan.nombre}" fue reincorporado a los planes vigentes.`);
+      },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar el plan."));
+      },
+    });
+  };
+
   const todosLosPlanes = useMemo(() => planes ?? [], [planes]);
   const planesVigentes = useMemo(() => todosLosPlanes.filter(estaVigente), [todosLosPlanes]);
+  const planesBaja = useMemo(() => todosLosPlanes.filter((p) => !estaVigente(p)), [todosLosPlanes]);
 
   const planesFiltrados = useMemo(() => {
-    const base = pestanaEstado === "VIGENTES" ? planesVigentes : todosLosPlanes;
+    const base = pestanaEstado === "VIGENTES" ? planesVigentes : planesBaja;
     const q = normalizarParaBuscar(busqueda);
     if (!q) return base;
     return base.filter((plan) =>
       [plan.nombre, plan.actividad?.nombre ?? ""].some((v) => normalizarParaBuscar(v).includes(q)),
     );
-  }, [todosLosPlanes, planesVigentes, pestanaEstado, busqueda]);
+  }, [planesVigentes, planesBaja, pestanaEstado, busqueda]);
 
   const hayFiltros = busqueda.trim().length > 0;
 
@@ -118,24 +132,24 @@ export function PlanesPage() {
       </button>
       <button
         type="button"
-        onClick={() => setPestanaEstado("TODOS")}
+        onClick={() => setPestanaEstado("BAJAS")}
         className={cn(
           "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-          pestanaEstado === "TODOS"
+          pestanaEstado === "BAJAS"
             ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
         )}
       >
-        <span>Historial completo</span>
+        <span>Dados de baja</span>
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-extrabold",
-            pestanaEstado === "TODOS"
+            pestanaEstado === "BAJAS"
               ? "bg-primary text-white"
               : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
           )}
         >
-          {todosLosPlanes.length}
+          {planesBaja.length}
         </span>
       </button>
     </div>
@@ -201,17 +215,17 @@ export function PlanesPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setPestanaEstado("TODOS")}
+                onClick={() => setPestanaEstado("BAJAS")}
                 className={cn(
                   "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-                  pestanaEstado === "TODOS"
+                  pestanaEstado === "BAJAS"
                     ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
                 )}
               >
-                Historial completo{" "}
-                <span className={cn(pestanaEstado === "TODOS" ? "text-primary font-black" : "text-slate-500")}>
-                  {todosLosPlanes.length}
+                Dados de baja{" "}
+                <span className={cn(pestanaEstado === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
+                  {planesBaja.length}
                 </span>
               </button>
             </div>
@@ -224,27 +238,38 @@ export function PlanesPage() {
                 onReintentar={() => void refetch()}
               />
             ) : planesFiltrados.length === 0 ? (
-              <EstadoVacio
-                titulo={hayFiltros ? "Sin resultados para tu búsqueda" : "Todavía no hay planes"}
-                detalle={
-                  hayFiltros
-                    ? "Probá ajustando el término de búsqueda para encontrar planes."
-                    : "Creá el primero para empezar a inscribir alumnos."
-                }
-                accion={
-                  !hayFiltros ? (
-                    <Can permission="PLANES_EDITAR">
-                      <Button
-                        type="button"
-                        onClick={() => setPlanNuevo(true)}
-                        className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
-                      >
-                        + Nuevo plan
-                      </Button>
-                    </Can>
-                  ) : undefined
-                }
-              />
+              <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+                {cabeceraPestanasDesktop}
+                <EstadoVacio
+                  titulo={
+                    hayFiltros
+                      ? "Sin resultados para tu búsqueda"
+                      : pestanaEstado === "BAJAS"
+                        ? "No hay planes dados de baja"
+                        : "Todavía no hay planes"
+                  }
+                  detalle={
+                    hayFiltros
+                      ? "Probá ajustando el término de búsqueda para encontrar planes."
+                      : pestanaEstado === "BAJAS"
+                        ? "Los planes que des de baja aparecerán acá por si necesitás reincorporarlos."
+                        : "Creá el primero para empezar a inscribir alumnos."
+                  }
+                  accion={
+                    !hayFiltros && pestanaEstado === "VIGENTES" ? (
+                      <Can permission="PLANES_EDITAR">
+                        <Button
+                          type="button"
+                          onClick={() => setPlanNuevo(true)}
+                          className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+                        >
+                          + Nuevo plan
+                        </Button>
+                      </Can>
+                    ) : undefined
+                  }
+                />
+              </div>
             ) : (
               <ListaPlanes
                 planes={planesFiltrados}
@@ -253,6 +278,8 @@ export function PlanesPage() {
                 onActualizarPrecio={setPlanPrecio}
                 onEditarPlan={setPlanEdicion}
                 onVerHistorial={setPlanHistorial}
+                onReactivarPlan={handleReactivarPlan}
+                reactivandoPlan={reactivarMutation.isPending}
               />
             )}
 

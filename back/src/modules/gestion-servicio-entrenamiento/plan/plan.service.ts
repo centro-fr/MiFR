@@ -52,23 +52,38 @@ export class PlanService implements IInfoPlanes {
   }
 
   async actualizar(id: number, input: ActualizarPlanInput): Promise<Plan> {
-    const plan = await this.obtenerVigente(id);
+    const { reactivar, ...campos } = input;
+    const plan = reactivar ? await this.obtenerPorId(id) : await this.obtenerVigente(id);
+    if (reactivar && !plan.fecha_baja) {
+      throw new ConflictError("El plan no está dado de baja");
+    }
+
     const resultante = {
       tipo: plan.tipo,
       clases_por_semana:
-        input.clases_por_semana !== undefined ? input.clases_por_semana : plan.clases_por_semana,
-      dias_gracia: input.dias_gracia ?? plan.dias_gracia,
+        campos.clases_por_semana !== undefined ? campos.clases_por_semana : plan.clases_por_semana,
+      dias_gracia: campos.dias_gracia ?? plan.dias_gracia,
     };
     if (!respetaReglaClaseSuelta(resultante)) {
       throw new ValidationError("Un plan CLASE_SUELTA no lleva clases por semana y sus días de gracia son 0");
     }
-    if (input.id_actividad_exclusiva != null) {
-      await this.validarActividadExclusiva(input.id_actividad_exclusiva);
+    const idActividad =
+      campos.id_actividad_exclusiva !== undefined
+        ? campos.id_actividad_exclusiva
+        : reactivar
+          ? plan.id_actividad_exclusiva
+          : undefined;
+    if (idActividad != null) {
+      await this.validarActividadExclusiva(idActividad);
     }
-    if (input.nombre) {
-      await this.validarNombreLibre(input.nombre, id);
+    const nombreValidar = campos.nombre ?? (reactivar ? plan.nombre : undefined);
+    if (nombreValidar) {
+      await this.validarNombreLibre(nombreValidar, id);
     }
-    return this.repositorio.actualizar(id, input);
+    return this.repositorio.actualizar(id, {
+      ...campos,
+      ...(reactivar ? { fecha_baja: null } : {}),
+    });
   }
 
   // Un plan nunca se borra (US-11): las inscripciones que ya tiene lo siguen usando.

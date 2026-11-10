@@ -38,7 +38,10 @@ const crearSchema = editablesSchema.extend({
   precio: z.number().positive().max(99_999_999.99),
 });
 
-const actualizarSchema = editablesSchema.partial().refine((cambios) => Object.keys(cambios).length > 0);
+const actualizarSchema = editablesSchema
+  .partial()
+  .extend({ reactivar: z.literal(true).optional() })
+  .refine((cambios) => Object.keys(cambios).length > 0);
 
 const registrarPrecioSchema = z.object({
   precio: z.number().positive().max(99_999_999.99).refine((valor) => Math.abs(Math.round(valor * 100) - valor * 100) < 1e-6),
@@ -206,22 +209,38 @@ export const planesHandlers = [
 
     const { id, plan } = buscarPlan(params);
     if (id === null) return idInvalido();
-    if (!plan || plan.fecha_baja !== null) return errorApi(404, "NOT_FOUND", "Plan no encontrado o dado de baja");
+    if (!plan) return errorApi(404, "NOT_FOUND", "Plan no encontrado");
     const cuerpo = actualizarSchema.safeParse(await request.json().catch(() => null));
     if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
     const cambios = cuerpo.data;
 
-    const clases = cambios.clases_por_semana !== undefined ? cambios.clases_por_semana : plan.clases_por_semana;
-    if (rompeReglaClaseSuelta(plan.tipo, clases, cambios.dias_gracia ?? plan.dias_gracia)) {
+    if (cambios.reactivar === true) {
+      if (plan.fecha_baja === null) {
+        return errorApi(409, "CONFLICT", "El plan no está dado de baja");
+      }
+      if (actividadInvalida(cambios.id_actividad_exclusiva !== undefined ? cambios.id_actividad_exclusiva : plan.id_actividad_exclusiva)) {
+        return errorApi(400, "VALIDATION_ERROR", "La actividad exclusiva no existe o está dada de baja");
+      }
+      if (nombreOcupado(cambios.nombre ?? plan.nombre, id)) {
+        return errorApi(409, "CONFLICT", "Ya existe un plan vigente con ese nombre");
+      }
+      plan.fecha_baja = null;
+    } else if (plan.fecha_baja !== null) {
+      return errorApi(404, "NOT_FOUND", "Plan no encontrado o dado de baja");
+    }
+
+    const { reactivar: _reactivar, ...restoCambios } = cambios;
+    const clases = restoCambios.clases_por_semana !== undefined ? restoCambios.clases_por_semana : plan.clases_por_semana;
+    if (rompeReglaClaseSuelta(plan.tipo, clases, restoCambios.dias_gracia ?? plan.dias_gracia)) {
       return errorApi(400, "VALIDATION_ERROR", "Un plan CLASE_SUELTA no lleva clases por semana y sus días de gracia son 0");
     }
-    if (actividadInvalida(cambios.id_actividad_exclusiva)) {
+    if (actividadInvalida(restoCambios.id_actividad_exclusiva)) {
       return errorApi(400, "VALIDATION_ERROR", "La actividad exclusiva no existe o está dada de baja");
     }
-    if (cambios.nombre && nombreOcupado(cambios.nombre, id)) {
+    if (restoCambios.nombre && nombreOcupado(restoCambios.nombre, id)) {
       return errorApi(409, "CONFLICT", "Ya existe un plan vigente con ese nombre");
     }
-    Object.assign(plan, cambios, cambios.descripcion === "" ? { descripcion: null } : {});
+    Object.assign(plan, restoCambios, restoCambios.descripcion === "" ? { descripcion: null } : {});
     return HttpResponse.json(planConPrecio(plan));
   }),
 
