@@ -117,6 +117,37 @@ export async function registrarCobroEfectivo(cuerpo: RegistrarCobroEfectivoBody)
   return pagoConInscripcion;
 }
 
+export interface RegistrarCobroTransferenciaRecibidaBody {
+  id_inscripcion: number;
+  id_promocion?: number;
+  monto: number;
+  fecha_hora_transferencia: string;
+  titular_cuenta_origen?: string;
+  confirmar_monto_distinto?: boolean;
+}
+
+/**
+ * Registra un cobro por transferencia recibido y confirmado por la propietaria.
+ */
+export async function registrarCobroTransferenciaRecibida(
+  cuerpo: RegistrarCobroTransferenciaRecibidaBody,
+): Promise<PagoApi> {
+  const fechaIso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(cuerpo.fecha_hora_transferencia)
+    ? `${cuerpo.fecha_hora_transferencia}:00-03:00`
+    : new Date(cuerpo.fecha_hora_transferencia).toISOString();
+  const respuesta = await apiClient.post("/pagos/transferencia-recibida", {
+    ...cuerpo,
+    fecha_hora_transferencia: fechaIso,
+  });
+  const pagoParseado = pagoApiSchema.parse(respuesta.data);
+  const pagoConInscripcion: PagoApi = {
+    ...pagoParseado,
+    id_inscripcion: cuerpo.id_inscripcion,
+  };
+  guardarPagoEnCacheLocal(pagoConInscripcion);
+  return pagoConInscripcion;
+}
+
 /**
  * Obtiene el comprobante digital numerado de un pago confirmado (US-15).
  * El backend valida que el solicitante sea la propietaria, quien cobró, o el alumno/tutor.

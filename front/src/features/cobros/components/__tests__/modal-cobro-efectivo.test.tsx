@@ -63,7 +63,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
     expect(screen.getByText("Plan Básico")).toBeInTheDocument();
     expect(screen.getByText("Vencida")).toBeInTheDocument();
 
-    const inputMonto = screen.getByLabelText(/Monto cobrado/i);
+    const inputMonto = screen.getByLabelText(/^Monto$/i);
     expect(inputMonto).toHaveValue("25000");
   });
 
@@ -78,7 +78,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Promoción" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Descuento" })).toBeInTheDocument();
   });
 
   it("registra el cobro exitosamente al confirmar con el precio vigente", async () => {
@@ -120,7 +120,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
       />,
     );
 
-    const inputMonto = screen.getByLabelText(/Monto cobrado/i);
+    const inputMonto = screen.getByLabelText(/^Monto$/i);
     fireEvent.change(inputMonto, { target: { value: "20000" } });
 
     // Debe mostrar la advertencia de monto distinto

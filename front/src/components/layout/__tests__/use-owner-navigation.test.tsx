@@ -12,43 +12,41 @@ function navegacionEn(ruta: string, contadores: ContadoresMenu = {}) {
   return renderHook(() => useOwnerNavigation(contadores), { wrapper }).result.current;
 }
 
-function buscarItem(ruta: string, etiqueta: string, contadores?: ContadoresMenu) {
-  return navegacionEn(ruta, contadores).items.find((item) => item.etiqueta === etiqueta)!;
+function buscarItem(ruta: string, etiqueta: string, contadores?: ContadoresMenu, seccion?: string) {
+  return navegacionEn(ruta, contadores).items.find(
+    (item) => item.etiqueta === etiqueta && (seccion === undefined || item.seccion === seccion),
+  )!;
 }
 
 describe("useOwnerNavigation: sección Alumnos", () => {
   it("marca Listado en su ruta", () => {
-    expect(buscarItem("/app/alumnos/listado", "Listado").esActivo).toBe(true);
+    expect(buscarItem("/app/alumnos/listado", "Listado", undefined, "Alumnos").esActivo).toBe(true);
   });
 
   // La ficha se abre desde el listado: mantiene marcado Listado por subrutasDe
   it("mantiene marcado Listado dentro de la ficha de un alumno", () => {
-    expect(buscarItem("/app/alumnos/3", "Listado").esActivo).toBe(true);
-  });
-
-  it("marca Ausentes en su ruta", () => {
-    expect(buscarItem("/app/ausentes", "Ausentes").esActivo).toBe(true);
+    expect(buscarItem("/app/alumnos/3", "Listado", undefined, "Alumnos").esActivo).toBe(true);
   });
 
   it("no marca Listado en otra sección", () => {
-    expect(buscarItem("/app/horarios", "Listado").esActivo).toBe(false);
+    expect(buscarItem("/app/horarios", "Listado", undefined, "Alumnos").esActivo).toBe(false);
   });
 });
 
 describe("useOwnerNavigation: sección Cobros", () => {
-  it("marca Cuotas en su ruta y en la raíz de pagos", () => {
-    expect(buscarItem("/app/pagos/cuotas", "Cuotas").esActivo).toBe(true);
-    expect(buscarItem("/app/pagos", "Cuotas").esActivo).toBe(true);
+  it("marca Historial de cobros en su ruta y en la raíz de cobros", () => {
+    expect(buscarItem("/app/cobros/listado", "Historial", undefined, "Cobros").esActivo).toBe(true);
+    expect(buscarItem("/app/cobros", "Historial", undefined, "Cobros").esActivo).toBe(true);
   });
 
-  it("marca Transferencias por verificar en su ruta sin activar Cuotas", () => {
-    expect(buscarItem("/app/pagos/transferencias", "Transferencias por verificar").esActivo).toBe(true);
-    expect(buscarItem("/app/pagos/transferencias", "Cuotas").esActivo).toBe(false);
+  it("marca Transferencias por verificar en su ruta sin activar Historial", () => {
+    expect(buscarItem("/app/cobros/transferencias", "Transferencias por verificar").esActivo).toBe(true);
+    expect(buscarItem("/app/cobros/transferencias", "Historial", undefined, "Cobros").esActivo).toBe(false);
   });
 
-  it("marca Efectivo a rendir en su ruta sin activar Cuotas", () => {
-    expect(buscarItem("/app/pagos/efectivo", "Efectivo a rendir").esActivo).toBe(true);
-    expect(buscarItem("/app/pagos/efectivo", "Cuotas").esActivo).toBe(false);
+  it("marca Efectivo a rendir en su ruta sin activar Historial", () => {
+    expect(buscarItem("/app/cobros/efectivo", "Efectivo a rendir").esActivo).toBe(true);
+    expect(buscarItem("/app/cobros/efectivo", "Historial", undefined, "Cobros").esActivo).toBe(false);
   });
 });
 

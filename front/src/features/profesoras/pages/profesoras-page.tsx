@@ -4,7 +4,6 @@ import {
   AlertCircle,
   Calendar,
   ChevronRight,
-  Clock,
   GraduationCap,
   Search,
 } from "lucide-react";
@@ -108,10 +107,10 @@ export function ProfesorasPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl xl:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-              Plantel de Profesores
+              Profesores
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-              Equipo docente del centro, disciplinas a cargo y acceso a su ficha de datos personales.
+            <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+              Buscá un profesor y abrí su ficha
             </p>
           </div>
           <Button
@@ -421,10 +420,9 @@ export function ProfesorasPage() {
                             <span className="text-slate-400 italic text-xs">Sin especialidad</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                           {conteoHorarios > 0 ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/40 px-2.5 py-1 text-xs font-bold text-primary dark:text-pink-300 border border-pink-100 dark:border-pink-900/50">
-                              <Clock className="size-3" />
+                            <span>
                               {conteoHorarios} {conteoHorarios === 1 ? "clase" : "clases"}
                             </span>
                           ) : (
@@ -512,8 +510,7 @@ export function ProfesorasPage() {
                       <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 pt-1">
                         <span>Clases semanales:</span>
                         {conteoHorarios > 0 ? (
-                          <span className="font-bold text-primary flex items-center gap-1">
-                            <Clock className="size-3" />
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
                             {conteoHorarios} {conteoHorarios === 1 ? "clase" : "clases"}
                           </span>
                         ) : (

@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { esMontoDistinto } from "@/features/cobros/api/cobros-api";
 import { BotonesDeCobro, CLASE_INPUT, Campo } from "@/features/cobros/components/campos-cobro";
@@ -88,7 +87,6 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
   const esSoloProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
   const registrar = useRegistrarCobroEfectivo();
   const [confirmarMontoDistinto, setConfirmarMontoDistinto] = useState(false);
-  const [observaciones, setObservaciones] = useState("");
   const [errores, setErrores] = useState<Errores>({});
   const [errorApi, setErrorApi] = useState<string | null>(null);
 
@@ -100,7 +98,6 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
       idInscripcion,
       monto,
       confirmarMontoDistinto,
-      observaciones: observaciones || undefined,
     });
     if (!resultado.success) {
       setErrores(Object.fromEntries(resultado.error.issues.map((issue) => [issue.path[0], issue.message])));
@@ -135,7 +132,7 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
   return (
     <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
       {esSoloProfesora && <AvisoRendicion />}
-      <Campo id="monto-cobro" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>
+      <Campo id="monto-cobro" etiqueta="Monto" error={errores.monto}>
         {(describedBy) => (
           <Input
             id="monto-cobro"
@@ -163,20 +160,6 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
           }}
         />
       )}
-      <Campo id="observaciones-cobro" etiqueta="Observaciones (opcional)" error={errores.observaciones}>
-        {(describedBy) => (
-          <Textarea
-            id="observaciones-cobro"
-            value={observaciones}
-            onChange={(evento) => setObservaciones(evento.target.value)}
-            maxLength={255}
-            rows={2}
-            aria-describedby={describedBy}
-            placeholder="Anotaciones sobre el cobro o descuento especial..."
-            className={CLASE_INPUT}
-          />
-        )}
-      </Campo>
       {errorApi && (
         <Alert role="alert" className="rounded-xl border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/10">
           <AlertDescription className="text-sm text-rose-900 dark:text-rose-200">{errorApi}</AlertDescription>

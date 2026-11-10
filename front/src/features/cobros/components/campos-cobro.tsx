@@ -12,7 +12,7 @@ import { cn } from "@/utils/cn";
 
 export type FormaDeCobro = "EFECTIVO" | "TRANSFERENCIA";
 
-export type EtiquetasFormaDeCobro = Record<FormaDeCobro, { titulo: string; detalle: string }>;
+export type EtiquetasFormaDeCobro = Record<FormaDeCobro, { titulo: string; detalle?: string }>;
 
 export const CLASE_INPUT = "rounded-xl border-slate-200 bg-white dark:border-white/15 dark:bg-transparent";
 
@@ -65,22 +65,30 @@ interface SelectorFormaDeCobroProps {
 /** Efectivo o transferencia, como tarjetas seleccionables. */
 export function SelectorFormaDeCobro({ formas, valor, onChange, leyenda, etiquetas }: SelectorFormaDeCobroProps) {
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">{leyenda}</legend>
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">{leyenda}</legend>
       <RadioGroup value={valor} onValueChange={(v) => onChange(v as FormaDeCobro)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {formas.map((forma) => (
-          <Label
-            key={forma}
-            htmlFor={`forma-pago-${forma}`}
-            className="flex min-h-[44px] cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 p-3 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-pink-50 dark:border-white/15 dark:has-data-[state=checked]:bg-primary/15"
-          >
-            <RadioGroupItem id={`forma-pago-${forma}`} value={forma} className="mt-0.5" />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{etiquetas[forma].titulo}</span>
-              <span className="text-xs font-medium text-muted-foreground">{etiquetas[forma].detalle}</span>
-            </span>
-          </Label>
-        ))}
+        {formas.map((forma) => {
+          const tieneDetalle = Boolean(etiquetas[forma].detalle);
+          return (
+            <Label
+              key={forma}
+              htmlFor={`forma-pago-${forma}`}
+              className={cn(
+                "flex min-h-[44px] cursor-pointer gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-white/15 dark:has-data-[state=checked]:border-white dark:has-data-[state=checked]:bg-white/10",
+                tieneDetalle ? "items-start" : "items-center",
+              )}
+            >
+              <RadioGroupItem id={`forma-pago-${forma}`} value={forma} className={tieneDetalle ? "mt-0.5" : undefined} />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{etiquetas[forma].titulo}</span>
+                {etiquetas[forma].detalle && (
+                  <span className="text-xs font-medium text-muted-foreground">{etiquetas[forma].detalle}</span>
+                )}
+              </span>
+            </Label>
+          );
+        })}
       </RadioGroup>
     </fieldset>
   );
@@ -124,13 +132,14 @@ export function FechaHoraAutomatica({ error }: { error?: string }) {
 
 interface CampoTitularProps {
   valor: string;
+  etiqueta?: string;
   error?: string;
   onChange: (valor: string) => void;
 }
 
-export function CampoTitularCuenta({ valor, error, onChange }: CampoTitularProps) {
+export function CampoTitularCuenta({ valor, etiqueta = "Titular de la cuenta", error, onChange }: CampoTitularProps) {
   return (
-    <Campo id="titular-cuenta" etiqueta="Titular de la cuenta" ayuda="Opcional: ayuda a encontrarla en el extracto." error={error}>
+    <Campo id="titular-cuenta" etiqueta={etiqueta} error={error}>
       {(describedBy) => (
         <Input
           id="titular-cuenta"
@@ -157,13 +166,13 @@ interface BotonesDeCobroProps {
 /** Pie de los formularios de cobro: cancelar y la acción principal, que es el envío del form. */
 export function BotonesDeCobro({ onCancelar, enviando, texto, textoEnviando }: BotonesDeCobroProps) {
   return (
-    <div className="sticky bottom-0 z-10 flex flex-row items-center justify-end gap-2 bg-background/95 pt-3 pb-1 backdrop-blur-sm">
+    <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
       <Button
         type="button"
         variant="outline"
         disabled={enviando}
         onClick={onCancelar}
-        className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
       >
         Cancelar
       </Button>

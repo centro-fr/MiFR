@@ -165,45 +165,7 @@ describe("PanelEfectivoARendir (US-19)", () => {
     expect(screen.getAllByText("Hace 18 d")[0]).toBeInTheDocument();
   });
 
-  it("abre el modal de rendición en lote al hacer clic en 'Rendir todo' y confirma", async () => {
-    mockMutateRendirLote.mockResolvedValueOnce({
-      rendidos: [101],
-      cantidad: 1,
-      total: 25000,
-      salteados: [],
-    });
-
-    renderPanel();
-
-    const botonRendirTodo = screen.getByRole("button", {
-      name: /Rendir todo el efectivo de Lucía García/i,
-    });
-    fireEvent.click(botonRendirTodo);
-
-    // Modal abierto
-    expect(screen.getByText("Monto a rendir")).toBeInTheDocument();
-    expect(screen.getByText("Observaciones (opcional)")).toBeInTheDocument();
-
-    // Ingresar observaciones
-    const inputObservaciones = screen.getByPlaceholderText(/Ej: Entregó dinero en mano/i);
-    fireEvent.change(inputObservaciones, { target: { value: "Rendido en mano" } });
-
-    // Confirmar
-    const botonConfirmar = screen.getByRole("button", { name: /Confirmar rendición/i });
-    fireEvent.click(botonConfirmar);
-
-    await waitFor(() => {
-      expect(mockMutateRendirLote).toHaveBeenCalledWith(
-        {
-          id_profesora: 1,
-          observaciones: "Rendido en mano",
-        },
-        expect.anything()
-      );
-    });
-  });
-
-  it("abre el modal individual al hacer clic en 'Rendir' en un cobro y confirma", async () => {
+  it("registra la rendición directamente al hacer clic en 'Rendir' en un cobro sin abrir modal", async () => {
     mockMutateRendirCobro.mockResolvedValueOnce({
       rendidos: [101],
       cantidad: 1,
@@ -218,12 +180,7 @@ describe("PanelEfectivoARendir (US-19)", () => {
     })[0];
     fireEvent.click(botonRendirIndividual);
 
-    // Modal individual abierto
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Rendir cobro de Mateo Fernández")).toBeInTheDocument();
-
-    const botonConfirmar = screen.getByRole("button", { name: /Confirmar rendición/i });
-    fireEvent.click(botonConfirmar);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(mockMutateRendirCobro).toHaveBeenCalledWith(

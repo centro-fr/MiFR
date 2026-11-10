@@ -154,6 +154,8 @@ export interface AlumnoResumen {
   nombre_completo: string;
   dni: string | null;
   telefono: string | null;
+  email?: string | null;
+  inasistencias_consecutivas?: number;
   estado: EstadoAlumno;
   plan: string | null;
   profesora: string | null;

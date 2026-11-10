@@ -220,6 +220,23 @@ describe("DetectorInactividadService", () => {
       expect(contactado.gestion).toEqual({ estado: "CONTACTADO", fecha_registro: MARCA });
     });
 
+    it("con incluir_ignorados muestra también los IGNORADO, sin filtro de estado", async () => {
+      mocks.inscripciones.listarParaInactividad.mockResolvedValue([1, 2, 3].map((id) => inscripcion(id)));
+      mocks.asistencias.rachasDeInasistencia.mockResolvedValue(
+        new Map([1, 2, 3].map((id) => [id, racha(3)])),
+      );
+      mocks.asistencias.seguimientosVigentes.mockResolvedValue(
+        new Map([
+          [2, { estado: "IGNORADO", fecha_registro: MARCA }],
+          [3, { estado: "CONTACTADO", fecha_registro: MARCA }],
+        ]),
+      );
+
+      const { datos } = await detector.listar({ ...PAGINA, incluir_ignorados: true });
+
+      expect(datos.map(({ id_inscripcion }) => id_inscripcion).sort()).toEqual([1, 2, 3]);
+    });
+
     it("pagina en memoria y busca solo los alumnos de la página, una vez cada uno", async () => {
       mocks.inscripciones.listarParaInactividad.mockResolvedValue([
         inscripcion(1, 10),
