@@ -231,9 +231,9 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Redirección de la ruta histórica de pendientes de alta hacia Cobros y Cuotas
+        // Redirección de la ruta histórica de pendientes de alta hacia Transferencias por verificar
         path: "alumnos/pendientes",
-        loader: redirigirA("/app/pagos?tab=transferencias"),
+        loader: redirigirA("/app/pagos/transferencias"),
       },
       {
         // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
@@ -263,7 +263,7 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Cobros y Cuotas (US-15 a US-19): la pantalla del grupo y cada una de sus opciones.
+        // Cobros (US-15 a US-19): Cuotas, Transferencias por verificar y Efectivo a rendir.
         path: "pagos",
         element: guardiaDeSeccion("pagos"),
         children: [
@@ -273,11 +273,15 @@ export const router = createBrowserRouter([
           },
           {
             path: "cuotas",
-            loader: redirigirA("/app/pagos?tab=cuotas"),
+            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
           },
           {
             path: "transferencias",
-            loader: redirigirA("/app/pagos?tab=transferencias"),
+            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
+          },
+          {
+            path: "efectivo",
+            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
           },
         ],
       },
