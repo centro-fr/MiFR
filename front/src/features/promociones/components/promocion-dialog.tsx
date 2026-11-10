@@ -68,6 +68,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
   const idsPlanes = useWatch({ control: formulario.control, name: "idsPlanes" }) ?? [];
   const tipo = useWatch({ control: formulario.control, name: "tipoDescuento" });
   const permanente = useWatch({ control: formulario.control, name: "permanente" }) ?? false;
+  const fechaHastaValue = useWatch({ control: formulario.control, name: "fechaHasta" });
 
   const todosSeleccionados = planes.length > 0 && planes.every((p) => idsPlanes.includes(p.id));
 
@@ -126,13 +127,35 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
               </Campo>
             </div>
 
-            {/* Vigencia con opción permanente */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-bold">
-                  Vigencia <span className="text-destructive">*</span>
-                </Label>
-                <label className="flex cursor-pointer items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 select-none">
+            {/* Fechas de vigencia */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Campo id="promocion-desde" label="Desde" error={formulario.formState.errors.fechaDesde?.message}>
+                <Input id="promocion-desde" type="date" {...formulario.register("fechaDesde")} className="h-11 rounded-xl" />
+              </Campo>
+
+              <div className="space-y-1.5">
+                <Campo
+                  id="promocion-hasta"
+                  label="Hasta"
+                  opcional={permanente}
+                  error={!permanente ? formulario.formState.errors.fechaHasta?.message : undefined}
+                >
+                  <Input
+                    id="promocion-hasta"
+                    type="date"
+                    disabled={permanente}
+                    {...formulario.register("fechaHasta")}
+                    value={permanente ? "" : (fechaHastaValue ?? "")}
+                    onChange={(e) => {
+                      formulario.setValue("fechaHasta", e.target.value, { shouldValidate: true });
+                    }}
+                    className={cn(
+                      "h-11 rounded-xl",
+                      permanente && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/50",
+                    )}
+                  />
+                </Campo>
+                <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 select-none">
                   <input
                     type="checkbox"
                     checked={permanente}
@@ -142,22 +165,14 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                       formulario.setValue("fechaHasta", esPerm ? "2099-12-31" : "", {
                         shouldValidate: true,
                       });
+                      if (esPerm) {
+                        formulario.clearErrors("fechaHasta");
+                      }
                     }}
                     className="size-4 accent-primary"
                   />
                   Descuento permanente
                 </label>
-              </div>
-
-              <div className={cn("grid grid-cols-1 gap-4", !permanente ? "sm:grid-cols-2" : "sm:grid-cols-1")}>
-                <Campo id="promocion-desde" label="Desde" error={formulario.formState.errors.fechaDesde?.message}>
-                  <Input id="promocion-desde" type="date" {...formulario.register("fechaDesde")} className="h-11 rounded-xl" />
-                </Campo>
-                {!permanente && (
-                  <Campo id="promocion-hasta" label="Hasta" error={formulario.formState.errors.fechaHasta?.message}>
-                    <Input id="promocion-hasta" type="date" {...formulario.register("fechaHasta")} className="h-11 rounded-xl" />
-                  </Campo>
-                )}
               </div>
             </div>
 
@@ -239,11 +254,23 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
   );
 }
 
-function Campo({ id, label, error, children }: { id?: string; label: string; error?: string; children: React.ReactNode }) {
+function Campo({
+  id,
+  label,
+  error,
+  opcional,
+  children,
+}: {
+  id?: string;
+  label: string;
+  error?: string;
+  opcional?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-sm font-bold">
-        {label} <span className="text-destructive">*</span>
+        {label} {!opcional && <span className="text-destructive">*</span>}
       </Label>
       {children}
       {error && <p className="text-xs font-semibold text-destructive">{error}</p>}

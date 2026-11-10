@@ -55,7 +55,7 @@ describe("PromocionDialog", () => {
     expect(checkKids).not.toBeChecked();
   });
 
-  it("permite configurar un descuento permanente ocultando la fecha hasta", async () => {
+  it("permite configurar un descuento permanente deshabilitando la fecha hasta", async () => {
     render(
       <PromocionDialog
         abierto={true}
@@ -71,13 +71,18 @@ describe("PromocionDialog", () => {
     const checkPermanente = screen.getByLabelText("Descuento permanente");
     expect(checkPermanente).not.toBeChecked();
 
-    // Inicialmente el campo 'Hasta' es visible
-    expect(screen.getByLabelText("Hasta *")).toBeInTheDocument();
+    // Inicialmente el campo 'Hasta *' es visible y habilitado
+    const inputHastaInicial = screen.getByLabelText("Hasta *");
+    expect(inputHastaInicial).toBeInTheDocument();
+    expect(inputHastaInicial).toBeEnabled();
 
     // Al marcar descuento permanente
     fireEvent.click(checkPermanente);
     expect(checkPermanente).toBeChecked();
-    expect(screen.queryByLabelText("Hasta *")).not.toBeInTheDocument();
+
+    // El campo Hasta queda opcional y deshabilitado
+    const inputHastaDeshabilitado = screen.getByLabelText("Hasta");
+    expect(inputHastaDeshabilitado).toBeDisabled();
 
     // Completar el resto de los campos y guardar
     fireEvent.change(screen.getByLabelText("Código *"), { target: { value: "PROMO100" } });
