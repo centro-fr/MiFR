@@ -19,7 +19,7 @@ import {
 } from "@/features/notificaciones/schemas/parametros";
 
 const CONTROL =
-  "min-h-12 w-28 rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
+  "min-h-12 w-28 rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
 const NOMBRE_CAMPO: Record<CampoAvisos, string> = {
   diasAviso: "los días de aviso",

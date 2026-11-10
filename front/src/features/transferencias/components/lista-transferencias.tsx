@@ -39,7 +39,7 @@ const FilaTransferencia = memo(function FilaTransferencia({ transferencia, selec
         aria-label={`Ver detalle de la transferencia de ${nombre}`}
         onClick={() => onSeleccionar(transferencia.id)}
         className={cn(
-          "relative flex w-full flex-col gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary sm:px-5 dark:hover:bg-white/5",
+          "relative flex w-full flex-col gap-3 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary sm:px-5 dark:hover:bg-slate-800/60",
           GRILLA,
           vencida && "bg-rose-50/70 dark:bg-rose-500/10",
           seleccionada && "bg-pink-50 dark:bg-primary/15",
@@ -100,7 +100,7 @@ export function ListaTransferencias({ transferencias, idSeleccionada, columnaEst
       <div
         aria-hidden="true"
         className={cn(
-          "hidden border-b border-border bg-slate-100 px-5 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:bg-white/5 dark:text-slate-300",
+          "hidden border-b border-border bg-slate-100 px-5 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300",
           GRILLA,
         )}
       >
@@ -109,7 +109,7 @@ export function ListaTransferencias({ transferencias, idSeleccionada, columnaEst
         <span>Transferencia</span>
         <span className="text-right">{columnaEstado}</span>
       </div>
-      <ul aria-label="Transferencias" className="divide-y divide-border">
+      <ul aria-label="Transferencias" className="divide-y divide-border dark:divide-slate-800/60">
         {transferencias.map((transferencia) => (
           <FilaTransferencia
             key={transferencia.id}

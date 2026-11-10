@@ -118,7 +118,7 @@ function AvisoResolucion({ transferencia }: { transferencia: Transferencia }) {
 
 function Dato({ etiqueta, children, ancho = false }: { etiqueta: string; children: ReactNode; ancho?: boolean }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-slate-50 px-3 py-2.5 dark:bg-white/5", ancho && "col-span-2")}>
+    <div className={cn("rounded-xl border border-border bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/40", ancho && "col-span-2")}>
       <dt className="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">{etiqueta}</dt>
       <dd className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{children}</dd>
     </div>

@@ -253,7 +253,7 @@ function ContenidoTransferencias() {
       <BarraFiltros estado={estado} filtros={filtros} onEstado={cambiarEstado} onChange={setFiltros} onLimpiar={limpiar} />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-        <Card className="overflow-hidden rounded-lg border-border bg-white shadow-sm dark:bg-surface-low">
+        <Card className="overflow-hidden rounded-lg border-border bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-900">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-3">
             <h2 className="text-base font-extrabold text-dark dark:text-white">{TITULO_LISTA[estado]}</h2>
             {visibles.length > 0 && <p className="text-sm text-muted-foreground">Tocá una para ver el detalle</p>}
@@ -329,7 +329,7 @@ function CuerpoLista({ estado, listado, visibles, conFiltros, idSeleccionada, on
         columnaEstado={estado === "PENDIENTE" ? "Desde la carga" : "Estado"}
         onSeleccionar={onSeleccionar}
       />
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-slate-50 px-5 py-3 text-sm text-muted-foreground dark:bg-white/5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-slate-50 px-5 py-3 text-sm text-muted-foreground dark:border-slate-800 dark:bg-slate-900">
         <p aria-live="polite">
           Mostrando {visibles.length} de {listado.data.length}
         </p>
