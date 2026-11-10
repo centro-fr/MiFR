@@ -118,8 +118,8 @@
 - [x] Quitar "Limpiar filtros" al seleccionar historial completo
 - [x] Arreglar visualizacion de vigencia, remplazar "-" por "/"
 
-- [ ] Modificar breadcum para que coincida con pantalla
-- [ ] Arreglar bug al seleccionar opcion en sidebar ![alt text](ErrorSeleccSidebar.png)
+- [x] Modificar breadcum para que coincida con pantalla
+- [x] Arreglar bug al seleccionar opcion en sidebar ![alt text](ErrorSeleccSidebar.png)
 
 ## Centro - Planes
-- [ ] Cambiar nombre a unicamente "Planes"
+- [x] Cambiar nombre a unicamente "Planes"
