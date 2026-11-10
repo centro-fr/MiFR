@@ -249,9 +249,9 @@ export function Paso1DatosPersonales({
 
       {/* 5. RESPONSABLE (ES MENOR) - Solo aparece si es menor el alumno */}
       {menorDeEdad && (
-        <div className="p-4 sm:p-5 rounded-2xl border border-pink-200 dark:border-pink-900/50 bg-pink-50/20 dark:bg-pink-950/10 space-y-4 animate-in fade-in duration-200">
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center">
-            <span className="text-sm font-bold text-primary">
+            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Responsable (es menor)
             </span>
           </div>

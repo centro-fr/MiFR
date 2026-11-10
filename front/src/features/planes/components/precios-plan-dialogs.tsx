@@ -159,11 +159,13 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
             <>
               {/* Encabezado */}
               <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
-                <div>
-                  <p className="text-xs sm:text-sm font-semibold text-muted-foreground">Cambiar precio</p>
-                  <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white mt-0.5">
-                    {plan.nombre}
+                <div className="space-y-0.5 pr-4">
+                  <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                    Cambiar precio de {plan.nombre}
                   </DialogTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                    Ingresá el nuevo importe y la fecha a partir de la cual empezará a regir.
+                  </p>
                 </div>
                 <Button
                   type="button"
@@ -171,7 +173,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                   size="icon"
                   onClick={onClose}
                   aria-label="Cerrar formulario"
-                  className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
                 >
                   <X className="size-4" />
                 </Button>

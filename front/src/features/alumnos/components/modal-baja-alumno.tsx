@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { TriangleAlert } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -73,22 +72,14 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
     >
       <AlertDialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
         <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-          <AlertDialogHeader className="space-y-4">
-            <div
-              aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
-            >
-              <TriangleAlert className="size-5" />
-            </div>
-            <div>
-              <AlertDialogTitle className="text-base font-extrabold text-dark dark:text-white">
-                ¿Dar de baja a {nombre}?
-              </AlertDialogTitle>
-              <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
-                poder reactivarse más adelante.
-              </AlertDialogDescription>
-            </div>
+          <AlertDialogHeader className="space-y-1 text-left">
+            <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              ¿Dar de baja a {nombre}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
+              poder reactivarse más adelante.
+            </AlertDialogDescription>
           </AlertDialogHeader>
 
           <fieldset className="flex flex-col gap-2" aria-describedby={errorMotivo ? "error-motivo-baja" : undefined}>
@@ -106,7 +97,7 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
                 <Label
                   key={valor}
                   htmlFor={`motivo-baja-${valor}`}
-                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-pink-50 dark:border-white/15 dark:text-slate-200 dark:has-data-[state=checked]:bg-primary/15"
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:has-data-[state=checked]:border-white dark:has-data-[state=checked]:bg-white/10"
                 >
                   <RadioGroupItem id={`motivo-baja-${valor}`} value={valor} />
                   {ETIQUETAS_MOTIVO[valor]}

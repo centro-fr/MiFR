@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { CircleCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -48,12 +48,9 @@ export function ModalAprobarTransferencia({ transferencia, aprobando, error, onC
     <Dialog open onOpenChange={(abierta) => !abierta && !aprobando && onClose()}>
       <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
         <form onSubmit={confirmar} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-              <CircleCheck className="size-5" />
-            </span>
-            <DialogTitle className="text-base font-extrabold text-dark dark:text-white">Aprobar transferencia</DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex flex-col gap-1 text-left">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">Aprobar transferencia</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
               Se actualizará el estado del alumno a “Al día”. ¿Confirmás?
             </DialogDescription>
           </div>

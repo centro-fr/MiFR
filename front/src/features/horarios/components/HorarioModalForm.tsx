@@ -149,17 +149,22 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
         className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
       >
         {/* Cabecera del modal */}
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
-          </DialogTitle>
+        <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Configurá la actividad, profesor/a, día y franja horaria de la clase.
+            </p>
+          </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={onClose}
             aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
           >
             <X className="size-4" />
           </Button>
@@ -270,7 +275,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                     className={cn(
                       "h-10 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center",
                       isSelected
-                        ? "border-primary ring-1 ring-primary bg-pink-50/40 text-primary dark:bg-primary/10 shadow-xs"
+                        ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900 shadow-xs"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
                     )}
                   >

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { CircleX, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -75,12 +75,9 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
     <Dialog open onOpenChange={(abierta) => !abierta && !rechazando && onClose()}>
       <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
         <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-              <CircleX className="size-5" />
-            </span>
-            <DialogTitle className="text-base font-extrabold text-dark dark:text-white">Rechazar transferencia</DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex flex-col gap-1 text-left">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">Rechazar transferencia</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
               La transferencia de {nombre} no se va a tomar como cuota abonada. El alumno verá el motivo en sus transferencias.
             </DialogDescription>
           </div>

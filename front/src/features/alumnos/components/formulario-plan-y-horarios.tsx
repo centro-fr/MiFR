@@ -220,12 +220,12 @@ function ListaHorarios({ horarios, elegidos, listoParaElegir, clasesPorSemana, e
         <ul className="flex flex-col gap-2">
           {horarios.map((horario) => (
             <li key={horario.id}>
-              <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-checked:border-primary has-checked:bg-pink-50 dark:border-white/15 dark:text-slate-200 dark:has-checked:bg-primary/15">
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-checked:border-slate-900 has-checked:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:has-checked:border-white dark:has-checked:bg-white/10">
                 <input
                   type="checkbox"
                   checked={elegidos.includes(horario.id)}
                   onChange={(evento) => alternar(horario.id, evento.target.checked)}
-                  className="size-4 accent-primary"
+                  className="size-4 accent-slate-900 dark:accent-white"
                 />
                 {etiquetaHorario(horario)}
               </label>
@@ -243,7 +243,6 @@ function ListaHorarios({ horarios, elegidos, listoParaElegir, clasesPorSemana, e
 }
 
 interface PropsDialogo {
-  icono: ReactNode;
   titulo: string;
   descripcion: string;
   /** Mientras se guarda no se cierra con Escape ni tocando afuera. */
@@ -252,7 +251,7 @@ interface PropsDialogo {
   children: ReactNode;
 }
 
-export function DialogoPlanYHorarios({ icono, titulo, descripcion, procesando, onClose, children }: PropsDialogo) {
+export function DialogoPlanYHorarios({ titulo, descripcion, procesando, onClose, children }: PropsDialogo) {
   return (
     <Dialog
       open
@@ -261,15 +260,9 @@ export function DialogoPlanYHorarios({ icono, titulo, descripcion, procesando, o
       }}
     >
       <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <div className="flex flex-col gap-3">
-          <span
-            aria-hidden="true"
-            className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
-          >
-            {icono}
-          </span>
-          <DialogTitle className="text-base font-extrabold text-dark dark:text-white">{titulo}</DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
+        <div className="flex flex-col gap-1 text-left">
+          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{descripcion}</DialogDescription>
         </div>
         {children}
       </DialogContent>

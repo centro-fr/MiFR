@@ -10,7 +10,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface ConfirmDeleteModalProps {
@@ -32,19 +31,14 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
     >
       <AlertDialogContent className="max-w-[640px] gap-0 overflow-hidden rounded-3xl border-border p-0 shadow-2xl sm:rounded-3xl">
         {/* Cabecera */}
-        <AlertDialogHeader className="flex-row items-center justify-between gap-4 space-y-0 border-b border-border bg-slate-50 dark:bg-white/5 px-6 py-5 md:px-8 md:py-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 md:h-14 md:w-14">
-              <Trash2 className="h-6 w-6 stroke-[2.5] md:h-7 md:w-7" />
-            </div>
-            <div>
-              <Badge variant="outline" className="rounded-md border-red-200 dark:border-red-500/30 bg-red-100 dark:bg-red-500/20 px-2.5 py-1 text-sm font-black uppercase tracking-wider text-red-700 dark:text-red-300">
-                Baja de Horario
-              </Badge>
-              <AlertDialogTitle className="mt-2 text-xl font-extrabold tracking-tight text-dark dark:text-white md:text-2xl">
-                ¿Eliminar clase del cronograma?
-              </AlertDialogTitle>
-            </div>
+        <AlertDialogHeader className="flex-row items-start justify-between gap-4 space-y-0 border-b border-border bg-slate-50 dark:bg-white/5 px-6 py-5 md:px-8 md:py-6">
+          <div className="space-y-1">
+            <AlertDialogTitle className="text-xl font-extrabold tracking-tight text-dark dark:text-white md:text-2xl">
+              ¿Eliminar clase del cronograma?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              La baja es lógica: el horario sale del cronograma y queda en el historial.
+            </AlertDialogDescription>
           </div>
           <Button
             type="button"
@@ -52,18 +46,18 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
             size="icon"
             onClick={onClose}
             aria-label="Cerrar modal"
-            className="h-11 w-11 shrink-0 rounded-full bg-slate-100 dark:bg-white/10 text-muted-foreground hover:bg-slate-200 dark:hover:bg-white/15 [&_svg]:size-5"
+            className="h-9 w-9 shrink-0 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10"
           >
             <X className="h-5 w-5" />
           </Button>
         </AlertDialogHeader>
 
         {/* Cuerpo */}
-        <div className="space-y-5 p-6 md:p-8">
+        <div className="p-6 md:p-8">
           <div className="space-y-2.5 rounded-2xl border border-border bg-slate-50 dark:bg-white/5 p-5 text-sm text-slate-700 dark:text-slate-200 md:p-6 md:text-base">
             <div className="flex items-center justify-between gap-3 font-bold text-foreground">
               <span className="text-base md:text-lg">{horario.actividadNombre}</span>
-              <span className="text-sm text-primary-dark dark:text-pink-300 md:text-base">{horario.diaSemana}</span>
+              <span className="text-sm text-slate-900 dark:text-white md:text-base">{horario.diaSemana}</span>
             </div>
             <div className="text-muted-foreground">
               Profesora: <strong className="text-foreground">{horario.profesoraNombre}</strong>
@@ -72,10 +66,6 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
               Franja horaria: <strong className="text-foreground">{horario.horaInicio} a {horario.horaFin} hs</strong>
             </div>
           </div>
-
-          <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground md:text-base">
-            La baja es lógica: el horario sale del cronograma y queda en el historial.
-          </AlertDialogDescription>
         </div>
 
         {/* Footer */}

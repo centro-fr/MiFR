@@ -1,4 +1,3 @@
-import { CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import {
   CargandoOpciones,
@@ -39,7 +38,6 @@ export function ModalCambiarPlan({ nombre, inscripcion, onClose }: Props) {
 
   return (
     <DialogoPlanYHorarios
-      icono={<CalendarClock className="size-5" />}
       titulo={`Cambiar plan u horarios de ${nombre}`}
       descripcion="Las cuotas ya cobradas no se modifican: el plan nuevo rige para las próximas."
       procesando={cambiar.isPending}

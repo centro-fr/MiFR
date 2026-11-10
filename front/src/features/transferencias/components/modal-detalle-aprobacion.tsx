@@ -94,14 +94,14 @@ export function ModalDetalleAprobacion({
       >
         <div className="space-y-4">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Transferencia · {textoTipoPago}
-              </p>
-              <DialogTitle className="text-xl font-black text-slate-900 tracking-tight dark:text-white">
+          <div className="flex items-start justify-between gap-3 text-left">
+            <div className="space-y-0.5 pr-4">
+              <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
                 {transferencia.alumno.nombre} {transferencia.alumno.apellido}
               </DialogTitle>
+              <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
+                Transferencia · {textoTipoPago}
+              </p>
             </div>
             <button
               type="button"
@@ -203,7 +203,7 @@ export function ModalDetalleAprobacion({
             <div className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
               <div className="flex justify-between py-2.5">
                 <span className="text-slate-500 dark:text-slate-400">Alumno</span>
-                <span className="font-bold text-primary dark:text-pink-300">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
                   {transferencia.alumno.nombre} {transferencia.alumno.apellido}
                 </span>
               </div>
