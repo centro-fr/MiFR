@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Banknote, Loader2, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -69,24 +69,19 @@ export function ModalConfirmarRendicion({
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
-                <Banknote className="size-5" />
-              </span>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {esLote ? "Rendición de lote" : "Rendición individual"}
-                </p>
-                <DialogTitle className="text-lg font-black text-slate-900 tracking-tight dark:text-white">
-                  {titulo}
-                </DialogTitle>
-              </div>
+            <div className="space-y-0.5 pr-4 text-left">
+              <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
+                {titulo}
+              </DialogTitle>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                {esLote ? "Rendición de lote" : "Rendición individual"}
+              </p>
             </div>
             <button
               type="button"
               onClick={handleCerrar}
               disabled={procesando}
-              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 shrink-0"
             >
               <X className="size-5" />
               <span className="sr-only">Cerrar</span>

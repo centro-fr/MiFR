@@ -4,7 +4,7 @@
 
 - [x] Que todas las esquinas (de las tablas u estados) o cornes tengan el mismo radios que tienen los filtros y el buscador que armamos en Listado y Ausentes. - Hacer Gaston Gil
 - [x] Verificar consistencia de lo colores de botones (como estan en Listado o Ausentes) - Hacer Gaston Gil
-- [ ] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
+- [x] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
 
 ## Recarga
 

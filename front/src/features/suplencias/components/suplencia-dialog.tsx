@@ -74,17 +74,22 @@ export function SuplenciaDialog({
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent hideClose className="w-[96vw] sm:w-full max-w-lg md:max-w-xl rounded-3xl p-5 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border-slate-200 dark:border-slate-800">
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-            {suplencia ? "Editar suplencia" : "Registrar suplencia"}
-          </DialogTitle>
+        <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              {suplencia ? "Editar suplencia" : "Registrar suplencia"}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Indicá la fecha, horario a cubrir y el/la profesor/a que estará a cargo.
+            </p>
+          </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={onClose}
             aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
           >
             <X className="size-4" />
           </Button>

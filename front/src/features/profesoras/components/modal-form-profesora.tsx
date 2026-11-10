@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Loader2, UserPlus, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -73,22 +73,14 @@ export function ModalFormProfesora({
         hideClose
         className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
       >
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20"
-            >
-              <UserPlus className="size-5" />
-            </span>
-            <div>
-              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Dar de alta profesor/a
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Ingresá los datos de contacto y la cuenta Google para el acceso
-              </p>
-            </div>
+        <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Dar de alta profesor/a
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Ingresá los datos de contacto y la cuenta Google para el acceso
+            </p>
           </div>
           <Button
             type="button"
@@ -96,7 +88,7 @@ export function ModalFormProfesora({
             size="icon"
             onClick={onClose}
             aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
           >
             <X className="size-4" />
           </Button>

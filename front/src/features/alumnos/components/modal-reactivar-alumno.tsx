@@ -1,4 +1,3 @@
-import { RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { EstadoAlReactivar } from "@/features/alumnos/api/reactivacion-api";
@@ -49,7 +48,6 @@ export function ModalReactivarAlumno({ idAlumno, nombre, deuda, onClose }: Props
 
   return (
     <DialogoPlanYHorarios
-      icono={<RotateCcw className="size-5" />}
       titulo={`Reactivar a ${nombre}`}
       descripcion="Se inscribe en el plan y los horarios que elijas; te proponemos los que tenía antes de la baja. Si nunca pagó una cuota, queda pre-inscripto hasta su primer pago."
       procesando={reactivar.isPending}

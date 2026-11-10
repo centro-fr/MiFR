@@ -68,11 +68,16 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
         bottomSheetOnMobile
         className="max-h-[92dvh] overflow-y-auto rounded-t-[28px] p-5 sm:rounded-3xl sm:p-7"
       >
-        <DialogHeader className="flex flex-row items-center justify-between text-left">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-            {promocion ? "Editar promoción" : "Nueva promoción"}
-          </DialogTitle>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario">
+        <DialogHeader className="flex flex-row items-start justify-between text-left pb-1">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              {promocion ? "Editar promoción" : "Nueva promoción"}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Definí el descuento, vigencia y planes aplicables de la promoción.
+            </p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario" className="shrink-0">
             <X className="size-4" />
           </Button>
         </DialogHeader>

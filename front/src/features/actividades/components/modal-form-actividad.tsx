@@ -170,20 +170,20 @@ export function ModalFormActividad({
             />
           </div>
 
-          {/* Modalidad * (Tarjetas horizontales con colores de marca: Grupal = Azul, Personalizada = Violeta) */}
+          {/* Modalidad * (Tarjetas limpias con selección neutra) */}
           <div className="space-y-1.5">
             <span className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Modalidad <span className="text-primary">*</span>
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Grupal (Azul #3B82F6) */}
+              {/* Grupal */}
               <label
                 htmlFor="modalidad-grupal"
                 onClick={() => setModalidad("GRUPAL")}
                 className={cn(
                   "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                   modalidad === "GRUPAL"
-                    ? "border-blue-500 bg-blue-50/60 shadow-xs dark:border-blue-500/60 dark:bg-blue-950/30 text-blue-950 dark:text-blue-100"
+                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white dark:bg-white/10 text-slate-900 dark:text-white"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                 )}
               >
@@ -199,11 +199,11 @@ export function ModalFormActividad({
                   className={cn(
                     "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     modalidad === "GRUPAL"
-                      ? "border-blue-600 bg-blue-600 text-white"
+                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                       : "border-slate-300 dark:border-slate-600",
                   )}
                 >
-                  {modalidad === "GRUPAL" && <span className="size-1.5 rounded-full bg-white" />}
+                  {modalidad === "GRUPAL" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                 </span>
                 <div>
                   <span className="block text-sm font-bold text-slate-900 dark:text-white">Grupal</span>
@@ -213,14 +213,14 @@ export function ModalFormActividad({
                 </div>
               </label>
 
-              {/* Personalizada (Violeta #8B5CF6) */}
+              {/* Personalizada */}
               <label
                 htmlFor="modalidad-personalizada"
                 onClick={() => setModalidad("PERSONALIZADA")}
                 className={cn(
                   "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                   modalidad === "PERSONALIZADA"
-                    ? "border-violet-500 bg-violet-50/60 shadow-xs dark:border-violet-500/60 dark:bg-violet-950/30 text-violet-950 dark:text-violet-100"
+                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white dark:bg-white/10 text-slate-900 dark:text-white"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                 )}
               >
@@ -236,11 +236,11 @@ export function ModalFormActividad({
                   className={cn(
                     "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     modalidad === "PERSONALIZADA"
-                      ? "border-violet-600 bg-violet-600 text-white"
+                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                       : "border-slate-300 dark:border-slate-600",
                   )}
                 >
-                  {modalidad === "PERSONALIZADA" && <span className="size-1.5 rounded-full bg-white" />}
+                  {modalidad === "PERSONALIZADA" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                 </span>
                 <div>
                   <span className="block text-sm font-bold text-slate-900 dark:text-white">Personalizada</span>

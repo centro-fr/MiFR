@@ -42,14 +42,14 @@ const OPCIONES_ESTADO: Array<{
       titulo: "Contactado",
       descripcion: "Se envió mensaje o se llamó para conocer el motivo de la inasistencia e incentivar el regreso.",
       icono: Clock,
-      colorActivo: "border-sky-500 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
+      colorActivo: "border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white",
     },
     {
       valor: "IGNORADO",
       titulo: "Ignorar por ahora",
       descripcion: "Se decide no contactar en este momento. Se oculta del listado principal de alertas.",
       icono: Ban,
-      colorActivo: "border-slate-500 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200",
+      colorActivo: "border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white",
     },
   ];
 

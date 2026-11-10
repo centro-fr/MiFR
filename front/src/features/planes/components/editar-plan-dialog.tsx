@@ -145,17 +145,22 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
           className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
         >
           {/* Encabezado */}
-          <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Editar plan {plan.nombre}
-            </DialogTitle>
+          <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+            <div className="space-y-0.5 pr-4">
+              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                Editar plan {plan.nombre}
+              </DialogTitle>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                Modificá las características, actividades y reglas del plan.
+              </p>
+            </div>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={onClose}
               aria-label="Cerrar formulario"
-              className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             >
               <X className="size-4" />
             </Button>
@@ -199,17 +204,17 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   className={cn(
                     "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
                     esMensual
-                      ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
+                      ? "border-2 border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white font-bold"
                       : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
                   )}
                 >
                   <div
                     className={cn(
                       "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                      esMensual ? "border-primary" : "border-slate-300 dark:border-slate-600"
+                      esMensual ? "border-slate-900 dark:border-white" : "border-slate-300 dark:border-slate-600"
                     )}
                   >
-                    {esMensual && <div className="size-2 rounded-full bg-primary" />}
+                    {esMensual && <div className="size-2 rounded-full bg-slate-900 dark:bg-white" />}
                   </div>
                   <div>
                     <span className="text-sm block">Abono mensual</span>
@@ -222,17 +227,17 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   className={cn(
                     "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
                     !esMensual
-                      ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
+                      ? "border-2 border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white font-bold"
                       : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
                   )}
                 >
                   <div
                     className={cn(
                       "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                      !esMensual ? "border-primary" : "border-slate-300 dark:border-slate-600"
+                      !esMensual ? "border-slate-900 dark:border-white" : "border-slate-300 dark:border-slate-600"
                     )}
                   >
-                    {!esMensual && <div className="size-2 rounded-full bg-primary" />}
+                    {!esMensual && <div className="size-2 rounded-full bg-slate-900 dark:bg-white" />}
                   </div>
                   <div>
                     <span className="text-sm block">Pase por clase individual</span>

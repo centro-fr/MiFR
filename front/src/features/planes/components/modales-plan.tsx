@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { CalendarClock, TriangleAlert } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -16,7 +15,6 @@ import { cn } from "@/utils/cn";
 interface PropsConfirmacion {
   titulo: string;
   descripcion: string;
-  icono: ReactNode;
   textoConfirmar: string;
   textoProcesando: string;
   procesando: boolean;
@@ -28,7 +26,7 @@ interface PropsConfirmacion {
 }
 
 function ModalConfirmacion(props: PropsConfirmacion) {
-  const { titulo, descripcion, icono, textoConfirmar, textoProcesando, procesando, peligroso = false, error, children, onClose, onConfirm } = props;
+  const { titulo, descripcion, textoConfirmar, textoProcesando, procesando, peligroso = false, error, children, onClose, onConfirm } = props;
   return (
     <AlertDialog
       open
@@ -37,12 +35,9 @@ function ModalConfirmacion(props: PropsConfirmacion) {
       }}
     >
       <AlertDialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <AlertDialogHeader className="space-y-4">
-          {icono}
-          <div>
-            <AlertDialogTitle className="text-base font-extrabold text-dark dark:text-white">{titulo}</AlertDialogTitle>
-            <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">{descripcion}</AlertDialogDescription>
-          </div>
+        <AlertDialogHeader className="space-y-1 text-left">
+          <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</AlertDialogTitle>
+          <AlertDialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">{descripcion}</AlertDialogDescription>
         </AlertDialogHeader>
         {children}
         {error && (
@@ -84,11 +79,6 @@ export function ModalCambioFrecuencia({ antes, despues, guardando, onClose, onCo
     <ModalConfirmacion
       titulo="¿Cambiar la frecuencia semanal?"
       descripcion="La nueva frecuencia define cuántas clases por semana pueden tomar los alumnos de este plan a partir de ahora."
-      icono={
-        <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-primary/15 dark:text-pink-300">
-          <CalendarClock className="size-5" />
-        </span>
-      }
       textoConfirmar="Confirmar cambios"
       textoProcesando="Guardando..."
       procesando={guardando}
@@ -116,11 +106,6 @@ export function ModalBajaPlan({ nombre, dandoDeBaja, error, onClose, onConfirm }
     <ModalConfirmacion
       titulo={`¿Dar de baja "${nombre}"?`}
       descripcion="Deja de ofrecerse a nuevos alumnos. Quienes ya lo tienen lo conservan, junto con sus cuotas e historial. Después no se puede volver a activar: si lo necesitás de nuevo, creá un plan nuevo."
-      icono={
-        <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-          <TriangleAlert className="size-5" />
-        </span>
-      }
       textoConfirmar="Dar de baja"
       textoProcesando="Dando de baja..."
       procesando={dandoDeBaja}
