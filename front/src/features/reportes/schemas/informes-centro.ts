@@ -68,6 +68,14 @@ export const informeCobranzaApiSchema = z.object({
       alumno: persona.extend({ id_alumno: entero.optional() }),
       plan: z.object({ nombre: z.string() }),
       profesora_cobra: persona.extend({ id_profesora: entero.optional() }).nullable(),
+      promocion: z
+        .object({
+          id_promocion: z.number().int(),
+          codigo: z.string(),
+          nombre: z.string(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
   ...pagina,

@@ -120,7 +120,9 @@ function cobroEnEfectivo(
   inscripcion: InscripcionMock,
   montoCobrado: number,
   observaciones?: string,
+  idPromocion?: number,
 ) {
+  const idPromo = idPromocion ?? inscripcion.id_promocion ?? null;
   if (usuario.roles.includes("PROPIETARIA")) {
     return nuevoPago({
       id_inscripcion: inscripcion.id_inscripcion,
@@ -128,6 +130,7 @@ function cobroEnEfectivo(
       monto: montoCobrado,
       id_usuario_registra: usuario.id_usuario,
       observaciones: observaciones ?? null,
+      id_promocion: idPromo,
     });
   }
   const profesora = db.profesoras.find((p) => p.id_usuario === usuario.id_usuario);
@@ -140,6 +143,7 @@ function cobroEnEfectivo(
     id_profesora_cobra: profesora.id_profesora,
     rendido: false,
     observaciones: observaciones ?? null,
+    id_promocion: idPromo,
   });
 }
 
@@ -335,6 +339,7 @@ export const pagosHandlers = [
       inscripcion!,
       cuerpo.data.monto,
       cuerpo.data.observaciones,
+      cuerpo.data.id_promocion,
     );
     if (!pago) return errorApi(403, "FORBIDDEN", "Solo cobra la profesora a cargo de la inscripción o la propietaria");
     activarSiEsPrimerPago(inscripcion!);
@@ -360,6 +365,7 @@ export const pagosHandlers = [
       id_usuario_registra: usuarioDeLaSesion(request)!.id_usuario,
       fecha_hora_transferencia: new Date(cuerpo.data.fecha_hora_transferencia).toISOString(),
       titular_cuenta_origen: cuerpo.data.titular_cuenta_origen ?? null,
+      id_promocion: cuerpo.data.id_promocion ?? inscripcion!.id_promocion ?? null,
     });
     activarSiEsPrimerPago(inscripcion!);
     return HttpResponse.json(pago, { status: 201 });

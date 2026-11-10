@@ -2,6 +2,7 @@ import { delay, http, HttpResponse } from "msw";
 import { db } from "@/mocks/db";
 import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
 import { errorApi, verificarAcceso } from "@/mocks/handlers/respuestas";
+import { promociones } from "@/mocks/handlers/promociones";
 import { situacionCuotaDe } from "@/mocks/situacion-cuota";
 
 // Mock de GET /reportes/planes (US-36), /ocupacion (US-37), /cobranza y /cuotas-vencidas (US-34),
@@ -164,6 +165,8 @@ export const reportesCentroHandlers = [
     const datos = pagos.map((p) => {
       const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === p.id_inscripcion);
       const plan = db.planes.find((pl) => pl.id_plan === inscripcion?.id_plan);
+      const idPromo = p.id_promocion ?? inscripcion?.id_promocion;
+      const promo = idPromo ? promociones.find((pr) => pr.id_promocion === idPromo) : null;
       return {
         id_pago: p.id_pago,
         id_cuota: p.id_cuota,
@@ -173,6 +176,7 @@ export const reportesCentroHandlers = [
         alumno: alumnoDe(inscripcion?.id_alumno ?? 0),
         plan: { id_plan: plan?.id_plan ?? 0, nombre: plan?.nombre ?? "" },
         profesora_cobra: p.id_profesora_cobra ? profesoraDe(p.id_profesora_cobra) : null,
+        promocion: promo ? { id_promocion: promo.id_promocion, codigo: promo.codigo, nombre: promo.nombre } : null,
       };
     });
     const suma = (lista: typeof pagos) => lista.reduce((s, p) => s + p.monto, 0);

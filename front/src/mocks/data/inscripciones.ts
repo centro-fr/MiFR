@@ -64,6 +64,7 @@ export interface PagoMock {
   fecha_confirmacion: string | null;
   motivo_rechazo: string | null;
   observaciones: string | null;
+  id_promocion?: number | null;
 }
 
 const VIGENCIA_PRECIOS = "2026-01-01T00:00:00.000Z";

@@ -28,6 +28,7 @@ vi.mock("@/api/client", () => ({
                 alumno: { id_alumno: 1, nombre: "Camila", apellido: "Pérez" },
                 plan: { id_plan: 1, nombre: "Plan Danza" },
                 profesora_cobra: null, // Cobrado por la Propietaria
+                promocion: { id_promocion: 1, codigo: "VERANO26", nombre: "Verano 2026" },
               },
               {
                 id_pago: 102,
@@ -38,6 +39,7 @@ vi.mock("@/api/client", () => ({
                 alumno: { id_alumno: 2, nombre: "Lucas", apellido: "Gómez" },
                 plan: { id_plan: 2, nombre: "Plan Básico" },
                 profesora_cobra: { id_profesora: 5, nombre: "Lucía", apellido: "Méndez" },
+                promocion: null,
               },
             ],
             total: 2,
@@ -113,5 +115,22 @@ describe("PanelListadoCobros - Propietaria en columna y filtro", () => {
 
     // Lucas Gómez (cobrado por Lucía) no debe mostrarse
     expect(screen.queryByText("Lucas Gómez")).not.toBeInTheDocument();
+  });
+
+  it("muestra la columna de promoción indicando si se aplicó descuento o no", async () => {
+    renderComponente();
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Camila Pérez").length).toBeGreaterThanOrEqual(1);
+    });
+
+    // Encabezado de la columna Promoción
+    expect(screen.getByRole("columnheader", { name: "Promoción" })).toBeInTheDocument();
+
+    // Promoción aplicada para Camila Pérez
+    expect(screen.getAllByText("Verano 2026").length).toBeGreaterThanOrEqual(1);
+
+    // Sin promoción (guión em-dash) para Lucas Gómez
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 });

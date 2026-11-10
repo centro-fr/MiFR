@@ -304,6 +304,9 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                     <th scope="col" className="px-4 py-3.5">
                       Monto
                     </th>
+                    <th scope="col" className="px-4 py-3.5">
+                      Promoción
+                    </th>
                     <th scope="col" className="px-6 py-3.5 text-right">
                       Acciones
                     </th>
@@ -358,6 +361,15 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                         <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
                           {formatearPrecio(cobro.monto)}
                         </td>
+                        <td className="px-4 py-3.5 text-sm">
+                          {cobro.promocion ? (
+                            <span className="inline-flex items-center rounded-md bg-pink-50 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-pink-950/50 dark:text-pink-300">
+                              {cobro.promocion.nombre}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-medium text-slate-400 dark:text-slate-500">—</span>
+                          )}
+                        </td>
                         <td className="px-6 py-3.5 text-right">
                           <Button
                             type="button"
@@ -410,6 +422,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                           {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)} ·{" "}
                           {formatearPrecio(cobro.monto)}
                           {filtroForma === "TODOS" ? ` · ${textoForma}` : ""}
+                          {cobro.promocion ? ` · Promoción: ${cobro.promocion.nombre}` : ""}
                         </p>
                       </div>
                     </div>

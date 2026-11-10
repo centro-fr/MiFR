@@ -6,7 +6,8 @@
 - [x] Verificar consistencia de lo colores de botones (como estan en Listado o Ausentes) - Hacer Gaston Gil
 - [x] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
 - [x] Quitar iconos En todas las pantallas del sistema vacias y recargas (ejemplo de la imagen) ![alt text](IconosError.png)
--[ ] Reacomodar Sidebar  1ro Alumnos (Listado) , 2do Cobros (Transferencias a verificEfectivo a rendir, Cobros), 3ro Pagos (Honorarios), 4to Reportes (Mismo orden), 5to Centro(Mismo orden).
+-[ ] Reacomodar Sidebar  1ro Alumnos (Listado) , 2do Cobros (Transferencias a verificar, rendir efectivo, Cobros), 3ro Pagos (Honorarios), 4to Reportes (Mismo orden), 5to Centro(Mismo orden).
+- [ ] Agregar en las tablas de promocion, actividades y planes la funcion de listados alumno y profesora que al clickear sobre la fila se abra el editar(o dependiendo el caso).
 
 
 ## Recarga
@@ -137,3 +138,5 @@
 
 ## Cobros - Historial 
 - [x] Agregar en Filtro el nombre de la Propietaria y en columna "cobro" Salga el nombre de la misma
+- [x] Agregar una columna al final sobre si se aplico una promocion al monto final
+
