@@ -146,10 +146,10 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
     >
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         {/* Cabecera del modal */}
-        <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
           <div className="space-y-0.5 pr-4">
             <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
@@ -170,7 +170,8 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
           </Button>
         </DialogHeader>
 
-        {/* Alerta de Conflicto de Superposición / Validación de Horario */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Alerta de Conflicto de Superposición / Validación de Horario */}
         {errorMessage && (
           <div className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/20 flex items-start gap-3 animate-in fade-in duration-200 mb-2">
             <AlertCircle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
@@ -395,6 +396,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

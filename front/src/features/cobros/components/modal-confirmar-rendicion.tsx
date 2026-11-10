@@ -64,30 +64,30 @@ export function ModalConfirmarRendicion({
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[92vh] overflow-y-auto"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5 pr-4 text-left">
-              <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
-                {titulo}
-              </DialogTitle>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                {esLote ? "Rendición de lote" : "Rendición individual"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleCerrar}
-              disabled={procesando}
-              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 shrink-0"
-            >
-              <X className="size-5" />
-              <span className="sr-only">Cerrar</span>
-            </button>
+        {/* Header */}
+        <div className="shrink-0 flex items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
+              {titulo}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              {esLote ? "Rendición de lote" : "Rendición individual"}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleCerrar}
+            disabled={procesando}
+            className="size-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+          >
+            <X className="size-4" />
+            <span className="sr-only">Cerrar</span>
+          </button>
+        </div>
 
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Importe y resumen */}
           <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800/80 dark:bg-slate-800/40">
             <div className="flex items-baseline justify-between">
@@ -143,33 +143,34 @@ export function ModalConfirmarRendicion({
             pendiente.
           </p>
 
-          {/* Acciones */}
-          <div className="flex items-center justify-end gap-2.5 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCerrar}
-              disabled={procesando}
-              className="h-10 rounded-xl px-4 text-xs font-semibold"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleConfirmar}
-              disabled={procesando}
-              className="h-10 rounded-xl bg-primary px-5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
-            >
-              {procesando ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Rindiendo...
-                </>
-              ) : (
-                "Confirmar rendición"
-              )}
-            </Button>
-          </div>
+        </div>
+
+        {/* Acciones */}
+        <div className="shrink-0 flex items-center justify-end gap-2.5 border-t border-border px-6 py-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCerrar}
+            disabled={procesando}
+            className="h-10 rounded-xl px-4 text-xs font-semibold"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirmar}
+            disabled={procesando}
+            className="h-10 rounded-xl bg-primary px-5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
+          >
+            {procesando ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Rindiendo...
+              </>
+            ) : (
+              "Confirmar rendición"
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

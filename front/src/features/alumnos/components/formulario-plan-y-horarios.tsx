@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { OpcionesDeInscripcion } from "@/features/alumnos/hooks/use-reactivacion";
 import {
@@ -259,12 +259,14 @@ export function DialogoPlanYHorarios({ titulo, descripcion, procesando, onClose,
         if (!abierto && !procesando) onClose();
       }}
     >
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <div className="flex flex-col gap-1 text-left">
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
           <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{descripcion}</DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto p-6">
+          {children}
         </div>
-        {children}
       </DialogContent>
     </Dialog>
   );

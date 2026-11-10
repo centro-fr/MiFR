@@ -142,10 +142,10 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
       >
         <DialogContent
           hideClose
-          className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
+          className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         >
           {/* Encabezado */}
-          <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+          <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
             <div className="space-y-0.5 pr-4">
               <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                 Editar plan {plan.nombre}
@@ -166,8 +166,9 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
             </Button>
           </DialogHeader>
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Formulario */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
             {/* Nombre */}
             <div className="space-y-1.5">
               <Label htmlFor="plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -399,8 +400,9 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogContent>
+    </Dialog>
 
       {/* Modal confirmación de cambio de frecuencia */}
       {confirmarFrecuencia && cambioDeFrecuencia && (

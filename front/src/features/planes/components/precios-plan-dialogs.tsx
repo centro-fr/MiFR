@@ -153,12 +153,12 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
       >
         <DialogContent
           hideClose
-          className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
+          className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         >
           {plan && (
             <>
               {/* Encabezado */}
-              <DialogHeader className="flex flex-row items-start justify-between pb-3 text-left">
+              <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
                 <div className="space-y-0.5 pr-4">
                   <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                     Cambiar precio de {plan.nombre}
@@ -180,7 +180,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               </DialogHeader>
 
               {/* Formulario */}
-              <form onSubmit={validar} className="space-y-4 pt-1">
+              <form onSubmit={validar} className="flex-1 overflow-y-auto p-6 space-y-4">
                 {/* Caja Precio actual */}
                 <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
                   <p className="text-xs font-semibold text-muted-foreground">Precio actual</p>
@@ -350,33 +350,37 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         open={confirmacionAbierta}
         onOpenChange={(abierto) => !registrar.isPending && setConfirmacionAbierta(abierto)}
       >
-        <AlertDialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl border-border dark:bg-surface-low">
-          <AlertDialogHeader className="text-left">
-            <AlertDialogTitle className="text-base font-extrabold text-slate-900 dark:text-white">
-              ¿Confirmar actualización?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              {precioValidado.success
-                ? `El nuevo precio de ${formatearPrecio(precioValidado.data.precio)} aplicará desde el ${fechaLegible(fecha)}. Las cuotas ya cobradas no se modificarán.`
-                : "Revisá el precio y la fecha de vigencia antes de guardar."}
-            </AlertDialogDescription>
+        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+          <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+            <div className="space-y-0.5">
+              <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                ¿Confirmar actualización?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
+                {precioValidado.success
+                  ? `El nuevo precio de ${formatearPrecio(precioValidado.data.precio)} aplicará desde el ${fechaLegible(fecha)}. Las cuotas ya cobradas no se modificarán.`
+                  : "Revisá el precio y la fecha de vigencia antes de guardar."}
+              </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
-          {registrar.isError && (
-            <p
-              role="alert"
-              className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200"
-            >
-              {mensajeDeErrorApi(registrar.error, "No se pudo actualizar el precio.")}
-            </p>
-          )}
-          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {registrar.isError && (
+              <p
+                role="alert"
+                className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200"
+              >
+                {mensajeDeErrorApi(registrar.error, "No se pudo actualizar el precio.")}
+              </p>
+            )}
+          </div>
+          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-4">
             <AlertDialogCancel asChild>
               <Button
                 type="button"
                 variant="outline"
                 disabled={registrar.isPending}
                 onClick={() => registrar.reset()}
-                className="min-h-11 rounded-xl font-bold"
+                className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
               >
                 Volver
               </Button>
@@ -385,7 +389,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               type="button"
               onClick={() => void confirmar()}
               disabled={registrar.isPending || !plan}
-              className="min-h-11 rounded-xl bg-primary px-5 font-extrabold text-white hover:bg-primary-dark"
+              className="rounded-xl bg-primary px-5 font-extrabold text-white hover:bg-primary-dark"
             >
               {registrar.isPending ? "Guardando..." : "Confirmar actualización"}
             </Button>

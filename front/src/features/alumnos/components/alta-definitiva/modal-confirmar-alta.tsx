@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { esMontoDistinto } from "@/features/alumnos/api/alta-definitiva-api";
 import {
@@ -202,18 +202,20 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
         if (!abierto && !confirmando) onClose();
       }}
     >
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1 text-left">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Confirmar alta de {nombre}
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              {esTransferenciaProfesora
-                ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
-                : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
-            </DialogDescription>
-          </div>
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            Confirmar alta de {nombre}
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            {esTransferenciaProfesora
+              ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
+              : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
 
           <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
@@ -296,6 +298,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             textoEnviando={esTransferenciaProfesora ? "Informando..." : "Registrando..."}
           />
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

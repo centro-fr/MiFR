@@ -34,18 +34,22 @@ function ModalConfirmacion(props: PropsConfirmacion) {
         if (!abierto && !procesando) onClose();
       }}
     >
-      <AlertDialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <AlertDialogHeader className="space-y-1 text-left">
-          <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</AlertDialogTitle>
-          <AlertDialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">{descripcion}</AlertDialogDescription>
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5">
+            <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">{descripcion}</AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
-        {children}
-        {error && (
-          <Alert role="alert" className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-            <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">{error}</AlertDescription>
-          </Alert>
-        )}
-        <AlertDialogFooter className="flex-row items-center justify-end gap-2 pt-2">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {children}
+          {error && (
+            <Alert role="alert" className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+              <AlertDescription className="text-sm text-amber-900 dark:text-amber-200">{error}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+        <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-4">
           <AlertDialogCancel asChild>
             <Button type="button" variant="outline" disabled={procesando} className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10">
               Cancelar

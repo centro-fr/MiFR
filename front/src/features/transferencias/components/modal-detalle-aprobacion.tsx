@@ -59,10 +59,10 @@ export function ModalDetalleAprobacion({
     tipo === "PRIMERA_CUOTA"
       ? "Primera cuota / Alta"
       : estadoCuota === "VENCIDA"
-      ? "Cuota vencida"
-      : estadoCuota === "POR_VENCER"
-      ? "Cuota por vencer"
-      : "Cuota";
+        ? "Cuota vencida"
+        : estadoCuota === "POR_VENCER"
+          ? "Cuota por vencer"
+          : "Cuota";
 
   const tramo = tramoDePlazo(transferencia);
   const textoInformada =
@@ -90,30 +90,30 @@ export function ModalDetalleAprobacion({
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[92vh] overflow-y-auto"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3 text-left">
-            <div className="space-y-0.5 pr-4">
-              <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
-                {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-              </DialogTitle>
-              <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
-                Transferencia · {textoTipoPago}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleCerrar}
-              disabled={aprobando || rechazando}
-              className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            >
-              <X className="size-5" />
-              <span className="sr-only">Cerrar</span>
-            </button>
+        {/* Header */}
+        <div className="shrink-0 flex items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
+              {transferencia.alumno.nombre} {transferencia.alumno.apellido}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+              Transferencia · {textoTipoPago}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleCerrar}
+            disabled={aprobando || rechazando}
+            className="size-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+          >
+            <X className="size-4" />
+            <span className="sr-only">Cerrar</span>
+          </button>
+        </div>
 
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Importe y badge de tiempo */}
           <div className="flex items-baseline justify-between pt-1">
             <div>
