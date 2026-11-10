@@ -6,6 +6,8 @@ async function operacionNoConfigurada(): Promise<never> {
 
 export const logicaRutinasNoConfigurada = {
   crearRutina: operacionNoConfigurada,
+  actualizarRutina: operacionNoConfigurada,
+  eliminarRutina: operacionNoConfigurada,
   listarRutinasDeAlumno: operacionNoConfigurada,
   obtenerRutinaVigente: operacionNoConfigurada,
   registrarProgreso: operacionNoConfigurada,

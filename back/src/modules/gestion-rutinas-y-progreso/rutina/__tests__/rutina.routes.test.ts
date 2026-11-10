@@ -32,6 +32,7 @@ describe("rutas de rutinas", () => {
   beforeEach(() => {
     logica = {
       crearRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
+      actualizarRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
       listarRutinasDeAlumno: vi.fn().mockResolvedValue([{ id_rutina: 1 }]),
       obtenerRutinaVigente: vi.fn().mockResolvedValue(null),
       obtenerMiRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
@@ -70,6 +71,31 @@ describe("rutas de rutinas", () => {
   it("POST /rutinas responde 403 sin RUTINAS_EDITAR", async () => {
     expect((await como("alumno", "post", "/rutinas").send(RUTINA)).status).toBe(403);
     expect(logica.crearRutina).not.toHaveBeenCalled();
+  });
+
+  it("PUT /rutinas/:id actualiza la rutina con RUTINAS_EDITAR y responde 200", async () => {
+    const respuesta = await request(app)
+      .put("/api/v1/rutinas/1")
+      .set("Authorization", "Bearer profesora")
+      .send({ nombre: "Rutina Editada" });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual({ id_rutina: 1 });
+    expect(logica.actualizarRutina).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ nombre: "Rutina Editada" }),
+      { idUsuario: 2, esPropietaria: false },
+    );
+  });
+
+  it("PUT /rutinas/:id responde 403 sin RUTINAS_EDITAR", async () => {
+    const respuesta = await request(app)
+      .put("/api/v1/rutinas/1")
+      .set("Authorization", "Bearer alumno")
+      .send({ nombre: "Rutina Editada" });
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.actualizarRutina).not.toHaveBeenCalled();
   });
 
   it.each([

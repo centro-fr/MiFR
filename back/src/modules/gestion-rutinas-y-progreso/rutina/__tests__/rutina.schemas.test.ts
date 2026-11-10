@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alumnoRutinasParamsSchema, crearRutinaSchema } from "../rutina.schemas.js";
+import { actualizarRutinaSchema, alumnoRutinasParamsSchema, crearRutinaSchema } from "../rutina.schemas.js";
 
 const EJERCICIO = { nombre: "Sentadilla", series: 3, repeticiones: "10" };
 const BASE = {
@@ -73,5 +73,32 @@ describe("alumnoRutinasParamsSchema", () => {
 
   it.each(["0", "-1", "1.5", "abc", "07"])("rechaza el id %s", (id) => {
     expect(alumnoRutinasParamsSchema.safeParse({ id }).success).toBe(false);
+  });
+});
+
+describe("actualizarRutinaSchema", () => {
+  it("deja sin tocar lo que no viene en el pedido", () => {
+    const resultado = actualizarRutinaSchema.safeParse({ nombre: "Fuerza" });
+
+    expect(resultado.success).toBe(true);
+    if (resultado.success) {
+      expect(resultado.data).toEqual({ nombre: "Fuerza" });
+      expect("fecha_hasta" in resultado.data).toBe(false);
+      expect("observaciones" in resultado.data).toBe(false);
+    }
+  });
+
+  it("con null o texto vacío borra la fecha de fin y las observaciones", () => {
+    const resultado = actualizarRutinaSchema.safeParse({ fecha_hasta: null, observaciones: "  " });
+
+    expect(resultado.success).toBe(true);
+    if (resultado.success) {
+      expect(resultado.data.fecha_hasta).toBeNull();
+      expect(resultado.data.observaciones).toBeNull();
+    }
+  });
+
+  it("rechaza una fecha de fin anterior al inicio cuando vienen las dos", () => {
+    expect(actualizarRutinaSchema.safeParse({ fecha_desde: "2026-11-10", fecha_hasta: "2026-11-01" }).success).toBe(false);
   });
 });

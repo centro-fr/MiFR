@@ -55,6 +55,19 @@ export async function crearRutina(cuerpo: CrearRutinaBody): Promise<Rutina> {
   return aRutina(rutinaApiSchema.parse(data));
 }
 
+export type ActualizarRutinaBody = Partial<CrearRutinaBody>;
+
+/** Actualiza una rutina existente. */
+export async function actualizarRutina(idRutina: number, cuerpo: ActualizarRutinaBody): Promise<Rutina> {
+  const { data } = await apiClient.put(`/rutinas/${encodeURIComponent(idRutina)}`, cuerpo);
+  return aRutina(rutinaApiSchema.parse(data));
+}
+
+/** Elimina una rutina. */
+export async function eliminarRutina(idRutina: number): Promise<void> {
+  await apiClient.delete(`/rutinas/${encodeURIComponent(idRutina)}`);
+}
+
 /** De la medición más reciente a la más antigua. Lista vacía si todavía no tiene. */
 export async function listarMedicionesDeAlumno(idAlumno: number): Promise<Medicion[]> {
   const { data } = await apiClient.get(`/alumnos/${encodeURIComponent(idAlumno)}/progreso`);

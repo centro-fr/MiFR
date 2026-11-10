@@ -20,37 +20,45 @@ const textoOpcional = (maximo: number) =>
   z.preprocess((valor) => (typeof valor === "string" && valor.trim() === "" ? null : valor), texto(maximo).nullable().optional());
 const fecha = z.string().date();
 
-const crearRutinaSchema = z
-  .object({
-    id_alumno: z.number().int().positive(),
-    id_profesora: z.number().int().positive().optional(),
-    nombre: texto(100),
-    fecha_desde: fecha,
-    fecha_hasta: fecha.nullable().optional(),
-    contenido: z.object({
-      dias: z
-        .array(
-          z.object({
-            nombre: texto(60),
-            ejercicios: z
-              .array(
-                z.object({
-                  nombre: texto(80),
-                  series: z.number().int().min(1).max(20),
-                  repeticiones: z.string().trim().min(1).max(30),
-                  notas: textoOpcional(200),
-                }),
-              )
-              .min(1)
-              .max(30),
-          }),
-        )
-        .min(1)
-        .max(7),
-    }),
-    observaciones: textoOpcional(500),
-  })
-  .refine(({ fecha_desde, fecha_hasta }) => !fecha_hasta || fecha_hasta >= fecha_desde);
+// Los campos van aparte de la regla de fechas: zod no deja usar .partial() sobre un schema con
+// .refine(), y la edición necesita la versión parcial.
+const camposRutinaSchema = z.object({
+  id_alumno: z.number().int().positive(),
+  id_profesora: z.number().int().positive().optional(),
+  nombre: texto(100),
+  fecha_desde: fecha,
+  fecha_hasta: fecha.nullable().optional(),
+  contenido: z.object({
+    dias: z
+      .array(
+        z.object({
+          nombre: texto(60),
+          ejercicios: z
+            .array(
+              z.object({
+                nombre: texto(80),
+                series: z.number().int().min(1).max(20),
+                repeticiones: z.string().trim().min(1).max(30),
+                notas: textoOpcional(200),
+              }),
+            )
+            .min(1)
+            .max(30),
+        }),
+      )
+      .min(1)
+      .max(7),
+  }),
+  observaciones: textoOpcional(500),
+});
+
+const fechasEnOrden = (desde: string, hasta: string | null | undefined) => !hasta || hasta >= desde;
+
+const crearRutinaSchema = camposRutinaSchema.refine(({ fecha_desde, fecha_hasta }) => fechasEnOrden(fecha_desde, fecha_hasta));
+
+// Como actualizarRutinaSchema del back: lo que no viene no se toca, y las fechas se comparan en el
+// handler con las guardadas.
+const actualizarRutinaSchema = camposRutinaSchema.omit({ id_alumno: true, id_profesora: true }).partial();
 
 const medidasSchema = z
   .array(
@@ -256,6 +264,13 @@ export const rutinasHandlers = [
     const carga = profesoraQueCarga(usuarioDeLaSesion(request)!, datos.id_alumno, datos.id_profesora);
     if ("error" in carga) return carga.error;
 
+    const repetida = db.rutinas.find(
+      (r) => r.id_alumno === datos.id_alumno && r.nombre.trim().toLowerCase() === datos.nombre.trim().toLowerCase(),
+    );
+    if (repetida) {
+      return errorApi(400, "VALIDATION_ERROR", `Ya existe una rutina con el nombre "${datos.nombre}" para este alumno`);
+    }
+
     cerrarVigentes(datos.id_alumno, datos.fecha_desde);
     const nueva: RutinaMock = {
       id_rutina: siguienteId(db.rutinas.map((r) => r.id_rutina)),
@@ -275,6 +290,69 @@ export const rutinasHandlers = [
     };
     db.rutinas.push(nueva);
     return HttpResponse.json(rutinaConFechas(nueva), { status: 201 });
+  }),
+
+  http.put("*/api/v1/rutinas/:id", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, EDITAR);
+    if (denegado) return denegado;
+    const idRutina = idDeRuta(params.id);
+    if (idRutina === null) return idInvalido();
+    const rutina = db.rutinas.find((r) => r.id_rutina === idRutina);
+    if (!rutina) return errorApi(404, "NOT_FOUND", "Rutina no encontrada");
+
+    const cuerpo = actualizarRutinaSchema.safeParse(await request.json().catch(() => null));
+    if (!cuerpo.success) return errorApi(400, "VALIDATION_ERROR", "Datos inválidos");
+    const datos = cuerpo.data;
+    const hastaFinal = datos.fecha_hasta === undefined ? rutina.fecha_hasta : datos.fecha_hasta;
+    if (!fechasEnOrden(datos.fecha_desde ?? rutina.fecha_desde, hastaFinal)) {
+      return errorApi(400, "VALIDATION_ERROR", "La fecha de fin no puede ser anterior a la de inicio");
+    }
+
+    if (datos.nombre) {
+      const repetida = db.rutinas.find(
+        (r) =>
+          r.id_alumno === rutina.id_alumno &&
+          r.id_rutina !== idRutina &&
+          r.nombre.trim().toLowerCase() === datos.nombre!.trim().toLowerCase(),
+      );
+      if (repetida) {
+        return errorApi(400, "VALIDATION_ERROR", `Ya existe una rutina con el nombre "${datos.nombre}" para este alumno`);
+      }
+      rutina.nombre = datos.nombre;
+    }
+
+    if (datos.fecha_desde) rutina.fecha_desde = datos.fecha_desde;
+    if (datos.fecha_hasta !== undefined) rutina.fecha_hasta = datos.fecha_hasta;
+    if (datos.contenido) {
+      rutina.contenido = {
+        dias: datos.contenido.dias.map((dia) => ({
+          ...dia,
+          ejercicios: dia.ejercicios.map((ejercicio) => ({ ...ejercicio, notas: ejercicio.notas ?? null })),
+        })),
+      };
+    }
+    if (datos.observaciones !== undefined) rutina.observaciones = datos.observaciones ?? null;
+
+    return HttpResponse.json(rutinaConFechas(rutina));
+  }),
+
+  http.delete("*/api/v1/rutinas/:id", async ({ request, params }) => {
+    await delay(300);
+    const denegado = verificarAcceso(request, EDITAR);
+    if (denegado) return denegado;
+    const idRutina = idDeRuta(params.id);
+    if (idRutina === null) return idInvalido();
+    const idx = db.rutinas.findIndex((r) => r.id_rutina === idRutina);
+    if (idx === -1) return errorApi(404, "NOT_FOUND", "Rutina no encontrada");
+    const eliminada = db.rutinas.splice(idx, 1)[0];
+    if (eliminada.activa) {
+      const restantes = db.rutinas
+        .filter((r) => r.id_alumno === eliminada.id_alumno)
+        .sort((a, b) => b.fecha_desde.localeCompare(a.fecha_desde) || b.id_rutina - a.id_rutina);
+      if (restantes[0]) restantes[0].activa = true;
+    }
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.get("*/api/v1/alumnos/:id/rutinas", async ({ request, params }) => {
