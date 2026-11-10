@@ -76,6 +76,54 @@ describe("autenticación", () => {
     expect(enLaBase?.google_id).toBe(`google-${usuario.email}`);
   });
 
+  it("A-49 el login guarda la foto de perfil de Google y /auth/me la devuelve", async () => {
+    const { usuario } = await sesionCon("PROPIETARIA");
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+
+    const login = await request(app)
+      .post("/api/v1/auth/google")
+      .send({ id_token: `${usuario.email}|${foto}` });
+
+    expect(login.status).toBe(200);
+    expect(login.body.usuario.foto_url).toBe(foto);
+    const enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: usuario.id_usuario } });
+    expect(enLaBase?.foto_url).toBe(foto);
+
+    const perfil = await request(app)
+      .get("/api/v1/auth/me")
+      .set(...autorizacion(login.body.token));
+
+    expect(perfil.status).toBe(200);
+    expect(perfil.body.usuario.foto_url).toBe(foto);
+  });
+
+  it("A-50 el login refresca la foto y conserva la última si Google no manda una", async () => {
+    const { usuario, token } = await sesionCon("PROPIETARIA");
+    const primera = "https://lh3.googleusercontent.com/a/primera=s96-c";
+    const segunda = "https://lh3.googleusercontent.com/a/segunda=s96-c";
+
+    await request(app)
+      .post("/api/v1/auth/google")
+      .send({ id_token: `${usuario.email}|${primera}` });
+    await request(app)
+      .post("/api/v1/auth/google")
+      .send({ id_token: `${usuario.email}|${segunda}` });
+
+    let enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: usuario.id_usuario } });
+    expect(enLaBase?.foto_url).toBe(segunda);
+
+    await request(app).post("/api/v1/auth/google").send({ id_token: usuario.email });
+
+    enLaBase = await prisma.usuarios.findUnique({ where: { id_usuario: usuario.id_usuario } });
+    expect(enLaBase?.foto_url).toBe(segunda);
+
+    const perfil = await request(app)
+      .get("/api/v1/auth/me")
+      .set(...autorizacion(token));
+
+    expect(perfil.body.usuario.foto_url).toBe(segunda);
+  });
+
   it("rechaza con 401 el token de un usuario que ya no existe", async () => {
     const { usuario, token } = await sesionCon("PROPIETARIA");
     await prisma.usuario_roles.deleteMany({ where: { id_usuario: usuario.id_usuario } });

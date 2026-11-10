@@ -8,6 +8,9 @@ const HOY_EN_ARGENTINA = new Date("2026-10-04T00:00:00Z");
 
 // El nombre de la profesora sale de usuarios: todas las consultas lo traen.
 const CON_NOMBRE = { usuario: { select: { nombre: true, apellido: true } } };
+const CON_DATOS_DE_CONTACTO = {
+  usuario: { select: { nombre: true, apellido: true, email: true, telefono: true, fecha_nacimiento: true } },
+};
 
 const prisma = {
   profesoras: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
@@ -74,12 +77,32 @@ describe("ProfesorRepository", () => {
     });
   });
 
+  it("listar incluye contacto solo cuando se solicita", async () => {
+    await repositorio.listar(undefined, true);
+
+    expect(prisma.profesoras.findMany).toHaveBeenCalledWith({
+      where: { fecha_baja: null },
+      include: CON_DATOS_DE_CONTACTO,
+      orderBy: { id_profesora: "asc" },
+    });
+  });
+
   it("darDeBaja registra la fecha de hoy en Argentina sin borrar el perfil", async () => {
     await repositorio.darDeBaja(3);
 
     expect(prisma.profesoras.update).toHaveBeenCalledWith({
       where: { id_profesora: 3 },
       data: { fecha_baja: HOY_EN_ARGENTINA },
+      include: CON_NOMBRE,
+    });
+  });
+
+  it("actualizar persiste solo los campos recibidos y trae el nombre asociado", async () => {
+    await repositorio.actualizar(3, { especialidad: "Posing", fecha_baja: null });
+
+    expect(prisma.profesoras.update).toHaveBeenCalledWith({
+      where: { id_profesora: 3 },
+      data: { especialidad: "Posing", fecha_baja: null },
       include: CON_NOMBRE,
     });
   });

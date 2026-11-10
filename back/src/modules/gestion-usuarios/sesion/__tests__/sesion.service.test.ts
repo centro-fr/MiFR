@@ -27,6 +27,7 @@ const usuarioExistente = {
   telefono: null,
   fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
+  foto_url: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),
@@ -45,6 +46,7 @@ function crearUsuariosMock() {
     obtenerPorId: vi.fn(),
     buscarPorId: vi.fn(),
     identificarPorGoogle: vi.fn(),
+    actualizarFoto: vi.fn(),
     buscarPorEmail: vi.fn(),
     buscarPorDni: vi.fn(),
     listarPropietariasActivas: vi.fn(),
@@ -195,6 +197,49 @@ describe("SesionService", () => {
 
     expect(permisos).toEqual(["RUTINAS_VER"]);
     expect(autorizacion.permisosEfectivos).toHaveBeenCalledWith(1);
+  });
+
+  it("iniciarSesion guarda la foto de perfil cuando Google la manda y cambió", async () => {
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    usuarios.identificarPorGoogle.mockResolvedValue(usuarioExistente);
+    usuarios.actualizarFoto.mockResolvedValue({ ...usuarioExistente, foto_url: foto });
+    vi.mocked(googleAuth.verificarToken).mockResolvedValue({ ...googlePayload, fotoUrl: foto });
+
+    const { usuario } = await sesion.iniciarSesion("id-token-valido");
+
+    expect(usuarios.actualizarFoto).toHaveBeenCalledWith(1, foto);
+    expect(usuario.foto_url).toBe(foto);
+  });
+
+  it("iniciarSesion no reescribe la foto si es la misma que ya tenía", async () => {
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    usuarios.identificarPorGoogle.mockResolvedValue({ ...usuarioExistente, foto_url: foto });
+    vi.mocked(googleAuth.verificarToken).mockResolvedValue({ ...googlePayload, fotoUrl: foto });
+
+    await sesion.iniciarSesion("id-token-valido");
+
+    expect(usuarios.actualizarFoto).not.toHaveBeenCalled();
+  });
+
+  it("iniciarSesion conserva la foto guardada si Google no manda una", async () => {
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    usuarios.identificarPorGoogle.mockResolvedValue({ ...usuarioExistente, foto_url: foto });
+
+    const { usuario } = await sesion.iniciarSesion("id-token-valido");
+
+    expect(usuarios.actualizarFoto).not.toHaveBeenCalled();
+    expect(usuario.foto_url).toBe(foto);
+  });
+
+  it("iniciarSesion no guarda la foto de un usuario inactivo", async () => {
+    usuarios.identificarPorGoogle.mockResolvedValue({ ...usuarioExistente, estado: "INACTIVO" });
+    vi.mocked(googleAuth.verificarToken).mockResolvedValue({
+      ...googlePayload,
+      fotoUrl: "https://lh3.googleusercontent.com/a/foto=s96-c",
+    });
+
+    await expect(sesion.iniciarSesion("id-token-valido")).rejects.toBeInstanceOf(ForbiddenError);
+    expect(usuarios.actualizarFoto).not.toHaveBeenCalled();
   });
 
   it("iniciarSesion no calcula permisos si el usuario está inactivo", async () => {

@@ -28,6 +28,7 @@ export const usuarioConRolesSchema = z
     telefono: z.string().nullable(),
     fecha_nacimiento: fechaSchema,
     direccion: z.string().nullable(),
+    foto_url: z.string().nullable(),
     estado: z.enum(["ACTIVO", "INACTIVO"]),
     fecha_alta: fechaSchema,
     fecha_actualizacion: fechaSchema,

@@ -7,7 +7,11 @@ import {
   respuestasDeError,
   SEGURIDAD_BEARER,
 } from "../../../shared/openapi/registro.js";
-import { crearProfesoraSchema, profesoraIdParamSchema } from "./profesor.schemas.js";
+import {
+  actualizarProfesoraSchema,
+  crearProfesoraSchema,
+  profesoraIdParamSchema,
+} from "./profesor.schemas.js";
 
 export const profesoraSchema = z
   .object({
@@ -16,7 +20,13 @@ export const profesoraSchema = z
     especialidad: z.string().nullable(),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
-    usuario: z.object({ nombre: z.string(), apellido: z.string() }),
+    usuario: z.object({
+      nombre: z.string(),
+      apellido: z.string(),
+      email: z.string().email().nullable().optional(),
+      telefono: z.string().nullable().optional(),
+      fecha_nacimiento: fechaSchema.nullable().optional(),
+    }),
   })
   .openapi("Profesora");
 
@@ -31,7 +41,9 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
     tags,
     security,
     summary: "Listar profesoras",
-    description: "Requiere el permiso `HORARIOS_VER`.",
+    description:
+      "Requiere el permiso `HORARIOS_VER`. " +
+      "Incluye email, teléfono y fecha de nacimiento del usuario solo cuando el solicitante es PROPIETARIA.",
     request: {
       query: z.object({
         incluirBajas: z
@@ -63,6 +75,26 @@ export function registrarDocumentacionProfesoras(registro: OpenAPIRegistry): voi
       ),
     },
     responses: { 201: profesora, ...respuestasDeError(400, 401, 403, 404, 409) },
+  });
+
+  registro.registerPath({
+    method: "patch",
+    path: "/profesoras/{id}",
+    tags,
+    security,
+    summary: "Actualizar o reincorporar una profesora",
+    description:
+      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. " +
+      "Permite cambiar la especialidad y/o reincorporar una profesora dada de baja.",
+    request: {
+      params: profesoraIdParamSchema,
+      body: cuerpoJson(
+        actualizarProfesoraSchema.openapi("ActualizarProfesora", {
+          example: { especialidad: "Entrenamiento funcional", reactivar: true },
+        }),
+      ),
+    },
+    responses: { 200: profesora, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 
   registro.registerPath({

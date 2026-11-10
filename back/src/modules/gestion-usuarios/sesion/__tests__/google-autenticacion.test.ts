@@ -35,6 +35,28 @@ describe("GoogleAutenticacion", () => {
     });
   });
 
+  it("verificarToken toma la foto de perfil cuando Google la manda por https", async () => {
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    verifyIdToken.mockResolvedValue({ getPayload: () => ({ ...googlePayload, picture: foto }) });
+
+    await expect(autenticacion.verificarToken("id-token-valido")).resolves.toMatchObject({ fotoUrl: foto });
+  });
+
+  const fotosInvalidas: [string, unknown][] = [
+    ["no es un texto", 123],
+    ["no es https", "http://lh3.googleusercontent.com/a/foto"],
+    ["tiene espacios", "https://lh3.googleusercontent.com/a foto"],
+    ["supera los 500 caracteres", `https://lh3.googleusercontent.com/${"a".repeat(480)}`],
+  ];
+
+  it.each(fotosInvalidas)("verificarToken ignora la foto si %s", async (_caso, picture) => {
+    verifyIdToken.mockResolvedValue({ getPayload: () => ({ ...googlePayload, picture }) });
+
+    const datos = await autenticacion.verificarToken("id-token-valido");
+
+    expect(datos.fotoUrl).toBeUndefined();
+  });
+
   it("lanza UnauthorizedError si el token de Google es inválido", async () => {
     verifyIdToken.mockResolvedValue({ getPayload: () => null });
 

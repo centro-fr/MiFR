@@ -41,6 +41,7 @@ function crearMocks() {
       crear: vi.fn(),
       listar: vi.fn(),
       darDeBaja: vi.fn(),
+      actualizar: vi.fn(),
       buscarPorUsuario: vi.fn().mockResolvedValue({ id_profesora: ID_PROFESORA }),
     },
     horarios: {
@@ -99,6 +100,23 @@ describe("GestionPersonasService", () => {
       await expect(servicio.crearProfesora({ id_usuario: 5 })).resolves.toEqual({ id_profesora: 1 });
       await expect(servicio.listarProfesoras()).resolves.toEqual([]);
       expect(mocks.profesoras.crear).toHaveBeenCalledWith({ id_usuario: 5 });
+    });
+
+    it("listarProfesoras solicita los datos de contacto solo para la propietaria", async () => {
+      await servicio.listarProfesoras(undefined, true);
+      await servicio.listarProfesoras(undefined, false);
+
+      expect(mocks.profesoras.listar).toHaveBeenNthCalledWith(1, undefined, true);
+      expect(mocks.profesoras.listar).toHaveBeenNthCalledWith(2, undefined, false);
+    });
+
+    it("actualizarProfesora llega al componente Profesor", async () => {
+      mocks.profesoras.actualizar.mockResolvedValue({ id_profesora: 1 });
+
+      await expect(servicio.actualizarProfesora(1, { especialidad: "Posing" })).resolves.toEqual({
+        id_profesora: 1,
+      });
+      expect(mocks.profesoras.actualizar).toHaveBeenCalledWith(1, { especialidad: "Posing" });
     });
 
     it("darDeBajaProfesora permite la baja si no tiene horarios activos", async () => {

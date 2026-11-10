@@ -19,7 +19,7 @@ import type {
   SituacionCuota,
 } from "./interface/i-logica-personas.js";
 import type { ProfesorService } from "./profesor/profesor.service.js";
-import type { CrearProfesoraInput } from "./profesor/profesor.schemas.js";
+import type { ActualizarProfesoraInput, CrearProfesoraInput } from "./profesor/profesor.schemas.js";
 import type { Profesora } from "./profesor/profesor.types.js";
 
 // US-09: la profesora modifica contacto y observaciones; el resto es de la propietaria.
@@ -77,8 +77,8 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.profesoras.crear(input);
   }
 
-  listarProfesoras(filtro?: { incluirBajas?: boolean }): Promise<Profesora[]> {
-    return this.profesoras.listar(filtro);
+  listarProfesoras(filtro?: { incluirBajas?: boolean }, incluirDatosContacto = false): Promise<Profesora[]> {
+    return this.profesoras.listar(filtro, incluirDatosContacto);
   }
 
   async darDeBajaProfesora(id: number): Promise<Profesora> {
@@ -86,6 +86,10 @@ export class GestionPersonasService implements ILogicaPersonas {
       throw new ConflictError("Debe dar de baja los horarios activos antes que a la profesora");
     }
     return this.profesoras.darDeBaja(id);
+  }
+
+  actualizarProfesora(id: number, input: ActualizarProfesoraInput): Promise<Profesora> {
+    return this.profesoras.actualizar(id, input);
   }
 
   // Una profesora carga al tutor con sus datos: elegir una cuenta existente por su id queda para la

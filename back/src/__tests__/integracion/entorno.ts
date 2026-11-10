@@ -16,9 +16,13 @@ import { crearPrismaDePrueba } from "./base-de-prueba.js";
 export const SECRETO_JWT_DE_PRUEBA = "secreto-de-los-tests-de-integracion";
 
 // Google es la única frontera externa que se reemplaza: el id_token que manda el test es el
-// email de la cuenta. Todo lo demás (servicios, repositorios, base, JWT) es lo de producción.
+// email de la cuenta. Después de un "|" puede traer la foto de perfil, como la manda Google.
+// Todo lo demás (servicios, repositorios, base, JWT) es lo de producción.
 const googleSimulado: IAutenticacionGoogleAuth = {
-  verificarToken: async (idToken: string) => ({ googleId: `google-${idToken}`, email: idToken }),
+  verificarToken: async (idToken: string) => {
+    const [email, fotoUrl] = idToken.split("|");
+    return { googleId: `google-${email}`, email, fotoUrl };
+  },
 };
 
 export interface EntornoDeIntegracion {
