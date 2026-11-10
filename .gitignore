@@ -27,6 +27,7 @@ pnpm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+.claude/
 
 # Cobertura de tests
 coverage/

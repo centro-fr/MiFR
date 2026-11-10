@@ -368,18 +368,57 @@ function SidebarSeparator({
   )
 }
 
-function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+const CLAVE_SCROLL_SIDEBAR = "sidebar_scroll_position";
+
+function SidebarContent({ className, onScroll, ...props }: React.ComponentProps<"div">) {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    try {
+      const guardado = sessionStorage.getItem(CLAVE_SCROLL_SIDEBAR);
+      if (guardado !== null) {
+        const top = Number(guardado);
+        if (!Number.isNaN(top)) {
+          el.scrollTop = top;
+          requestAnimationFrame(() => {
+            if (el) el.scrollTop = top;
+          });
+          return;
+        }
+      }
+      const activo = el.querySelector<HTMLElement>('[data-active="true"]');
+      if (activo) {
+        activo.scrollIntoView({ block: "nearest" });
+      }
+    } catch {
+      // sessionStorage no disponible en entornos restringidos
+    }
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    try {
+      sessionStorage.setItem(CLAVE_SCROLL_SIDEBAR, String(e.currentTarget.scrollTop));
+    } catch {
+      // ignorar
+    }
+    onScroll?.(e);
+  };
+
   return (
     <div
+      ref={ref}
       data-slot="sidebar-content"
       data-sidebar="content"
       className={cn(
         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className
       )}
+      onScroll={handleScroll}
       {...props}
     />
-  )
+  );
 }
 
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {

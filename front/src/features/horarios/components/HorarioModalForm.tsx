@@ -172,6 +172,21 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Aviso informativo de modificación con alumnos activos */}
+            {horarioEnEdicion && alumnosInscriptos > 0 && (
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 flex items-start gap-3 animate-in fade-in duration-200 mb-2">
+                <AlertCircle className="size-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-blue-950 dark:text-blue-200 leading-snug">
+                    Clase con {alumnosInscriptos} alumno(s) activo(s)
+                  </p>
+                  <p className="text-xs text-blue-800 dark:text-blue-300 mt-0.5 leading-relaxed">
+                    Las modificaciones en este horario comenzarán a regir cuando venzan las cuotas de los alumnos actuales para no alterar sus clases vigentes.
+                  </p>
+                </div>
+              </div>
+            )}
           {/* Fila 1: Actividad y Profesora */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
