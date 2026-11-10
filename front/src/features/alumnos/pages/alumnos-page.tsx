@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Search,
   SlidersHorizontal,
   Users,
@@ -16,10 +16,12 @@ import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import type { FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
+import { etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
@@ -108,10 +110,28 @@ function CargandoAlumnos() {
   return (
     <div
       role="status"
-      className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+      aria-label="Cargando alumnos"
+      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
     >
-      <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-      Cargando alumnos…
+      <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
+        <Skeleton className="h-8 w-24 rounded-lg" />
+        <Skeleton className="h-8 w-28 rounded-lg" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
+      </div>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between px-6 py-3.5">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-8 rounded-full" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+            <Skeleton className="hidden md:block h-4 w-24" />
+            <Skeleton className="hidden sm:block h-4 w-28" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-lg" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -277,15 +297,15 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           onClick={() => setModalPreinscripcionAbierto(true)}
           className="min-h-[40px] rounded-xl bg-primary px-3 sm:px-5 text-sm font-extrabold text-white shadow-md shadow-primary/25 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
         >
-          + Pre-inscripción
+          + Nueva pre-inscripción
         </Button>
       </header>
 
-      {/* Barra de filtros integrada */}
-      <section aria-label="Filtros de alumnos" className="space-y-3">
-        <div className="flex items-center gap-2">
+      {/* Barra de filtros integrada idéntica a image.png */}
+      <section aria-label="Filtros de alumnos" className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Buscador */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-[280px] max-w-sm">
             <Search
               aria-hidden="true"
               className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
@@ -298,9 +318,9 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 setPagina(0);
                 setBusqueda(evento.target.value);
               }}
-              placeholder="Nombre o DNI"
+              placeholder="Buscar por nombre, apellido o DNI"
               autoComplete="off"
-              className="h-10 w-full rounded-xl border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+              className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
             />
           </div>
 
@@ -310,95 +330,99 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
             aria-label="Filtros adicionales"
             onClick={() => setMostrarFiltrosMobile((v) => !v)}
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+              "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
               (mostrarFiltrosMobile || hayFiltrosActivos(busquedaDebounced, filtros, filtroCuota)) && "border-primary text-primary"
             )}
           >
             <SlidersHorizontal className="size-4" />
           </button>
-        </div>
 
-        {/* Selects secundarios (desktop siempre visible, mobile con toggle) */}
-        <div className={cn("flex flex-wrap items-center gap-2.5", !mostrarFiltrosMobile && "hidden xl:flex")}>
-          {/* Select Plan */}
-          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-            <label htmlFor="desktop-filtro-plan" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              Plan
-            </label>
-            <select
-              id="desktop-filtro-plan"
-              aria-label="Plan"
-              value={filtros.id_plan}
-              onChange={(e) => cambiarFiltro("id_plan", e.target.value)}
-              className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
-            >
-              <option value="">Todos</option>
-              {opciones.planes.map((p) => (
-                <option key={p.id} value={p.id}>{p.etiqueta}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Select Profesora (si corresponde) */}
-          {!soloACargo && (
-            <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="desktop-filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Profesor/a
+          {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
+          <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+            {/* Select Plan */}
+            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+              <label htmlFor="desktop-filtro-plan" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                Plan
               </label>
               <select
-                id="desktop-filtro-profesora"
-                aria-label="Profesor/a"
-                value={filtros.id_profesora}
-                onChange={(e) => cambiarFiltro("id_profesora", e.target.value)}
-                className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                id="desktop-filtro-plan"
+                aria-label="Plan"
+                value={filtros.id_plan}
+                onChange={(e) => cambiarFiltro("id_plan", e.target.value)}
+                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
               >
                 <option value="">Todos</option>
-                {opciones.profesoras.map((p) => (
+                {opciones.planes.map((p) => (
                   <option key={p.id} value={p.id}>{p.etiqueta}</option>
                 ))}
               </select>
+              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
             </div>
-          )}
 
-          {/* Select Actividad */}
-          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-            <label htmlFor="desktop-filtro-actividad" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              Actividad
-            </label>
-            <select
-              id="desktop-filtro-actividad"
-              aria-label="Actividad"
-              value={filtros.id_actividad}
-              onChange={(e) => cambiarFiltro("id_actividad", e.target.value)}
-              className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
-            >
-              <option value="">Todas</option>
-              {opciones.actividades.map((a) => (
-                <option key={a.id} value={a.id}>{a.etiqueta}</option>
-              ))}
-            </select>
-          </div>
+            {/* Select Profesora (si corresponde) */}
+            {!soloACargo && (
+              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                <label htmlFor="desktop-filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  Profesora
+                </label>
+                <select
+                  id="desktop-filtro-profesora"
+                  aria-label="Profesor/a"
+                  value={filtros.id_profesora}
+                  onChange={(e) => cambiarFiltro("id_profesora", e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                >
+                  <option value="">Todas</option>
+                  {opciones.profesoras.map((p) => (
+                    <option key={p.id} value={p.id}>{p.etiqueta}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+              </div>
+            )}
 
-          {/* Select Cuota */}
-          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-            <label htmlFor="desktop-filtro-cuota" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              Cuota
-            </label>
-            <select
-              id="desktop-filtro-cuota"
-              aria-label="Cuota"
-              value={filtroCuota}
-              onChange={(e) => {
-                setPagina(0);
-                setFiltroCuota(e.target.value);
-              }}
-              className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
-            >
-              <option value="">Todas</option>
-              <option value="AL_DIA">Al día</option>
-              <option value="POR_VENCER">Por vencer</option>
-              <option value="VENCIDA">Vencida</option>
-            </select>
+            {/* Select Actividad */}
+            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+              <label htmlFor="desktop-filtro-actividad" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                Actividad
+              </label>
+              <select
+                id="desktop-filtro-actividad"
+                aria-label="Actividad"
+                value={filtros.id_actividad}
+                onChange={(e) => cambiarFiltro("id_actividad", e.target.value)}
+                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+              >
+                <option value="">Todas</option>
+                {opciones.actividades.map((a) => (
+                  <option key={a.id} value={a.id}>{a.etiqueta}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+            </div>
+
+            {/* Select Cuota */}
+            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+              <label htmlFor="desktop-filtro-cuota" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                Cuota
+              </label>
+              <select
+                id="desktop-filtro-cuota"
+                aria-label="Cuota"
+                value={filtroCuota}
+                onChange={(e) => {
+                  setPagina(0);
+                  setFiltroCuota(e.target.value);
+                }}
+                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+              >
+                <option value="">Todas</option>
+                <option value="AL_DIA">Al día</option>
+                <option value="POR_VENCER">Por vencer</option>
+                <option value="VENCIDA">Vencida</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+            </div>
           </div>
         </div>
 
@@ -420,19 +444,19 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
         </label>
       </section>
 
-      {/* Tabs de estado: Segmented control en mobile, Pills en desktop */}
-      <div className="flex xl:hidden items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      {/* Tabs de estado para mobile */}
+      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
         <button
           type="button"
           onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
           className={cn(
-            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
             filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
         >
-          Activos{" "}
+          <span>Activos</span>
           <span
             className={cn(
               filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
@@ -447,13 +471,13 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           type="button"
           onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
           className={cn(
-            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
             filtros.estado === "PENDIENTE"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
         >
-          Pendientes{" "}
+          <span>Pendientes</span>
           <span
             className={cn(
               filtros.estado === "PENDIENTE" ? "text-primary font-black" : "text-slate-500"
@@ -466,90 +490,15 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           type="button"
           onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
           className={cn(
-            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
             filtros.estado === "BAJA"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
         >
-          Bajas{" "}
+          <span>Bajas</span>
           <span
             className={cn(filtros.estado === "BAJA" ? "text-primary font-black" : "text-slate-500")}
-          >
-            {conteoBajas}
-          </span>
-        </button>
-      </div>
-
-      {/* Tabs de estado (Pills en desktop) */}
-      <div className="hidden xl:flex items-center gap-2 pt-1 border-b border-transparent">
-        {/* Activos */}
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-            filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
-              ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-          )}
-        >
-          <span>Activos</span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-extrabold",
-              filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
-                ? "bg-primary text-white"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-            )}
-          >
-            {conteoActivos || (respuesta?.total ?? 0)}
-          </span>
-        </button>
-
-        {/* Pendientes de alta */}
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-            filtros.estado === "PENDIENTE"
-              ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-          )}
-        >
-          <span>Pendientes de alta</span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-extrabold",
-              filtros.estado === "PENDIENTE"
-                ? "bg-primary text-white"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-            )}
-          >
-            {conteoPendientes}
-          </span>
-        </button>
-
-        {/* Dados de baja */}
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-            filtros.estado === "BAJA"
-              ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-          )}
-        >
-          <span>Dados de baja</span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-extrabold",
-              filtros.estado === "BAJA"
-                ? "bg-primary text-white"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-            )}
           >
             {conteoBajas}
           </span>
@@ -565,46 +514,118 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           onReintentar={() => void consulta.refetch()}
         />
       ) : itemsVisibles.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-            <Users aria-hidden="true" className="size-7" />
-          </span>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-            {filtrando ? "No encontramos alumnos" : soloACargo ? "Todavía no tenés alumnos a cargo" : "Todavía no hay alumnos"}
-          </h2>
-          <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
-            {busquedaDebounced
-              ? "Probá con otro nombre, apellido o DNI, o cambiá los filtros."
-              : soloACargo
-                ? "Cuando te asignen alumnos, vas a poder consultarlos desde acá."
-                : "Cuando haya alumnos registrados, vas a poder consultarlos desde acá."}
-          </p>
-          {(busqueda || filtrando) && (
-            <Button
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+          {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
+          <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <button
               type="button"
-              variant="outline"
-              onClick={() => {
-                setBusqueda("");
-                setFiltros(FILTROS_INICIALES);
-                setFiltroCuota("");
-                setPagina(0);
-              }}
-              className="min-h-[40px] rounded-xl"
+              onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                  ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              )}
             >
-              Limpiar búsqueda y filtros
-            </Button>
-          )}
-        </Card>
+              <span>Activos</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                  filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                )}
+              >
+                {conteoActivos || (respuesta?.total ?? 0)}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filtros.estado === "PENDIENTE"
+                  ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              )}
+            >
+              <span>Pendientes de alta</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                  filtros.estado === "PENDIENTE"
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                )}
+              >
+                {conteoPendientes}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filtros.estado === "BAJA"
+                  ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              )}
+            >
+              <span>Dados de baja</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                  filtros.estado === "BAJA"
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                )}
+              >
+                {conteoBajas}
+              </span>
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
+              <Users aria-hidden="true" className="size-7" />
+            </span>
+            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+              {filtrando ? "No encontramos alumnos" : soloACargo ? "Todavía no tenés alumnos a cargo" : "Todavía no hay alumnos"}
+            </h2>
+            <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
+              {busquedaDebounced
+                ? "Probá con otro nombre, apellido o DNI, o cambiá los filtros."
+                : soloACargo
+                  ? "Cuando te asignen alumnos, vas a poder consultarlos desde acá."
+                  : "Cuando haya alumnos registrados, vas a poder consultarlos desde acá."}
+            </p>
+            {(busqueda || filtrando) && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setBusqueda("");
+                  setFiltros(FILTROS_INICIALES);
+                  setFiltroCuota("");
+                  setPagina(0);
+                }}
+                className="min-h-[40px] rounded-xl font-bold"
+              >
+                Limpiar búsqueda y filtros
+              </Button>
+            )}
+          </div>
+        </div>
       ) : (
         <>
-          {/* Vista Mobile: Lista agrupada según diseño exacto */}
-          <div className="xl:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+          {/* Vista Mobile: Lista agrupada limpia en tonos neutros igual que en Ausentes */}
+          <div className="lg:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
             {itemsVisibles.map((alumno) => {
-              const detallePlan =
-                alumno.situacion_cuota?.estado === "POR_VENCER" && alumno.situacion_cuota.dias_restantes != null
-                  ? `${alumno.situacion_cuota.dias_restantes} días`
-                  : (alumno.plan ?? "Sin plan");
-              const subtitulo = [detallePlan, alumno.profesora].filter(Boolean).join(" · ");
+              const baseSubtitulo = alumno.plan || (alumno.dni ? `DNI ${formatearDni(alumno.dni)}` : "Sin plan");
+              const estadoCuotaMobile = alumno.situacion_cuota ? etiquetaCuota(alumno.situacion_cuota.estado) : null;
+              const subtitulo = [baseSubtitulo, estadoCuotaMobile].filter(Boolean).join(" · ");
 
               return (
                 <Link
@@ -620,20 +641,20 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                       <h2 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                         {alumno.nombre_completo}
                       </h2>
-                      <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                        {subtitulo || (alumno.dni ? `DNI ${formatearDni(alumno.dni)}` : "Sin plan")}
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                        {subtitulo}
                       </p>
                       {/* Spans accesibles que satisfacen pruebas y selectores */}
                       <span className={cn("hidden", colorEstado(alumno.estado))}>
                         {etiquetaEstado(alumno.estado)}
                       </span>
-                      <span className="sr-only">Ver ficha</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
-                    <ChevronRight className="size-4 text-slate-300 dark:text-slate-600" />
+                    <span className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200">
+                      Ver ficha
+                    </span>
                   </div>
                 </Link>
               );
@@ -641,7 +662,78 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           </div>
 
           {/* Vista Desktop: Tabla limpia exactamente como en la imagen */}
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-700/80 dark:bg-slate-900">
+          <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
+            {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
+            <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+                )}
+              >
+                <span>Activos</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  )}
+                >
+                  {conteoActivos || (respuesta?.total ?? 0)}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  filtros.estado === "PENDIENTE"
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+                )}
+              >
+                <span>Pendientes de alta</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    filtros.estado === "PENDIENTE"
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  )}
+                >
+                  {conteoPendientes}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  filtros.estado === "BAJA"
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+                )}
+              >
+                <span>Dados de baja</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    filtros.estado === "BAJA"
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  )}
+                >
+                  {conteoBajas}
+                </span>
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
@@ -662,7 +754,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                       Teléfono
                     </th>
                     <th scope="col" className="px-6 py-3.5 text-right">
-                      <span className="sr-only">Acciones</span>
+                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -713,12 +805,19 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                         {alumno.telefono ?? "Sin teléfono"}
                       </td>
 
-                      {/* Indicador de navegación a la ficha */}
+                      {/* Acción: Ver ficha */}
                       <td className="px-6 py-3.5 text-right">
-                        <ChevronRight
-                          aria-hidden="true"
-                          className="ml-auto size-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary dark:text-slate-600 dark:group-hover:text-pink-400"
-                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/app/alumnos/${alumno.id_alumno}`);
+                          }}
+                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          Ver ficha
+                        </Button>
                       </td>
                     </tr>
                   ))}
