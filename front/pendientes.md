@@ -41,10 +41,11 @@
 ## Alumno - Listado
 
 - [x] Vista y filtros alineados con el diseño exacto de image.png con pestañas integradas en cabecera de tarjeta y botón de acción "Ver ficha".
-
-- [ ] Ordena los alumnos por Estado de Cuota, de manera que primero se visualicen las cuotas con mayor vencimiento.
-
+- [x] Ordena los alumnos por Estado de Cuota, de manera que primero se visualicen las cuotas con mayor vencimiento.
 - [x] Que la primera opcion de visualizacion sea "Todos", Quita "Activos"
+- [ ] Arreglar error de "Sin dni" al aplicar filtro Contactar ![Listado](SinDni.png)
+
+
  
 ## Alumno - Cobros y Cuotas
 
@@ -86,8 +87,8 @@
 
 - [x] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
 - [x] Sacar el reporte cuotas vencidas y cobranza.
-
-- [ ] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
+- [x] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
+- [ ] Cambiar nombre de reporte "Planes" a "Planes mas elegidos"
 
 ## Clases
 

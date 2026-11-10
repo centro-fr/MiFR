@@ -5,27 +5,33 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 // REPORTES del menú lateral.
 
 interface PropsPagina {
+  titulo?: ReactNode;
+  subtitulo?: ReactNode;
   /** Controles del informe abierto (exportar), a la derecha del título. */
   acciones?: ReactNode;
   children: ReactNode;
 }
 
-export function PaginaReportes({ acciones, children }: PropsPagina) {
+export function PaginaReportes({ titulo, subtitulo, acciones, children }: PropsPagina) {
   return (
     <OwnerLayout>
       <div className="space-y-6 min-w-0">
         {/* ENCABEZADO PRINCIPAL */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Reportes
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-              Los números del centro en detalle, por período. El Dashboard muestra el resumen del mes.
-            </p>
+        {titulo && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {titulo}
+              </h1>
+              {subtitulo && (
+                <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+                  {subtitulo}
+                </p>
+              )}
+            </div>
+            {acciones && <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">{acciones}</div>}
           </div>
-          {acciones && <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">{acciones}</div>}
-        </div>
+        )}
 
         {/* CONTENIDO DEL REPORTE */}
         {children}

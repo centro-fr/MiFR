@@ -164,17 +164,11 @@ export function InscripcionesPage() {
 
   return (
     <PaginaReportes
+      titulo="Inscripciones"
+      subtitulo={`Altas y bajas de ${filtros.anio}${aplicados.length > 0 ? ` · ${aplicados.join(" · ")}` : ""}. No se cuentan las pre-inscripciones ni las reactivaciones.`}
       acciones={<MenuExportar disabled={!conDatos || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <div>
-          <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl dark:text-white">Inscripciones</h2>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Altas y bajas de {filtros.anio}
-            {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}. No se cuentan las pre-inscripciones ni las reactivaciones.
-          </p>
-        </div>
-
         <FiltrosDeInscripciones filtros={filtros} anioActual={anioActual} onCambiar={setFiltros} />
 
         {/* Con otro año o filtro la comparación arranca de nuevo, con el año anterior. */}

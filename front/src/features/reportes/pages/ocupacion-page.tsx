@@ -16,7 +16,6 @@ import {
   TH,
   TH_NUMERO,
   GrupoDeFiltros,
-  TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
 import { useExportarTabla } from "@/features/reportes/hooks/use-exportar-tabla";
@@ -155,9 +154,12 @@ export function OcupacionReportePage() {
   );
 
   return (
-    <PaginaReportes acciones={<MenuExportar disabled={horarios.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}>
+    <PaginaReportes
+      titulo="Ocupación de horarios"
+      subtitulo={detalle}
+      acciones={<MenuExportar disabled={horarios.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
+    >
       <div className="min-w-0 space-y-6">
-        <TituloDelReporte titulo="Ocupación de horarios" detalle={detalle} />
         <GrupoDeFiltros>
           <SelectFiltro
             id="ocupacion-profesora"

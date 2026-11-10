@@ -163,8 +163,7 @@ describe("Páginas de Reportes (Estandarización)", () => {
   it("renderiza la página de inscripciones con título h1, pestañas y el resumen del año", () => {
     renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Inscripciones" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Inscripciones" })).toBeInTheDocument();
     const resumen = screen.getByRole("region", { name: "Resumen" });
     expect(within(resumen).getByText("Crecimiento en el año")).toBeInTheDocument();
     expect(within(resumen).getByText("Activos al cierre")).toBeInTheDocument();
@@ -211,8 +210,7 @@ describe("Páginas de Reportes (Estandarización)", () => {
   it("renderiza la página de asistencia con su período y filtros", () => {
     renderizarConRuta("/app/reportes/asistencia", <InformeAsistenciaPage />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Informe de asistencia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Informe de asistencia" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Generar informe" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
   });

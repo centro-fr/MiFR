@@ -97,6 +97,13 @@ export function InformeAsistenciaPage() {
 
   return (
     <PaginaReportes
+      titulo="Informe de asistencia"
+      subtitulo={
+        <>
+          {informe ? periodoDelInforme(informe.desde, informe.hasta) : periodoDelInforme(filtros.desde, filtros.hasta)}
+          {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}
+        </>
+      }
       acciones={
         <MenuExportar
           disabled={!conDatos || consulta.isFetching}
@@ -106,16 +113,6 @@ export function InformeAsistenciaPage() {
       }
     >
       <div className="space-y-6 min-w-0">
-        <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Informe de asistencia
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            {informe ? periodoDelInforme(informe.desde, informe.hasta) : periodoDelInforme(filtros.desde, filtros.hasta)}
-            {aplicados.length > 0 && ` · ${aplicados.join(" · ")}`}
-          </p>
-        </div>
-
         <FiltrosInforme generando={consulta.isFetching && !consulta.isPlaceholderData} onGenerar={generar} />
 
         {consulta.isPending && <Cargando />}

@@ -15,7 +15,6 @@ import {
   TH,
   TH_NUMERO,
   GrupoDeFiltros,
-  TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
 import { useExportarTabla } from "@/features/reportes/hooks/use-exportar-tabla";
@@ -126,9 +125,12 @@ export function PlanesReportePage() {
   );
 
   return (
-    <PaginaReportes acciones={<MenuExportar disabled={!conDatos} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}>
+    <PaginaReportes
+      titulo="Planes más elegidos"
+      subtitulo={detalle}
+      acciones={<MenuExportar disabled={!conDatos} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
+    >
       <div className="min-w-0 space-y-6">
-        <TituloDelReporte titulo="Planes más elegidos" detalle={detalle} />
         <GrupoDeFiltros>
           <SelectFiltro
             id="planes-profesora"

@@ -16,7 +16,6 @@ import {
   TH,
   TH_NUMERO,
   GrupoDeFiltros,
-  TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
 import { FILAS_POR_PAGINA, obtenerCuotasVencidasCompleto } from "@/features/reportes/api/reportes-api";
@@ -147,10 +146,11 @@ export function CuotasVencidasReportePage() {
 
   return (
     <PaginaReportes
+      titulo="Cuotas vencidas"
+      subtitulo={detalle}
       acciones={<MenuExportar disabled={!informe || informe.total === 0 || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <TituloDelReporte titulo="Cuotas vencidas" detalle={detalle} />
         <GrupoDeFiltros>
           <SelectFiltro
             id="vencidas-profesora"

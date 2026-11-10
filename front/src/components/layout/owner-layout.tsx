@@ -510,20 +510,24 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
                   /
                 </span>
               )}
-              {esUltima || !miga.to ? (
+              {esUltima ? (
                 <span
-                  aria-current={esUltima ? "page" : undefined}
+                  aria-current="page"
                   className="truncate font-semibold text-slate-700 dark:text-slate-200"
                 >
                   {miga.etiqueta}
                 </span>
-              ) : (
+              ) : miga.to ? (
                 <Link
                   to={miga.to}
                   className="truncate text-slate-400 transition-colors hover:text-primary dark:text-slate-500 dark:hover:text-pink-300"
                 >
                   {miga.etiqueta}
                 </Link>
+              ) : (
+                <span className="truncate text-slate-400 dark:text-slate-500">
+                  {miga.etiqueta}
+                </span>
               )}
             </li>
           );

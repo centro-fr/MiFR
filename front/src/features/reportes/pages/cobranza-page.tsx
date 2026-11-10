@@ -17,7 +17,6 @@ import {
   TH,
   TH_NUMERO,
   GrupoDeFiltros,
-  TituloDelReporte,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
 import { FILAS_POR_PAGINA, obtenerCobranzaCompleta } from "@/features/reportes/api/reportes-api";
@@ -113,10 +112,11 @@ export function CobranzaReportePage() {
 
   return (
     <PaginaReportes
+      titulo="Cobranza"
+      subtitulo={detalle}
       acciones={<MenuExportar disabled={!informe || informe.total === 0 || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <TituloDelReporte titulo="Cobranza" detalle={detalle} />
         <GrupoDeFiltros>
           <FiltroPeriodo prefijo="cobranza" desde={filtros.desde} hasta={filtros.hasta} onCambiar={filtrar} />
           <SelectFiltro
