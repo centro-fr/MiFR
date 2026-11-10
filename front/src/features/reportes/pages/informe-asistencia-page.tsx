@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { AlertCircle, CalendarX } from "lucide-react";
+import { CalendarX } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { MenuExportar } from "@/components/menu-exportar";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { FiltrosInforme } from "@/features/reportes/components/filtros-informe";
 import { InformeAsistenciaImprimible } from "@/features/reportes/components/informe-asistencia-imprimible";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
@@ -32,8 +32,7 @@ function Cargando() {
           <Skeleton key={indice} className="h-24 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-48 rounded-lg" />
-      <Skeleton className="h-72 rounded-lg" />
+      <TablaSkeleton ariaLabel="Cargando informe de asistencia" filas={6} />
     </div>
   );
 }
@@ -122,23 +121,12 @@ export function InformeAsistenciaPage() {
         {consulta.isPending && <Cargando />}
 
         {consulta.isError && (
-          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-lg shadow-xs">
-            <AlertCircle className="size-8 text-rose-500" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Error al generar el informe
-            </h3>
-            <p role="alert" className="text-xs text-slate-500 max-w-sm">
-              {mensajeDeErrorApi(consulta.error, "No se pudo generar el informe.")}
-            </p>
-            <Button
-              type="button"
-              disabled={consulta.isFetching}
-              onClick={() => void consulta.refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold px-5"
-            >
-              Reintentar
-            </Button>
-          </Card>
+          <EstadoErrorCarga
+            titulo="Error al generar el informe"
+            mensaje={mensajeDeErrorApi(consulta.error, "No se pudo generar el informe.")}
+            reintentando={consulta.isFetching}
+            onReintentar={() => void consulta.refetch()}
+          />
         )}
 
         {informe && (

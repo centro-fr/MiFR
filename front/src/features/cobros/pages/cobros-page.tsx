@@ -14,7 +14,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { apiClient } from "@/api/client";
 import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
@@ -188,6 +188,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   const {
     data: transferenciasData,
     isLoading: cargandoTransferencias,
+    isError: errorTransferencias,
     refetch: recargarTransferencias,
   } = useTransferencias("PENDIENTE", { orden: "desc" });
 
@@ -213,6 +214,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   const {
     data: alumnosData,
     isLoading: cargandoAlumnos,
+    isError: errorAlumnos,
     refetch: recargarAlumnos,
   } = useQuery({
     queryKey: ["alumnos", "listado-cobros", idProfesoraACargo ?? null],
@@ -487,7 +489,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                     aria-label="Plan"
                     value={filtroPlan}
                     onChange={(e) => setFiltroPlan(e.target.value)}
-                    className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                    className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                   >
                     <option value="TODOS">Todos</option>
                     {planes.map((p) => (
@@ -509,7 +511,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                       aria-label="Profesora"
                       value={filtroProfesora}
                       onChange={(e) => setFiltroProfesora(e.target.value)}
-                      className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                      className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                     >
                       <option value="TODAS">Todas</option>
                       {opcionesProfesoras.map((prof) => (
@@ -569,32 +571,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
           {/* TABLA DE CUOTAS */}
           {cargandoAlumnos ? (
-            <div
-              role="status"
-              aria-label="Cargando cuotas"
-              className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-            >
-              <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
-                <Skeleton className="h-8 w-20 rounded-lg" />
-                <Skeleton className="h-8 w-24 rounded-lg" />
-                <Skeleton className="h-8 w-24 rounded-lg" />
-                <Skeleton className="h-8 w-20 rounded-lg" />
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="size-8 rounded-full" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    <Skeleton className="hidden md:block h-4 w-24" />
-                    <Skeleton className="hidden sm:block h-4 w-28" />
-                    <Skeleton className="hidden lg:block h-5 w-16 rounded-md" />
-                    <Skeleton className="h-8 w-28 rounded-lg" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TablaSkeleton ariaLabel="Cargando cuotas" cantidadPestanas={4} filas={5} />
+          ) : errorAlumnos ? (
+            <EstadoErrorCarga
+              mensaje="No se pudieron cargar las cuotas de los alumnos."
+              onReintentar={() => void recargarAlumnos()}
+            />
           ) : (
             <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
               {/* Header de pestañas para desktop dentro de la tarjeta */}
@@ -863,26 +845,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
           {/* TABLA DE TRANSFERENCIAS */}
           {cargandoTransferencias ? (
-            <div
-              role="status"
-              aria-label="Cargando transferencias"
-              className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-            >
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="size-8 rounded-full" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    <Skeleton className="hidden md:block h-4 w-24" />
-                    <Skeleton className="hidden sm:block h-4 w-28" />
-                    <Skeleton className="hidden lg:block h-4 w-20" />
-                    <Skeleton className="h-8 w-36 rounded-lg" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TablaSkeleton ariaLabel="Cargando transferencias" filas={4} />
+          ) : errorTransferencias ? (
+            <EstadoErrorCarga
+              mensaje="No se pudieron cargar las transferencias por verificar."
+              onReintentar={() => void recargarTransferencias()}
+            />
           ) : transferenciasPendientes.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
               <Banknote className="size-8 text-slate-400" />

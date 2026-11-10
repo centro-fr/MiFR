@@ -6,12 +6,11 @@ import {
   Clock,
   Users,
   ChevronRight,
-  AlertCircle,
-  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import {
@@ -75,32 +74,15 @@ function ContenidoMisClases({ idProfesora }: { idProfesora: string }) {
 
       {/* ESTADO DE CARGA */}
       {cargando && (
-        <div
-          role="status"
-          className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-8 text-center"
-        >
-          <Loader2 className="size-7 animate-spin text-primary" />
-          <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
-            Cargando tu cronograma semanal…
-          </p>
-        </div>
+        <TablaSkeleton ariaLabel="Cargando tu cronograma semanal" cantidadPestanas={5} filas={5} />
       )}
 
       {/* ESTADO DE ERROR */}
       {!cargando && error && (
-        <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-3xl">
-          <AlertCircle className="size-8 text-rose-600 dark:text-rose-400" />
-          <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {mensajeDeErrorApi(error, "No se pudo cargar tu cronograma semanal.")}
-          </p>
-          <Button
-            type="button"
-            onClick={() => void reintentar()}
-            className="min-h-[40px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
-          >
-            Reintentar
-          </Button>
-        </Card>
+        <EstadoErrorCarga
+          mensaje={mensajeDeErrorApi(error, "No se pudo cargar tu cronograma semanal.")}
+          onReintentar={() => void reintentar()}
+        />
       )}
 
       {/* ESTADO VACÍO */}

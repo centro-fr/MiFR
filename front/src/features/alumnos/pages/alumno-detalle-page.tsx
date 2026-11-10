@@ -5,8 +5,6 @@ import {
   CalendarClock,
   CalendarDays,
   CreditCard,
-  Loader2,
-  Mail,
   MoreHorizontal,
   PenSquare,
   UserRound,
@@ -16,6 +14,8 @@ import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { AccionesEstadoAlumno } from "@/features/alumnos/components/acciones-estado-alumno";
 import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-form";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
@@ -148,12 +148,20 @@ export function AlumnoDetallePage() {
             error={false}
           />
         ) : consulta.isPending ? (
-          <div
-            role="status"
-            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-          >
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            Cargando ficha…
+          <div aria-busy="true" aria-label="Cargando ficha" className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Skeleton className="size-16 rounded-2xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-56" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 rounded-2xl" />
+              ))}
+            </div>
+            <Skeleton className="h-96 rounded-2xl" />
           </div>
         ) : consulta.isError && esAlumnoNoEncontrado(consulta.error) ? (
           <EstadoFicha
@@ -730,35 +738,31 @@ function EstadoFicha({
   error: boolean;
   onReintentar?: () => void;
 }) {
+  if (error) {
+    return (
+      <EstadoErrorCarga
+        titulo={titulo}
+        mensaje={descripcion}
+        onReintentar={onReintentar}
+        accionSecundaria={
+          <Button asChild variant="outline" className="min-h-[40px] rounded-lg">
+            <Link to="/app/alumnos/listado">Volver al listado</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600 bg-card">
-      <span
-        className={cn(
-          "flex size-12 items-center justify-center rounded-2xl",
-          error
-            ? "bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-200"
-            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200",
-        )}
-      >
-        {error ? (
-          <Mail aria-hidden="true" className="size-6" />
-        ) : (
-          <UserRound aria-hidden="true" className="size-6" />
-        )}
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600 bg-card rounded-lg shadow-2xs">
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+        <UserRound aria-hidden="true" className="size-6" />
       </span>
       <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">{titulo}</h1>
-      <p
-        role={error ? "alert" : undefined}
-        className="max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400"
-      >
+      <p className="max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
         {descripcion}
       </p>
-      {onReintentar && (
-        <Button type="button" onClick={onReintentar} className="min-h-[40px] rounded-xl">
-          Reintentar
-        </Button>
-      )}
-      <Button asChild variant="outline" className="min-h-[40px] rounded-xl">
+      <Button asChild variant="outline" className="min-h-[40px] rounded-lg">
         <Link to="/app/alumnos/listado">Volver al listado</Link>
       </Button>
     </Card>

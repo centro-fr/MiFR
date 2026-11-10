@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
-  Loader2,
   Search,
   Users,
   X,
@@ -14,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { NavegadorFecha } from "@/features/asistencia/components/navegador-fecha";
 import { EstadoClase } from "@/features/asistencia/components/fila-clase";
 import { horaDesdeApi } from "@/features/horarios/utils/cronograma";
@@ -215,29 +215,15 @@ export function ClasesDelDia({
 
       {/* ESTADO DE ERROR */}
       {error && (
-        <Card className="flex flex-col items-center gap-3 border-rose-200 bg-rose-50/50 p-6 text-center dark:border-rose-900/50 dark:bg-rose-950/20">
-          <p role="alert" className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-            {error}
-          </p>
-          <Button
-            type="button"
-            onClick={onReintentar}
-            className="min-h-[44px] rounded-xl bg-primary px-5 text-sm font-bold text-white hover:bg-primary-dark"
-          >
-            Reintentar
-          </Button>
-        </Card>
+        <EstadoErrorCarga
+          mensaje={error}
+          onReintentar={onReintentar}
+        />
       )}
 
       {/* ESTADO DE CARGA */}
       {cargando && (
-        <div
-          role="status"
-          className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-        >
-          <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-          Cargando clases…
-        </div>
+        <TablaSkeleton ariaLabel="Cargando clases…" filas={5} />
       )}
 
       {!cargando && !error && (

@@ -3,9 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { ClasesDelDia } from "@/features/asistencia/components/clases-del-dia";
 import { RegistroAsistencia } from "@/features/asistencia/components/registro-asistencia";
 import { fechaActualArgentina } from "@/utils/fecha";
@@ -127,27 +126,12 @@ function VistaAsistencia({ propietaria }: VistaProps) {
       <div className="space-y-6 min-w-0">
         {id ? (
           consultaAsistencia.isPending ? (
-            <div
-              role="status"
-              className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-            >
-              <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-              Cargando la lista de inscriptos…
-            </div>
+            <TablaSkeleton ariaLabel="Cargando la lista de inscriptos" filas={6} />
           ) : consultaAsistencia.isError && !consultaAsistencia.data ? (
-            <div className="flex flex-col items-start gap-4">
-              <p role="alert" className="text-sm font-semibold text-destructive">
-                {mensajeDeErrorApi(consultaAsistencia.error, "No se pudo cargar la asistencia.")}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void consultaAsistencia.refetch()}
-                className="min-h-[44px] rounded-xl px-4 text-sm font-bold"
-              >
-                Reintentar
-              </Button>
-            </div>
+            <EstadoErrorCarga
+              mensaje={mensajeDeErrorApi(consultaAsistencia.error, "No se pudo cargar la asistencia.")}
+              onReintentar={() => void consultaAsistencia.refetch()}
+            />
           ) : consultaAsistencia.data ? (
             <RegistroAsistencia
               datos={consultaAsistencia.data}

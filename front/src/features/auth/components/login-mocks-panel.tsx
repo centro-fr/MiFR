@@ -74,7 +74,7 @@ export default function LoginMocksPanel({ errorCode, isLoading, onSelect }: Prop
                 id="login-mocks-rol"
                 value={idPerfil}
                 onChange={(e) => setIdPerfil(Number(e.target.value))}
-                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-white/15 dark:bg-white/5"
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
               >
                 {PERFILES.map((opcion) => (
                   <option key={opcion.id_usuario} value={opcion.id_usuario}>

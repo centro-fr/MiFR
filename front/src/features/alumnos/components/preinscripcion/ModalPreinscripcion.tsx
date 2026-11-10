@@ -111,13 +111,13 @@ export function ModalPreinscripcion({
   return (
     <Dialog open={open} onOpenChange={cerrarModal}>
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         onInteractOutside={(e) => {
           if (enviando) e.preventDefault();
         }}
       >
-        {/* Encabezado estándar */}
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+        {/* Encabezado del mismo color que el body */}
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <div className="space-y-0.5">
             <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Nueva pre-inscripción
@@ -211,15 +211,15 @@ export function ModalPreinscripcion({
             </div>
           </div>
 
-          {/* Footer con botones de navegación */}
-          <div className="shrink-0 flex items-center justify-between border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          {/* Footer del mismo color que el body */}
+          <div className="shrink-0 flex items-center justify-between border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
               {paso > 1 ? (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={retrocederPaso}
                   disabled={enviando}
-                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   Atrás
                 </Button>
@@ -229,7 +229,7 @@ export function ModalPreinscripcion({
                   variant="outline"
                   onClick={() => cerrarModal(false)}
                   disabled={enviando}
-                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   Cancelar
                 </Button>

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowRight, Bell, CheckCheck, ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
+import { ArrowRight, Bell, CheckCheck, ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { IconoNotificacion, MarcaSinLeer, MomentoNotificacion } from "@/features/notificaciones/components/partes-notificacion";
 import {
   NOTIFICACIONES_POR_PAGINA,
@@ -151,25 +151,15 @@ function Contenido() {
   const { data, isPending, isError, error, refetch, isFetching } = useMisNotificaciones(NOTIFICACIONES_POR_PAGINA, offset);
 
   if (isPending) {
-    return (
-      <div aria-busy="true" aria-label="Cargando las notificaciones" className="space-y-3">
-        {[0, 1, 2, 3].map((indice) => (
-          <Skeleton key={indice} className="h-20 rounded-2xl" />
-        ))}
-      </div>
-    );
+    return <TablaSkeleton ariaLabel="Cargando las notificaciones" filas={5} />;
   }
   if (isError && !data) {
     return (
-      <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
-        <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-        <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {mensajeDeErrorApi(error, "No se pudieron cargar las notificaciones.")}
-        </p>
-        <Button type="button" onClick={() => void refetch()} disabled={isFetching} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
-          Reintentar
-        </Button>
-      </Card>
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(error, "No se pudieron cargar las notificaciones.")}
+        reintentando={isFetching}
+        onReintentar={() => void refetch()}
+      />
     );
   }
   return <Bandeja pagina={data} onCambiarPagina={setOffset} />;

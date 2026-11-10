@@ -1,7 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  AlertCircle,
   ArrowLeft,
   Calendar,
   Clock,
@@ -20,6 +19,8 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import {
   Dialog,
   DialogContent,
@@ -135,12 +136,16 @@ export function ProfesoraDetallePage() {
   if (!idValido) {
     return (
       <OwnerLayout>
-        <div className="py-12 text-center space-y-4">
-          <AlertCircle className="mx-auto size-10 text-rose-500" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Identificador inválido</h2>
-          <Button asChild variant="outline" className="rounded-xl">
-            <Link to="/app/profesoras">Volver al plantel</Link>
-          </Button>
+        <div className="py-8">
+          <EstadoErrorCarga
+            titulo="Identificador inválido"
+            mensaje="El identificador de profesor/a no es válido."
+            accionSecundaria={
+              <Button asChild variant="outline" className="min-h-[40px] rounded-lg">
+                <Link to="/app/profesoras">Volver al plantel</Link>
+              </Button>
+            }
+          />
         </div>
       </OwnerLayout>
     );
@@ -149,9 +154,20 @@ export function ProfesoraDetallePage() {
   if (cargandoProfesoras || (profesora && cargandoUsuario)) {
     return (
       <OwnerLayout>
-        <div role="status" className="flex min-h-64 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-          <Loader2 className="size-5 animate-spin text-primary" />
-          Cargando ficha del profesor/a...
+        <div aria-busy="true" aria-label="Cargando ficha del profesor/a" className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="size-16 rounded-2xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-56" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+          </div>
+          <Skeleton className="h-72 rounded-2xl" />
         </div>
       </OwnerLayout>
     );
@@ -160,17 +176,17 @@ export function ProfesoraDetallePage() {
   if (isError || !profesora) {
     return (
       <OwnerLayout>
-        <div className="py-12 text-center space-y-4">
-          <AlertCircle className="mx-auto size-10 text-rose-500" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {profesora ? "Error al cargar datos" : "Profesor/a no encontrado/a"}
-          </h2>
-          <p className="text-sm text-slate-500 max-w-sm mx-auto">
-            {error ? mensajeDeErrorApi(error, "No se pudo obtener la información.") : "El/la profesor/a no existe o fue eliminado/a."}
-          </p>
-          <Button asChild variant="outline" className="rounded-xl">
-            <Link to="/app/profesoras">Volver al plantel</Link>
-          </Button>
+        <div className="py-8">
+          <EstadoErrorCarga
+            titulo={profesora ? "Error al cargar datos" : "Profesor/a no encontrado/a"}
+            mensaje={error ? mensajeDeErrorApi(error, "No se pudo obtener la información.") : "El/la profesor/a no existe o fue eliminado/a."}
+            onReintentar={() => window.location.reload()}
+            accionSecundaria={
+              <Button asChild variant="outline" className="min-h-[40px] rounded-lg">
+                <Link to="/app/profesoras">Volver al plantel</Link>
+              </Button>
+            }
+          />
         </div>
       </OwnerLayout>
     );

@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, AlertTriangle, CircleCheck, RefreshCw, Settings2 } from "lucide-react";
+import { AlertTriangle, CircleCheck, RefreshCw, Settings2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { BloqueCuotasVencidas, BloqueEfectivo, BloqueTransferencias } from "@/features/notificaciones/components/bloques-resumen";
 import { useResumenDiario } from "@/features/notificaciones/hooks/use-notificaciones";
 import type { BloqueDelResumen, ResumenDiario } from "@/features/notificaciones/schemas/resumen-diario";
@@ -110,15 +111,11 @@ export function ResumenDelDia() {
 
       {isPending && <Cargando />}
       {isError && (
-        <Card className="flex flex-col items-start gap-3 rounded-2xl border-border bg-white p-5 dark:bg-surface-low">
-          <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
-            <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
-            {mensajeDeErrorApi(error, "No se pudo cargar el resumen del día.")}
-          </p>
-          <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching} className="rounded-xl font-bold">
-            Reintentar
-          </Button>
-        </Card>
+        <EstadoErrorCarga
+          mensaje={mensajeDeErrorApi(error, "No se pudo cargar el resumen del día.")}
+          reintentando={isFetching}
+          onReintentar={() => void refetch()}
+        />
       )}
       {resumen && <Bloques resumen={resumen} />}
     </section>

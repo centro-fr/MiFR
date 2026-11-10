@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TablaSkeleton, EstadoErrorCarga } from '@/components/ui/estados-pantalla';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
-import { Plus, CalendarX, Loader2 } from 'lucide-react';
+import { Plus, CalendarX } from 'lucide-react';
 
 export const HorariosPage: React.FC = () => {
   const {
@@ -167,21 +168,24 @@ export const HorariosPage: React.FC = () => {
   if (cargando || errorCarga) {
     return (
       <OwnerLayout>
-        <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-          {cargando ? (
-            <>
-              <Loader2 aria-hidden="true" className="w-8 h-8 text-primary animate-spin" />
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Cargando el cronograma…</p>
-            </>
-          ) : (
-            <>
-              <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {mensajeDeErrorApi(errorCarga, 'No se pudo cargar el cronograma.')}
+        <div className="space-y-6 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Horarios
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+                La semana del centro: qué clase hay, con quién y cuántos lugares quedan.
               </p>
-              <Button type="button" onClick={reintentarCarga} className="min-h-[44px] px-5">
-                Reintentar
-              </Button>
-            </>
+            </div>
+          </div>
+          {cargando ? (
+            <TablaSkeleton ariaLabel="Cargando cronograma" cantidadPestanas={5} filas={6} />
+          ) : (
+            <EstadoErrorCarga
+              mensaje={mensajeDeErrorApi(errorCarga, 'No se pudo cargar el cronograma.')}
+              onReintentar={reintentarCarga}
+            />
           )}
         </div>
       </OwnerLayout>

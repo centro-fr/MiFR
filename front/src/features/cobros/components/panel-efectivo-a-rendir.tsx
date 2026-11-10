@@ -4,7 +4,7 @@ import { CheckCircle, ChevronDown, Search, SlidersHorizontal } from "lucide-reac
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
@@ -34,8 +34,18 @@ export function PanelEfectivoARendir() {
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
 
   // Queries
-  const { data: efectivoData, isLoading: cargandoPendientes } = useEfectivoPendiente();
-  const { data: historialData, isLoading: cargandoHistorial } = useHistorialRendiciones();
+  const {
+    data: efectivoData,
+    isLoading: cargandoPendientes,
+    isError: errorPendientes,
+    refetch: recargarPendientes,
+  } = useEfectivoPendiente();
+  const {
+    data: historialData,
+    isLoading: cargandoHistorial,
+    isError: errorHistorial,
+    refetch: recargarHistorial,
+  } = useHistorialRendiciones();
 
   // Mutations
   const rendirCobro = useRendirCobro();
@@ -165,7 +175,7 @@ export function PanelEfectivoARendir() {
                 aria-label="Profesora"
                 value={filtroProfesora}
                 onChange={(e) => setFiltroProfesora(e.target.value)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="TODAS">Todas</option>
                 {opcionesProfesoras.map((p) => (
@@ -282,23 +292,13 @@ export function PanelEfectivoARendir() {
         {/* Contenido según vista */}
         {vista === "PENDIENTES" ? (
           cargandoPendientes ? (
-            <div
-              role="status"
-              aria-label="Cargando efectivo pendiente"
-              className="divide-y divide-slate-100 dark:divide-slate-800"
-            >
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="size-8 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                  <Skeleton className="hidden md:block h-4 w-24" />
-                  <Skeleton className="hidden sm:block h-4 w-28" />
-                  <Skeleton className="hidden lg:block h-4 w-16" />
-                  <Skeleton className="h-8 w-24 rounded-lg" />
-                </div>
-              ))}
+            <TablaSkeleton conTarjeta={false} ariaLabel="Cargando efectivo pendiente" filas={4} />
+          ) : errorPendientes ? (
+            <div className="p-4">
+              <EstadoErrorCarga
+                mensaje="No se pudo cargar el efectivo pendiente de rendición."
+                onReintentar={() => void recargarPendientes()}
+              />
             </div>
           ) : cobrosFiltrados.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
@@ -460,6 +460,13 @@ export function PanelEfectivoARendir() {
               </div>
             </>
           )
+        ) : errorHistorial ? (
+          <div className="p-4">
+            <EstadoErrorCarga
+              mensaje="No se pudo cargar el historial de rendiciones."
+              onReintentar={() => void recargarHistorial()}
+            />
+          </div>
         ) : (
           <TablaHistorialRendiciones
             rendiciones={historialFiltrado}

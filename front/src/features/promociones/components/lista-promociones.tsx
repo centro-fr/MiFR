@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton } from "@/components/ui/estados-pantalla";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 
@@ -203,24 +203,5 @@ export function ListaPromociones({
 
 /** Mientras cargan: skeleton de filas de tabla como en Alumnos - Listado. */
 export function ListaPromocionesCargando() {
-  return (
-    <div
-      role="status"
-      aria-label="Cargando promociones"
-      className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-    >
-      <div className="divide-y divide-slate-100 dark:divide-slate-800">
-        {Array.from({ length: 5 }, (_, indice) => (
-          <div key={indice} className="flex items-center justify-between px-6 py-3.5">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="hidden md:block h-4 w-20" />
-            <Skeleton className="hidden sm:block h-4 w-24" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-8 w-28 rounded-lg" />
-          </div>
-        ))}
-      </div>
-      <span className="sr-only">Cargando promociones…</span>
-    </div>
-  );
+  return <TablaSkeleton ariaLabel="Cargando promociones" cantidadPestanas={2} filas={5} />;
 }

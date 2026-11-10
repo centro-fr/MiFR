@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Plus, Settings, Users } from "lucide-react";
+import { Plus, Settings, Users } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { HORARIOS_QUERY_KEY, PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { SelectorMes } from "@/features/honorarios/components/controles-informe";
@@ -32,25 +33,15 @@ import type { Suplencia } from "@/types/suplencia";
 import { fechaActualArgentina } from "@/utils/fecha";
 
 function SuplenciasCargando() {
-  return (
-    <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-      <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-      Cargando suplencias…
-    </div>
-  );
+  return <TablaSkeleton ariaLabel="Cargando suplencias" filas={5} />;
 }
 
 function SuplenciasConError({ error, onReintentar }: { error: unknown; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-12 text-center">
-      <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-      <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        {mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
-      </p>
-      <Button type="button" onClick={onReintentar} className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark">
-        Reintentar
-      </Button>
-    </Card>
+    <EstadoErrorCarga
+      mensaje={mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
+      onReintentar={onReintentar}
+    />
   );
 }
 

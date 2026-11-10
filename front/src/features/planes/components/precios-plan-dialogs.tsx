@@ -151,12 +151,12 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         }}
       >
         <DialogContent
-          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
+          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
         >
           {plan && (
             <>
               {/* Encabezado */}
-              <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+              <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
                 <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
                   Cambiar precio de {plan.nombre}
                 </DialogTitle>
@@ -306,13 +306,13 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                 </div>
 
                 {/* Footer de botones */}
-                <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+                <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onClose}
                     disabled={registrar.isPending}
-                    className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                    className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     Cancelar
                   </Button>
@@ -339,8 +339,8 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         open={confirmacionAbierta}
         onOpenChange={(abierto) => !registrar.isPending && setConfirmacionAbierta(abierto)}
       >
-        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-          <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+          <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 text-left dark:border-slate-800 dark:bg-slate-900">
             <div className="space-y-0.5">
               <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                 ¿Confirmar actualización?
@@ -362,14 +362,14 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               </p>
             )}
           </div>
-          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
             <AlertDialogCancel asChild>
               <Button
                 type="button"
                 variant="outline"
                 disabled={registrar.isPending}
                 onClick={() => registrar.reset()}
-                className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 Volver
               </Button>
@@ -402,9 +402,9 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
     <Dialog open={plan !== null} onOpenChange={(abierto) => !abierto && onClose()}>
       <DialogContent
         bottomSheetOnMobile
-        className="gap-0 border-border bg-white p-0 dark:bg-surface-low sm:max-w-lg"
+        className="gap-0 border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-900 sm:max-w-lg"
       >
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             Historial de precios
           </DialogTitle>
@@ -452,7 +452,7 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
                 return (
                   <li
                     key={precio.id_plan_precio}
-                    className="rounded-xl border border-border bg-slate-50 p-4 dark:bg-white/5"
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-lg font-extrabold text-slate-900 dark:text-white">
@@ -481,12 +481,12 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
             </ol>
           )}
         </div>
-        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             Cerrar
           </Button>

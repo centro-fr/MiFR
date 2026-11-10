@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Search, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import {
   ListaPromociones,
   ListaPromocionesCargando,
@@ -233,19 +234,10 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       {consulta.isPending ? (
         <ListaPromocionesCargando />
       ) : consulta.isError ? (
-        <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-800">
-          <AlertCircle className="size-8 text-rose-600" />
-          <p role="alert" className="text-sm font-semibold">
-            {mensajeDeErrorApi(consulta.error, "No se pudieron cargar las promociones.")}
-          </p>
-          <Button
-            type="button"
-            onClick={() => void consulta.refetch()}
-            className="min-h-11 rounded-xl font-bold"
-          >
-            Reintentar
-          </Button>
-        </Card>
+        <EstadoErrorCarga
+          mensaje={mensajeDeErrorApi(consulta.error, "No se pudieron cargar las promociones.")}
+          onReintentar={() => void consulta.refetch()}
+        />
       ) : promocionesFiltradas.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70">

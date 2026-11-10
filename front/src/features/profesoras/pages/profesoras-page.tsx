@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertCircle,
   ChevronRight,
   GraduationCap,
   Search,
@@ -10,9 +9,8 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import {
   Table,
   TableBody,
@@ -187,43 +185,13 @@ export function ProfesorasPage() {
 
         {/* CONTENIDO PRINCIPAL */}
         {isPending ? (
-          <div
-            role="status"
-            aria-label="Cargando profesores"
-            className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-          >
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="size-8 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                  <Skeleton className="hidden md:block h-4 w-28" />
-                  <Skeleton className="hidden sm:block h-4 w-24" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-8 w-24 rounded-lg" />
-                </div>
-              ))}
-            </div>
-          </div>
+          <TablaSkeleton ariaLabel="Cargando profesores" cantidadPestanas={2} filas={5} />
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-lg">
-            <AlertCircle className="size-8 text-rose-500" />
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Error al cargar profesores
-            </h2>
-            <p className="text-xs text-slate-500 max-w-sm">
-              {mensajeDeErrorApi(error, "No se pudo consultar el listado.")}
-            </p>
-            <Button
-              type="button"
-              onClick={() => refetch()}
-              className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark font-bold"
-            >
-              Reintentar
-            </Button>
-          </Card>
+          <EstadoErrorCarga
+            titulo="Error al cargar profesores"
+            mensaje={mensajeDeErrorApi(error, "No se pudo consultar el listado.")}
+            onReintentar={() => void refetch()}
+          />
         ) : listaFiltrada.length === 0 ? (
           <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
             {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}

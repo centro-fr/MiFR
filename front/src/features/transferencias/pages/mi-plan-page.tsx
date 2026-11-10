@@ -1,7 +1,7 @@
-import { AlertCircle, Loader2, RotateCcw } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { DatosBancariosCard } from "../components/datos-bancarios-card";
 import { ListaMisTransferencias } from "../components/lista-mis-transferencias";
 import { ResumenPlanCuota } from "../components/resumen-plan-cuota";
@@ -19,11 +19,16 @@ export function MiPlanPage() {
   if (cargando) {
     return (
       <OwnerLayout>
-        <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-          <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-            Cargando los datos de tu plan y transferencias...
-          </p>
+        <div aria-busy="true" aria-label="Cargando datos de tu plan y transferencias" className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-60" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-64 rounded-3xl" />
+            <Skeleton className="h-64 rounded-3xl" />
+          </div>
+          <Skeleton className="h-56 rounded-3xl" />
         </div>
       </OwnerLayout>
     );
@@ -32,18 +37,12 @@ export function MiPlanPage() {
   if (errorPlan || !planData) {
     return (
       <OwnerLayout>
-        <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 p-6 text-center">
-          <AlertCircle className="size-10 text-rose-500" />
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">
-            No pudimos cargar la información de tu plan
-          </h2>
-          <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
-            Ocurrió un error al consultar tus datos. Por favor intentá nuevamente.
-          </p>
-          <Button type="button" onClick={() => reintentarPlan()} className="mt-2 min-h-[44px] rounded-xl bg-primary">
-            <RotateCcw className="mr-2 size-4" />
-            Reintentar
-          </Button>
+        <div className="py-8">
+          <EstadoErrorCarga
+            titulo="No pudimos cargar la información de tu plan"
+            mensaje="Ocurrió un error al consultar tus datos. Por favor intentá nuevamente."
+            onReintentar={() => reintentarPlan()}
+          />
         </div>
       </OwnerLayout>
     );

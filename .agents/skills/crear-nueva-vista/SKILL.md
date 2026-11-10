@@ -318,24 +318,26 @@ Para vistas basadas en tarjetas (como la nueva pantalla de Planes):
 
 ## 7. Estados de Feedback (Carga, Error, Vacío)
 
-- **Carga:**
+- **Carga (Skeleton Estándar de Lista/Tabla):**
+  Usar el componente reutilizable `TablaSkeleton` de `@/components/ui/estados-pantalla`:
   ```tsx
-  <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-    <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-    Cargando {entidad}...
-  </div>
+  import { TablaSkeleton } from "@/components/ui/estados-pantalla";
+
+  // En la vista:
+  {isPending && <TablaSkeleton ariaLabel="Cargando entidades" cantidadPestanas={3} filas={5} />}
   ```
-- **Error con botón de reintento:**
+- **Error con botón de reintento (Alerta Estándar de Error de Carga):**
+  Usar el componente reutilizable `EstadoErrorCarga` de `@/components/ui/estados-pantalla`:
   ```tsx
-  <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
-    <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-    <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-      {mensajeDeErrorApi(error, "No se pudieron cargar los datos.")}
-    </p>
-    <Button type="button" onClick={reintentar} className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold">
-      Reintentar
-    </Button>
-  </Card>
+  import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+
+  // En la vista:
+  {isError && (
+    <EstadoErrorCarga
+      mensaje={mensajeDeErrorApi(error, "No se pudieron cargar los datos.")}
+      onReintentar={() => void refetch()}
+    />
+  )}
   ```
 - **Vacío:**
   ```tsx

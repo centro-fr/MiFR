@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { History } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { formatearPrecio } from "@/utils/moneda";
 import type { CobroRendido } from "../schemas/rendicion";
@@ -22,26 +22,7 @@ function formatearFechaHora(fechaIso: string): string {
 
 export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
   if (cargando) {
-    return (
-      <div
-        role="status"
-        aria-label="Cargando historial de rendiciones"
-        className="divide-y divide-slate-100 dark:divide-slate-800"
-      >
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between px-6 py-3.5">
-            <div className="flex items-center gap-3">
-              <Skeleton className="size-8 rounded-full" />
-              <Skeleton className="h-4 w-40" />
-            </div>
-            <Skeleton className="hidden md:block h-4 w-24" />
-            <Skeleton className="hidden sm:block h-4 w-28" />
-            <Skeleton className="hidden lg:block h-4 w-24" />
-            <Skeleton className="h-4 w-20" />
-          </div>
-        ))}
-      </div>
-    );
+    return <TablaSkeleton conTarjeta={false} ariaLabel="Cargando historial de rendiciones" filas={4} />;
   }
 
   if (rendiciones.length === 0) {

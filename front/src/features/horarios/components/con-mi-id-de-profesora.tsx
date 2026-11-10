@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { AlertCircle, Loader2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { useMiIdDeProfesora } from "@/features/horarios/hooks/use-mi-id-de-profesora";
 
 interface Props {
@@ -18,32 +18,15 @@ export function ConMiIdDeProfesora({ children }: Props) {
   const miPerfil = useMiIdDeProfesora();
 
   if (miPerfil.isPending) {
-    return (
-      <div
-        role="status"
-        className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-      >
-        <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-        Cargando tus alumnos…
-      </div>
-    );
+    return <TablaSkeleton ariaLabel="Cargando tus alumnos" filas={4} />;
   }
 
   if (miPerfil.isError) {
     return (
-      <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-700">
-        <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-        <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {mensajeDeErrorApi(miPerfil.error, "No se pudo cargar tu perfil de profesora.")}
-        </p>
-        <Button
-          type="button"
-          onClick={() => void miPerfil.refetch()}
-          className="min-h-[40px] rounded-xl bg-primary text-white hover:bg-primary-dark"
-        >
-          Reintentar
-        </Button>
-      </Card>
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(miPerfil.error, "No se pudo cargar tu perfil de profesora.")}
+        onReintentar={() => void miPerfil.refetch()}
+      />
     );
   }
 

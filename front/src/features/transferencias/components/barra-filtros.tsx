@@ -80,7 +80,7 @@ export function BarraFiltros({ estado, filtros, onEstado, onChange, onLimpiar }:
                 aria-label="Estado"
                 value={estado}
                 onChange={(evento) => onEstado(evento.target.value as EstadoTransferencia)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 {ESTADOS.map(({ valor, texto }) => (
                   <option key={valor} value={valor}>
@@ -111,7 +111,7 @@ export function BarraFiltros({ estado, filtros, onEstado, onChange, onLimpiar }:
               aria-label="Ordenar"
               value={filtros.orden}
               onChange={(evento) => cambiar({ orden: evento.target.value as OrdenTransferencias })}
-              className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+              className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
             >
               {ORDENES.map(({ valor, texto }) => (
                 <option key={valor} value={valor}>

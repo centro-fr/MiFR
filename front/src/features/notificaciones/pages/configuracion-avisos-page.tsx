@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { FormularioAvisos } from "@/features/notificaciones/components/formulario-avisos";
 import { useParametros } from "@/features/notificaciones/hooks/use-notificaciones";
 
@@ -20,15 +19,11 @@ function Contenido() {
   }
   if (isError) {
     return (
-      <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
-        <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-        <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          {mensajeDeErrorApi(error, "No se pudo cargar la configuración de los avisos.")}
-        </p>
-        <Button type="button" onClick={() => void refetch()} disabled={isFetching} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
-          Reintentar
-        </Button>
-      </Card>
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(error, "No se pudo cargar la configuración de los avisos.")}
+        reintentando={isFetching}
+        onReintentar={() => void refetch()}
+      />
     );
   }
   return <FormularioAvisos parametros={parametros} />;

@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertCircle,
   ChevronDown,
   Search,
   SlidersHorizontal,
@@ -13,9 +12,8 @@ import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
 import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { cn } from "@/lib/utils";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
@@ -265,7 +263,7 @@ export function AusentesPage() {
                   aria-label="Plan"
                   value={filtroPlan}
                   onChange={(e) => setFiltroPlan(e.target.value)}
-                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                 >
                   <option value="TODOS">Todos</option>
                   {(consultaPlanes.data ?? []).map((p) => (
@@ -285,7 +283,7 @@ export function AusentesPage() {
                   aria-label="Profesora"
                   value={filtroProfesora}
                   onChange={(e) => setFiltroProfesora(e.target.value)}
-                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                 >
                   <option value="TODAS">Todas</option>
                   {(consultaProfesoras.data ?? []).map((p) => (
@@ -305,7 +303,7 @@ export function AusentesPage() {
                   aria-label="Faltas"
                   value={filtroInasistencias}
                   onChange={(e) => setFiltroInasistencias(e.target.value)}
-                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                 >
                   <option value="DEFAULT">{umbral} o más</option>
                   <option value="4">4 o más</option>
@@ -358,51 +356,12 @@ export function AusentesPage() {
 
         {/* Feedback de Carga / Error / Vacío */}
         {consultaInactivos.isPending ? (
-          <div
-            role="status"
-            aria-label="Cargando alumnos ausentes"
-            className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-          >
-            <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
-              <Skeleton className="h-8 w-24 rounded-lg" />
-              <Skeleton className="h-8 w-28 rounded-lg" />
-              <Skeleton className="h-8 w-24 rounded-lg" />
-              <Skeleton className="h-8 w-20 rounded-lg" />
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="size-8 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                  <Skeleton className="hidden md:block h-4 w-12" />
-                  <Skeleton className="hidden sm:block h-4 w-24" />
-                  <div className="hidden lg:flex items-center gap-2">
-                    <Skeleton className="size-8 rounded-lg" />
-                    <Skeleton className="size-8 rounded-lg" />
-                    <Skeleton className="size-8 rounded-lg" />
-                  </div>
-                  <Skeleton className="hidden sm:block h-4 w-28" />
-                  <Skeleton className="h-8 w-24 rounded-lg" />
-                </div>
-              ))}
-            </div>
-          </div>
+          <TablaSkeleton ariaLabel="Cargando alumnos ausentes" cantidadPestanas={4} filas={5} />
         ) : consultaInactivos.isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-lg">
-            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(consultaInactivos.error, "No se pudo cargar el listado de alumnos ausentes.")}
-            </p>
-            <Button
-              type="button"
-              onClick={() => void consultaInactivos.refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
-            >
-              Reintentar
-            </Button>
-          </Card>
+          <EstadoErrorCarga
+            mensaje={mensajeDeErrorApi(consultaInactivos.error, "No se pudo cargar el listado de alumnos ausentes.")}
+            onReintentar={() => void consultaInactivos.refetch()}
+          />
         ) : alumnosFiltrados.length === 0 ? (
           <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
             {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}

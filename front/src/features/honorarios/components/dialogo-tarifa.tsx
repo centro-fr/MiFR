@@ -202,7 +202,7 @@ function FormularioTarifa({ alcance, periodo, tarifas, onListo }: PropsFormulari
 
       {/* Fijos al pie del diálogo: en el celular el formulario no entra entero y Guardar queda siempre a mano.
           El -bottom compensa el relleno del contenedor que scrollea, para que no se vea el contenido por debajo. */}
-      <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-border bg-white px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6 sm:pb-6 dark:bg-surface-low">
+      <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-slate-100 bg-white px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6 sm:pb-6 dark:border-slate-800 dark:bg-slate-900">
         <Button type="button" variant="outline" onClick={onListo} disabled={registrar.isPending} className="min-h-11 rounded-xl font-bold">
           Cancelar
         </Button>
@@ -261,7 +261,7 @@ export function DialogoTarifa({ abierto, periodo, alcance, onClose }: PropsDialo
   const textos = alcance ? textosDelAlcance(alcance) : null;
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-border bg-white p-0 sm:max-w-lg dark:bg-surface-low">
+      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-slate-200 bg-white p-0 sm:max-w-lg dark:border-slate-800 dark:bg-slate-900">
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
           <div className="min-w-0 pr-2">
             <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">{textos?.titulo}</DialogTitle>

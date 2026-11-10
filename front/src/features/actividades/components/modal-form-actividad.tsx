@@ -81,10 +81,10 @@ export function ModalFormActividad({
       }}
     >
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-surface-low"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        {/* Cabecera modal con línea separadora idéntica a modal-registrar-cobro */}
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+        {/* Cabecera modal del mismo color que el body */}
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             {tituloModal}
           </DialogTitle>
@@ -172,7 +172,7 @@ export function ModalFormActividad({
                 className={cn(
                   "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                   modalidad === "GRUPAL"
-                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white dark:bg-white/10 text-slate-900 dark:text-white"
+                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                 )}
               >
@@ -209,7 +209,7 @@ export function ModalFormActividad({
                 className={cn(
                   "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                   modalidad === "PERSONALIZADA"
-                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white dark:bg-white/10 text-slate-900 dark:text-white"
+                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                 )}
               >
@@ -316,14 +316,14 @@ export function ModalFormActividad({
           )}
         </div>
 
-        {/* Footer idéntico a modal-registrar-cobro */}
-        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+        {/* Footer del mismo color que el body */}
+        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={guardando}
-            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             Cancelar
           </Button>

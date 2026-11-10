@@ -89,10 +89,10 @@ export function ModalDetalleAprobacion({
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
+        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
       >
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <DialogTitle className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl dark:text-white">
             {transferencia.alumno.nombre} {transferencia.alumno.apellido}
           </DialogTitle>
@@ -254,13 +254,13 @@ export function ModalDetalleAprobacion({
 
         {/* Acciones */}
         {!modoRechazo && (
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-between gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-between gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
             <Button
               type="button"
               variant="outline"
               onClick={() => setModoRechazo(true)}
               disabled={aprobando || rechazando}
-              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:border-white/15 dark:bg-transparent dark:text-rose-400 dark:hover:bg-rose-950/20"
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:border-slate-700 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-slate-700"
             >
               Rechazar
             </Button>

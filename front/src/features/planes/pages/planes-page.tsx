@@ -1,12 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { AlertCircle, Search, Tag } from "lucide-react";
+import { Search, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
@@ -219,19 +220,10 @@ export function PlanesPage() {
             {isPending ? (
               <ListaPlanesCargando />
             ) : isError ? (
-              <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-lg">
-                <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
-                <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
-                </p>
-                <Button
-                  type="button"
-                  onClick={() => void refetch()}
-                  className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
-                >
-                  Reintentar
-                </Button>
-              </Card>
+              <EstadoErrorCarga
+                mensaje={mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
+                onReintentar={() => void refetch()}
+              />
             ) : planesFiltrados.length === 0 ? (
               <EstadoVacio
                 titulo={hayFiltros ? "Sin resultados para tu búsqueda" : "Todavía no hay planes"}

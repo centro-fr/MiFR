@@ -46,9 +46,9 @@ export function ModalAprobarTransferencia({ transferencia, aprobando, error, onC
 
   return (
     <Dialog open onOpenChange={(abierta) => !abierta && !aprobando && onClose()}>
-      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
         <form onSubmit={confirmar} className="flex flex-col flex-1 overflow-hidden">
-          <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
             <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Aprobar transferencia
             </DialogTitle>
@@ -58,7 +58,7 @@ export function ModalAprobarTransferencia({ transferencia, aprobando, error, onC
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-white/5">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800/40">
               <span className="font-bold text-slate-900 dark:text-white">
                 {nombre} {apellido}
               </span>
@@ -95,13 +95,13 @@ export function ModalAprobarTransferencia({ transferencia, aprobando, error, onC
             )}
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
             <Button
               type="button"
               variant="outline"
               disabled={aprobando}
               onClick={onClose}
-              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Cancelar
             </Button>

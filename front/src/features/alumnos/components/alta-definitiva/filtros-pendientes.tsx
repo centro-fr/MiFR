@@ -14,7 +14,7 @@ const PERIODOS: { valor: PeriodoPendientes; texto: string }[] = [
 ];
 
 const CLASE_SELECT =
-  "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus-visible:outline-2 focus-visible:outline-primary dark:border-white/15 dark:bg-surface-low dark:text-slate-200";
+  "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus-visible:outline-2 focus-visible:outline-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 interface Props {
   filtros: Filtros;
@@ -41,7 +41,7 @@ export function FiltrosPendientes({ filtros, planes, onChange, onLimpiar }: Prop
           value={filtros.busqueda}
           maxLength={60}
           onChange={(evento) => cambiar({ busqueda: evento.target.value })}
-          className="min-h-[44px] rounded-xl border-slate-200 bg-white pl-9 text-slate-900 placeholder:text-slate-500 shadow-none dark:border-white/15 dark:bg-surface-low dark:text-slate-100"
+          className="min-h-[44px] rounded-xl border-slate-200 bg-white pl-9 text-slate-900 placeholder:text-slate-500 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
       <select

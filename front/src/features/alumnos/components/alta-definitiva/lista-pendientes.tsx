@@ -109,7 +109,7 @@ function Contacto({ pendiente }: { pendiente: PreInscripcionPendiente }) {
 function FilaPendiente(props: AccionesProps) {
   const { pendiente } = props;
   return (
-    <TableRow className="hover:bg-slate-50 dark:hover:bg-white/5">
+    <TableRow className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
       <TableHead scope="row" className="px-6 py-4 font-normal">
         <div className="flex items-center gap-3">
           <Avatar pendiente={pendiente} />
@@ -171,7 +171,7 @@ function TarjetaPendiente(props: AccionesProps) {
   const { pendiente } = props;
   return (
     <li>
-      <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm transition hover:border-pink-300 dark:border-slate-600 dark:bg-surface-low dark:hover:border-pink-500">
+      <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm transition hover:border-pink-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-pink-500">
         <div className="flex items-center gap-2.5">
           <Avatar pendiente={pendiente} />
           <div className="flex min-w-0 flex-col">
@@ -181,7 +181,7 @@ function TarjetaPendiente(props: AccionesProps) {
             <Identidad pendiente={pendiente} />
           </div>
         </div>
-        <dl className="flex flex-col gap-1.5 rounded-lg bg-slate-50 p-2.5 text-sm dark:bg-white/5">
+        <dl className="flex flex-col gap-1.5 rounded-lg bg-slate-50 p-2.5 text-sm dark:bg-slate-800/40">
           <DatoTarjeta etiqueta="Plan">
             {pendiente.nombrePlan} ({formatearPrecio(pendiente.precio)})
           </DatoTarjeta>
@@ -214,11 +214,11 @@ interface ListaPendientesProps {
 export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: ListaPendientesProps) {
   return (
     <>
-      <Card className="hidden overflow-hidden rounded-lg border-border bg-white shadow-sm xl:block dark:bg-surface-low">
+      <Card className="hidden overflow-hidden rounded-lg border-border bg-white shadow-sm xl:block dark:border-slate-700/80 dark:bg-slate-900">
         <div className="overflow-x-auto">
           <Table className="w-full text-left text-sm">
             <TableHeader>
-              <TableRow className="border-b border-border bg-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:bg-white/5 dark:text-slate-200">
+              <TableRow className="border-b border-border bg-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
                 <TableHead scope="col" className="px-6 py-4">Alumno</TableHead>
                 <TableHead scope="col" className="px-4 py-4">Edad</TableHead>
                 <TableHead scope="col" className="px-4 py-4">Contacto</TableHead>
@@ -230,7 +230,7 @@ export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: Lis
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody className="divide-y divide-slate-200 font-medium dark:divide-white/10">
+            <TableBody className="divide-y divide-slate-200 font-medium dark:divide-slate-800/60">
               {pendientes.map((pendiente) => (
                 <FilaPendiente key={pendiente.idInscripcion} pendiente={pendiente} puedeConfirmar={puedeConfirmar} onConfirmar={onConfirmar} />
               ))}

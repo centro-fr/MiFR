@@ -75,7 +75,7 @@ export function SelectorFormaDeCobro({ formas, valor, onChange, leyenda, etiquet
               key={forma}
               htmlFor={`forma-pago-${forma}`}
               className={cn(
-                "flex min-h-[44px] cursor-pointer gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-white/15 dark:has-data-[state=checked]:border-white dark:has-data-[state=checked]:bg-white/10",
+                "flex min-h-[44px] cursor-pointer gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-slate-800 dark:has-data-[state=checked]:border-white/80 dark:has-data-[state=checked]:bg-slate-800",
                 tieneDetalle ? "items-start" : "items-center",
               )}
             >
@@ -121,7 +121,7 @@ export function FechaHoraAutomatica({ error }: { error?: string }) {
             value={FORMATO_FECHA_HORA.format(ahora)}
             aria-invalid={error !== undefined}
             aria-describedby={describedBy}
-            className={cn(CLASE_INPUT, "cursor-default bg-slate-50 pr-10 text-slate-600 tabular-nums dark:bg-white/5 dark:text-slate-300")}
+            className={cn(CLASE_INPUT, "cursor-default bg-slate-50 pr-10 text-slate-600 tabular-nums dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300")}
           />
           <LockKeyhole aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-slate-400" />
         </div>
@@ -166,13 +166,13 @@ interface BotonesDeCobroProps {
 /** Pie de los formularios de cobro: cancelar y la acción principal, que es el envío del form. */
 export function BotonesDeCobro({ onCancelar, enviando, texto, textoEnviando }: BotonesDeCobroProps) {
   return (
-    <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+    <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
       <Button
         type="button"
         variant="outline"
         disabled={enviando}
         onClick={onCancelar}
-        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
       >
         Cancelar
       </Button>

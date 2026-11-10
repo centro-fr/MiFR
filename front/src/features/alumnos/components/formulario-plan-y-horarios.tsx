@@ -19,7 +19,7 @@ import type { HorarioElegible, InscripcionAnterior } from "@/types/alumno";
 // Lo usan la reactivación (US-08) y el cambio de plan u horarios desde la ficha.
 
 const CLASE_SELECT =
-  "min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 disabled:opacity-60 dark:border-white/15 dark:bg-surface-low dark:text-slate-200";
+  "min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 type Errores = Partial<Record<keyof ReactivacionFormValues, string>>;
 
@@ -122,13 +122,13 @@ export function FormularioPlanYHorarios({
         </Alert>
       )}
 
-      <div className="-mx-6 -mb-6 mt-6 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+      <div className="-mx-6 -mb-6 mt-6 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
         <Button
           type="button"
           variant="outline"
           disabled={procesando}
           onClick={onClose}
-          className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+          className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Cancelar
         </Button>
@@ -259,8 +259,8 @@ export function DialogoPlanYHorarios({ titulo, descripcion, procesando, onClose,
         if (!abierto && !procesando) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</DialogTitle>
           <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
         </DialogHeader>

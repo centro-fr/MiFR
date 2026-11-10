@@ -5,7 +5,7 @@ import { ChevronDown, Receipt, Search, SlidersHorizontal } from "lucide-react";
 import { apiClient } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { formatearFecha, inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { informeCobranzaApiSchema } from "@/features/reportes/schemas/informes-centro";
 import { cn } from "@/utils/cn";
@@ -32,7 +32,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
 
   const hoy = fechaActualArgentina();
-  const { data: cobranzaData, isLoading } = useQuery({
+  const { data: cobranzaData, isLoading, isError, refetch } = useQuery({
     queryKey: ["cobros", "historial", hoy],
     queryFn: async () => {
       const respuesta = await apiClient.get("/reportes/cobranza", {
@@ -147,7 +147,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 aria-label="Cobró"
                 value={filtroProfesora}
                 onChange={(e) => setFiltroProfesora(e.target.value)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="TODAS">Cualquiera</option>
                 {opcionesProfesoras.map((nombre) => (
@@ -233,22 +233,13 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
         </div>
 
         {isLoading ? (
-          <div
-            role="status"
-            aria-label="Cargando cobros"
-            className="divide-y divide-slate-100 dark:divide-slate-800"
-          >
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between px-6 py-3.5">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="size-8 rounded-full" />
-                  <Skeleton className="h-4 w-40" />
-                </div>
-                <Skeleton className="hidden md:block h-4 w-28" />
-                <Skeleton className="hidden sm:block h-4 w-24" />
-                <Skeleton className="h-8 w-28 rounded-lg" />
-              </div>
-            ))}
+          <TablaSkeleton conTarjeta={false} ariaLabel="Cargando cobros" filas={5} />
+        ) : isError ? (
+          <div className="p-4">
+            <EstadoErrorCarga
+              mensaje="No se pudo cargar el historial de cobros."
+              onReintentar={() => void refetch()}
+            />
           </div>
         ) : cobrosFiltrados.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">

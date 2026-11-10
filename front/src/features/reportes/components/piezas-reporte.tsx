@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { cn } from "@/utils/cn";
 
 // Piezas que comparten las pestañas de Reportes: mismas tarjetas, tablas, estados y filtros que el
@@ -82,28 +83,19 @@ export function CargandoReporte() {
           <Skeleton key={indice} className="h-24 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-72 rounded-lg" />
+      <TablaSkeleton ariaLabel="Cargando tabla de informe" filas={5} />
     </div>
   );
 }
 
 export function ErrorDelReporte({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-lg border-rose-200 p-8 text-center shadow-xs dark:border-rose-900/50">
-      <AlertCircle aria-hidden="true" className="size-8 text-rose-500" />
-      <h3 className="text-base font-bold text-slate-900 dark:text-white">Error al generar el informe</h3>
-      <p role="alert" className="max-w-sm text-xs text-slate-500">
-        {mensajeDeErrorApi(error, "No se pudo generar el informe.")}
-      </p>
-      <Button
-        type="button"
-        disabled={reintentando}
-        onClick={onReintentar}
-        className="min-h-[40px] rounded-lg bg-primary px-5 font-bold text-white hover:bg-primary-dark"
-      >
-        Reintentar
-      </Button>
-    </Card>
+    <EstadoErrorCarga
+      titulo="Error al generar el informe"
+      mensaje={mensajeDeErrorApi(error, "No se pudo generar el informe.")}
+      reintentando={reintentando}
+      onReintentar={onReintentar}
+    />
   );
 }
 

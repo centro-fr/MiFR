@@ -1,10 +1,11 @@
 import { isAxiosError } from "axios";
-import { AlertCircle, AlertTriangle, Calculator, Loader2, X } from "lucide-react";
+import { AlertTriangle, Calculator, Loader2, X } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
 import type { AdvertenciaHonorario, LiquidacionResumen } from "@/types/honorarios";
@@ -36,15 +37,11 @@ function mensajeDeError(error: unknown): string {
 
 export function InformeConError({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-800">
-      <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-      <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        {mensajeDeError(error)}
-      </p>
-      <Button type="button" onClick={onReintentar} disabled={reintentando} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
-        Reintentar
-      </Button>
-    </Card>
+    <EstadoErrorCarga
+      mensaje={mensajeDeError(error)}
+      reintentando={reintentando}
+      onReintentar={onReintentar}
+    />
   );
 }
 

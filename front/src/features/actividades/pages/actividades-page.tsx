@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CalendarPlus, ChevronDown, Loader2, Search } from "lucide-react";
+import { CalendarPlus, ChevronDown, Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import {
   Table,
   TableBody,
@@ -213,7 +214,7 @@ export function ActividadesPage() {
                 aria-label="Modalidad"
                 value={filtroModalidad}
                 onChange={(e) => setFiltroModalidad(e.target.value as ModalidadFiltro)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="TODAS">Todas</option>
                 <option value="GRUPAL">Grupales</option>
@@ -238,27 +239,12 @@ export function ActividadesPage() {
 
         {/* Contenido de lista */}
         {isPending ? (
-          <div
-            role="status"
-            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
-          >
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            Cargando actividades…
-          </div>
+          <TablaSkeleton ariaLabel="Cargando actividades" cantidadPestanas={3} filas={5} />
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-lg">
-            <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(error, "No se pudieron cargar las actividades.")}
-            </p>
-            <Button
-              type="button"
-              onClick={() => void refetch()}
-              className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark font-bold text-sm"
-            >
-              Reintentar
-            </Button>
-          </Card>
+          <EstadoErrorCarga
+            mensaje={mensajeDeErrorApi(error, "No se pudieron cargar las actividades.")}
+            onReintentar={() => void refetch()}
+          />
         ) : listaFiltrada.length === 0 ? (
           <EmptyActividades
             onNuevo={abrirNueva}

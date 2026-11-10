@@ -1,9 +1,10 @@
-import { Award, Flame, LockKeyhole, Star, Trophy, Loader2, AlertCircle } from "lucide-react";
+import { Award, Flame, LockKeyhole, Star, Trophy } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import { useInsignias } from "../hooks/use-insignias";
 import type { FichaInsignias } from "../schemas/insignias";
@@ -122,12 +123,29 @@ export function InsigniasContenido() {
   const consulta = useInsignias(panel.data?.id_alumno);
 
   if (panel.isPending || consulta.isPending) {
-    return <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"><Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />Cargando tus logros...</div>;
+    return (
+      <div aria-busy="true" aria-label="Cargando tus logros" className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-64 rounded-3xl" />
+          <Skeleton className="h-64 rounded-3xl" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-3xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const error = panel.error ?? consulta.error;
   if (error) {
-    return <Card className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border-slate-200 p-6 text-center dark:border-slate-800"><AlertCircle aria-hidden="true" className="size-8 text-rose-600" /><p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">{mensajeDeErrorApi(error, "No se pudieron cargar tus logros.")}</p><Button type="button" onClick={() => void consulta.refetch()} className="min-h-[44px] rounded-xl bg-primary font-bold text-white">Reintentar</Button></Card>;
+    return (
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(error, "No se pudieron cargar tus logros.")}
+        onReintentar={() => void consulta.refetch()}
+      />
+    );
   }
 
   const ficha = consulta.data;

@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { AlertCircle, Plus, type LucideIcon } from "lucide-react";
+import { Plus, type LucideIcon } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 
 // Base de las dos tarjetas de la pestaña "Rutina y progreso": mismo estilo que las de la ficha.
 
@@ -67,15 +68,11 @@ interface PropsError {
 
 export function ErrorDeCarga({ error, mensaje, reintentando, onReintentar }: PropsError) {
   return (
-    <div className="flex flex-col items-start gap-3">
-      <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
-        <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
-        {mensajeDeErrorApi(error, mensaje)}
-      </p>
-      <Button type="button" variant="outline" disabled={reintentando} onClick={onReintentar} className="min-h-11 rounded-xl font-bold">
-        Reintentar
-      </Button>
-    </div>
+    <EstadoErrorCarga
+      mensaje={mensajeDeErrorApi(error, mensaje)}
+      reintentando={reintentando}
+      onReintentar={onReintentar}
+    />
   );
 }
 

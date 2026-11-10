@@ -33,13 +33,13 @@ interface PropsPie {
 /** El -bottom compensa el relleno del contenedor que scrollea, para que no se vea el contenido por debajo. */
 export function PieDelFormulario({ guardando, textoGuardar, onCancelar }: PropsPie) {
   return (
-    <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5 sm:-bottom-6 sm:-mx-6 sm:-mb-6">
+    <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900 sm:-bottom-6 sm:-mx-6 sm:-mb-6">
       <Button
         type="button"
         variant="outline"
         onClick={onCancelar}
         disabled={guardando}
-        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
       >
         Cancelar
       </Button>
@@ -69,9 +69,9 @@ export function DialogoDeCarga({ abierto, titulo, descripcion, onClose, ancho = 
   return (
     <Dialog open={abierto} onOpenChange={(abriendo) => !abriendo && onClose()}>
       <DialogContent
-        className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low", ancho === "amplio" ? "sm:max-w-3xl" : "sm:max-w-lg")}
+        className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900", ancho === "amplio" ? "sm:max-w-3xl" : "sm:max-w-lg")}
       >
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
           <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</DialogTitle>
           <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
         </DialogHeader>

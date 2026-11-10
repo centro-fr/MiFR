@@ -73,9 +73,9 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
 
   return (
     <Dialog open onOpenChange={(abierta) => !abierta && !rechazando && onClose()}>
-      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
         <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
             <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Rechazar transferencia
             </DialogTitle>
@@ -101,7 +101,7 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
                 onChange={(evento) => cambiarMotivo(evento.target.value)}
                 aria-invalid={errorMotivo !== null}
                 aria-describedby={errorMotivo ? "motivo-rechazo-contador motivo-rechazo-error" : "motivo-rechazo-contador"}
-                className="min-h-22 resize-y rounded-xl border-slate-200 bg-white text-sm dark:border-white/15 dark:bg-transparent"
+                className="min-h-22 resize-y rounded-xl border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
               <p id="motivo-rechazo-contador" className="text-right text-xs text-muted-foreground">
                 {motivo.length}/{LARGO_MAXIMO_MOTIVO}
@@ -122,13 +122,13 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
             )}
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
             <Button
               type="button"
               variant="outline"
               disabled={rechazando}
               onClick={onClose}
-              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Cancelar
             </Button>

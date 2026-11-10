@@ -7,7 +7,6 @@ import {
   Clock3,
   Dumbbell,
   Flame,
-  Loader2,
   Trophy,
   XCircle,
 } from "lucide-react";
@@ -16,6 +15,8 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import type { PanelAlumno } from "../schemas/panel-alumno";
 
@@ -193,9 +194,16 @@ export function PanelAlumnoPage() {
   if (consulta.isPending) {
     return (
       <OwnerLayout>
-        <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-          Cargando tu panel...
+        <div aria-busy="true" aria-label="Cargando tu panel" className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-48 rounded-3xl" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-64 rounded-3xl" />
+            <Skeleton className="h-64 rounded-3xl" />
+          </div>
         </div>
       </OwnerLayout>
     );
@@ -204,15 +212,10 @@ export function PanelAlumnoPage() {
   if (consulta.isError) {
     return (
       <OwnerLayout>
-        <Card className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border-slate-200 p-6 text-center dark:border-slate-800">
-          <AlertCircle aria-hidden="true" className="size-8 text-rose-600" />
-          <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {mensajeDeErrorApi(consulta.error, "No se pudo cargar tu panel.")}
-          </p>
-          <Button type="button" onClick={() => void consulta.refetch()} className="min-h-[44px] rounded-xl bg-primary font-bold text-white">
-            Reintentar
-          </Button>
-        </Card>
+        <EstadoErrorCarga
+          mensaje={mensajeDeErrorApi(consulta.error, "No se pudo cargar tu panel.")}
+          onReintentar={() => void consulta.refetch()}
+        />
       </OwnerLayout>
     );
   }

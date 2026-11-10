@@ -30,7 +30,7 @@ export function ModalDetalleClaseProfesor({ horario, abierto, onClose }: Props) 
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border-slate-200 dark:border-slate-800"
+        className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <DialogTitle className="sr-only">Detalle de clase semanal</DialogTitle>
         <DialogDescription className="sr-only">
