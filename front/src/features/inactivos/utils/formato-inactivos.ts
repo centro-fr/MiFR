@@ -1,5 +1,5 @@
 import type { AlumnoInactivo } from "@/features/inactivos/schemas/inactivos";
-import { formatearFecha, tiempoDesdeFecha } from "@/features/alumnos/utils/formato-ficha";
+import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 
 export interface ContactoPrioritario {
   nombreCompleto: string;
@@ -42,10 +42,10 @@ export function generarMensajeReintegro(item: AlumnoInactivo): string {
   const plan = item.plan.nombre;
 
   if (contacto.esTutor) {
-    return `¡Hola ${item.tutor?.nombre || contacto.nombreCompleto}! Te escribimos de MiFR Espacio de Danzas por las clases de ${item.alumno.nombre}. Notamos que estuvo ausente en sus últimas clases de ${plan} y queríamos saber si está todo bien o si necesitan coordinar algo. ¡Esperamos verles pronto!`;
+    return `¡Hola ${item.tutor?.nombre || contacto.nombreCompleto}! Te escribimos de MiFR por las clases de ${item.alumno.nombre}. Notamos que estuvo ausente en sus últimas clases de ${plan} y queríamos saber si está todo bien o si necesitan coordinar algo. ¡Esperamos verles pronto!`;
   }
 
-  return `¡Hola ${item.alumno.nombre}! Te escribimos de MiFR Espacio de Danzas. Notamos que no pudiste venir a tus últimas clases de ${plan} y te extrañamos. Queríamos saber si está todo bien o si querés coordinar una reposición. ¡Esperamos verte pronto!`;
+  return `¡Hola ${item.alumno.nombre}! Te escribimos de MiFR. Notamos que no pudiste venir a tus últimas clases de ${plan} y te extrañamos. Queríamos saber si está todo bien o si querés coordinar una reposición. ¡Esperamos verte pronto!`;
 }
 
 /**
@@ -69,12 +69,30 @@ export function generarEnlaceWhatsApp(telefono: string | null, mensaje?: string)
 }
 
 /**
- * Formatea la fecha de la última asistencia con un texto amigable relativo.
+ * Formatea la fecha de la última asistencia:
+ * - Si está dentro de los 15 días: "Hace X días" (o "Hoy" / "Ayer").
+ * - Si supera los 15 días: "El DD/MM/AAAA".
  */
 export function formatearUltimaAsistencia(fechaIso: string | null): string {
   if (!fechaIso) return "Sin asistencias previas";
-  const fecha = formatearFecha(fechaIso);
-  const relativo = tiempoDesdeFecha(fechaIso);
-  if (!relativo) return fecha;
-  return `${fecha} (${relativo.toLowerCase()})`;
+  const fecha = new Date(fechaIso);
+  if (isNaN(fecha.getTime())) return "Sin asistencias previas";
+
+  const ahora = new Date();
+  const msPorDia = 1000 * 60 * 60 * 24;
+  const difDias = Math.floor((ahora.getTime() - fecha.getTime()) / msPorDia);
+
+  if (difDias < 0) {
+    return `El ${formatearFecha(fechaIso)}`;
+  }
+  if (difDias === 0) {
+    return "Hoy";
+  }
+  if (difDias === 1) {
+    return "Ayer";
+  }
+  if (difDias <= 15) {
+    return `Hace ${difDias} días`;
+  }
+  return `El ${formatearFecha(fechaIso)}`;
 }

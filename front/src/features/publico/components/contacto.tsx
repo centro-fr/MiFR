@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { Button } from "@/components/ui/button";
 import { enlacesDeContacto, type EnlacesDeContacto } from "@/features/publico/utils/contacto";
@@ -24,7 +24,7 @@ export function Contacto({ enlaces = enlacesDeContacto() }: { enlaces?: EnlacesD
             {enlaces.whatsapp && (
               <Button asChild className="h-12 rounded-xl bg-white px-6 text-base font-bold text-primary-dark hover:bg-pink-50">
                 <a href={enlaces.whatsapp} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle aria-hidden="true" />
+                  <WhatsAppIcon className="size-5" />
                   Escribinos por WhatsApp
                 </a>
               </Button>
