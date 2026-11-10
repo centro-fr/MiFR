@@ -145,41 +145,30 @@ export function ListaPlanes({
                           </Can>
                         )}
                         {vigente && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => onActualizarPrecio(plan)}
-                              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                            >
-                              Cambiar precio
-                              <span className="sr-only"> de {plan.nombre}</span>
-                            </Button>
-                            <Can permission="PLANES_EDITAR">
-                              {onEditarPlan ? (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => onEditarPlan(plan)}
-                                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                                >
+                          <Can permission="PLANES_EDITAR">
+                            {onEditarPlan ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onEditarPlan(plan)}
+                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              >
+                                Editar
+                                <span className="sr-only"> {plan.nombre}</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                asChild
+                                variant="outline"
+                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              >
+                                <Link to={`/app/planes/${plan.id}/editar`}>
                                   Editar
                                   <span className="sr-only"> {plan.nombre}</span>
-                                </Button>
-                              ) : (
-                                <Button
-                                  asChild
-                                  variant="outline"
-                                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                                >
-                                  <Link to={`/app/planes/${plan.id}/editar`}>
-                                    Editar
-                                    <span className="sr-only"> {plan.nombre}</span>
-                                  </Link>
-                                </Button>
-                              )}
-                            </Can>
-                          </>
+                                </Link>
+                              </Button>
+                            )}
+                          </Can>
                         )}
                       </div>
                     </td>
@@ -242,41 +231,30 @@ export function ListaPlanes({
                     </Can>
                   )}
                   {vigente && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onActualizarPrecio(plan)}
-                        className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                      >
-                        Cambiar precio
-                        <span className="sr-only"> de {plan.nombre}</span>
-                      </Button>
-                      <Can permission="PLANES_EDITAR">
-                        {onEditarPlan ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onEditarPlan(plan)}
-                            className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
+                    <Can permission="PLANES_EDITAR">
+                      {onEditarPlan ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => onEditarPlan(plan)}
+                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          Editar
+                          <span className="sr-only"> {plan.nombre}</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          <Link to={`/app/planes/${plan.id}/editar`}>
                             Editar
                             <span className="sr-only"> {plan.nombre}</span>
-                          </Button>
-                        ) : (
-                          <Button
-                            asChild
-                            variant="outline"
-                            className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
-                            <Link to={`/app/planes/${plan.id}/editar`}>
-                              Editar
-                              <span className="sr-only"> {plan.nombre}</span>
-                            </Link>
-                          </Button>
-                        )}
-                      </Can>
-                    </>
+                          </Link>
+                        </Button>
+                      )}
+                    </Can>
                   )}
                 </div>
               </div>

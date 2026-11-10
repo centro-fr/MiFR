@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EditarPlanDialog } from "../editar-plan-dialog";
 import type { Plan } from "@/types/plan";
@@ -20,6 +20,8 @@ const mockPlan: Plan = {
 
 const mockMutate = vi.fn();
 const mockMutateAsync = vi.fn();
+const mockActualizarAsync = vi.fn();
+const mockRegistrarPrecioAsync = vi.fn();
 
 vi.mock("@/features/actividades/hooks/use-actividades", () => ({
   useActividades: () => ({
@@ -37,6 +39,11 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
   }),
   useActualizarPlan: () => ({
     mutate: mockMutate,
+    mutateAsync: mockActualizarAsync,
+    isPending: false,
+  }),
+  useRegistrarPrecioPlan: () => ({
+    mutateAsync: mockRegistrarPrecioAsync,
     isPending: false,
   }),
   useDarDeBajaPlan: () => ({
@@ -51,19 +58,29 @@ describe("EditarPlanDialog", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActualizarAsync.mockResolvedValue({ ...mockPlan, nombre: "Kids Avanzado" });
+    mockRegistrarPrecioAsync.mockResolvedValue({ id_plan_precio: 99, precio: 26000 });
   });
 
-  it("renderiza todos los campos con los valores del plan Kids", () => {
+  it("renderiza campos simplificados con los valores del plan Kids y sin cantidad de días", () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
     expect(screen.getByRole("heading", { name: "Editar plan Kids" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toHaveValue("Kids");
     expect(screen.getByText("Abono mensual")).toBeInTheDocument();
     expect(screen.getByText("Pase por clase individual")).toBeInTheDocument();
-    expect(screen.getByText(/La modalidad de cobro no se puede modificar/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Clases por semana \*/i)).toBeInTheDocument();
-    expect(screen.getByLabelText("Días de gracia")).toHaveValue(5);
+
+    // Textos de ayuda y campos de cantidad de días eliminados
+    expect(screen.queryByText(/La modalidad de cobro no se puede modificar/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Clases por semana/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Días de gracia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Días que el alumno puede seguir viniendo/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Si elegís una, al inscribir/i)).not.toBeInTheDocument();
+
+    // Actividad y campo Precio
     expect(screen.getByLabelText("Actividad")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio \*/i)).toHaveValue("22.000");
+
     expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
     expect(screen.getByRole("button", { name: "Dar de baja el plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
@@ -93,7 +110,8 @@ describe("EditarPlanDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     expect(screen.getByText("Ingresá el nombre del plan.")).toBeInTheDocument();
-    expect(mockMutate).not.toHaveBeenCalled();
+    expect(mockActualizarAsync).not.toHaveBeenCalled();
+    expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
   });
 
   it("abre el modal de baja al presionar 'Dar de baja el plan'", () => {
@@ -104,7 +122,7 @@ describe("EditarPlanDialog", () => {
     expect(screen.getByText(/¿Dar de baja "Kids"\?/i)).toBeInTheDocument();
   });
 
-  it("envía las modificaciones al hacer clic en Guardar cambios", () => {
+  it("envía las modificaciones de nombre al hacer clic en Guardar cambios", async () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
     const inputNombre = screen.getByLabelText(/Nombre \*/i);
@@ -112,15 +130,39 @@ describe("EditarPlanDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
-    expect(mockMutate).toHaveBeenCalledTimes(1);
-    expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "2",
-        cambios: expect.objectContaining({
-          nombre: "Kids Avanzado",
-        }),
-      }),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockActualizarAsync).toHaveBeenCalledTimes(1);
+      expect(mockActualizarAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "2",
+          cambios: expect.objectContaining({
+            nombre: "Kids Avanzado",
+          }),
+        })
+      );
+    });
+    expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
+  });
+
+  it("permite modificar el precio y actualiza el historial registrando el nuevo precio", async () => {
+    render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
+
+    const inputPrecio = screen.getByLabelText(/Precio \*/i);
+    fireEvent.change(inputPrecio, { target: { value: "26000" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      expect(mockRegistrarPrecioAsync).toHaveBeenCalledTimes(1);
+      expect(mockRegistrarPrecioAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "2",
+          cuerpo: expect.objectContaining({
+            precio: 26000,
+          }),
+        })
+      );
+    });
+    expect(mockActualizarAsync).not.toHaveBeenCalled();
   });
 });

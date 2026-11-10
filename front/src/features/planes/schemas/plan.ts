@@ -115,8 +115,8 @@ export function crearPlanFormSchema({ editando }: { editando: boolean }) {
       diasGracia: z.string().trim(),
     })
     .superRefine((valores, ctx) => {
-      if (!editando) validarPrecio(valores.precio, ctx);
-      if (valores.tipo === "MENSUAL") validarFrecuenciaYGracia(valores, ctx);
+      validarPrecio(valores.precio, ctx);
+      if (!editando && valores.tipo === "MENSUAL") validarFrecuenciaYGracia(valores, ctx);
     });
 }
 
@@ -227,7 +227,11 @@ export function aCuerpoActualizacion(plan: Plan, valores: PlanFormValues): Actua
   const antes = datosEditablesDe(plan);
   const despues = aDatosEditables(valores);
   const campos = Object.keys(despues) as (keyof DatosEditablesBody)[];
-  return Object.fromEntries(campos.filter((campo) => antes[campo] !== despues[campo]).map((campo) => [campo, despues[campo]]));
+  return Object.fromEntries(
+    campos
+      .filter((campo) => campo !== "clases_por_semana" && campo !== "dias_gracia" && antes[campo] !== despues[campo])
+      .map((campo) => [campo, despues[campo]])
+  );
 }
 
 export function valoresDelPlan(plan: Plan): PlanFormValues {

@@ -94,6 +94,7 @@
 - [x] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
 - [x] Cambiar nombre de reporte "Planes" a "Planes mas elegidos"
 - [x] Cambiar Icodo de Planes ams elegidos por Tags en plural (Dos etiquetas encimadas)
+
 ## Clases
 
 - [x] Modificar el nombre del sidebar "CLASES" por "CENTRO".
@@ -116,6 +117,8 @@
 - [x] Separa en subitems 'Planes y Precios' y Promociones - Gaston Gutierrez
 - [x] Planes y precios que sean tablas como en "Alumnos - Listado" - Gaston Gutierrez
 - [x] Promociones tambien hacer como tablas en "Alumnos - Listado" - Gaston Gutierrez
+- [x] Quitar boton cambiar precio
+- [x] En modal de edición de plan: simplificar interfaz quitando textos de ayuda redundantes, quitar modificación de cantidad de días del plan y agregar modificación de precio integrada con actualización automática del historial de precios
 
 
 ## Centro - Promociones
@@ -131,3 +134,6 @@
 
 ## Centro - Planes
 - [x] Cambiar nombre a unicamente "Planes"
+
+## Cobros - Historial 
+- [ ] Agregar en Filtro el nombre de la Propietaria y en columna "cobro" Salga el nombre de la misma

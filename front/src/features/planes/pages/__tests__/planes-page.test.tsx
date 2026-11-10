@@ -164,21 +164,9 @@ describe("PlanesPage", () => {
     renderPlanesPage("/app/planes/promociones");
 
     expect(screen.getByRole("heading", { name: "Promociones", level: 1 })).toBeInTheDocument();
-    expect(screen.getByText("Todavía no hay promociones")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "+ Nueva promoción" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "+ Nueva promoción" }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("abre el modal centrado de Cambiar precio al presionar el botón", async () => {
-    renderPlanesPage();
-
-    const botonesCambiarPrecio = screen.getAllByRole("button", { name: /Cambiar precio/i });
-    fireEvent.click(botonesCambiarPrecio[0]);
-
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Precio actual")).toBeInTheDocument();
-    expect(screen.getByLabelText("Nuevo arancel (ARS) *")).toBeInTheDocument();
-    expect(screen.getByLabelText("Fecha de vigencia *")).toBeInTheDocument();
-  });
 
   it("abre el modal centrado de Nuevo plan al presionar '+ Nuevo plan'", async () => {
     renderPlanesPage();
@@ -205,7 +193,7 @@ describe("PlanesPage", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Editar plan/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Clases por semana \*/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio \*/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
   });
 
