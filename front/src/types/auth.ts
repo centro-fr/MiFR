@@ -7,6 +7,7 @@ export interface AuthUser {
   apellido: string;
   roles: RoleCode[];
   permisos: string[];
+  fotoUrl?: string | null;
 }
 
 export interface AuthResponse {
