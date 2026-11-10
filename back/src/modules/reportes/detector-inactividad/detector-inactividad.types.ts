@@ -12,6 +12,7 @@ export interface FiltroAlumnosInactivos extends Paginacion {
   minimo_inasistencias?: number;
   // Sin él no aparecen los IGNORADO (US-22).
   estado_gestion?: EstadoGestionInactividad;
+  incluir_ignorados?: boolean;
 }
 
 interface Contacto {
