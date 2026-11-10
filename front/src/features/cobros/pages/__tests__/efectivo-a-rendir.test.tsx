@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { PanelEfectivoARendir } from "../../components/panel-efectivo-a-rendir";
@@ -136,7 +137,9 @@ const renderPanel = () => {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <PanelEfectivoARendir />
+      <MemoryRouter>
+        <PanelEfectivoARendir />
+      </MemoryRouter>
     </QueryClientProvider>
   );
 };
@@ -150,39 +153,16 @@ describe("PanelEfectivoARendir (US-19)", () => {
     mockCargandoHistorial = false;
   });
 
-  it("renderiza la lista de profesoras con cobros pendientes y sus totales", () => {
+  it("renderiza la tabla de cobros pendientes con alumnos, planes y profesoras", () => {
     renderPanel();
-
-    // Profesoras
-    expect(screen.getByText("Lucía García")).toBeInTheDocument();
-    expect(screen.getByText("Carla Ruiz")).toBeInTheDocument();
-
-    // Alerta de más de 15 días para Lucía García (18 días)
-    expect(screen.getByText("+15 días")).toBeInTheDocument();
-  });
-
-  it("inicia contraído y muestra el detalle de cobros al desplegar el acordeón", () => {
-    renderPanel();
-
-    // Por defecto el acordeón está contraído
-    expect(screen.queryByText("Mateo Fernández")).not.toBeInTheDocument();
-
-    // Desplegar acordeón de Lucía García
-    const botonDesplegar = screen.getByRole("button", {
-      name: /Ver cobros de Lucía García/i,
-    });
-    fireEvent.click(botonDesplegar);
 
     expect(screen.getAllByText("Mateo Fernández")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Bautista Gómez")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Plan Básico")[0]).toBeInTheDocument();
-
-    // Al hacer clic en cualquier parte de la tarjeta (ej. en el nombre), se vuelve a contraer
-    fireEvent.click(screen.getByText("Lucía García"));
-    expect(screen.queryByText("Mateo Fernández")).not.toBeInTheDocument();
-
-    // Y al volver a hacer clic en la tarjeta, se vuelve a desplegar
-    fireEvent.click(screen.getByText("Lucía García"));
-    expect(screen.getAllByText("Mateo Fernández")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Plan Intermedio")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Lucía García")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Carla Ruiz")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Hace 18 d")[0]).toBeInTheDocument();
   });
 
   it("abre el modal de rendición en lote al hacer clic en 'Rendir todo' y confirma", async () => {
@@ -233,12 +213,6 @@ describe("PanelEfectivoARendir (US-19)", () => {
 
     renderPanel();
 
-    // Desplegar primero el acordeón
-    const botonDesplegar = screen.getByRole("button", {
-      name: /Ver cobros de Lucía García/i,
-    });
-    fireEvent.click(botonDesplegar);
-
     const botonRendirIndividual = screen.getAllByRole("button", {
       name: /Rendir cobro de Mateo Fernández/i,
     })[0];
@@ -268,7 +242,7 @@ describe("PanelEfectivoARendir (US-19)", () => {
     const botonHistorial = screen.getByRole("button", { name: /Historial rendido/i });
     fireEvent.click(botonHistorial);
 
-    expect(screen.getByText("Sofía López")).toBeInTheDocument();
+    expect(screen.getAllByText("Sofía López")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Lucía García")[0]).toBeInTheDocument();
   });
 
@@ -278,9 +252,9 @@ describe("PanelEfectivoARendir (US-19)", () => {
     const inputBuscar = screen.getByPlaceholderText(/Buscar por profesor\/a o alumno.../i);
     fireEvent.change(inputBuscar, { target: { value: "Carla" } });
 
-    // Carla Ruiz visible, Lucía García oculta
-    expect(screen.getByText("Carla Ruiz")).toBeInTheDocument();
-    expect(screen.queryByText("Lucía García")).not.toBeInTheDocument();
+    // Bautista Gómez (alumno de Carla Ruiz) visible, Mateo Fernández oculto
+    expect(screen.getAllByText("Bautista Gómez")[0]).toBeInTheDocument();
+    expect(screen.queryByText("Mateo Fernández")).not.toBeInTheDocument();
   });
 
   it("muestra estado de caja al día cuando no hay efectivo pendiente", () => {

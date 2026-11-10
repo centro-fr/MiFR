@@ -21,9 +21,19 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401 && typeof window !== "undefined") {
-      clearSessionToken();
-      window.dispatchEvent(new CustomEvent("mifr:unauthorized"));
+    const url = String(error?.config?.url ?? "");
+    const esRutaLogin = url.includes("/auth/google") || url.includes("/auth/desarrollo");
+    const teniaToken = Boolean(error?.config?.headers?.Authorization);
+    if (
+      error?.response?.status === 401 &&
+      !esRutaLogin &&
+      (teniaToken || getSessionToken() === null) &&
+      typeof window !== "undefined"
+    ) {
+      if (teniaToken) {
+        clearSessionToken();
+        window.dispatchEvent(new CustomEvent("mifr:unauthorized"));
+      }
     }
     return Promise.reject(error);
   },
