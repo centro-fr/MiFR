@@ -13,9 +13,6 @@ export function ListaMisTransferencias({ transferencias }: Props) {
   if (transferencias.length === 0) {
     return (
       <Card className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-800 dark:bg-slate-900/50">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-pink-50 text-pink-600 dark:bg-pink-950/50 dark:text-pink-300">
-          <Clock className="size-6" />
-        </div>
         <h3 className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
           No tenés pagos registrados
         </h3>

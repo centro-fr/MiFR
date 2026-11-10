@@ -28,7 +28,6 @@ function CargandoFormulario() {
 function ErrorDeCarga({ error, onReintentar }: { error: unknown; onReintentar: () => void }) {
   return (
     <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-600">
-      <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensajeDeErrorApi(error, "No se pudieron cargar los datos del plan.")}
       </p>
@@ -46,9 +45,6 @@ function ErrorDeCarga({ error, onReintentar }: { error: unknown; onReintentar: (
 function PlanNoDisponible({ titulo, detalle }: { titulo: string; detalle: string }) {
   return (
     <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600">
-      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        <SearchX className="size-7" />
-      </span>
       <h2 className="text-lg font-extrabold text-[#181C26] dark:text-white">{titulo}</h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{detalle}</p>
       <Button asChild variant="outline" className="min-h-[44px] rounded-xl font-bold">

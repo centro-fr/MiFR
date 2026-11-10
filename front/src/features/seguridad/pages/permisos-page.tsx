@@ -56,9 +56,6 @@ export function PermisosPage() {
     return (
       <OwnerLayout>
         <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-          <span aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
-            <AlertTriangle className="h-8 w-8" />
-          </span>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">No pudimos cargar la matriz</h1>
           <p className="max-w-[320px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
             {matrizQuery.error === "SIN_PERMISO"

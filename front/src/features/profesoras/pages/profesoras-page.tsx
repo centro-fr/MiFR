@@ -257,12 +257,6 @@ export function ProfesorasPage() {
             </div>
 
             <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-              <span
-                aria-hidden="true"
-                className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
-              >
-                <GraduationCap className="size-7" />
-              </span>
               <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
                 {hayFiltrosActivos
                   ? "Sin resultados para tu búsqueda"

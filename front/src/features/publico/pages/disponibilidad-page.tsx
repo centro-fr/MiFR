@@ -83,7 +83,6 @@ export function DisponibilidadPage() {
           </div>
         ) : isError ? (
           <section className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-card px-5 py-12 text-center">
-            <AlertCircle aria-hidden="true" className="size-9 text-destructive" />
             <div>
               <h2 className="text-lg font-extrabold">No pudimos cargar la disponibilidad</h2>
               <p role="alert" className="mt-1 text-sm text-muted-foreground">
@@ -97,7 +96,6 @@ export function DisponibilidadPage() {
           </section>
         ) : actividades.length === 0 ? (
           <section className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-border bg-card px-5 py-12 text-center">
-            <Dumbbell aria-hidden="true" className="size-9 text-primary" />
             <h2 className="text-lg font-extrabold">No hay actividades disponibles</h2>
             <p className="max-w-md text-sm text-muted-foreground">
               En este momento no hay horarios publicados. Volvé a consultar más tarde o escribinos para recibir

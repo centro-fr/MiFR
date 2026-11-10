@@ -106,9 +106,6 @@ function TablaPosiciones({ ranking }: { ranking: Ranking }) {
 function RankingVacio({ minimoClases }: { minimoClases: number }) {
   return (
     <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        <Trophy aria-hidden="true" className="size-7" />
-      </span>
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Todavía no hay ranking</h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
         Se necesitan al menos {minimoClases} clases previstas en el período para aparecer.

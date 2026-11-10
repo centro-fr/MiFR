@@ -88,9 +88,6 @@ function ContenidoMisClases({ idProfesora }: { idProfesora: string }) {
       {/* ESTADO VACÍO */}
       {!cargando && !error && horarios.length === 0 && (
         <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-900/30">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20">
-            <CalendarX className="size-7" />
-          </span>
           <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
             No tenés clases asignadas en el cronograma
           </h2>

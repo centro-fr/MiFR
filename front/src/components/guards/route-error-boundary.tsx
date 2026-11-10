@@ -26,9 +26,6 @@ export function RouteErrorBoundary() {
 
   return (
     <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-bg-light px-6 py-12 text-center text-foreground dark:bg-canvas">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 shadow-sm dark:bg-rose-500/15 dark:text-rose-300">
-        <AlertCircle className="h-8 w-8" />
-      </div>
       <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">{titulo}</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground leading-relaxed">{mensaje}</p>
 

@@ -30,13 +30,6 @@ export function EnConstruccionPage({ seccion }: EnConstruccionPageProps) {
         className="mx-auto w-full max-w-[640px] rounded-2xl border-border bg-white px-6 py-12 text-center shadow-sm sm:px-10 dark:bg-surface-low"
       >
         <CardContent className="flex flex-col items-center gap-5 p-0">
-          <span
-            aria-hidden="true"
-            className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary-dark dark:bg-primary/20 dark:text-pink-300"
-          >
-            <Construction className="h-8 w-8" />
-          </span>
-
           <div className="flex flex-col gap-2">
             <h1
               id="en-construccion-titulo"

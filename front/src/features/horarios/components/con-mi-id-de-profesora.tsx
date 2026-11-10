@@ -33,9 +33,6 @@ export function ConMiIdDeProfesora({ children }: Props) {
   if (miPerfil.idProfesora === null) {
     return (
       <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
-        <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-          <Users aria-hidden="true" className="size-7" />
-        </span>
         <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">No tenés alumnos a cargo</h1>
       </Card>
     );

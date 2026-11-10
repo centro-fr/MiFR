@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,7 +87,6 @@ export function EstadoErrorCarga({
         className
       )}
     >
-      <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
       {titulo && (
         <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
           {titulo}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -302,9 +302,6 @@ export function PanelEfectivoARendir() {
             </div>
           ) : cobrosFiltrados.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
-                <CheckCircle className="size-6" />
-              </div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 {hayFiltrosActivos
                   ? "No se encontraron coincidencias"

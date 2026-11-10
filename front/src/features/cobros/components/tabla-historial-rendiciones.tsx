@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { History } from "lucide-react";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { formatearPrecio } from "@/utils/moneda";
@@ -28,7 +27,6 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
   if (rendiciones.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-        <History className="size-8 text-slate-400" />
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
           No hay rendiciones en el historial
         </h3>

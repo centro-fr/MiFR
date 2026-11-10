@@ -48,9 +48,6 @@ function SuplenciasConError({ error, onReintentar }: { error: unknown; onReinten
 function SinSuplencias({ periodo, abierto, onRegistrar }: { periodo: string; abierto: boolean; onRegistrar: () => void }) {
   return (
     <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-14 text-center">
-      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        <Users className="size-7" />
-      </span>
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">No hubo suplencias en {etiquetaPeriodo(periodo).toLowerCase()}</h2>
       <p className="max-w-md text-sm text-muted-foreground">
         {abierto

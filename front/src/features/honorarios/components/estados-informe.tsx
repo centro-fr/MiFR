@@ -58,9 +58,6 @@ export function InformeVacio({ periodo, mesAbierto, procesando, onCalcular }: Pr
   const mes = etiquetaPeriodo(periodo);
   return (
     <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        <Calculator aria-hidden="true" className="size-7" />
-      </span>
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
         {mesAbierto ? `Todavía no se calcularon los honorarios de ${mes}` : `No hay honorarios de ${mes}`}
       </h2>

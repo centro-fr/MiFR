@@ -99,12 +99,9 @@ export function ErrorDelReporte({ error, reintentando, onReintentar }: { error: 
   );
 }
 
-export function ReporteVacio({ icono, titulo, texto }: { icono: ReactNode; titulo: string; texto: string }) {
+export function ReporteVacio({ icono: _icono, titulo, texto }: { icono?: ReactNode; titulo: string; texto: string }) {
   return (
     <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center shadow-xs dark:border-slate-800">
-      <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-        {icono}
-      </span>
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">{titulo}</h2>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{texto}</p>
     </Card>

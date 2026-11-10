@@ -361,9 +361,6 @@ export function ClasesDelDia({
           {/* LISTADO DE CLASES O ESTADO VACÍO */}
           {clases.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
-              <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-                <CalendarClock aria-hidden="true" className="size-7" />
-              </span>
               <h2 className="text-lg font-extrabold text-dark dark:text-white">
                 No hay clases para esta fecha
               </h2>
@@ -375,9 +372,6 @@ export function ClasesDelDia({
             </Card>
           ) : clasesFiltradas.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-700">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                <Search aria-hidden="true" className="size-6" />
-              </span>
               <h3 className="text-base font-bold text-foreground">No se encontraron clases</h3>
               <p className="max-w-sm text-sm text-muted-foreground">
                 No hay clases que coincidan con la búsqueda o el filtro seleccionado.

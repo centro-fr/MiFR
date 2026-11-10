@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ChevronDown, Receipt, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import { apiClient } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -243,7 +243,6 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
           </div>
         ) : cobrosFiltrados.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-            <Receipt className="size-8 text-slate-400" />
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
               {hayFiltrosActivos ? "No se encontraron coincidencias" : "No hay cobros registrados"}
             </h3>

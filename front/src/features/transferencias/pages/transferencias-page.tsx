@@ -78,18 +78,9 @@ function Encabezado({ pendientes, actualizando, onActualizar }: { pendientes?: n
   );
 }
 
-function EstadoLista({ icono: Icono, titulo, detalle, tono = "neutro", children }: { icono: typeof Inbox; titulo: string; detalle: string; tono?: "neutro" | "exito"; children?: ReactNode }) {
+function EstadoLista({ icono: _Icono, titulo, detalle, tono: _tono = "neutro", children }: { icono: typeof Inbox; titulo: string; detalle: string; tono?: "neutro" | "exito"; children?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "flex size-14 items-center justify-center rounded-2xl",
-          tono === "exito" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300",
-        )}
-      >
-        <Icono className="size-7" />
-      </span>
       <h3 className="text-lg font-extrabold text-dark dark:text-white">{titulo}</h3>
       <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">{detalle}</p>
       {children}

@@ -755,9 +755,6 @@ function EstadoFicha({
 
   return (
     <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-600 bg-card rounded-lg shadow-2xs">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
-        <UserRound aria-hidden="true" className="size-6" />
-      </span>
       <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">{titulo}</h1>
       <p className="max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
         {descripcion}

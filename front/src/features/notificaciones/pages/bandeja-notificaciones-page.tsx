@@ -105,9 +105,6 @@ function Bandeja({ pagina, onCambiarPagina }: { pagina: PaginaNotificaciones; on
   if (pagina.total === 0) {
     return (
       <Card className="flex flex-col items-center gap-3 rounded-2xl border-border px-5 py-14 text-center">
-        <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
-          <Bell className="size-7" />
-        </span>
         <h2 className="text-lg font-extrabold text-dark dark:text-white">No tenés notificaciones</h2>
         <p className="max-w-md text-sm text-muted-foreground">
           Cuando MiFR tenga algo para avisarte, como un vencimiento de cuota, lo vas a ver acá y en la campana.

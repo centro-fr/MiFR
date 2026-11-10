@@ -28,12 +28,6 @@ export function PermissionGuard({ roles, permission, children }: PermissionGuard
   if (!rolOk || !permisoOk) {
     return (
       <main className="flex min-h-dvh w-full flex-col items-center justify-center gap-4 bg-background px-6 py-10 text-center text-foreground">
-        <span
-          aria-hidden="true"
-          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300"
-        >
-          <ShieldX className="h-8 w-8" />
-        </span>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Sin acceso</h1>
         <p className="max-w-[320px] text-sm leading-relaxed text-muted-foreground">
           No tenés permisos para ver esta sección. Desde tu inicio vas a encontrar las que te corresponden.

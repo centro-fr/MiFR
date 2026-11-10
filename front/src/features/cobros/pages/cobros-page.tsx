@@ -626,7 +626,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
               {alumnosFiltrados.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
-                  <Users className="size-8 text-slate-400" />
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                     No se encontraron cuotas
                   </h3>
@@ -853,7 +852,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
             />
           ) : transferenciasPendientes.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-              <Banknote className="size-8 text-slate-400" />
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 No hay transferencias pendientes
               </h3>
@@ -863,7 +861,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
             </div>
           ) : transferenciasVisibles.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-              <Search className="size-8 text-slate-400" />
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Sin resultados</h3>
               <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
                 Ninguna transferencia pendiente coincide con los filtros.
