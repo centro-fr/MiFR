@@ -1,16 +1,9 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { alumnosDelMes, fechaHora, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
+import { fechaHora, ultimoCalculo } from "@/features/honorarios/utils/formato-honorarios";
 import { diaDeCierreLegible, esPeriodoEnCurso, etiquetaPeriodo, mesSigueAbierto } from "@/features/honorarios/utils/periodo";
 import type { InformeHonorarios } from "@/types/honorarios";
-import { formatearPrecio } from "@/utils/moneda";
-
-const TARJETA = "rounded-lg border-border bg-white p-5 shadow-sm dark:bg-surface-low";
-const ETIQUETA = "text-sm font-semibold text-muted-foreground";
-const VALOR = "mt-1 text-3xl font-black tracking-tight text-dark tabular-nums break-words dark:text-white";
-const NOTA = "mt-1 text-sm text-muted-foreground";
 
 function textoDelMes(informe: InformeHonorarios, diaDeCierre: number): { titulo: string; detalle: string; abierto: boolean } {
   const { periodo, liquidaciones } = informe;
@@ -80,44 +73,6 @@ export function EstadoDelMes({ informe, diaDeCierre, procesando, onActualizar }:
           </Can>
         )}
       </div>
-    </div>
-  );
-}
-
-function cantidad(numero: number, singular: string, plural: string): string {
-  return `${numero} ${numero === 1 ? singular : plural}`;
-}
-
-export function ResumenDelMes({ informe, mesAbierto }: { informe: InformeHonorarios; mesAbierto: boolean }) {
-  const { liquidaciones } = informe;
-  const alumnos = alumnosDelMes(liquidaciones);
-  const abonadas = liquidaciones.filter(({ estado }) => estado === "PAGADA").length;
-  // Por el ancho del contenido y no de la pantalla: con el menú lateral abierto, una tablet deja poco lugar.
-  return (
-    <div className="@container">
-      <section aria-label="Resumen del mes" className="grid grid-cols-1 gap-4 @2xl:grid-cols-3">
-        <Card className={TARJETA}>
-          <h2 className={ETIQUETA}>Total para profesores</h2>
-          <p className={VALOR}>{formatearPrecio(informe.totalGeneral)}</p>
-          <p className={NOTA}>Entre {cantidad(liquidaciones.length, "profesor/a", "profesores")}</p>
-        </Card>
-        <Card className={TARJETA}>
-          <h2 className={ETIQUETA}>Alumnos a cargo</h2>
-          <p className={VALOR}>{alumnos ?? "—"}</p>
-          <p className={NOTA}>Cada profesor/a cobra un porcentaje de lo que pagaron sus alumnos</p>
-        </Card>
-        <Card className={TARJETA}>
-          <h2 className={ETIQUETA}>Abonados</h2>
-          <p className={VALOR}>
-            {abonadas} de {liquidaciones.length}
-          </p>
-          <p className={NOTA}>
-            {mesAbierto
-              ? "Se abonan cuando el mes se cierra"
-              : cantidad(liquidaciones.length - abonadas, "profesor/a por abonar", "profesores por abonar")}
-          </p>
-        </Card>
-      </section>
     </div>
   );
 }

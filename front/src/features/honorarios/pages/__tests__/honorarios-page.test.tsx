@@ -37,6 +37,8 @@ const mockInforme: InformeHonorarios = {
 };
 
 const mockCalcular = vi.fn();
+// Lo que devuelve useInformeHonorarios en cada render: cada test lo ajusta.
+let mockConsulta: { data: InformeHonorarios | undefined; isPending: boolean } = { data: mockInforme, isPending: false };
 
 vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => ({ hasPermission: () => true }),
@@ -55,8 +57,7 @@ vi.mock("@/features/honorarios/utils/periodo", async (importOriginal) => {
 
 vi.mock("@/features/honorarios/hooks/use-honorarios", () => ({
   useInformeHonorarios: () => ({
-    data: mockInforme,
-    isPending: false,
+    ...mockConsulta,
     isError: false,
     error: null,
     refetch: vi.fn(),
@@ -80,31 +81,33 @@ vi.mock("@/features/honorarios/hooks/use-exportar-informe", () => ({
 
 function renderizar() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const pagina = () => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={["/app/honorarios"]}>
         <HonorariosPage />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  const resultado = render(pagina());
+  return { ...resultado, volverARenderizar: () => resultado.rerender(pagina()) };
 }
 
 describe("HonorariosPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConsulta = { data: mockInforme, isPending: false };
     mockCalcular.mockResolvedValue({ informe: mockInforme, advertencias: [] });
   });
 
-  it("renderiza el encabezado y pestañas sin breadcrumbs locales duplicados", () => {
+  it("renderiza el encabezado sin pestañas y lleva a las suplencias del mismo mes con un botón", () => {
     renderizar();
 
     // Encabezado principal
     expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
     expect(screen.getByText(/Revisa el calculo del pago mensual para cada profesor\/a/i)).toBeInTheDocument();
 
-    // Pestañas
-    expect(screen.getByRole("link", { name: /Honorarios del mes/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Suplencias/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Honorarios del mes/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Suplencias" })).toHaveAttribute("href", "/app/honorarios/suplencias?mes=2026-10");
 
     // Sin breadcrumbs locales
     expect(screen.queryByRole("navigation", { name: "Ruta de navegación" })).not.toBeInTheDocument();
@@ -116,22 +119,42 @@ describe("HonorariosPage", () => {
     expect(screen.getByRole("button", { name: /Exportar/i })).toBeInTheDocument();
   });
 
-  it("muestra el resumen y una fila por profesor/a con su estado", () => {
+  it("muestra una fila por profesor/a con su estado, sin las tarjetas de resumen", () => {
     renderizar();
-    expect(screen.getByRole("heading", { level: 2, name: "Total para profesores" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Resumen del mes" })).not.toBeInTheDocument();
     const tabla = screen.getByRole("table");
     const fila = within(tabla).getByRole("row", { name: /Lucía Gómez/ });
     expect(within(fila).getByText("En curso")).toBeInTheDocument();
     expect(within(fila).getByRole("button", { name: "Ver el detalle de Lucía Gómez" })).toBeInTheDocument();
   });
 
-  it("no recalcula por entrar: con el mes abierto, recalcula cuando se toca Actualizar", async () => {
+  it("con liquidaciones no recalcula por entrar: con el mes abierto, recalcula cuando se toca Actualizar", async () => {
     renderizar();
     expect(mockCalcular).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Actualizar" }));
 
     await vi.waitFor(() => expect(mockCalcular).toHaveBeenCalledTimes(1));
+  });
+
+  it("pasa de cargando al informe sin romperse", () => {
+    mockConsulta = { data: undefined, isPending: true };
+    const { volverARenderizar } = renderizar();
+
+    mockConsulta = { data: mockInforme, isPending: false };
+    volverARenderizar();
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("calcula una sola vez al entrar a un mes abierto sin liquidaciones", async () => {
+    mockConsulta = { data: { ...mockInforme, totalGeneral: 0, liquidaciones: [] }, isPending: false };
+    const { volverARenderizar } = renderizar();
+
+    await vi.waitFor(() => expect(mockCalcular).toHaveBeenCalledTimes(1));
+    volverARenderizar();
+    volverARenderizar();
+    expect(mockCalcular).toHaveBeenCalledTimes(1);
   });
 
   it("abre la configuración en un diálogo centrado", async () => {

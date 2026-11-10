@@ -14,8 +14,9 @@ interface RecalculoDelMes {
 }
 
 /**
- * Recalcular es una escritura (POST /liquidaciones): se hace solo cuando la propietaria lo pide, nunca
- * por entrar a mirar. Lo que se abona no depende de esto: al cerrar el mes, el back lo calcula por última vez.
+ * Recalcular es una escritura (POST /liquidaciones): la propietaria lo pide con el botón, y la página lo
+ * hace sola una vez al entrar a un mes abierto que todavía no tiene liquidaciones. Lo que se abona no
+ * depende de esto: al cerrar el mes, el back lo calcula por última vez.
  */
 export function useRecalcularMes(periodo: string): RecalculoDelMes {
   const calcular = useCalcularLiquidaciones(periodo);

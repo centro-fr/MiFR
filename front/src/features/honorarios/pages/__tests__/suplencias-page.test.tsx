@@ -84,12 +84,11 @@ describe("SuplenciasPage", () => {
     mockSuplencias = [suplencia("1"), suplencia("2", { estadoClase: "CANCELADA", fechaClase: "2026-10-20" })];
   });
 
-  it("muestra las suplencias del mes elegido, con el encabezado y las pestañas de Honorarios", () => {
+  it("muestra las suplencias del mes elegido con su propio título, sin pestañas", () => {
     renderizar();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Honorarios" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Honorarios del mes/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Suplencias/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Suplencias" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Honorarios del mes/ })).not.toBeInTheDocument();
     expect(mockUseSuplencias).toHaveBeenCalledWith({ desde: "2026-10-01", hasta: "2026-10-31" });
     expect(screen.getByRole("status")).toHaveTextContent("Octubre sigue abierto.");
   });
@@ -97,9 +96,7 @@ describe("SuplenciasPage", () => {
   it("calcula lo que se le paga a quien cubrió con su valor por hora y no paga la clase cancelada", () => {
     renderizar();
 
-    const resumen = screen.getByRole("region", { name: "Resumen de las suplencias" });
-    expect(within(resumen).getByText("$ 6.000")).toBeInTheDocument();
-    expect(within(resumen).getByText("1,5 horas en total")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Resumen de las suplencias" })).not.toBeInTheDocument();
     const tabla = screen.getByRole("table");
     const dictada = within(tabla).getByRole("row", { name: /16\/10\/2026/ });
     expect(within(dictada).getByText("Mariana Pérez")).toBeInTheDocument();
@@ -130,11 +127,11 @@ describe("SuplenciasPage", () => {
     expect(screen.queryByRole("button", { name: /Editar la suplencia/ })).not.toBeInTheDocument();
   });
 
-  it("sin suplencias en el mes lo dice y ofrece registrar una", () => {
+  it("sin suplencias en el mes lo dice, y se registra desde el botón del encabezado", () => {
     mockSuplencias = [];
     renderizar();
 
     expect(screen.getByRole("heading", { level: 2, name: "No hubo suplencias en octubre 2026" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Registrar suplencia" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Registrar suplencia" })).toHaveLength(1);
   });
 });
