@@ -72,7 +72,7 @@ Estas pruebas ejecutan el backend completo sobre una base de datos PostgreSQL re
 | Herramientas         | Vitest + Supertest sobre la app Express real, inicializada con `construirDependencias`, la misma configuración de dependencias que usa producción. No suman dependencias a las de los tests unitarios                                                                   |
 | Base de datos        | PostgreSQL 16 de prueba (`db-test` en `docker-compose.yml`, en memoria, puerto 55433). Las migraciones se aplican con `prisma migrate deploy` al arrancar; antes de cada test se vacían las tablas y se recarga el catálogo de seguridad                                |
 | Protección           | Las pruebas solo corren contra una base cuyo nombre termine en `_test`. Si se las apunta por error a la base de desarrollo o a la de producción, se detienen antes de empezar y no modifican ningún dato                                                                |
-| Google Auth          | En un login real, Google entrega un comprobante (`id_token`) y el backend le consulta a Google si es válido. En las pruebas se reemplaza solo esa consulta: el comprobante es directamente el correo del usuario de prueba, así no hace falta una cuenta real de Google |
+| Google Auth          | En un login real, Google entrega un comprobante (`id_token`) y el backend le consulta a Google si es válido. En las pruebas se reemplaza solo esa consulta: el comprobante es directamente el correo del usuario de prueba y, después de una barra vertical, la foto de perfil que manda Google, así no hace falta una cuenta real de Google |
 | Validación           | Se verifican los códigos HTTP, los códigos de error de la API y el estado final en la base                                                                                                                                                                              |
 | Ubicación del código | `back/src/__tests__/integracion/` (flujos entre componentes) y el `__tests__/` de cada componente. Archivos `*.integration.test.ts`, agrupados por tema                                                                                                                 |
 | Cómo se corren       | `docker compose --profile test up -d db-test` y después `pnpm --filter back test:integration`. Se corre siempre la suite completa, así cada corrida es también la regresión de los sprints anteriores                                                                   |
@@ -180,7 +180,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 
 | US    | Historia                                                  | Sprint | Casos                                                         | Automatización                                                                         |
 | :---- | :-------------------------------------------------------- | :----: | :------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
-| US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10, PI-28, PI-29        | Sí, salvo PI-10 (Manual)                                                               |
+| US-01 | Inicio de sesión con Google Auth                          |   1    | PI-01, PI-02, PI-03, PI-07, PI-08, PI-10, PI-28, PI-29, PI-90  | Sí, salvo PI-10 (Manual)                                                               |
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38, PI-46        | Sí                                                                                     |
@@ -306,8 +306,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-87         | El movimiento de alumnos del año en el reporte de Inscripciones     | US-35               | Servicios          | Fábricas, fechas de alta y baja fijadas en la base         | Sí           |
 | PI-88         | Edición y reincorporación de profesoras                              | US-38, US-02        | Servicios          | Fábricas, sesiones, baja lógica                             | Sí           |
 | PI-89         | Contacto y privacidad en el listado de profesoras                    | US-38, US-02        | Servicios          | Fábricas, datos de usuario                                  | Sí           |
+| PI-90         | La foto de perfil de Google                                          | US-01               | Servicios          | Fábricas, sesiones, foto simulada                           | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026).
 
 ### 6.2 Detalle
 
@@ -1185,11 +1186,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-335 tests en veintiún archivos:
+337 tests en veintiún archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
-|    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 48 (A-01 a A-48) | PI-01 a PI-03, PI-07, PI-08, PI-28, PI-29 |
+|    A    | `back/src/__tests__/integracion/control-de-acceso.integration.test.ts`          | 50 (A-01 a A-50) | PI-01 a PI-03, PI-07, PI-08, PI-28, PI-29, PI-90 |
 |    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 21 (B-01 a B-21) | PI-04, PI-05, PI-06, PI-46        |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
@@ -1227,6 +1228,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | A-43, A-44  | La única propietaria activa no se quita el rol ni se desactiva (409); con otra propietaria activa, sí deja el rol                                                                | PI-28 |
 | A-45 a A-47 | Sin permisos, un usuario no cambia su propio DNI ni su fecha de nacimiento (403, la base queda igual), pero sí su teléfono                                                      | PI-29 |
 | A-48        | Dar de alta un usuario con un DNI repetido responde 409, no 500, y no crea a nadie                                                                                              | PI-29 |
+| A-49        | El login guarda la foto de perfil de Google en el usuario y `/auth/me` la devuelve                                                                                              | PI-90 |
+| A-50        | El login refresca la foto cuando Google manda otra y conserva la última si no manda ninguna                                                                                      | PI-90 |
 | B-01 a B-04 | Cupo obligatorio en personalizadas; el horario sin cupo propio toma el de la actividad; el cupo propio manda; grupal sin cupo                                                   | PI-04 |
 | B-05 a B-09 | Superposición de horarios de una misma profesora (también la propietaria); dos profesoras a la misma hora; horario invertido; profesora sin el rol                              | PI-05 |
 | B-10 a B-13 | Descripción visible en todos los horarios; baja bloqueada con alumnos inscriptos; baja sin horarios; no pasar a personalizada sin cupo                                          | PI-06 |
@@ -1474,6 +1477,19 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (T-05).
 
+#### PI-90 — La foto de perfil de Google
+
+**US:** US-01 · **Precondición:** un usuario activo dado de alta; Google simulado devuelve `picture` junto con el email.
+
+1. El usuario inicia sesión con una foto de perfil.
+2. Pide `GET /auth/me` con el token recibido.
+3. Vuelve a iniciar sesión con otra foto.
+4. Inicia sesión otra vez sin que Google mande foto.
+
+**Resultado esperado:** en el paso 1 la respuesta y `usuarios.foto_url` traen la foto. En el paso 2 `/auth/me` la devuelve. En el paso 3 la base queda con la foto nueva. En el paso 4 se conserva la última guardada, también en `/auth/me`. Un usuario inactivo no se actualiza, y la base rechaza una URL que no sea `https`, tenga espacios o supere los 500 caracteres.
+
+**Automatizado:** Sí (A-49, A-50).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1613,6 +1629,11 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | Reincorporar una profesora activa no responde 409                                       | T-02 y un unitario del service                                                                             |
 | El listado de profesoras incluye el contacto para cualquier rol                         | T-05 y un unitario de las rutas                                                                            |
 | El PATCH reincorpora sin limpiar `fecha_baja`                                           | T-01 y dos unitarios del service                                                                           |
+| La foto de Google se acepta por `http` en lugar de `https`                              | Un unitario de `GoogleAutenticacion`                                                                        |
+| El login escribe la foto sobre un usuario inactivo                                      | Un unitario de `SesionService` (el login igual lo rechaza con 403)                                          |
+| El login reescribe la foto aunque sea la misma                                          | Un unitario de `SesionService`                                                                              |
+| El login pisa la foto guardada cuando Google no manda una                               | Un unitario de `SesionService`                                                                              |
+| La base sin el check `ck_usuarios_foto_url`                                             | Ninguno: se comprobó con un `INSERT` de `http://` en la base de prueba, que Postgres rechazó                |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1668,6 +1689,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 18/10/2026 | DNI y contacto de emergencia obligatorios en el alta (PI-15)          | 245 | 245 aprobados | 295,7 s | Corrida sobre `dev` con notificaciones e inactividad ya integradas. La migración `contacto_emergencia_obligatorio` se aplicó sobre la base de prueba después de las de notificaciones. 17 tests de PI-15 a PI-17, PI-31 y PI-64 se adaptaron: mandaban altas sin DNI o sin contacto. Pasaron también los 1973 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las 3 fallas provocadas fueron detectadas |
 | 20/10/2026 | Ranking, insignias y los informes de asistencia y ocupación (PI-71 a PI-77) | 261 | 261 aprobados | 51,8 s | Pasaron también los 2179 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las migraciones `agregar_insignias` y `agregar_checks_insignias` se aplicaron sobre la base nueva. De las 9 fallas provocadas, 7 las detectaron los de integración en la primera versión; los resúmenes que contaban clases abiertas, después de sumar una clase abierta con marcas, y la falta en el logro de racha, los unitarios del calculador |
 | 09/11/2026 | Edición, reincorporación y contacto del plantel de profesoras (PI-88, PI-89) | 335 | 335 aprobados | 145,7 s | Pasaron también los 2651 tests unitarios; chequeo de tipos, formato y build correctos. Las 4 fallas provocadas fueron detectadas |
+| 10/11/2026 | La foto de perfil de Google en el login y en `/auth/me` (PI-90)       | 337 | 337 aprobados | 181,2 s | Pasaron también los 2662 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las migraciones `agregar_foto_usuario` y `agregar_checks_foto_usuario` se aplicaron sobre la base de prueba. Las 3 fallas provocadas fueron detectadas; el check de la base se comprobó con un `INSERT` inválido |
 
 ### 8.2 Resultado por caso
 
@@ -1728,6 +1750,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-82         | 24/10/2026 | Rosario Mendoza   | Aprobado           | Pasan R-13 a R-16; sin defectos                                                  |
 | PI-88         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasan T-01 a T-04; sin defectos                                                  |
 | PI-89         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasa T-05; sin defectos                                                          |
+| PI-90         | 10/11/2026 | Francisco Andrade | Aprobado           | Pasan A-49 y A-50; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -1857,3 +1880,4 @@ Los defectos se numeran D-01, D-02…
 |   2.32  | 04/11/2026 | Caso PI-86 (el cierre mensual automático de los honorarios desde `DIA_CIERRE_HONORARIOS`) y tests R-17 y R-18; el resto del archivo R corre con el día de cierre en 28 para que listar no cierre septiembre solo | Francisco Andrade |
 |   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
 |   2.34  | 09/11/2026 | Casos PI-88 (edición y reincorporación de profesoras) y PI-89 (contacto y privacidad del listado), con T-01 a T-05; US-38 pasa a automatizada. Se completa la tabla de tests con los archivos L, R, S y U | Francisco Andrade |
+|   2.35  | 10/11/2026 | Caso PI-90 (la foto de perfil de Google en el login y en `/auth/me`) y tests A-49 y A-50; US-01 la suma. El fake de Google recibe la foto como `email` + barra vertical + `foto` y las migraciones agregan `usuarios.foto_url` con su check | Francisco Andrade |
