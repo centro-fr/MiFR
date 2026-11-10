@@ -32,8 +32,9 @@ export const promocionFormSchema = z
       .trim()
       .regex(/^\d+(?:[.,]\d{1,2})?$/, "Ingresá un valor positivo."),
     fechaDesde: fecha,
-    fechaHasta: fecha,
-    idsPlanes: z.array(z.string()).min(1, "Elegí al menos un plan."),
+    fechaHasta: z.string().optional().default(""),
+    permanente: z.boolean().optional().default(false),
+    idsPlanes: z.array(z.string()).min(1, "Elegí al menos un plan o actividad."),
   })
   .superRefine((datos, contexto) => {
     const valor = Number(datos.valor.replace(",", "."));
@@ -43,8 +44,12 @@ export const promocionFormSchema = z
     if (datos.tipoDescuento === "PORCENTAJE" && valor >= 100) {
       contexto.addIssue({ code: z.ZodIssueCode.custom, path: ["valor"], message: "El porcentaje debe ser menor al 100 %." });
     }
-    if (datos.fechaHasta < datos.fechaDesde) {
-      contexto.addIssue({ code: z.ZodIssueCode.custom, path: ["fechaHasta"], message: "La fecha hasta no puede ser anterior." });
+    if (!datos.permanente) {
+      if (!datos.fechaHasta || !/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaHasta)) {
+        contexto.addIssue({ code: z.ZodIssueCode.custom, path: ["fechaHasta"], message: "Ingresá una fecha válida." });
+      } else if (datos.fechaHasta < datos.fechaDesde) {
+        contexto.addIssue({ code: z.ZodIssueCode.custom, path: ["fechaHasta"], message: "La fecha hasta no puede ser anterior." });
+      }
     }
   });
 

@@ -19,6 +19,9 @@ function descuento(promocion: Promocion): string {
 }
 
 function formatearVigencia(desde: string, hasta: string): string {
+  if (hasta.startsWith("2099") || hasta >= "2099-01-01") {
+    return "Permanente";
+  }
   const d = formatearFecha(desde) || desde.slice(0, 10).replace(/-/g, "/");
   const h = formatearFecha(hasta) || hasta.slice(0, 10).replace(/-/g, "/");
   return `${d} al ${h}`;

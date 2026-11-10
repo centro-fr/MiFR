@@ -125,11 +125,11 @@
 
 - [x] Quitar "Limpiar filtros" al seleccionar historial completo
 - [x] Arreglar visualizacion de vigencia, remplazar "-" por "/"
-
 - [x] Modificar breadcum para que coincida con pantalla
 - [x] Arreglar bug al seleccionar opcion en sidebar ![alt text](ErrorSeleccSidebar.png)
 - [x] Cambiar Icono por uno de Gift
 - [x] Aplicar la misma logica de Vigente y dado de baja como en planes y actividades
+- [x] Agregar opción "Todas las actividades" en planes asociados y opción "Descuento permanente" sin vencimiento de fechas
 
 
 ## Centro - Planes

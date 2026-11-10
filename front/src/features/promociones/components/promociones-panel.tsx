@@ -97,7 +97,7 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       tipo_descuento: datos.tipoDescuento,
       valor: Number(datos.valor.replace(",", ".")),
       fecha_desde: datos.fechaDesde,
-      fecha_hasta: datos.fechaHasta,
+      fecha_hasta: datos.permanente ? "2099-12-31" : datos.fechaHasta,
       ids_planes: datos.idsPlanes.map(Number),
     };
     const opciones = {
