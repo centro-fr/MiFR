@@ -74,6 +74,16 @@ describe("useOwnerNavigation: sección Centro (Planes y Promociones)", () => {
   });
 });
 
+describe("useOwnerNavigation: sección Reportes", () => {
+  it("marca Planes más elegidos en su ruta y genera breadcrumb coincidente", () => {
+    const nav = navegacionEn("/app/reportes/planes");
+    const itemPlanesReporte = nav.items.find((i) => i.etiqueta === "Planes más elegidos" && i.seccion === "Reportes")!;
+
+    expect(itemPlanesReporte.esActivo).toBe(true);
+    expect(nav.migas.map((m) => m.etiqueta)).toEqual(["Inicio", "Reportes", "Planes más elegidos"]);
+  });
+});
+
 describe("useOwnerNavigation: contadores", () => {
   it("pone el número de transferencias pendientes en Transferencias por verificar", () => {
     const transferencias = buscarItem("/app/dashboard", "Transferencias por verificar", {

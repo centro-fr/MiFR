@@ -100,7 +100,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Planes", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
   { etiqueta: "Promociones", icono: Sparkles, seccion: SECCION_CLASES, to: "/app/planes/promociones" },
   { etiqueta: "Inscripciones", icono: BarChart3, seccion: SECCION_REPORTES, to: "/app/reportes/inscripciones", subrutasDe: "/app/reportes" },
-  { etiqueta: "Planes", icono: Tag, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
+  { etiqueta: "Planes más elegidos", icono: Tag, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
   { etiqueta: "Ocupación", icono: CalendarClock, seccion: SECCION_REPORTES, to: "/app/reportes/ocupacion" },
   { etiqueta: "Asistencia", icono: BookOpen, seccion: SECCION_REPORTES, to: "/app/reportes/asistencia" },
   { etiqueta: "Ranking", icono: Trophy, seccion: SECCION_REPORTES, to: "/app/reportes/ranking" },

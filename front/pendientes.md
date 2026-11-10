@@ -88,7 +88,7 @@
 - [x] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
 - [x] Sacar el reporte cuotas vencidas y cobranza.
 - [x] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
-- [ ] Cambiar nombre de reporte "Planes" a "Planes mas elegidos"
+- [x] Cambiar nombre de reporte "Planes" a "Planes mas elegidos"
 
 ## Clases
 
