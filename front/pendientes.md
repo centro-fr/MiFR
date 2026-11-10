@@ -116,3 +116,4 @@
 ## Centro - Promociones
 
 - [x] Quitar "Limpiar filtros" al seleccionar historial completo
+- [x] Arreglar visualizacion de vigencia, remplazar "-" por "/"

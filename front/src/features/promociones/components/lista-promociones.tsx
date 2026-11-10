@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
+import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 
@@ -15,6 +16,12 @@ function descuento(promocion: Promocion): string {
   return promocion.tipoDescuento === "PORCENTAJE"
     ? `${promocion.valor}% OFF`
     : `$${promocion.valor.toLocaleString("es-AR")} OFF`;
+}
+
+function formatearVigencia(desde: string, hasta: string): string {
+  const d = formatearFecha(desde) || desde.slice(0, 10).replace(/-/g, "/");
+  const h = formatearFecha(hasta) || hasta.slice(0, 10).replace(/-/g, "/");
+  return `${d} al ${h}`;
 }
 
 export function ListaPromociones({
@@ -64,7 +71,7 @@ export function ListaPromociones({
             {promociones.map((promocion) => {
               const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
               const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
-              const vigencia = `${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`;
+              const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
               return (
                 <tr
@@ -141,7 +148,7 @@ export function ListaPromociones({
         {promociones.map((promocion) => {
           const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
           const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
-          const vigencia = `${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`;
+          const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
           return (
             <div
