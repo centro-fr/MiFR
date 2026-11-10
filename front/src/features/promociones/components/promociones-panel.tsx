@@ -58,7 +58,7 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
     );
   }, [promocionesOrdenadas, promocionesVigentes, pestana, busqueda]);
 
-  const hayFiltros = busqueda.trim().length > 0 || pestana !== "VIGENTES";
+  const hayFiltros = busqueda.trim().length > 0;
 
   const abrirNueva = () => {
     crear.reset();
@@ -187,7 +187,6 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
               variant="ghost"
               onClick={() => {
                 setBusqueda("");
-                setPestana("VIGENTES");
               }}
               className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
             >

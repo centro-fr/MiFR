@@ -90,7 +90,7 @@ export function PlanesPage() {
     );
   }, [todosLosPlanes, planesVigentes, pestanaEstado, busqueda]);
 
-  const hayFiltros = busqueda.trim().length > 0 || pestanaEstado !== "VIGENTES";
+  const hayFiltros = busqueda.trim().length > 0;
 
   const cabeceraPestanasDesktop = (
     <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
@@ -173,7 +173,6 @@ export function PlanesPage() {
                     variant="ghost"
                     onClick={() => {
                       setBusqueda("");
-                      setPestanaEstado("VIGENTES");
                     }}
                     className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
                   >

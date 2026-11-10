@@ -42,6 +42,10 @@
 
 - [x] Vista y filtros alineados con el diseño exacto de image.png con pestañas integradas en cabecera de tarjeta y botón de acción "Ver ficha".
 
+- [ ] Ordena los alumnos por Estado de Cuota, de manera que primero se visualicen las cuotas con mayor vencimiento.
+
+- [ ] Que la primera opcion de visualizacion sea "Todos", Quita "Activos"
+ 
 ## Alumno - Cobros y Cuotas
 
 - [x] Cambiar "Quién debe, qué transferencias faltan verificar y cuánto efectivo te tienen que rendir." por "Busca los deudores, que trasnferencias faltan verificar y cuanto efectivo te tienen que rendir"
@@ -83,6 +87,8 @@
 - [x] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
 - [x] Sacar el reporte cuotas vencidas y cobranza.
 
+- [ ] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita)
+
 ## Clases
 
 - [x] Modificar el nombre del sidebar "CLASES" por "CENTRO".
@@ -97,6 +103,7 @@
 
 - [x] El icono del perfin del usuario/profesor que sea como el de Alumnos - Listado. - Gaston Gutierrez
 - [x] En la columna de Incorporacion, saca el icono del calendario. - Gaston Gutierrez
+- [x] Quitar "Limpiar filtros" al seleccionar historial completo
 
 
 ## Centro - Planes y Precios
@@ -104,3 +111,8 @@
 - [x] Separa en subitems 'Planes y Precios' y Promociones - Gaston Gutierrez
 - [x] Planes y precios que sean tablas como en "Alumnos - Listado" - Gaston Gutierrez
 - [x] Promociones tambien hacer como tablas en "Alumnos - Listado" - Gaston Gutierrez
+
+
+## Centro - Promociones
+
+- [x] Quitar "Limpiar filtros" al seleccionar historial completo
