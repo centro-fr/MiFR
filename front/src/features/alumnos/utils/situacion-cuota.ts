@@ -71,3 +71,80 @@ export function deudaAlIrse(inscripcionesDeLaBaja: InscripcionDeAlumno[]): Deuda
 export function textoDeuda({ planes, diasDeAtraso }: DeudaAlIrse): string {
   return `Cuando se dio de baja debía la cuota de ${planes.join(" y ")}, vencida hace ${dias(diasDeAtraso)}.`;
 }
+
+const PESO_ESTADO_CUOTA: Record<EstadoCuota, number> = {
+  VENCIDA: 1,
+  CLASE_SUELTA_VENCIDA: 1,
+  POR_VENCER: 2,
+  PENDIENTE_DE_PAGO: 3,
+  AL_DIA: 4,
+  CLASE_SUELTA_VIGENTE: 4,
+};
+
+export type SituacionCuotaComparable =
+  | {
+    estado: EstadoCuota;
+    dias_restantes?: number | null;
+    fecha_vencimiento?: string | null;
+  }
+  | null
+  | undefined;
+
+/**
+ * Compara dos situaciones de cuota para ordenar:
+ * 1. Cuotas vencidas (mayor vencimiento / mayor atraso primero).
+ * 2. Cuotas por vencer (más próximas a vencer primero).
+ * 3. Pendientes de pago.
+ * 4. Cuotas al día (más próximas a renovar primero).
+ * 5. Sin cuota / sin datos.
+ */
+export function compararPorEstadoCuotaYMora(
+  cuotaA: SituacionCuotaComparable,
+  cuotaB: SituacionCuotaComparable,
+): number {
+  const pesoA = cuotaA?.estado ? PESO_ESTADO_CUOTA[cuotaA.estado] ?? 5 : 5;
+  const pesoB = cuotaB?.estado ? PESO_ESTADO_CUOTA[cuotaB.estado] ?? 5 : 5;
+
+  if (pesoA !== pesoB) {
+    return pesoA - pesoB;
+  }
+
+  // Mismo grupo de prioridad:
+  if (cuotaA?.dias_restantes != null && cuotaB?.dias_restantes != null) {
+    if (cuotaA.dias_restantes !== cuotaB.dias_restantes) {
+      // Menor número de días restantes va primero (-30 < -5 < 0 < 3 < 20)
+      return cuotaA.dias_restantes - cuotaB.dias_restantes;
+    }
+  } else if (cuotaA?.fecha_vencimiento && cuotaB?.fecha_vencimiento) {
+    const compFecha = cuotaA.fecha_vencimiento.localeCompare(cuotaB.fecha_vencimiento);
+    if (compFecha !== 0) return compFecha;
+  }
+
+  return 0;
+}
+
+/**
+ * Ordena alumnos por Estado de Cuota (mayor vencimiento primero) y desempata por fecha de alta / id.
+ */
+export function compararAlumnosPorCuota<
+  T extends {
+    situacion_cuota?: SituacionCuotaComparable;
+    fecha_alta?: string;
+    id_alumno?: number;
+  },
+>(a: T, b: T): number {
+  const compCuota = compararPorEstadoCuotaYMora(a.situacion_cuota, b.situacion_cuota);
+  if (compCuota !== 0) return compCuota;
+
+  if (a.fecha_alta && b.fecha_alta) {
+    const compAlta = b.fecha_alta.localeCompare(a.fecha_alta);
+    if (compAlta !== 0) return compAlta;
+  }
+
+  if (a.id_alumno != null && b.id_alumno != null) {
+    return b.id_alumno - a.id_alumno;
+  }
+
+  return 0;
+}
+

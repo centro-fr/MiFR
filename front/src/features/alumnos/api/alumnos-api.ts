@@ -17,6 +17,7 @@ import {
   type SituacionCuotaApi,
 } from "@/features/alumnos/schemas/alumno";
 import { horaDesdeApi } from "@/features/horarios/utils/cronograma";
+import { compararAlumnosPorCuota } from "@/features/alumnos/utils/situacion-cuota";
 import type { CrearAlumnoPayload, MotivoBaja } from "@/types/alumno";
 
 /** "Activos y pendientes" no manda estado: el back excluye a los de baja salvo con incluirBajas. */
@@ -93,8 +94,6 @@ export async function listarAlumnos(filtros: FiltrosAlumnos): Promise<RespuestaA
 // El máximo que acepta el back por consulta (LIMITE_MAXIMO de esquemas-paginacion.ts).
 const ALUMNOS_POR_CONSULTA = 100;
 
-type AlumnoEnListadoApi = PaginaAlumnosApi["datos"][number];
-
 async function pedirPaginaDeAlumnos(filtros: FiltrosDelListado, offset: number): Promise<PaginaAlumnosApi> {
   const { data } = await apiClient.get("/alumnos", {
     params: parametrosDeListado({ ...filtros, limit: ALUMNOS_POR_CONSULTA, offset }),
@@ -102,16 +101,11 @@ async function pedirPaginaDeAlumnos(filtros: FiltrosDelListado, offset: number):
   return paginaAlumnosApiSchema.parse(data);
 }
 
-function porAltaMasReciente(a: AlumnoEnListadoApi, b: AlumnoEnListadoApi): number {
-  return b.fecha_alta.localeCompare(a.fecha_alta) || b.id_alumno - a.id_alumno;
-}
-
 export type FiltrosDelListado = Omit<FiltrosAlumnos, "limit" | "offset">;
 
 /**
- * Todos los alumnos que cumplen los filtros, del alta más reciente a la más antigua: el que se
- * acaba de pre-inscribir queda primero. El back ordena por apellido y pagina, así que reordenar
- * una sola página no alcanza (el nuevo puede caer en otra): se piden todas y la pantalla pagina.
+ * Todos los alumnos que cumplen los filtros, ordenados por estado de cuota (mayor vencimiento
+ * primero) y por alta más reciente como desempate.
  */
 export async function listarAlumnosRecientesPrimero(filtros: FiltrosDelListado): Promise<AlumnoResumen[]> {
   const primera = await pedirPaginaDeAlumnos(filtros, 0);
@@ -120,7 +114,7 @@ export async function listarAlumnosRecientesPrimero(filtros: FiltrosDelListado):
   const resto = await Promise.all(offsets.map((offset) => pedirPaginaDeAlumnos(filtros, offset)));
   // Si alguien se da de alta entre una consulta y otra, el corrimiento podría repetir una fila.
   const sinRepetir = new Map([primera, ...resto].flatMap(({ datos }) => datos).map((alumno) => [alumno.id_alumno, alumno]));
-  return [...sinRepetir.values()].sort(porAltaMasReciente).map(aAlumnoResumen);
+  return [...sinRepetir.values()].sort(compararAlumnosPorCuota).map(aAlumnoResumen);
 }
 
 // Las columnas DATE viajan como medianoche UTC ("1996-04-24T00:00:00.000Z"): se queda solo la

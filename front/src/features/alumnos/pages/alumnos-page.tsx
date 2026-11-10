@@ -2,7 +2,6 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -17,15 +16,13 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { obtenerAlumno, type FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
-import { etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
+import { compararAlumnosPorCuota, etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
@@ -38,6 +35,7 @@ import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { listarAlumnosInactivos } from "@/features/inactivos/api/inactivos-api";
 import { generarEnlaceWhatsApp, obtenerContactoPrioritario } from "@/features/inactivos/utils/formato-inactivos";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
+import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { cn } from "@/utils/cn";
 
 const TAMANO_PAGINA = 10;
@@ -116,51 +114,11 @@ const CobroInmediato = lazy(() =>
 );
 
 function CargandoAlumnos() {
-  return (
-    <div
-      role="status"
-      aria-label="Cargando alumnos"
-      className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
-    >
-      <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
-        <Skeleton className="h-8 w-24 rounded-lg" />
-        <Skeleton className="h-8 w-28 rounded-lg" />
-        <Skeleton className="h-8 w-24 rounded-lg" />
-      </div>
-      <div className="divide-y divide-slate-100 dark:divide-slate-800">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between px-6 py-3.5">
-            <div className="flex items-center gap-3">
-              <Skeleton className="size-8 rounded-full" />
-              <Skeleton className="h-4 w-40" />
-            </div>
-            <Skeleton className="hidden md:block h-4 w-24" />
-            <Skeleton className="hidden sm:block h-4 w-28" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-8 w-24 rounded-lg" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <TablaSkeleton ariaLabel="Cargando alumnos" cantidadPestanas={3} filas={6} />;
 }
 
 function ErrorAlCargar({ mensaje, onReintentar }: { mensaje: string; onReintentar: () => void }) {
-  return (
-    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-700">
-      <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
-      <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        {mensaje}
-      </p>
-      <Button
-        type="button"
-        onClick={onReintentar}
-        className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark"
-      >
-        Reintentar
-      </Button>
-    </Card>
-  );
+  return <EstadoErrorCarga mensaje={mensaje} onReintentar={onReintentar} />;
 }
 
 export function AlumnosPage() {
@@ -362,12 +320,15 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     }
   }
 
-  // Filtrado de cuota o pestaña Contactar si se aplica
-  const itemsBase = soloContactar
-    ? itemsContactar
-    : filtroCuota && respuesta?.items
-      ? respuesta.items.filter((item) => item.situacion_cuota?.estado === filtroCuota)
-      : (respuesta?.items ?? []);
+  // Filtrado de cuota o pestaña Contactar si se aplica (ordenados por estado de cuota y mayor vencimiento)
+  const itemsBase = useMemo(() => {
+    const lista = soloContactar
+      ? itemsContactar
+      : filtroCuota && respuesta?.items
+        ? respuesta.items.filter((item) => item.situacion_cuota?.estado === filtroCuota)
+        : (respuesta?.items ?? []);
+    return [...lista].sort(compararAlumnosPorCuota);
+  }, [soloContactar, itemsContactar, filtroCuota, respuesta?.items]);
   const itemsVisibles = itemsBase;
 
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
@@ -441,7 +402,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 aria-label="Plan"
                 value={filtros.id_plan}
                 onChange={(e) => cambiarFiltro("id_plan", e.target.value)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="">Todos</option>
                 {opciones.planes.map((p) => (
@@ -462,7 +423,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   aria-label="Profesor/a"
                   value={filtros.id_profesora}
                   onChange={(e) => cambiarFiltro("id_profesora", e.target.value)}
-                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
                 >
                   <option value="">Todas</option>
                   {opciones.profesoras.map((p) => (
@@ -483,7 +444,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 aria-label="Actividad"
                 value={filtros.id_actividad}
                 onChange={(e) => cambiarFiltro("id_actividad", e.target.value)}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="">Todas</option>
                 {opciones.actividades.map((a) => (
@@ -506,7 +467,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   setPagina(0);
                   setFiltroCuota(e.target.value);
                 }}
-                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
               >
                 <option value="">Todas</option>
                 <option value="AL_DIA">Al día</option>
@@ -1038,19 +999,19 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                             {(alumno.situacion_cuota?.estado === "POR_VENCER" ||
                               alumno.situacion_cuota?.estado === "VENCIDA" ||
                               alumno.situacion_cuota?.estado === "CLASE_SUELTA_VENCIDA") && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setIdAlumnoACobrar(alumno.id_alumno);
-                                }}
-                                aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
-                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Cobrar
-                              </Button>
-                            )}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIdAlumnoACobrar(alumno.id_alumno);
+                                  }}
+                                  aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
+                                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                >
+                                  Cobrar
+                                </Button>
+                              )}
                             <Button
                               type="button"
                               variant="outline"

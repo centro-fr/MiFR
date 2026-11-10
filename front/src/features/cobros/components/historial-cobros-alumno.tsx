@@ -22,7 +22,7 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
 
   return (
     <>
-      <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-850">
+      <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900">
         <div>
           <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
             <Receipt aria-hidden="true" className="size-5 text-[#BC1266] dark:text-pink-400" />
