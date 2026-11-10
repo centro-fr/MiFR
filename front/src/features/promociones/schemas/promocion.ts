@@ -32,8 +32,8 @@ export const promocionFormSchema = z
       .trim()
       .regex(/^\d+(?:[.,]\d{1,2})?$/, "Ingresá un valor positivo."),
     fechaDesde: fecha,
-    fechaHasta: z.string().optional().default(""),
-    permanente: z.boolean().optional().default(false),
+    fechaHasta: z.string(),
+    permanente: z.boolean(),
     idsPlanes: z.array(z.string()).min(1, "Elegí al menos un plan o actividad."),
   })
   .superRefine((datos, contexto) => {

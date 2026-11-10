@@ -38,7 +38,6 @@ export function ListaPlanes({
   planes,
   total,
   cabecera,
-  onActualizarPrecio,
   onEditarPlan,
   onVerHistorial,
   onReactivarPlan,
