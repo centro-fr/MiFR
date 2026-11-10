@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
-  Calendar,
   ChevronRight,
   GraduationCap,
   Search,
@@ -390,10 +389,10 @@ export function ProfesorasPage() {
                       >
                         <TableCell className="py-4 pl-6">
                           <div className="flex items-center gap-3">
-                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
                               {prof.nombre.charAt(0)}
                               {prof.apellido.charAt(0)}
-                            </div>
+                            </span>
                             <Link
                               to={`/app/profesoras/${prof.id}`}
                               onClick={(e) => e.stopPropagation()}
@@ -430,10 +429,7 @@ export function ProfesorasPage() {
                           )}
                         </TableCell>
                         <TableCell className="py-4 font-medium text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="size-3.5 text-slate-400" />
-                            <span>{formatearFecha(prof.fechaAlta)}</span>
-                          </div>
+                          {formatearFecha(prof.fechaAlta)}
                         </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
                           <Button
@@ -473,10 +469,10 @@ export function ProfesorasPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-pink-100 dark:bg-pink-950/60 font-black text-primary text-sm">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-pink-700 dark:bg-pink-950/70 dark:text-pink-200">
                           {prof.nombre.charAt(0)}
                           {prof.apellido.charAt(0)}
-                        </div>
+                        </span>
                         <div className="min-w-0">
                           <Link
                             to={`/app/profesoras/${prof.id}`}

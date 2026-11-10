@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ListaPromociones } from "@/features/promociones/components/lista-promociones";
+import { Input } from "@/components/ui/input";
+import {
+  ListaPromociones,
+  ListaPromocionesCargando,
+} from "@/features/promociones/components/lista-promociones";
 import { PromocionDialog } from "@/features/promociones/components/promocion-dialog";
 import {
   useActualizarPromocion,
@@ -16,12 +20,18 @@ import {
 import type { PromocionFormValues } from "@/features/promociones/schemas/promocion";
 import type { Plan } from "@/types/plan";
 import type { Promocion } from "@/types/promocion";
+import { cn } from "@/utils/cn";
+import { normalizarParaBuscar } from "@/utils/texto";
+
+type PestanaEstadoPromocion = "VIGENTES" | "TODAS";
 
 export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const consulta = usePromociones();
   const crear = useCrearPromocion();
   const actualizar = useActualizarPromocion();
   const desactivar = useDesactivarPromocion();
+  const [busqueda, setBusqueda] = useState("");
+  const [pestana, setPestana] = useState<PestanaEstadoPromocion>("VIGENTES");
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [promocionEditando, setPromocionEditando] = useState<Promocion | null>(null);
   const [promocionADesactivar, setPromocionADesactivar] = useState<Promocion | null>(null);
@@ -30,6 +40,24 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
     () => [...(consulta.data ?? [])].sort((a, b) => b.fechaDesde.localeCompare(a.fechaDesde)),
     [consulta.data],
   );
+
+  const promocionesVigentes = useMemo(
+    () => promocionesOrdenadas.filter((p) => p.estado === "ACTIVA" || p.estado === "PROGRAMADA"),
+    [promocionesOrdenadas],
+  );
+
+  const promocionesFiltradas = useMemo(() => {
+    const base = pestana === "VIGENTES" ? promocionesVigentes : promocionesOrdenadas;
+    const q = normalizarParaBuscar(busqueda);
+    if (!q) return base;
+    return base.filter((p) =>
+      [p.nombre, p.codigo, ...p.planes.map((pl) => pl.nombre)].some((v) =>
+        normalizarParaBuscar(v).includes(q),
+      ),
+    );
+  }, [promocionesOrdenadas, promocionesVigentes, pestana, busqueda]);
+
+  const hayFiltros = busqueda.trim().length > 0 || pestana !== "VIGENTES";
 
   const abrirNueva = () => {
     crear.reset();
@@ -66,35 +94,179 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
     }
   };
 
-  if (consulta.isPending) {
-    return <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold"><Loader2 className="size-5 animate-spin text-primary" />Cargando promociones...</div>;
-  }
-
-  if (consulta.isError) {
-    return (
-      <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-800">
-        <AlertCircle className="size-8 text-rose-600" />
-        <p role="alert" className="text-sm font-semibold">{mensajeDeErrorApi(consulta.error, "No se pudieron cargar las promociones.")}</p>
-        <Button type="button" onClick={() => void consulta.refetch()} className="min-h-11 rounded-xl font-bold">Reintentar</Button>
-      </Card>
-    );
-  }
+  const cabeceraPestanasDesktop = (
+    <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <button
+        type="button"
+        onClick={() => setPestana("VIGENTES")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestana === "VIGENTES"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Vigentes</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestana === "VIGENTES"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {promocionesVigentes.length}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setPestana("TODAS")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestana === "TODAS"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Historial completo</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestana === "TODAS"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {promocionesOrdenadas.length}
+        </span>
+      </button>
+    </div>
+  );
 
   return (
-    <section className="space-y-4">
-      <div className="flex justify-end">
-        <Button type="button" onClick={abrirNueva} className="min-h-11 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
+    <section className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Promociones
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+            Descuentos y beneficios vigentes para aplicar en las inscripciones.
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={abrirNueva}
+          className="min-h-[44px] rounded-xl bg-primary px-4 md:px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
+        >
           + Nueva promoción
         </Button>
       </div>
-      {promocionesOrdenadas.length === 0 ? (
+
+      {/* Barra de búsqueda como en Alumnos - Listado */}
+      <section aria-label="Filtros de promociones" className="space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1 min-w-[280px] max-w-sm">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400"
+            />
+            <Input
+              type="search"
+              aria-label="Buscar por nombre, código o plan"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por nombre, código o plan..."
+              className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+            />
+          </div>
+          {hayFiltros && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setBusqueda("");
+                setPestana("VIGENTES");
+              }}
+              className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+            >
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Pestañas de estado para mobile */}
+      <div className="flex lg:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+        <button
+          type="button"
+          onClick={() => setPestana("VIGENTES")}
+          className={cn(
+            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+            pestana === "VIGENTES"
+              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+          )}
+        >
+          Vigentes{" "}
+          <span className={cn(pestana === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
+            {promocionesVigentes.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPestana("TODAS")}
+          className={cn(
+            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+            pestana === "TODAS"
+              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+          )}
+        >
+          Historial completo{" "}
+          <span className={cn(pestana === "TODAS" ? "text-primary font-black" : "text-slate-500")}>
+            {promocionesOrdenadas.length}
+          </span>
+        </button>
+      </div>
+
+      {consulta.isPending ? (
+        <ListaPromocionesCargando />
+      ) : consulta.isError ? (
+        <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-800">
+          <AlertCircle className="size-8 text-rose-600" />
+          <p role="alert" className="text-sm font-semibold">
+            {mensajeDeErrorApi(consulta.error, "No se pudieron cargar las promociones.")}
+          </p>
+          <Button
+            type="button"
+            onClick={() => void consulta.refetch()}
+            className="min-h-11 rounded-xl font-bold"
+          >
+            Reintentar
+          </Button>
+        </Card>
+      ) : promocionesFiltradas.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70"><Sparkles className="size-7" /></span>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Todavía no hay promociones</h2>
-          <p className="max-w-md text-sm text-muted-foreground">Creá una promoción temporal para aplicar descuentos a nuevas inscripciones.</p>
+          <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70">
+            <Sparkles className="size-7" />
+          </span>
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+            {hayFiltros ? "Sin resultados para tu búsqueda" : "Todavía no hay promociones"}
+          </h2>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {hayFiltros
+              ? "Probá ajustando el término de búsqueda para encontrar promociones."
+              : "Creá una promoción temporal para aplicar descuentos a nuevas inscripciones."}
+          </p>
         </Card>
       ) : (
-        <ListaPromociones promociones={promocionesOrdenadas} onEditar={abrirEdicion} onDesactivar={setPromocionADesactivar} />
+        <ListaPromociones
+          promociones={promocionesFiltradas}
+          cabecera={cabeceraPestanasDesktop}
+          onEditar={abrirEdicion}
+          onDesactivar={setPromocionADesactivar}
+        />
       )}
 
       <PromocionDialog

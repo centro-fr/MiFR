@@ -52,7 +52,7 @@
 - [x] Cambiar el boton de "Registrar Cobro", separarlo en dos "Cobrar Efectivo" y "Cobrar Transferencia".
 - [x] En efectivo a rendir solo tiene que tener un boton de rendir sin formulario.
 - [x] Agregar un listado de cobros en el apartado "Cobros" verificar el formato de las listas.
-- [ ] Cambiar el nombre  de "Listado" por "Historial" en el apartado "COBROS" - Gaston Gutierrez
+- [x] Cambiar el nombre  de "Listado" por "Historial" en el apartado "COBROS" - Gaston Gutierrez
 
 
 ## Honorario
@@ -95,12 +95,12 @@
 
 ## Centro - Profesores
 
-- [ ] El icono del perfin del usuario/profesor que sea como el de Alumnos - Listado. - Gaston Gutierrez
-- [ ] En la columna de Incorporacion, saca el icono del calendario. - Gaston Gutierrez
+- [x] El icono del perfin del usuario/profesor que sea como el de Alumnos - Listado. - Gaston Gutierrez
+- [x] En la columna de Incorporacion, saca el icono del calendario. - Gaston Gutierrez
 
 
 ## Centro - Planes y Precios
 
-- [ ] Separa en subitems 'Planes y Precios' y Promociones - Gaston Gutierrez
-- [ ] Planes y precios que sean tablas como en "Alumnos - Listado" - Gaston Gutierrez
-- [ ] Promociones tambien hacer como tablas en "Alumnos - Listado" - Gaston Gutierrez
+- [x] Separa en subitems 'Planes y Precios' y Promociones - Gaston Gutierrez
+- [x] Planes y precios que sean tablas como en "Alumnos - Listado" - Gaston Gutierrez
+- [x] Promociones tambien hacer como tablas en "Alumnos - Listado" - Gaston Gutierrez

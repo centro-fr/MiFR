@@ -1,5 +1,6 @@
-import { CalendarDays, Pencil, Power, Tag } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 
@@ -11,49 +12,215 @@ const ESTADOS: Record<Promocion["estado"], string> = {
 };
 
 function descuento(promocion: Promocion): string {
-  return promocion.tipoDescuento === "PORCENTAJE" ? `${promocion.valor}% OFF` : `$${promocion.valor.toLocaleString("es-AR")} OFF`;
+  return promocion.tipoDescuento === "PORCENTAJE"
+    ? `${promocion.valor}% OFF`
+    : `$${promocion.valor.toLocaleString("es-AR")} OFF`;
 }
 
 export function ListaPromociones({
   promociones,
+  cabecera,
   onEditar,
   onDesactivar,
 }: {
   promociones: Promocion[];
+  cabecera?: ReactNode;
   onEditar: (promocion: Promocion) => void;
   onDesactivar: (promocion: Promocion) => void;
 }) {
   return (
-    <ul aria-label="Promociones" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
-      {promociones.map((promocion) => (
-        <li key={promocion.id} className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/60">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-pink-950/50 dark:text-pink-300"><Tag className="size-4" /></span>
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900 dark:text-white">{promocion.nombre}</h2>
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{promocion.codigo}</p>
+    <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+      {cabecera}
+
+      {/* Vista Desktop: Tabla limpia como en Alumnos - Listado */}
+      <div className="hidden overflow-x-auto lg:block">
+        <table aria-label="Promociones" className="w-full text-left text-sm">
+          <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+            <tr>
+              <th scope="col" className="px-6 py-3.5">
+                Promoción
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Código
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Descuento
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Planes
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Vigencia
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Estado
+              </th>
+              <th scope="col" className="px-6 py-3.5 text-right">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {promociones.map((promocion) => {
+              const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
+              const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
+              const vigencia = `${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`;
+
+              return (
+                <tr
+                  key={promocion.id}
+                  className={cn(
+                    "transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
+                    !editable && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                  )}
+                >
+                  <td className="px-6 py-3.5">
+                    <h2 className="font-bold text-sm text-slate-900 dark:text-white">
+                      {promocion.nombre}
+                    </h2>
+                  </td>
+
+                  <td className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                    {promocion.codigo}
+                  </td>
+
+                  <td className="px-4 py-3.5 font-bold text-sm text-slate-900 dark:text-white tabular-nums">
+                    {descuento(promocion)}
+                  </td>
+
+                  <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {nombresPlanes}
+                  </td>
+
+                  <td className="px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    {vigencia}
+                  </td>
+
+                  <td className="px-4 py-3.5">
+                    <span
+                      className={cn(
+                        "inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold capitalize",
+                        ESTADOS[promocion.estado],
+                      )}
+                    >
+                      {promocion.estado.toLowerCase()}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-3.5 text-right">
+                    {editable && (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => onEditar(promocion)}
+                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => onDesactivar(promocion)}
+                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                        >
+                          Desactivar
+                        </Button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Vista Mobile: Filas agrupadas como en Alumnos - Listado */}
+      <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+        {promociones.map((promocion) => {
+          const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
+          const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
+          const vigencia = `${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`;
+
+          return (
+            <div
+              key={promocion.id}
+              className={cn(
+                "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5",
+                !editable && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {promocion.nombre}
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    ({promocion.codigo})
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold capitalize",
+                      ESTADOS[promocion.estado],
+                    )}
+                  >
+                    {promocion.estado.toLowerCase()}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {descuento(promocion)} · {nombresPlanes} · {vigencia}
+                </p>
               </div>
+
+              {editable && (
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onEditar(promocion)}
+                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onDesactivar(promocion)}
+                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                  >
+                    Desactivar
+                  </Button>
+                </div>
+              )}
             </div>
-            <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold", ESTADOS[promocion.estado])}>{promocion.estado.toLowerCase()}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 border-y border-slate-100 py-3 text-xs sm:text-sm dark:border-slate-800">
-            <Dato label="Descuento" valor={descuento(promocion)} destacado />
-            <Dato label="Vigencia" valor={`${promocion.fechaDesde.slice(0, 10)} al ${promocion.fechaHasta.slice(0, 10)}`} icono={<CalendarDays className="size-3.5" />} />
-            <Dato label="Planes" valor={promocion.planes.map((plan) => plan.nombre).join(", ")} />
-          </div>
-          {(promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA") && (
-            <div className="flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className="h-8 min-h-0 flex-1 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"><Pencil className="mr-1.5 size-3.5" />Editar</Button>
-              <Button type="button" variant="ghost" onClick={() => onDesactivar(promocion)} className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"><Power className="mr-1.5 size-3.5" />Desactivar</Button>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-function Dato({ label, valor, destacado, icono }: { label: string; valor: string; destacado?: boolean; icono?: React.ReactNode }) {
-  return <div className="min-w-0"><span className="block text-xs font-semibold text-muted-foreground">{label}</span><span className={cn("mt-1 flex items-center gap-1 font-bold text-slate-700 dark:text-slate-200", destacado && "text-primary dark:text-pink-300")}>{icono}{valor}</span></div>;
+/** Mientras cargan: skeleton de filas de tabla como en Alumnos - Listado. */
+export function ListaPromocionesCargando() {
+  return (
+    <div
+      role="status"
+      aria-label="Cargando promociones"
+      className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+    >
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        {Array.from({ length: 5 }, (_, indice) => (
+          <div key={indice} className="flex items-center justify-between px-6 py-3.5">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="hidden md:block h-4 w-20" />
+            <Skeleton className="hidden sm:block h-4 w-24" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-8 w-28 rounded-lg" />
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">Cargando promociones…</span>
+    </div>
+  );
 }

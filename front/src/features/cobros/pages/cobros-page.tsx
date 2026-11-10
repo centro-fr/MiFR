@@ -408,7 +408,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   const tituloSeccion = soloACargo
     ? "Cobros"
     : tabActiva === "listado"
-      ? "Historial de cobros"
+      ? "Historial"
       : tabActiva === "transferencias"
         ? "Transferencias por verificar"
         : tabActiva === "efectivo"
@@ -1080,7 +1080,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         </div>
       )}
 
-      {/* TAB 0: LISTADO DE COBROS */}
+      {/* TAB 0: HISTORIAL DE COBROS */}
       {tabActiva === "listado" && <PanelListadoCobros onVerComprobante={(id) => setComprobanteId(id)} />}
 
       {/* TAB 3: EFECTIVO A RENDIR */}

@@ -248,6 +248,7 @@ export const router = createBrowserRouter([
         element: guardiaDeSeccion("planes", "PLANES_VER"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") },
+          { path: "promociones", lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") },
           {
             element: (
               <PermissionGuard permission="PLANES_EDITAR">

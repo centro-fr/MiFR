@@ -33,7 +33,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
 
   const hoy = fechaActualArgentina();
   const { data: cobranzaData, isLoading } = useQuery({
-    queryKey: ["cobros", "listado", hoy],
+    queryKey: ["cobros", "historial", hoy],
     queryFn: async () => {
       const respuesta = await apiClient.get("/reportes/cobranza", {
         params: { desde: "2025-01-01", hasta: hoy, limit: 100, offset: 0 },
@@ -99,7 +99,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
 
   return (
     <div className="space-y-4">
-      <section aria-label="Filtros de listado de cobros" className="space-y-2.5">
+      <section aria-label="Filtros de historial de cobros" className="space-y-2.5">
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative flex-1 min-w-[280px] max-w-sm">
             <Search
@@ -107,7 +107,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
             />
             <Input
-              id="buscar-cobros-listado"
+              id="buscar-cobros-historial"
               aria-label="Buscar por alumno o plan"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -137,13 +137,13 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
           >
             <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
               <label
-                htmlFor="filtro-profesora-cobros-listado"
+                htmlFor="filtro-profesora-cobros-historial"
                 className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap"
               >
                 Cobró
               </label>
               <select
-                id="filtro-profesora-cobros-listado"
+                id="filtro-profesora-cobros-historial"
                 aria-label="Cobró"
                 value={filtroProfesora}
                 onChange={(e) => setFiltroProfesora(e.target.value)}
@@ -259,7 +259,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
             <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
               {hayFiltrosActivos
                 ? "Probá ajustando el término de búsqueda o los filtros seleccionados."
-                : "Los cobros confirmados figurarán en este listado con su comprobante."}
+                : "Los cobros confirmados figurarán en este historial con su comprobante."}
             </p>
             {hayFiltrosActivos && (
               <Button

@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
-import { AlertCircle, Tag } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { AlertCircle, Search, Tag } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
@@ -13,11 +14,11 @@ import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/plane
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
-import { cn } from "@/utils/cn";
 import { PromocionesPanel } from "@/features/promociones/components/promociones-panel";
-import { usePromociones } from "@/features/promociones/hooks/use-promociones";
+import { cn } from "@/utils/cn";
+import { normalizarParaBuscar } from "@/utils/texto";
 
-type PestanaPlanes = "PLANES" | "PROMOCIONES";
+type PestanaEstadoPlan = "VIGENTES" | "TODOS";
 
 function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
   return (
@@ -43,68 +44,6 @@ function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
   );
 }
 
-function Pestanas({
-  activa,
-  onChange,
-  cantidadPlanes,
-  cantidadPromociones,
-}: {
-  activa: PestanaPlanes;
-  onChange: (tab: PestanaPlanes) => void;
-  cantidadPlanes: number;
-  cantidadPromociones?: number;
-}) {
-  return (
-    <div className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 pt-1 overflow-x-auto scrollbar-none">
-      <button
-        type="button"
-        onClick={() => onChange("PLANES")}
-        className={cn(
-          "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-          activa === "PLANES"
-            ? "border-primary text-slate-900 dark:text-white"
-            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-        )}
-      >
-        <span>Planes</span>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-            activa === "PLANES"
-              ? "bg-primary text-white"
-              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-          )}
-        >
-          {cantidadPlanes}
-        </span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onChange("PROMOCIONES")}
-        className={cn(
-          "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-          activa === "PROMOCIONES"
-            ? "border-primary text-slate-900 dark:text-white"
-            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-        )}
-      >
-        <span>Promociones</span>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-            activa === "PROMOCIONES"
-              ? "bg-primary text-white"
-              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-          )}
-        >
-          {cantidadPromociones ?? "—"}
-        </span>
-      </button>
-    </div>
-  );
-}
-
 function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: string; accion?: ReactNode }) {
   return (
     <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-800 rounded-lg">
@@ -120,10 +59,12 @@ function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: str
 
 // US-11: Catálogo de planes y promociones comerciales
 export function PlanesPage() {
+  const { pathname } = useLocation();
+  const enPromociones = pathname.endsWith("/promociones");
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
-  const promociones = usePromociones();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [pestana, setPestana] = useState<PestanaPlanes>("PLANES");
+  const [busqueda, setBusqueda] = useState("");
+  const [pestanaEstado, setPestanaEstado] = useState<PestanaEstadoPlan>("VIGENTES");
   const [planNuevo, setPlanNuevo] = useState(() => searchParams.get("nuevo") === "1");
   const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
   const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
@@ -136,82 +77,215 @@ export function PlanesPage() {
     }
   };
 
-  const planesVigentes = (planes ?? []).filter(estaVigente);
+  const todosLosPlanes = useMemo(() => planes ?? [], [planes]);
+  const planesVigentes = useMemo(() => todosLosPlanes.filter(estaVigente), [todosLosPlanes]);
+
+  const planesFiltrados = useMemo(() => {
+    const base = pestanaEstado === "VIGENTES" ? planesVigentes : todosLosPlanes;
+    const q = normalizarParaBuscar(busqueda);
+    if (!q) return base;
+    return base.filter((plan) =>
+      [plan.nombre, plan.actividad?.nombre ?? ""].some((v) => normalizarParaBuscar(v).includes(q)),
+    );
+  }, [todosLosPlanes, planesVigentes, pestanaEstado, busqueda]);
+
+  const hayFiltros = busqueda.trim().length > 0 || pestanaEstado !== "VIGENTES";
+
+  const cabeceraPestanasDesktop = (
+    <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <button
+        type="button"
+        onClick={() => setPestanaEstado("VIGENTES")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestanaEstado === "VIGENTES"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Vigentes</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestanaEstado === "VIGENTES"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {planesVigentes.length}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setPestanaEstado("TODOS")}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+          pestanaEstado === "TODOS"
+            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+        )}
+      >
+        <span>Historial completo</span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-extrabold",
+            pestanaEstado === "TODOS"
+              ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+          )}
+        >
+          {todosLosPlanes.length}
+        </span>
+      </button>
+    </div>
+  );
 
   return (
     <OwnerLayout>
       <div className="space-y-6 min-w-0">
-        <Encabezado onNuevoPlan={() => setPlanNuevo(true)} />
-        <Pestanas
-          activa={pestana}
-          onChange={setPestana}
-          cantidadPlanes={planesVigentes.length}
-          cantidadPromociones={promociones.data?.length}
-        />
-
-        {pestana === "PROMOCIONES" ? (
+        {enPromociones ? (
           <PromocionesPanel planes={planesVigentes} />
-        ) : isPending ? (
-          <ListaPlanesCargando />
-        ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-lg">
-            <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
-            <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
-            </p>
-            <Button
-              type="button"
-              onClick={() => void refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
-            >
-              Reintentar
-            </Button>
-          </Card>
-        ) : planesVigentes.length === 0 ? (
-          <EstadoVacio
-            titulo="Todavía no hay planes"
-            detalle="Creá el primero para empezar a inscribir alumnos."
-            accion={
-              <Can permission="PLANES_EDITAR">
+        ) : (
+          <>
+            <Encabezado onNuevoPlan={() => setPlanNuevo(true)} />
+
+            {/* Barra de búsqueda como en Alumnos - Listado */}
+            <section aria-label="Filtros de planes" className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="relative flex-1 min-w-[280px] max-w-sm">
+                  <Search
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400"
+                  />
+                  <Input
+                    type="search"
+                    aria-label="Buscar por nombre o actividad"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por nombre o actividad..."
+                    className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                  />
+                </div>
+                {hayFiltros && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setBusqueda("");
+                      setPestanaEstado("VIGENTES");
+                    }}
+                    className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+                  >
+                    Limpiar filtros
+                  </Button>
+                )}
+              </div>
+            </section>
+
+            {/* Pestañas de estado para mobile */}
+            <div className="flex lg:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => setPestanaEstado("VIGENTES")}
+                className={cn(
+                  "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+                  pestanaEstado === "VIGENTES"
+                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+                )}
+              >
+                Vigentes{" "}
+                <span className={cn(pestanaEstado === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
+                  {planesVigentes.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPestanaEstado("TODOS")}
+                className={cn(
+                  "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+                  pestanaEstado === "TODOS"
+                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+                )}
+              >
+                Historial completo{" "}
+                <span className={cn(pestanaEstado === "TODOS" ? "text-primary font-black" : "text-slate-500")}>
+                  {todosLosPlanes.length}
+                </span>
+              </button>
+            </div>
+
+            {isPending ? (
+              <ListaPlanesCargando />
+            ) : isError ? (
+              <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-lg">
+                <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
+                <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}
+                </p>
                 <Button
                   type="button"
-                  onClick={() => setPlanNuevo(true)}
-                  className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+                  onClick={() => void refetch()}
+                  className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
                 >
-                  + Nuevo plan
+                  Reintentar
                 </Button>
-              </Can>
-            }
-          />
-        ) : (
-          <ListaPlanes
-            planes={planesVigentes}
-            total={planesVigentes.length}
-            onActualizarPrecio={setPlanPrecio}
-            onEditarPlan={setPlanEdicion}
-            onVerHistorial={setPlanHistorial}
-          />
-        )}
+              </Card>
+            ) : planesFiltrados.length === 0 ? (
+              <EstadoVacio
+                titulo={hayFiltros ? "Sin resultados para tu búsqueda" : "Todavía no hay planes"}
+                detalle={
+                  hayFiltros
+                    ? "Probá ajustando el término de búsqueda para encontrar planes."
+                    : "Creá el primero para empezar a inscribir alumnos."
+                }
+                accion={
+                  !hayFiltros ? (
+                    <Can permission="PLANES_EDITAR">
+                      <Button
+                        type="button"
+                        onClick={() => setPlanNuevo(true)}
+                        className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+                      >
+                        + Nuevo plan
+                      </Button>
+                    </Can>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <ListaPlanes
+                planes={planesFiltrados}
+                total={planesFiltrados.length}
+                cabecera={cabeceraPestanasDesktop}
+                onActualizarPrecio={setPlanPrecio}
+                onEditarPlan={setPlanEdicion}
+                onVerHistorial={setPlanHistorial}
+              />
+            )}
 
-        <CrearPlanDialog
-          abierto={planNuevo}
-          onClose={cerrarModalNuevo}
-        />
-        <ActualizarPrecioDialog
-          key={planPrecio?.id ?? "precio-cerrado"}
-          plan={planPrecio}
-          onClose={() => setPlanPrecio(null)}
-        />
-        <HistorialPreciosDialog
-          key={planHistorial?.id ?? "historial-cerrado"}
-          plan={planHistorial}
-          onClose={() => setPlanHistorial(null)}
-        />
-        <EditarPlanDialog
-          key={planEdicion?.id ?? "edicion-cerrada"}
-          plan={planEdicion}
-          onClose={() => setPlanEdicion(null)}
-        />
+            <CrearPlanDialog
+              abierto={planNuevo}
+              onClose={cerrarModalNuevo}
+            />
+            <ActualizarPrecioDialog
+              key={planPrecio?.id ?? "precio-cerrado"}
+              plan={planPrecio}
+              onClose={() => setPlanPrecio(null)}
+            />
+            <HistorialPreciosDialog
+              key={planHistorial?.id ?? "historial-cerrado"}
+              plan={planHistorial}
+              onClose={() => setPlanHistorial(null)}
+            />
+            <EditarPlanDialog
+              key={planEdicion?.id ?? "edicion-cerrada"}
+              plan={planEdicion}
+              onClose={() => setPlanEdicion(null)}
+            />
+          </>
+        )}
       </div>
     </OwnerLayout>
   );

@@ -103,13 +103,13 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
   }),
 }));
 
-const renderPlanesPage = () => {
+const renderPlanesPage = (ruta = "/app/planes") => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[ruta]}>
         <PlanesPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -121,13 +121,12 @@ describe("PlanesPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renderiza el encabezado, breadcrumbs y las pestañas con sus conteos", () => {
+  it("renderiza el encabezado de Planes y Precios y el botón '+ Nuevo plan'", () => {
     renderPlanesPage();
 
     expect(screen.getByRole("heading", { name: "Planes y Precios", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Lo que se le ofrece a cada alumno, cuánto cuesta y las promociones del momento.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Planes/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Promociones/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+ Nuevo plan" })).toBeInTheDocument();
   });
 
   it("muestra las tarjetas de planes con sus precios, beneficios y badges de suba programada", () => {
@@ -140,12 +139,10 @@ describe("PlanesPage", () => {
     expect(screen.getByText("3 clases por semana")).toBeInTheDocument();
   });
 
-  it("muestra el estado vacío de promociones al seleccionar la pestaña Promociones", () => {
-    renderPlanesPage();
+  it("muestra el encabezado y el estado vacío de promociones en la ruta /app/planes/promociones", () => {
+    renderPlanesPage("/app/planes/promociones");
 
-    const btnPromociones = screen.getByRole("button", { name: /^Promociones/i });
-    fireEvent.click(btnPromociones);
-
+    expect(screen.getByRole("heading", { name: "Promociones", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Todavía no hay promociones")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "+ Nueva promoción" })).toBeInTheDocument();
   });
