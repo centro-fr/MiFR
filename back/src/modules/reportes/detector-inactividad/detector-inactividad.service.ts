@@ -42,7 +42,9 @@ export class DetectorInactividadService {
     const umbral = await this.parametros.obtener("INASISTENCIAS_CONSECUTIVAS_INACTIVO");
     const minimo = Math.max(umbral, filtro.minimo_inasistencias ?? 0);
     const candidatas = await this.candidatas(filtro, minimo);
-    const visibles = candidatas.filter(({ marca }) => coincideLaGestion(marca, filtro.estado_gestion));
+    const visibles = candidatas.filter(({ marca }) =>
+      coincideLaGestion(marca, filtro.estado_gestion, filtro.incluir_ignorados),
+    );
     const pagina = visibles.slice(filtro.offset, filtro.offset + filtro.limit);
     const alumnos = await this.alumnosPorId(pagina);
 
@@ -133,9 +135,11 @@ function tiempo(fecha: Date | null): number {
 function coincideLaGestion(
   marca: MarcaDeSeguimiento | undefined,
   estado: FiltroAlumnosInactivos["estado_gestion"],
+  incluirIgnorados?: boolean,
 ): boolean {
   const actual = marca?.estado ?? "PENDIENTE";
-  return estado === undefined ? actual !== "IGNORADO" : actual === estado;
+  if (estado !== undefined) return actual === estado;
+  return incluirIgnorados ? true : actual !== "IGNORADO";
 }
 
 function aAlumnoInactivo(

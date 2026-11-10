@@ -99,5 +99,18 @@ describe("formato-inactivos", () => {
   it("formatea correctamente la última asistencia", () => {
     expect(formatearUltimaAsistencia(null)).toBe("Sin asistencias previas");
     expect(formatearUltimaAsistencia("2026-10-10T00:00:00.000Z")).toContain("10/10/2026");
+
+    const ahora = new Date();
+    const hoyIso = ahora.toISOString();
+    expect(formatearUltimaAsistencia(hoyIso)).toBe("Hoy");
+
+    const ayer = new Date(ahora.getTime() - 24 * 60 * 60 * 1000);
+    expect(formatearUltimaAsistencia(ayer.toISOString())).toBe("Ayer");
+
+    const hace5Dias = new Date(ahora.getTime() - 5 * 24 * 60 * 60 * 1000);
+    expect(formatearUltimaAsistencia(hace5Dias.toISOString())).toBe("Hace 5 días");
+
+    const hace20Dias = new Date(ahora.getTime() - 20 * 24 * 60 * 60 * 1000);
+    expect(formatearUltimaAsistencia(hace20Dias.toISOString())).toMatch(/^El \d{2}\/\d{2}\/\d{4}$/);
   });
 });

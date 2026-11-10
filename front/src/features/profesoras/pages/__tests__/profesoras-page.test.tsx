@@ -113,7 +113,7 @@ describe("ProfesorasPage (US-38)", () => {
 
   it("muestra todas las profesoras al cambiar a la pestaña 'Historial completo'", () => {
     renderizar();
-    const tabTodas = screen.getByRole("button", { name: /Historial completo/i });
+    const tabTodas = screen.getAllByRole("button", { name: /Historial completo/i })[0];
     fireEvent.click(tabTodas);
 
     expect(screen.getAllByText("Lucía Gómez").length).toBeGreaterThan(0);

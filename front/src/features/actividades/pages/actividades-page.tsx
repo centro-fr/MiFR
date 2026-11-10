@@ -1,19 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CalendarPlus, Loader2, Search } from "lucide-react";
+import { AlertCircle, CalendarPlus, ChevronDown, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -191,47 +184,42 @@ export function ActividadesPage() {
         </div>
 
         {/* Barra de Búsqueda y Filtros Compactos en Píldoras */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-          {/* Buscador */}
-          <div className="relative flex-1 min-w-0 sm:min-w-[240px] max-w-sm">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
-            />
-            <Input
-              id="buscar-actividad"
-              aria-label="Buscar actividad"
-              type="text"
-              placeholder="Buscar por nombre o descripción..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="h-10 w-full rounded-xl border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
-            />
-          </div>
+        <section aria-label="Filtros de actividades" className="space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Buscador */}
+            <div className="relative flex-1 min-w-[280px] max-w-sm">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              />
+              <Input
+                id="buscar-actividad"
+                aria-label="Buscar actividad"
+                type="text"
+                placeholder="Buscar por nombre o descripción..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+              />
+            </div>
 
-          {/* Filtros compactos en píldoras */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Modalidad */}
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+            {/* Select Modalidad en píldora idéntico a image.png */}
+            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+              <label htmlFor="filtro-modalidad" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                 Modalidad:
-              </span>
-              <Select
+              </label>
+              <select
+                id="filtro-modalidad"
+                aria-label="Modalidad"
                 value={filtroModalidad}
-                onValueChange={(val) => setFiltroModalidad(val as ModalidadFiltro)}
+                onChange={(e) => setFiltroModalidad(e.target.value as ModalidadFiltro)}
+                className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
               >
-                <SelectTrigger
-                  aria-label="Filtrar por modalidad"
-                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[80px]"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODAS">Todas</SelectItem>
-                  <SelectItem value="GRUPAL">Grupales</SelectItem>
-                  <SelectItem value="PERSONALIZADA">Personalizadas</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="TODAS">Todas</option>
+                <option value="GRUPAL">Grupales</option>
+                <option value="PERSONALIZADA">Personalizadas</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
             </div>
 
             {/* Limpiar filtros */}
@@ -246,7 +234,7 @@ export function ActividadesPage() {
               </Button>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Contenido de lista */}
         {isPending ? (
@@ -345,17 +333,18 @@ export function ActividadesPage() {
               })}
             </div>
 
-            {/* Desktop Table */}
-            <Card className="hidden overflow-hidden rounded-2xl border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+            {/* Desktop Table exactamente como en image.png */}
+            <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
               <Table className="w-full text-left text-sm">
                 <TableHeader>
-                  <TableRow className="border-b border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 uppercase tracking-wider">
-                    <TableHead className="px-6 py-3.5 font-bold text-slate-600 dark:text-slate-400">Actividad</TableHead>
-                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Modalidad</TableHead>
-                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Cupo por clase</TableHead>
-                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Horarios</TableHead>
-                    <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Pide peso y talla</TableHead>
-                    <TableHead className="px-6 py-3.5 text-right"><span className="sr-only">Acciones</span></TableHead>
+                  <TableRow className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    <TableHead className="px-6 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Actividad</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Descripción</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Modalidad</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Cupo por clase</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Horarios</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Pide peso y talla</TableHead>
+                    <TableHead className="px-6 py-3.5 text-right font-semibold text-slate-500 dark:text-slate-400">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-100 font-medium dark:divide-slate-800">
@@ -363,46 +352,51 @@ export function ActividadesPage() {
                     const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                     return (
                       <TableRow key={actividad.id} className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40">
+                        {/* Actividad */}
                         <TableCell className="px-6 py-4 align-middle">
                           <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                             {actividad.nombre}
                           </div>
+                        </TableCell>
+
+                        {/* Descripción (columna separada) */}
+                        <TableCell className="px-4 py-4 align-middle text-xs text-slate-600 dark:text-slate-300 font-normal max-w-xs">
                           {actividad.descripcion ? (
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 max-w-md font-normal">
+                            <div className="line-clamp-2">
                               {actividad.descripcion}
                             </div>
-                          ) : null}
+                          ) : (
+                            <span className="text-slate-400 italic">—</span>
+                          )}
                         </TableCell>
 
-                        <TableCell className="px-4 py-4 align-middle">
-                          <span
-                            className={cn(
-                              "inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-bold",
-                              badgeModalidadClase(actividad.modalidad),
-                            )}
-                          >
-                            {textoModalidad(actividad.modalidad)}
-                          </span>
+                        {/* Modalidad: texto plano, sin colores, sin bordes, sin badge */}
+                        <TableCell className="px-4 py-4 align-middle text-sm text-slate-700 dark:text-slate-300 font-medium">
+                          {textoModalidad(actividad.modalidad)}
                         </TableCell>
 
+                        {/* Cupo */}
                         <TableCell className="px-4 py-4 align-middle text-slate-700 dark:text-slate-300 font-medium">
                           {textoCupoActividad(actividad.cupoMaximo)}
                         </TableCell>
 
+                        {/* Horarios */}
                         <TableCell className="px-4 py-4 align-middle text-slate-700 dark:text-slate-300 font-medium">
                           {cantHorarios > 0 ? `${cantHorarios} por semana` : "—"}
                         </TableCell>
 
+                        {/* Pide peso y talla */}
                         <TableCell className="px-4 py-4 align-middle text-slate-700 dark:text-slate-300 font-medium">
                           {actividad.requiereMedidas ? "Sí" : "—"}
                         </TableCell>
 
+                        {/* Botón de acción */}
                         <TableCell className="px-6 py-4 text-right align-middle">
                           <Button
                             type="button"
                             variant="outline"
                             onClick={() => abrirEdicion(actividad)}
-                            className="h-8 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                            className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                           >
                             Editar
                           </Button>
@@ -412,7 +406,7 @@ export function ActividadesPage() {
                   })}
                 </TableBody>
               </Table>
-            </Card>
+            </div>
           </>
         )}
       </div>
