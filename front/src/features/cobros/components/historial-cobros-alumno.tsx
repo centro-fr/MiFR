@@ -1,8 +1,5 @@
 import { useState } from "react";
-import { Banknote, FileText, Receipt, CheckCircle, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Receipt } from "lucide-react";
 import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
@@ -21,27 +18,21 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
   const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<number | null>(null);
 
   return (
-    <>
-      <Card className="rounded-xl border-slate-200 p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-850">
-        <div>
-          <h2 className="flex items-center gap-2 text-base font-extrabold text-[#181C26] dark:text-white">
-            <Receipt aria-hidden="true" className="size-5 text-[#BC1266] dark:text-pink-400" />
-            Historial de cobros y comprobantes
-          </h2>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            Registro de cuotas abonadas y comprobantes digitales emitidos (US-15).
-          </p>
-        </div>
+    <div className="space-y-3">
+      <h2 className="text-base font-bold text-slate-900 dark:text-white">
+        Cobros
+      </h2>
 
+      <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
         {isLoading ? (
-          <div className="flex items-center justify-center py-10 text-slate-400">
-            <span className="size-6 animate-spin rounded-full border-2 border-[#BC1266] border-t-transparent" />
-            <span className="ml-2 text-sm font-medium">Cargando cobros...</span>
+          <div className="flex items-center justify-center py-14 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <span className="mr-2 size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Cargando cobros…
           </div>
         ) : pagos.length === 0 ? (
-          <div className="my-6 rounded-xl border border-dashed border-slate-200 py-10 text-center dark:border-slate-700">
+          <div className="p-10 text-center">
             <Receipt className="mx-auto size-10 text-slate-300 dark:text-slate-600" />
-            <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+            <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">
               No hay cobros registrados todavía
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -49,73 +40,70 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
             </p>
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+              <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
-                  <th className="px-3.5 py-2.5">N° Recibo</th>
-                  <th className="px-3.5 py-2.5">Fecha</th>
-                  <th className="px-3.5 py-2.5">Forma</th>
-                  <th className="px-3.5 py-2.5">Monto</th>
-                  <th className="px-3.5 py-2.5">Estado</th>
-                  <th className="px-3.5 py-2.5 text-right">Comprobante</th>
+                  <th scope="col" className="px-6 py-3.5">
+                    N° Recibo
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Fecha
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Forma de pago
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Monto
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-6 py-3.5 text-right">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {pagos.map((pago) => (
-                  <tr key={pago.id_pago} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
-                    <td className="px-3.5 py-3 font-mono font-bold text-slate-700 dark:text-slate-300">
+                  <tr
+                    key={pago.id_pago}
+                    className="transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
+                  >
+                    <td className="px-6 py-3.5 whitespace-nowrap font-mono font-bold text-sm text-slate-900 dark:text-white">
                       #{String(pago.id_pago).padStart(6, "0")}
                     </td>
-                    <td className="px-3.5 py-3 text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-600 dark:text-slate-300">
                       {formatearFechaCobro(pago.fecha_pago)}
                     </td>
-                    <td className="px-3.5 py-3">
-                      <span className="inline-flex items-center gap-1 font-medium text-slate-800 dark:text-slate-200">
-                        {pago.forma_pago === "EFECTIVO" ? (
-                          <>
-                            <Banknote className="size-3.5 text-emerald-600" />
-                            Efectivo
-                          </>
-                        ) : (
-                          "Transferencia"
-                        )}
-                      </span>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {pago.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia"}
                     </td>
-                    <td className="px-3.5 py-3 font-bold text-slate-900 dark:text-white">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">
                       {formatearPrecio(pago.monto)}
                     </td>
-                    <td className="px-3.5 py-3">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <Badge
-                          variant="outline"
-                          className="border-emerald-200 bg-emerald-50 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                        >
-                          <CheckCircle className="mr-1 size-3" />
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 shadow-2xs dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
                           Confirmado
-                        </Badge>
+                        </span>
                         {!pago.rendido && pago.forma_pago === "EFECTIVO" && (
-                          <Badge
-                            variant="outline"
-                            className="border-amber-200 bg-amber-50 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                          >
-                            <Clock className="mr-1 size-3" />
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 shadow-2xs dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300">
+                            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
                             Pendiente de rendición
-                          </Badge>
+                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3.5 py-3 text-right">
-                      <Button
+                    <td className="px-6 py-3.5 whitespace-nowrap text-right">
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="sm"
                         onClick={() => setComprobanteSeleccionado(pago.id_pago)}
-                        className="min-h-[36px] text-xs font-semibold text-[#BC1266] hover:bg-pink-50 hover:text-[#9D1055] dark:text-pink-300 dark:hover:bg-pink-950/40"
+                        className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                       >
-                        <FileText className="mr-1.5 size-3.5" />
                         Ver recibo
-                      </Button>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -123,7 +111,7 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
             </table>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Modal de comprobante digital */}
       <ModalComprobante
@@ -131,6 +119,6 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
         abierto={Boolean(comprobanteSeleccionado)}
         onClose={() => setComprobanteSeleccionado(null)}
       />
-    </>
+    </div>
   );
 }

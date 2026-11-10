@@ -221,6 +221,8 @@ export interface AlumnoDetalle {
   fecha_baja: string | null;
   /** La inscripción vigente más reciente; null si no tiene (por ejemplo, dado de baja). */
   inscripcion: InscripcionDeAlumno | null;
+  /** Todas las inscripciones vigentes (si el alumno tiene más de un plan simultáneo). */
+  inscripciones: InscripcionDeAlumno[];
   /** Solo si está de baja: las inscripciones que cerró su última baja, con la cuota a ese día. */
   inscripciones_de_la_baja: InscripcionDeAlumno[];
 }

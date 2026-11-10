@@ -33,6 +33,7 @@ function crearAlumno(): AlumnoDetalle {
     fecha_alta: "2025-02-10T12:00:00.000Z",
     fecha_baja: null,
     inscripcion: null,
+    inscripciones: [],
     inscripciones_de_la_baja: [],
   };
 }

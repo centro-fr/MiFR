@@ -180,6 +180,7 @@ export function aAlumnoDetalle(api: FichaAlumnoApi): AlumnoDetalle {
     fecha_alta: api.fecha_alta,
     fecha_baja: api.fecha_baja,
     // El back las ordena de la más reciente a la más vieja (fecha_inicio desc).
+    inscripciones: api.inscripciones.map(aInscripcion),
     inscripcion: api.inscripciones[0] ? aInscripcion(api.inscripciones[0]) : null,
     inscripciones_de_la_baja: api.inscripciones_de_la_baja.map(aInscripcion),
   };

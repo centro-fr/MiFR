@@ -101,6 +101,11 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
     isPending: false,
     reset: vi.fn(),
   }),
+  useReactivarPlan: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+    reset: vi.fn(),
+  }),
 }));
 
 const renderPlanesPage = (ruta = "/app/planes") => {

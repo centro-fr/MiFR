@@ -30,6 +30,7 @@ interface AccionesDeLaTarjeta {
   onActualizarPrecio: (plan: Plan) => void;
   onEditarPlan?: (plan: Plan) => void;
   onVerHistorial?: (plan: Plan) => void;
+  onReactivarPlan?: (plan: Plan) => void;
 }
 
 export function ListaPlanes({
@@ -39,6 +40,7 @@ export function ListaPlanes({
   onActualizarPrecio,
   onEditarPlan,
   onVerHistorial,
+  onReactivarPlan,
 }: {
   planes: Plan[];
   total: number;
@@ -126,7 +128,7 @@ export function ListaPlanes({
                             Historial
                           </Button>
                         )}
-                        {vigente && (
+                        {vigente ? (
                           <>
                             <Button
                               type="button"
@@ -162,7 +164,19 @@ export function ListaPlanes({
                               )}
                             </Can>
                           </>
-                        )}
+                        ) : onReactivarPlan ? (
+                          <Can permission="PLANES_EDITAR">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => onReactivarPlan(plan)}
+                              className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 shadow-2xs hover:bg-emerald-100 hover:text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200 cursor-pointer"
+                            >
+                              Reactivar
+                              <span className="sr-only"> {plan.nombre}</span>
+                            </Button>
+                          </Can>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -209,7 +223,7 @@ export function ListaPlanes({
                       Historial
                     </Button>
                   )}
-                  {vigente && (
+                  {vigente ? (
                     <>
                       <Button
                         type="button"
@@ -245,7 +259,19 @@ export function ListaPlanes({
                         )}
                       </Can>
                     </>
-                  )}
+                  ) : onReactivarPlan ? (
+                    <Can permission="PLANES_EDITAR">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onReactivarPlan(plan)}
+                        className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 shadow-2xs hover:bg-emerald-100 hover:text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200 cursor-pointer"
+                      >
+                        Reactivar
+                        <span className="sr-only"> {plan.nombre}</span>
+                      </Button>
+                    </Can>
+                  ) : null}
                 </div>
               </div>
             );

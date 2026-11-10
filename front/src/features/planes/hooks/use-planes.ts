@@ -7,6 +7,7 @@ import {
   listarPreciosPlan,
   listarPlanes,
   obtenerPlan,
+  reactivarPlan,
   registrarPrecioPlan,
 } from "@/features/planes/api/planes-api";
 import type { ActualizarPlanBody, CrearPlanBody, RegistrarPrecioBody } from "@/features/planes/schemas/plan";
@@ -57,6 +58,11 @@ export function useActualizarPlan() {
 export function useDarDeBajaPlan() {
   const invalidar = useInvalidarPlanes();
   return useMutation({ mutationFn: (id: string) => darDeBajaPlan(id), onSuccess: invalidar });
+}
+
+export function useReactivarPlan() {
+  const invalidar = useInvalidarPlanes();
+  return useMutation({ mutationFn: (id: string) => reactivarPlan(id), onSuccess: invalidar });
 }
 
 export function usePreciosPlan(id: string, habilitado: boolean) {

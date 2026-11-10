@@ -238,4 +238,23 @@ export const planesHandlers = [
     plan.fecha_baja = new Date().toISOString();
     return HttpResponse.json(planConPrecio(plan));
   }),
+
+  // Reactivar plan dado de baja
+  http.post("*/api/v1/planes/:id/reactivar", async ({ request, params }) => {
+    await delay(500);
+    const denegado = verificarAcceso(request, PROPIETARIA_EDITA);
+    if (denegado) return denegado;
+
+    const { id, plan } = buscarPlan(params);
+    if (id === null) return idInvalido();
+    if (!plan) return errorApi(404, "NOT_FOUND", "Plan no encontrado");
+    if (plan.fecha_baja === null) return errorApi(409, "CONFLICT", "El plan ya se encuentra vigente");
+
+    if (nombreOcupado(plan.nombre, id)) {
+      return errorApi(409, "CONFLICT", "Ya existe otro plan vigente con ese nombre");
+    }
+
+    plan.fecha_baja = null;
+    return HttpResponse.json(planConPrecio(plan));
+  }),
 ];

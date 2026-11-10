@@ -544,6 +544,69 @@ export const alumnosHandlers = [
     return HttpResponse.json(panelAlumnoDe(alumno));
   }),
 
+  http.get("*/api/v1/alumnos/:id/asistencias", async ({ params }) => {
+    await delay(200);
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+    return HttpResponse.json([
+      {
+        id_clase: 101,
+        fecha: "2026-11-09",
+        dia: "Lunes",
+        hora_inicio: "16:00",
+        hora_fin: "17:00",
+        actividad: "HIIT",
+        profesora: "Lucía Gómez",
+        asistio: true,
+        observaciones: null,
+      },
+      {
+        id_clase: 102,
+        fecha: "2026-11-06",
+        dia: "Viernes",
+        hora_inicio: "20:00",
+        hora_fin: "21:00",
+        actividad: "HIIT",
+        profesora: "Lucía Gómez",
+        asistio: true,
+        observaciones: null,
+      },
+      {
+        id_clase: 103,
+        fecha: "2026-11-04",
+        dia: "Miércoles",
+        hora_inicio: "20:00",
+        hora_fin: "21:00",
+        actividad: "HIIT",
+        profesora: "Lucía Gómez",
+        asistio: false,
+        observaciones: "Aviso previo por WhatsApp",
+      },
+      {
+        id_clase: 104,
+        fecha: "2026-11-02",
+        dia: "Lunes",
+        hora_inicio: "16:00",
+        hora_fin: "17:00",
+        actividad: "HIIT",
+        profesora: "Lucía Gómez",
+        asistio: true,
+        observaciones: null,
+      },
+      {
+        id_clase: 105,
+        fecha: "2026-10-30",
+        dia: "Viernes",
+        hora_inicio: "20:00",
+        hora_fin: "21:00",
+        actividad: "HIIT",
+        profesora: "Lucía Gómez",
+        asistio: true,
+        observaciones: null,
+      },
+    ]);
+  }),
+
   http.get("*/api/v1/alumnos/:id", async ({ request, params }) => {
     await delay(300);
     const denegado = verificarAcceso(request, { permiso: "ALUMNOS_VER" });

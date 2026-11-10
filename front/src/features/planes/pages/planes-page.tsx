@@ -11,12 +11,13 @@ import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog"
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
 import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
-import { usePlanes } from "@/features/planes/hooks/use-planes";
+import { usePlanes, useReactivarPlan } from "@/features/planes/hooks/use-planes";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { PromocionesPanel } from "@/features/promociones/components/promociones-panel";
 import { cn } from "@/utils/cn";
 import { normalizarParaBuscar } from "@/utils/texto";
+import { toast } from "sonner";
 
 type PestanaEstadoPlan = "VIGENTES" | "TODOS";
 
@@ -69,6 +70,16 @@ export function PlanesPage() {
   const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
   const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
   const [planEdicion, setPlanEdicion] = useState<Plan | null>(null);
+  const reactivar = useReactivarPlan();
+
+  const handleReactivar = async (plan: Plan) => {
+    try {
+      await reactivar.mutateAsync(plan.id);
+      toast.success(`Plan "${plan.nombre}" reactivado en el catálogo.`);
+    } catch (err) {
+      toast.error(mensajeDeErrorApi(err, "No se pudo reactivar el plan."));
+    }
+  };
 
   const cerrarModalNuevo = () => {
     setPlanNuevo(false);
@@ -262,6 +273,7 @@ export function PlanesPage() {
                 onActualizarPrecio={setPlanPrecio}
                 onEditarPlan={setPlanEdicion}
                 onVerHistorial={setPlanHistorial}
+                onReactivarPlan={handleReactivar}
               />
             )}
 

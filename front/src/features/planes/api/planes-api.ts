@@ -59,6 +59,12 @@ export async function darDeBajaPlan(id: string): Promise<void> {
   await apiClient.delete(`/planes/${encodeURIComponent(id)}`);
 }
 
+// Reactivación: vuelve a ofrecer el plan dado de baja en el catálogo.
+export async function reactivarPlan(id: string): Promise<Plan> {
+  const { data } = await apiClient.post(`/planes/${encodeURIComponent(id)}/reactivar`);
+  return aPlan(planApiSchema.parse(data));
+}
+
 export async function listarPreciosPlan(id: string): Promise<PrecioPlanHistorial[]> {
   const { data } = await apiClient.get(`/planes/${encodeURIComponent(id)}/precios`);
   return z.array(precioHistorialApiSchema).parse(data);
