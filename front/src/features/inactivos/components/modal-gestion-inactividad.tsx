@@ -101,22 +101,17 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && !guardando && onClose()}>
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-lg md:max-w-xl rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border-slate-200 dark:border-slate-800"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <DialogTitle className="sr-only">Gestionar seguimiento de inactividad</DialogTitle>
-        <DialogDescription className="sr-only">
-          Registrar el seguimiento o reintegro del alumno ausente.
-        </DialogDescription>
-
         {/* Encabezado con título y botón de cierre */}
-        <DialogHeader className="flex flex-row items-start justify-between pb-2 text-left">
-          <div className="space-y-1 pr-4">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Seguimiento de alumno
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
               Acción proactiva para incentivar el reintegro
-            </p>
+            </DialogDescription>
           </div>
           <Button
             type="button"
@@ -131,7 +126,8 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
           </Button>
         </DialogHeader>
 
-        {/* Tarjeta de resumen del alumno y plan */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Tarjeta de resumen del alumno y plan */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -278,28 +274,29 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
             </Button>
           </div>
         )}
+      </div>
 
-        {/* Footer con botones Cancelar y Guardar */}
-        <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={guardando}
-            className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleGuardar}
-            disabled={guardando}
-            className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
-          >
-            {guardando ? "Guardando..." : "Guardar seguimiento"}
-          </Button>
-        </div>
-      </DialogContent>
+      {/* Footer con botones Cancelar y Guardar */}
+      <div className="shrink-0 flex items-center gap-3 border-t border-border px-6 py-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={guardando}
+          className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="button"
+          onClick={handleGuardar}
+          disabled={guardando}
+          className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+        >
+          {guardando ? "Guardando..." : "Guardar seguimiento"}
+        </Button>
+      </div>
+    </DialogContent>
     </Dialog>
   );
 }

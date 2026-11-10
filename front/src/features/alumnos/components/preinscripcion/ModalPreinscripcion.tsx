@@ -110,42 +110,47 @@ export function ModalPreinscripcion({
   return (
     <Dialog open={open} onOpenChange={cerrarModal}>
       <DialogContent
-        className="w-[96vw] sm:w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-7 shadow-2xl"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
         onInteractOutside={(e) => {
           if (enviando) e.preventDefault();
         }}
       >
         {/* Encabezado estándar */}
-        <DialogHeader className="pb-1 text-left">
-          <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Nueva pre-inscripción
-          </DialogTitle>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Queda pendiente de alta hasta el primer cobro.
-          </p>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+              Nueva pre-inscripción
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Queda pendiente de alta hasta el primer cobro.
+            </p>
+          </div>
         </DialogHeader>
 
         {/* Si ya se completó con éxito, mostrar la Pantalla de Éxito */}
         {exito ? (
-          <PantallaExito
-            yaAbono={datosCobro.yaAbono}
-            onCargarOtro={reiniciar}
-            onVerFicha={() => {
-              cerrarModal(false);
-              onExito?.({
-                idInscripcion: idInscripcionCreada!,
-                idAlumno: idAlumnoCreado ?? undefined,
-                cobrarAhora: false,
-              });
-            }}
-          />
+          <div className="flex-1 overflow-y-auto p-6">
+            <PantallaExito
+              yaAbono={datosCobro.yaAbono}
+              onCargarOtro={reiniciar}
+              onVerFicha={() => {
+                cerrarModal(false);
+                onExito?.({
+                  idInscripcion: idInscripcionCreada!,
+                  idAlumno: idAlumnoCreado ?? undefined,
+                  cobrarAhora: false,
+                });
+              }}
+            />
+          </div>
         ) : (
           <>
-            {/* Stepper de 3 Pasos */}
-            <StepperBar pasoActual={paso} irAPaso={(p) => setPaso(p)} />
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Stepper de 3 Pasos */}
+              <StepperBar pasoActual={paso} irAPaso={(p) => setPaso(p)} />
 
-            {/* Contenido dinámico según el paso */}
-            <div className="py-2 min-h-[320px]">
+              {/* Contenido dinámico según el paso */}
+              <div className="py-2 min-h-[320px]">
               {paso === 1 && (
                 <Paso1DatosPersonales
                   datos={datosAlumno}
@@ -203,9 +208,10 @@ export function ModalPreinscripcion({
                 />
               )}
             </div>
+          </div>
 
-            {/* Footer con botones de navegación */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800 gap-3">
+          {/* Footer con botones de navegación */}
+          <div className="shrink-0 flex items-center justify-between border-t border-border px-6 py-4 gap-3">
               {paso > 1 ? (
                 <Button
                   type="button"

@@ -70,17 +70,19 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
         if (!abierto && !dandoDeBaja) onClose();
       }}
     >
-      <AlertDialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-          <AlertDialogHeader className="space-y-1 text-left">
-            <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              ¿Dar de baja a {nombre}?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
-              poder reactivarse más adelante.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+          <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            ¿Dar de baja a {nombre}?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
+            poder reactivarse más adelante.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
 
           <fieldset className="flex flex-col gap-2" aria-describedby={errorMotivo ? "error-motivo-baja" : undefined}>
             <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -149,6 +151,7 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
             </Button>
           </AlertDialogFooter>
         </form>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

@@ -42,8 +42,8 @@ export function ModalBajaProfesora({
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white p-6 shadow-2xl dark:bg-slate-900">
-        <AlertDialogHeader className="space-y-1 text-left">
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
           <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
             ¿Dar de baja a este/a profesor/a?
           </AlertDialogTitle>
@@ -53,6 +53,8 @@ export function ModalBajaProfesora({
             para la asignación de nuevos horarios.
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <div className="space-y-4 p-6">
 
         {tieneHorarios ? (
           <Alert className="rounded-2xl border-amber-300 bg-amber-50/90 p-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
@@ -103,6 +105,7 @@ export function ModalBajaProfesora({
             </Button>
           )}
         </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
