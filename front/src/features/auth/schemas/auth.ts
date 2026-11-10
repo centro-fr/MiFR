@@ -18,6 +18,7 @@ const backendUsuarioSchema = z
     email: z.string().nullable(),
     nombre: z.string(),
     apellido: z.string(),
+    foto_url: z.string().nullable().optional(),
   })
   .passthrough();
 
@@ -30,6 +31,7 @@ const backendSessionSchema = z.object({
 
 export function normalizeSession(data: unknown): AuthResponse {
   const parsed = backendSessionSchema.parse(data);
+  const rawUsuario = parsed.usuario as { foto_url?: string | null };
   const usuario: AuthUser = {
     id_usuario: parsed.usuario.id_usuario,
     email: parsed.usuario.email,
@@ -37,6 +39,7 @@ export function normalizeSession(data: unknown): AuthResponse {
     apellido: parsed.usuario.apellido,
     roles: parsed.roles as RoleCode[],
     permisos: parsed.permisos,
+    fotoUrl: rawUsuario.foto_url ?? null,
   };
   return { token: parsed.token ?? "", usuario };
 }

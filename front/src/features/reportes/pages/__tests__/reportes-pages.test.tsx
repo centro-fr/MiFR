@@ -92,19 +92,28 @@ vi.mock("@/features/reportes/hooks/use-reportes", () => ({
       },
       porProfesora: [
         {
+          id: 1,
           idProfesora: 1,
           nombre: "Lucía",
           apellido: "Gómez",
           clasesDictadas: 15,
+          cantidadAlumnos: 2,
+          asistencias: 30,
           totalAsistencias: 30,
+          porcentajePromedio: 100,
         },
       ],
       alumnos: [
         {
+          id: 10,
           idAlumno: 10,
           nombre: "Juan Pérez",
+          apellido: "",
+          dadoDeBaja: false,
+          clasesPrevistas: 8,
           asistencias: 8,
           inasistencias: 0,
+          porcentaje: 100,
         },
       ],
     },

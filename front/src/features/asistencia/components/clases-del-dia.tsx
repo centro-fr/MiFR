@@ -478,7 +478,7 @@ export function ClasesDelDia({
                       {propietaria && <th scope="col" className="w-[18%] px-5 py-4">Profesor/a</th>}
                       <th scope="col" className={propietaria ? "w-[16%] px-5 py-4" : "w-[22%] px-5 py-4"}>Inscriptos</th>
                       <th scope="col" className={propietaria ? "w-[12%] px-5 py-4" : "w-[14%] px-5 py-4"}>Estado</th>
-                      <th scope="col" className="w-[18%] px-5 py-4 text-right">Acción</th>
+                      <th scope="col" className="w-[18%] px-5 py-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">

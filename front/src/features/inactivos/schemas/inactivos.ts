@@ -69,6 +69,7 @@ export interface FiltrosAlumnosInactivos {
   id_plan?: number;
   minimo_inasistencias?: number;
   estado_gestion?: EstadoGestionInactividad;
+  incluir_ignorados?: boolean;
   limit?: number;
   offset?: number;
 }

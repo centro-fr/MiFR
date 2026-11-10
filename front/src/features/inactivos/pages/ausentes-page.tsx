@@ -1,32 +1,41 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  AlertTriangle,
-  Loader2,
+  ChevronDown,
+  Search,
+  SlidersHorizontal,
   UserCheck,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
+import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
-import { useAlumnosInactivos } from "@/features/inactivos/hooks/use-inactivos";
+import {
+  useAlumnosInactivos,
+  useQuitarSeguimiento,
+  useRegistrarSeguimiento,
+} from "@/features/inactivos/hooks/use-inactivos";
 import type {
   AlumnoInactivo,
-  EstadoGestionInactividad,
   FiltrosAlumnosInactivos,
 } from "@/features/inactivos/schemas/inactivos";
 import {
   formatearUltimaAsistencia,
+  generarEnlaceWhatsApp,
+  generarMensajeReintegro,
   obtenerContactoPrioritario,
 } from "@/features/inactivos/utils/formato-inactivos";
-import { ModalGestionInactividad } from "@/features/inactivos/components/modal-gestion-inactividad";
 
 type TabGestion = "PENDIENTE" | "CONTACTADO" | "IGNORADO" | "TODOS";
 
@@ -37,55 +46,60 @@ const PESTANAS: Array<{ id: TabGestion; etiqueta: string }> = [
   { id: "TODOS", etiqueta: "Todos" },
 ];
 
-function badgeGestion(estado: EstadoGestionInactividad) {
-  switch (estado) {
-    case "PENDIENTE":
-      return (
-        <Badge
-          variant="outline"
-          className="shrink-0 border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-xs"
-        >
-          Por contactar
-        </Badge>
-      );
-    case "CONTACTADO":
-      return (
-        <Badge
-          variant="outline"
-          className="shrink-0 border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300 font-bold text-xs"
-        >
-          Contactado
-        </Badge>
-      );
-    case "GESTIONADO":
-      return (
-        <Badge
-          variant="outline"
-          className="shrink-0 border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold text-xs"
-        >
-          Gestionado
-        </Badge>
-      );
-    case "IGNORADO":
-      return (
-        <Badge
-          variant="outline"
-          className="shrink-0 border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold text-xs"
-        >
-          Ignorado
-        </Badge>
-      );
+function iniciales(nombre: string): string {
+  return nombre
+    .split(/\s+/u)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0))
+    .join("")
+    .toLocaleUpperCase("es");
+}
+
+function BadgeEstadoAusente({
+  estado,
+}: {
+  estado: "PENDIENTE" | "CONTACTADO" | "GESTIONADO" | "IGNORADO";
+}) {
+  if (estado === "CONTACTADO" || estado === "GESTIONADO") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 whitespace-nowrap shadow-2xs dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <span className="size-1.5 rounded-full shrink-0 bg-emerald-500" aria-hidden="true" />
+        {estado === "GESTIONADO" ? "Gestionado" : "Contactado"}
+      </span>
+    );
   }
+  if (estado === "IGNORADO") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 whitespace-nowrap shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <span className="size-1.5 rounded-full shrink-0 bg-slate-400" aria-hidden="true" />
+        Ignorado
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 whitespace-nowrap shadow-2xs dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300">
+      <span className="size-1.5 rounded-full shrink-0 bg-amber-500" aria-hidden="true" />
+      Contactar
+    </span>
+  );
 }
 
 export function AusentesPage() {
   const [tabActual, setTabActual] = useState<TabGestion>("PENDIENTE");
+  const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [filtroProfesora, setFiltroProfesora] = useState<string>("TODAS");
   const [filtroPlan, setFiltroPlan] = useState<string>("TODOS");
   const [filtroInasistencias, setFiltroInasistencias] = useState<string>("DEFAULT");
+  const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
 
-  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<AlumnoInactivo | null>(null);
-  const [modalAbierto, setModalAbierto] = useState(false);
+  const registrar = useRegistrarSeguimiento();
+  const quitar = useQuitarSeguimiento();
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
+    return () => window.clearTimeout(temporizador);
+  }, [busqueda]);
 
   // Consultas secundarias para opciones de filtros
   const consultaProfesoras = useQuery({
@@ -119,7 +133,7 @@ export function AusentesPage() {
   const consultaPendientes = useAlumnosInactivos({ ...filtrosBase, estado_gestion: "PENDIENTE" });
   const consultaContactados = useAlumnosInactivos({ ...filtrosBase, estado_gestion: "CONTACTADO" });
   const consultaIgnorados = useAlumnosInactivos({ ...filtrosBase, estado_gestion: "IGNORADO" });
-  const consultaTodos = useAlumnosInactivos(filtrosBase);
+  const consultaTodos = useAlumnosInactivos({ ...filtrosBase, incluir_ignorados: true });
 
   const consultaInactivos = useMemo(() => {
     switch (tabActual) {
@@ -138,43 +152,185 @@ export function AusentesPage() {
     PENDIENTE: consultaPendientes.data?.total ?? 0,
     CONTACTADO: consultaContactados.data?.total ?? 0,
     IGNORADO: consultaIgnorados.data?.total ?? 0,
-    TODOS: consultaTodos.data?.total ?? 0,
+    TODOS:
+      consultaTodos.data?.total ??
+      (consultaPendientes.data?.total ?? 0) +
+        (consultaContactados.data?.total ?? 0) +
+        (consultaIgnorados.data?.total ?? 0),
   };
 
   const alumnos = consultaInactivos.data?.datos ?? [];
   const umbral = consultaInactivos.data?.umbral ?? 3;
 
+  const alumnosFiltrados = useMemo(() => {
+    if (!busquedaDebounced) return alumnos;
+    const termino = busquedaDebounced.toLowerCase().trim();
+    return alumnos.filter((a) => {
+      const nombreCompleto = `${a.alumno.nombre} ${a.alumno.apellido}`.toLowerCase();
+      const tutor = a.tutor ? `${a.tutor.nombre} ${a.tutor.apellido}`.toLowerCase() : "";
+      const tel = a.alumno.telefono ?? a.tutor?.telefono ?? "";
+      return nombreCompleto.includes(termino) || tutor.includes(termino) || tel.includes(termino);
+    });
+  }, [alumnos, busquedaDebounced]);
+
   const hayFiltrosActivos =
-    filtroProfesora !== "TODAS" || filtroPlan !== "TODOS" || filtroInasistencias !== "DEFAULT";
+    busquedaDebounced.trim() !== "" ||
+    filtroProfesora !== "TODAS" ||
+    filtroPlan !== "TODOS" ||
+    filtroInasistencias !== "DEFAULT";
 
   function limpiarFiltros() {
+    setBusqueda("");
+    setBusquedaDebounced("");
     setFiltroProfesora("TODAS");
     setFiltroPlan("TODOS");
     setFiltroInasistencias("DEFAULT");
   }
 
-  function abrirGestion(alumno: AlumnoInactivo) {
-    setAlumnoSeleccionado(alumno);
-    setModalAbierto(true);
+  async function handleContactar(alumno: AlumnoInactivo) {
+    await registrar.mutateAsync({
+      idInscripcion: alumno.id_inscripcion,
+      estado: "CONTACTADO",
+    });
+  }
+
+  async function handleIgnorar(alumno: AlumnoInactivo) {
+    await registrar.mutateAsync({
+      idInscripcion: alumno.id_inscripcion,
+      estado: "IGNORADO",
+    });
+  }
+
+  async function handleRevertir(alumno: AlumnoInactivo) {
+    await quitar.mutateAsync(alumno.id_inscripcion);
   }
 
   return (
     <OwnerLayout>
-      <div className="space-y-6 min-w-0">
+      <div className="space-y-4 sm:space-y-5 min-w-0">
         {/* Encabezado Principal */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               Ausentes
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
-              Detección proactiva de alumnos con cuota al día y faltas reiteradas para contactar e incentivar su reintegro.
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+              Busca los alumnos ausentes que queres contactar
             </p>
           </div>
-        </div>
+        </header>
 
-        {/* Pestañas de estado (Tabs) */}
-        <div className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pt-1 scrollbar-none">
+        {/* Barra de filtros integrada como en image.png */}
+        <section aria-label="Filtros de alumnos ausentes" className="space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Buscador */}
+            <div className="relative flex-1 min-w-[280px] max-w-sm">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              />
+              <Input
+                id="buscar-ausentes"
+                aria-label="Buscar por nombre, apellido o DNI"
+                value={busqueda}
+                onChange={(evento) => setBusqueda(evento.target.value)}
+                placeholder="Buscar por nombre, apellido o DNI"
+                autoComplete="off"
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+              />
+            </div>
+
+            {/* Botón de filtros para mobile */}
+            <button
+              type="button"
+              aria-label="Filtros adicionales"
+              onClick={() => setMostrarFiltrosMobile((v) => !v)}
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                (mostrarFiltrosMobile || hayFiltrosActivos) && "border-primary text-primary",
+              )}
+            >
+              <SlidersHorizontal className="size-4" />
+            </button>
+
+            {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
+            <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+              {/* Select Plan */}
+              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                <label htmlFor="filtro-plan" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  Plan
+                </label>
+                <select
+                  id="filtro-plan"
+                  aria-label="Plan"
+                  value={filtroPlan}
+                  onChange={(e) => setFiltroPlan(e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                >
+                  <option value="TODOS">Todos</option>
+                  {(consultaPlanes.data ?? []).map((p) => (
+                    <option key={p.id} value={String(p.id)}>{p.nombre}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+              </div>
+
+              {/* Select Profesora */}
+              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                <label htmlFor="filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  Profesora
+                </label>
+                <select
+                  id="filtro-profesora"
+                  aria-label="Profesora"
+                  value={filtroProfesora}
+                  onChange={(e) => setFiltroProfesora(e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                >
+                  <option value="TODAS">Todas</option>
+                  {(consultaProfesoras.data ?? []).map((p) => (
+                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+              </div>
+
+              {/* Select Faltas */}
+              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                <label htmlFor="filtro-inasistencias" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  Faltas
+                </label>
+                <select
+                  id="filtro-inasistencias"
+                  aria-label="Faltas"
+                  value={filtroInasistencias}
+                  onChange={(e) => setFiltroInasistencias(e.target.value)}
+                  className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                >
+                  <option value="DEFAULT">{umbral} o más</option>
+                  <option value="4">4 o más</option>
+                  <option value="5">5 o más</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+              </div>
+
+              {/* Botón limpiar filtros */}
+              {hayFiltrosActivos && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={limpiarFiltros}
+                  className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Pestañas de estado para mobile */}
+        <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
           {PESTANAS.map((pestana) => {
             const activa = tabActual === pestana.id;
             const conteo = conteosPorTab[pestana.id];
@@ -185,21 +341,14 @@ export function AusentesPage() {
                 type="button"
                 onClick={() => setTabActual(pestana.id)}
                 className={cn(
-                  "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
+                  "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
                   activa
-                    ? "border-primary text-slate-900 dark:text-white"
-                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
+                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
                 )}
               >
                 <span>{pestana.etiqueta}</span>
-                <span
-                  className={cn(
-                    "rounded-full text-xs px-2 py-0.5 font-black transition-colors",
-                    activa
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-                  )}
-                >
+                <span className={cn(activa ? "text-primary font-black" : "text-slate-500")}>
                   {conteo}
                 </span>
               </button>
@@ -207,95 +356,38 @@ export function AusentesPage() {
           })}
         </div>
 
-        {/* Filtros Compactos en Píldoras */}
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          {/* Selector de Profesor/a */}
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-            <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Profesor/a:
-            </span>
-            <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
-              <SelectTrigger
-                aria-label="Filtrar por profesor/a"
-                className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[90px]"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODAS">Todas</SelectItem>
-                {(consultaProfesoras.data ?? []).map((profesora) => (
-                  <SelectItem key={profesora.id} value={profesora.id}>
-                    {profesora.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Selector de Plan */}
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-            <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Plan:
-            </span>
-            <Select value={filtroPlan} onValueChange={setFiltroPlan}>
-              <SelectTrigger
-                aria-label="Filtrar por plan"
-                className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[80px]"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
-                {(consultaPlanes.data ?? []).map((plan) => (
-                  <SelectItem key={plan.id} value={String(plan.id)}>
-                    {plan.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Mínimo de inasistencias */}
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
-            <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Faltas:
-            </span>
-            <Select value={filtroInasistencias} onValueChange={setFiltroInasistencias}>
-              <SelectTrigger
-                aria-label="Filtrar por mínimo de inasistencias"
-                className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[70px]"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DEFAULT">{umbral} o más (umbral)</SelectItem>
-                <SelectItem value="4">4 o más</SelectItem>
-                <SelectItem value="5">5 o más</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Botón limpiar filtros */}
-          {hayFiltrosActivos && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={limpiarFiltros}
-              className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-            >
-              Limpiar filtros
-            </Button>
-          )}
-        </div>
-
         {/* Feedback de Carga / Error / Vacío */}
         {consultaInactivos.isPending ? (
           <div
             role="status"
-            className="flex min-h-56 items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300"
+            aria-label="Cargando alumnos ausentes"
+            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
           >
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            Cargando alumnos ausentes...
+            <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
+              <Skeleton className="h-8 w-24 rounded-lg" />
+              <Skeleton className="h-8 w-28 rounded-lg" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
+              <Skeleton className="h-8 w-20 rounded-lg" />
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-8 rounded-full" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  <Skeleton className="hidden md:block h-4 w-12" />
+                  <Skeleton className="hidden sm:block h-4 w-24" />
+                  <div className="hidden lg:flex items-center gap-2">
+                    <Skeleton className="size-8 rounded-lg" />
+                    <Skeleton className="size-8 rounded-lg" />
+                    <Skeleton className="size-8 rounded-lg" />
+                  </div>
+                  <Skeleton className="hidden sm:block h-4 w-28" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : consultaInactivos.isError ? (
           <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
@@ -311,204 +403,492 @@ export function AusentesPage() {
               Reintentar
             </Button>
           </Card>
-        ) : alumnos.length === 0 ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl">
-            <span
-              aria-hidden="true"
-              className="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-300"
-            >
-              <UserCheck className="size-7" />
-            </span>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              {hayFiltrosActivos
-                ? "No se encontraron alumnos con los filtros seleccionados"
-                : tabActual === "PENDIENTE"
-                  ? "¡Excelente! No hay ausencias pendientes de contactar"
-                  : "No hay alumnos en esta sección"}
-            </h2>
-            <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
-              {hayFiltrosActivos
-                ? "Probá limpiando los filtros para ver otros alumnos ausentes."
-                : tabActual === "PENDIENTE"
-                  ? "Todos los alumnos con inasistencias consecutivas y cuota al día ya han sido contactados o gestionados."
-                  : "Cuando registres acciones de seguimiento, se agruparán en esta pestaña."}
-            </p>
-            {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={limpiarFiltros}
-                className="mt-2 rounded-xl font-bold text-xs"
+        ) : alumnosFiltrados.length === 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+            {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
+            <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              {PESTANAS.map((pestana) => {
+                const activa = tabActual === pestana.id;
+                const conteo = conteosPorTab[pestana.id];
+
+                return (
+                  <button
+                    key={pestana.id}
+                    type="button"
+                    onClick={() => setTabActual(pestana.id)}
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                      activa
+                        ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                    )}
+                  >
+                    <span>{pestana.etiqueta}</span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                        activa
+                          ? "bg-primary text-white"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                      )}
+                    >
+                      {conteo}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
+              <span
+                aria-hidden="true"
+                className="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-300"
               >
-                Limpiar filtros
-              </Button>
-            )}
-          </Card>
+                <UserCheck className="size-7" />
+              </span>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                {hayFiltrosActivos
+                  ? "No se encontraron alumnos con los filtros seleccionados"
+                  : tabActual === "PENDIENTE"
+                    ? "¡Excelente! No hay ausencias pendientes de contactar"
+                    : "No hay alumnos en esta sección"}
+              </h2>
+              <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                {hayFiltrosActivos
+                  ? "Probá limpiando los filtros para ver otros alumnos ausentes."
+                  : tabActual === "PENDIENTE"
+                    ? "Todos los alumnos con inasistencias consecutivas y cuota al día ya han sido contactados o gestionados."
+                    : "Cuando registres acciones de seguimiento, se agruparán en esta pestaña."}
+              </p>
+              {hayFiltrosActivos && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={limpiarFiltros}
+                  className="mt-2 rounded-xl font-bold text-xs"
+                >
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </div>
         ) : (
           <>
-            {/* VISTA MOBILE: Tarjetas encuadradas (mismo patrón responsive de Cuotas) */}
-            <div className="grid grid-cols-1 gap-3.5 xl:hidden">
-              {alumnos.map((alumno) => {
+            {/* VISTA MOBILE: Lista agrupada limpia y en tonos neutros igual que en Listado */}
+            <div className="lg:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+              {alumnosFiltrados.map((alumno) => {
                 const contacto = obtenerContactoPrioritario(alumno);
+                const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
+                const inicialesAlumno = iniciales(`${alumno.alumno.nombre} ${alumno.alumno.apellido}`);
+                const etiquetaEstadoMobile =
+                  alumno.gestion.estado === "CONTACTADO"
+                    ? "Contactado"
+                    : alumno.gestion.estado === "IGNORADO"
+                      ? "Ignorado"
+                      : "Por contactar";
 
                 return (
                   <div
                     key={alumno.id_inscripcion}
-                    className="w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs space-y-3"
+                    className="flex flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-700/40"
                   >
-                    <div className="flex items-start justify-between gap-2 min-w-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-pink-700 dark:bg-pink-950/70 dark:text-pink-200">
+                        {inicialesAlumno}
+                      </span>
+                      <div className="min-w-0">
+                        <Link
+                          to={`/app/alumnos/${alumno.alumno.id_alumno}`}
+                          className="truncate block text-sm font-extrabold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                        >
                           {alumno.alumno.nombre} {alumno.alumno.apellido}
-                        </p>
+                        </Link>
                         {contacto.esTutor && (
-                          <p className="text-xs font-semibold text-pink-600 dark:text-pink-400 truncate">
+                          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
                             Tutor: {contacto.nombreCompleto}
                           </p>
                         )}
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          {alumno.plan.nombre} • Prof. {alumno.profesora.nombre} {alumno.profesora.apellido}
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
+                          {alumno.inasistencias_consecutivas} faltas ·{" "}
+                          {formatearUltimaAsistencia(alumno.fecha_ultima_asistencia)}
+                          {tabActual === "TODOS" && ` · ${etiquetaEstadoMobile}`}
                         </p>
                       </div>
-
-                      {badgeGestion(alumno.gestion.estado)}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-bold text-xs rounded-full px-2.5 py-0.5",
-                          alumno.inasistencias_consecutivas >= 4
-                            ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
-                            : "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+                    <div className="flex items-center gap-2 shrink-0 ml-auto">
+                      {/* Canales de Contacto Directos con Iconos Reales */}
+                      <div className="flex items-center gap-1.5">
+                        {enlaceWa ? (
+                          <a
+                            href={enlaceWa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Abrir WhatsApp con mensaje a ${contacto.nombreCompleto}`}
+                            title="Abrir WhatsApp"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <WhatsAppIcon className="size-6 shrink-0" />
+                          </a>
+                        ) : (
+                          <span
+                            title="Sin teléfono para WhatsApp"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                          >
+                            <WhatsAppIcon className="size-6 shrink-0" />
+                          </span>
                         )}
-                      >
-                        <AlertTriangle className="mr-1 size-3" />
-                        {alumno.inasistencias_consecutivas} faltas consecutivas
-                      </Badge>
 
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Última: {formatearUltimaAsistencia(alumno.fecha_ultima_asistencia)}
-                      </span>
-                    </div>
+                        {contacto.email ? (
+                          <a
+                            href={`mailto:${contacto.email}`}
+                            aria-label={`Enviar email a ${contacto.nombreCompleto}`}
+                            title={`Enviar correo a ${contacto.email}`}
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <AppleMailIcon className="size-6 shrink-0" />
+                          </a>
+                        ) : (
+                          <span
+                            title="Sin email registrado"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                          >
+                            <AppleMailIcon className="size-6 shrink-0" />
+                          </span>
+                        )}
 
-                    {/* Acciones */}
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => abrirGestion(alumno)}
-                        className="w-full rounded-xl h-10 px-4 text-xs font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50"
-                      >
-                        Gestionar
-                      </Button>
+                        {contacto.telefono ? (
+                          <a
+                            href={`tel:${contacto.telefono}`}
+                            aria-label={`Llamar a ${contacto.nombreCompleto}`}
+                            title={`Llamar a ${contacto.telefono}`}
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <ApplePhoneIcon className="size-6 shrink-0" />
+                          </a>
+                        ) : (
+                          <span
+                            title="Sin teléfono registrado"
+                            className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                          >
+                            <ApplePhoneIcon className="size-6 shrink-0" />
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Botones de acción directos sin modal */}
+                      <div className="flex items-center gap-1.5">
+                        {alumno.gestion.estado === "PENDIENTE" && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => void handleContactar(alumno)}
+                              disabled={registrar.isPending}
+                              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Contactado
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => void handleIgnorar(alumno)}
+                              disabled={registrar.isPending}
+                              className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                              Ignorar
+                            </Button>
+                          </>
+                        )}
+                        {alumno.gestion.estado === "CONTACTADO" && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => void handleRevertir(alumno)}
+                              disabled={quitar.isPending}
+                              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Revertir
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => void handleIgnorar(alumno)}
+                              disabled={registrar.isPending}
+                              className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                              Ignorar
+                            </Button>
+                          </>
+                        )}
+                        {alumno.gestion.estado === "IGNORADO" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void handleRevertir(alumno)}
+                            disabled={quitar.isPending}
+                            className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                          >
+                            Revertir
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* VISTA DESKTOP: Tabla limpia con hover y acciones claras */}
-            <div className="hidden xl:block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+            {/* VISTA DESKTOP: Tabla exactamente como en image.png */}
+            <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
+              {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
+              <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                {PESTANAS.map((pestana) => {
+                  const activa = tabActual === pestana.id;
+                  const conteo = conteosPorTab[pestana.id];
+
+                  return (
+                    <button
+                      key={pestana.id}
+                      type="button"
+                      onClick={() => setTabActual(pestana.id)}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                        activa
+                          ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                      )}
+                    >
+                      <span>{pestana.etiqueta}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                          activa
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                        )}
+                      >
+                        {conteo}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="border-b border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400 uppercase tracking-wider">
+                  <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                     <tr>
                       <th scope="col" className="px-6 py-3.5">
-                        Alumno / Contacto
+                        Alumno
                       </th>
-                      <th scope="col" className="px-6 py-3.5">
-                        Plan y Profesor/a
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-center">
+                      <th scope="col" className="px-4 py-3.5 text-center">
                         Faltas seguidas
                       </th>
-                      <th scope="col" className="px-6 py-3.5">
+                      <th scope="col" className="px-4 py-3.5">
                         Última asistencia
                       </th>
-                      <th scope="col" className="px-6 py-3.5">
-                        Estado
+                      {tabActual === "TODOS" && (
+                        <th scope="col" className="px-4 py-3.5">
+                          Estado
+                        </th>
+                      )}
+                      <th scope="col" className="px-4 py-3.5">
+                        Contacto
+                      </th>
+                      <th scope="col" className="px-4 py-3.5">
+                        Teléfono
                       </th>
                       <th scope="col" className="px-6 py-3.5 text-right">
-                        Acción
+                        Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                    {alumnos.map((alumno) => {
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                    {alumnosFiltrados.map((alumno) => {
                       const contacto = obtenerContactoPrioritario(alumno);
+                      const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
+                      const inicialesAlumno = iniciales(`${alumno.alumno.nombre} ${alumno.alumno.apellido}`);
 
                       return (
                         <tr
                           key={alumno.id_inscripcion}
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
                         >
-                          {/* Alumno */}
-                          <td className="px-6 py-4">
-                            <div className="min-w-0">
-                              <p className="font-extrabold text-slate-900 dark:text-white">
-                                {alumno.alumno.nombre} {alumno.alumno.apellido}
-                              </p>
-                              {contacto.esTutor && (
-                                <p className="text-xs font-semibold text-pink-600 dark:text-pink-400">
-                                  Tutor: {contacto.nombreCompleto}
-                                </p>
-                              )}
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                Tel: {contacto.telefono || "Sin teléfono"}
-                              </p>
+                          {/* Alumno: avatar circular + nombre con link a la ficha + tutor en gris */}
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                                {inicialesAlumno}
+                              </span>
+                              <div className="min-w-0">
+                                <Link
+                                  to={`/app/alumnos/${alumno.alumno.id_alumno}`}
+                                  className="font-extrabold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                                >
+                                  {alumno.alumno.nombre} {alumno.alumno.apellido}
+                                </Link>
+                                {contacto.esTutor && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                    Tutor: {contacto.nombreCompleto}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </td>
 
-                          {/* Plan y Profesora */}
-                          <td className="px-6 py-4">
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-900 dark:text-white">
-                                {alumno.plan.nombre}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Prof. {alumno.profesora.nombre} {alumno.profesora.apellido}
-                              </p>
-                            </div>
-                          </td>
-
-                          {/* Faltas consecutivas */}
-                          <td className="px-6 py-4 text-center">
-                            <Badge
-                              variant="outline"
+                          {/* Faltas seguidas: número con color, sin bordes ni fondo */}
+                          <td className="px-4 py-3.5 text-center">
+                            <span
                               className={cn(
-                                "font-bold text-xs rounded-full px-2.5 py-0.5",
+                                "font-black text-sm tabular-nums",
                                 alumno.inasistencias_consecutivas >= 4
-                                  ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
-                                  : "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : "text-amber-600 dark:text-amber-400",
                               )}
                             >
-                              <AlertTriangle className="mr-1 size-3" />
                               {alumno.inasistencias_consecutivas}
-                            </Badge>
+                            </span>
                           </td>
 
                           {/* Última asistencia */}
-                          <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                          <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
                             {formatearUltimaAsistencia(alumno.fecha_ultima_asistencia)}
                           </td>
 
-                          {/* Estado */}
-                          <td className="px-6 py-4">
-                            {badgeGestion(alumno.gestion.estado)}
+                          {/* Estado: solo visible en pestaña Todos */}
+                          {tabActual === "TODOS" && (
+                            <td className="px-4 py-3.5">
+                              <BadgeEstadoAusente estado={alumno.gestion.estado} />
+                            </td>
+                          )}
+
+                          {/* Canales de Contacto: WhatsApp, Mail, Teléfono con Iconos Reales */}
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-1.5">
+                              {enlaceWa ? (
+                                <a
+                                  href={enlaceWa}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`Abrir WhatsApp con mensaje a ${contacto.nombreCompleto}`}
+                                  title="Abrir WhatsApp"
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                                >
+                                  <WhatsAppIcon className="size-6 shrink-0" />
+                                </a>
+                              ) : (
+                                <span
+                                  title="Sin teléfono para WhatsApp"
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                                >
+                                  <WhatsAppIcon className="size-6 shrink-0" />
+                                </span>
+                              )}
+
+                              {contacto.email ? (
+                                <a
+                                  href={`mailto:${contacto.email}`}
+                                  aria-label={`Enviar email a ${contacto.nombreCompleto}`}
+                                  title={`Enviar correo a ${contacto.email}`}
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-800"
+                                >
+                                  <AppleMailIcon className="size-6 shrink-0" />
+                                </a>
+                              ) : (
+                                <span
+                                  title="Sin email registrado"
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                                >
+                                  <AppleMailIcon className="size-6 shrink-0" />
+                                </span>
+                              )}
+
+                              {contacto.telefono ? (
+                                <a
+                                  href={`tel:${contacto.telefono}`}
+                                  aria-label={`Llamar a ${contacto.nombreCompleto}`}
+                                  title={`Llamar a ${contacto.telefono}`}
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                                >
+                                  <ApplePhoneIcon className="size-6 shrink-0" />
+                                </a>
+                              ) : (
+                                <span
+                                  title="Sin teléfono registrado"
+                                  className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/40 bg-slate-50 opacity-40 grayscale dark:border-slate-800 dark:bg-slate-900 cursor-not-allowed"
+                                >
+                                  <ApplePhoneIcon className="size-6 shrink-0" />
+                                </span>
+                              )}
+                            </div>
                           </td>
 
-                          {/* Acciones */}
-                          <td className="px-6 py-4 text-right">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => abrirGestion(alumno)}
-                              className="h-8 rounded-xl px-4 text-xs font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-                            >
-                              Gestionar
-                            </Button>
+                          {/* Teléfono: columna al último antes de los botones de acción */}
+                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                            {contacto.telefono || "Sin teléfono"}
+                          </td>
+
+                          {/* Botones de acción directos sin modal */}
+                          <td className="px-6 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {alumno.gestion.estado === "PENDIENTE" && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => void handleContactar(alumno)}
+                                    disabled={registrar.isPending}
+                                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                  >
+                                    Contactado
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => void handleIgnorar(alumno)}
+                                    disabled={registrar.isPending}
+                                    className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Ignorar
+                                  </Button>
+                                </>
+                              )}
+                              {alumno.gestion.estado === "CONTACTADO" && (
+                                <>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => void handleRevertir(alumno)}
+                                    disabled={quitar.isPending}
+                                    className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Revertir
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => void handleIgnorar(alumno)}
+                                    disabled={registrar.isPending}
+                                    className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Ignorar
+                                  </Button>
+                                </>
+                              )}
+                              {alumno.gestion.estado === "IGNORADO" && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => void handleRevertir(alumno)}
+                                  disabled={quitar.isPending}
+                                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                >
+                                  Revertir
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -519,17 +899,8 @@ export function AusentesPage() {
             </div>
           </>
         )}
-
-        {/* Modal Centrado de Gestión de Inactividad */}
-        <ModalGestionInactividad
-          alumno={alumnoSeleccionado}
-          abierto={modalAbierto}
-          onClose={() => {
-            setModalAbierto(false);
-            setAlumnoSeleccionado(null);
-          }}
-        />
       </div>
     </OwnerLayout>
   );
 }
+
