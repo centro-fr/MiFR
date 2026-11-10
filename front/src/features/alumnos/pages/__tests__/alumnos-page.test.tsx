@@ -15,6 +15,7 @@ vi.mock("@/components/layout/owner-layout", () => ({
 
 vi.mock("../../hooks/use-alumnos", () => ({
   useAlumnos: vi.fn(),
+  useListaCompletaAlumnos: vi.fn(() => ({ data: [] })),
 }));
 
 vi.mock("@/features/actividades/hooks/use-actividades", () => ({
@@ -27,6 +28,35 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
 
 vi.mock("@/features/horarios/api/horarios-api", () => ({
   listarProfesoras: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/features/inactivos/api/inactivos-api", () => ({
+  listarAlumnosInactivos: vi.fn().mockResolvedValue({
+    datos: [
+      {
+        id_inscripcion: 10,
+        alumno: {
+          id_alumno: 10,
+          nombre: "Valentina",
+          apellido: "Herrera",
+          dni: "39222333",
+          telefono: "+5491144445555",
+          email: "valentina@example.com",
+        },
+        tutor: null,
+        profesora: { id_profesora: 1, nombre: "Lucía", apellido: "Gómez" },
+        plan: { id_plan: 2, nombre: "Plan Intermedio" },
+        estado_cuota: "AL_DIA",
+        inasistencias_consecutivas: 3,
+        fecha_ultima_asistencia: "2026-10-02T18:00:00.000Z",
+        gestion: { estado: "PENDIENTE", fecha_registro: null },
+      },
+    ],
+    total: 1,
+    umbral: 3,
+    limit: 50,
+    offset: 0,
+  }),
 }));
 
 vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
@@ -179,5 +209,17 @@ describe("AlumnosPage", () => {
     fireEvent.click(celdaDni.closest("tr")!);
 
     expect(screen.getByRole("heading", { name: "Ficha del alumno" })).toBeInTheDocument();
+  });
+
+  it("muestra el DNI correcto del alumno y no 'Sin DNI' al aplicar la pestaña Contactar", async () => {
+    renderListado();
+
+    const botonContactar = screen.getAllByRole("button", { name: /Contactar/i })[0];
+    await act(async () => {
+      fireEvent.click(botonContactar);
+    });
+
+    expect(await screen.findByRole("cell", { name: "39.222.333" })).toBeInTheDocument();
+    expect(screen.queryByText("Sin DNI")).not.toBeInTheDocument();
   });
 });

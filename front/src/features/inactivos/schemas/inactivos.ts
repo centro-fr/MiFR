@@ -6,6 +6,7 @@ const fechaApiSchema = z.string();
 const contactoSchema = z.object({
   nombre: z.string(),
   apellido: z.string(),
+  dni: z.string().nullable().optional(),
   telefono: z.string().nullable(),
   email: z.string().nullable(),
 });

@@ -43,7 +43,7 @@
 - [x] Vista y filtros alineados con el diseño exacto de image.png con pestañas integradas en cabecera de tarjeta y botón de acción "Ver ficha".
 - [x] Ordena los alumnos por Estado de Cuota, de manera que primero se visualicen las cuotas con mayor vencimiento.
 - [x] Que la primera opcion de visualizacion sea "Todos", Quita "Activos"
-- [ ] Arreglar error de "Sin dni" al aplicar filtro Contactar ![Listado](SinDni.png)
+- [x] Arreglar error de "Sin dni" al aplicar filtro Contactar ![Listado](SinDni.png)
 
 
  

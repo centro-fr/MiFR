@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { obtenerAlumno, type FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
-import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import { useAlumnos, useListaCompletaAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
 import { compararAlumnosPorCuota, etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
@@ -247,6 +247,12 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   const rangoInicio = respuesta && respuesta.total > 0 ? respuesta.offset + 1 : 0;
   const rangoFin = Math.min((respuesta?.offset ?? 0) + TAMANO_PAGINA, respuesta?.total ?? 0);
 
+  const { data: listaCompletaAlumnos = [] } = useListaCompletaAlumnos();
+  const mapaAlumnosCompleto = useMemo(
+    () => new Map(listaCompletaAlumnos.map((item) => [item.id_alumno, item])),
+    [listaCompletaAlumnos],
+  );
+
   const conteoTodos = consultaTodos.data?.total ?? (filtros.estado === "TODOS" ? (respuesta?.total ?? 0) : 0);
   const conteoPendientes = consultaPendientes.data?.total ?? (filtros.estado === "PENDIENTE" ? (respuesta?.total ?? 0) : 0);
   const conteoBajas = consultaBajas.data?.total ?? (filtros.estado === "BAJA" ? (respuesta?.total ?? 0) : 0);
@@ -257,12 +263,13 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     return (paginaInactivos?.datos ?? [])
       .filter((item) => item.inasistencias_consecutivas >= 3)
       .map((item): AlumnoResumen => {
-        const existente = porIdEnListado.get(item.alumno.id_alumno);
+        const existente = mapaAlumnosCompleto.get(item.alumno.id_alumno) ?? porIdEnListado.get(item.alumno.id_alumno);
         const contacto = obtenerContactoPrioritario(item);
+        const dni = item.alumno.dni ?? existente?.dni ?? null;
         return {
           id_alumno: item.alumno.id_alumno,
           nombre_completo: `${item.alumno.nombre} ${item.alumno.apellido}`,
-          dni: existente?.dni ?? null,
+          dni,
           telefono: contacto.telefono ?? existente?.telefono ?? null,
           email: contacto.email ?? existente?.email ?? null,
           inasistencias_consecutivas: item.inasistencias_consecutivas,
@@ -287,7 +294,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
         }
         return true;
       });
-  }, [paginaInactivos, respuesta?.items, busquedaDebounced, filtroCuota]);
+  }, [paginaInactivos, mapaAlumnosCompleto, respuesta?.items, busquedaDebounced, filtroCuota]);
 
   const conteoContactar = itemsContactar.length;
 

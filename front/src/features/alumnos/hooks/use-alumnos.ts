@@ -32,6 +32,18 @@ export function useAlumnos({ limit, offset, ...filtros }: FiltrosAlumnos) {
   });
 }
 
+/**
+ * Consulta la lista completa sin recortar paginación para resolver datos de contacto, DNI y cuotas
+ * de alumnos que provienen de otros módulos (ej. alumnos inactivos / contactar).
+ */
+export function useListaCompletaAlumnos() {
+  return useQuery({
+    queryKey: [...ALUMNOS_QUERY_KEY, "lista-completa"],
+    queryFn: () => listarAlumnosRecientesPrimero({ busqueda: "", estado: "TODOS", incluir_bajas: true }),
+    staleTime: 60_000,
+  });
+}
+
 // Un 404 no se arregla reintentando: se corta enseguida y la página muestra "no encontrado".
 function reintentarSalvo404(intentos: number, error: unknown): boolean {
   if (isAxiosError(error) && error.response?.status === 404) return false;
