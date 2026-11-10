@@ -20,7 +20,12 @@ const PROGRESOS: Record<number, { actual: number; mejor: number; inicio: string 
   12: { actual: 3, mejor: 9, inicio: "2026-10-27" },
   13: { actual: 0, mejor: 6, inicio: null },
   14: { actual: 2, mejor: 2, inicio: "2026-10-29" },
+  // Lucas Benítez tiene todas las insignias: sirve para ver cómo se ven en la ficha, el ranking y "Mis insignias".
+  27: { actual: 26, mejor: 26, inicio: "2026-09-15" },
 };
+
+const CLASES_ASISTIDAS: Record<number, number> = { 3: 50, 4: 18, 11: 7, 27: 104 };
+const CON_MES_PERFECTO_Y_PODIO = new Set([3, 27]);
 
 function alumnoPropio(idUsuario: number | null): number | null {
   const usuario = db.usuarios.find((item) => item.id_usuario === idUsuario);
@@ -35,7 +40,7 @@ function alumnoPropio(idUsuario: number | null): number | null {
 
 function fichaDe(idAlumno: number) {
   const progreso = PROGRESOS[idAlumno] ?? PROGRESOS[1];
-  const clasesAsistidas = idAlumno === 3 ? 50 : idAlumno === 4 ? 18 : idAlumno === 11 ? 7 : progreso.actual;
+  const clasesAsistidas = CLASES_ASISTIDAS[idAlumno] ?? progreso.actual;
   return {
     id_alumno: idAlumno,
     racha: {
@@ -55,10 +60,9 @@ function fichaDe(idAlumno: number) {
         ? { umbral: 100, faltantes: 100 - clasesAsistidas }
         : null,
     insignias: CATALOGO.map((insignia) => {
-      const obtenida = (insignia.codigo === "RACHA_10" && progreso.mejor >= 10) ||
-        (insignia.codigo === "TOTAL_50" && clasesAsistidas >= 50) ||
-        (insignia.codigo === "MES_PERFECTO" && idAlumno === 3) ||
-        (insignia.codigo === "PODIO_MES" && idAlumno === 3);
+      const obtenida = (insignia.tipo === "RACHA" && progreso.mejor >= insignia.valor_umbral) ||
+        (insignia.tipo === "TOTAL_CLASES" && clasesAsistidas >= insignia.valor_umbral) ||
+        ((insignia.tipo === "MES_PERFECTO" || insignia.tipo === "PODIO_MES") && CON_MES_PERFECTO_Y_PODIO.has(idAlumno));
       const actual = insignia.tipo === "RACHA" ? progreso.mejor : insignia.tipo === "TOTAL_CLASES" ? clasesAsistidas : 0;
       return {
         ...insignia,
@@ -71,6 +75,13 @@ function fichaDe(idAlumno: number) {
       };
     }),
   };
+}
+
+/** Las obtenidas, como las devuelve el ranking junto a cada alumno. */
+export function insigniasObtenidasDe(idAlumno: number) {
+  return fichaDe(idAlumno)
+    .insignias.filter((insignia) => insignia.obtenida)
+    .map(({ codigo, nombre, descripcion, tipo, valor_umbral }) => ({ codigo, nombre, descripcion, tipo, valor_umbral }));
 }
 
 export const insigniasHandlers = [

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Trophy } from "lucide-react";
+import { ListaInsignias } from "@/components/insignias/insignia-medalla";
 import { MenuExportar } from "@/components/menu-exportar";
 import { MedallaPuesto } from "@/features/portal-alumno/components/medalla-puesto";
 import { useRankingAsistencia } from "@/features/portal-alumno/hooks/use-ranking-asistencia";
@@ -80,8 +81,14 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
                 <td className={TD}>
                   <MedallaPuesto posicion={fila.posicion} tamanio="chico" />
                 </td>
-                <th scope="row" className={`${TD} text-left font-semibold text-slate-900 dark:text-white`}>
-                  {fila.nombre} {fila.apellido}
+                <th scope="row" className={`${TD} text-left font-normal`}>
+                  {/* Como en el diseño: las insignias de cada alumno al lado de su nombre. */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <span className="font-semibold whitespace-nowrap text-slate-900 dark:text-white">
+                      {fila.nombre} {fila.apellido}
+                    </span>
+                    <ListaInsignias insignias={fila.insignias} tamano={22} className="gap-1" />
+                  </div>
                 </th>
                 <td className={`${TD_NUMERO} text-slate-700 dark:text-slate-300`}>{clases(fila)}</td>
                 <td className={TD_NUMERO}>
