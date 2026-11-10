@@ -111,3 +111,27 @@ describe("Menú: ranking de asistencia", () => {
     expect(rolesConAcceso("/app/ranking")).toEqual(["PROFESORA", "ALUMNO", "TUTOR"]);
   });
 });
+
+describe("useOwnerNavigation: orden de secciones y subitems", () => {
+  it("organiza las secciones en el orden: Alumnos, Cobros, Pagos, Reportes, Centro", () => {
+    const nav = navegacionEn("/app/dashboard");
+    const secciones = Array.from(
+      new Set(nav.items.map((i) => i.seccion).filter((s): s is string => Boolean(s))),
+    );
+    expect(secciones).toEqual(["Alumnos", "Cobros", "Pagos", "Reportes", "Centro"]);
+  });
+
+  it("ordena Cobros como: Transferencias por verificar, Efectivo a rendir, Historial", () => {
+    const nav = navegacionEn("/app/dashboard");
+    const itemsCobros = nav.items.filter((i) => i.seccion === "Cobros").map((i) => i.etiqueta);
+    expect(itemsCobros).toEqual(["Transferencias por verificar", "Efectivo a rendir", "Historial"]);
+  });
+
+  it("asigna Honorarios a la sección Pagos y genera su breadcrumb correspondiente", () => {
+    const nav = navegacionEn("/app/honorarios");
+    const itemHonorarios = nav.items.find((i) => i.etiqueta === "Honorarios")!;
+    expect(itemHonorarios.seccion).toBe("Pagos");
+    expect(itemHonorarios.esActivo).toBe(true);
+    expect(nav.migas.map((m) => m.etiqueta)).toEqual(["Inicio", "Pagos", "Honorarios"]);
+  });
+});

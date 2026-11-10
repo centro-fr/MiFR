@@ -55,12 +55,12 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
-// Secciones de la navegación según diseño (ALUMNOS, COBROS, CENTRO, REPORTES, OTROS)
+// Secciones de la navegación según diseño (ALUMNOS, COBROS, PAGOS, REPORTES, CENTRO)
 const SECCION_ALUMNOS = "Alumnos";
 const SECCION_COBROS = "Cobros";
-const SECCION_CLASES = "Centro";
+const SECCION_PAGOS = "Pagos";
 const SECCION_REPORTES = "Reportes";
-const SECCION_CENTRO = "Otros";
+const SECCION_CENTRO = "Centro";
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
@@ -71,14 +71,6 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     to: "/app/alumnos/listado",
     descripcion: "Buscar alumnos, ver su ficha y su estado de cuota.",
     subrutasDe: SUBRUTAS_DE_ALUMNOS,
-  },
-  {
-    etiqueta: "Historial",
-    icono: Receipt,
-    seccion: SECCION_COBROS,
-    to: "/app/cobros/listado",
-    subrutasDe: "/app/cobros",
-    descripcion: "Historial de cobros confirmados y descarga de comprobantes.",
   },
   {
     etiqueta: "Transferencias por verificar",
@@ -95,17 +87,31 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     to: "/app/cobros/efectivo",
     descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
-  { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
-  { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
-  { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
-  { etiqueta: "Planes", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
-  { etiqueta: "Promociones", icono: Gift, seccion: SECCION_CLASES, to: "/app/planes/promociones" },
+  {
+    etiqueta: "Historial",
+    icono: Receipt,
+    seccion: SECCION_COBROS,
+    to: "/app/cobros/listado",
+    subrutasDe: "/app/cobros",
+    descripcion: "Historial de cobros confirmados y descarga de comprobantes.",
+  },
+  {
+    etiqueta: "Honorarios",
+    icono: Receipt,
+    seccion: SECCION_PAGOS,
+    to: "/app/honorarios",
+    descripcion: "Revisa el cálculo del pago mensual para cada profesor/a.",
+  },
   { etiqueta: "Inscripciones", icono: BarChart3, seccion: SECCION_REPORTES, to: "/app/reportes/inscripciones", subrutasDe: "/app/reportes" },
   { etiqueta: "Planes más elegidos", icono: Tags, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
   { etiqueta: "Ocupación", icono: CalendarClock, seccion: SECCION_REPORTES, to: "/app/reportes/ocupacion" },
   { etiqueta: "Asistencia", icono: BookOpen, seccion: SECCION_REPORTES, to: "/app/reportes/asistencia" },
   { etiqueta: "Ranking", icono: Trophy, seccion: SECCION_REPORTES, to: "/app/reportes/ranking" },
-  { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_CENTRO, to: "/app/honorarios" },
+  { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CENTRO, to: "/app/actividades" },
+  { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CENTRO, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
+  { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CENTRO, to: "/app/horarios" },
+  { etiqueta: "Planes", icono: Tag, seccion: SECCION_CENTRO, to: "/app/planes" },
+  { etiqueta: "Promociones", icono: Gift, seccion: SECCION_CENTRO, to: "/app/planes/promociones" },
 ];
 
 const PERFIL: ItemMenu = { etiqueta: "Perfil", icono: UserRound, to: "/app/perfil" };
