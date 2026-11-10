@@ -37,3 +37,8 @@ export async function desactivarPromocion(id: string): Promise<Promocion> {
   const { data } = await apiClient.post(`/promociones/${encodeURIComponent(id)}/desactivar`);
   return aPromocion(promocionApiSchema.parse(data));
 }
+
+export async function reactivarPromocion(id: string): Promise<Promocion> {
+  const { data } = await apiClient.post(`/promociones/${encodeURIComponent(id)}/reactivar`);
+  return aPromocion(promocionApiSchema.parse(data));
+}

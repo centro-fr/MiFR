@@ -89,6 +89,14 @@ export class PromocionService implements IInfoPromociones {
     return conEstado(desactivada);
   }
 
+  async reactivar(id: number): Promise<Promocion> {
+    const promocion = await this.obtenerPorId(id);
+    if (promocion.activo) throw new ConflictError("La promoción ya está activa");
+    const reactivada = await this.repositorio.reactivar(id);
+    if (!reactivada) throw new ConflictError("No se pudo reactivar la promoción");
+    return conEstado(reactivada);
+  }
+
   vigenteParaPlan(idPlan: number, fecha: Date): Promise<PromocionAplicable | null> {
     return this.repositorio.vigenteParaPlan(idPlan, fecha);
   }

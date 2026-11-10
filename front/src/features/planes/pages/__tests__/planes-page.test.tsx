@@ -19,6 +19,7 @@ vi.mock("@/features/promociones/hooks/use-promociones", () => ({
   useCrearPromocion: () => ({ isPending: false, isError: false, error: null, reset: vi.fn(), mutate: vi.fn() }),
   useActualizarPromocion: () => ({ isPending: false, isError: false, error: null, reset: vi.fn(), mutate: vi.fn() }),
   useDesactivarPromocion: () => ({ isPending: false, isError: false, error: null, mutate: vi.fn() }),
+  useReactivarPromocion: () => ({ isPending: false, isError: false, error: null, mutate: vi.fn() }),
 }));
 
 const mockPlanes: Plan[] = [

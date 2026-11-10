@@ -64,6 +64,10 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return this.promociones.desactivar(id);
   }
 
+  reactivarPromocion(id: number): Promise<Promocion> {
+    return this.promociones.reactivar(id);
+  }
+
   crearActividad(input: CrearActividadInput): Promise<Actividad> {
     return this.actividades.crear(input);
   }

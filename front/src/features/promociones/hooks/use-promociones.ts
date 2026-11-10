@@ -4,6 +4,7 @@ import {
   crearPromocion,
   desactivarPromocion,
   listarPromociones,
+  reactivarPromocion,
 } from "@/features/promociones/api/promociones-api";
 import type { PromocionBody } from "@/features/promociones/schemas/promocion";
 
@@ -34,4 +35,9 @@ export function useActualizarPromocion() {
 export function useDesactivarPromocion() {
   const invalidar = useInvalidarPromociones();
   return useMutation({ mutationFn: desactivarPromocion, onSuccess: invalidar });
+}
+
+export function useReactivarPromocion() {
+  const invalidar = useInvalidarPromociones();
+  return useMutation({ mutationFn: reactivarPromocion, onSuccess: invalidar });
 }

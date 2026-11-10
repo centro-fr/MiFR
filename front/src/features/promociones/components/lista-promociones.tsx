@@ -29,11 +29,15 @@ export function ListaPromociones({
   cabecera,
   onEditar,
   onDesactivar,
+  onReactivar,
+  reactivandoId,
 }: {
   promociones: Promocion[];
   cabecera?: ReactNode;
   onEditar: (promocion: Promocion) => void;
   onDesactivar: (promocion: Promocion) => void;
+  onReactivar?: (promocion: Promocion) => void;
+  reactivandoId?: string | null;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
@@ -115,7 +119,7 @@ export function ListaPromociones({
                   </td>
 
                   <td className="px-6 py-3.5 text-right">
-                    {editable && (
+                    {editable ? (
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           type="button"
@@ -134,7 +138,20 @@ export function ListaPromociones({
                           Desactivar
                         </Button>
                       </div>
-                    )}
+                    ) : onReactivar ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={reactivandoId === promocion.id}
+                          onClick={() => onReactivar(promocion)}
+                          className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                        >
+                          Reincorporar
+                          <span className="sr-only"> {promocion.nombre}</span>
+                        </Button>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               );
@@ -180,26 +197,39 @@ export function ListaPromociones({
                 </p>
               </div>
 
-              {editable && (
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {editable ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onEditar(promocion)}
+                      className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onDesactivar(promocion)}
+                      className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                    >
+                      Desactivar
+                    </Button>
+                  </>
+                ) : onReactivar ? (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onEditar(promocion)}
-                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                    disabled={reactivandoId === promocion.id}
+                    onClick={() => onReactivar(promocion)}
+                    className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                   >
-                    Editar
+                    Reincorporar
+                    <span className="sr-only"> {promocion.nombre}</span>
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onDesactivar(promocion)}
-                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                  >
-                    Desactivar
-                  </Button>
-                </div>
-              )}
+                ) : null}
+              </div>
             </div>
           );
         })}

@@ -101,4 +101,14 @@ export const promocionesHandlers = [
     promocion.activo = false;
     return HttpResponse.json(serializar(promocion));
   }),
+  http.post("*/api/v1/promociones/:id/reactivar", async ({ request, params }) => {
+    await delay(350);
+    const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PLANES_EDITAR" });
+    if (denegado) return denegado;
+    const promocion = buscar(params.id);
+    if (!promocion) return errorApi(404, "NOT_FOUND", "La promoción no existe");
+    if (promocion.activo) return errorApi(409, "YA_ACTIVA", "La promoción ya está activa");
+    promocion.activo = true;
+    return HttpResponse.json(serializar(promocion));
+  }),
 ];

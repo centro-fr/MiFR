@@ -124,7 +124,7 @@
 - [x] Modificar breadcum para que coincida con pantalla
 - [x] Arreglar bug al seleccionar opcion en sidebar ![alt text](ErrorSeleccSidebar.png)
 - [x] Cambiar Icono por uno de Gift
-- [ ] Aplicar la misma logica de Vigente y dado de baja como en planes y actividades
+- [x] Aplicar la misma logica de Vigente y dado de baja como en planes y actividades
 
 
 ## Centro - Planes

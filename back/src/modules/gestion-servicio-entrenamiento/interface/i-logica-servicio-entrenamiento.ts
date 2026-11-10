@@ -52,6 +52,7 @@ export interface ILogicaPromociones {
   crearPromocion(input: CrearPromocionInput): Promise<Promocion>;
   actualizarPromocion(id: number, input: ActualizarPromocionInput): Promise<Promocion>;
   desactivarPromocion(id: number): Promise<Promocion>;
+  reactivarPromocion(id: number): Promise<Promocion>;
 }
 
 // Lo que la API le pide a ParametrosSistema: ver y editar la configuración del centro (solo la

@@ -52,5 +52,11 @@ export function createPromocionController(logica: ILogicaPromociones) {
       auditarPromocion("PROMOCION_DESACTIVADA", req, promocion);
       res.json(promocion);
     },
+
+    async reactivar(req: Request, res: Response) {
+      const promocion = await logica.reactivarPromocion(Number(req.params.id));
+      auditarPromocion("PROMOCION_MODIFICADA", req, promocion);
+      res.json(promocion);
+    },
   };
 }

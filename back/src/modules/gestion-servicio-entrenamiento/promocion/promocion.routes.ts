@@ -34,6 +34,12 @@ export function createPromocionRoutes(logica: ILogicaPromociones, acceso: Contro
     validate({ params: promocionIdParamSchema }),
     controller.desactivar,
   );
+  router.post(
+    "/:id/reactivar",
+    ...puedeEditar,
+    validate({ params: promocionIdParamSchema }),
+    controller.reactivar,
+  );
 
   return router;
 }

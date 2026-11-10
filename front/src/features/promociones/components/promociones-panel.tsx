@@ -16,6 +16,7 @@ import {
   useActualizarPromocion,
   useCrearPromocion,
   useDesactivarPromocion,
+  useReactivarPromocion,
   usePromociones,
 } from "@/features/promociones/hooks/use-promociones";
 import type { PromocionFormValues } from "@/features/promociones/schemas/promocion";
@@ -24,18 +25,30 @@ import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 import { normalizarParaBuscar } from "@/utils/texto";
 
-type PestanaEstadoPromocion = "VIGENTES" | "TODAS";
+type PestanaEstadoPromocion = "VIGENTES" | "BAJAS";
 
 export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const consulta = usePromociones();
   const crear = useCrearPromocion();
   const actualizar = useActualizarPromocion();
   const desactivar = useDesactivarPromocion();
+  const reactivar = useReactivarPromocion();
   const [busqueda, setBusqueda] = useState("");
   const [pestana, setPestana] = useState<PestanaEstadoPromocion>("VIGENTES");
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [promocionEditando, setPromocionEditando] = useState<Promocion | null>(null);
   const [promocionADesactivar, setPromocionADesactivar] = useState<Promocion | null>(null);
+
+  const handleReactivar = (promocion: Promocion) => {
+    reactivar.mutate(promocion.id, {
+      onSuccess: () => {
+        toast.success(`Promoción "${promocion.nombre}" reincorporada a vigente.`);
+      },
+      onError: (err) => {
+        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar la promoción."));
+      },
+    });
+  };
 
   const promocionesOrdenadas = useMemo(
     () => [...(consulta.data ?? [])].sort((a, b) => b.fechaDesde.localeCompare(a.fechaDesde)),
@@ -47,8 +60,13 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
     [promocionesOrdenadas],
   );
 
+  const promocionesBajas = useMemo(
+    () => promocionesOrdenadas.filter((p) => p.estado === "DESACTIVADA" || !p.activo),
+    [promocionesOrdenadas],
+  );
+
   const promocionesFiltradas = useMemo(() => {
-    const base = pestana === "VIGENTES" ? promocionesVigentes : promocionesOrdenadas;
+    const base = pestana === "VIGENTES" ? promocionesVigentes : promocionesBajas;
     const q = normalizarParaBuscar(busqueda);
     if (!q) return base;
     return base.filter((p) =>
@@ -56,7 +74,7 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         normalizarParaBuscar(v).includes(q),
       ),
     );
-  }, [promocionesOrdenadas, promocionesVigentes, pestana, busqueda]);
+  }, [promocionesVigentes, promocionesBajas, pestana, busqueda]);
 
   const hayFiltros = busqueda.trim().length > 0;
 
@@ -121,24 +139,24 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       </button>
       <button
         type="button"
-        onClick={() => setPestana("TODAS")}
+        onClick={() => setPestana("BAJAS")}
         className={cn(
           "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-          pestana === "TODAS"
+          pestana === "BAJAS"
             ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
         )}
       >
-        <span>Historial completo</span>
+        <span>Dados de baja</span>
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-extrabold",
-            pestana === "TODAS"
+            pestana === "BAJAS"
               ? "bg-primary text-white"
               : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
           )}
         >
-          {promocionesOrdenadas.length}
+          {promocionesBajas.length}
         </span>
       </button>
     </div>
@@ -215,17 +233,17 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         </button>
         <button
           type="button"
-          onClick={() => setPestana("TODAS")}
+          onClick={() => setPestana("BAJAS")}
           className={cn(
             "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-            pestana === "TODAS"
+            pestana === "BAJAS"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
           )}
         >
-          Historial completo{" "}
-          <span className={cn(pestana === "TODAS" ? "text-primary font-black" : "text-slate-500")}>
-            {promocionesOrdenadas.length}
+          Dados de baja{" "}
+          <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
+            {promocionesBajas.length}
           </span>
         </button>
       </div>
@@ -238,22 +256,42 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
           onReintentar={() => void consulta.refetch()}
         />
       ) : promocionesFiltradas.length === 0 ? (
-        <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-            {hayFiltros ? "Sin resultados para tu búsqueda" : "Todavía no hay promociones"}
-          </h2>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {hayFiltros
-              ? "Probá ajustando el término de búsqueda para encontrar promociones."
-              : "Creá una promoción temporal para aplicar descuentos a nuevas inscripciones."}
-          </p>
-        </Card>
+        <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+          {cabeceraPestanasDesktop}
+          <Card className="flex flex-col items-center gap-3 border-0 shadow-none px-5 py-14 text-center rounded-lg">
+            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+              {hayFiltros
+                ? "Sin resultados para tu búsqueda"
+                : pestana === "BAJAS"
+                  ? "No hay promociones dadas de baja"
+                  : "Todavía no hay promociones"}
+            </h2>
+            <p className="max-w-md text-sm text-muted-foreground">
+              {hayFiltros
+                ? "Probá ajustando el término de búsqueda para encontrar promociones."
+                : pestana === "BAJAS"
+                  ? "Las promociones que desactives aparecerán acá por si necesitás reincorporarlas."
+                  : "Creá una promoción temporal para aplicar descuentos a nuevas inscripciones."}
+            </p>
+            {!hayFiltros && pestana === "VIGENTES" && (
+              <Button
+                type="button"
+                onClick={abrirNueva}
+                className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+              >
+                + Nueva promoción
+              </Button>
+            )}
+          </Card>
+        </div>
       ) : (
         <ListaPromociones
           promociones={promocionesFiltradas}
           cabecera={cabeceraPestanasDesktop}
           onEditar={abrirEdicion}
           onDesactivar={setPromocionADesactivar}
+          onReactivar={handleReactivar}
+          reactivandoId={reactivar.isPending ? (reactivar.variables as string) : null}
         />
       )}
 

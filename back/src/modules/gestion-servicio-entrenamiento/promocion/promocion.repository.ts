@@ -135,6 +135,20 @@ export class PromocionRepository {
     });
   }
 
+  // Reactiva una promoción desactivada para volver a ofrecerla.
+  async reactivar(id: number): Promise<PromocionGuardada | null> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      const { count } = await transaccion.promociones.updateMany({
+        where: { id_promocion: id, activo: false },
+        data: { activo: true },
+      });
+      if (count === 0) return null;
+      return aPromocion(
+        await transaccion.promociones.findUniqueOrThrow({ where: { id_promocion: id }, include: CON_PLANES }),
+      );
+    });
+  }
+
   async vigenteParaPlan(idPlan: number, fecha: Date): Promise<PromocionAplicable | null> {
     const fila = await this.prisma.promociones.findFirst({
       where: { ...vigenteEl(fecha), planes: { some: { id_plan: idPlan } } },
