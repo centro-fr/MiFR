@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import {
   actividadFormSchema,
   CUPO_MAXIMO_GRUPAL,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -80,43 +81,29 @@ export function ModalFormActividad({
       }}
     >
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-surface-low"
       >
-        {/* Cabecera modal con línea separadora */}
-        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              {tituloModal}
-            </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              {actividad
-                ? "Modificá la modalidad, cupos o características de la disciplina."
-                : "Definí una nueva disciplina para el centro y su esquema de cupos."}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            disabled={guardando}
-            aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
+        {/* Cabecera modal con línea separadora idéntica a modal-registrar-cobro */}
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {tituloModal}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            {actividad
+              ? "Modificá la modalidad, cupos o características de la disciplina."
+              : "Definí una nueva disciplina para el centro y su esquema de cupos."}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
-          {errorGuardado && (
-            <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 dark:border-rose-900/60 dark:bg-rose-950/40">
-              <AlertDescription className="text-xs font-semibold text-rose-800 dark:text-rose-200">
-                {errorGuardado}
-              </AlertDescription>
-            </Alert>
-          )}
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {errorGuardado && (
+              <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 dark:border-rose-900/60 dark:bg-rose-950/40">
+                <AlertDescription className="text-xs font-semibold text-rose-800 dark:text-rose-200">
+                  {errorGuardado}
+                </AlertDescription>
+              </Alert>
+            )}
 
           {/* Campo código accesible para tests y backend */}
           <div className="sr-only">
@@ -327,34 +314,34 @@ export function ModalFormActividad({
               </Button>
             </div>
           )}
-
-          {/* Footer estándar de botones */}
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={guardando}
-              className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={guardando}
-              aria-label="Guardar actividad"
-              className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
-            >
-              {guardando
-                ? "Guardando…"
-                : actividad
-                  ? "Guardar cambios"
-                  : "Crear actividad"}
-            </Button>
-          </div>
-        </form>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Footer idéntico a modal-registrar-cobro */}
+        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={guardando}
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={guardando}
+            aria-label="Guardar actividad"
+            className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+          >
+            {guardando
+              ? "Guardando…"
+              : actividad
+                ? "Guardar cambios"
+                : "Crear actividad"}
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
+  </Dialog>
   );
 }

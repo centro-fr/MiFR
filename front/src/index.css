@@ -71,14 +71,14 @@
   --color-surface-low: #171b25;
   --color-surface-high: #262a34;
   --color-bg-light: #f8fafc;
-  /* Menú lateral: fondo grafito oscuro (#131722) según el nuevo diseño. */
-  --color-sidebar: #131722;
+  /* Menú lateral: fondo azul de las tablas en modo oscuro (slate-900 #0f172a) para ambos temas. */
+  --color-sidebar: #0f172a;
   --color-sidebar-foreground: #ffffff;
   --color-sidebar-primary: #e91e82;
   --color-sidebar-primary-foreground: #ffffff;
   --color-sidebar-accent: rgba(255, 255, 255, 0.08);
   --color-sidebar-accent-foreground: #ffffff;
-  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+  --color-sidebar-border: #1e293b;
   --color-sidebar-ring: #e91e82;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);

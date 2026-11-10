@@ -33,8 +33,9 @@ const DialogContent = React.forwardRef<
     hideClose?: boolean;
     bottomSheetOnMobile?: boolean;
     overlayClassName?: string;
+    closeAriaLabel?: string;
   }
->(({ className, children, hideClose = false, bottomSheetOnMobile = false, overlayClassName, ...props }, ref) => (
+>(({ className, children, hideClose = false, bottomSheetOnMobile = false, overlayClassName, closeAriaLabel, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay className={overlayClassName} />
     <DialogPrimitive.Content
@@ -49,9 +50,12 @@ const DialogContent = React.forwardRef<
     >
       {children}
       {!hideClose && (
-        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1.5 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <DialogPrimitive.Close
+          aria-label={closeAriaLabel ?? "Cerrar formulario"}
+          className="absolute right-3 top-3 rounded-md p-1.5 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+        >
           <X className="h-5 w-5" />
-          <span className="sr-only">Cerrar</span>
+          <span className="sr-only">{closeAriaLabel ?? "Cerrar formulario"}</span>
         </DialogPrimitive.Close>
       )}
     </DialogPrimitive.Content>

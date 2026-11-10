@@ -47,7 +47,7 @@ const COOKIE_SIDEBAR = "sidebar_state";
 
 /** Ítem de navegación con estilo refinado según diseño oscuro */
 const CLASES_ITEM =
-  "h-11 pointer-fine:h-9.5 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-white [&>svg]:size-5 [&>svg]:text-slate-400 hover:[&>svg]:text-white data-[active=true]:bg-[#281525] data-[active=true]:text-white data-[active=true]:font-bold data-[active=true]:[&>svg]:text-primary group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden transition-colors";
+  "h-11 pointer-fine:h-9.5 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-slate-800/70 hover:text-white [&>svg]:size-5 [&>svg]:text-slate-400 hover:[&>svg]:text-white data-[active=true]:bg-[#281525] data-[active=true]:text-white data-[active=true]:font-bold data-[active=true]:[&>svg]:text-primary group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden transition-colors";
 
 function leerSidebarAbierto(): boolean {
   try {
@@ -315,7 +315,7 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
     <nav aria-label="Menú principal" className="py-1">
       {agruparPorSeccion(items).map((seccion, indice) => (
         <Fragment key={seccion.titulo ?? "sin-seccion"}>
-          {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none border-white/5" />}
+          {indice > 0 && <SidebarSeparator className="my-1.5 pointer-events-none border-slate-800" />}
           <SeccionMenu seccion={seccion} contraido={contraido} alNavegar={alNavegar} />
         </Fragment>
       ))}
@@ -368,7 +368,7 @@ function SwitchRoles({
 
   return (
     <div className="px-3 pt-3 pb-1 group-data-[collapsible=icon]:hidden">
-      <div className="grid grid-cols-2 p-1 bg-[#1a1f2c] rounded-xl border border-white/5 gap-1">
+      <div className="grid grid-cols-2 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 gap-1">
         <button
           type="button"
           onClick={() => onCambiarRol("PROPIETARIA")}

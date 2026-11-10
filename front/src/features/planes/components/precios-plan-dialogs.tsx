@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -10,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -152,35 +151,23 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         }}
       >
         <DialogContent
-          hideClose
-          className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
         >
           {plan && (
             <>
               {/* Encabezado */}
-              <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-                <div className="space-y-0.5 pr-4">
-                  <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                    Cambiar precio de {plan.nombre}
-                  </DialogTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                    Ingresá el nuevo importe y la fecha a partir de la cual empezará a regir.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  aria-label="Cerrar formulario"
-                  className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-                >
-                  <X className="size-4" />
-                </Button>
+              <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+                <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+                  Cambiar precio de {plan.nombre}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+                  Ingresá el nuevo importe y la fecha a partir de la cual empezará a regir.
+                </DialogDescription>
               </DialogHeader>
 
               {/* Formulario */}
-              <form onSubmit={validar} className="flex-1 overflow-y-auto p-6 space-y-4">
+              <form onSubmit={validar} className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {/* Caja Precio actual */}
                 <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
                   <p className="text-xs font-semibold text-muted-foreground">Precio actual</p>
@@ -316,14 +303,16 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                   )}
                 </div>
 
+                </div>
+
                 {/* Footer de botones */}
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onClose}
                     disabled={registrar.isPending}
-                    className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                    className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
                   >
                     Cancelar
                   </Button>
@@ -331,7 +320,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                     type="submit"
                     disabled={registrar.isPending}
                     aria-label="Revisar y confirmar"
-                    className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+                    className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
                   >
                     {registrar.isPending
                       ? "Guardando..."
@@ -339,7 +328,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                         ? "Programar precio"
                         : "Actualizar precio"}
                   </Button>
-                </div>
+                </DialogFooter>
               </form>
             </>
           )}
@@ -373,14 +362,14 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               </p>
             )}
           </div>
-          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-4">
+          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
             <AlertDialogCancel asChild>
               <Button
                 type="button"
                 variant="outline"
                 disabled={registrar.isPending}
                 onClick={() => registrar.reset()}
-                className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
               >
                 Volver
               </Button>
@@ -389,7 +378,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               type="button"
               onClick={() => void confirmar()}
               disabled={registrar.isPending || !plan}
-              className="rounded-xl bg-primary px-5 font-extrabold text-white hover:bg-primary-dark"
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
             >
               {registrar.isPending ? "Guardando..." : "Confirmar actualización"}
             </Button>
@@ -415,8 +404,8 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
         bottomSheetOnMobile
         className="gap-0 border-border bg-white p-0 dark:bg-surface-low sm:max-w-lg"
       >
-        <DialogHeader className="border-b border-border px-5 py-4 pr-12 text-left sm:px-6">
-          <DialogTitle className="text-lg font-extrabold text-slate-900 dark:text-white">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             Historial de precios
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
@@ -492,16 +481,16 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
             </ol>
           )}
         </div>
-        <div className="flex justify-end border-t border-border p-4">
+        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="min-h-11 rounded-xl px-5 font-bold"
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
           >
             Cerrar
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
