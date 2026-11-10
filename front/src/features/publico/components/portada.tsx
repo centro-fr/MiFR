@@ -1,87 +1,62 @@
-import { useState } from "react";
-import { ArrowRight, Dumbbell, MessageCircle } from "lucide-react";
-import { LogoFr } from "@/components/marca/logo-fr";
-import { Button } from "@/components/ui/button";
+import type { CSSProperties } from "react";
+import { ArrowRight } from "lucide-react";
 import { enlacesDeContacto } from "@/features/publico/utils/contacto";
-import { NOMBRE_DEL_CENTRO } from "./marca-centro";
+import { BOTON_CONTORNO, BOTON_DESTACADO, CONTENEDOR_PUBLICO } from "./estilos-publicos";
 
-// La foto se publica dejando el archivo en front/public/centro.webp. Mientras no exista, el espacio
-// muestra la marca: el 404 (o el index.html que devuelve el hosting) dispara onError.
-const FOTO_DEL_CENTRO = "/centro.webp";
-
-function FotoDelCentro() {
-  const [sinFoto, setSinFoto] = useState(false);
-
-  return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl bg-dark shadow-2xl ring-1 ring-border">
-      {sinFoto ? (
-        <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(233,30,130,0.45),transparent_55%),radial-gradient(circle_at_80%_90%,rgba(188,18,102,0.5),transparent_50%)]">
-          <LogoFr className="size-28 drop-shadow-[0_20px_40px_rgba(233,30,130,0.45)] sm:size-40" />
-        </div>
-      ) : (
-        <img
-          src={FOTO_DEL_CENTRO}
-          alt={`Sala de entrenamiento de ${NOMBRE_DEL_CENTRO}`}
-          width={1200}
-          height={900}
-          fetchPriority="high"
-          onError={() => setSinFoto(true)}
-          className="h-full w-full object-cover"
-        />
-      )}
-    </div>
-  );
-}
+// La foto se publica dejando el archivo en front/public/centro.webp. Mientras no exista, la capa de la
+// foto no pinta nada y quedan los degradés de la marca sobre el fondo oscuro.
+// Los velos oscuros van encima de la foto para que el título se lea sobre cualquier imagen.
+const FONDO_DE_PORTADA: CSSProperties = {
+  background: [
+    "radial-gradient(900px 600px at 85% 20%, rgba(233,30,130,0.22), transparent 60%)",
+    "radial-gradient(700px 500px at 10% 100%, rgba(120,20,80,0.35), transparent 60%)",
+    "linear-gradient(90deg, rgba(11,13,18,0.92) 0%, rgba(11,13,18,0.6) 45%, rgba(11,13,18,0.15) 100%)",
+    "linear-gradient(180deg, rgba(11,13,18,0.2) 0%, rgba(11,13,18,0) 40%, #0b0d12 100%)",
+    "url('/centro.webp') center 62% / cover no-repeat",
+    "#0b0d12",
+  ].join(", "),
+};
 
 export function Portada() {
-  const { whatsapp } = enlacesDeContacto();
+  const { whatsapp, instagram } = enlacesDeContacto();
+  const hayContacto = Boolean(whatsapp || instagram);
 
   return (
     <section
       id="inicio"
       aria-labelledby="titulo-portada"
-      className="scroll-mt-20 bg-background text-foreground"
+      style={FONDO_DE_PORTADA}
+      className="relative flex min-h-[min(100svh,844px)] items-center md:min-h-[min(100svh,900px)]"
     >
-      <div className="mx-auto grid w-full max-w-[1280px] items-center gap-14 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pb-20 lg:pt-16">
-        <div className="flex animate-hero-enter flex-col gap-6">
+      <div className={`${CONTENEDOR_PUBLICO} pb-12 pt-24 md:pb-[72px] md:pt-[110px]`}>
+        <div className="motion-safe:animate-hero-enter">
           <h1
             id="titulo-portada"
-            className="text-5xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl"
+            className="m-0 font-display text-[76px] font-normal uppercase leading-[72px] md:text-[112px] md:leading-[104px] lg:text-[148px] lg:leading-[136px]"
           >
             Entrená
             <br />
-            con{" "}
-            <span className="bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
-              energía.
-            </span>
+            con <span className="text-primary">energía.</span>
           </h1>
-          <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
-            Elegí la actividad que más te guste y sumate a entrenar. Te esperamos.
+          <p className="mt-7 max-w-[520px] text-base leading-6 text-publico-texto-claro md:text-[19px] md:leading-[30px]">
+            Fuerza, HIIT, funcional y mucho más, con profes que te siguen de cerca. Elegí cómo querés entrenar y
+            sumate.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild className="h-12 rounded-xl px-7 text-base font-bold shadow-brand-glow hover:bg-primary-dark">
-              <a href="#actividades">
-                <Dumbbell aria-hidden="true" />
-                Ver actividades
-              </a>
-            </Button>
-            {whatsapp && (
-              <Button
-                asChild
-                variant="outline"
-                className="h-12 rounded-xl border-primary/40 px-7 text-base font-bold text-primary-dark hover:bg-primary/10 hover:text-primary-dark dark:text-pink-200"
+          <div className="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            {hayContacto && (
+              <a
+                href="#contacto"
+                className={`${BOTON_DESTACADO} bg-primary text-white shadow-[0_10px_24px_rgba(233,30,130,0.35)] hover:shadow-[0_14px_30px_rgba(233,30,130,0.45)]`}
               >
-                <a href={whatsapp} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle aria-hidden="true" />
-                  Quiero sumarme
-                  <ArrowRight aria-hidden="true" />
-                </a>
-              </Button>
+                Quiero empezar
+                <ArrowRight aria-hidden="true" className="size-[18px]" strokeWidth={2.5} />
+              </a>
             )}
+            <a href="#actividades" className={`${BOTON_CONTORNO} border-white/30 hover:bg-white/10`}>
+              Ver actividades
+            </a>
           </div>
         </div>
-
-        <FotoDelCentro />
       </div>
     </section>
   );

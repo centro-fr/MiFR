@@ -51,7 +51,7 @@ describe("Actividades", () => {
     const [funcional, combat] = within(lista).getAllByRole("listitem");
     expect(funcional).toHaveTextContent("Funcional");
     expect(funcional).toHaveTextContent("Entrenamiento funcional en grupo");
-    expect(funcional).toHaveTextContent("Lun · Mié · Vie");
+    expect(funcional).toHaveTextContent("Días: lunes, miércoles y viernes");
     expect(funcional).toHaveTextContent("3 clases por semana");
     expect(combat).toHaveTextContent("1 clase por semana");
   });
