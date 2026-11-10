@@ -71,18 +71,18 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
       }}
     >
       <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
-          <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             ¿Dar de baja a {nombre}?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
             El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
             poder reactivarse más adelante.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
+        <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
           <fieldset className="flex flex-col gap-2" aria-describedby={errorMotivo ? "error-motivo-baja" : undefined}>
             <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -130,13 +130,15 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
             </Alert>
           )}
 
-          <AlertDialogFooter className="flex-row items-center justify-end gap-2 pt-2">
+          </div>
+
+          <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
             <AlertDialogCancel asChild>
               <Button
                 type="button"
                 variant="outline"
                 disabled={dandoDeBaja}
-                className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+                className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
               >
                 Cancelar
               </Button>
@@ -151,7 +153,6 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
             </Button>
           </AlertDialogFooter>
         </form>
-        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

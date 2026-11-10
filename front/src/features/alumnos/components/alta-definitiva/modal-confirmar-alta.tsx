@@ -14,8 +14,8 @@ import {
   type PrimerPagoFormValues,
 } from "@/features/alumnos/schemas/primer-pago";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import { Button } from "@/components/ui/button";
 import {
-  BotonesDeCobro,
   CLASE_INPUT,
   Campo,
   CampoTitularCuenta,
@@ -203,21 +203,20 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
       }}
     >
       <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             Confirmar alta de {nombre}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
             {esTransferenciaProfesora
               ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
               : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-
-          <ResumenPreInscripcion pendiente={pendiente} />
+        <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="promocion-primer-pago" className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -291,14 +290,29 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             </Alert>
           )}
 
-          <BotonesDeCobro
-            onCancelar={onClose}
-            enviando={confirmando}
-            texto={esTransferenciaProfesora ? "Informar transferencia" : "Registrar y dar de alta"}
-            textoEnviando={esTransferenciaProfesora ? "Informando..." : "Registrando..."}
-          />
+          </div>
+
+          <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={confirmando}
+              onClick={onClose}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={confirmando}
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+            >
+              {confirmando
+                ? (esTransferenciaProfesora ? "Informando..." : "Registrando...")
+                : (esTransferenciaProfesora ? "Informar transferencia" : "Registrar y dar de alta")}
+            </Button>
+          </div>
         </form>
-        </div>
       </DialogContent>
     </Dialog>
   );

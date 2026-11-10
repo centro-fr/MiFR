@@ -35,13 +35,13 @@ interface PropsConfirmacion {
 function Confirmacion({ abierto, titulo, descripcion, ocupado, onCancelar, children }: PropsConfirmacion) {
   return (
     <AlertDialog open={abierto} onOpenChange={(abriendo) => !abriendo && !ocupado && onCancelar()}>
-      <AlertDialogContent className="w-[96vw] max-w-md rounded-3xl border-slate-200 bg-white p-6 shadow-2xl sm:w-full sm:p-7 dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</AlertDialogTitle>
-          <AlertDialogDescription className="mt-2 text-sm text-slate-600 dark:text-slate-300">{descripcion}</AlertDialogDescription>
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
+          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</AlertDialogTitle>
+          <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">{descripcion}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="gap-2 border-t border-slate-100 pt-4 sm:space-x-0 dark:border-slate-800">
-          <AlertDialogCancel disabled={ocupado} className={BOTON}>
+        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <AlertDialogCancel disabled={ocupado} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10">
             Cancelar
           </AlertDialogCancel>
           {children}

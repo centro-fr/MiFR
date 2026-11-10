@@ -42,10 +42,10 @@ export function ConfirmarAbono({ liquidacion, abierto, periodo, onClose }: Props
 
   return (
     <AlertDialog open={abierto} onOpenChange={(abrir) => !abrir && !abonar.isPending && onClose()}>
-      <AlertDialogContent className="w-[96vw] sm:w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">¿Marcar como abonada?</AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-300 mt-2">
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
+          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">¿Marcar como abonada?</AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             {liquidacion && (
               <>
                 <strong className="text-slate-900 dark:text-white">{nombreCompleto(liquidacion.profesora)}</strong> ·{" "}
@@ -55,8 +55,8 @@ export function ConfirmarAbono({ liquidacion, abierto, periodo, onClose }: Props
             Solo deja registro de que ya se le abonó por fuera del sistema: MiFR no mueve dinero.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800 gap-2 sm:gap-3">
-          <AlertDialogCancel disabled={abonar.isPending} className="h-11 px-6 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800">
+        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <AlertDialogCancel disabled={abonar.isPending} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10">
             Cancelar
           </AlertDialogCancel>
           {/* Botón común y no AlertDialogAction: esa acción cierra el diálogo antes de saber si salió bien. */}
@@ -64,7 +64,7 @@ export function ConfirmarAbono({ liquidacion, abierto, periodo, onClose }: Props
             type="button"
             onClick={() => void confirmar()}
             disabled={abonar.isPending}
-            className="h-11 px-6 rounded-xl bg-primary font-bold text-sm text-white hover:bg-primary-dark transition-colors shadow-xs"
+            className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
           >
             {abonar.isPending && <Loader2 aria-hidden="true" className="size-4 animate-spin mr-1.5" />}
             {abonar.isPending ? "Guardando…" : "Marcar como abonada"}

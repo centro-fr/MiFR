@@ -35,10 +35,10 @@ function ModalConfirmacion(props: PropsConfirmacion) {
       }}
     >
       <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
           <div className="space-y-0.5">
-            <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">{titulo}</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">{descripcion}</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</AlertDialogDescription>
           </div>
         </AlertDialogHeader>
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -49,9 +49,9 @@ function ModalConfirmacion(props: PropsConfirmacion) {
             </Alert>
           )}
         </div>
-        <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border px-6 py-4">
+        <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
           <AlertDialogCancel asChild>
-            <Button type="button" variant="outline" disabled={procesando} className="rounded-xl border-slate-200 px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10">
+            <Button type="button" variant="outline" disabled={procesando} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10">
               Cancelar
             </Button>
           </AlertDialogCancel>

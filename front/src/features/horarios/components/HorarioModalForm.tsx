@@ -2,12 +2,13 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
-import { X, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { textoCupo } from '../utils/cupo';
 import { horarioFormSchema } from '../schemas/horario';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -145,47 +146,32 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
       }}
     >
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-surface-low"
       >
         {/* Cabecera del modal */}
-        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
-            </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Configurá la actividad, profesor/a, día y franja horaria de la clase.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            Configurá la actividad, profesor/a, día y franja horaria de la clase.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Alerta de Conflicto de Superposición / Validación de Horario */}
-        {errorMessage && (
-          <div className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/20 flex items-start gap-3 animate-in fade-in duration-200 mb-2">
-            <AlertCircle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <span className="sr-only">Validación de Horario</span>
-              <p className="text-xs sm:text-sm font-medium text-rose-900 dark:text-rose-200 leading-snug">
-                {errorMessage}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {/* Alerta de Conflicto de Superposición / Validación de Horario */}
+            {errorMessage && (
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/20 flex items-start gap-3 animate-in fade-in duration-200 mb-2">
+                <AlertCircle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="sr-only">Validación de Horario</span>
+                  <p className="text-xs sm:text-sm font-medium text-rose-900 dark:text-rose-200 leading-snug">
+                    {errorMessage}
+                  </p>
+                </div>
+              </div>
+            )}
           {/* Fila 1: Actividad y Profesora */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
@@ -376,28 +362,28 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               )}
             </div>
           )}
-
-          {/* Footer de botones */}
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="h-11 px-5 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              aria-label="Aceptar"
-              className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
-            >
-              {horarioEnEdicion ? 'Guardar cambios' : 'Crear horario'}
-            </Button>
-          </div>
-        </form>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Footer idéntico a modal-registrar-cobro */}
+        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            aria-label="Aceptar"
+            className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+          >
+            {horarioEnEdicion ? 'Guardar cambios' : 'Crear horario'}
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
+  </Dialog>
   );
 };

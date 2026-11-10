@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -64,24 +65,19 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
       >
-        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              {promocion ? "Editar promoción" : "Nueva promoción"}
-            </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Definí el descuento, vigencia y planes aplicables de la promoción.
-            </p>
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario" className="shrink-0 size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-            <X className="size-4" />
-          </Button>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {promocion ? "Editar promoción" : "Nueva promoción"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            Definí el descuento, vigencia y planes aplicables de la promoción.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <Campo label="Código" error={formulario.formState.errors.codigo?.message}>
             <Input {...formulario.register("codigo")} className="h-11 rounded-xl" placeholder="VERANO26" />
           </Campo>
@@ -135,12 +131,26 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
             </div>
           </Campo>
           {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{error}</p>}
-          <div className="flex gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <Button type="button" variant="outline" onClick={onClose} disabled={guardando} className="h-11 rounded-xl font-bold">Cancelar</Button>
-            <Button type="submit" disabled={guardando} className="h-11 flex-1 rounded-xl bg-primary font-bold text-white hover:bg-primary-dark">
+          </div>
+
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={guardando}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={guardando}
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+            >
               {guardando ? "Guardando..." : "Guardar promoción"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { AlertTriangle, Clock, Loader2, X } from "lucide-react";
+import { AlertTriangle, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import { tipoDeTransferencia } from "@/features/transferencias/utils/formato-transferencia";
@@ -89,29 +89,17 @@ export function ModalDetalleAprobacion({
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
       >
         {/* Header */}
-        <div className="shrink-0 flex items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
-              {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-            </DialogTitle>
-            <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-              Transferencia · {textoTipoPago}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleCerrar}
-            disabled={aprobando || rechazando}
-            className="size-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          >
-            <X className="size-4" />
-            <span className="sr-only">Cerrar</span>
-          </button>
-        </div>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl dark:text-white">
+            {transferencia.alumno.nombre} {transferencia.alumno.apellido}
+          </DialogTitle>
+          <DialogDescription className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            Transferencia · {textoTipoPago}
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Importe y badge de tiempo */}
@@ -262,38 +250,38 @@ export function ModalDetalleAprobacion({
               </div>
             </div>
           )}
-
-          {/* Acciones */}
-          {!modoRechazo && (
-            <div className="flex items-center justify-between gap-3 pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setModoRechazo(true)}
-                disabled={aprobando || rechazando}
-                className="h-10 rounded-xl border-slate-200 px-4 text-xs font-bold text-slate-700 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:border-slate-700 dark:text-slate-300"
-              >
-                Rechazar
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleConfirmarAprobacion}
-                disabled={aprobando || rechazando}
-                className="h-10 flex-1 rounded-xl bg-primary px-5 text-xs font-extrabold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
-              >
-                {aprobando ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Aprobando...
-                  </>
-                ) : (
-                  "Aprobar transferencia"
-                )}
-              </Button>
-            </div>
-          )}
         </div>
+
+        {/* Acciones */}
+        {!modoRechazo && (
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-between gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModoRechazo(true)}
+              disabled={aprobando || rechazando}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-rose-600 hover:border-rose-200 hover:bg-rose-50 dark:border-white/15 dark:bg-transparent dark:text-rose-400 dark:hover:bg-rose-950/20"
+            >
+              Rechazar
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleConfirmarAprobacion}
+              disabled={aprobando || rechazando}
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+            >
+              {aprobando ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Aprobando...
+                </>
+              ) : (
+                "Aprobar transferencia"
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

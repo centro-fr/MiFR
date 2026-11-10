@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -128,31 +130,19 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
       >
-        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Nuevo plan
-            </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Configurá las condiciones del plan y su precio inicial.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            aria-label="Cerrar formulario"
-          >
-            <X className="size-4" />
-          </Button>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            Nuevo plan
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            Configurá las condiciones del plan y su precio inicial.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Nombre */}
           <div className="space-y-1.5">
             <Label htmlFor="nuevo-plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -411,21 +401,22 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
             )}
           </div>
 
-          {/* Acciones del pie */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          </div>
+
+          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
             <Button
               type="button"
               variant="outline"
               disabled={crear.isPending}
               onClick={onClose}
-              className="rounded-xl min-h-[44px] px-4 font-bold border-slate-200 dark:border-slate-700"
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={crear.isPending}
-              className="rounded-xl min-h-[44px] px-5 font-black bg-primary hover:bg-primary-dark text-white shadow-md shadow-primary/25 transition-transform active:scale-95"
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
             >
               {crear.isPending ? (
                 <>
@@ -436,7 +427,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 "Crear plan"
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

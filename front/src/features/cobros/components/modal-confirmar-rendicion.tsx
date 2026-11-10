@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatearPrecio } from "@/utils/moneda";
 import type { CobroSinRendir, TotalDeProfesora } from "../schemas/rendicion";
@@ -63,29 +63,17 @@ export function ModalConfirmarRendicion({
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
-        hideClose
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
       >
         {/* Header */}
-        <div className="shrink-0 flex items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight dark:text-white">
-              {titulo}
-            </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              {esLote ? "Rendición de lote" : "Rendición individual"}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleCerrar}
-            disabled={procesando}
-            className="size-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          >
-            <X className="size-4" />
-            <span className="sr-only">Cerrar</span>
-          </button>
-        </div>
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl dark:text-white">
+            {titulo}
+          </DialogTitle>
+          <DialogDescription className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            {esLote ? "Rendición de lote" : "Rendición individual"}
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Importe y resumen */}
@@ -146,13 +134,13 @@ export function ModalConfirmarRendicion({
         </div>
 
         {/* Acciones */}
-        <div className="shrink-0 flex items-center justify-end gap-2.5 border-t border-border px-6 py-4">
+        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
           <Button
             type="button"
             variant="outline"
             onClick={handleCerrar}
             disabled={procesando}
-            className="h-10 rounded-xl px-4 text-xs font-semibold"
+            className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
           >
             Cancelar
           </Button>
@@ -160,7 +148,7 @@ export function ModalConfirmarRendicion({
             type="button"
             onClick={handleConfirmar}
             disabled={procesando}
-            className="h-10 rounded-xl bg-primary px-5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
+            className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
           >
             {procesando ? (
               <>
@@ -171,7 +159,7 @@ export function ModalConfirmarRendicion({
               "Confirmar rendición"
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

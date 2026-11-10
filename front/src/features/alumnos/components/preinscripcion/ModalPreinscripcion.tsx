@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -116,14 +117,14 @@ export function ModalPreinscripcion({
         }}
       >
         {/* Encabezado estándar */}
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-          <div className="space-y-0.5 pr-4">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <div className="space-y-0.5">
+            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Nueva pre-inscripción
             </DialogTitle>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
               Queda pendiente de alta hasta el primer cobro.
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
 
@@ -211,14 +212,14 @@ export function ModalPreinscripcion({
           </div>
 
           {/* Footer con botones de navegación */}
-          <div className="shrink-0 flex items-center justify-between border-t border-border px-6 py-4 gap-3">
+          <div className="shrink-0 flex items-center justify-between border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
               {paso > 1 ? (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={retrocederPaso}
                   disabled={enviando}
-                  className="min-h-[44px] px-5 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   Atrás
                 </Button>
@@ -228,7 +229,7 @@ export function ModalPreinscripcion({
                   variant="outline"
                   onClick={() => cerrarModal(false)}
                   disabled={enviando}
-                  className="min-h-[44px] px-5 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                  className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </Button>
@@ -238,7 +239,7 @@ export function ModalPreinscripcion({
                 <Button
                   type="button"
                   onClick={avanzarPaso}
-                  className="min-h-[44px] px-6 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs ml-auto"
+                  className="rounded-xl bg-primary px-5 font-bold text-white shadow-md hover:bg-primary-dark ml-auto"
                 >
                   Siguiente
                 </Button>
@@ -247,7 +248,7 @@ export function ModalPreinscripcion({
                   type="button"
                   onClick={() => void confirmarPreinscripcion()}
                   disabled={enviando}
-                  className="min-h-[44px] px-6 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs ml-auto flex items-center gap-2"
+                  className="rounded-xl bg-primary px-5 font-bold text-white shadow-md hover:bg-primary-dark ml-auto flex items-center gap-2"
                 >
                   {enviando ? (
                     <>

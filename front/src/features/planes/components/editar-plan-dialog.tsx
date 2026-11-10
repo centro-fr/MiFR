@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { X } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -141,34 +142,20 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
         }}
       >
         <DialogContent
-          hideClose
-          className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low"
         >
           {/* Encabezado */}
-          <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
-            <div className="space-y-0.5 pr-4">
-              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Editar plan {plan.nombre}
-              </DialogTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                Modificá las características, actividades y reglas del plan.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              aria-label="Cerrar formulario"
-              className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-            >
-              <X className="size-4" />
-            </Button>
+          <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+              Editar plan {plan.nombre}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+              Modificá las características, actividades y reglas del plan.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6">
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {/* Nombre */}
             <div className="space-y-1.5">
               <Label htmlFor="plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -380,29 +367,30 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               </Button>
             </div>
 
+            </div>
+
             {/* Footer de botones */}
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={actualizar.isPending}
-                className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+                className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={actualizar.isPending || sinCambios}
-                className="h-11 flex-1 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
+                className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
               >
                 {actualizar.isPending ? "Guardando..." : "Guardar cambios"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal confirmación de cambio de frecuencia */}
       {confirmarFrecuencia && cambioDeFrecuencia && (
