@@ -454,10 +454,10 @@ export function ClasesDelDia({
               </div>
 
               {/* VISTA DESKTOP (hidden xl:block) - TABLA */}
-              <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm xl:block dark:bg-surface-low">
+              <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm xl:block dark:border-slate-700/80 dark:bg-slate-900">
                 <table className="w-full table-fixed text-left text-sm">
                   <caption className="sr-only">Listado de clases del {fechaLarga(fecha)}</caption>
-                  <thead className="border-b border-border bg-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:bg-white/5 dark:text-slate-200">
+                  <thead className="border-b border-border bg-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
                     <tr>
                       <th scope="col" className="w-[18%] px-5 py-4">Horario</th>
                       <th scope="col" className="w-[28%] px-5 py-4">Actividad</th>
@@ -467,13 +467,13 @@ export function ClasesDelDia({
                       <th scope="col" className="w-[18%] px-5 py-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border dark:divide-slate-800/60">
                     {clasesFiltradas.map(({ clase, estado, puedeMarcar, profesora }) => {
                       return (
                         <tr
                           key={clase.id_clase}
                           className={cn(
-                            "transition-colors hover:bg-slate-50/70 dark:hover:bg-white/5",
+                            "transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/60",
                             estado === "EN_CURSO" && "bg-pink-50/30 dark:bg-primary/5"
                           )}
                         >
