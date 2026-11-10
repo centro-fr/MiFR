@@ -81,7 +81,13 @@ export function ListaPromociones({
               return (
                 <tr
                   key={promocion.id}
-                  className="transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
+                  onClick={() => {
+                    if (editable) onEditar(promocion);
+                  }}
+                  className={cn(
+                    "transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
+                    editable && "cursor-pointer",
+                  )}
                 >
                   <td className="px-6 py-3.5">
                     <h2 className="font-bold text-sm text-slate-900 dark:text-white">
@@ -122,7 +128,10 @@ export function ListaPromociones({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => onEditar(promocion)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditar(promocion);
+                          }}
                           className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                         >
                           Editar
@@ -131,7 +140,10 @@ export function ListaPromociones({
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => onDesactivar(promocion)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDesactivar(promocion);
+                        }}
                         className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                       >
                         Eliminar
@@ -155,7 +167,13 @@ export function ListaPromociones({
           return (
             <div
               key={promocion.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5"
+              onClick={() => {
+                if (editable) onEditar(promocion);
+              }}
+              className={cn(
+                "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
+                editable && "cursor-pointer",
+              )}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -184,7 +202,10 @@ export function ListaPromociones({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onEditar(promocion)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditar(promocion);
+                    }}
                     className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                   >
                     Editar
@@ -193,7 +214,10 @@ export function ListaPromociones({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => onDesactivar(promocion)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDesactivar(promocion);
+                  }}
                   className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                 >
                   Eliminar

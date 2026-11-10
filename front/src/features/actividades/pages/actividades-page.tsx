@@ -367,9 +367,14 @@ export function ActividadesPage() {
                 return (
                   <Card
                     key={actividad.id}
+                    onClick={() => {
+                      if (actividad.activo) abrirEdicion(actividad);
+                    }}
                     className={cn(
-                      "w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3",
-                      !actividad.activo && "opacity-70 bg-slate-50/40 dark:bg-slate-900/40",
+                      "w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/40",
+                      actividad.activo
+                        ? "cursor-pointer"
+                        : "opacity-70 bg-slate-50/40 dark:bg-slate-900/40",
                     )}
                   >
                     <div className="flex items-start justify-between gap-2 min-w-0">
@@ -419,7 +424,10 @@ export function ActividadesPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => abrirEdicion(actividad)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirEdicion(actividad);
+                          }}
                           className="w-full h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                         >
                           Editar
@@ -429,7 +437,10 @@ export function ActividadesPage() {
                           type="button"
                           variant="outline"
                           disabled={reactivar.isPending}
-                          onClick={() => handleReactivar(actividad)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReactivar(actividad);
+                          }}
                           className="w-full h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                         >
                           Reincorporar
@@ -462,9 +473,14 @@ export function ActividadesPage() {
                     return (
                       <TableRow
                         key={actividad.id}
+                        onClick={() => {
+                          if (actividad.activo) abrirEdicion(actividad);
+                        }}
                         className={cn(
-                          "hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40",
-                          !actividad.activo && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                          "transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/40",
+                          actividad.activo
+                            ? "cursor-pointer"
+                            : "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
                         )}
                       >
                         {/* Actividad */}
@@ -511,7 +527,10 @@ export function ActividadesPage() {
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() => abrirEdicion(actividad)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirEdicion(actividad);
+                              }}
                               className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                             >
                               Editar
@@ -521,7 +540,10 @@ export function ActividadesPage() {
                               type="button"
                               variant="outline"
                               disabled={reactivar.isPending}
-                              onClick={() => handleReactivar(actividad)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReactivar(actividad);
+                              }}
                               className="h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                             >
                               Reincorporar

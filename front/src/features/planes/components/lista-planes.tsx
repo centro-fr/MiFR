@@ -81,9 +81,14 @@ export function ListaPlanes({
                 return (
                   <tr
                     key={plan.id}
+                    onClick={() => {
+                      if (vigente) {
+                        onEditarPlan?.(plan);
+                      }
+                    }}
                     className={cn(
                       "transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
-                      !vigente && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                      vigente ? "cursor-pointer" : "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
                     )}
                   >
                     <td className="px-6 py-3.5">
@@ -124,7 +129,10 @@ export function ListaPlanes({
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => onVerHistorial(plan)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onVerHistorial(plan);
+                            }}
                             className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                           >
                             Historial
@@ -136,7 +144,10 @@ export function ListaPlanes({
                               type="button"
                               variant="outline"
                               disabled={reactivandoPlan}
-                              onClick={() => onReactivarPlan(plan)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onReactivarPlan(plan);
+                              }}
                               className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                             >
                               Reincorporar
@@ -150,7 +161,10 @@ export function ListaPlanes({
                               <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => onEditarPlan(plan)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditarPlan(plan);
+                                }}
                                 className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                               >
                                 Editar
@@ -160,6 +174,7 @@ export function ListaPlanes({
                               <Button
                                 asChild
                                 variant="outline"
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                               >
                                 <Link to={`/app/planes/${plan.id}/editar`}>
@@ -188,9 +203,14 @@ export function ListaPlanes({
             return (
               <div
                 key={plan.id}
+                onClick={() => {
+                  if (vigente) {
+                    onEditarPlan?.(plan);
+                  }
+                }}
                 className={cn(
-                  "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5",
-                  !vigente && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
+                  "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
+                  vigente ? "cursor-pointer" : "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
                 )}
               >
                 <div className="min-w-0 flex-1">
@@ -210,7 +230,10 @@ export function ListaPlanes({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => onVerHistorial(plan)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onVerHistorial(plan);
+                      }}
                       className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                     >
                       Historial
@@ -222,7 +245,10 @@ export function ListaPlanes({
                         type="button"
                         variant="outline"
                         disabled={reactivandoPlan}
-                        onClick={() => onReactivarPlan(plan)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReactivarPlan(plan);
+                        }}
                         className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
                       >
                         Reincorporar
@@ -236,7 +262,10 @@ export function ListaPlanes({
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => onEditarPlan(plan)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditarPlan(plan);
+                          }}
                           className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                         >
                           Editar
@@ -246,6 +275,7 @@ export function ListaPlanes({
                         <Button
                           asChild
                           variant="outline"
+                          onClick={(e) => e.stopPropagation()}
                           className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                         >
                           <Link to={`/app/planes/${plan.id}/editar`}>
