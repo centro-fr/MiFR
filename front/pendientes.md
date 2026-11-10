@@ -5,6 +5,8 @@
 - [x] Que todas las esquinas (de las tablas u estados) o cornes tengan el mismo radios que tienen los filtros y el buscador que armamos en Listado y Ausentes. - Hacer Gaston Gil
 - [x] Verificar consistencia de lo colores de botones (como estan en Listado o Ausentes) - Hacer Gaston Gil
 - [x] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
+- [ ] Quitar iconos En todas las pantallas del sistema vacias y recargas (ejemplo de la imagen) ![alt text](IconosError.png)
+
 
 ## Recarga
 
@@ -89,7 +91,7 @@
 - [x] Sacar el reporte cuotas vencidas y cobranza.
 - [x] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
 - [x] Cambiar nombre de reporte "Planes" a "Planes mas elegidos"
-
+- [x] Cambiar Icodo de Planes ams elegidos por Tags en plural (Dos etiquetas encimadas)
 ## Clases
 
 - [x] Modificar el nombre del sidebar "CLASES" por "CENTRO".
@@ -121,6 +123,8 @@
 
 - [x] Modificar breadcum para que coincida con pantalla
 - [x] Arreglar bug al seleccionar opcion en sidebar ![alt text](ErrorSeleccSidebar.png)
+- [x] Cambiar Icono por uno de Gift
+
 
 ## Centro - Planes
 - [x] Cambiar nombre a unicamente "Planes"
