@@ -136,4 +136,4 @@
 - [x] Cambiar nombre a unicamente "Planes"
 
 ## Cobros - Historial 
-- [ ] Agregar en Filtro el nombre de la Propietaria y en columna "cobro" Salga el nombre de la misma
+- [x] Agregar en Filtro el nombre de la Propietaria y en columna "cobro" Salga el nombre de la misma

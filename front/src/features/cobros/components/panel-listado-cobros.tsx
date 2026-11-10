@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { formatearFecha, inicialesDe } from "@/features/alumnos/utils/formato-ficha";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { informeCobranzaApiSchema } from "@/features/reportes/schemas/informes-centro";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
@@ -26,6 +27,11 @@ interface PanelListadoCobrosProps {
 }
 
 export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps) {
+  const { user } = useAuth();
+  const nombrePropietaria =
+    (user?.roles.includes("PROPIETARIA") && `${user.nombre} ${user.apellido}`.trim()) ||
+    "Marina Sosa";
+
   const [busqueda, setBusqueda] = useState("");
   const [filtroProfesora, setFiltroProfesora] = useState<string>("TODAS");
   const [filtroForma, setFiltroForma] = useState<FiltroFormaCobro>("TODOS");
@@ -46,13 +52,23 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
 
   const opcionesProfesoras = useMemo(() => {
     const nombres = new Set<string>();
+    let huboCobroPropietaria = false;
+
     for (const c of cobros) {
       if (c.profesora_cobra) {
         nombres.add(`${c.profesora_cobra.nombre} ${c.profesora_cobra.apellido}`.trim());
+      } else {
+        huboCobroPropietaria = true;
       }
     }
-    return Array.from(nombres).sort((a, b) => a.localeCompare(b, "es"));
-  }, [cobros]);
+
+    const lista = Array.from(nombres).sort((a, b) => a.localeCompare(b, "es"));
+    // Agregar a la Propietaria en el filtro si hubo cobros registrados por ella o si la lista está disponible
+    if (huboCobroPropietaria || cobros.length === 0) {
+      lista.unshift(nombrePropietaria);
+    }
+    return lista;
+  }, [cobros, nombrePropietaria]);
 
   const conteosPorForma: Record<FiltroFormaCobro, number> = useMemo(
     () => ({
@@ -71,7 +87,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
       if (filtroProfesora !== "TODAS") {
         const nombreProf = cobro.profesora_cobra
           ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`.trim()
-          : "";
+          : nombrePropietaria;
         if (nombreProf !== filtroProfesora) {
           return false;
         }
@@ -86,7 +102,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
       }
       return true;
     });
-  }, [cobros, filtroForma, filtroProfesora, busqueda]);
+  }, [cobros, filtroForma, filtroProfesora, busqueda, nombrePropietaria]);
 
   const hayFiltrosActivos =
     busqueda.trim() !== "" || filtroProfesora !== "TODAS" || filtroForma !== "TODOS";
@@ -298,7 +314,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                     const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                     const nombreQuienCobro = cobro.profesora_cobra
                       ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
-                      : "Propietaria";
+                      : nombrePropietaria;
                     const textoForma = cobro.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia";
 
                     return (
@@ -365,7 +381,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                 const nombreQuienCobro = cobro.profesora_cobra
                   ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
-                  : "Propietaria";
+                  : nombrePropietaria;
                 const textoForma = cobro.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia";
 
                 return (
