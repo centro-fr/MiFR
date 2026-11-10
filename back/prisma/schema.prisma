@@ -37,6 +37,8 @@ model usuarios {
   telefono            String?        @db.VarChar(20)
   fecha_nacimiento    DateTime       @db.Date
   direccion           String?        @db.VarChar(120)
+  // Foto de perfil de Google; NULL si la cuenta no tiene
+  foto_url            String?        @db.VarChar(500)
   estado              estado_usuario @default(ACTIVO)
   fecha_alta          DateTime       @default(now()) @db.Timestamp(6)
   fecha_actualizacion DateTime       @updatedAt @db.Timestamp(6)

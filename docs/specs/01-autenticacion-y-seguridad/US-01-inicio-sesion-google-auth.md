@@ -37,7 +37,8 @@ Como usuario del sistema (propietaria, profesora, alumno/tutor), quiero iniciar 
 - El `id_token` de la cuenta. El back lo verifica con Google y usa:
   - el identificador de la cuenta (`sub`, que se guarda como `google_id`)
   - el email, que tiene que estar verificado por Google
-- El nombre, el apellido y la foto **no se toman de Google**: los datos del usuario son los que cargó el centro al darlo de alta (US-05).
+  - la foto de perfil (`picture`), que se guarda en `usuarios.foto_url` y se refresca en cada login. Si Google no la manda, se conserva la última que se guardó.
+- El nombre y el apellido **no se toman de Google**: son los que cargó el centro al darlo de alta (US-05).
 
 ### Datos que envía al backend
 
@@ -45,7 +46,7 @@ Como usuario del sistema (propietaria, profesora, alumno/tutor), quiero iniciar 
 
 ### Datos que recibe del backend
 
-- Token de sesión propio (JWT), el usuario, sus roles y sus permisos efectivos (la unión de los permisos de todos sus roles)
+- Token de sesión propio (JWT), el usuario (con su `foto_url` si tiene), sus roles y sus permisos efectivos (la unión de los permisos de todos sus roles)
 
 ## 6. Acciones del usuario
 

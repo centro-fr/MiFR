@@ -135,6 +135,19 @@ describe("UsuarioRepository", () => {
     expect(prisma.usuarios.findUnique).not.toHaveBeenCalled();
   });
 
+  it("actualizarFoto guarda la foto y devuelve el usuario con sus roles", async () => {
+    const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+    const actualizado = { id_usuario: 1, foto_url: foto, roles: [] };
+    prisma.usuarios.update.mockResolvedValue(actualizado);
+
+    await expect(repositorio.actualizarFoto(1, foto)).resolves.toEqual(actualizado);
+    expect(prisma.usuarios.update).toHaveBeenCalledWith({
+      where: { id_usuario: 1 },
+      data: { foto_url: foto },
+      ...CON_ROLES,
+    });
+  });
+
   it("contarPropietariasActivas cuenta usuarios ACTIVOS con el rol PROPIETARIA", async () => {
     prisma.usuarios.count.mockResolvedValue(2);
 

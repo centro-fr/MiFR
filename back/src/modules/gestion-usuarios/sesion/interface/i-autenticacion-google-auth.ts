@@ -3,6 +3,8 @@ export interface DatosGoogle {
   email: string;
   nombre?: string;
   apellido?: string;
+  // Foto de perfil de Google. Es opcional: si falta, la sesión conserva la última guardada.
+  fotoUrl?: string;
 }
 
 // Puerto requerido por el módulo (ball-and-socket "IAutenticacionGoogleAuth" en la vista arquitectónica):

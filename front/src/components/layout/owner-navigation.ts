@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Banknote,
   BarChart3,
   BookOpen,
@@ -53,8 +54,9 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
-// Secciones de la navegación según diseño (ALUMNOS, CLASES, OTROS)
+// Secciones de la navegación según diseño (ALUMNOS, COBROS, CLASES, OTROS)
 const SECCION_ALUMNOS = "Alumnos";
+const SECCION_COBROS = "Cobros";
 const SECCION_CLASES = "Clases";
 const SECCION_CENTRO = "Otros";
 
@@ -76,13 +78,27 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     descripcion: "Detección y seguimiento de alumnos ausentes.",
   },
   {
-    etiqueta: "Cobros y Cuotas",
-    icono: Banknote,
-    seccion: SECCION_ALUMNOS,
-    to: "/app/pagos",
-    contador: "TRANSFERENCIAS_PENDIENTES",
+    etiqueta: "Cuotas",
+    icono: CreditCard,
+    seccion: SECCION_COBROS,
+    to: "/app/pagos/cuotas",
     subrutasDe: "/app/pagos",
-    descripcion: "Quién debe, qué transferencias faltan verificar y cuánto efectivo te tienen que rendir.",
+    descripcion: "Estado de cuota de los alumnos y registro de cobros.",
+  },
+  {
+    etiqueta: "Transferencias por verificar",
+    icono: ArrowLeftRight,
+    seccion: SECCION_COBROS,
+    to: "/app/pagos/transferencias",
+    contador: "TRANSFERENCIAS_PENDIENTES",
+    descripcion: "Transferencias informadas pendientes de aprobación o rechazo.",
+  },
+  {
+    etiqueta: "Efectivo a rendir",
+    icono: Banknote,
+    seccion: SECCION_COBROS,
+    to: "/app/pagos/efectivo",
+    descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
   { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
@@ -174,6 +190,7 @@ const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to"
 export function rolesConAcceso(ruta: string): RoleCode[] {
   if (ruta === "/app/notificaciones") return ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
   if (ruta === "/app/alumnos") return ["PROPIETARIA", "PROFESORA"];
+  if (ruta === "/app/pagos") return ["PROPIETARIA"];
   return (Object.keys(MENU_POR_ROL) as RoleCode[]).filter(
     (rol) => MENU_POR_ROL[rol].some((item) => ofreceLaRuta(item, ruta)) || GRUPO_DEL_ROL[rol].to === ruta,
   );

@@ -81,6 +81,7 @@ package "IDENTIDAD Y ACCESO" {
       telefono : VARCHAR(20)
     * fecha_nacimiento : DATE
       direccion : VARCHAR(120)
+      foto_url : VARCHAR(500) <color:#6B7280><size:11>foto de perfil de Google; NULL si no tiene</size></color>
     * estado : ENUM <color:#000000><<ACTIVO|INACTIVO>></color>
     * fecha_alta : TIMESTAMP
     * fecha_actualizacion : TIMESTAMP

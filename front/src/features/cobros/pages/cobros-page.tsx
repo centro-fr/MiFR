@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Banknote,
   ChevronDown,
@@ -28,7 +28,6 @@ import {
 } from "@/features/cobros/components/modal-registrar-cobro";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectivo-a-rendir";
-import { useEfectivoPendiente } from "@/features/cobros/hooks/use-rendiciones";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { BarraFiltros } from "@/features/transferencias/components/barra-filtros";
@@ -106,10 +105,19 @@ interface PanelDeCobrosProps {
 }
 
 function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const tabActiva =
-    !soloACargo && (tabParam === "transferencias" || tabParam === "efectivo") ? tabParam : "cuotas";
+  const seccionDeRuta = pathname.endsWith("/transferencias")
+    ? "transferencias"
+    : pathname.endsWith("/efectivo")
+      ? "efectivo"
+      : pathname.endsWith("/cuotas")
+        ? "cuotas"
+        : null;
+  const tabActiva = !soloACargo
+    ? (seccionDeRuta ?? (tabParam === "transferencias" || tabParam === "efectivo" ? tabParam : "cuotas"))
+    : "cuotas";
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroPlan, setFiltroPlan] = useState<string>("TODOS");
@@ -192,9 +200,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     [transferenciasPendientes, filtrosTransferencias]
   );
   const limpiarFiltrosTransferencias = () => setFiltrosTransferencias(FILTROS_INICIALES);
-
-  // Consulta de efectivo a rendir pendiente (solo propietaria)
-  const { data: efectivoData } = useEfectivoPendiente(undefined, { enabled: !soloACargo });
 
   // Consulta de alumnos activos con su inscripción
   const {
@@ -350,10 +355,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     void recargarAlumnos();
   }
 
-  function cambiarTab(nuevaTab: "cuotas" | "transferencias" | "efectivo") {
-    setSearchParams({ tab: nuevaTab });
-  }
-
   const handleAprobarTransferencia = (
     transferencia: Transferencia,
     confirmarMontoDistinto: boolean
@@ -395,103 +396,37 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     );
   };
 
+  const tituloSeccion = soloACargo
+    ? "Cobros"
+    : tabActiva === "transferencias"
+      ? "Transferencias por verificar"
+      : tabActiva === "efectivo"
+        ? "Efectivo a rendir"
+        : "Cuotas";
+
+  const descripcionSeccion = soloACargo
+    ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
+    : tabActiva === "transferencias"
+      ? "Verificá en tu cuenta las transferencias informadas por los alumnos y aprobalas o rechazalas."
+      : tabActiva === "efectivo"
+        ? "Controlá el efectivo cobrado por las profesoras pendiente de entrega y el historial rendido."
+        : "Buscá el estado de cuota de los alumnos y registrá cobros en efectivo o por transferencia.";
+
   return (
     <div className="space-y-5 min-w-0">
       {/* ENCABEZADO */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Cobros
+            {tituloSeccion}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-            {soloACargo
-              ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
-              : "Busca los deudores, que trasnferencias faltan verificar y cuanto efectivo te tienen que rendir"}
+            {descripcionSeccion}
           </p>
         </div>
       </header>
 
-      {/* PESTAÑAS PRINCIPALES (solo propietaria) */}
-      {!soloACargo && (
-        <nav
-          aria-label="Secciones de cobros y cuotas"
-          className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pt-1 scrollbar-none"
-        >
-          {/* Cuotas */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("cuotas")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "cuotas"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Cuotas</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "cuotas"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {conteoVencidas + conteoPorVencer || alumnosCobro.length}
-            </span>
-          </button>
-
-          {/* Transferencias por verificar */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("transferencias")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "transferencias"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Transferencias por verificar</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "transferencias"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {transferenciasPendientes.length}
-            </span>
-          </button>
-
-          {/* Efectivo a rendir */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("efectivo")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "efectivo"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Efectivo a rendir</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "efectivo"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {efectivoData?.cantidad ?? 0}
-            </span>
-          </button>
-        </nav>
-      )}
-
-      {/* CONTENIDO SEGÚN TAB */}
+      {/* CONTENIDO SEGÚN SECCIÓN */}
 
       {/* TAB 1: CUOTAS */}
       {tabActiva === "cuotas" && (

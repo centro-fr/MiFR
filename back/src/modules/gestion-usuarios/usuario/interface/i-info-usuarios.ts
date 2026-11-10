@@ -6,6 +6,7 @@ export interface IInfoUsuarios {
   obtenerPorId(id: number): Promise<UsuarioConRoles>;
   buscarPorId(id: number): Promise<UsuarioConRoles | null>;
   identificarPorGoogle(googleId: string, email: string): Promise<UsuarioConRoles | null>;
+  actualizarFoto(id: number, fotoUrl: string): Promise<UsuarioConRoles>;
   buscarPorEmail(email: string): Promise<UsuarioConRoles | null>;
   buscarPorDni(dni: string): Promise<UsuarioConRoles | null>;
   listarPropietariasActivas(): Promise<UsuarioConRoles[]>;
