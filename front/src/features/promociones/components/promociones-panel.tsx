@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
-import { Gift, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { Input } from "@/components/ui/input";
 import {
   ListaPromociones,
   ListaPromocionesCargando,
@@ -16,65 +22,41 @@ import {
   useActualizarPromocion,
   useCrearPromocion,
   useDesactivarPromocion,
-  useReactivarPromocion,
   usePromociones,
 } from "@/features/promociones/hooks/use-promociones";
 import type { PromocionFormValues } from "@/features/promociones/schemas/promocion";
 import type { Plan } from "@/types/plan";
 import type { Promocion } from "@/types/promocion";
-import { cn } from "@/utils/cn";
 import { normalizarParaBuscar } from "@/utils/texto";
-
-type PestanaEstadoPromocion = "VIGENTES" | "BAJAS";
 
 export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const consulta = usePromociones();
   const crear = useCrearPromocion();
   const actualizar = useActualizarPromocion();
   const desactivar = useDesactivarPromocion();
-  const reactivar = useReactivarPromocion();
   const [busqueda, setBusqueda] = useState("");
-  const [pestana, setPestana] = useState<PestanaEstadoPromocion>("VIGENTES");
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [promocionEditando, setPromocionEditando] = useState<Promocion | null>(null);
-  const [promocionADesactivar, setPromocionADesactivar] = useState<Promocion | null>(null);
+  const [promocionAEliminar, setPromocionAEliminar] = useState<Promocion | null>(null);
 
-  const handleReactivar = (promocion: Promocion) => {
-    reactivar.mutate(promocion.id, {
-      onSuccess: () => {
-        toast.success(`Promoción "${promocion.nombre}" reincorporada a vigente.`);
-      },
-      onError: (err) => {
-        toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar la promoción."));
-      },
-    });
-  };
-
-  const promocionesOrdenadas = useMemo(
-    () => [...(consulta.data ?? [])].sort((a, b) => b.fechaDesde.localeCompare(a.fechaDesde)),
-    [consulta.data],
-  );
-
-  const promocionesVigentes = useMemo(
-    () => promocionesOrdenadas.filter((p) => p.estado === "ACTIVA" || p.estado === "PROGRAMADA"),
-    [promocionesOrdenadas],
-  );
-
-  const promocionesBajas = useMemo(
-    () => promocionesOrdenadas.filter((p) => p.estado === "DESACTIVADA" || !p.activo),
-    [promocionesOrdenadas],
+  // Las promociones no tienen historial: si la propietaria las borra o se acaba su vigencia, simplemente no aparecen.
+  const promocionesActivas = useMemo(
+    () =>
+      [...(consulta.data ?? [])]
+        .filter((p) => p.activo && p.estado !== "DESACTIVADA" && p.estado !== "VENCIDA")
+        .sort((a, b) => b.fechaDesde.localeCompare(a.fechaDesde)),
+    [consulta.data]
   );
 
   const promocionesFiltradas = useMemo(() => {
-    const base = pestana === "VIGENTES" ? promocionesVigentes : promocionesBajas;
     const q = normalizarParaBuscar(busqueda);
-    if (!q) return base;
-    return base.filter((p) =>
+    if (!q) return promocionesActivas;
+    return promocionesActivas.filter((p) =>
       [p.nombre, p.codigo, ...p.planes.map((pl) => pl.nombre)].some((v) =>
-        normalizarParaBuscar(v).includes(q),
-      ),
+        normalizarParaBuscar(v).includes(q)
+      )
     );
-  }, [promocionesVigentes, promocionesBajas, pestana, busqueda]);
+  }, [promocionesActivas, busqueda]);
 
   const hayFiltros = busqueda.trim().length > 0;
 
@@ -112,55 +94,6 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       crear.mutate(cuerpo, opciones);
     }
   };
-
-  const cabeceraPestanasDesktop = (
-    <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-      <button
-        type="button"
-        onClick={() => setPestana("VIGENTES")}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-          pestana === "VIGENTES"
-            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
-        )}
-      >
-        <span>Vigentes</span>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-extrabold",
-            pestana === "VIGENTES"
-              ? "bg-primary text-white"
-              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-          )}
-        >
-          {promocionesVigentes.length}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setPestana("BAJAS")}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-          pestana === "BAJAS"
-            ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
-        )}
-      >
-        <span>Dados de baja</span>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-extrabold",
-            pestana === "BAJAS"
-              ? "bg-primary text-white"
-              : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-          )}
-        >
-          {promocionesBajas.length}
-        </span>
-      </button>
-    </div>
-  );
 
   return (
     <section className="space-y-6">
@@ -214,40 +147,6 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         </div>
       </section>
 
-      {/* Pestañas de estado para mobile */}
-      <div className="flex lg:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-        <button
-          type="button"
-          onClick={() => setPestana("VIGENTES")}
-          className={cn(
-            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-            pestana === "VIGENTES"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-          )}
-        >
-          Vigentes{" "}
-          <span className={cn(pestana === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
-            {promocionesVigentes.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setPestana("BAJAS")}
-          className={cn(
-            "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-            pestana === "BAJAS"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-          )}
-        >
-          Dados de baja{" "}
-          <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
-            {promocionesBajas.length}
-          </span>
-        </button>
-      </div>
-
       {consulta.isPending ? (
         <ListaPromocionesCargando />
       ) : consulta.isError ? (
@@ -257,23 +156,18 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         />
       ) : promocionesFiltradas.length === 0 ? (
         <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-          {cabeceraPestanasDesktop}
           <Card className="flex flex-col items-center gap-3 border-0 shadow-none px-5 py-14 text-center rounded-lg">
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
               {hayFiltros
                 ? "Sin resultados para tu búsqueda"
-                : pestana === "BAJAS"
-                  ? "No hay promociones dadas de baja"
-                  : "Todavía no hay promociones"}
+                : "Todavía no hay promociones"}
             </h2>
             <p className="max-w-md text-sm text-muted-foreground">
               {hayFiltros
                 ? "Probá ajustando el término de búsqueda para encontrar promociones."
-                : pestana === "BAJAS"
-                  ? "Las promociones que desactives aparecerán acá por si necesitás reincorporarlas."
-                  : "Creá una promoción temporal para aplicar descuentos a nuevas inscripciones."}
+                : "Creá una promoción para aplicar descuentos a nuevas inscripciones."}
             </p>
-            {!hayFiltros && pestana === "VIGENTES" && (
+            {!hayFiltros && (
               <Button
                 type="button"
                 onClick={abrirNueva}
@@ -287,11 +181,8 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       ) : (
         <ListaPromociones
           promociones={promocionesFiltradas}
-          cabecera={cabeceraPestanasDesktop}
           onEditar={abrirEdicion}
-          onDesactivar={setPromocionADesactivar}
-          onReactivar={handleReactivar}
-          reactivandoId={reactivar.isPending ? (reactivar.variables as string) : null}
+          onDesactivar={setPromocionAEliminar}
         />
       )}
 
@@ -312,27 +203,38 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         onSubmit={guardar}
       />
 
-      <Dialog open={promocionADesactivar !== null} onOpenChange={(open) => !open && setPromocionADesactivar(null)}>
+      <Dialog open={promocionAEliminar !== null} onOpenChange={(open) => !open && setPromocionAEliminar(null)}>
         <DialogContent className="rounded-3xl sm:max-w-md">
-          <DialogHeader><DialogTitle className="font-black">¿Desactivar promoción?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">La promoción dejará de aplicarse inmediatamente. ¿Confirmás?</p>
+          <DialogHeader>
+            <DialogTitle className="font-black text-xl">¿Eliminar promoción?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            La promoción <strong>{promocionAEliminar?.nombre}</strong> se eliminará y no se aplicará a nuevas inscripciones. ¿Confirmás?
+          </p>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setPromocionADesactivar(null)} className="rounded-xl font-bold">Cancelar</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPromocionAEliminar(null)}
+              className="rounded-xl font-bold"
+            >
+              Cancelar
+            </Button>
             <Button
               type="button"
               disabled={desactivar.isPending}
               onClick={() => {
-                if (!promocionADesactivar) return;
-                desactivar.mutate(promocionADesactivar.id, {
+                if (!promocionAEliminar) return;
+                desactivar.mutate(promocionAEliminar.id, {
                   onSuccess: () => {
-                    setPromocionADesactivar(null);
-                    toast.success("Promoción desactivada");
+                    setPromocionAEliminar(null);
+                    toast.success("Promoción eliminada");
                   },
                 });
               }}
               className="rounded-xl bg-rose-600 font-bold text-white hover:bg-rose-700"
             >
-              {desactivar.isPending ? "Desactivando..." : "Desactivar"}
+              {desactivar.isPending ? "Eliminando..." : "Eliminar"}
             </Button>
           </DialogFooter>
         </DialogContent>

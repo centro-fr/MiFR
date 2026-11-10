@@ -32,8 +32,6 @@ export function ListaPromociones({
   cabecera,
   onEditar,
   onDesactivar,
-  onReactivar,
-  reactivandoId,
 }: {
   promociones: Promocion[];
   cabecera?: ReactNode;
@@ -76,17 +74,14 @@ export function ListaPromociones({
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {promociones.map((promocion) => {
-              const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
+              const editable = promocion.activo && promocion.estado !== "VENCIDA";
               const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
               const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
               return (
                 <tr
                   key={promocion.id}
-                  className={cn(
-                    "transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
-                    !editable && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
-                  )}
+                  className="transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
                 >
                   <td className="px-6 py-3.5">
                     <h2 className="font-bold text-sm text-slate-900 dark:text-white">
@@ -122,8 +117,8 @@ export function ListaPromociones({
                   </td>
 
                   <td className="px-6 py-3.5 text-right">
-                    {editable ? (
-                      <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
+                      {editable && (
                         <Button
                           type="button"
                           variant="outline"
@@ -132,29 +127,16 @@ export function ListaPromociones({
                         >
                           Editar
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => onDesactivar(promocion)}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Desactivar
-                        </Button>
-                      </div>
-                    ) : onReactivar ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={reactivandoId === promocion.id}
-                          onClick={() => onReactivar(promocion)}
-                          className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                        >
-                          Reincorporar
-                          <span className="sr-only"> {promocion.nombre}</span>
-                        </Button>
-                      </div>
-                    ) : null}
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onDesactivar(promocion)}
+                        className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -163,32 +145,26 @@ export function ListaPromociones({
         </table>
       </div>
 
-      {/* Vista Mobile: Filas agrupadas como en Alumnos - Listado */}
-      <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+      {/* Vista Mobile: Cards apiladas */}
+      <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800/60">
         {promociones.map((promocion) => {
-          const editable = promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA";
+          const editable = promocion.activo && promocion.estado !== "VENCIDA";
           const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
           const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
           return (
             <div
               key={promocion.id}
-              className={cn(
-                "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5",
-                !editable && "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
-              )}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
                     {promocion.nombre}
                   </span>
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                    ({promocion.codigo})
-                  </span>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold capitalize",
+                      "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold capitalize",
                       ESTADOS[promocion.estado],
                     )}
                   >
@@ -196,42 +172,32 @@ export function ListaPromociones({
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  {descuento(promocion)} · {nombresPlanes} · {vigencia}
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{promocion.codigo}</span> · {descuento(promocion)} · {nombresPlanes}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {vigencia}
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                {editable ? (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onEditar(promocion)}
-                      className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onDesactivar(promocion)}
-                      className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                    >
-                      Desactivar
-                    </Button>
-                  </>
-                ) : onReactivar ? (
+              <div className="flex items-center gap-2 shrink-0">
+                {editable && (
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={reactivandoId === promocion.id}
-                    onClick={() => onReactivar(promocion)}
-                    className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                    onClick={() => onEditar(promocion)}
+                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                   >
-                    Reincorporar
-                    <span className="sr-only"> {promocion.nombre}</span>
+                    Editar
                   </Button>
-                ) : null}
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onDesactivar(promocion)}
+                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                >
+                  Eliminar
+                </Button>
               </div>
             </div>
           );
@@ -243,5 +209,5 @@ export function ListaPromociones({
 
 /** Mientras cargan: skeleton de filas de tabla como en Alumnos - Listado. */
 export function ListaPromocionesCargando() {
-  return <TablaSkeleton ariaLabel="Cargando promociones" cantidadPestanas={2} filas={5} />;
+  return <TablaSkeleton ariaLabel="Cargando promociones" filas={5} />;
 }

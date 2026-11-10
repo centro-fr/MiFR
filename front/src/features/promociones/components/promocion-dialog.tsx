@@ -164,7 +164,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
             {/* Planes y actividades asociados con 'Todas las actividades' */}
             <Campo label="Planes asociados" error={formulario.formState.errors.idsPlanes?.message}>
               <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-2">
-                <label className="sm:col-span-2 flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-primary/20 bg-pink-50/50 p-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-pink-100/60 dark:border-primary/30 dark:bg-primary/10 dark:text-white dark:hover:bg-primary/20 select-none">
+                <label className="sm:col-span-2 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 select-none">
                   <input
                     type="checkbox"
                     checked={todosSeleccionados}
