@@ -26,8 +26,10 @@ import {
   type DatosAlumnoCobro,
   type DatosInscripcionCobro,
 } from "@/features/cobros/components/modal-registrar-cobro";
+import type { FormaDeCobro } from "@/features/cobros/components/campos-cobro";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectivo-a-rendir";
+import { PanelListadoCobros } from "@/features/cobros/components/panel-listado-cobros";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { BarraFiltros } from "@/features/transferencias/components/barra-filtros";
@@ -112,11 +114,16 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     ? "transferencias"
     : pathname.endsWith("/efectivo")
       ? "efectivo"
-      : pathname.endsWith("/cuotas")
-        ? "cuotas"
-        : null;
+      : pathname.endsWith("/listado")
+        ? "listado"
+        : pathname.endsWith("/cuotas")
+          ? "cuotas"
+          : null;
   const tabActiva = !soloACargo
-    ? (seccionDeRuta ?? (tabParam === "transferencias" || tabParam === "efectivo" ? tabParam : "cuotas"))
+    ? (seccionDeRuta ??
+        (tabParam === "transferencias" || tabParam === "efectivo" || tabParam === "listado"
+          ? tabParam
+          : "cuotas"))
     : "cuotas";
 
   const [busqueda, setBusqueda] = useState("");
@@ -129,6 +136,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<{
     alumno: DatosAlumnoCobro;
     inscripcion: DatosInscripcionCobro;
+    forma: FormaDeCobro;
   } | null>(null);
   const [comprobanteId, setComprobanteId] = useState<number | null>(null);
 
@@ -331,7 +339,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     setFiltroCuota("TODOS");
   };
 
-  function abrirCobro(alumno: (typeof alumnosCobro)[number]) {
+  function abrirCobro(alumno: (typeof alumnosCobro)[number], forma: FormaDeCobro) {
     setAlumnoSeleccionado({
       alumno: {
         id_alumno: alumno.id_alumno,
@@ -346,6 +354,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         precio_vigente: alumno.precio_vigente,
         situacion_cuota: alumno.situacion_cuota,
       },
+      forma,
     });
   }
 
@@ -398,19 +407,23 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
   const tituloSeccion = soloACargo
     ? "Cobros"
-    : tabActiva === "transferencias"
-      ? "Transferencias por verificar"
-      : tabActiva === "efectivo"
-        ? "Efectivo a rendir"
-        : "Cuotas";
+    : tabActiva === "listado"
+      ? "Historial de cobros"
+      : tabActiva === "transferencias"
+        ? "Transferencias por verificar"
+        : tabActiva === "efectivo"
+          ? "Efectivo a rendir"
+          : "Cuotas";
 
   const descripcionSeccion = soloACargo
     ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
-    : tabActiva === "transferencias"
-      ? "Verificá en tu cuenta las transferencias informadas por los alumnos y aprobalas o rechazalas."
-      : tabActiva === "efectivo"
-        ? "Controlá el efectivo cobrado por las profesoras pendiente de entrega y el historial rendido."
-        : "Buscá el estado de cuota de los alumnos y registrá cobros en efectivo o por transferencia.";
+    : tabActiva === "listado"
+      ? "Consultá los cobros confirmados, filtrá por forma de pago o profesor/a y descargá su comprobante."
+      : tabActiva === "transferencias"
+        ? "Verificá en tu cuenta las transferencias informadas por los alumnos y aprobalas o rechazalas."
+        : tabActiva === "efectivo"
+          ? "Controlá el efectivo cobrado por las profesoras pendiente de entrega y el historial rendido."
+          : "Buscá el estado de cuota de los alumnos y registrá cobros en efectivo o por transferencia.";
 
   return (
     <div className="space-y-5 min-w-0">
@@ -735,17 +748,28 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                                 {formatearPrecio(alumno.precio_vigente)}
                               </td>
 
-                              {/* Acción: Registrar cobro */}
+                              {/* Acciones: Cobrar Efectivo y Cobrar Transferencia */}
                               <td className="px-6 py-3.5 text-right">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => abrirCobro(alumno)}
-                                  aria-label={`Cobrar cuota de ${nombreCompleto}`}
-                                  className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                                >
-                                  Registrar cobro
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => abrirCobro(alumno, "EFECTIVO")}
+                                    aria-label={`Cobrar Efectivo de ${nombreCompleto}`}
+                                    className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                  >
+                                    Cobrar Efectivo
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => abrirCobro(alumno, "TRANSFERENCIA")}
+                                    aria-label={`Cobrar Transferencia de ${nombreCompleto}`}
+                                    className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                  >
+                                    Cobrar Transferencia
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -766,7 +790,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                       return (
                         <div
                           key={alumno.id_alumno}
-                          className="flex items-center justify-between gap-3 px-4 py-3.5"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
@@ -786,15 +810,26 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                             </div>
                           </div>
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => abrirCobro(alumno)}
-                            aria-label={`Cobrar cuota de ${nombreCompleto}`}
-                            className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
-                            Registrar cobro
-                          </Button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => abrirCobro(alumno, "EFECTIVO")}
+                              aria-label={`Cobrar Efectivo de ${nombreCompleto}`}
+                              className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Cobrar Efectivo
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => abrirCobro(alumno, "TRANSFERENCIA")}
+                              aria-label={`Cobrar Transferencia de ${nombreCompleto}`}
+                              className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Cobrar Transferencia
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1043,6 +1078,9 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         </div>
       )}
 
+      {/* TAB 0: LISTADO DE COBROS */}
+      {tabActiva === "listado" && <PanelListadoCobros onVerComprobante={(id) => setComprobanteId(id)} />}
+
       {/* TAB 3: EFECTIVO A RENDIR */}
       {tabActiva === "efectivo" && <PanelEfectivoARendir />}
 
@@ -1053,6 +1091,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           onClose={() => setAlumnoSeleccionado(null)}
           alumno={alumnoSeleccionado.alumno}
           inscripcion={alumnoSeleccionado.inscripcion}
+          formaInicial={alumnoSeleccionado.forma}
           cotizacion={cotizacionSeleccionada}
           plan={{
             id: String(alumnoSeleccionado.inscripcion.id_plan),

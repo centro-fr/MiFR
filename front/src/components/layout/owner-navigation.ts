@@ -17,7 +17,6 @@ import {
   Trophy,
   UserRound,
   Users,
-  UserX,
 } from "lucide-react";
 import type { RoleCode } from "@/types/auth";
 
@@ -54,10 +53,11 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
-// Secciones de la navegación según diseño (ALUMNOS, COBROS, CLASES, OTROS)
+// Secciones de la navegación según diseño (ALUMNOS, COBROS, CENTRO, REPORTES, OTROS)
 const SECCION_ALUMNOS = "Alumnos";
 const SECCION_COBROS = "Cobros";
-const SECCION_CLASES = "Clases";
+const SECCION_CLASES = "Centro";
+const SECCION_REPORTES = "Reportes";
 const SECCION_CENTRO = "Otros";
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
@@ -71,25 +71,18 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     subrutasDe: SUBRUTAS_DE_ALUMNOS,
   },
   {
-    etiqueta: "Ausentes",
-    icono: UserX,
-    seccion: SECCION_ALUMNOS,
-    to: "/app/ausentes",
-    descripcion: "Detección y seguimiento de alumnos ausentes.",
-  },
-  {
-    etiqueta: "Cuotas",
-    icono: CreditCard,
+    etiqueta: "Historial",
+    icono: Receipt,
     seccion: SECCION_COBROS,
-    to: "/app/pagos/cuotas",
-    subrutasDe: "/app/pagos",
-    descripcion: "Estado de cuota de los alumnos y registro de cobros.",
+    to: "/app/cobros/listado",
+    subrutasDe: "/app/cobros",
+    descripcion: "Historial de cobros confirmados y descarga de comprobantes.",
   },
   {
     etiqueta: "Transferencias por verificar",
     icono: ArrowLeftRight,
     seccion: SECCION_COBROS,
-    to: "/app/pagos/transferencias",
+    to: "/app/cobros/transferencias",
     contador: "TRANSFERENCIAS_PENDIENTES",
     descripcion: "Transferencias informadas pendientes de aprobación o rechazo.",
   },
@@ -97,15 +90,19 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     etiqueta: "Efectivo a rendir",
     icono: Banknote,
     seccion: SECCION_COBROS,
-    to: "/app/pagos/efectivo",
+    to: "/app/cobros/efectivo",
     descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
-  { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
+  { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
   { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
   { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
+  { etiqueta: "Inscripciones", icono: BarChart3, seccion: SECCION_REPORTES, to: "/app/reportes/inscripciones", subrutasDe: "/app/reportes" },
+  { etiqueta: "Planes", icono: Tag, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
+  { etiqueta: "Ocupación", icono: CalendarClock, seccion: SECCION_REPORTES, to: "/app/reportes/ocupacion" },
+  { etiqueta: "Asistencia", icono: BookOpen, seccion: SECCION_REPORTES, to: "/app/reportes/asistencia" },
+  { etiqueta: "Ranking", icono: Trophy, seccion: SECCION_REPORTES, to: "/app/reportes/ranking" },
   { etiqueta: "Honorarios", icono: Receipt, seccion: SECCION_CENTRO, to: "/app/honorarios" },
-  { etiqueta: "Reportes", icono: BarChart3, seccion: SECCION_CENTRO, to: "/app/reportes" },
 ];
 
 const PERFIL: ItemMenu = { etiqueta: "Perfil", icono: UserRound, to: "/app/perfil" };
@@ -167,6 +164,7 @@ function ofreceLaPantalla(item: ItemMenu, ruta: string): boolean {
  * ninguno (Notificaciones): en esas, el panel lo decide desde cuál se llegó.
  */
 export function panelExclusivoDeLaRuta(ruta: string): Panel | null {
+  if (ruta.startsWith("/app/cobros/")) return "PROPIETARIA";
   const paneles = PANELES.filter((panel) => MENU_POR_ROL[panel].some((item) => ofreceLaPantalla(item, ruta)));
   return paneles.length === 1 ? paneles[0] : null;
 }
@@ -190,7 +188,10 @@ const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to"
 export function rolesConAcceso(ruta: string): RoleCode[] {
   if (ruta === "/app/notificaciones") return ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
   if (ruta === "/app/alumnos") return ["PROPIETARIA", "PROFESORA"];
+  if (ruta === "/app/cobros") return ["PROPIETARIA", "PROFESORA"];
   if (ruta === "/app/pagos") return ["PROPIETARIA"];
+  if (ruta === "/app/ausentes") return ["PROPIETARIA"];
+  if (ruta === "/app/reportes") return ["PROPIETARIA"];
   return (Object.keys(MENU_POR_ROL) as RoleCode[]).filter(
     (rol) => MENU_POR_ROL[rol].some((item) => ofreceLaRuta(item, ruta)) || GRUPO_DEL_ROL[rol].to === ruta,
   );

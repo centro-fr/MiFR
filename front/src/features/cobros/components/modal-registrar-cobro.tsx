@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, Banknote, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { SituacionCuota } from "@/features/alumnos/schemas/alumno";
 import {
   SelectorFormaDeCobro,
@@ -15,6 +14,7 @@ import { calcularCotizacionCobro, type CotizacionCobro } from "@/features/cobros
 import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 
 export interface DatosAlumnoCobro {
   id_alumno: number;
@@ -42,32 +42,30 @@ interface Props {
   errorCotizacion?: boolean;
   promociones?: Promocion[];
   plan?: Pick<Plan, "id" | "nombre">;
+  /** Forma de cobro preseleccionada al abrir desde un botón puntual ("Cobrar Efectivo" o "Cobrar Transferencia"). */
+  formaInicial?: FormaDeCobro;
+  /** Si se indica la forma desde el botón de la tabla, oculta el selector de forma dentro del modal. */
+  ocultarSelectorForma?: boolean;
   /** Cobro en efectivo registrado: con el id del pago, para mostrar su comprobante. */
   onExito: (idPago: number) => void;
   /** Transferencia informada: queda pendiente de verificación, no tiene comprobante todavía. */
   onTransferenciaInformada?: () => void;
 }
 
-// La propietaria y la profesora cobran de las dos formas (decisión de la dueña): el efectivo queda
-// confirmado en el acto y la transferencia, pendiente hasta verificarla en el extracto.
 const FORMAS: FormaDeCobro[] = ["EFECTIVO", "TRANSFERENCIA"];
 
 const ETIQUETAS: EtiquetasFormaDeCobro = {
-  EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
-  TRANSFERENCIA: { titulo: "Transferencia", detalle: "Queda pendiente hasta verificarla en el extracto." },
+  EFECTIVO: { titulo: "Efectivo" },
+  TRANSFERENCIA: { titulo: "Transferencia" },
 };
 
-const ENCABEZADO: Record<FormaDeCobro, { titulo: string; descripcion: string; Icono: typeof Banknote }> = {
-  EFECTIVO: {
-    titulo: "Registrar cobro en efectivo",
-    descripcion: "Al confirmarlo, la cuota queda paga y se emite el comprobante.",
-    Icono: Banknote,
-  },
-  TRANSFERENCIA: {
-    titulo: "Informar transferencia",
-    descripcion: "Registrá la transferencia que te avisó el alumno.",
-    Icono: ArrowLeftRight,
-  },
+const TEXTO_ESTADO_CUOTA: Record<SituacionCuota["estado"], string> = {
+  AL_DIA: "Al día",
+  POR_VENCER: "Por vencer",
+  VENCIDA: "Vencida",
+  CLASE_SUELTA_VIGENTE: "Clase suelta vigente",
+  CLASE_SUELTA_VENCIDA: "Clase suelta vencida",
+  PENDIENTE_DE_PAGO: "Pendiente de pago",
 };
 
 function ResumenCobro({ alumno, inscripcion }: Pick<Props, "alumno" | "inscripcion">) {
@@ -75,37 +73,37 @@ function ResumenCobro({ alumno, inscripcion }: Pick<Props, "alumno" | "inscripci
   const precioLista = cotizacion?.precio_lista ?? inscripcion.precio_vigente;
   const monto = cotizacion?.monto ?? inscripcion.precio_vigente;
   return (
-    <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 rounded-xl bg-slate-50 p-3 text-sm dark:bg-white/5">
-      <dt className="text-muted-foreground">Alumno</dt>
-      <dd className="text-right font-bold">
-        {alumno.nombre} {alumno.apellido}
-        <span className="block text-xs font-normal text-muted-foreground">
-          {alumno.dni ? `DNI ${alumno.dni}` : "Sin DNI"} · ALU-{String(alumno.id_alumno).padStart(3, "0")}
-        </span>
-      </dd>
-      <dt className="text-muted-foreground">Plan</dt>
-      <dd className="text-right font-bold">{inscripcion.nombre_plan}</dd>
-      <dt className="text-muted-foreground">Precio de lista</dt>
-      <dd className="text-right font-bold">{formatearPrecio(precioLista)}</dd>
-      {cotizacion && cotizacion.descuento > 0 && (
-        <>
-          <dt className="text-muted-foreground">Promoción</dt>
-          <dd className="text-right font-semibold text-emerald-700 dark:text-emerald-300">
-            {cotizacion.promocion?.nombre ?? "Descuento"} · −{formatearPrecio(cotizacion.descuento)}
-          </dd>
-        </>
-      )}
-      <dt className="text-muted-foreground">Total a cobrar</dt>
-      <dd className="text-right text-lg font-extrabold text-primary">{formatearPrecio(monto)}</dd>
-      {inscripcion.situacion_cuota && (
-        <>
-          <dt className="text-muted-foreground">Cuota</dt>
-          <dd className="flex justify-end">
-            <BadgeSituacionCuota situacion={inscripcion.situacion_cuota} />
-          </dd>
-        </>
-      )}
-    </dl>
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Detalle cobro</span>
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 text-sm dark:border-white/10 dark:bg-white/5">
+        <dt className="text-muted-foreground">Alumno</dt>
+        <dd className="text-right font-medium text-slate-900 dark:text-slate-100">
+          {alumno.nombre} {alumno.apellido}
+        </dd>
+        <dt className="text-muted-foreground">Plan</dt>
+        <dd className="text-right font-medium text-slate-900 dark:text-slate-100">{inscripcion.nombre_plan}</dd>
+        <dt className="text-muted-foreground">Precio de lista</dt>
+        <dd className="text-right font-medium text-slate-900 dark:text-slate-100">{formatearPrecio(precioLista)}</dd>
+        {cotizacion && cotizacion.descuento > 0 && (
+          <>
+            <dt className="text-muted-foreground">Descuento</dt>
+            <dd className="text-right font-medium text-slate-900 dark:text-slate-100">
+              {cotizacion.promocion?.nombre ?? "Descuento"} · −{formatearPrecio(cotizacion.descuento)}
+            </dd>
+          </>
+        )}
+        <dt className="text-muted-foreground">Total a cobrar</dt>
+        <dd className="text-right font-bold text-slate-900 dark:text-white">{formatearPrecio(monto)}</dd>
+        {inscripcion.situacion_cuota && (
+          <>
+            <dt className="text-muted-foreground">Cuota</dt>
+            <dd className="text-right font-medium text-slate-700 dark:text-slate-300">
+              {TEXTO_ESTADO_CUOTA[inscripcion.situacion_cuota.estado]}
+            </dd>
+          </>
+        )}
+      </dl>
+    </div>
   );
 }
 
@@ -121,7 +119,7 @@ function SelectorPromocion({
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor="promocion-cobro" className="text-sm font-bold text-slate-800 dark:text-slate-200">
-        Promoción
+        Descuento
       </label>
       <Select value={seleccionada} onValueChange={onChange}>
         <SelectTrigger id="promocion-cobro" className="h-11 rounded-xl border-slate-200 dark:border-white/15">
@@ -136,16 +134,13 @@ function SelectorPromocion({
           ))}
         </SelectContent>
       </Select>
-      {promociones.length === 0 && (
-        <p className="text-xs text-muted-foreground">No hay promociones activas para este plan.</p>
-      )}
     </div>
   );
 }
 
 /**
- * Cobro de la cuota desde Estado de cuotas (US-15) o Cobros de la profesora: en efectivo o por
- * transferencia, con el mismo diseño que "Confirmar alta". Cada forma tiene su propio formulario.
+ * Cobro de la cuota desde el listado de alumnos o cobros de la profesora: en efectivo o por
+ * transferencia.
  */
 export function ModalRegistrarCobro({
   abierto,
@@ -156,10 +151,17 @@ export function ModalRegistrarCobro({
   cargandoCotizacion = false,
   errorCotizacion = false,
   promociones = [],
+  formaInicial = "EFECTIVO",
+  ocultarSelectorForma = false,
   onExito,
   onTransferenciaInformada,
 }: Props) {
-  const [forma, setForma] = useState<FormaDeCobro>("EFECTIVO");
+  const { hasRole } = usePermissions();
+  const esPropietaria = hasRole("PROPIETARIA");
+  const [forma, setForma] = useState<FormaDeCobro>(formaInicial);
+  useEffect(() => {
+    setForma(formaInicial);
+  }, [formaInicial]);
   const [monto, setMonto] = useState(String(inscripcion.precio_vigente));
   const [promocionSeleccionada, setPromocionSeleccionada] = useState("SIN_PROMOCION");
   // La cotización llega de forma asíncrona y debe sincronizar el selector local del formulario.
@@ -184,7 +186,17 @@ export function ModalRegistrarCobro({
   }, [cotizacionActual.monto]);
 
   const inscripcionConCotizacion = { ...inscripcion, cotizacion: cotizacionActual };
-  const { titulo, descripcion, Icono } = ENCABEZADO[forma];
+  const titulo =
+    forma === "EFECTIVO"
+      ? "Registrar cobro en efectivo"
+      : esPropietaria
+        ? "Registrar cobro por transferencia"
+        : "Informar transferencia";
+  const descripcion =
+    forma === "EFECTIVO" || esPropietaria
+      ? "Al confirmarlo, la cuota queda paga y se emite el comprobante."
+      : "Registrá la transferencia que te avisó el alumno.";
+
   const datosDelFormulario = {
     idInscripcion: inscripcion.id_inscripcion,
     precioVigente: cotizacionActual.monto,
@@ -193,30 +205,26 @@ export function ModalRegistrarCobro({
     onMontoChange: setMonto,
     onCancelar: onClose,
   };
+  const nombreCompletoAlumno = `${alumno.nombre} ${alumno.apellido}`.trim();
 
   return (
-    <>
-      <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <span
-              aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-primary/15 dark:text-pink-300"
-            >
-              <Icono className="size-5" />
-            </span>
-            <DialogTitle className="text-base font-extrabold text-dark dark:text-white">{titulo}</DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
-          </div>
+    <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
+        </DialogHeader>
 
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
           <ResumenCobro alumno={alumno} inscripcion={inscripcionConCotizacion} />
           <SelectorPromocion
             promociones={promociones}
             seleccionada={promocionSeleccionada}
             onChange={setPromocionSeleccionada}
           />
-          <SelectorFormaDeCobro formas={FORMAS} valor={forma} onChange={setForma} leyenda="¿Cómo abonó la cuota?" etiquetas={ETIQUETAS} />
+          {!ocultarSelectorForma && (
+            <SelectorFormaDeCobro formas={FORMAS} valor={forma} onChange={setForma} leyenda="Tipo Pago" etiquetas={ETIQUETAS} />
+          )}
 
           {cargandoCotizacion ? (
             <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 p-4 text-sm text-muted-foreground dark:bg-white/5">
@@ -228,13 +236,17 @@ export function ModalRegistrarCobro({
               No se pudo obtener el monto vigente. Cerrá el formulario y volvé a intentarlo.
             </p>
           ) : forma === "EFECTIVO" ? (
-              <FormularioCobroEfectivo {...datosDelFormulario} onExito={onExito} />
-            ) : (
-              <FormularioTransferenciaCobro {...datosDelFormulario} onInformada={onTransferenciaInformada ?? onClose} />
-            )}
+            <FormularioCobroEfectivo {...datosDelFormulario} onExito={onExito} />
+          ) : (
+            <FormularioTransferenciaCobro
+              {...datosDelFormulario}
+              titularInicial={nombreCompletoAlumno}
+              onExito={onExito}
+              onInformada={onTransferenciaInformada ?? onClose}
+            />
+          )}
         </div>
       </DialogContent>
-      </Dialog>
-    </>
+    </Dialog>
   );
 }

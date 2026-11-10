@@ -165,7 +165,6 @@ describe("Páginas de Reportes (Estandarización)", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Reportes" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Inscripciones" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Inscripciones" })).toBeInTheDocument();
     const resumen = screen.getByRole("region", { name: "Resumen" });
     expect(within(resumen).getByText("Crecimiento en el año")).toBeInTheDocument();
     expect(within(resumen).getByText("Activos al cierre")).toBeInTheDocument();

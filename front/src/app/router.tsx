@@ -171,9 +171,8 @@ export const router = createBrowserRouter([
           { path: "ocupacion", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ocupacion-page"), "OcupacionReportePage") },
           // US-30: ranking de asistencia, en tabla. Los demás roles lo ven en su sección Ranking.
           { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-reporte-page"), "RankingReportePage") },
-          { path: "cobranza", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cobranza-page"), "CobranzaReportePage") },
-          // US-34: cuotas vencidas.
-          { path: "cuotas-vencidas", lazy: paginaPerezosa(() => import("@/features/reportes/pages/cuotas-vencidas-page"), "CuotasVencidasReportePage") },
+          { path: "cobranza", loader: redirigirA("/app/cobros/listado") },
+          { path: "cuotas-vencidas", loader: redirigirA("/app/cobros/cuotas") },
         ],
       },
       {
@@ -233,7 +232,7 @@ export const router = createBrowserRouter([
       {
         // Redirección de la ruta histórica de pendientes de alta hacia Transferencias por verificar
         path: "alumnos/pendientes",
-        loader: redirigirA("/app/pagos/transferencias"),
+        loader: redirigirA("/app/cobros/transferencias"),
       },
       {
         // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
@@ -263,26 +262,15 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Cobros (US-15 a US-19): Cuotas, Transferencias por verificar y Efectivo a rendir.
+        // Redirección de rutas históricas /app/pagos hacia /app/cobros.
         path: "pagos",
         element: guardiaDeSeccion("pagos"),
         children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
-          },
-          {
-            path: "cuotas",
-            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
-          },
-          {
-            path: "transferencias",
-            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
-          },
-          {
-            path: "efectivo",
-            lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage"),
-          },
+          { index: true, loader: redirigirA("/app/cobros/listado") },
+          { path: "listado", loader: redirigirA("/app/cobros/listado") },
+          { path: "cuotas", loader: redirigirA("/app/cobros/listado") },
+          { path: "transferencias", loader: redirigirA("/app/cobros/transferencias") },
+          { path: "efectivo", loader: redirigirA("/app/cobros/efectivo") },
         ],
       },
       {
@@ -332,11 +320,16 @@ export const router = createBrowserRouter([
         loader: redirigirA("/app/dashboard"),
       },
       {
-        // US-15: cobro en efectivo. Actor: Profesora (menú 'Cobros') con PAGOS_REGISTRAR.
+        // Cobros (US-15 a US-19): Listado, Cuotas, Transferencias por verificar y Efectivo a rendir (propietaria),
+        // o cobro de cuotas de alumnos a cargo (profesora).
         path: "cobros",
-        element: guardiaDeSeccion("cobros", "PAGOS_REGISTRAR"),
+        element: guardiaDeSeccion("cobros"),
         children: [
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "listado", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "cuotas", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "transferencias", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "efectivo", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
         ],
       },
       {

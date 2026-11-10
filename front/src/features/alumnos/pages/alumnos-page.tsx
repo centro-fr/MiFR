@@ -11,6 +11,9 @@ import {
   Users,
 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
+import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Button } from "@/components/ui/button";
@@ -18,17 +21,22 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
-import type { FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
+import { obtenerAlumno, type FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
+import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
 import { etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
 import { formatearDni } from "@/features/alumnos/utils/formato-ficha";
+import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
+import { ModalRegistrarCobro } from "@/features/cobros/components/modal-registrar-cobro";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
+import { listarAlumnosInactivos } from "@/features/inactivos/api/inactivos-api";
+import { generarEnlaceWhatsApp, obtenerContactoPrioritario } from "@/features/inactivos/utils/formato-inactivos";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { cn } from "@/utils/cn";
 
@@ -65,7 +73,7 @@ function useOpcionesDeFiltros() {
   );
 }
 
-function hayFiltrosActivos(busqueda: string, filtros: FiltrosDeLaPantalla, filtroCuota: string): boolean {
+function hayFiltrosActivos(busqueda: string, filtros: FiltrosDeLaPantalla, filtroCuota: string, soloContactar = false): boolean {
   return (
     busqueda.trim() !== "" ||
     filtros.id_plan !== "" ||
@@ -73,7 +81,8 @@ function hayFiltrosActivos(busqueda: string, filtros: FiltrosDeLaPantalla, filtr
     filtros.id_actividad !== "" ||
     filtros.incluir_bajas ||
     filtros.estado !== "TODOS" ||
-    filtroCuota !== ""
+    filtroCuota !== "" ||
+    soloContactar
   );
 }
 
@@ -183,11 +192,20 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [filtros, setFiltros] = useState<FiltrosDeLaPantalla>(FILTROS_INICIALES);
   const [filtroCuota, setFiltroCuota] = useState<string>("");
+  const [soloContactar, setSoloContactar] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [modalPreinscripcionAbierto, setModalPreinscripcionAbierto] = useState(false);
   const puedeCobrar = useFormasDePrimerPago().length > 0;
   const [idInscripcionACobrar, setIdInscripcionACobrar] = useState<number | null>(null);
   const terminarCobro = useCallback(() => setIdInscripcionACobrar(null), []);
+  const [idAlumnoACobrar, setIdAlumnoACobrar] = useState<number | null>(null);
+  const [comprobanteId, setComprobanteId] = useState<number | null>(null);
+
+  const { data: alumnoDetalleCobro } = useQuery({
+    queryKey: ["alumnos", "cobro-listado", idAlumnoACobrar],
+    queryFn: () => obtenerAlumno(idAlumnoACobrar!),
+    enabled: idAlumnoACobrar !== null,
+  });
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
@@ -195,8 +213,33 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   }, [busqueda]);
 
   const opciones = useOpcionesDeFiltros();
-  const filtrando = hayFiltrosActivos(busquedaDebounced, filtros, filtroCuota);
+  const filtrando = hayFiltrosActivos(busquedaDebounced, filtros, filtroCuota, soloContactar);
   const idProfesora = idProfesoraACargo ?? filtros.id_profesora;
+
+  const { data: paginaInactivos } = useQuery({
+    queryKey: ["inactivos", "alumnos-listado", idProfesora, filtros.id_plan],
+    queryFn: async () => {
+      try {
+        return await listarAlumnosInactivos({
+          incluir_ignorados: true,
+          limit: 50,
+          ...(idProfesora ? { id_profesora: Number(idProfesora) } : {}),
+          ...(filtros.id_plan ? { id_plan: Number(filtros.id_plan) } : {}),
+        });
+      } catch {
+        return { datos: [], total: 0, umbral: 3, limit: 50, offset: 0 };
+      }
+    },
+    staleTime: 60_000,
+  });
+
+  const inactivosPorAlumno = useMemo(() => {
+    const mapa = new Map<number, (typeof paginaInactivos extends undefined ? never : NonNullable<typeof paginaInactivos>["datos"][number])>();
+    for (const item of paginaInactivos?.datos ?? []) {
+      mapa.set(item.alumno.id_alumno, item);
+    }
+    return mapa;
+  }, [paginaInactivos]);
 
   // Consultas ligeras de conteo para los tabs de estado
   const consultaActivos = useAlumnos({
@@ -250,6 +293,46 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   const conteoPendientes = consultaPendientes.data?.total ?? (filtros.estado === "PENDIENTE" ? (respuesta?.total ?? 0) : 0);
   const conteoBajas = consultaBajas.data?.total ?? (filtros.estado === "BAJA" ? (respuesta?.total ?? 0) : 0);
 
+  const itemsContactar = useMemo((): AlumnoResumen[] => {
+    const porIdEnListado = new Map((respuesta?.items ?? []).map((item) => [item.id_alumno, item]));
+    const termino = busquedaDebounced.toLowerCase().trim();
+    return (paginaInactivos?.datos ?? [])
+      .filter((item) => item.inasistencias_consecutivas >= 3)
+      .map((item): AlumnoResumen => {
+        const existente = porIdEnListado.get(item.alumno.id_alumno);
+        const contacto = obtenerContactoPrioritario(item);
+        return {
+          id_alumno: item.alumno.id_alumno,
+          nombre_completo: `${item.alumno.nombre} ${item.alumno.apellido}`,
+          dni: existente?.dni ?? null,
+          telefono: contacto.telefono ?? existente?.telefono ?? null,
+          email: contacto.email ?? existente?.email ?? null,
+          inasistencias_consecutivas: item.inasistencias_consecutivas,
+          estado: "ACTIVO",
+          plan: item.plan.nombre,
+          profesora: `${item.profesora.nombre} ${item.profesora.apellido}`,
+          situacion_cuota: existente?.situacion_cuota ?? {
+            estado: item.estado_cuota,
+            fecha_vencimiento: null,
+            dias_restantes: null,
+            puede_asistir: true,
+            tiene_pago_pendiente: false,
+          },
+        };
+      })
+      .filter((item) => {
+        if (termino && !item.nombre_completo.toLowerCase().includes(termino) && !(item.dni ?? "").includes(termino)) {
+          return false;
+        }
+        if (filtroCuota && item.situacion_cuota?.estado !== filtroCuota) {
+          return false;
+        }
+        return true;
+      });
+  }, [paginaInactivos, respuesta?.items, busquedaDebounced, filtroCuota]);
+
+  const conteoContactar = itemsContactar.length;
+
   function alPreinscribir({ idInscripcion, cobrarAhora }: ResultadoPreinscripcion) {
     void consulta.refetch();
     if (cobrarAhora) setIdInscripcionACobrar(idInscripcion);
@@ -260,8 +343,14 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     setFiltros((anteriores) => ({ ...anteriores, [nombre]: valor }));
   }
 
-  function seleccionarTabEstado(estadoTab: "ACTIVO" | "PENDIENTE" | "BAJA" | "TODOS") {
+  function seleccionarTabEstado(estadoTab: "ACTIVO" | "PENDIENTE" | "BAJA" | "CONTACTAR" | "TODOS") {
     setPagina(0);
+    if (estadoTab === "CONTACTAR") {
+      setSoloContactar((prev) => !prev);
+      setFiltros((prev) => ({ ...prev, estado: "ACTIVO", incluir_bajas: false }));
+      return;
+    }
+    setSoloContactar(false);
     if (estadoTab === "BAJA") {
       setFiltros((prev) => ({ ...prev, estado: "BAJA", incluir_bajas: true }));
     } else if (estadoTab === "PENDIENTE") {
@@ -273,10 +362,13 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     }
   }
 
-  // Filtrado de cuota si se aplica
-  const itemsVisibles = filtroCuota && respuesta?.items
-    ? respuesta.items.filter((item) => item.situacion_cuota?.estado === filtroCuota)
-    : (respuesta?.items ?? []);
+  // Filtrado de cuota o pestaña Contactar si se aplica
+  const itemsBase = soloContactar
+    ? itemsContactar
+    : filtroCuota && respuesta?.items
+      ? respuesta.items.filter((item) => item.situacion_cuota?.estado === filtroCuota)
+      : (respuesta?.items ?? []);
+  const itemsVisibles = itemsBase;
 
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
 
@@ -448,10 +540,10 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
         <button
           type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+          onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
           className={cn(
             "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+            !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
@@ -459,7 +551,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           <span>Activos</span>
           <span
             className={cn(
-              filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+              !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                 ? "text-primary font-black"
                 : "text-slate-500"
             )}
@@ -472,7 +564,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
           className={cn(
             "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            filtros.estado === "PENDIENTE"
+            !soloContactar && filtros.estado === "PENDIENTE"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
@@ -480,7 +572,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           <span>Pendientes</span>
           <span
             className={cn(
-              filtros.estado === "PENDIENTE" ? "text-primary font-black" : "text-slate-500"
+              !soloContactar && filtros.estado === "PENDIENTE" ? "text-primary font-black" : "text-slate-500"
             )}
           >
             {conteoPendientes}
@@ -491,16 +583,31 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
           className={cn(
             "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            filtros.estado === "BAJA"
+            !soloContactar && filtros.estado === "BAJA"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
         >
           <span>Bajas</span>
           <span
-            className={cn(filtros.estado === "BAJA" ? "text-primary font-black" : "text-slate-500")}
+            className={cn(!soloContactar && filtros.estado === "BAJA" ? "text-primary font-black" : "text-slate-500")}
           >
             {conteoBajas}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => seleccionarTabEstado("CONTACTAR")}
+          className={cn(
+            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+            soloContactar
+              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+          )}
+        >
+          <span>Contactar</span>
+          <span className={cn(soloContactar ? "text-primary font-black" : "text-slate-500")}>
+            {conteoContactar}
           </span>
         </button>
       </div>
@@ -519,10 +626,10 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
             <button
               type="button"
-              onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+              onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
               )}
@@ -531,7 +638,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                  filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                  !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 )}
@@ -545,7 +652,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                filtros.estado === "PENDIENTE"
+                !soloContactar && filtros.estado === "PENDIENTE"
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
               )}
@@ -554,7 +661,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                  filtros.estado === "PENDIENTE"
+                  !soloContactar && filtros.estado === "PENDIENTE"
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 )}
@@ -568,7 +675,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                filtros.estado === "BAJA"
+                !soloContactar && filtros.estado === "BAJA"
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
               )}
@@ -577,12 +684,35 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                  filtros.estado === "BAJA"
+                  !soloContactar && filtros.estado === "BAJA"
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 )}
               >
                 {conteoBajas}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => seleccionarTabEstado("CONTACTAR")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                soloContactar
+                  ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+              )}
+            >
+              <span>Contactar</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                  soloContactar
+                    ? "bg-primary text-white"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                )}
+              >
+                {conteoContactar}
               </span>
             </button>
           </div>
@@ -609,6 +739,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   setBusqueda("");
                   setFiltros(FILTROS_INICIALES);
                   setFiltroCuota("");
+                  setSoloContactar(false);
                   setPagina(0);
                 }}
                 className="min-h-[40px] rounded-xl font-bold"
@@ -623,9 +754,18 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           {/* Vista Mobile: Lista agrupada limpia en tonos neutros igual que en Ausentes */}
           <div className="lg:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
             {itemsVisibles.map((alumno) => {
+              const faltasSeguidas =
+                alumno.inasistencias_consecutivas ??
+                inactivosPorAlumno.get(alumno.id_alumno)?.inasistencias_consecutivas ??
+                0;
               const baseSubtitulo = alumno.plan || (alumno.dni ? `DNI ${formatearDni(alumno.dni)}` : "Sin plan");
               const estadoCuotaMobile = alumno.situacion_cuota ? etiquetaCuota(alumno.situacion_cuota.estado) : null;
-              const subtitulo = [baseSubtitulo, estadoCuotaMobile].filter(Boolean).join(" · ");
+              const textoFaltasMobile = `${faltasSeguidas} faltas`;
+              const subtitulo = [baseSubtitulo, estadoCuotaMobile, textoFaltasMobile].filter(Boolean).join(" · ");
+              const cuotaCobrable =
+                alumno.situacion_cuota?.estado === "POR_VENCER" ||
+                alumno.situacion_cuota?.estado === "VENCIDA" ||
+                alumno.situacion_cuota?.estado === "CLASE_SUELTA_VENCIDA";
 
               return (
                 <Link
@@ -652,6 +792,21 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    {cuotaCobrable && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIdAlumnoACobrar(alumno.id_alumno);
+                        }}
+                        aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
+                        className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                      >
+                        Cobrar
+                      </Button>
+                    )}
                     <span className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200">
                       Ver ficha
                     </span>
@@ -667,10 +822,10 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
             <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <button
                 type="button"
-                onClick={() => seleccionarTabEstado(filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+                onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                  !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
                 )}
@@ -679,7 +834,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    filtros.estado === "ACTIVO" || filtros.estado === "TODOS"
+                    !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                       ? "bg-primary text-white"
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   )}
@@ -693,7 +848,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  filtros.estado === "PENDIENTE"
+                  !soloContactar && filtros.estado === "PENDIENTE"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
                 )}
@@ -702,7 +857,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    filtros.estado === "PENDIENTE"
+                    !soloContactar && filtros.estado === "PENDIENTE"
                       ? "bg-primary text-white"
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   )}
@@ -716,7 +871,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  filtros.estado === "BAJA"
+                  !soloContactar && filtros.estado === "BAJA"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
                 )}
@@ -725,12 +880,35 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    filtros.estado === "BAJA"
+                    !soloContactar && filtros.estado === "BAJA"
                       ? "bg-primary text-white"
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   )}
                 >
                   {conteoBajas}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => seleccionarTabEstado("CONTACTAR")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  soloContactar
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+                )}
+              >
+                <span>Contactar</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    soloContactar
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  )}
+                >
+                  {conteoContactar}
                 </span>
               </button>
             </div>
@@ -750,8 +928,11 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                     <th scope="col" className="px-4 py-3.5">
                       Cuota
                     </th>
+                    <th scope="col" className="px-4 py-3.5 text-center">
+                      Faltas seguidas
+                    </th>
                     <th scope="col" className="px-4 py-3.5">
-                      Teléfono
+                      Contacto
                     </th>
                     <th scope="col" className="px-6 py-3.5 text-right">
                       Acciones
@@ -759,68 +940,133 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {itemsVisibles.map((alumno) => (
-                    <tr
-                      key={alumno.id_alumno}
-                      onClick={() => navigate(`/app/alumnos/${alumno.id_alumno}`)}
-                      className="group cursor-pointer transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
-                    >
-                      {/* Alumno: Avatar circular + Nombre */}
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                            {iniciales(alumno.nombre_completo)}
-                          </span>
-                          <Link
-                            to={`/app/alumnos/${alumno.id_alumno}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="rounded-sm font-bold text-sm text-slate-900 transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white dark:group-hover:text-pink-300"
-                          >
-                            {alumno.nombre_completo}
-                            <span className="sr-only"> · Ver ficha</span>
-                          </Link>
-                          <span className={cn("hidden", colorEstado(alumno.estado))}>
-                            {etiquetaEstado(alumno.estado)}
-                          </span>
-                        </div>
-                      </td>
+                  {itemsVisibles.map((alumno) => {
+                    const faltasSeguidas =
+                      alumno.inasistencias_consecutivas ??
+                      inactivosPorAlumno.get(alumno.id_alumno)?.inasistencias_consecutivas ??
+                      0;
+                    const enlaceWa = generarEnlaceWhatsApp(alumno.telefono);
+                    const tieneEmail = alumno.email !== null;
 
-                      {/* DNI */}
-                      <td className="px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300">
-                        {alumno.dni ? formatearDni(alumno.dni) : "Sin DNI"}
-                      </td>
+                    return (
+                      <tr
+                        key={alumno.id_alumno}
+                        onClick={() => navigate(`/app/alumnos/${alumno.id_alumno}`)}
+                        className="group cursor-pointer transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
+                      >
+                        {/* Alumno: Avatar circular + Nombre */}
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                              {iniciales(alumno.nombre_completo)}
+                            </span>
+                            <Link
+                              to={`/app/alumnos/${alumno.id_alumno}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded-sm font-bold text-sm text-slate-900 transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white dark:group-hover:text-pink-300"
+                            >
+                              {alumno.nombre_completo}
+                              <span className="sr-only"> · Ver ficha</span>
+                            </Link>
+                            <span className={cn("hidden", colorEstado(alumno.estado))}>
+                              {etiquetaEstado(alumno.estado)}
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Plan */}
-                      <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                        {alumno.plan ?? "Sin plan"}
-                      </td>
+                        {/* DNI */}
+                        <td className="px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300">
+                          {alumno.dni ? formatearDni(alumno.dni) : "Sin DNI"}
+                        </td>
 
-                      {/* Cuota */}
-                      <td className="px-4 py-3.5">
-                        <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
-                      </td>
+                        {/* Plan */}
+                        <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {alumno.plan ?? "Sin plan"}
+                        </td>
 
-                      {/* Teléfono */}
-                      <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                        {alumno.telefono ?? "Sin teléfono"}
-                      </td>
+                        {/* Cuota */}
+                        <td className="px-4 py-3.5">
+                          <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
+                        </td>
 
-                      {/* Acción: Ver ficha */}
-                      <td className="px-6 py-3.5 text-right">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/app/alumnos/${alumno.id_alumno}`);
-                          }}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Ver ficha
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                        {/* Faltas seguidas (sin color) */}
+                        <td className="px-4 py-3.5 text-center text-sm font-medium text-slate-700 tabular-nums dark:text-slate-300">
+                          {faltasSeguidas}
+                        </td>
+
+                        {/* Contacto: WhatsApp y Teléfono si tiene teléfono; Mail si tiene email */}
+                        <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
+                            {alumno.telefono && enlaceWa && (
+                              <a
+                                href={enlaceWa}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Abrir WhatsApp a ${alumno.nombre_completo}`}
+                                title="Abrir WhatsApp"
+                                className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                              >
+                                <WhatsAppIcon className="size-6 shrink-0" />
+                              </a>
+                            )}
+                            {alumno.telefono && (
+                              <a
+                                href={`tel:${alumno.telefono}`}
+                                aria-label={`Llamar a ${alumno.nombre_completo}`}
+                                title={`Llamar a ${alumno.telefono}`}
+                                className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-800"
+                              >
+                                <ApplePhoneIcon className="size-6 shrink-0" />
+                              </a>
+                            )}
+                            {tieneEmail && (
+                              <a
+                                href={`mailto:${alumno.email ?? ""}`}
+                                aria-label={`Enviar email a ${alumno.nombre_completo}`}
+                                title={alumno.email ? `Enviar correo a ${alumno.email}` : "Enviar correo"}
+                                className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-2xs transition-transform hover:scale-105 hover:border-sky-300 dark:border-slate-700 dark:bg-slate-800"
+                              >
+                                <AppleMailIcon className="size-6 shrink-0" />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Acciones: Cobrar (si cuota por vencer o vencida) + Ver ficha */}
+                        <td className="px-6 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {(alumno.situacion_cuota?.estado === "POR_VENCER" ||
+                              alumno.situacion_cuota?.estado === "VENCIDA" ||
+                              alumno.situacion_cuota?.estado === "CLASE_SUELTA_VENCIDA") && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIdAlumnoACobrar(alumno.id_alumno);
+                                }}
+                                aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
+                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              >
+                                Cobrar
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/app/alumnos/${alumno.id_alumno}`);
+                              }}
+                              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Ver ficha
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -878,6 +1124,45 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
         <Suspense fallback={null}>
           <CobroInmediato idInscripcion={idInscripcionACobrar} onTerminar={terminarCobro} />
         </Suspense>
+      )}
+      {idAlumnoACobrar !== null && alumnoDetalleCobro?.inscripcion && (
+        <ModalRegistrarCobro
+          abierto={idAlumnoACobrar !== null}
+          onClose={() => setIdAlumnoACobrar(null)}
+          alumno={{
+            id_alumno: alumnoDetalleCobro.id_alumno,
+            nombre: alumnoDetalleCobro.usuario.nombre,
+            apellido: alumnoDetalleCobro.usuario.apellido,
+            dni: alumnoDetalleCobro.usuario.dni,
+          }}
+          inscripcion={{
+            id_inscripcion: alumnoDetalleCobro.inscripcion.id_inscripcion,
+            id_plan: alumnoDetalleCobro.inscripcion.plan.id_plan,
+            nombre_plan: alumnoDetalleCobro.inscripcion.plan.nombre,
+            precio_vigente: alumnoDetalleCobro.inscripcion.plan.precio,
+            situacion_cuota: alumnoDetalleCobro.inscripcion.situacion_cuota,
+          }}
+          plan={{
+            id: String(alumnoDetalleCobro.inscripcion.plan.id_plan),
+            nombre: alumnoDetalleCobro.inscripcion.plan.nombre,
+          }}
+          onExito={(idPago) => {
+            setIdAlumnoACobrar(null);
+            setComprobanteId(idPago);
+            void consulta.refetch();
+          }}
+          onTransferenciaInformada={() => {
+            setIdAlumnoACobrar(null);
+            void consulta.refetch();
+          }}
+        />
+      )}
+      {comprobanteId !== null && (
+        <ModalComprobante
+          idPago={comprobanteId}
+          abierto={comprobanteId !== null}
+          onClose={() => setComprobanteId(null)}
+        />
       )}
     </div>
   );

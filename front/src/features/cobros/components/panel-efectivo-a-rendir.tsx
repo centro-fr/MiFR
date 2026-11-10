@@ -13,12 +13,8 @@ import {
   useEfectivoPendiente,
   useHistorialRendiciones,
   useRendirCobro,
-  useRendirLote,
 } from "../hooks/use-rendiciones";
-import {
-  ModalConfirmarRendicion,
-  type DestinoRendicion,
-} from "./modal-confirmar-rendicion";
+import type { CobroSinRendir } from "../schemas/rendicion";
 import { TablaHistorialRendiciones } from "./tabla-historial-rendiciones";
 
 type VistaRendicion = "PENDIENTES" | "HISTORIAL";
@@ -36,7 +32,6 @@ export function PanelEfectivoARendir() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroProfesora, setFiltroProfesora] = useState<string>("TODAS");
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
-  const [destinoRendicion, setDestinoRendicion] = useState<DestinoRendicion | null>(null);
 
   // Queries
   const { data: efectivoData, isLoading: cargandoPendientes } = useEfectivoPendiente();
@@ -44,9 +39,7 @@ export function PanelEfectivoARendir() {
 
   // Mutations
   const rendirCobro = useRendirCobro();
-  const rendirLote = useRendirLote();
-
-  const procesando = rendirCobro.isPending || rendirLote.isPending;
+  const procesando = rendirCobro.isPending;
 
   // Opciones de profesoras para el filtro en píldora
   const opcionesProfesoras = useMemo(() => {
@@ -59,14 +52,6 @@ export function PanelEfectivoARendir() {
     }
     return Array.from(mapa.entries()).map(([id, nombre]) => ({ id: String(id), nombre }));
   }, [efectivoData, historialData]);
-
-  const mapaProfesorasPendientes = useMemo(() => {
-    const mapa = new Map<number, NonNullable<typeof efectivoData>["profesoras"][number]>();
-    for (const p of efectivoData?.profesoras ?? []) {
-      mapa.set(p.id_profesora, p);
-    }
-    return mapa;
-  }, [efectivoData]);
 
   // Cobros pendientes filtrados
   const cobrosFiltrados = useMemo(() => {
@@ -113,48 +98,23 @@ export function PanelEfectivoARendir() {
     setFiltroProfesora("TODAS");
   };
 
-  const handleConfirmarRendicion = async (observaciones?: string) => {
-    if (!destinoRendicion) return;
-
-    if (destinoRendicion.tipo === "INDIVIDUAL") {
-      await rendirCobro.mutateAsync(
-        {
-          idPago: destinoRendicion.cobro.id_pago,
-          observaciones,
+  const handleRendirCobro = async (cobro: CobroSinRendir) => {
+    await rendirCobro.mutateAsync(
+      {
+        idPago: cobro.id_pago,
+        observaciones: undefined,
+      },
+      {
+        onSuccess: (res) => {
+          toast.success("Cobro rendido exitosamente", {
+            description: `Se rindieron ${formatearPrecio(res.total)} en caja.`,
+          });
         },
-        {
-          onSuccess: (res) => {
-            toast.success("Cobro rendido exitosamente", {
-              description: `Se rindieron ${formatearPrecio(res.total)} en caja.`,
-            });
-            setDestinoRendicion(null);
-          },
-          onError: () => {
-            toast.error("No se pudo registrar la rendición");
-          },
-        }
-      );
-    } else {
-      await rendirLote.mutateAsync(
-        {
-          id_profesora: destinoRendicion.profesora.id_profesora,
-          observaciones,
+        onError: () => {
+          toast.error("No se pudo registrar la rendición");
         },
-        {
-          onSuccess: (res) => {
-            toast.success("Rendición registrada", {
-              description: `Se rindió el efectivo de ${destinoRendicion.profesora.nombre} (${formatearPrecio(
-                res.total
-              )}).`,
-            });
-            setDestinoRendicion(null);
-          },
-          onError: () => {
-            toast.error("No se pudo registrar la rendición del lote");
-          },
-        }
-      );
-    }
+      }
+    );
   };
 
   const cantidadPendiente = efectivoData?.cantidad ?? 0;
@@ -402,9 +362,6 @@ export function PanelEfectivoARendir() {
                       const nombreProfesora = `${cobro.profesora.nombre} ${cobro.profesora.apellido}`;
                       const dias = cobro.dias_sin_rendir;
                       const textoSinRendir = dias === 0 ? "Hoy" : `Hace ${dias} d`;
-                      const resumenProfesora = mapaProfesorasPendientes.get(
-                        cobro.profesora.id_profesora,
-                      );
 
                       return (
                         <tr
@@ -440,34 +397,16 @@ export function PanelEfectivoARendir() {
                             {formatearPrecio(cobro.monto)}
                           </td>
                           <td className="px-6 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                  setDestinoRendicion({ tipo: "INDIVIDUAL", cobro })
-                                }
-                                aria-label={`Rendir cobro de ${nombreAlumno}`}
-                                className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Rendir
-                              </Button>
-                              {resumenProfesora && (
-                                <Button
-                                  type="button"
-                                  onClick={() =>
-                                    setDestinoRendicion({
-                                      tipo: "LOTE",
-                                      profesora: resumenProfesora,
-                                    })
-                                  }
-                                  aria-label={`Rendir todo el efectivo de ${nombreProfesora}`}
-                                  className="h-8 rounded-lg bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
-                                >
-                                  Rendir todo
-                                </Button>
-                              )}
-                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              disabled={procesando}
+                              onClick={() => void handleRendirCobro(cobro)}
+                              aria-label={`Rendir cobro de ${nombreAlumno}`}
+                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            >
+                              Rendir
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -508,7 +447,8 @@ export function PanelEfectivoARendir() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setDestinoRendicion({ tipo: "INDIVIDUAL", cobro })}
+                        disabled={procesando}
+                        onClick={() => void handleRendirCobro(cobro)}
                         aria-label={`Rendir cobro de ${nombreAlumno}`}
                         className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                       >
@@ -527,17 +467,6 @@ export function PanelEfectivoARendir() {
           />
         )}
       </div>
-
-      {/* Modal flotante de confirmación */}
-      {destinoRendicion && (
-        <ModalConfirmarRendicion
-          open={destinoRendicion !== null}
-          onClose={() => setDestinoRendicion(null)}
-          destino={destinoRendicion}
-          onConfirmar={handleConfirmarRendicion}
-          procesando={procesando}
-        />
-      )}
     </div>
   );
 }
