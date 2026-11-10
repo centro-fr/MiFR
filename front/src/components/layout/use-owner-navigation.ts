@@ -28,7 +28,12 @@ function coincidencia(
   opcion: Pick<SubItemMenu, "to" | "subrutasDe">,
   rutasDeOtrosItems: string[] = [],
 ): number {
-  if (esRutaDe(ruta, opcion.to)) return opcion.to.length;
+  if (esRutaDe(ruta, opcion.to)) {
+    if (rutasDeOtrosItems.some((otra) => otra.length > opcion.to.length && esRutaDe(ruta, otra))) {
+      return 0;
+    }
+    return opcion.to.length;
+  }
   if (opcion.subrutasDe && esRutaDe(ruta, opcion.subrutasDe)) {
     if (rutasDeOtrosItems.some((otra) => esRutaDe(ruta, otra))) {
       return 0;

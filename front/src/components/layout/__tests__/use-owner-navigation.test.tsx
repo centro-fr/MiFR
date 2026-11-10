@@ -50,6 +50,30 @@ describe("useOwnerNavigation: sección Cobros", () => {
   });
 });
 
+describe("useOwnerNavigation: sección Centro (Planes y Promociones)", () => {
+  it("marca Promociones en su ruta sin activar Planes y genera breadcrumb coincidente", () => {
+    const nav = navegacionEn("/app/planes/promociones");
+    const itemPromociones = nav.items.find((i) => i.etiqueta === "Promociones")!;
+    const itemPlanes = nav.items.find((i) => i.etiqueta === "Planes" && i.seccion === "Centro")!;
+
+    expect(itemPromociones.esActivo).toBe(true);
+    expect(itemPlanes.esActivo).toBe(false);
+
+    expect(nav.migas.map((m) => m.etiqueta)).toEqual(["Inicio", "Centro", "Promociones"]);
+  });
+
+  it("marca Planes en su ruta y genera breadcrumb coincidente", () => {
+    const nav = navegacionEn("/app/planes");
+    const itemPlanes = nav.items.find((i) => i.etiqueta === "Planes" && i.seccion === "Centro")!;
+    const itemPromociones = nav.items.find((i) => i.etiqueta === "Promociones")!;
+
+    expect(itemPlanes.esActivo).toBe(true);
+    expect(itemPromociones.esActivo).toBe(false);
+
+    expect(nav.migas.map((m) => m.etiqueta)).toEqual(["Inicio", "Centro", "Planes"]);
+  });
+});
+
 describe("useOwnerNavigation: contadores", () => {
   it("pone el número de transferencias pendientes en Transferencias por verificar", () => {
     const transferencias = buscarItem("/app/dashboard", "Transferencias por verificar", {
