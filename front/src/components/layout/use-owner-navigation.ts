@@ -29,7 +29,7 @@ function coincidencia(
   rutasDeOtrosItems: string[] = [],
 ): number {
   if (esRutaDe(ruta, opcion.to)) return opcion.to.length;
-  if (opcion.subrutasDe && ruta.startsWith(`${opcion.subrutasDe}/`)) {
+  if (opcion.subrutasDe && esRutaDe(ruta, opcion.subrutasDe)) {
     if (rutasDeOtrosItems.some((otra) => esRutaDe(ruta, otra))) {
       return 0;
     }
@@ -95,7 +95,9 @@ function construirMigas(items: ItemConEstado[], inicio: string, ruta?: string): 
         if (item.seccion) {
           migas.push({ etiqueta: item.seccion });
         }
-        const esSubruta = Boolean(ruta && item.to && ruta !== item.to && ruta.startsWith(item.subrutasDe ?? item.to));
+        const esSubruta = Boolean(
+          ruta && item.to && ruta !== item.to && ruta !== item.subrutasDe && ruta.startsWith(item.subrutasDe ?? item.to),
+        );
         migas.push({ etiqueta: item.etiqueta, to: esSubruta ? item.to : undefined });
       }
       break;

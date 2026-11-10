@@ -707,8 +707,8 @@ function AvisoReserva({ reserva }: { reserva: NonNullable<InscripcionDeAlumno["r
       {hasRole("PROPIETARIA") ? (
         <>
           El alta se confirma al registrar el primer pago, desde{" "}
-          <Link to="/app/pagos" className="font-bold underline underline-offset-2">
-            Cobros y Cuotas
+          <Link to="/app/pagos/cuotas" className="font-bold underline underline-offset-2">
+            Cobros
           </Link>
           .
         </>
