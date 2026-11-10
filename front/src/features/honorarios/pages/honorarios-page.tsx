@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, Settings } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -55,7 +55,15 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const mesAbierto = mesSigueAbierto(periodo, cierre.diaDeCierre);
   const recalcular = () => void recalculo.recalcular();
 
+  // Calcular automáticamente al ingresar si el mes sigue abierto y aún no tiene liquidaciones
+  useEffect(() => {
+    if (mesAbierto && liquidaciones.length === 0 && !recalculo.procesando && !recalculo.error && !informe.isFetching) {
+      void recalculo.recalcular();
+    }
+  }, [mesAbierto, liquidaciones.length, recalculo, informe.isFetching]);
+
   if (liquidaciones.length === 0) {
+    if (recalculo.procesando) return <InformeCargando />;
     return <InformeVacio periodo={periodo} mesAbierto={mesAbierto} procesando={recalculo.procesando} onCalcular={recalcular} />;
   }
 
@@ -102,7 +110,7 @@ export function HonorariosPage() {
     <OwnerLayout>
       <div className="min-w-0 space-y-6">
         <EncabezadoHonorarios
-          descripcion="Se calculan con lo que pagan los alumnos de cada profesor/a y las suplencias del mes. El sistema no mueve dinero."
+          descripcion="Revisa el calculo del pago mensual para cada profesor/a"
           acciones={
             <>
               <SelectorMes periodo={periodo} onChange={cambiarPeriodo} />

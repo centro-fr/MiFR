@@ -174,16 +174,17 @@ export const inactivosHandlers = [
     const estadoGestion = url.searchParams.get("estado_gestion") as
       | EstadoGestionInactividad
       | null;
+    const incluirIgnorados = url.searchParams.get("incluir_ignorados") === "true";
     const limit = Number(url.searchParams.get("limit") || 50);
     const offset = Number(url.searchParams.get("offset") || 0);
 
     let filtrados = [...alumnosInactivosStore];
 
-    // Regla de backend: si no se especifica estado_gestion, los IGNORADO quedan ocultos
-    if (!estadoGestion) {
-      filtrados = filtrados.filter((a) => a.gestion.estado !== "IGNORADO");
-    } else {
+    if (estadoGestion) {
       filtrados = filtrados.filter((a) => a.gestion.estado === estadoGestion);
+    } else if (!incluirIgnorados) {
+      // Regla de backend: si no se especifica estado_gestion ni incluir_ignorados, los IGNORADO quedan ocultos
+      filtrados = filtrados.filter((a) => a.gestion.estado !== "IGNORADO");
     }
 
     if (idProfesora) {

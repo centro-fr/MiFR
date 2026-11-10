@@ -104,8 +104,8 @@ export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props
               <TableHead className={cn(CABECERA, "text-right")}>Suplencias</TableHead>
               <TableHead className={cn(CABECERA, "text-right")}>Total</TableHead>
               <TableHead className={CABECERA}>Estado</TableHead>
-              <TableHead className="px-6 py-3.5 text-right">
-                <span className="sr-only">Acciones</span>
+              <TableHead className={cn(CABECERA, "px-6 text-right")}>
+                Acciones
               </TableHead>
             </TableRow>
           </TableHeader>

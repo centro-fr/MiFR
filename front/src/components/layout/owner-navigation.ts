@@ -53,10 +53,10 @@ export interface ItemMenu {
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
 
-// Secciones de la navegación según diseño (ALUMNOS, CLASES, CENTRO)
+// Secciones de la navegación según diseño (ALUMNOS, CLASES, OTROS)
 const SECCION_ALUMNOS = "Alumnos";
 const SECCION_CLASES = "Clases";
-const SECCION_CENTRO = "Centro";
+const SECCION_CENTRO = "Otros";
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },

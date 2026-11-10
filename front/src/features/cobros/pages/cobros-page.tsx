@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Banknote,
   Clock,
@@ -458,7 +458,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por nombre, apellido o DNI..."
-                className="h-10 w-full rounded-xl border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
               />
             </div>
 
@@ -579,7 +579,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                           Monto
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-right">
-                          <span className="sr-only">Acciones</span>
+                          Acciones
                         </th>
                       </tr>
                     </thead>
@@ -601,9 +601,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
                                   {inicialesDe(alumno.nombre, alumno.apellido)}
                                 </span>
-                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                <Link
+                                  to={`/app/alumnos/${alumno.id_alumno}`}
+                                  className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                                >
                                   {nombreCompleto}
-                                </span>
+                                </Link>
                               </div>
                             </td>
 
@@ -671,9 +674,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                             {inicialesDe(alumno.nombre, alumno.apellido)}
                           </span>
                           <div>
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                            <Link
+                              to={`/app/alumnos/${alumno.id_alumno}`}
+                              className="text-sm font-extrabold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 block"
+                            >
                               {nombreCompleto}
-                            </h3>
+                            </Link>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                               {alumno.nombre_plan} · {alumno.profesora}
                             </p>
@@ -785,7 +791,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                           Informada
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-right">
-                          <span className="sr-only">Acciones</span>
+                          Acciones
                         </th>
                       </tr>
                     </thead>
@@ -814,9 +820,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                                     transferencia.alumno.apellido
                                   )}
                                 </span>
-                                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                <Link
+                                  to={`/app/alumnos/${transferencia.alumno.id}`}
+                                  className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                                >
                                   {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-                                </span>
+                                </Link>
                               </div>
                             </td>
 
@@ -905,9 +914,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                             )}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                            <Link
+                              to={`/app/alumnos/${transferencia.alumno.id}`}
+                              className="text-sm font-extrabold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
+                            >
                               {nombreCompleto}
-                            </h3>
+                            </Link>
                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                               {fechaFormateada}
                               {transferencia.titularCuenta ? ` · Titular: ${transferencia.titularCuenta}` : ""}
