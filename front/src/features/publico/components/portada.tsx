@@ -4,7 +4,8 @@ import { enlacesDeContacto } from "@/features/publico/utils/contacto";
 import { BOTON_CONTORNO, BOTON_DESTACADO, CONTENEDOR_PUBLICO } from "./estilos-publicos";
 
 // La foto se publica dejando el archivo en front/public/centro.webp. Mientras no exista, la capa de la
-// foto no pinta nada y quedan los degradés de la marca sobre el fondo oscuro.
+// foto no pinta nada y quedan los degradés de la marca sobre el fondo oscuro. La actual es provisoria
+// (Unsplash, Sven Mieke, licencia de Unsplash): va a reemplazarse por una foto del centro.
 // Los velos oscuros van encima de la foto para que el título se lea sobre cualquier imagen.
 const FONDO_DE_PORTADA: CSSProperties = {
   background: [
