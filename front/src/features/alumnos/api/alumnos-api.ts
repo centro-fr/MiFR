@@ -70,12 +70,13 @@ function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | 
   );
 }
 
-function aAlumnoResumen({ id_alumno, usuario, estado, inscripcion, situacion_cuota }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
+function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
     dni: usuario.dni,
-    telefono: usuario.telefono,
+    telefono: usuario.telefono ?? responsable?.telefono ?? null,
+    email: usuario.email ?? responsable?.email ?? null,
     estado: ESTADO_EN_PANTALLA[estado],
     plan: inscripcion?.nombre_plan ?? null,
     profesora: inscripcion?.nombre_profesora ?? null,
