@@ -26,6 +26,15 @@ describe("schemas de alumnos inactivos", () => {
   });
 
   it.each([
+    ["true", true],
+    ["false", false],
+  ])("listarAlumnosInactivosQuerySchema convierte incluir_ignorados=%s a booleano", (valor, esperado) => {
+    expect(listarAlumnosInactivosQuerySchema.parse({ incluir_ignorados: valor }).incluir_ignorados).toBe(
+      esperado,
+    );
+  });
+
+  it.each([
     { id_profesora: "0" },
     { id_plan: "-1" },
     { minimo_inasistencias: "0" },
