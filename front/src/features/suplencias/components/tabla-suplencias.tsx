@@ -108,8 +108,8 @@ export function TablaSuplencias({ suplencias, montos, editables, onEditar, onEli
               <TableHead className={CABECERA}>Faltó</TableHead>
               <TableHead className={CABECERA}>La cubrió</TableHead>
               <TableHead className={cn(CABECERA, "text-right")}>Le paga</TableHead>
-              <TableHead className="w-px px-6 py-3.5 text-right whitespace-nowrap">
-                <span className="sr-only">Acciones</span>
+              <TableHead className={cn(CABECERA, "w-px px-6 text-right whitespace-nowrap")}>
+                Acciones
               </TableHead>
             </TableRow>
           </TableHeader>
