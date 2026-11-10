@@ -114,7 +114,7 @@ const CobroInmediato = lazy(() =>
 );
 
 function CargandoAlumnos() {
-  return <TablaSkeleton ariaLabel="Cargando alumnos" cantidadPestanas={3} filas={6} />;
+  return <TablaSkeleton ariaLabel="Cargando alumnos" cantidadPestanas={4} filas={6} />;
 }
 
 function ErrorAlCargar({ mensaje, onReintentar }: { mensaje: string; onReintentar: () => void }) {
@@ -200,13 +200,13 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   }, [paginaInactivos]);
 
   // Consultas ligeras de conteo para los tabs de estado
-  const consultaActivos = useAlumnos({
+  const consultaTodos = useAlumnos({
     busqueda: busquedaDebounced,
     id_plan: filtros.id_plan,
     id_profesora: idProfesora,
     id_actividad: filtros.id_actividad,
-    estado: "ACTIVO",
-    incluir_bajas: false,
+    estado: "TODOS",
+    incluir_bajas: filtros.incluir_bajas,
     limit: 1,
     offset: 0,
   });
@@ -247,7 +247,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   const rangoInicio = respuesta && respuesta.total > 0 ? respuesta.offset + 1 : 0;
   const rangoFin = Math.min((respuesta?.offset ?? 0) + TAMANO_PAGINA, respuesta?.total ?? 0);
 
-  const conteoActivos = consultaActivos.data?.total ?? (filtros.estado === "ACTIVO" ? (respuesta?.total ?? 0) : 0);
+  const conteoTodos = consultaTodos.data?.total ?? (filtros.estado === "TODOS" ? (respuesta?.total ?? 0) : 0);
   const conteoPendientes = consultaPendientes.data?.total ?? (filtros.estado === "PENDIENTE" ? (respuesta?.total ?? 0) : 0);
   const conteoBajas = consultaBajas.data?.total ?? (filtros.estado === "BAJA" ? (respuesta?.total ?? 0) : 0);
 
@@ -301,11 +301,11 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     setFiltros((anteriores) => ({ ...anteriores, [nombre]: valor }));
   }
 
-  function seleccionarTabEstado(estadoTab: "ACTIVO" | "PENDIENTE" | "BAJA" | "CONTACTAR" | "TODOS") {
+  function seleccionarTabEstado(estadoTab: "TODOS" | "PENDIENTE" | "BAJA" | "CONTACTAR") {
     setPagina(0);
     if (estadoTab === "CONTACTAR") {
       setSoloContactar((prev) => !prev);
-      setFiltros((prev) => ({ ...prev, estado: "ACTIVO", incluir_bajas: false }));
+      setFiltros((prev) => ({ ...prev, estado: "TODOS" }));
       return;
     }
     setSoloContactar(false);
@@ -313,8 +313,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       setFiltros((prev) => ({ ...prev, estado: "BAJA", incluir_bajas: true }));
     } else if (estadoTab === "PENDIENTE") {
       setFiltros((prev) => ({ ...prev, estado: "PENDIENTE", incluir_bajas: false }));
-    } else if (estadoTab === "ACTIVO") {
-      setFiltros((prev) => ({ ...prev, estado: "ACTIVO", incluir_bajas: false }));
     } else {
       setFiltros((prev) => ({ ...prev, estado: "TODOS", incluir_bajas: false }));
     }
@@ -501,23 +499,23 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
         <button
           type="button"
-          onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+          onClick={() => seleccionarTabEstado("TODOS")}
           className={cn(
             "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+            !soloContactar && filtros.estado === "TODOS"
               ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
               : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
           )}
         >
-          <span>Activos</span>
+          <span>Todos</span>
           <span
             className={cn(
-              !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+              !soloContactar && filtros.estado === "TODOS"
                 ? "text-primary font-black"
                 : "text-slate-500"
             )}
           >
-            {conteoActivos || (respuesta?.total ?? 0)}
+            {conteoTodos || (respuesta?.total ?? 0)}
           </span>
         </button>
         <button
@@ -587,24 +585,24 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
             <button
               type="button"
-              onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+              onClick={() => seleccionarTabEstado("TODOS")}
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+                !soloContactar && filtros.estado === "TODOS"
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
               )}
             >
-              <span>Activos</span>
+              <span>Todos</span>
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                  !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+                  !soloContactar && filtros.estado === "TODOS"
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 )}
               >
-                {conteoActivos || (respuesta?.total ?? 0)}
+                {conteoTodos || (respuesta?.total ?? 0)}
               </span>
             </button>
 
@@ -783,24 +781,24 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
             <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <button
                 type="button"
-                onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
+                onClick={() => seleccionarTabEstado("TODOS")}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+                  !soloContactar && filtros.estado === "TODOS"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
                 )}
               >
-                <span>Activos</span>
+                <span>Todos</span>
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
+                    !soloContactar && filtros.estado === "TODOS"
                       ? "bg-primary text-white"
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   )}
                 >
-                  {conteoActivos || (respuesta?.total ?? 0)}
+                  {conteoTodos || (respuesta?.total ?? 0)}
                 </span>
               </button>
 

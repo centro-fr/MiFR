@@ -44,7 +44,7 @@
 
 - [ ] Ordena los alumnos por Estado de Cuota, de manera que primero se visualicen las cuotas con mayor vencimiento.
 
-- [ ] Que la primera opcion de visualizacion sea "Todos", Quita "Activos"
+- [x] Que la primera opcion de visualizacion sea "Todos", Quita "Activos"
  
 ## Alumno - Cobros y Cuotas
 
@@ -87,7 +87,7 @@
 - [x] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
 - [x] Sacar el reporte cuotas vencidas y cobranza.
 
-- [ ] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita)
+- [ ] Arreglar Titulo duplicado (quitar Titulo Reportes de todos) y arreglar el path del bread  (Quedan dos en negrita) ![Reportes](ReportesTitulo.png)
 
 ## Clases
 
