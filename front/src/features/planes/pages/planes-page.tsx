@@ -26,7 +26,7 @@ function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Planes y Precios
+          Planes
         </h1>
         <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
           Lo que se le ofrece a cada alumno, cuánto cuesta y las promociones del momento.

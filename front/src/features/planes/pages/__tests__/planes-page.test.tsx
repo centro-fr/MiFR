@@ -121,10 +121,10 @@ describe("PlanesPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renderiza el encabezado de Planes y Precios y el botón '+ Nuevo plan'", () => {
+  it("renderiza el encabezado de Planes y el botón '+ Nuevo plan'", () => {
     renderPlanesPage();
 
-    expect(screen.getByRole("heading", { name: "Planes y Precios", level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Planes", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Lo que se le ofrece a cada alumno, cuánto cuesta y las promociones del momento.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "+ Nuevo plan" })).toBeInTheDocument();
   });

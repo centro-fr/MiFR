@@ -97,7 +97,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CLASES, to: "/app/actividades" },
   { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CLASES, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },
   { etiqueta: "Horarios", icono: CalendarDays, seccion: SECCION_CLASES, to: "/app/horarios" },
-  { etiqueta: "Planes y Precios", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
+  { etiqueta: "Planes", icono: Tag, seccion: SECCION_CLASES, to: "/app/planes" },
   { etiqueta: "Promociones", icono: Sparkles, seccion: SECCION_CLASES, to: "/app/planes/promociones" },
   { etiqueta: "Inscripciones", icono: BarChart3, seccion: SECCION_REPORTES, to: "/app/reportes/inscripciones", subrutasDe: "/app/reportes" },
   { etiqueta: "Planes", icono: Tag, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
