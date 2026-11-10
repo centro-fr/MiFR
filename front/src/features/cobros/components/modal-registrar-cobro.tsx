@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { SituacionCuota } from "@/features/alumnos/schemas/alumno";
@@ -15,6 +15,7 @@ import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
 export interface DatosAlumnoCobro {
   id_alumno: number;
@@ -150,7 +151,7 @@ export function ModalRegistrarCobro({
   cotizacion,
   cargandoCotizacion = false,
   errorCotizacion = false,
-  promociones = [],
+  promociones: promocionesProp,
   formaInicial = "EFECTIVO",
   ocultarSelectorForma = false,
   onExito,
@@ -158,6 +159,8 @@ export function ModalRegistrarCobro({
 }: Props) {
   const { hasRole } = usePermissions();
   const esPropietaria = hasRole("PROPIETARIA");
+  const { data: promocionesQuery = [] } = usePromociones();
+  const promocionesBase = promocionesProp && promocionesProp.length > 0 ? promocionesProp : promocionesQuery;
   const [forma, setForma] = useState<FormaDeCobro>(formaInicial);
   useEffect(() => {
     setForma(formaInicial);
@@ -170,6 +173,19 @@ export function ModalRegistrarCobro({
     setPromocionSeleccionada(cotizacion?.promocion ? String(cotizacion.promocion.id_promocion) : "SIN_PROMOCION");
   }, [cotizacion?.promocion]);
 
+  const idPlan = inscripcion.id_plan;
+  const promocionesDisponibles = useMemo(() => {
+    return promocionesBase.filter((promocion) => {
+      if (promocionSeleccionada !== "SIN_PROMOCION" && String(promocion.id) === String(promocionSeleccionada)) {
+        return true;
+      }
+      if (!promocion.activo || promocion.estado !== "ACTIVA") return false;
+      if (!idPlan) return true;
+      if (!promocion.planes || promocion.planes.length === 0) return true;
+      return promocion.planes.some((plan) => plan.id === String(idPlan));
+    });
+  }, [promocionesBase, idPlan, promocionSeleccionada]);
+
   const cotizacionActual = calcularCotizacionCobro(
     {
       id: inscripcion.id_inscripcion,
@@ -177,7 +193,7 @@ export function ModalRegistrarCobro({
       idPromocion: promocionSeleccionada === "SIN_PROMOCION" ? null : Number(promocionSeleccionada),
       idPlan: inscripcion.id_plan ?? 0,
     },
-    promociones,
+    promocionesBase,
   );
   // El monto editable se actualiza al cambiar la promoción o la cotización vigente.
   useEffect(() => {
@@ -218,7 +234,7 @@ export function ModalRegistrarCobro({
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
           <ResumenCobro alumno={alumno} inscripcion={inscripcionConCotizacion} />
           <SelectorPromocion
-            promociones={promociones}
+            promociones={promocionesDisponibles}
             seleccionada={promocionSeleccionada}
             onChange={setPromocionSeleccionada}
           />

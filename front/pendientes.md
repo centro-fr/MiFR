@@ -6,6 +6,7 @@
 - [x] Verificar consistencia de lo colores de botones (como estan en Listado o Ausentes) - Hacer Gaston Gil
 - [x] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
 - [x] Quitar iconos En todas las pantallas del sistema vacias y recargas (ejemplo de la imagen) ![alt text](IconosError.png)
+-[ ] Reacomodar Sidebar  1ro Alumnos (Listado) , 2do Cobros (Transferencias a verificEfectivo a rendir, Cobros), 3ro Pagos (Honorarios), 4to Reportes (Mismo orden), 5to Centro(Mismo orden).
 
 
 ## Recarga
@@ -60,6 +61,7 @@
 - [x] En efectivo a rendir solo tiene que tener un boton de rendir sin formulario.
 - [x] Agregar un listado de cobros en el apartado "Cobros" verificar el formato de las listas.
 - [x] Cambiar el nombre  de "Listado" por "Historial" en el apartado "COBROS" - Gaston Gutierrez
+- [x] Corregir seleccionable de promociones al registrar cobro (habilitar promociones activas y aplicables según el plan del alumno en Cobros, Listado de Alumnos y Ficha de Alumno)
 
 
 ## Honorario

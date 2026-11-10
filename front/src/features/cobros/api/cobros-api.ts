@@ -50,7 +50,7 @@ export function calcularCotizacionCobro(
           item.id === String(datos.idPromocion) &&
           item.activo &&
           item.estado === "ACTIVA" &&
-          item.planes.some((plan) => plan.id === String(datos.idPlan)),
+          (item.planes.length === 0 || item.planes.some((plan) => plan.id === String(datos.idPlan))),
       ) ?? null;
   const descuento = promocion
     ? promocion.tipoDescuento === "PORCENTAJE"

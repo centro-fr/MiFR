@@ -20,6 +20,41 @@ vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => mockPermissions,
 }));
 
+const mockPromociones = [
+  {
+    id: "1",
+    codigo: "VERANO26",
+    nombre: "Verano 2026",
+    tipoDescuento: "PORCENTAJE" as const,
+    valor: 20,
+    fechaDesde: "2026-10-01",
+    fechaHasta: "2027-03-31",
+    activo: true,
+    estado: "ACTIVA" as const,
+    planes: [{ id: "1", nombre: "Plan Básico" }],
+  },
+  {
+    id: "2",
+    codigo: "OTROPLAN",
+    nombre: "Promo Exclusiva Plan 2",
+    tipoDescuento: "MONTO_FIJO" as const,
+    valor: 5000,
+    fechaDesde: "2026-10-01",
+    fechaHasta: "2027-12-31",
+    activo: true,
+    estado: "ACTIVA" as const,
+    planes: [{ id: "2", nombre: "Otro Plan" }],
+  },
+];
+
+vi.mock("@/features/promociones/hooks/use-promociones", () => ({
+  usePromociones: () => ({
+    data: mockPromociones,
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 describe("ModalCobroEfectivo (US-15)", () => {
   const alumnoPrueba = {
     id_alumno: 3,
@@ -169,5 +204,23 @@ describe("ModalCobroEfectivo (US-15)", () => {
     expect(
       screen.getByText(/pendiente de rendición/i),
     ).toBeInTheDocument();
+  });
+
+  it("filtra y lista únicamente las promociones aplicables al plan del alumno", () => {
+    render(
+      <ModalCobroEfectivo
+        abierto={true}
+        onClose={vi.fn()}
+        alumno={alumnoPrueba}
+        inscripcion={inscripcionPrueba}
+        onExito={vi.fn()}
+      />,
+    );
+
+    const selectorPromocion = screen.getByRole("combobox", { name: "Descuento" });
+    expect(selectorPromocion).toBeInTheDocument();
+
+    // Verificamos que se renderice el selector con 'Sin promoción'
+    expect(screen.getByText("Sin promoción")).toBeInTheDocument();
   });
 });

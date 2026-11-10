@@ -15,8 +15,8 @@ interface PromocionMock {
 }
 
 export const promociones: PromocionMock[] = [
-  { id_promocion: 1, codigo: "VERANO26", nombre: "Verano 2026", tipo_descuento: "PORCENTAJE", valor: 20, fecha_desde: "2026-12-01", fecha_hasta: "2027-02-28", activo: true, ids_planes: [1, 2] },
-  { id_promocion: 2, codigo: "NUEVOFR", nombre: "Primera cuota", tipo_descuento: "MONTO_FIJO", valor: 3000, fecha_desde: "2026-10-01", fecha_hasta: "2026-11-30", activo: true, ids_planes: [1] },
+  { id_promocion: 1, codigo: "VERANO26", nombre: "Verano 2026", tipo_descuento: "PORCENTAJE", valor: 20, fecha_desde: "2026-10-01", fecha_hasta: "2027-03-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
+  { id_promocion: 2, codigo: "NUEVOFR", nombre: "Primera cuota", tipo_descuento: "MONTO_FIJO", valor: 3000, fecha_desde: "2026-10-01", fecha_hasta: "2027-12-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
   { id_promocion: 3, codigo: "OCTUBRE", nombre: "Octubre pausado", tipo_descuento: "PORCENTAJE", valor: 15, fecha_desde: "2026-10-01", fecha_hasta: "2026-10-31", activo: false, ids_planes: [3] },
 ];
 
@@ -52,7 +52,7 @@ export function precioConPromocion(idPlan: number, precioLista: number, idPromoc
     (item) =>
       item.id_promocion === idPromocion &&
       item.activo &&
-      item.ids_planes.includes(idPlan) &&
+      (item.ids_planes.length === 0 || item.ids_planes.includes(idPlan)) &&
       item.fecha_desde <= hoy() &&
       item.fecha_hasta >= hoy(),
   );

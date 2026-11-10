@@ -20,7 +20,7 @@ import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
 import { listarPlanes } from "@/features/planes/api/planes-api";
 import { calcularCotizacionCobro } from "@/features/cobros/api/cobros-api";
-import { listarPromociones } from "@/features/promociones/api/promociones-api";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 import {
   ModalRegistrarCobro,
   type DatosAlumnoCobro,
@@ -154,11 +154,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     enabled: idAlumnoSeleccionado !== undefined,
     staleTime: 0,
   });
-  const { data: promociones = [] } = useQuery({
-    queryKey: ["promociones", "cobros"],
-    queryFn: listarPromociones,
-    enabled: alumnoSeleccionado !== null,
-  });
+  const { data: promociones = [] } = usePromociones();
 
   const cotizacionSeleccionada = useMemo(() => {
     const idInscripcion = alumnoSeleccionado?.inscripcion.id_inscripcion;
@@ -1064,12 +1060,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
             id: String(alumnoSeleccionado.inscripcion.id_plan),
             nombre: alumnoSeleccionado.inscripcion.nombre_plan,
           }}
-          promociones={promociones.filter(
-            (promocion) =>
-              promocion.estado === "ACTIVA" &&
-              promocion.activo &&
-              promocion.planes.some((plan) => plan.id === String(alumnoSeleccionado.inscripcion.id_plan)),
-          )}
+          promociones={promociones}
           cargandoCotizacion={cargandoCotizacion}
           errorCotizacion={errorCotizacion}
           onExito={handleCobroExitoso}
