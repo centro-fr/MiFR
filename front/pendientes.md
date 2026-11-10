@@ -4,7 +4,7 @@
 
 - [ ] Que todas las esquinas (de las tablas u estados) o cornes tengan el mismo radios que tienen los filtros y el buscador que armamos en Listado y Ausentes. - Hacer Gaston Gil
 - [ ] Verificar consistencia de lo colores de botones (como estan en Listado o Ausentes) - Hacer Gaston Gil
-- [ ] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados)
+- [ ] Corregir consistencia de formularios (que sean simples). Un titulo, un subtitulo y formulario (evitar badges y colores en todos lados) - Hacer Gaston Gil
 
 ## Recarga
 
@@ -36,6 +36,7 @@
 - [x] Sacar columna de plan y profesora.
 - [x] El boton dice "Contactar" pero deberia decir "Contactado" para que haga el cambio de estado, verifica las otras tambien.
 - [x] La columna de estados solo dejala en el apartado de "todos", en el resto sacala.
+- [x] Cambiar el nombre en el sidebar de "Ausentes" por "Contactar" que tenga como icono un telefono.
 
 ## Alumno - Listado
 
@@ -47,8 +48,12 @@
 - [x] Los buscadores y filtros mantene la estructura de Lista y Ausentes (incluido el responsive y los colores).
 - [x] Columna informada quitale los colores y fondos, solo dejala como texto simple.
 - [x] Efectivo a rendir que tambien sea tabla como venimos haciendo en Lista y Ausentes.
-- [ ] Arreglar rutas /app/pagos/transferencias no son pagos son cobros
-- [ ] Cambiar el boton de "Registrar Cobro", separarlo en dos "Cobrar Efectivo" y "Cobrar Transferencia".
+- [x] Arreglar rutas /app/pagos/transferencias no son pagos son cobros
+- [x] Cambiar el boton de "Registrar Cobro", separarlo en dos "Cobrar Efectivo" y "Cobrar Transferencia".
+- [x] En efectivo a rendir solo tiene que tener un boton de rendir sin formulario.
+- [x] Agregar un listado de cobros en el apartado "Cobros" verificar el formato de las listas.
+- [ ] Cambiar el nombre  de "Listado" por "Historial" en el apartado "COBROS" - Gaston Gutierrez
+
 
 ## Honorario
 
@@ -71,10 +76,31 @@
 
 ## Propietaria - Horarios
 
-- [ ] Modificar estilo de horarios como estan en el rol de profesores "Mis Clases" - Hacer Gaston Gil no yo
-
+- [ ] Modificar estilo de horarios como estan en el rol de profesores "Mis Clases" - Hacer Gaston Gil
 
 ## Reportes
 
-- [ ] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
-- [ ] Sacar el reporte cuotas vencidas.
+- [x] Separar en el sidebar como "ALUMNOS" un "REPORTES" que tenga los subitems "Inscripciones", "Planes", ..., etc.
+- [x] Sacar el reporte cuotas vencidas y cobranza.
+
+## Clases
+
+- [x] Modificar el nombre del sidebar "CLASES" por "CENTRO".
+- [x] Reordenarlos poniendo "Actividades" primero, "Profesores" segundo y los otros dos dejalo igual.
+
+## Quitar Cuotas
+
+- [x] Necesito sacar cuotas y directamente en listado de alumnos que si la cuota esta por vencer o vencida que aparezca para en acciones cobrar. 
+
+
+## Centro - Profesores
+
+- [ ] El icono del perfin del usuario/profesor que sea como el de Alumnos - Listado. - Gaston Gutierrez
+- [ ] En la columna de Incorporacion, saca el icono del calendario. - Gaston Gutierrez
+
+
+## Centro - Planes y Precios
+
+- [ ] Separa en subitems 'Planes y Precios' y Promociones - Gaston Gutierrez
+- [ ] Planes y precios que sean tablas como en "Alumnos - Listado" - Gaston Gutierrez
+- [ ] Promociones tambien hacer como tablas en "Alumnos - Listado" - Gaston Gutierrez
