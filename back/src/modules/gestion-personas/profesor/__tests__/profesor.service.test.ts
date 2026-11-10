@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError, ValidationError } from "../../../../share
 import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-autorizacion.js";
 import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { ProfesorRepository } from "../profesor.repository.js";
+import type { ActualizarProfesoraInput } from "../profesor.schemas.js";
 import { ProfesorService } from "../profesor.service.js";
 
 function crearRepositorioMock() {
@@ -12,6 +13,7 @@ function crearRepositorioMock() {
     buscarPorUsuarioId: vi.fn(),
     listar: vi.fn(),
     darDeBaja: vi.fn(),
+    actualizar: vi.fn(),
   };
 }
 
@@ -141,5 +143,49 @@ describe("ProfesorService", () => {
 
     await expect(servicio.darDeBaja(99)).rejects.toThrow(NotFoundError);
     expect(repositorio.darDeBaja).not.toHaveBeenCalled();
+  });
+
+  it("actualizar cambia la especialidad", async () => {
+    repositorio.buscarPorId.mockResolvedValue(perfil);
+    repositorio.actualizar.mockResolvedValue({ ...perfil, especialidad: "Posing" });
+
+    await expect(servicio.actualizar(1, { especialidad: "Posing" })).resolves.toMatchObject({
+      especialidad: "Posing",
+    });
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { especialidad: "Posing" });
+  });
+
+  it("actualizar reincorpora a la profesora y permite cambiar su especialidad", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...perfil, fecha_baja: new Date() });
+    repositorio.actualizar.mockResolvedValue({ ...perfil, especialidad: "Posing" });
+
+    await expect(servicio.actualizar(1, { especialidad: "Posing", reactivar: true })).resolves.toMatchObject({
+      fecha_baja: null,
+      especialidad: "Posing",
+    });
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { especialidad: "Posing", fecha_baja: null });
+  });
+
+  it("actualizar reincorpora sin cambiar la especialidad", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...perfil, fecha_baja: new Date() });
+    repositorio.actualizar.mockResolvedValue(perfil);
+
+    await servicio.actualizar(1, { reactivar: true } satisfies ActualizarProfesoraInput);
+
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { fecha_baja: null });
+  });
+
+  it("actualizar rechaza reincorporar una profesora activa", async () => {
+    repositorio.buscarPorId.mockResolvedValue(perfil);
+
+    await expect(servicio.actualizar(1, { reactivar: true })).rejects.toThrow(ConflictError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("actualizar lanza NotFoundError si la profesora no existe", async () => {
+    repositorio.buscarPorId.mockResolvedValue(null);
+
+    await expect(servicio.actualizar(99, { especialidad: "Posing" })).rejects.toThrow(NotFoundError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 });
