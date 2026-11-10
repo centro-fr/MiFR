@@ -361,13 +361,11 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                         <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
                           {formatearPrecio(cobro.monto)}
                         </td>
-                        <td className="px-4 py-3.5 text-sm">
+                        <td className="px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white">
                           {cobro.promocion ? (
-                            <span className="inline-flex items-center rounded-md bg-pink-50 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-pink-950/50 dark:text-pink-300">
-                              {cobro.promocion.nombre}
-                            </span>
+                            cobro.promocion.nombre
                           ) : (
-                            <span className="text-xs font-medium text-slate-400 dark:text-slate-500">—</span>
+                            <span className="font-normal text-slate-400 dark:text-slate-500">—</span>
                           )}
                         </td>
                         <td className="px-6 py-3.5 text-right">

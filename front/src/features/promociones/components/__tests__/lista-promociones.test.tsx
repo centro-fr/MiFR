@@ -62,3 +62,4 @@ describe("ListaPromociones - Visualización de planes", () => {
     expect(screen.getAllByText("Plan Básico").length).toBeGreaterThanOrEqual(1);
   });
 });
+
