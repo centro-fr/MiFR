@@ -39,3 +39,11 @@ front/.vite/
 *.ldb
 
 user09y10/
+
+# Capturas de pantalla temporales de chat / diseño
+/*.png
+/*.jpg
+/*.jpeg
+front/*.png
+front/*.jpg
+front/*.jpeg
