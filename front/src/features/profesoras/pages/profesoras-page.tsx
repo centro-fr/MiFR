@@ -95,7 +95,7 @@ export function ProfesorasPage() {
     });
   }, [profesoras, pestana, busqueda]);
 
-  const hayFiltrosActivos = busqueda.trim().length > 0 || pestana !== "ACTIVAS";
+  const hayFiltrosActivos = busqueda.trim().length > 0;
 
   return (
     <OwnerLayout>
@@ -139,7 +139,6 @@ export function ProfesorasPage() {
                 variant="ghost"
                 onClick={() => {
                   setBusqueda("");
-                  setPestana("ACTIVAS");
                 }}
                 className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
               >
