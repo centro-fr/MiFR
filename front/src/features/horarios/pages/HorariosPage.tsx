@@ -215,7 +215,7 @@ export const HorariosPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <div className="flex flex-wrap items-center gap-3">
             {/* Profesor/a */}
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 shadow-2xs">
               <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Profesor/a</span>
               <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
                 <SelectTrigger
@@ -236,7 +236,7 @@ export const HorariosPage: React.FC = () => {
             </div>
 
             {/* Actividad */}
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-1.5 shadow-2xs">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 shadow-2xs">
               <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Actividad</span>
               <Select value={filtroActividad} onValueChange={setFiltroActividad}>
                 <SelectTrigger
@@ -275,7 +275,7 @@ export const HorariosPage: React.FC = () => {
 
             {/* MENSAJE CUANDO EL CRONOGRAMA ESTÁ VACÍO */}
             {totalHorarios === 0 ? (
-              <Card className="mb-5 rounded-2xl border-amber-200/90 dark:border-amber-500/30 bg-gradient-to-r from-amber-50/90 dark:from-amber-500/10 via-white dark:via-card to-pink-50/70 dark:to-primary/10 p-4 shadow-xs sm:p-5">
+              <Card className="mb-5 rounded-lg border-amber-200/90 dark:border-amber-500/30 bg-gradient-to-r from-amber-50/90 dark:from-amber-500/10 via-white dark:via-card to-pink-50/70 dark:to-primary/10 p-4 shadow-xs sm:p-5">
                 <CardContent className="flex flex-col items-center justify-between gap-4 p-0 sm:flex-row">
                   <div className="flex items-center gap-3.5">
                     <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
@@ -306,7 +306,7 @@ export const HorariosPage: React.FC = () => {
                 </CardContent>
               </Card>
             ) : isFilterActive && horariosMostrados.length === 0 ? (
-              <Alert className="mb-5 flex items-center justify-between gap-3 rounded-2xl border-border bg-slate-50 dark:bg-white/5 p-4 text-sm text-slate-600 dark:text-slate-300">
+              <Alert className="mb-5 flex items-center justify-between gap-3 rounded-lg border-border bg-slate-50 dark:bg-white/5 p-4 text-sm text-slate-600 dark:text-slate-300">
                 <AlertDescription>
                   No se encontraron clases programadas con los filtros seleccionados.
                 </AlertDescription>

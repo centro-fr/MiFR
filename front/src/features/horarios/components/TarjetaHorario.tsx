@@ -18,7 +18,7 @@ interface TarjetaHorarioProps extends AccionesTarjeta {
 }
 
 const CLASES_BOTON_ACCION =
-  'h-6 w-6 rounded-lg bg-white/90 p-1 text-slate-500 shadow-2xs transition hover:bg-white dark:bg-black/40 dark:hover:bg-black/60 [&_svg]:size-3';
+  'h-6 w-6 rounded-md border border-slate-200/80 dark:border-slate-700 bg-slate-50/90 p-1 text-slate-500 shadow-2xs transition hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 [&_svg]:size-3';
 
 /** Editar y eliminar: se muestran al pasar el mouse o al enfocar con el teclado (`sr-only` los deja en el orden de tab). */
 function AccionesHorario({ horario, onEdit, onDelete }: AccionesTarjeta & { horario: Horario }) {
@@ -62,33 +62,36 @@ export function TarjetaHorario({
   onDelete,
 }: TarjetaHorarioProps) {
   return (
-    <div className="flex h-full w-full flex-col justify-between p-3">
-      {/* Encabezado: Título actividad y botones de acción */}
+    <div className={cn('flex h-full w-full flex-col justify-between', esCompacta ? 'p-2.5' : 'p-3')}>
+      {/* Encabezado: Rango horario (estilo Mis Clases) y botones de acción */}
       <div className="flex items-start justify-between gap-1.5 min-w-0">
-        <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-slate-900 dark:text-white line-clamp-2">
-          {horario.actividadNombre}
-        </h4>
+        <span className="inline-block text-[11px] font-extrabold text-primary leading-tight">
+          {horario.horaInicio} - {horario.horaFin}
+        </span>
         <div className="pointer-events-auto shrink-0">
           <AccionesHorario horario={horario} onEdit={onEdit} onDelete={onDelete} />
         </div>
       </div>
 
-      {/* Subtítulos: Profesora y Rango Horario */}
-      <div className="mt-1 space-y-0.5">
-        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate">
+      {/* Cuerpo: Actividad y Profesora */}
+      <div className="min-w-0 my-0.5">
+        <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug truncate">
+          {horario.actividadNombre}
+        </h4>
+        <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
           {horario.profesoraNombre}
-        </p>
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          {horario.horaInicio} - {horario.horaFin}
         </p>
       </div>
 
-      {/* Footer / Cupo (si no es ultra compacta) */}
-      {!esCompacta && (
-        <div className="mt-auto pt-1.5 border-t border-black/5 dark:border-white/10 text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Cupo: <strong className="font-bold text-slate-700 dark:text-slate-200">{textoCupo(horario.cupoMaximo)}</strong></span>
-        </div>
-      )}
+      {/* Pie: Modalidad y Cupo (estilo Mis Clases) */}
+      <div className="mt-auto pt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-medium text-slate-500 dark:text-slate-400">
+        <span className="capitalize">
+          {horario.actividadTipo === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'}
+        </span>
+        <span>
+          Cupo: <strong className="font-bold text-slate-700 dark:text-slate-200">{textoCupo(horario.cupoMaximo)}</strong>
+        </span>
+      </div>
     </div>
   );
 }

@@ -35,7 +35,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
   return (
     <li
       className={cn(
-        "flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-2xs hover:shadow-md transition-all gap-3.5",
+        "flex flex-col justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-2xs hover:shadow-md transition-all gap-3.5",
         !vigente && "bg-muted/40 opacity-80",
       )}
     >
@@ -88,7 +88,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
             type="button"
             variant="outline"
             onClick={() => onActualizarPrecio(plan)}
-            className="flex-1 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+            className="flex-1 h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
           >
             Cambiar precio
             <span className="sr-only"> de {plan.nombre}</span>
@@ -99,7 +99,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
                 type="button"
                 variant="outline"
                 onClick={() => onEditarPlan(plan)}
-                className="px-4 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
               >
                 Editar
                 <span className="sr-only"> {plan.nombre}</span>
@@ -108,7 +108,7 @@ function TarjetaPlan({ plan, onActualizarPrecio, onEditarPlan, onVerHistorial }:
               <Button
                 asChild
                 variant="outline"
-                className="px-4 h-10 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
               >
                 <Link to={`/app/planes/${plan.id}/editar`}>
                   Editar
@@ -152,7 +152,7 @@ export function ListaPlanesCargando() {
     <div role="status">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
         {Array.from({ length: 6 }, (_, indice) => (
-          <div key={indice} className="flex h-56 flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5">
+          <div key={indice} className="flex h-56 flex-col gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5">
             <div className="h-5 w-1/3 animate-pulse rounded-lg bg-muted" />
             <div className="h-8 w-1/2 animate-pulse rounded-lg bg-muted" />
             <div className="flex-1 animate-pulse rounded-lg bg-muted/60" />

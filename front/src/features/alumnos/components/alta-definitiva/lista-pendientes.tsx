@@ -29,7 +29,7 @@ function Acciones({ pendiente, puedeConfirmar, onConfirmar }: AccionesProps) {
       <Button
         asChild
         variant="outline"
-        className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary pointer-fine:min-h-0 md:px-2.5 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
+        className="h-8 min-h-0 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
       >
         <Link to={`/app/alumnos/${pendiente.idAlumno}`} aria-label={`Ver ficha de ${nombre}`}>
           Ver ficha
@@ -38,9 +38,10 @@ function Acciones({ pendiente, puedeConfirmar, onConfirmar }: AccionesProps) {
       {puedeConfirmar && (
         <Button
           type="button"
+          variant="outline"
           onClick={() => onConfirmar(pendiente)}
           aria-label={`Confirmar alta de ${nombre}`}
-          className="inline-flex h-auto min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-lg bg-primary px-3.5 py-1.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-primary-dark pointer-fine:min-h-0 md:px-3"
+          className="h-8 min-h-0 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
         >
           Confirmar alta
         </Button>
@@ -170,7 +171,7 @@ function TarjetaPendiente(props: AccionesProps) {
   const { pendiente } = props;
   return (
     <li>
-      <Card className="flex flex-col gap-3 rounded-xl border-border bg-white p-4 shadow-sm transition hover:border-pink-300 dark:border-slate-600 dark:bg-surface-low dark:hover:border-pink-500">
+      <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm transition hover:border-pink-300 dark:border-slate-600 dark:bg-surface-low dark:hover:border-pink-500">
         <div className="flex items-center gap-2.5">
           <Avatar pendiente={pendiente} />
           <div className="flex min-w-0 flex-col">
@@ -180,7 +181,7 @@ function TarjetaPendiente(props: AccionesProps) {
             <Identidad pendiente={pendiente} />
           </div>
         </div>
-        <dl className="flex flex-col gap-1.5 rounded-xl bg-slate-50 p-2.5 text-sm dark:bg-white/5">
+        <dl className="flex flex-col gap-1.5 rounded-lg bg-slate-50 p-2.5 text-sm dark:bg-white/5">
           <DatoTarjeta etiqueta="Plan">
             {pendiente.nombrePlan} ({formatearPrecio(pendiente.precio)})
           </DatoTarjeta>
@@ -213,7 +214,7 @@ interface ListaPendientesProps {
 export function ListaPendientes({ pendientes, puedeConfirmar, onConfirmar }: ListaPendientesProps) {
   return (
     <>
-      <Card className="hidden overflow-hidden rounded-2xl border-border bg-white shadow-sm xl:block dark:bg-surface-low">
+      <Card className="hidden overflow-hidden rounded-lg border-border bg-white shadow-sm xl:block dark:bg-surface-low">
         <div className="overflow-x-auto">
           <Table className="w-full text-left text-sm">
             <TableHeader>

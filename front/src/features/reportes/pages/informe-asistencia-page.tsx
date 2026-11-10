@@ -29,18 +29,18 @@ function Cargando() {
     <div aria-busy="true" aria-label="Cargando el informe" className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((indice) => (
-          <Skeleton key={indice} className="h-24 rounded-2xl" />
+          <Skeleton key={indice} className="h-24 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-48 rounded-2xl" />
-      <Skeleton className="h-72 rounded-2xl" />
+      <Skeleton className="h-48 rounded-lg" />
+      <Skeleton className="h-72 rounded-lg" />
     </div>
   );
 }
 
 function SinDatos() {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl shadow-xs">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-lg shadow-xs">
       <span
         aria-hidden="true"
         className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
@@ -122,7 +122,7 @@ export function InformeAsistenciaPage() {
         {consulta.isPending && <Cargando />}
 
         {consulta.isError && (
-          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl shadow-xs">
+          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-lg shadow-xs">
             <AlertCircle className="size-8 text-rose-500" />
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Error al generar el informe

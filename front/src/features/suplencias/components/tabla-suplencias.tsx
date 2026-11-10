@@ -17,7 +17,7 @@ interface Props {
 }
 
 const BOTON =
-  "min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 hover:border-slate-300 hover:bg-slate-50 pointer-fine:min-h-9 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800";
+  "h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200";
 const CABECERA = "px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400";
 const CELDA = "px-4 py-4 align-middle";
 
@@ -51,11 +51,11 @@ function Acciones({
       </Button>
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         aria-haspopup="dialog"
         onClick={() => onEliminar(suplencia)}
         aria-label={`Eliminar la suplencia del ${fecha}`}
-        className={cn(BOTON, "text-rose-700 hover:text-rose-800 dark:text-rose-300")}
+        className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
       >
         Eliminar
       </Button>
@@ -71,7 +71,7 @@ export function TablaSuplencias({ suplencias, montos, editables, onEditar, onEli
       <ul aria-label="Suplencias del mes" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
         {suplencias.map((suplencia) => (
           <li key={suplencia.idClase}>
-            <Card className="flex flex-col gap-3 rounded-2xl border-border bg-white p-4 shadow-sm dark:bg-surface-low">
+            <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm dark:bg-surface-low">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-muted-foreground tabular-nums">
@@ -98,7 +98,7 @@ export function TablaSuplencias({ suplencias, montos, editables, onEditar, onEli
         ))}
       </ul>
 
-      <Card className="hidden overflow-hidden rounded-2xl border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+      <Card className="hidden overflow-hidden rounded-lg border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
         <Table className="w-full text-left text-sm">
           <TableHeader>
             <TableRow className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/60">

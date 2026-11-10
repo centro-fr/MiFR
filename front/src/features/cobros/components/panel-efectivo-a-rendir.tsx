@@ -192,7 +192,7 @@ export function PanelEfectivoARendir() {
       </section>
 
       {/* Pestañas de estado para mobile */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
         <button
           type="button"
           onClick={() => setVista("PENDIENTES")}
@@ -227,7 +227,7 @@ export function PanelEfectivoARendir() {
       </div>
 
       {/* Tarjeta unificada de tabla con pestañas integradas en desktop */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
         {/* Header de pestañas para desktop dentro de la tarjeta */}
         <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button
@@ -235,7 +235,7 @@ export function PanelEfectivoARendir() {
             aria-label="Pendientes"
             onClick={() => setVista("PENDIENTES")}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+              "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
               vista === "PENDIENTES"
                 ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -259,7 +259,7 @@ export function PanelEfectivoARendir() {
             aria-label="Historial rendido"
             onClick={() => setVista("HISTORIAL")}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+              "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
               vista === "HISTORIAL"
                 ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",

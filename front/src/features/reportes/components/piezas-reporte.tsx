@@ -33,8 +33,8 @@ export function ResumenEnTarjetas({ datos, aclaracion }: { datos: DatoResumen[];
               className={
                 destacada
                   ? // Rosa oscuro y no el rosa de marca: el texto blanco chico necesita contraste 4,5:1.
-                    "rounded-2xl bg-primary-dark p-4 text-white shadow-md shadow-primary/20"
-                  : "rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-900"
+                    "rounded-lg bg-primary-dark p-4 text-white shadow-md shadow-primary/20"
+                  : "rounded-lg border border-slate-200/80 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-900"
               }
             >
               <dt className={destacada ? "text-sm font-semibold text-white/90" : "text-sm font-semibold text-slate-500 dark:text-slate-400"}>{etiqueta}</dt>
@@ -54,7 +54,7 @@ export function SeccionReporte({ id, titulo, descripcion, children }: { id: stri
     <Card
       role="region"
       aria-labelledby={id}
-      className="rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-700/80 dark:bg-slate-900"
+      className="rounded-lg border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-700/80 dark:bg-slate-900"
     >
       <h2 id={id} className="text-base font-extrabold text-slate-900 dark:text-white">
         {titulo}
@@ -79,17 +79,17 @@ export function CargandoReporte() {
     <div aria-busy="true" aria-label="Cargando el informe" className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((indice) => (
-          <Skeleton key={indice} className="h-24 rounded-2xl" />
+          <Skeleton key={indice} className="h-24 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-72 rounded-2xl" />
+      <Skeleton className="h-72 rounded-lg" />
     </div>
   );
 }
 
 export function ErrorDelReporte({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-3xl border-rose-200 p-8 text-center shadow-xs dark:border-rose-900/50">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-rose-200 p-8 text-center shadow-xs dark:border-rose-900/50">
       <AlertCircle aria-hidden="true" className="size-8 text-rose-500" />
       <h3 className="text-base font-bold text-slate-900 dark:text-white">Error al generar el informe</h3>
       <p role="alert" className="max-w-sm text-xs text-slate-500">
@@ -99,7 +99,7 @@ export function ErrorDelReporte({ error, reintentando, onReintentar }: { error: 
         type="button"
         disabled={reintentando}
         onClick={onReintentar}
-        className="min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark"
+        className="min-h-[40px] rounded-lg bg-primary px-5 font-bold text-white hover:bg-primary-dark"
       >
         Reintentar
       </Button>
@@ -109,7 +109,7 @@ export function ErrorDelReporte({ error, reintentando, onReintentar }: { error: 
 
 export function ReporteVacio({ icono, titulo, texto }: { icono: ReactNode; titulo: string; texto: string }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center shadow-xs dark:border-slate-800">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center shadow-xs dark:border-slate-800">
       <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
         {icono}
       </span>
@@ -137,13 +137,13 @@ export function PaginacionReporte({ etiqueta, offset, total, porPagina, cargando
         {offset + 1}–{hasta} de {total}
       </p>
       <div className="flex gap-2">
-        <Button type="button" variant="outline" disabled={cargando || offset === 0} onClick={() => onCambiar(Math.max(offset - porPagina, 0))} className="min-h-11 rounded-xl font-bold">
-          <ChevronLeft aria-hidden="true" />
+        <Button type="button" variant="outline" disabled={cargando || offset === 0} onClick={() => onCambiar(Math.max(offset - porPagina, 0))} className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200">
+          <ChevronLeft aria-hidden="true" className="mr-1 size-3.5" />
           Anterior
         </Button>
-        <Button type="button" variant="outline" disabled={cargando || hasta >= total} onClick={() => onCambiar(offset + porPagina)} className="min-h-11 rounded-xl font-bold">
+        <Button type="button" variant="outline" disabled={cargando || hasta >= total} onClick={() => onCambiar(offset + porPagina)} className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200">
           Siguiente
-          <ChevronRight aria-hidden="true" />
+          <ChevronRight aria-hidden="true" className="ml-1 size-3.5" />
         </Button>
       </div>
     </nav>
@@ -163,7 +163,7 @@ export function BarraPorcentaje({ valor, texto, tono = "bg-primary" }: { valor: 
 }
 
 const CONTROL =
-  "min-h-11 w-full cursor-pointer rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200";
+  "h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 export const ETIQUETA_FILTRO = "text-xs font-bold text-slate-700 dark:text-slate-300";
 export const CONTROL_FILTRO = CONTROL;
 

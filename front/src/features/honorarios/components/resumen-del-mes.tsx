@@ -7,7 +7,7 @@ import { diaDeCierreLegible, esPeriodoEnCurso, etiquetaPeriodo, mesSigueAbierto 
 import type { InformeHonorarios } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
 
-const TARJETA = "rounded-2xl border-border bg-white p-5 shadow-sm dark:bg-surface-low";
+const TARJETA = "rounded-lg border-border bg-white p-5 shadow-sm dark:bg-surface-low";
 const ETIQUETA = "text-sm font-semibold text-muted-foreground";
 const VALOR = "mt-1 text-3xl font-black tracking-tight text-dark tabular-nums break-words dark:text-white";
 const NOTA = "mt-1 text-sm text-muted-foreground";

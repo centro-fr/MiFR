@@ -107,7 +107,7 @@ function Pestanas({
 
 function EstadoVacio({ titulo, detalle, accion }: { titulo: string; detalle: string; accion?: ReactNode }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-800 rounded-3xl">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-800 rounded-lg">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
         <Tag aria-hidden="true" className="h-7 w-7" />
       </span>
@@ -154,7 +154,7 @@ export function PlanesPage() {
         ) : isPending ? (
           <ListaPlanesCargando />
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-3xl">
+          <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800 rounded-lg">
             <AlertCircle aria-hidden="true" className="h-8 w-8 text-rose-600 dark:text-rose-300" />
             <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {mensajeDeErrorApi(error, "No se pudieron cargar los planes.")}

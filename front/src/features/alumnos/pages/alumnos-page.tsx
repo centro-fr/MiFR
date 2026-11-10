@@ -120,7 +120,7 @@ function CargandoAlumnos() {
     <div
       role="status"
       aria-label="Cargando alumnos"
-      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+      className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
     >
       <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
         <Skeleton className="h-8 w-24 rounded-lg" />
@@ -147,7 +147,7 @@ function CargandoAlumnos() {
 
 function ErrorAlCargar({ mensaje, onReintentar }: { mensaje: string; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-700">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-700">
       <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensaje}
@@ -155,7 +155,7 @@ function ErrorAlCargar({ mensaje, onReintentar }: { mensaje: string; onReintenta
       <Button
         type="button"
         onClick={onReintentar}
-        className="min-h-[40px] rounded-xl bg-primary text-white hover:bg-primary-dark"
+        className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark"
       >
         Reintentar
       </Button>
@@ -537,7 +537,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       </section>
 
       {/* Tabs de estado para mobile */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
         <button
           type="button"
           onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
@@ -621,14 +621,14 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           onReintentar={() => void consulta.refetch()}
         />
       ) : itemsVisibles.length === 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
           {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
           <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
             <button
               type="button"
               onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                 !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -651,7 +651,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               type="button"
               onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                 !soloContactar && filtros.estado === "PENDIENTE"
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -674,7 +674,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               type="button"
               onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                 !soloContactar && filtros.estado === "BAJA"
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -697,7 +697,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               type="button"
               onClick={() => seleccionarTabEstado("CONTACTAR")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                 soloContactar
                   ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -742,7 +742,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   setSoloContactar(false);
                   setPagina(0);
                 }}
-                className="min-h-[40px] rounded-xl font-bold"
+                className="min-h-[40px] rounded-lg font-bold"
               >
                 Limpiar búsqueda y filtros
               </Button>
@@ -752,7 +752,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       ) : (
         <>
           {/* Vista Mobile: Lista agrupada limpia en tonos neutros igual que en Ausentes */}
-          <div className="lg:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+          <div className="lg:hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
             {itemsVisibles.map((alumno) => {
               const faltasSeguidas =
                 alumno.inasistencias_consecutivas ??
@@ -817,14 +817,14 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           </div>
 
           {/* Vista Desktop: Tabla limpia exactamente como en la imagen */}
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
+          <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
             {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
             <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => seleccionarTabEstado(!soloContactar && filtros.estado === "ACTIVO" ? "TODOS" : "ACTIVO")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   !soloContactar && (filtros.estado === "ACTIVO" || filtros.estado === "TODOS")
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -847,7 +847,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 type="button"
                 onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   !soloContactar && filtros.estado === "PENDIENTE"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -870,7 +870,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 type="button"
                 onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   !soloContactar && filtros.estado === "BAJA"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -893,7 +893,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 type="button"
                 onClick={() => seleccionarTabEstado("CONTACTAR")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   soloContactar
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
@@ -1089,7 +1089,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               variant="outline"
               disabled={pagina === 0}
               onClick={() => setPagina((actual) => Math.max(0, actual - 1))}
-              className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold"
+              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
             >
               <ChevronLeft aria-hidden="true" className="mr-1 size-3.5" />
               Anterior
@@ -1102,7 +1102,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
               variant="outline"
               disabled={pagina + 1 >= paginas}
               onClick={() => setPagina((actual) => Math.min(paginas - 1, actual + 1))}
-              className="h-8 rounded-lg border-slate-200 px-3 text-xs font-semibold"
+              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
             >
               Siguiente
               <ChevronRight aria-hidden="true" className="ml-1 size-3.5" />

@@ -330,7 +330,7 @@ export function AusentesPage() {
         </section>
 
         {/* Pestañas de estado para mobile */}
-        <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
           {PESTANAS.map((pestana) => {
             const activa = tabActual === pestana.id;
             const conteo = conteosPorTab[pestana.id];
@@ -361,7 +361,7 @@ export function AusentesPage() {
           <div
             role="status"
             aria-label="Cargando alumnos ausentes"
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+            className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
           >
             <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
               <Skeleton className="h-8 w-24 rounded-lg" />
@@ -390,7 +390,7 @@ export function AusentesPage() {
             </div>
           </div>
         ) : consultaInactivos.isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
+          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-lg">
             <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
             <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {mensajeDeErrorApi(consultaInactivos.error, "No se pudo cargar el listado de alumnos ausentes.")}
@@ -404,7 +404,7 @@ export function AusentesPage() {
             </Button>
           </Card>
         ) : alumnosFiltrados.length === 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+          <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
             {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
             <div className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               {PESTANAS.map((pestana) => {
@@ -417,7 +417,7 @@ export function AusentesPage() {
                     type="button"
                     onClick={() => setTabActual(pestana.id)}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                      "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                       activa
                         ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -475,7 +475,7 @@ export function AusentesPage() {
         ) : (
           <>
             {/* VISTA MOBILE: Lista agrupada limpia y en tonos neutros igual que en Listado */}
-            <div className="lg:hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+            <div className="lg:hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
               {alumnosFiltrados.map((alumno) => {
                 const contacto = obtenerContactoPrioritario(alumno);
                 const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
@@ -641,7 +641,7 @@ export function AusentesPage() {
             </div>
 
             {/* VISTA DESKTOP: Tabla exactamente como en image.png */}
-            <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
+            <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
               {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
               <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
                 {PESTANAS.map((pestana) => {
@@ -654,7 +654,7 @@ export function AusentesPage() {
                       type="button"
                       onClick={() => setTabActual(pestana.id)}
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                        "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                         activa
                           ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
