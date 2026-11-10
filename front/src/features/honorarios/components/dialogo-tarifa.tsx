@@ -264,7 +264,6 @@ export function DialogoTarifa({ abierto, periodo, alcance, onClose }: PropsDialo
       <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-border bg-white p-0 sm:max-w-lg dark:bg-surface-low">
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
           <div className="min-w-0 pr-2">
-            <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Honorarios</p>
             <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">{textos?.titulo}</DialogTitle>
             <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{textos?.descripcion}</DialogDescription>
           </div>

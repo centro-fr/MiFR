@@ -65,19 +65,23 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideClose
-        bottomSheetOnMobile
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[28px] p-5 sm:rounded-3xl sm:p-7"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <DialogHeader className="flex flex-row items-center justify-between text-left">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-            {promocion ? "Editar promoción" : "Nueva promoción"}
-          </DialogTitle>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario">
+        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              {promocion ? "Editar promoción" : "Nueva promoción"}
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Definí el descuento, vigencia y planes aplicables de la promoción.
+            </p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Cerrar formulario" className="shrink-0 size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
             <X className="size-4" />
           </Button>
         </DialogHeader>
 
-        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="space-y-4 pt-2">
+        <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex-1 overflow-y-auto p-6 space-y-4">
           <Campo label="Código" error={formulario.formState.errors.codigo?.message}>
             <Input {...formulario.register("codigo")} className="h-11 rounded-xl" placeholder="VERANO26" />
           </Campo>

@@ -1,4 +1,3 @@
-import { TriangleAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   AlertDialog,
@@ -43,25 +42,19 @@ export function ModalBajaProfesora({
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="max-w-md space-y-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white p-6 shadow-2xl dark:bg-slate-900">
-        <AlertDialogHeader className="space-y-3">
-          <div
-            aria-hidden="true"
-            className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 font-black text-rose-600 dark:bg-rose-950/60 dark:text-rose-300"
-          >
-            <TriangleAlert className="size-6" />
-          </div>
-          <div>
-            <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              ¿Dar de baja a este/a profesor/a?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              Estás por dar de baja el perfil de <strong>{profesora.nombreCompleto}</strong>. La baja es estrictamente lógica:
-              se preserva todo su historial de clases dictadas, suplencias e informes de honorarios, pero dejará de estar disponible
-              para la asignación de nuevos horarios.
-            </AlertDialogDescription>
-          </div>
+      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+          <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+            ¿Dar de baja a este/a profesor/a?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+            Estás por dar de baja el perfil de <strong>{profesora.nombreCompleto}</strong>. La baja es estrictamente lógica:
+            se preserva todo su historial de clases dictadas, suplencias e informes de honorarios, pero dejará de estar disponible
+            para la asignación de nuevos horarios.
+          </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <div className="space-y-4 p-6">
 
         {tieneHorarios ? (
           <Alert className="rounded-2xl border-amber-300 bg-amber-50/90 p-4 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
@@ -112,6 +105,7 @@ export function ModalBajaProfesora({
             </Button>
           )}
         </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Check, Dumbbell, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { formatearEspecialidades } from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
@@ -68,15 +68,13 @@ export function SelectorEspecialidades({ seleccionadas, onCambiar, disabled = fa
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-2xs select-none",
                 estaSeleccionada
-                  ? "border-primary bg-pink-50 text-primary dark:border-primary dark:bg-pink-950/50 dark:text-pink-200 ring-1 ring-primary/30"
+                  ? "border-slate-900 bg-slate-100 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white"
                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/50",
                 noEntra && "opacity-40 cursor-not-allowed hover:border-slate-200 hover:bg-white",
               )}
             >
-              {estaSeleccionada ? (
+              {estaSeleccionada && (
                 <Check className="size-3.5 stroke-[2.5]" />
-              ) : (
-                <Dumbbell className="size-3.5 text-slate-400" />
               )}
               <span>{actividad.nombre}</span>
             </button>

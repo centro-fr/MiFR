@@ -112,7 +112,7 @@ export function Paso3Confirmar({
               return (
                 <span
                   key={h.id_horario}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-pink-50 dark:bg-pink-950/40 text-primary border border-pink-200 dark:border-pink-900/50"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
                 >
                   {diaNombre} {hora}
                 </span>
@@ -211,7 +211,7 @@ export function Paso3Confirmar({
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
                   datosCobro.formaPago === "EFECTIVO"
-                    ? "border-primary ring-1 ring-primary bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
+                    ? "border-slate-900 bg-slate-50 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white shadow-xs font-bold"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
                 )}
               >
@@ -219,13 +219,13 @@ export function Paso3Confirmar({
                   className={cn(
                     "size-4 rounded-full border flex items-center justify-center shrink-0",
                     datosCobro.formaPago === "EFECTIVO"
-                      ? "border-primary bg-primary text-white"
+                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                       : "border-slate-300 dark:border-slate-600",
                   )}
                 >
-                  {datosCobro.formaPago === "EFECTIVO" && <div className="size-1.5 rounded-full bg-white" />}
+                  {datosCobro.formaPago === "EFECTIVO" && <div className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                 </div>
-                <span className="text-xs sm:text-sm font-bold">Efectivo</span>
+                <span className="text-xs sm:text-sm">Efectivo</span>
               </button>
 
               {/* Radio: Transferencia */}
@@ -240,7 +240,7 @@ export function Paso3Confirmar({
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
                   datosCobro.formaPago === "TRANSFERENCIA"
-                    ? "border-primary ring-1 ring-primary bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
+                    ? "border-slate-900 bg-slate-50 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white shadow-xs font-bold"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
                 )}
               >
@@ -248,13 +248,13 @@ export function Paso3Confirmar({
                   className={cn(
                     "size-4 rounded-full border flex items-center justify-center shrink-0",
                     datosCobro.formaPago === "TRANSFERENCIA"
-                      ? "border-primary bg-primary text-white"
+                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                       : "border-slate-300 dark:border-slate-600",
                   )}
                 >
-                  {datosCobro.formaPago === "TRANSFERENCIA" && <div className="size-1.5 rounded-full bg-white" />}
+                  {datosCobro.formaPago === "TRANSFERENCIA" && <div className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                 </div>
-                <span className="text-xs sm:text-sm font-bold">Transferencia</span>
+                <span className="text-xs sm:text-sm">Transferencia</span>
               </button>
             </div>
           </div>

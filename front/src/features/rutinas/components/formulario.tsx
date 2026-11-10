@@ -65,7 +65,6 @@ export function DialogoDeCarga({ abierto, titulo, descripcion, onClose, ancho = 
       >
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 px-5 py-4 text-left sm:px-6 dark:border-slate-800">
           <div className="min-w-0 pr-2">
-            <p className="text-xs font-extrabold tracking-wider text-primary uppercase">Rutina y progreso</p>
             <DialogTitle className="text-lg font-black tracking-tight text-slate-900 sm:text-xl dark:text-white">{titulo}</DialogTitle>
             <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
           </div>

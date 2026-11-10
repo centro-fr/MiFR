@@ -230,11 +230,11 @@ export function Paso2PlanYHorarios({
                   className={cn(
                     "px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5",
                     isSelected
-                      ? "border border-primary text-primary bg-primary/5 dark:bg-primary/10 font-bold shadow-xs"
+                      ? "border border-slate-900 text-slate-900 bg-slate-100 dark:border-white dark:text-white dark:bg-white/10 font-bold shadow-xs"
                       : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-white dark:bg-slate-900",
                   )}
                 >
-                  {isSelected && <Check className="size-3.5 stroke-[3] text-primary" />}
+                  {isSelected && <Check className="size-3.5 stroke-[3] text-current" />}
                   {act.nombre}
                 </button>
               );
@@ -263,12 +263,12 @@ export function Paso2PlanYHorarios({
                 className={cn(
                   "px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5",
                   isSelected
-                    ? "border border-primary text-primary bg-primary/5 dark:bg-primary/10 font-bold shadow-xs"
+                    ? "border border-slate-900 text-slate-900 bg-slate-100 dark:border-white dark:text-white dark:bg-white/10 font-bold shadow-xs"
                     : "border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-white dark:bg-slate-900",
                   esSoloProfesora && !isSelected && "opacity-50 cursor-not-allowed",
                 )}
               >
-                {isSelected && <Check className="size-3.5 stroke-[3] text-primary" />}
+                {isSelected && <Check className="size-3.5 stroke-[3] text-current" />}
                 {nombreCompleto}
               </button>
             );
@@ -353,12 +353,12 @@ export function Paso2PlanYHorarios({
                           className={cn(
                             "relative flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center min-h-[58px]",
                             estaSeleccionado
-                              ? "border-primary ring-1 ring-primary bg-pink-50/30 dark:bg-primary/10 text-primary shadow-xs"
+                              ? "border-slate-900 ring-1 ring-slate-900 bg-slate-100 text-slate-900 dark:border-white dark:ring-white dark:bg-white/10 dark:text-white shadow-xs"
                               : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200",
                           )}
                         >
                           {estaSeleccionado && (
-                            <div className="absolute top-1 right-1 size-3.5 rounded-full bg-primary text-white flex items-center justify-center">
+                            <div className="absolute top-1 right-1 size-3.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center">
                               <Check className="size-2.5 stroke-[3]" />
                             </div>
                           )}
@@ -366,7 +366,7 @@ export function Paso2PlanYHorarios({
                           <span
                             className={cn(
                               "text-[10px] font-medium mt-0.5",
-                              estaSeleccionado ? "text-primary font-semibold" : "text-amber-700 dark:text-amber-400",
+                              estaSeleccionado ? "text-slate-700 dark:text-slate-300 font-semibold" : "text-slate-500 dark:text-slate-400",
                             )}
                           >
                             Queda {cuposLibres}

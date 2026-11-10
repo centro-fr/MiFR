@@ -129,10 +129,10 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-lg md:max-w-xl rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <div className="space-y-0.5">
+        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
             <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Nuevo plan
             </DialogTitle>
@@ -152,7 +152,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
           </Button>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Nombre */}
           <div className="space-y-1.5">
             <Label htmlFor="nuevo-plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">

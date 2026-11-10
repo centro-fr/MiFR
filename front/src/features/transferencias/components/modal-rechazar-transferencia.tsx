@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { CircleX, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -73,55 +73,56 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
 
   return (
     <Dialog open onOpenChange={(abierta) => !abierta && !rechazando && onClose()}>
-      <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto rounded-2xl border-border p-6 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-            <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-              <CircleX className="size-5" />
-            </span>
-            <DialogTitle className="text-base font-extrabold text-dark dark:text-white">Rechazar transferencia</DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              La transferencia de {nombre} no se va a tomar como cuota abonada. El alumno verá el motivo en sus transferencias.
-            </DialogDescription>
+      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
+          <div className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:border-slate-800 dark:bg-white/5">
+            <div className="space-y-0.5">
+              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">Rechazar transferencia</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
+                La transferencia de {nombre} no se va a tomar como cuota abonada. El alumno verá el motivo en sus transferencias.
+              </DialogDescription>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="motivo-rechazo" className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Motivo del rechazo
-              <span className="text-rose-600" aria-hidden="true"> *</span>
-              <span className="sr-only"> (obligatorio)</span>
-            </Label>
-            <MotivosFrecuentes motivo={motivo} onElegir={cambiarMotivo} />
-            <Textarea
-              id="motivo-rechazo"
-              value={motivo}
-              maxLength={LARGO_MAXIMO_MOTIVO}
-              rows={3}
-              placeholder="Elegí uno de los motivos o escribí otro…"
-              onChange={(evento) => cambiarMotivo(evento.target.value)}
-              aria-invalid={errorMotivo !== null}
-              aria-describedby={errorMotivo ? "motivo-rechazo-contador motivo-rechazo-error" : "motivo-rechazo-contador"}
-              className="min-h-22 resize-y rounded-xl border-slate-200 bg-white text-sm dark:border-white/15 dark:bg-transparent"
-            />
-            <p id="motivo-rechazo-contador" className="text-right text-xs text-muted-foreground">
-              {motivo.length}/{LARGO_MAXIMO_MOTIVO}
-            </p>
-            {errorMotivo && (
-              <p id="motivo-rechazo-error" className="text-sm font-semibold text-rose-700 dark:text-rose-300">
-                {errorMotivo}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="motivo-rechazo" className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                Motivo del rechazo
+                <span className="text-rose-600" aria-hidden="true"> *</span>
+                <span className="sr-only"> (obligatorio)</span>
+              </Label>
+              <MotivosFrecuentes motivo={motivo} onElegir={cambiarMotivo} />
+              <Textarea
+                id="motivo-rechazo"
+                value={motivo}
+                maxLength={LARGO_MAXIMO_MOTIVO}
+                rows={3}
+                placeholder="Elegí uno de los motivos o escribí otro…"
+                onChange={(evento) => cambiarMotivo(evento.target.value)}
+                aria-invalid={errorMotivo !== null}
+                aria-describedby={errorMotivo ? "motivo-rechazo-contador motivo-rechazo-error" : "motivo-rechazo-contador"}
+                className="min-h-22 resize-y rounded-xl border-slate-200 bg-white text-sm dark:border-white/15 dark:bg-transparent"
+              />
+              <p id="motivo-rechazo-contador" className="text-right text-xs text-muted-foreground">
+                {motivo.length}/{LARGO_MAXIMO_MOTIVO}
               </p>
+              {errorMotivo && (
+                <p id="motivo-rechazo-error" className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+                  {errorMotivo}
+                </p>
+              )}
+            </div>
+
+            {errorGeneral && (
+              <Alert role="alert" className="rounded-xl border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/10">
+                <AlertDescription className="text-sm text-rose-900 dark:text-rose-200">
+                  {errorGeneral} La transferencia sigue pendiente: no se aplicó ningún cambio.
+                </AlertDescription>
+              </Alert>
             )}
           </div>
 
-          {errorGeneral && (
-            <Alert role="alert" className="rounded-xl border-rose-200 bg-rose-50 p-3 dark:border-rose-500/20 dark:bg-rose-500/10">
-              <AlertDescription className="text-sm text-rose-900 dark:text-rose-200">
-                {errorGeneral} La transferencia sigue pendiente: no se aplicó ningún cambio.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex flex-row items-center justify-end gap-2 pt-1">
+          <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border px-6 py-4">
             <Button
               type="button"
               variant="outline"

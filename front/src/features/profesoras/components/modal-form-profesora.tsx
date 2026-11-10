@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Loader2, UserPlus, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -71,24 +71,16 @@ export function ModalFormProfesora({
     >
       <DialogContent
         hideClose
-        className="w-[96vw] sm:w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-slate-200 p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
       >
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20"
-            >
-              <UserPlus className="size-5" />
-            </span>
-            <div>
-              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Dar de alta profesor/a
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Ingresá los datos de contacto y la cuenta Google para el acceso
-              </p>
-            </div>
+        <DialogHeader className="shrink-0 flex flex-row items-start justify-between border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-white/5">
+          <div className="space-y-0.5 pr-4">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Dar de alta profesor/a
+            </DialogTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Ingresá los datos de contacto y la cuenta Google para el acceso
+            </p>
           </div>
           <Button
             type="button"
@@ -96,13 +88,14 @@ export function ModalFormProfesora({
             size="icon"
             onClick={onClose}
             aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
           >
             <X className="size-4" />
           </Button>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
           {errorGuardado && (
             <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
               <AlertDescription className="text-xs font-semibold">{errorGuardado}</AlertDescription>
@@ -236,6 +229,7 @@ export function ModalFormProfesora({
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
