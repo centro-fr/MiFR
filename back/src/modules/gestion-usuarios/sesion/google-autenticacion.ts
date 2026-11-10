@@ -2,6 +2,18 @@ import type { OAuth2Client } from "google-auth-library";
 import { UnauthorizedError } from "../../../shared/errors/app-error.js";
 import type { DatosGoogle, IAutenticacionGoogleAuth } from "./interface/i-autenticacion-google-auth.js";
 
+const LARGO_MAXIMO_FOTO = 500;
+
+// La foto es un dato opcional de Google: si viene rara se ignora, no se rechaza un login que
+// Google ya validó. El CHECK de la base exige https, sin espacios y hasta 500 caracteres.
+function fotoValida(picture: unknown): string | undefined {
+  if (typeof picture !== "string") return undefined;
+  if (picture.length > LARGO_MAXIMO_FOTO) return undefined;
+  if (!picture.startsWith("https://")) return undefined;
+  if (/\s/.test(picture)) return undefined;
+  return picture;
+}
+
 export class GoogleAutenticacion implements IAutenticacionGoogleAuth {
   constructor(
     private readonly client: OAuth2Client,
@@ -28,6 +40,7 @@ export class GoogleAutenticacion implements IAutenticacionGoogleAuth {
       email: payload.email,
       nombre: payload.given_name,
       apellido: payload.family_name,
+      fotoUrl: fotoValida(payload.picture),
     };
   }
 }

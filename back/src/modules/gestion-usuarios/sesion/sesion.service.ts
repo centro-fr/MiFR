@@ -28,7 +28,7 @@ export class SesionService implements IAutenticacion {
   async iniciarSesion(idToken: string): Promise<SesionIniciada> {
     const datos = await this.googleAuth.verificarToken(idToken);
     const usuario = await this.usuarios.identificarPorGoogle(datos.googleId, datos.email);
-    return this.abrirSesion(usuario, datos.email);
+    return this.abrirSesion(await this.actualizarFotoDeGoogle(usuario, datos.fotoUrl), datos.email);
   }
 
   // Mismas reglas que con Google, pero sin verificar la identidad: por eso solo se expone
@@ -51,6 +51,16 @@ export class SesionService implements IAutenticacion {
     const { usuarioId } = this.jwtService.verificar(token);
     const usuario = await this.usuarioActivo(usuarioId);
     return { usuarioId, roles: usuario.roles.map((r) => r.rol.codigo) };
+  }
+
+  // La foto se refresca en cada login para que un cambio en Google llegue a la próxima sesión.
+  // No se escribe sobre un usuario inactivo ni se pisa la que había si Google no manda una.
+  private async actualizarFotoDeGoogle(
+    usuario: UsuarioConRoles | null,
+    fotoUrl?: string,
+  ): Promise<UsuarioConRoles | null> {
+    if (!usuario || usuario.estado === "INACTIVO" || !fotoUrl || usuario.foto_url === fotoUrl) return usuario;
+    return this.usuarios.actualizarFoto(usuario.id_usuario, fotoUrl);
   }
 
   private async abrirSesion(usuario: UsuarioConRoles | null, email: string): Promise<SesionIniciada> {

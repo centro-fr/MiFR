@@ -99,6 +99,7 @@ const usuario: UsuarioConRoles = {
   telefono: null,
   fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
+  foto_url: null,
   estado: "ACTIVO",
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),

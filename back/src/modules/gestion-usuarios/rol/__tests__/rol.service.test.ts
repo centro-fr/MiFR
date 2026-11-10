@@ -25,6 +25,7 @@ const usuario = {
   telefono: null,
   fecha_nacimiento: new Date("1990-01-01"),
   direccion: null,
+  foto_url: null,
   estado: "ACTIVO" as const,
   fecha_alta: new Date(),
   fecha_actualizacion: new Date(),
