@@ -30,11 +30,13 @@ function formatearVigencia(desde: string, hasta: string): string {
 export function ListaPromociones({
   promociones,
   cabecera,
+  totalPlanes,
   onEditar,
   onDesactivar,
 }: {
   promociones: Promocion[];
   cabecera?: ReactNode;
+  totalPlanes?: number;
   onEditar: (promocion: Promocion) => void;
   onDesactivar: (promocion: Promocion) => void;
   onReactivar?: (promocion: Promocion) => void;
@@ -75,7 +77,12 @@ export function ListaPromociones({
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {promociones.map((promocion) => {
               const editable = promocion.activo && promocion.estado !== "VENCIDA";
-              const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
+              const esTodosLosPlanes =
+                (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
+                promocion.planes.length === 0;
+              const nombresPlanes = esTodosLosPlanes
+                ? "Todos"
+                : promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
               const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
               return (
@@ -161,7 +168,12 @@ export function ListaPromociones({
       <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800/60">
         {promociones.map((promocion) => {
           const editable = promocion.activo && promocion.estado !== "VENCIDA";
-          const nombresPlanes = promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
+          const esTodosLosPlanes =
+            (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
+            promocion.planes.length === 0;
+          const nombresPlanes = esTodosLosPlanes
+            ? "Todos"
+            : promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
           const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
 
           return (

@@ -51,12 +51,16 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const promocionesFiltradas = useMemo(() => {
     const q = normalizarParaBuscar(busqueda);
     if (!q) return promocionesActivas;
-    return promocionesActivas.filter((p) =>
-      [p.nombre, p.codigo, ...p.planes.map((pl) => pl.nombre)].some((v) =>
-        normalizarParaBuscar(v).includes(q)
-      )
-    );
-  }, [promocionesActivas, busqueda]);
+    return promocionesActivas.filter((p) => {
+      const esTodos = planes.length > 0 && p.planes.length >= planes.length;
+      return [
+        p.nombre,
+        p.codigo,
+        ...(esTodos ? ["todos"] : []),
+        ...p.planes.map((pl) => pl.nombre),
+      ].some((v) => normalizarParaBuscar(v).includes(q));
+    });
+  }, [promocionesActivas, busqueda, planes.length]);
 
   const hayFiltros = busqueda.trim().length > 0;
 
@@ -181,6 +185,7 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       ) : (
         <ListaPromociones
           promociones={promocionesFiltradas}
+          totalPlanes={planes.length}
           onEditar={abrirEdicion}
           onDesactivar={setPromocionAEliminar}
         />
