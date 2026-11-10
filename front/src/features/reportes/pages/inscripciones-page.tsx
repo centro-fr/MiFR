@@ -41,10 +41,10 @@ function Cargando() {
     <div aria-busy="true" aria-label="Cargando las estadísticas" className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((indice) => (
-          <Skeleton key={indice} className="h-24 rounded-2xl" />
+          <Skeleton key={indice} className="h-24 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-64 rounded-2xl" />
+      <Skeleton className="h-64 rounded-lg" />
     </div>
   );
 }

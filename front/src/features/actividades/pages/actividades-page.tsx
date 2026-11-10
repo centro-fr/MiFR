@@ -177,7 +177,7 @@ export function ActividadesPage() {
           <Button
             onClick={abrirNueva}
             type="button"
-            className="min-h-[44px] rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
+            className="min-h-[40px] rounded-lg bg-primary px-5 text-sm font-extrabold text-white shadow-md shadow-primary/25 transition-transform hover:bg-primary-dark active:scale-95 shrink-0"
           >
             + Nueva actividad
           </Button>
@@ -246,7 +246,7 @@ export function ActividadesPage() {
             Cargando actividades…
           </div>
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-3xl">
+          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-12 text-center rounded-lg">
             <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
             <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {mensajeDeErrorApi(error, "No se pudieron cargar las actividades.")}
@@ -254,7 +254,7 @@ export function ActividadesPage() {
             <Button
               type="button"
               onClick={() => void refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold text-sm"
+              className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark font-bold text-sm"
             >
               Reintentar
             </Button>
@@ -274,7 +274,7 @@ export function ActividadesPage() {
                 return (
                   <Card
                     key={actividad.id}
-                    className="w-full min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3"
+                    className="w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2 min-w-0">
                       <div className="min-w-0 flex-1">
@@ -323,7 +323,7 @@ export function ActividadesPage() {
                         type="button"
                         variant="outline"
                         onClick={() => abrirEdicion(actividad)}
-                        className="w-full rounded-xl h-10 px-4 text-xs font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                       >
                         Editar
                       </Button>
@@ -334,7 +334,7 @@ export function ActividadesPage() {
             </div>
 
             {/* Desktop Table exactamente como en image.png */}
-            <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+            <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
               <Table className="w-full text-left text-sm">
                 <TableHeader>
                   <TableRow className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
@@ -455,7 +455,7 @@ function EmptyActividades({
   onLimpiarFiltros?: () => void;
 }) {
   return (
-    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl">
+    <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-lg">
       <span
         aria-hidden="true"
         className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
@@ -477,7 +477,7 @@ function EmptyActividades({
           type="button"
           variant="outline"
           onClick={onLimpiarFiltros}
-          className="mt-2 rounded-xl font-bold text-xs"
+          className="mt-2 h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
         >
           Limpiar filtros
         </Button>
@@ -485,7 +485,7 @@ function EmptyActividades({
         <Button
           type="button"
           onClick={onNuevo}
-          className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary-dark active:scale-95"
+          className="mt-2 inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-primary px-5 text-sm font-extrabold text-white shadow-md shadow-primary/25 transition-transform hover:bg-primary-dark active:scale-95"
         >
           + Nueva actividad
         </Button>

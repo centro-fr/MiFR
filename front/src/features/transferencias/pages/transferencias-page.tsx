@@ -253,7 +253,7 @@ function ContenidoTransferencias() {
       <BarraFiltros estado={estado} filtros={filtros} onEstado={cambiarEstado} onChange={setFiltros} onLimpiar={limpiar} />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-        <Card className="overflow-hidden rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low">
+        <Card className="overflow-hidden rounded-lg border-border bg-white shadow-sm dark:bg-surface-low">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-3">
             <h2 className="text-base font-extrabold text-dark dark:text-white">{TITULO_LISTA[estado]}</h2>
             {visibles.length > 0 && <p className="text-sm text-muted-foreground">Tocá una para ver el detalle</p>}

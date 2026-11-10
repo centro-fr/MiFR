@@ -26,7 +26,7 @@ export function ListaPromociones({
   return (
     <ul aria-label="Promociones" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
       {promociones.map((promocion) => (
-        <li key={promocion.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/60">
+        <li key={promocion.id} className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-pink-950/50 dark:text-pink-300"><Tag className="size-4" /></span>
@@ -44,8 +44,8 @@ export function ListaPromociones({
           </div>
           {(promocion.estado === "ACTIVA" || promocion.estado === "PROGRAMADA") && (
             <div className="flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className="h-10 flex-1 rounded-xl font-bold text-xs sm:text-sm"><Pencil className="mr-1.5 size-3.5" />Editar</Button>
-              <Button type="button" variant="outline" onClick={() => onDesactivar(promocion)} className="h-10 rounded-xl font-bold text-xs sm:text-sm text-rose-600 hover:bg-rose-50 dark:text-rose-300"><Power className="mr-1.5 size-3.5" />Desactivar</Button>
+              <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className="h-8 min-h-0 flex-1 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"><Pencil className="mr-1.5 size-3.5" />Editar</Button>
+              <Button type="button" variant="ghost" onClick={() => onDesactivar(promocion)} className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"><Power className="mr-1.5 size-3.5" />Desactivar</Button>
             </div>
           )}
         </li>

@@ -26,7 +26,7 @@ export const PanelDetalle = memo(function PanelDetalle({ transferencia, esEscrit
     return (
       <Card
         aria-label="Detalle de la transferencia"
-        className="sticky top-4 flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl border-border bg-white shadow-sm dark:bg-surface-low"
+        className="sticky top-4 flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-lg border-border bg-white shadow-sm dark:bg-surface-low"
       >
         {detalle ?? (
           <div className="flex flex-col items-center gap-3 px-6 py-14 text-center text-sm text-muted-foreground">

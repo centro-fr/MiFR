@@ -176,7 +176,7 @@ export function TarifasDelMes({ periodo, embebido = false }: { periodo: string; 
   }
 
   return (
-    <section aria-labelledby={idTitulo} className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5 dark:bg-surface-low">
+    <section aria-labelledby={idTitulo} className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 shadow-sm sm:p-5 dark:bg-surface-low">
       <div>
         <h2 id={idTitulo} className="text-base font-extrabold text-dark dark:text-white">
           Tarifas del mes

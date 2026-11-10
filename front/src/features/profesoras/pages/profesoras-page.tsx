@@ -153,7 +153,7 @@ export function ProfesorasPage() {
         </section>
 
         {/* PESTAÑAS DE ESTADO PARA MOBILE */}
-        <div className="flex sm:hidden items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex sm:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
           <button
             type="button"
             onClick={() => setPestana("ACTIVAS")}
@@ -191,7 +191,7 @@ export function ProfesorasPage() {
           <div
             role="status"
             aria-label="Cargando profesores"
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+            className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
           >
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -209,7 +209,7 @@ export function ProfesorasPage() {
             </div>
           </div>
         ) : isError ? (
-          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl">
+          <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-lg">
             <AlertCircle className="size-8 text-rose-500" />
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
               Error al cargar profesores
@@ -220,20 +220,20 @@ export function ProfesorasPage() {
             <Button
               type="button"
               onClick={() => refetch()}
-              className="min-h-[44px] rounded-xl bg-primary text-white hover:bg-primary-dark font-bold"
+              className="min-h-[40px] rounded-lg bg-primary text-white hover:bg-primary-dark font-bold"
             >
               Reintentar
             </Button>
           </Card>
         ) : listaFiltrada.length === 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+          <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
             {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
             <div className="hidden sm:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => setPestana("ACTIVAS")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   pestana === "ACTIVAS"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -255,7 +255,7 @@ export function ProfesorasPage() {
                 type="button"
                 onClick={() => setPestana("TODAS")}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   pestana === "TODAS"
                     ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -294,7 +294,7 @@ export function ProfesorasPage() {
                 <Button
                   type="button"
                   onClick={abrirNueva}
-                  className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
+                  className="mt-2 min-h-[40px] rounded-lg bg-primary px-5 font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
                 >
                   + Dar de alta profesor/a
                 </Button>
@@ -304,14 +304,14 @@ export function ProfesorasPage() {
         ) : (
           <>
             {/* VISTA ESCRITORIO (TABLA EXACTAMENTE COMO EN IMAGE.PNG) */}
-            <div className="hidden sm:block rounded-2xl border border-slate-200/80 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+            <div className="hidden sm:block rounded-lg border border-slate-200/80 bg-white dark:border-slate-700/80 dark:bg-slate-900 overflow-hidden shadow-2xs">
               {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
               <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <button
                   type="button"
                   onClick={() => setPestana("ACTIVAS")}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                     pestana === "ACTIVAS"
                       ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -333,7 +333,7 @@ export function ProfesorasPage() {
                   type="button"
                   onClick={() => setPestana("TODAS")}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                     pestana === "TODAS"
                       ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
@@ -467,7 +467,7 @@ export function ProfesorasPage() {
                     key={prof.id}
                     onClick={() => navigate(`/app/profesoras/${prof.id}`)}
                     className={cn(
-                      "group cursor-pointer flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3.5 transition-colors hover:border-pink-300 dark:hover:border-pink-500",
+                      "group cursor-pointer flex flex-col justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3.5 transition-colors hover:border-pink-300 dark:hover:border-pink-500",
                       !prof.activa && "opacity-75 bg-muted/30",
                     )}
                   >

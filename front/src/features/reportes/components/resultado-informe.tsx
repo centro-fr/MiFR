@@ -9,7 +9,7 @@ import type { AsistenciaDeAlumno, AsistenciaDeProfesora, InformeAsistencia } fro
 // Lo que muestra el informe de asistencia (US-33). En el celular cada fila es una tarjeta; desde md,
 // una tabla. Las cifras van con números tabulares para que se puedan comparar en columna.
 
-const TARJETA = "rounded-2xl border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-700/80 dark:bg-slate-900";
+const TARJETA = "rounded-lg border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5 dark:border-slate-700/80 dark:bg-slate-900";
 const TH = "px-3 py-2.5 text-left text-xs font-bold tracking-wide text-slate-500 uppercase dark:text-slate-400";
 const TH_NUMERO = `${TH} text-right`;
 const TD = "border-t border-slate-100 px-3 py-2.5 dark:border-slate-800";
@@ -32,8 +32,8 @@ export function ResumenDelInforme({ informe }: { informe: InformeAsistencia }) {
             className={
               indice === datos.length - 1
                 ? // Rosa oscuro y no el rosa de marca: el texto blanco chico necesita contraste 4,5:1.
-                  "rounded-2xl bg-primary-dark p-4 text-white shadow-md shadow-primary/20"
-                : "rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-900"
+                  "rounded-lg bg-primary-dark p-4 text-white shadow-md shadow-primary/20"
+                : "rounded-lg border border-slate-200/80 bg-white p-4 dark:border-slate-700/80 dark:bg-slate-900"
             }
           >
             <dt className={indice === datos.length - 1 ? "text-sm font-semibold text-white/90" : "text-sm font-semibold text-slate-500 dark:text-slate-400"}>

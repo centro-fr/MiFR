@@ -96,19 +96,22 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
   if (totalSlots === 0) {
     return (
-      <div className="w-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
+      <div className="w-full rounded-lg border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
         {/* Cabecera de días */}
-        <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-50/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-100/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
           <div className="p-3 text-center border-r border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-center">
             <span className="sr-only">Horario</span>
           </div>
           {DIAS_COLUMNAS.map((dia) => (
             <div
               key={dia.id}
-              className="p-3.5 pl-4 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center"
+              className="p-3 px-3.5 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center justify-between"
             >
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 {dia.label}
+              </span>
+              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                0
               </span>
             </div>
           ))}
@@ -131,24 +134,30 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
   }
 
   return (
-    <div className="w-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
+    <div className="w-full rounded-lg border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <div className="min-w-[700px]">
           {/* Cabecera de días */}
-          <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-50/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="grid grid-cols-[80px_repeat(5,minmax(0,1fr))] bg-slate-100/70 dark:bg-slate-900/80 sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800">
             <div className="p-3 text-center border-r border-slate-200/80 dark:border-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-center">
               <span className="sr-only">Horario</span>
             </div>
-            {DIAS_COLUMNAS.map((dia) => (
-              <div
-                key={dia.id}
-                className="p-3.5 pl-4 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center"
-              >
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  {dia.label}
-                </span>
-              </div>
-            ))}
+            {DIAS_COLUMNAS.map((dia) => {
+              const cantidadDia = horarios.filter((h) => h.diaSemana === dia.id).length;
+              return (
+                <div
+                  key={dia.id}
+                  className="p-3 px-3.5 text-left border-r last:border-r-0 border-slate-200/80 dark:border-slate-800 flex items-center justify-between"
+                >
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    {dia.label}
+                  </span>
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    {cantidadDia}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Grilla: horas y columnas de días */}
@@ -175,7 +184,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
               return (
                 <div
                   key={dia.id}
-                  className="border-r last:border-r-0 border-slate-200/80 dark:border-slate-800/80 relative"
+                  className="border-r last:border-r-0 border-slate-200/80 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/20 relative"
                   style={{ height: `${totalSlots * 104}px` }}
                 >
                   {/* CAPA 1: CELDAS LIBRES / DROP TARGETS */}
@@ -321,7 +330,6 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                     const topPx = (startMins - baseMinutos) * (104 / 60);
                     const heightPx = duracionMins * (104 / 60);
                     const isCompact = heightPx <= 110 || duracionMins <= 60;
-                    const esPersonalizada = h.actividadTipo === 'PERSONALIZADA';
 
                     return (
                       <div
@@ -398,11 +406,7 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
                             setDraggedHorarioId(null);
                           }}
                           onClick={() => onEdit(h)}
-                          className={`h-full w-full rounded-2xl flex flex-col justify-between hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing shadow-xs group relative overflow-hidden select-none ${
-                            esPersonalizada
-                              ? 'bg-[#F3EFFD] border border-[#DDD4FA] dark:bg-purple-950/30 dark:border-purple-900/40'
-                              : 'bg-[#FDF2F4] border border-[#F9D5DD] dark:bg-pink-950/30 dark:border-pink-900/40'
-                          } ${
+                          className={`h-full w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between shadow-2xs hover:shadow-sm hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing group relative overflow-hidden select-none ${
                             draggedHorarioId === h.id
                               ? 'opacity-30 scale-95 border-2 border-dashed border-primary'
                               : ''

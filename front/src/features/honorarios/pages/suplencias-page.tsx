@@ -42,7 +42,7 @@ function SuplenciasCargando() {
 
 function SuplenciasConError({ error, onReintentar }: { error: unknown; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-2xl border-border px-5 py-12 text-center">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-12 text-center">
       <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensajeDeErrorApi(error, "No se pudieron cargar las suplencias.")}
@@ -56,7 +56,7 @@ function SuplenciasConError({ error, onReintentar }: { error: unknown; onReinten
 
 function SinSuplencias({ periodo, abierto, onRegistrar }: { periodo: string; abierto: boolean; onRegistrar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-2xl border-border px-5 py-14 text-center">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-14 text-center">
       <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
         <Users className="size-7" />
       </span>

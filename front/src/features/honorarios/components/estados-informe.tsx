@@ -13,12 +13,12 @@ export function InformeCargando() {
   return (
     <div aria-busy="true" aria-label="Cargando el informe" className="space-y-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Skeleton className="h-32 rounded-2xl" />
-        <Skeleton className="h-32 rounded-2xl" />
+        <Skeleton className="h-32 rounded-lg" />
+        <Skeleton className="h-32 rounded-lg" />
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[0, 1, 2].map((indice) => (
-          <Skeleton key={indice} className="h-72 rounded-2xl" />
+          <Skeleton key={indice} className="h-72 rounded-lg" />
         ))}
       </div>
     </div>
@@ -36,7 +36,7 @@ function mensajeDeError(error: unknown): string {
 
 export function InformeConError({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-12 text-center dark:border-slate-800">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-12 text-center dark:border-slate-800">
       <AlertCircle aria-hidden="true" className="size-8 text-rose-600 dark:text-rose-300" />
       <p role="alert" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
         {mensajeDeError(error)}
@@ -60,7 +60,7 @@ interface PropsVacio {
 export function InformeVacio({ periodo, mesAbierto, procesando, onCalcular }: PropsVacio) {
   const mes = etiquetaPeriodo(periodo);
   return (
-    <Card className="flex flex-col items-center gap-3 rounded-3xl border-slate-200 px-5 py-14 text-center dark:border-slate-800">
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
       <span className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200">
         <Calculator aria-hidden="true" className="size-7" />
       </span>
@@ -118,7 +118,7 @@ export function AvisoAdvertencias({ advertencias, liquidaciones, onCerrar }: Pro
   return (
     <section
       aria-label="Líneas sin calcular"
-      className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+      className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
     >
       <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
       <div className="min-w-0 flex-1">
