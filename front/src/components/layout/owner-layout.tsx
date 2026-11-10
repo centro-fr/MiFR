@@ -293,11 +293,12 @@ function SeccionMenu({ seccion, contraido, alNavegar }: PropsSeccion) {
       )}
       <SidebarMenu aria-labelledby={seccion.titulo && !contraido ? idTitulo : undefined}>
         {seccion.items.map((item) => {
-          if (!item.hijos) return <ItemSimple key={item.etiqueta} item={item} alNavegar={alNavegar} />;
+          const clave = item.to ?? item.etiqueta;
+          if (!item.hijos) return <ItemSimple key={clave} item={item} alNavegar={alNavegar} />;
           return contraido ? (
-            <GrupoContraido key={item.etiqueta} item={item} />
+            <GrupoContraido key={clave} item={item} />
           ) : (
-            <GrupoDesplegable key={item.etiqueta} item={item} alNavegar={alNavegar} />
+            <GrupoDesplegable key={clave} item={item} alNavegar={alNavegar} />
           );
         })}
       </SidebarMenu>

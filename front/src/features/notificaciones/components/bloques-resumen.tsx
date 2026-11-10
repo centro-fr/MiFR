@@ -130,7 +130,7 @@ export function BloqueTransferencias({ datos }: { datos: TransferenciasDelResume
       icono={ArrowLeftRight}
       cantidad={datos?.cantidad ?? null}
       detalleCantidad={`${datos?.cantidad === 1 ? "transferencia" : "transferencias"} · ${formatearPrecio(datos?.total ?? 0)}`}
-      enlace={{ to: "/app/pagos/transferencias", etiqueta: "Verificar transferencias" }}
+      enlace={{ to: "/app/cobros/transferencias", etiqueta: "Verificar transferencias" }}
     >
       {datos && datos.supera_24_horas > 0 && (
         <Aviso tono="urgente">{plural(datos.supera_24_horas, "lleva", "llevan")} más de 24 h sin verificar</Aviso>
@@ -196,7 +196,7 @@ export function BloqueCuotasVencidas({ datos }: { datos: CuotasVencidasDelResume
       icono={CalendarX}
       cantidad={datos?.cantidad_alumnos ?? null}
       detalleCantidad={`${datos?.cantidad_alumnos === 1 ? "alumno" : "alumnos"} · ${formatearPrecio(datos?.monto_estimado ?? 0)} estimado`}
-      enlace={{ to: "/app/pagos/cuotas", etiqueta: "Ver estado de cuotas" }}
+      enlace={{ to: "/app/cobros/cuotas", etiqueta: "Ver estado de cuotas" }}
     >
       {datos && datos.sin_precio > 0 && (
         <Aviso tono="atencion">

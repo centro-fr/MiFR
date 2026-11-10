@@ -97,8 +97,8 @@ describe("ProfesorasPage (US-38)", () => {
 
   it("renderiza el título principal, subtítulo y botón de acción", () => {
     renderizar();
-    expect(screen.getByRole("heading", { level: 1, name: "Plantel de Profesores" })).toBeInTheDocument();
-    expect(screen.getByText(/Equipo docente del centro/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Profesores" })).toBeInTheDocument();
+    expect(screen.getByText(/Buscá un profesor y abrí su ficha/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "+ Nuevo/a profesor/a" })).toBeInTheDocument();
   });
 
