@@ -1,5 +1,7 @@
-import { CheckCircle2, History, Loader2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { History } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { formatearPrecio } from "@/utils/moneda";
 import type { CobroRendido } from "../schemas/rendicion";
 
@@ -21,16 +23,30 @@ function formatearFechaHora(fechaIso: string): string {
 export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
   if (cargando) {
     return (
-      <div className="flex min-h-48 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-        <Loader2 className="size-5 animate-spin text-primary" />
-        Cargando historial de rendiciones…
+      <div
+        role="status"
+        aria-label="Cargando historial de rendiciones"
+        className="divide-y divide-slate-100 dark:divide-slate-800"
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between px-6 py-3.5">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-8 rounded-full" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+            <Skeleton className="hidden md:block h-4 w-24" />
+            <Skeleton className="hidden sm:block h-4 w-28" />
+            <Skeleton className="hidden lg:block h-4 w-24" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (rendiciones.length === 0) {
     return (
-      <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-12 text-center dark:border-slate-800">
+      <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
         <History className="size-8 text-slate-400" />
         <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
           No hay rendiciones en el historial
@@ -38,28 +54,28 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
         <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
           A medida que confirmes la entrega de efectivo de los profesores, quedarán registradas acá.
         </p>
-      </Card>
+      </div>
     );
   }
 
   return (
     <>
       {/* Desktop Table */}
-      <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
             <tr>
               <th scope="col" className="px-6 py-3.5">
-                Fecha rendición
+                Alumno
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Plan
               </th>
               <th scope="col" className="px-4 py-3.5">
                 Profesor/a
               </th>
               <th scope="col" className="px-4 py-3.5">
-                Alumno
-              </th>
-              <th scope="col" className="px-4 py-3.5">
-                Plan
+                Fecha rendición
               </th>
               <th scope="col" className="px-6 py-3.5 text-right">
                 Monto rendido
@@ -67,61 +83,80 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {rendiciones.map((rendicion) => (
-              <tr
-                key={rendicion.id_pago}
-                className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
-              >
-                <td className="px-6 py-3.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                  {formatearFechaHora(rendicion.fecha_rendicion)}
-                </td>
-                <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                  {rendicion.profesora.nombre} {rendicion.profesora.apellido}
-                </td>
-                <td className="px-4 py-3.5 text-slate-700 dark:text-slate-200">
-                  {rendicion.alumno.nombre} {rendicion.alumno.apellido}
-                </td>
-                <td className="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400">
-                  {rendicion.plan}
-                </td>
-                <td className="px-6 py-3.5 text-right font-extrabold text-slate-900 dark:text-white">
-                  {formatearPrecio(rendicion.monto)}
-                </td>
-              </tr>
-            ))}
+            {rendiciones.map((rendicion) => {
+              const nombreAlumno = `${rendicion.alumno.nombre} ${rendicion.alumno.apellido}`;
+              const nombreProfesora = `${rendicion.profesora.nombre} ${rendicion.profesora.apellido}`;
+
+              return (
+                <tr
+                  key={rendicion.id_pago}
+                  className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                >
+                  <td className="px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                        {inicialesDe(rendicion.alumno.nombre, rendicion.alumno.apellido)}
+                      </span>
+                      <Link
+                        to={`/app/alumnos/${rendicion.alumno.id_alumno}`}
+                        className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                      >
+                        {nombreAlumno}
+                      </Link>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {rendicion.plan}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                    {nombreProfesora}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                    {formatearFechaHora(rendicion.fecha_rendicion)}
+                  </td>
+                  <td className="px-6 py-3.5 text-right font-bold text-slate-900 dark:text-white">
+                    {formatearPrecio(rendicion.monto)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="grid gap-3 xl:hidden">
-        {rendiciones.map((rendicion) => (
-          <Card
-            key={rendicion.id_pago}
-            className="w-full min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 text-slate-900 shadow-2xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <span className="font-extrabold text-sm text-slate-900 dark:text-white truncate flex-1 min-w-0">
-                {rendicion.profesora.nombre} {rendicion.profesora.apellido}
-              </span>
-              <span className="font-extrabold text-slate-900 dark:text-white shrink-0">
+      {/* Mobile Rows */}
+      <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+        {rendiciones.map((rendicion) => {
+          const nombreAlumno = `${rendicion.alumno.nombre} ${rendicion.alumno.apellido}`;
+          const nombreProfesora = `${rendicion.profesora.nombre} ${rendicion.profesora.apellido}`;
+
+          return (
+            <div
+              key={rendicion.id_pago}
+              className="flex items-center justify-between gap-3 px-4 py-3.5"
+            >
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                  {inicialesDe(rendicion.alumno.nombre, rendicion.alumno.apellido)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/app/alumnos/${rendicion.alumno.id_alumno}`}
+                    className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
+                  >
+                    {nombreAlumno}
+                  </Link>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {rendicion.plan} · {nombreProfesora} · {formatearFechaHora(rendicion.fecha_rendicion)}
+                  </p>
+                </div>
+              </div>
+              <span className="font-bold text-sm text-slate-900 dark:text-white shrink-0">
                 {formatearPrecio(rendicion.monto)}
               </span>
             </div>
-
-            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Alumno: {rendicion.alumno.nombre} {rendicion.alumno.apellido} ({rendicion.plan})
-            </div>
-
-            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-400 dark:border-slate-800">
-              <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <CheckCircle2 className="size-3.5" />
-                <span>Rendido en caja</span>
-              </div>
-              <span>{formatearFechaHora(rendicion.fecha_rendicion)}</span>
-            </div>
-          </Card>
-        ))}
+          );
+        })}
       </div>
     </>
   );

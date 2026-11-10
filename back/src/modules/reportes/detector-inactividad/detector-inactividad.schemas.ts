@@ -15,6 +15,7 @@ export const listarAlumnosInactivosQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(30))
     .optional(),
   estado_gestion: z.enum(["PENDIENTE", ...ESTADOS_SEGUIMIENTO]).optional(),
+  incluir_ignorados: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
   ...paginacionSchema(50),
 });
 

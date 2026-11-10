@@ -1,20 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Banknote,
-  Clock,
+  ChevronDown,
   Info,
-  Loader2,
   Search,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient } from "@/api/client";
 import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
@@ -28,7 +28,6 @@ import {
 } from "@/features/cobros/components/modal-registrar-cobro";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectivo-a-rendir";
-import { useEfectivoPendiente } from "@/features/cobros/hooks/use-rendiciones";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { BarraFiltros } from "@/features/transferencias/components/barra-filtros";
@@ -46,6 +45,20 @@ import { formatearPrecio } from "@/utils/moneda";
 import { normalizarParaBuscar } from "@/utils/texto";
 
 type FiltroEstadoCuota = "TODOS" | "VENCIDA" | "POR_VENCER" | "AL_DIA";
+
+const PESTANAS_CUOTA: { id: FiltroEstadoCuota; etiqueta: string }[] = [
+  { id: "TODOS", etiqueta: "Todos" },
+  { id: "VENCIDA", etiqueta: "Vencidas" },
+  { id: "POR_VENCER", etiqueta: "Por vencer" },
+  { id: "AL_DIA", etiqueta: "Al día" },
+];
+
+function etiquetaEstadoCuota(estado?: string): string {
+  if (estado === "VENCIDA") return "Vencida";
+  if (estado === "POR_VENCER") return "Por vencer";
+  if (estado === "AL_DIA") return "Al día";
+  return "";
+}
 
 const DIA_DE_CALENDARIO = /^\d{4}-(\d{2})-(\d{2})/;
 
@@ -92,13 +105,25 @@ interface PanelDeCobrosProps {
 }
 
 function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const tabActiva =
-    !soloACargo && (tabParam === "transferencias" || tabParam === "efectivo") ? tabParam : "cuotas";
+  const seccionDeRuta = pathname.endsWith("/transferencias")
+    ? "transferencias"
+    : pathname.endsWith("/efectivo")
+      ? "efectivo"
+      : pathname.endsWith("/cuotas")
+        ? "cuotas"
+        : null;
+  const tabActiva = !soloACargo
+    ? (seccionDeRuta ?? (tabParam === "transferencias" || tabParam === "efectivo" ? tabParam : "cuotas"))
+    : "cuotas";
 
   const [busqueda, setBusqueda] = useState("");
+  const [filtroPlan, setFiltroPlan] = useState<string>("TODOS");
+  const [filtroProfesora, setFiltroProfesora] = useState<string>("TODAS");
   const [filtroCuota, setFiltroCuota] = useState<FiltroEstadoCuota>("TODOS");
+  const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
 
   // Modales de cobro
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<{
@@ -176,9 +201,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   );
   const limpiarFiltrosTransferencias = () => setFiltrosTransferencias(FILTROS_INICIALES);
 
-  // Consulta de efectivo a rendir pendiente (solo propietaria)
-  const { data: efectivoData } = useEfectivoPendiente(undefined, { enabled: !soloACargo });
-
   // Consulta de alumnos activos con su inscripción
   const {
     data: alumnosData,
@@ -240,6 +262,14 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
       });
   }, [alumnosData, mapaPreciosPlanes]);
 
+  const opcionesProfesoras = useMemo(() => {
+    const nombres = new Set<string>();
+    for (const a of alumnosCobro) {
+      if (a.profesora && a.profesora !== "—") nombres.add(a.profesora);
+    }
+    return Array.from(nombres).sort((a, b) => a.localeCompare(b, "es"));
+  }, [alumnosCobro]);
+
   // Conteo de estados
   const conteoVencidas = useMemo(
     () => alumnosCobro.filter((a) => a.situacion_cuota?.estado === "VENCIDA").length,
@@ -253,6 +283,12 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     () => alumnosCobro.filter((a) => a.situacion_cuota?.estado === "AL_DIA").length,
     [alumnosCobro]
   );
+  const conteosPorCuota: Record<FiltroEstadoCuota, number> = {
+    TODOS: alumnosCobro.length,
+    VENCIDA: conteoVencidas,
+    POR_VENCER: conteoPorVencer,
+    AL_DIA: conteoAlDia,
+  };
 
   // Filtrado de alumnos
   const alumnosFiltrados = useMemo(() => {
@@ -266,13 +302,34 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         }
       }
 
+      if (filtroPlan !== "TODOS" && String(alumno.id_plan) !== filtroPlan) {
+        return false;
+      }
+
+      if (!soloACargo && filtroProfesora !== "TODAS" && alumno.profesora !== filtroProfesora) {
+        return false;
+      }
+
       if (filtroCuota !== "TODOS") {
         if (alumno.situacion_cuota?.estado !== filtroCuota) return false;
       }
 
       return true;
     });
-  }, [alumnosCobro, busqueda, filtroCuota]);
+  }, [alumnosCobro, busqueda, filtroPlan, filtroProfesora, filtroCuota, soloACargo]);
+
+  const hayFiltrosCuotasActivos =
+    busqueda.trim() !== "" ||
+    filtroPlan !== "TODOS" ||
+    (!soloACargo && filtroProfesora !== "TODAS") ||
+    filtroCuota !== "TODOS";
+
+  const limpiarFiltrosCuotas = () => {
+    setBusqueda("");
+    setFiltroPlan("TODOS");
+    setFiltroProfesora("TODAS");
+    setFiltroCuota("TODOS");
+  };
 
   function abrirCobro(alumno: (typeof alumnosCobro)[number]) {
     setAlumnoSeleccionado({
@@ -296,10 +353,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     setAlumnoSeleccionado(null);
     setComprobanteId(idPago);
     void recargarAlumnos();
-  }
-
-  function cambiarTab(nuevaTab: "cuotas" | "transferencias" | "efectivo") {
-    setSearchParams({ tab: nuevaTab });
   }
 
   const handleAprobarTransferencia = (
@@ -343,373 +396,412 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     );
   };
 
+  const tituloSeccion = soloACargo
+    ? "Cobros"
+    : tabActiva === "transferencias"
+      ? "Transferencias por verificar"
+      : tabActiva === "efectivo"
+        ? "Efectivo a rendir"
+        : "Cuotas";
+
+  const descripcionSeccion = soloACargo
+    ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
+    : tabActiva === "transferencias"
+      ? "Verificá en tu cuenta las transferencias informadas por los alumnos y aprobalas o rechazalas."
+      : tabActiva === "efectivo"
+        ? "Controlá el efectivo cobrado por las profesoras pendiente de entrega y el historial rendido."
+        : "Buscá el estado de cuota de los alumnos y registrá cobros en efectivo o por transferencia.";
+
   return (
     <div className="space-y-5 min-w-0">
       {/* ENCABEZADO */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Cobros
+            {tituloSeccion}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-            {soloACargo
-              ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
-              : "Quién debe, qué transferencias faltan verificar y cuánto efectivo te tienen que rendir."}
+            {descripcionSeccion}
           </p>
         </div>
       </header>
 
-      {/* PESTAÑAS PRINCIPALES (solo propietaria) */}
-      {!soloACargo && (
-        <nav
-          aria-label="Secciones de cobros y cuotas"
-          className="flex items-center gap-4 sm:gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pt-1 scrollbar-none"
-        >
-          {/* Cuotas */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("cuotas")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "cuotas"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Cuotas</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "cuotas"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {conteoVencidas + conteoPorVencer || alumnosCobro.length}
-            </span>
-          </button>
-
-          {/* Transferencias por verificar */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("transferencias")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "transferencias"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Transferencias por verificar</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "transferencias"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {transferenciasPendientes.length}
-            </span>
-          </button>
-
-          {/* Efectivo a rendir */}
-          <button
-            type="button"
-            onClick={() => cambiarTab("efectivo")}
-            className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-              tabActiva === "efectivo"
-                ? "border-primary text-slate-900 dark:text-white"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-            )}
-          >
-            <span>Efectivo a rendir</span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                tabActiva === "efectivo"
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              )}
-            >
-              {efectivoData?.cantidad ?? 0}
-            </span>
-          </button>
-        </nav>
-      )}
-
-      {/* CONTENIDO SEGÚN TAB */}
+      {/* CONTENIDO SEGÚN SECCIÓN */}
 
       {/* TAB 1: CUOTAS */}
       {tabActiva === "cuotas" && (
         <div className="space-y-4">
-          {/* Barra de búsqueda y chips */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Buscador */}
-            <div className="relative flex-1 min-w-[240px]">
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
-              />
-              <Input
-                id="buscar-alumno-cuota"
-                aria-label="Buscar por nombre, apellido o DNI"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre, apellido o DNI..."
-                className="h-10 w-full rounded-xl border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
-              />
+          {/* Barra de búsqueda y filtros en píldoras */}
+          <section aria-label="Filtros de cuotas" className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Buscador */}
+              <div className="relative flex-1 min-w-[280px] max-w-sm">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  id="buscar-alumno-cuota"
+                  aria-label="Buscar por nombre, apellido o DNI"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar por nombre, apellido o DNI..."
+                  className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                />
+              </div>
+
+              {/* Botón de filtros para mobile */}
+              <button
+                type="button"
+                aria-label="Filtros adicionales"
+                onClick={() => setMostrarFiltrosMobile((v) => !v)}
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
+                  (mostrarFiltrosMobile || hayFiltrosCuotasActivos) && "border-primary text-primary",
+                )}
+              >
+                <SlidersHorizontal className="size-4" />
+              </button>
+
+              {/* Selects secundarios en píldoras */}
+              <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+                <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                  <label htmlFor="filtro-plan-cobros" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    Plan
+                  </label>
+                  <select
+                    id="filtro-plan-cobros"
+                    aria-label="Plan"
+                    value={filtroPlan}
+                    onChange={(e) => setFiltroPlan(e.target.value)}
+                    className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                  >
+                    <option value="TODOS">Todos</option>
+                    {planes.map((p) => (
+                      <option key={p.id} value={String(p.id)}>
+                        {p.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+                </div>
+
+                {!soloACargo && (
+                  <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                    <label htmlFor="filtro-profesora-cobros" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      Profesora
+                    </label>
+                    <select
+                      id="filtro-profesora-cobros"
+                      aria-label="Profesora"
+                      value={filtroProfesora}
+                      onChange={(e) => setFiltroProfesora(e.target.value)}
+                      className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+                    >
+                      <option value="TODAS">Todas</option>
+                      {opcionesProfesoras.map((prof) => (
+                        <option key={prof} value={prof}>
+                          {prof}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
+                  </div>
+                )}
+
+                {hayFiltrosCuotasActivos && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={limpiarFiltrosCuotas}
+                    className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
+                  >
+                    Limpiar filtros
+                  </Button>
+                )}
+              </div>
             </div>
+          </section>
 
-            {/* Chips rápidos de estado */}
-            <div
-              className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0"
-              role="group"
-              aria-label="Filtrar por estado de cuota"
-            >
-              {/* Vencidas */}
-              <button
-                type="button"
-                aria-label="Vencidas"
-                onClick={() => setFiltroCuota(filtroCuota === "VENCIDA" ? "TODOS" : "VENCIDA")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shadow-2xs shrink-0",
-                  filtroCuota === "VENCIDA"
-                    ? "bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-950/60 dark:text-rose-200"
-                    : "bg-white text-rose-700 border border-slate-200 hover:bg-rose-50 dark:border-slate-700 dark:bg-slate-900 dark:text-rose-300"
-                )}
-              >
-                <span className="size-1.5 rounded-full bg-rose-500" />
-                <span>Vencidas</span>
-                <span className="font-extrabold">{conteoVencidas}</span>
-              </button>
+          {/* Pestañas de estado para mobile */}
+          <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            {PESTANAS_CUOTA.map((pestana) => {
+              const activa = filtroCuota === pestana.id;
+              const conteo = conteosPorCuota[pestana.id];
 
-              {/* Por vencer */}
-              <button
-                type="button"
-                aria-label="Por vencer"
-                onClick={() =>
-                  setFiltroCuota(filtroCuota === "POR_VENCER" ? "TODOS" : "POR_VENCER")
-                }
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shadow-2xs shrink-0",
-                  filtroCuota === "POR_VENCER"
-                    ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300 dark:bg-amber-950/60 dark:text-amber-200"
-                    : "bg-white text-amber-700 border border-slate-200 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-900 dark:text-amber-300"
-                )}
-              >
-                <span className="size-1.5 rounded-full bg-amber-500" />
-                <span>Por vencer</span>
-                <span className="font-extrabold">{conteoPorVencer}</span>
-              </button>
-
-              {/* Al día */}
-              <button
-                type="button"
-                aria-label="Al día"
-                onClick={() => setFiltroCuota(filtroCuota === "AL_DIA" ? "TODOS" : "AL_DIA")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shadow-2xs shrink-0",
-                  filtroCuota === "AL_DIA"
-                    ? "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200"
-                    : "bg-white text-emerald-700 border border-slate-200 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-300"
-                )}
-              >
-                <span className="size-1.5 rounded-full bg-emerald-500" />
-                <span>Al día</span>
-                <span className="font-extrabold">{conteoAlDia}</span>
-              </button>
-            </div>
+              return (
+                <button
+                  key={pestana.id}
+                  type="button"
+                  onClick={() =>
+                    setFiltroCuota(
+                      pestana.id !== "TODOS" && filtroCuota === pestana.id ? "TODOS" : pestana.id,
+                    )
+                  }
+                  className={cn(
+                    "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+                    activa
+                      ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+                  )}
+                >
+                  <span>{pestana.etiqueta}</span>
+                  <span className={cn(activa ? "text-primary font-black" : "text-slate-500")}>
+                    {conteo}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* TABLA DE CUOTAS */}
           {cargandoAlumnos ? (
-            <div className="flex min-h-52 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-              <Loader2 className="size-5 animate-spin text-primary" />
-              Cargando cuotas…
-            </div>
-          ) : alumnosFiltrados.length === 0 ? (
-            <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
-              <Users className="size-8 text-slate-400" />
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                No se encontraron cuotas
-              </h3>
-              <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Probá ajustando la búsqueda o el filtro de estado.
-              </p>
-              {(busqueda || filtroCuota !== "TODOS") && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setBusqueda("");
-                    setFiltroCuota("TODOS");
-                  }}
-                  className="h-8 rounded-lg text-xs"
-                >
-                  Limpiar filtros
-                </Button>
-              )}
-            </Card>
-          ) : (
-            <>
-              {/* Desktop Table */}
-              <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                      <tr>
-                        <th scope="col" className="px-6 py-3.5">
-                          Alumno
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Plan
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Profesor/a
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Vencimiento
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Estado
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Monto
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-right">
-                          <span className="sr-only">Acciones</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {alumnosFiltrados.map((alumno) => {
-                        const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`;
-                        const vencimientoCorto = formatearFechaCorta(
-                          alumno.situacion_cuota?.fecha_vencimiento
-                        );
-
-                        return (
-                          <tr
-                            key={alumno.id_alumno}
-                            className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
-                          >
-                            {/* Alumno */}
-                            <td className="px-6 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                                  {inicialesDe(alumno.nombre, alumno.apellido)}
-                                </span>
-                                <span className="font-bold text-sm text-slate-900 dark:text-white">
-                                  {nombreCompleto}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Plan */}
-                            <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                              {alumno.nombre_plan}
-                            </td>
-
-                            {/* Profesora */}
-                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                              {alumno.profesora}
-                            </td>
-
-                            {/* Vencimiento */}
-                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                              {vencimientoCorto}
-                            </td>
-
-                            {/* Estado */}
-                            <td className="px-4 py-3.5">
-                              <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
-                            </td>
-
-                            {/* Monto */}
-                            <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                              {formatearPrecio(alumno.precio_vigente)}
-                            </td>
-
-                            {/* Acción: Registrar cobro */}
-                            <td className="px-6 py-3.5 text-right">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => abrirCobro(alumno)}
-                                aria-label={`Cobrar cuota de ${nombreCompleto}`}
-                                className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Registrar cobro
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            <div
+              role="status"
+              aria-label="Cargando cuotas"
+              className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+            >
+              <div className="hidden lg:flex items-center gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
+                <Skeleton className="h-8 w-20 rounded-lg" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
+                <Skeleton className="h-8 w-24 rounded-lg" />
+                <Skeleton className="h-8 w-20 rounded-lg" />
               </div>
-
-              {/* Mobile Cards */}
-              <div className="grid gap-3 xl:hidden">
-                {alumnosFiltrados.map((alumno) => {
-                  const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`;
-                  const vencimientoCorto = formatearFechaCorta(
-                    alumno.situacion_cuota?.fecha_vencimiento
-                  );
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-8 rounded-full" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <Skeleton className="hidden md:block h-4 w-24" />
+                    <Skeleton className="hidden sm:block h-4 w-28" />
+                    <Skeleton className="hidden lg:block h-5 w-16 rounded-md" />
+                    <Skeleton className="h-8 w-28 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+              {/* Header de pestañas para desktop dentro de la tarjeta */}
+              <div
+                className="hidden lg:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900"
+                role="group"
+                aria-label="Filtrar por estado de cuota"
+              >
+                {PESTANAS_CUOTA.map((pestana) => {
+                  const activa = filtroCuota === pestana.id;
+                  const conteo = conteosPorCuota[pestana.id];
 
                   return (
-                    <Card
-                      key={alumno.id_alumno}
-                      className="rounded-2xl border-slate-200 bg-white p-4 text-slate-900 shadow-2xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    <button
+                      key={pestana.id}
+                      type="button"
+                      aria-label={pestana.etiqueta}
+                      onClick={() =>
+                        setFiltroCuota(
+                          pestana.id !== "TODOS" && filtroCuota === pestana.id
+                            ? "TODOS"
+                            : pestana.id,
+                        )
+                      }
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                        activa
+                          ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                      )}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                            {inicialesDe(alumno.nombre, alumno.apellido)}
-                          </span>
-                          <div>
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                              {nombreCompleto}
-                            </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {alumno.nombre_plan} · {alumno.profesora}
-                            </p>
-                          </div>
-                        </div>
-                        <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400">Vencimiento: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {vencimientoCorto}
-                          </span>
-                        </div>
-                        <span className="font-extrabold text-slate-900 dark:text-white">
-                          {formatearPrecio(alumno.precio_vigente)}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => abrirCobro(alumno)}
-                          aria-label={`Cobrar cuota de ${nombreCompleto}`}
-                          className="w-full h-9 rounded-xl border-slate-200 text-xs font-bold text-slate-800 hover:text-primary dark:border-slate-700 dark:text-slate-200"
-                        >
-                          Registrar cobro
-                        </Button>
-                      </div>
-                    </Card>
+                      <span>{pestana.etiqueta}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                          activa
+                            ? "bg-primary text-white"
+                            : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                        )}
+                      >
+                        {conteo}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
-            </>
+
+              {alumnosFiltrados.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
+                  <Users className="size-8 text-slate-400" />
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    No se encontraron cuotas
+                  </h3>
+                  <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
+                    Probá ajustando la búsqueda o el filtro de estado.
+                  </p>
+                  {hayFiltrosCuotasActivos && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={limpiarFiltrosCuotas}
+                      className="h-8 rounded-lg text-xs"
+                    >
+                      Limpiar filtros
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden overflow-x-auto lg:block">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                        <tr>
+                          <th scope="col" className="px-6 py-3.5">
+                            Alumno
+                          </th>
+                          <th scope="col" className="px-4 py-3.5">
+                            Plan
+                          </th>
+                          <th scope="col" className="px-4 py-3.5">
+                            Profesor/a
+                          </th>
+                          <th scope="col" className="px-4 py-3.5">
+                            Vencimiento
+                          </th>
+                          {filtroCuota === "TODOS" && (
+                            <th scope="col" className="px-4 py-3.5">
+                              Estado
+                            </th>
+                          )}
+                          <th scope="col" className="px-4 py-3.5">
+                            Monto
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-right">
+                            Acciones
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {alumnosFiltrados.map((alumno) => {
+                          const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`;
+                          const vencimientoCorto = formatearFechaCorta(
+                            alumno.situacion_cuota?.fecha_vencimiento
+                          );
+
+                          return (
+                            <tr
+                              key={alumno.id_alumno}
+                              className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                            >
+                              {/* Alumno */}
+                              <td className="px-6 py-3.5">
+                                <div className="flex items-center gap-3">
+                                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                                    {inicialesDe(alumno.nombre, alumno.apellido)}
+                                  </span>
+                                  <Link
+                                    to={`/app/alumnos/${alumno.id_alumno}`}
+                                    className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                                  >
+                                    {nombreCompleto}
+                                  </Link>
+                                </div>
+                              </td>
+
+                              {/* Plan */}
+                              <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+                                {alumno.nombre_plan}
+                              </td>
+
+                              {/* Profesora */}
+                              <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                                {alumno.profesora}
+                              </td>
+
+                              {/* Vencimiento */}
+                              <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                                {vencimientoCorto}
+                              </td>
+
+                              {/* Estado (solo en Todos igual que Ausentes) */}
+                              {filtroCuota === "TODOS" && (
+                                <td className="px-4 py-3.5">
+                                  <BadgeSituacionCuota situacion={alumno.situacion_cuota} />
+                                </td>
+                              )}
+
+                              {/* Monto */}
+                              <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                                {formatearPrecio(alumno.precio_vigente)}
+                              </td>
+
+                              {/* Acción: Registrar cobro */}
+                              <td className="px-6 py-3.5 text-right">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => abrirCobro(alumno)}
+                                  aria-label={`Cobrar cuota de ${nombreCompleto}`}
+                                  className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                >
+                                  Registrar cobro
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Rows */}
+                  <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+                    {alumnosFiltrados.map((alumno) => {
+                      const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`;
+                      const vencimientoCorto = formatearFechaCorta(
+                        alumno.situacion_cuota?.fecha_vencimiento
+                      );
+                      const estadoTexto = etiquetaEstadoCuota(alumno.situacion_cuota?.estado);
+
+                      return (
+                        <div
+                          key={alumno.id_alumno}
+                          className="flex items-center justify-between gap-3 px-4 py-3.5"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                              {inicialesDe(alumno.nombre, alumno.apellido)}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <Link
+                                to={`/app/alumnos/${alumno.id_alumno}`}
+                                className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
+                              >
+                                {nombreCompleto}
+                              </Link>
+                              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                                {alumno.nombre_plan} · Vence {vencimientoCorto} · {formatearPrecio(alumno.precio_vigente)}
+                                {filtroCuota === "TODOS" && estadoTexto ? ` · ${estadoTexto}` : ""}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => abrirCobro(alumno)}
+                            aria-label={`Cobrar cuota de ${nombreCompleto}`}
+                            className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                          >
+                            Registrar cobro
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -736,12 +828,28 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
           {/* TABLA DE TRANSFERENCIAS */}
           {cargandoTransferencias ? (
-            <div className="flex min-h-52 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-              <Loader2 className="size-5 animate-spin text-primary" />
-              Cargando transferencias…
+            <div
+              role="status"
+              aria-label="Cargando transferencias"
+              className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+            >
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-8 rounded-full" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <Skeleton className="hidden md:block h-4 w-24" />
+                    <Skeleton className="hidden sm:block h-4 w-28" />
+                    <Skeleton className="hidden lg:block h-4 w-20" />
+                    <Skeleton className="h-8 w-36 rounded-lg" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : transferenciasPendientes.length === 0 ? (
-            <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
               <Banknote className="size-8 text-slate-400" />
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 No hay transferencias pendientes
@@ -749,137 +857,128 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
               <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
                 Cuando se informe una transferencia, va a figurar acá para su verificación.
               </p>
-            </Card>
+            </div>
           ) : transferenciasVisibles.length === 0 ? (
-            <Card className="flex flex-col items-center gap-3 border-slate-200 px-5 py-14 text-center dark:border-slate-700">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
               <Search className="size-8 text-slate-400" />
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Sin resultados</h3>
               <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
                 Ninguna transferencia pendiente coincide con los filtros.
               </p>
-              <Button type="button" variant="outline" onClick={limpiarFiltrosTransferencias} className="min-h-11 rounded-xl font-bold">
+              <Button type="button" variant="outline" onClick={limpiarFiltrosTransferencias} className="h-8 rounded-lg text-xs">
                 Limpiar filtros
               </Button>
-            </Card>
+            </div>
           ) : (
-            <>
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
               {/* Desktop Table */}
-              <div className="hidden overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs xl:block dark:border-slate-800 dark:bg-slate-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                      <tr>
-                        <th scope="col" className="px-6 py-3.5">
-                          Alumno
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Fecha
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Titular
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Transfirió
-                        </th>
-                        <th scope="col" className="px-4 py-3.5">
-                          Informada
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-right">
-                          <span className="sr-only">Acciones</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {transferenciasVisibles.map((transferencia) => {
-                        const tramo = tramoDePlazo(transferencia);
-                        const fechaFormateada = formatearFechaHoraCorta(
-                          transferencia.realizadaEl
-                        );
-                        const textoPlazo =
-                          tramo === "vencida"
-                            ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
-                            : `Hace ${transferencia.horasDesdeLaCarga} h`;
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    <tr>
+                      <th scope="col" className="px-6 py-3.5">
+                        Alumno
+                      </th>
+                      <th scope="col" className="px-4 py-3.5">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-4 py-3.5">
+                        Titular
+                      </th>
+                      <th scope="col" className="px-4 py-3.5">
+                        Transfirió
+                      </th>
+                      <th scope="col" className="px-4 py-3.5">
+                        Informada
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-right">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {transferenciasVisibles.map((transferencia) => {
+                      const tramo = tramoDePlazo(transferencia);
+                      const fechaFormateada = formatearFechaHoraCorta(
+                        transferencia.realizadaEl
+                      );
+                      const textoPlazo =
+                        tramo === "vencida"
+                          ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
+                          : `Hace ${transferencia.horasDesdeLaCarga} h`;
 
-                        return (
-                          <tr
-                            key={transferencia.id}
-                            className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
-                          >
-                            {/* Alumno */}
-                            <td className="px-6 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                                  {inicialesDe(
-                                    transferencia.alumno.nombre,
-                                    transferencia.alumno.apellido
-                                  )}
-                                </span>
-                                <span className="font-bold text-sm text-slate-900 dark:text-white">
-                                  {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Fecha */}
-                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                              {fechaFormateada}
-                            </td>
-
-                            {/* Titular */}
-                            <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                              {transferencia.titularCuenta || "—"}
-                            </td>
-
-                            {/* Transfirió */}
-                            <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                              {formatearPrecio(transferencia.monto)}
-                            </td>
-
-                            {/* Informada */}
-                            <td className="px-4 py-3.5">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
-                                  tramo === "vencida"
-                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                                    : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                      return (
+                        <tr
+                          key={transferencia.id}
+                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                        >
+                          {/* Alumno */}
+                          <td className="px-6 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                                {inicialesDe(
+                                  transferencia.alumno.nombre,
+                                  transferencia.alumno.apellido
                                 )}
-                              >
-                                <Clock className="size-3.5" />
-                                <span>{textoPlazo}</span>
                               </span>
-                            </td>
+                              <Link
+                                to={`/app/alumnos/${transferencia.alumno.id}`}
+                                className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
+                              >
+                                {transferencia.alumno.nombre} {transferencia.alumno.apellido}
+                              </Link>
+                            </div>
+                          </td>
 
-                            {/* Acciones: Ver detalle y Aprobar */}
-                            <td className="px-6 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                  className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                                >
-                                  Ver detalle
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                  className="h-8 rounded-lg bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
-                                >
-                                  Aprobar
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                          {/* Fecha */}
+                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                            {fechaFormateada}
+                          </td>
+
+                          {/* Titular */}
+                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                            {transferencia.titularCuenta || "—"}
+                          </td>
+
+                          {/* Transfirió */}
+                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                            {formatearPrecio(transferencia.monto)}
+                          </td>
+
+                          {/* Informada (texto simple sin colores ni fondos) */}
+                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                            {textoPlazo}
+                          </td>
+
+                          {/* Acciones: Ver detalle y Aprobar */}
+                          <td className="px-6 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setTransferenciaSeleccionada(transferencia)}
+                                className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              >
+                                Ver detalle
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => setTransferenciaSeleccionada(transferencia)}
+                                className="h-8 rounded-lg bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
+                              >
+                                Aprobar
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Mobile Cards */}
-              <div className="grid w-full min-w-0 gap-3 xl:hidden">
+              {/* Mobile Rows */}
+              <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
                 {transferenciasVisibles.map((transferencia) => {
                   const tramo = tramoDePlazo(transferencia);
                   const fechaFormateada = formatearFechaHoraCorta(
@@ -892,80 +991,54 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                   const nombreCompleto = `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}`;
 
                   return (
-                    <Card
+                    <div
                       key={transferencia.id}
-                      className="w-full min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 text-slate-900 shadow-2xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                      className="flex items-center justify-between gap-3 px-4 py-3.5"
                     >
-                      <div className="flex items-center justify-between gap-3 min-w-0">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                            {inicialesDe(
-                              transferencia.alumno.nombre,
-                              transferencia.alumno.apellido
-                            )}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                              {nombreCompleto}
-                            </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                              {fechaFormateada}
-                              {transferencia.titularCuenta ? ` · Titular: ${transferencia.titularCuenta}` : ""}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0 shadow-2xs",
-                            tramo === "vencida"
-                              ? "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300"
-                              : "border-amber-200/60 bg-amber-50 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300"
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                          {inicialesDe(
+                            transferencia.alumno.nombre,
+                            transferencia.alumno.apellido
                           )}
-                        >
-                          <Clock className="size-3.5 shrink-0" />
-                          <span>{textoPlazo}</span>
                         </span>
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs dark:border-slate-800 min-w-0">
-                        <div className="min-w-0 flex-1 truncate pr-2">
-                          <span className="text-slate-500 dark:text-slate-400">Titular de cuenta: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {transferencia.titularCuenta || "—"}
-                          </span>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to={`/app/alumnos/${transferencia.alumno.id}`}
+                            className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
+                          >
+                            {nombreCompleto}
+                          </Link>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            {fechaFormateada} · {formatearPrecio(transferencia.monto)} · {textoPlazo}
+                          </p>
                         </div>
-                        <span className="font-extrabold text-slate-900 dark:text-white shrink-0">
-                          {formatearPrecio(transferencia.monto)}
-                        </span>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 pt-2 w-full min-w-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
                           onClick={() => setTransferenciaSeleccionada(transferencia)}
                           aria-label={`Ver detalle de transferencia de ${nombreCompleto}`}
-                          className="w-full min-w-0 h-9 rounded-xl border-slate-200 text-xs font-semibold text-slate-800 hover:text-primary dark:border-slate-700 dark:text-slate-200 truncate"
+                          className="h-8 rounded-lg border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
                         >
                           Ver detalle
                         </Button>
                         <Button
                           type="button"
-                          size="sm"
                           onClick={() => setTransferenciaSeleccionada(transferencia)}
                           aria-label={`Aprobar transferencia de ${nombreCompleto}`}
-                          className="w-full min-w-0 h-9 rounded-xl bg-primary text-xs font-bold text-white hover:bg-primary-dark shadow-2xs truncate"
+                          className="h-8 rounded-lg bg-primary px-2.5 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
                         >
                           Aprobar
                         </Button>
                       </div>
-                    </Card>
+                    </div>
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
       )}

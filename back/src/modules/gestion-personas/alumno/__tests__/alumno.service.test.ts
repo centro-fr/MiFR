@@ -147,6 +147,7 @@ describe("AlumnoService", () => {
       obtenerPorId: vi.fn(),
       buscarPorId: vi.fn().mockResolvedValue(null),
       identificarPorGoogle: vi.fn(),
+      actualizarFoto: vi.fn(),
       buscarPorEmail: vi.fn().mockResolvedValue(null),
       buscarPorDni: vi.fn().mockResolvedValue(null),
       listarPropietariasActivas: vi.fn().mockResolvedValue([]),

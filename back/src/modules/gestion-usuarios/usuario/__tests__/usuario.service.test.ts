@@ -18,6 +18,7 @@ function crearUsuario(cambios: Partial<UsuarioConRoles> = {}): UsuarioConRoles {
     telefono: null,
     fecha_nacimiento: new Date("1990-01-01"),
     direccion: null,
+    foto_url: null,
     estado: "ACTIVO",
     fecha_alta: new Date(),
     fecha_actualizacion: new Date(),
@@ -44,6 +45,7 @@ function crearRepositorioMock() {
     listar: vi.fn(),
     crear: vi.fn(),
     actualizar: vi.fn(),
+    actualizarFoto: vi.fn(),
     vincularGoogleId: vi.fn(),
     eliminar: vi.fn(),
     contarPropietariasActivas: vi.fn(),
@@ -257,6 +259,16 @@ describe("UsuarioService", () => {
       await expect(service.identificarPorGoogle("google-otra", "test@example.com")).rejects.toBeInstanceOf(
         UnauthorizedError,
       );
+    });
+  });
+
+  describe("actualizarFoto", () => {
+    it("actualizarFoto delega en el repositorio", async () => {
+      const foto = "https://lh3.googleusercontent.com/a/foto=s96-c";
+      repositorio.actualizarFoto.mockResolvedValue(crearUsuario({ foto_url: foto }));
+
+      await expect(service.actualizarFoto(1, foto)).resolves.toMatchObject({ foto_url: foto });
+      expect(repositorio.actualizarFoto).toHaveBeenCalledWith(1, foto);
     });
   });
 

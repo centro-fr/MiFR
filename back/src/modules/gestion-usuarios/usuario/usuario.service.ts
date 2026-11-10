@@ -37,6 +37,10 @@ export class UsuarioService implements IInfoUsuarios {
     return this.repositorio.buscarPorId(id);
   }
 
+  actualizarFoto(id: number, fotoUrl: string): Promise<UsuarioConRoles> {
+    return this.repositorio.actualizarFoto(id, fotoUrl);
+  }
+
   buscarPorEmail(email: string): Promise<UsuarioConRoles | null> {
     return this.repositorio.buscarPorEmail(email);
   }

@@ -152,7 +152,7 @@ export function AcordeonProfesoraRendicion({
                         Monto
                       </th>
                       <th scope="col" className="px-4 py-3 text-right">
-                        <span className="sr-only">Acciones</span>
+                        Acciones
                       </th>
                     </tr>
                   </thead>

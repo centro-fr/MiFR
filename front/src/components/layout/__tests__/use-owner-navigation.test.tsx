@@ -30,23 +30,38 @@ describe("useOwnerNavigation: sección Alumnos", () => {
     expect(buscarItem("/app/ausentes", "Ausentes").esActivo).toBe(true);
   });
 
-  it("marca Cobros y Cuotas en su ruta", () => {
-    expect(buscarItem("/app/pagos", "Cobros y Cuotas").esActivo).toBe(true);
-  });
-
   it("no marca Listado en otra sección", () => {
     expect(buscarItem("/app/horarios", "Listado").esActivo).toBe(false);
   });
 });
 
+describe("useOwnerNavigation: sección Cobros", () => {
+  it("marca Cuotas en su ruta y en la raíz de pagos", () => {
+    expect(buscarItem("/app/pagos/cuotas", "Cuotas").esActivo).toBe(true);
+    expect(buscarItem("/app/pagos", "Cuotas").esActivo).toBe(true);
+  });
+
+  it("marca Transferencias por verificar en su ruta sin activar Cuotas", () => {
+    expect(buscarItem("/app/pagos/transferencias", "Transferencias por verificar").esActivo).toBe(true);
+    expect(buscarItem("/app/pagos/transferencias", "Cuotas").esActivo).toBe(false);
+  });
+
+  it("marca Efectivo a rendir en su ruta sin activar Cuotas", () => {
+    expect(buscarItem("/app/pagos/efectivo", "Efectivo a rendir").esActivo).toBe(true);
+    expect(buscarItem("/app/pagos/efectivo", "Cuotas").esActivo).toBe(false);
+  });
+});
+
 describe("useOwnerNavigation: contadores", () => {
-  it("pone el número de transferencias pendientes en Cobros y Cuotas", () => {
-    const cobros = buscarItem("/app/dashboard", "Cobros y Cuotas", { TRANSFERENCIAS_PENDIENTES: 3 });
-    expect(cobros.contador).toBe(3);
+  it("pone el número de transferencias pendientes en Transferencias por verificar", () => {
+    const transferencias = buscarItem("/app/dashboard", "Transferencias por verificar", {
+      TRANSFERENCIAS_PENDIENTES: 3,
+    });
+    expect(transferencias.contador).toBe(3);
   });
 
   it("sin dato no hay contador", () => {
-    expect(buscarItem("/app/dashboard", "Cobros y Cuotas").contador).toBeUndefined();
+    expect(buscarItem("/app/dashboard", "Transferencias por verificar").contador).toBeUndefined();
   });
 });
 

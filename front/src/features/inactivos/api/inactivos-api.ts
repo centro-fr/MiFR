@@ -15,6 +15,7 @@ export async function listarAlumnosInactivos(
   if (filtros.id_plan) params.id_plan = filtros.id_plan;
   if (filtros.minimo_inasistencias) params.minimo_inasistencias = filtros.minimo_inasistencias;
   if (filtros.estado_gestion) params.estado_gestion = filtros.estado_gestion;
+  if (filtros.incluir_ignorados) params.incluir_ignorados = "true";
   if (filtros.limit) params.limit = filtros.limit;
   if (filtros.offset !== undefined) params.offset = filtros.offset;
 

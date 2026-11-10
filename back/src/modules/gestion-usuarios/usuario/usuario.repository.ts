@@ -52,6 +52,14 @@ export class UsuarioRepository {
     return count === 0 ? null : this.buscarPorId(id);
   }
 
+  actualizarFoto(id: number, fotoUrl: string): Promise<UsuarioConRoles> {
+    return this.prisma.usuarios.update({
+      where: { id_usuario: id },
+      data: { foto_url: fotoUrl },
+      ...CON_ROLES,
+    });
+  }
+
   contarPropietariasActivas(): Promise<number> {
     return this.prisma.usuarios.count({
       where: { estado: "ACTIVO", roles: { some: { rol: { codigo: "PROPIETARIA" } } } },

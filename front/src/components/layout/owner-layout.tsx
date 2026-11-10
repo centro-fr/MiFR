@@ -6,6 +6,7 @@ import { CampanaNotificaciones } from "@/features/notificaciones/components/camp
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -414,9 +415,19 @@ function BloqueUsuario() {
       <div className="flex items-center gap-3 w-full group-data-[collapsible=icon]:justify-center">
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow-xs">
-              {iniciales}
-            </div>
+            <Avatar className="size-9 shrink-0 border border-white/10 shadow-xs cursor-default">
+              {user?.fotoUrl && (
+                <AvatarImage
+                  src={user.fotoUrl}
+                  alt={nombre}
+                  referrerPolicy="no-referrer"
+                  className="object-cover"
+                />
+              )}
+              <AvatarFallback className="bg-primary text-xs font-bold text-white">
+                {iniciales}
+              </AvatarFallback>
+            </Avatar>
           </TooltipTrigger>
           <TooltipContent side="right" hidden={state !== "collapsed" || isMobile}>
             <div>{nombre}</div>

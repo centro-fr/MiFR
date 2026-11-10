@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Clock,
   GraduationCap,
-  Loader2,
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -123,73 +123,91 @@ export function ProfesorasPage() {
           </Button>
         </div>
 
-        {/* PESTAÑAS DE ESTADO + BUSCADOR */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-none pt-1">
-            <button
-              type="button"
-              onClick={() => setPestana("ACTIVAS")}
-              className={cn(
-                "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-                pestana === "ACTIVAS"
-                  ? "border-primary text-slate-900 dark:text-white"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-              )}
-            >
-              <span>Activas</span>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                  pestana === "ACTIVAS"
-                    ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-                )}
+        {/* BARRA DE FILTROS INTEGRADA COMO EN IMAGE.PNG */}
+        <section aria-label="Filtros de profesores" className="space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative flex-1 min-w-[280px] max-w-sm">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <Input
+                type="search"
+                aria-label="Buscar por nombre o especialidad"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar por nombre o especialidad..."
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+              />
+            </div>
+            {hayFiltrosActivos && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setBusqueda("");
+                  setPestana("ACTIVAS");
+                }}
+                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
               >
-                {conteoActivas}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPestana("TODAS")}
-              className={cn(
-                "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors",
-                pestana === "TODAS"
-                  ? "border-primary text-slate-900 dark:text-white"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-              )}
-            >
-              <span>Historial completo</span>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-black transition-colors",
-                  pestana === "TODAS"
-                    ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-                )}
-              >
-                {conteoTotal}
-              </span>
-            </button>
+                Limpiar filtros
+              </Button>
+            )}
           </div>
+        </section>
 
-          {/* Buscador */}
-          <div className="relative w-full md:w-80 pb-3 md:pb-2">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
-            <Input
-              type="search"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por nombre o especialidad..."
-              className="h-10 pl-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium shadow-2xs placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
+        {/* PESTAÑAS DE ESTADO PARA MOBILE */}
+        <div className="flex sm:hidden items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+          <button
+            type="button"
+            onClick={() => setPestana("ACTIVAS")}
+            className={cn(
+              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+              pestana === "ACTIVAS"
+                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+            )}
+          >
+            Activas{" "}
+            <span className={cn(pestana === "ACTIVAS" ? "text-primary font-black" : "text-slate-500")}>
+              {conteoActivas}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPestana("TODAS")}
+            className={cn(
+              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
+              pestana === "TODAS"
+                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
+            )}
+          >
+            Historial completo{" "}
+            <span className={cn(pestana === "TODAS" ? "text-primary font-black" : "text-slate-500")}>
+              {conteoTotal}
+            </span>
+          </button>
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
         {isPending ? (
-          <div role="status" className="flex min-h-64 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-            <Loader2 className="size-5 animate-spin text-primary" />
-            Cargando plantel de profesores...
+          <div
+            role="status"
+            aria-label="Cargando profesores"
+            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900"
+          >
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between px-6 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-8 rounded-full" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  <Skeleton className="hidden md:block h-4 w-28" />
+                  <Skeleton className="hidden sm:block h-4 w-24" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : isError ? (
           <Card className="flex flex-col items-center gap-3 border-rose-200 dark:border-rose-900/50 p-8 text-center rounded-3xl">
@@ -209,52 +227,150 @@ export function ProfesorasPage() {
             </Button>
           </Card>
         ) : listaFiltrada.length === 0 ? (
-          <Card className="flex flex-col items-center gap-3 border-slate-200 dark:border-slate-800 px-5 py-14 text-center rounded-3xl">
-            <span
-              aria-hidden="true"
-              className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
-            >
-              <GraduationCap className="size-7" />
-            </span>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              {hayFiltrosActivos ? "Sin resultados para tu búsqueda" : "No hay profesores registrados"}
-            </h2>
-            <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
-              {hayFiltrosActivos
-                ? "Probá ajustando el término de búsqueda para encontrar profesores o especialidades."
-                : "Agregá el/la primer/a profesor/a asociando una cuenta con rol PROFESORA para armar el equipo."}
-            </p>
-            {!hayFiltrosActivos && (
-              <Button
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
+            {/* Header de pestañas para desktop dentro de la tarjeta idéntico a image.png */}
+            <div className="hidden sm:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <button
                 type="button"
-                onClick={abrirNueva}
-                className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
+                onClick={() => setPestana("ACTIVAS")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  pestana === "ACTIVAS"
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                )}
               >
-                + Dar de alta profesor/a
-              </Button>
-            )}
-          </Card>
+                <span>Activas</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    pestana === "ACTIVAS"
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                  )}
+                >
+                  {conteoActivas}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPestana("TODAS")}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                  pestana === "TODAS"
+                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                )}
+              >
+                <span>Historial completo</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                    pestana === "TODAS"
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                  )}
+                >
+                  {conteoTotal}
+                </span>
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
+              <span
+                aria-hidden="true"
+                className="flex size-14 items-center justify-center rounded-2xl bg-pink-50 text-primary dark:bg-pink-950/70 dark:text-pink-200"
+              >
+                <GraduationCap className="size-7" />
+              </span>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                {hayFiltrosActivos ? "Sin resultados para tu búsqueda" : "No hay profesores registrados"}
+              </h2>
+              <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                {hayFiltrosActivos
+                  ? "Probá ajustando el término de búsqueda para encontrar profesores o especialidades."
+                  : "Agregá el/la primer/a profesor/a asociando una cuenta con rol PROFESORA para armar el equipo."}
+              </p>
+              {!hayFiltrosActivos && (
+                <Button
+                  type="button"
+                  onClick={abrirNueva}
+                  className="mt-2 min-h-[44px] rounded-xl bg-primary px-5 font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark"
+                >
+                  + Dar de alta profesor/a
+                </Button>
+              )}
+            </div>
+          </div>
         ) : (
           <>
-            {/* VISTA ESCRITORIO (TABLA) */}
-            <div className="hidden sm:block rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xs">
+            {/* VISTA ESCRITORIO (TABLA EXACTAMENTE COMO EN IMAGE.PNG) */}
+            <div className="hidden sm:block rounded-2xl border border-slate-200/80 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+              {/* Header de pestañas dentro de la tarjeta idéntico a image.png */}
+              <div className="flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setPestana("ACTIVAS")}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    pestana === "ACTIVAS"
+                      ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                  )}
+                >
+                  <span>Activas</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                      pestana === "ACTIVAS"
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                    )}
+                  >
+                    {conteoActivas}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPestana("TODAS")}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    pestana === "TODAS"
+                      ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800",
+                  )}
+                >
+                  <span>Historial completo</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                      pestana === "TODAS"
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+                    )}
+                  >
+                    {conteoTotal}
+                  </span>
+                </button>
+              </div>
+
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                    <TableHead className="py-3.5 pl-6 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <TableRow className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    <TableHead className="py-3.5 pl-6 font-semibold text-slate-500 dark:text-slate-400">
                       Profesor/a
                     </TableHead>
-                    <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <TableHead className="py-3.5 font-semibold text-slate-500 dark:text-slate-400">
                       Especialidad
                     </TableHead>
-                    <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <TableHead className="py-3.5 font-semibold text-slate-500 dark:text-slate-400">
                       Clases semanales
                     </TableHead>
-                    <TableHead className="py-3.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <TableHead className="py-3.5 font-semibold text-slate-500 dark:text-slate-400">
                       Incorporación
                     </TableHead>
-                    <TableHead className="py-3.5 pr-6 text-right font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                      <span className="sr-only">Acciones</span>
+                    <TableHead className="py-3.5 pr-6 text-right font-semibold text-slate-500 dark:text-slate-400">
+                      Acciones
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -322,10 +438,17 @@ export function ProfesorasPage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
-                          <ChevronRight
-                            aria-hidden="true"
-                            className="inline-block size-4 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary dark:text-slate-600 dark:group-hover:text-pink-400"
-                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/app/profesoras/${prof.id}`);
+                            }}
+                            className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                          >
+                            Ver perfil
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

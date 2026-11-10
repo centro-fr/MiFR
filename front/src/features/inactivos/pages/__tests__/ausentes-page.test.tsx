@@ -138,23 +138,23 @@ describe("AusentesPage", () => {
     renderizar();
 
     expect(screen.getByRole("heading", { level: 1, name: "Ausentes" })).toBeInTheDocument();
-    expect(screen.getByText(/Detección proactiva de alumnos con cuota al día/i)).toBeInTheDocument();
+    expect(screen.getByText("Busca los alumnos ausentes que queres contactar")).toBeInTheDocument();
   });
 
   it("renderiza las pestañas de navegación con estados", () => {
     renderizar();
 
-    expect(screen.getByRole("button", { name: /Por contactar/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Contactados/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Ignorados/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Todos/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Por contactar/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Contactados/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Ignorados/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Todos/i }).length).toBeGreaterThan(0);
   });
 
-  it("muestra la información de los alumnos ausentes en el listado", () => {
+  it("muestra la información de los alumnos ausentes en el listado sin plan ni profesora en la fila", () => {
     renderizar();
 
     expect(screen.getAllByText("Martina Sosa").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Danza Clásica Adultos/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Prof\./i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/4/i).length).toBeGreaterThan(0);
 
     // Alumno menor con tutor a cargo
@@ -162,35 +162,43 @@ describe("AusentesPage", () => {
     expect(screen.getAllByText(/Tutor: Patricia Ríos/i).length).toBeGreaterThan(0);
   });
 
-  it("muestra enlace de WhatsApp dentro del modal de gestión", () => {
+  it("muestra enlaces directos de WhatsApp, Mail y Teléfono en la fila", () => {
     renderizar();
 
-    const botonesGestionar = screen.getAllByRole("button", { name: /Gestionar/i });
-    fireEvent.click(botonesGestionar[0]);
+    const enlacesWa = screen.getAllByRole("link", { name: /Abrir WhatsApp con mensaje/i });
+    expect(enlacesWa.length).toBeGreaterThan(0);
+    const hrefWa = enlacesWa[0].getAttribute("href");
+    expect(hrefWa).toContain("https://wa.me/");
+    expect(hrefWa).toContain("text=");
 
-    const enlaceWa = screen.getByRole("link", { name: /Abrir WhatsApp con mensaje/i });
-    expect(enlaceWa).toBeInTheDocument();
-    const href = enlaceWa.getAttribute("href");
-    expect(href).toContain("https://wa.me/");
-    expect(href).toContain("text=");
+    const enlacesMail = screen.getAllByRole("link", { name: /Enviar email/i });
+    expect(enlacesMail.length).toBeGreaterThan(0);
+    expect(enlacesMail[0].getAttribute("href")).toContain("mailto:");
+
+    const enlacesTel = screen.getAllByRole("link", { name: /Llamar/i });
+    expect(enlacesTel.length).toBeGreaterThan(0);
+    expect(enlacesTel[0].getAttribute("href")).toContain("tel:");
   });
 
-  it("abre el modal flotante centrado de gestión al hacer click en Gestionar", () => {
+  it("registra directamente como contactado al presionar el botón Contactado sin abrir modal", () => {
     renderizar();
 
-    const botonesGestionar = screen.getAllByRole("button", { name: /Gestionar/i });
-    fireEvent.click(botonesGestionar[0]);
+    const botonesContactar = screen.getAllByRole("button", { name: "Contactado" });
+    fireEvent.click(botonesContactar[0]);
 
-    // Modal se abre
-    expect(screen.getByRole("heading", { name: "Seguimiento de alumno" })).toBeInTheDocument();
-    expect(screen.getByText(/Acción proactiva para incentivar el reintegro/i)).toBeInTheDocument();
+    // Llama directamente a registrar seguimiento sin abrir ningún modal
+    expect(mockMutateRegistrar).toHaveBeenCalledWith({
+      idInscripcion: 101,
+      estado: "CONTACTADO",
+    });
+    expect(screen.queryByRole("heading", { name: "Seguimiento de alumno" })).not.toBeInTheDocument();
+  });
 
-    // Permite elegir nuevo estado Ignorar
-    const opcionIgnorar = screen.getByRole("button", { name: /Ignorar por ahora/i });
-    fireEvent.click(opcionIgnorar);
+  it("permite ignorar directamente a un alumno con el botón Ignorar", () => {
+    renderizar();
 
-    const botonGuardar = screen.getByRole("button", { name: /Guardar seguimiento/i });
-    fireEvent.click(botonGuardar);
+    const botonesIgnorar = screen.getAllByRole("button", { name: "Ignorar" });
+    fireEvent.click(botonesIgnorar[0]);
 
     expect(mockMutateRegistrar).toHaveBeenCalledWith({
       idInscripcion: 101,
@@ -198,19 +206,25 @@ describe("AusentesPage", () => {
     });
   });
 
-  it("permite cerrar el modal con el botón Cancelar", async () => {
+  it("permite revertir el estado con el botón Revertir", () => {
     renderizar();
 
-    const botonesGestionar = screen.getAllByRole("button", { name: /Gestionar/i });
-    fireEvent.click(botonesGestionar[0]);
+    const botonesRevertir = screen.getAllByRole("button", { name: "Revertir" });
+    fireEvent.click(botonesRevertir[0]);
 
-    expect(screen.getByRole("heading", { name: "Seguimiento de alumno" })).toBeInTheDocument();
+    expect(mockMutateQuitar).toHaveBeenCalledWith(102);
+  });
 
-    const botonCancelar = screen.getByRole("button", { name: "Cancelar" });
-    fireEvent.click(botonCancelar);
+  it("muestra la columna Estado únicamente en la pestaña Todos", () => {
+    renderizar();
 
-    await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: "Seguimiento de alumno" })).not.toBeInTheDocument();
-    });
+    // Por defecto inicia en "Por contactar": no debe estar la columna Estado
+    expect(screen.queryByRole("columnheader", { name: /Estado/i })).not.toBeInTheDocument();
+
+    // Al cambiar a "Todos", aparece la columna Estado
+    const botonesTodos = screen.getAllByRole("button", { name: /Todos/i });
+    fireEvent.click(botonesTodos[0]);
+
+    expect(screen.getByRole("columnheader", { name: /Estado/i })).toBeInTheDocument();
   });
 });
