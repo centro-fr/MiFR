@@ -7,7 +7,7 @@ import {
   type MiPlanRespuesta,
   type TransferenciaApi,
 } from "@/features/transferencias/schemas/transferencia";
-import type { EstadoTransferencia, Transferencia } from "@/types/transferencia";
+import type { EstadoTransferencia, TipoTransferencia, Transferencia } from "@/types/transferencia";
 
 /** El máximo que acepta el back por página (LIMITE_MAXIMO). */
 export const TRANSFERENCIAS_POR_PAGINA = 100;
@@ -52,6 +52,12 @@ export async function informarTransferencia(
   return data;
 }
 
+const TIPOS_TRANSFERENCIA: readonly TipoTransferencia[] = ["PRIMERA_CUOTA", "CUOTA_VENCIDA", "RENOVACION"];
+
+function esTipoTransferencia(valor: string | undefined): valor is TipoTransferencia {
+  return TIPOS_TRANSFERENCIA.includes(valor as TipoTransferencia);
+}
+
 function aTransferencia(api: TransferenciaApi): Transferencia {
   return {
     id: api.id_pago,
@@ -66,6 +72,8 @@ function aTransferencia(api: TransferenciaApi): Transferencia {
     alumno: { id: api.alumno.id_alumno, nombre: api.alumno.nombre, apellido: api.alumno.apellido },
     horasDesdeLaCarga: api.horas_desde_la_carga ?? 0,
     superaPlazo: api.supera_24_horas ?? false,
+    tipo: esTipoTransferencia(api.tipo) ? api.tipo : null,
+    plan: api.plan ?? null,
   };
 }
 

@@ -120,11 +120,10 @@ export function useOwnerNavigation(
   rolActivo?: RoleCode,
 ) {
   const { pathname } = useLocation();
-  const pendientesDeAlta = contadores.PENDIENTES_DE_ALTA;
-  const transferenciasPendientes = contadores.TRANSFERENCIAS_PENDIENTES;
+  const porVerificar = contadores.POR_VERIFICAR;
   const menu = useMemo(() => itemsDelMenu(roles, rolActivo), [roles, rolActivo]);
   return useMemo(() => {
-    const numeros: ContadoresMenu = { PENDIENTES_DE_ALTA: pendientesDeAlta, TRANSFERENCIAS_PENDIENTES: transferenciasPendientes };
+    const numeros: ContadoresMenu = { POR_VERIFICAR: porVerificar };
     const todasLasRutas = menu
       .flatMap((i) => [i.to, ...(i.hijos?.map((h) => h.to) ?? [])])
       .filter((t): t is string => Boolean(t));
@@ -138,5 +137,5 @@ export function useOwnerNavigation(
     );
     const rutaInicio = rolActivo ? homePathForRoles([rolActivo]) : homePathForRoles(roles);
     return { items, migas: construirMigas(items, rutaInicio, pathname) };
-  }, [menu, pathname, pendientesDeAlta, transferenciasPendientes, roles, rolActivo]);
+  }, [menu, pathname, porVerificar, roles, rolActivo]);
 }
