@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ModalComprobante } from "../modal-comprobante";
-import { formatearPrecio } from "@/utils/moneda";
 
 const mockUseComprobante = vi.fn();
 
@@ -35,7 +34,7 @@ describe("ModalComprobante (US-15)", () => {
     },
   };
 
-  it("muestra el comprobante digital sobrio con cabecera, cuerpo y pie institucional", () => {
+  it("muestra la cabecera (Logo FR + Comprobante Digital) y el detalle en forma de filas", () => {
     mockUseComprobante.mockReturnValue({
       data: comprobanteEjemplo,
       isLoading: false,
@@ -44,29 +43,28 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    // Cabecera institucional
-    expect(screen.getByText("CENTRO DE ENTRENAMIENTO FR")).toBeInTheDocument();
-    expect(screen.getByText("Comprobante de cobro digital")).toBeInTheDocument();
-    expect(screen.getByText("N° 000042")).toBeInTheDocument();
+    // Cabecera sobria: Logo FR + Comprobante Digital
+    expect(screen.getAllByText("Comprobante Digital").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("N° 000042").length).toBeGreaterThan(0);
 
-    // Cuerpo con datos ordenados y legibles
-    expect(screen.getByText("Monto cobrado")).toBeInTheDocument();
-    expect(screen.getByText(/25\.000/)).toBeInTheDocument();
-    expect(screen.getByText("Valentina Herrera")).toBeInTheDocument();
-    expect(screen.getByText(/DNI: 43123456/i)).toBeInTheDocument();
-    expect(screen.getByText("Plan Básico")).toBeInTheDocument();
-    expect(screen.getByText("Cuota N° 2")).toBeInTheDocument();
-    expect(screen.getByText("Receptor / Registrado por")).toBeInTheDocument();
-    expect(screen.getByText("Profesora: Carla Ruiz")).toBeInTheDocument();
+    // Detalle en forma de filas
+    expect(screen.getAllByText("Alumno").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Valentina Herrera/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/DNI: 43123456/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Plan").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Plan Básico").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Cuota").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Cuota N° 2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Fecha de cobro").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Receptor").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Profesora: Carla Ruiz").length).toBeGreaterThan(0);
 
-    // Sin badges saturados ni innecesarios en el contenido
-    expect(screen.queryByText("Cobro en efectivo confirmado")).not.toBeInTheDocument();
-    expect(screen.queryByText("Pendiente de rendición")).not.toBeInTheDocument();
+    // Monto cobrado como fila final destacada
+    expect(screen.getAllByText("Monto cobrado").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/25\.000/).length).toBeGreaterThan(0);
 
-    // Pie de acciones
-    expect(
-      screen.getByRole("button", { name: /Imprimir \/ Guardar comprobante/i }),
-    ).toBeInTheDocument();
+    // Acciones del footer
+    expect(screen.getByRole("button", { name: /Imprimir \/ Guardar comprobante/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Cerrar$/i })).toBeInTheDocument();
   });
 
@@ -82,7 +80,7 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    expect(screen.getByText("Administración: Carla Ruiz")).toBeInTheDocument();
+    expect(screen.getAllByText("Administración: Carla Ruiz").length).toBeGreaterThan(0);
   });
 
   it("muestra estado de carga mientras obtiene el comprobante", () => {
