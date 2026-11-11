@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   actividad: Actividad | null;
@@ -97,14 +98,14 @@ export function ModalFormActividad({
       }}
     >
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "w-[96vw] sm:w-full max-w-lg md:max-w-xl")}
       >
         {/* Cabecera modal del mismo color que el body */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {tituloModal}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             {actividad
               ? "Modificá los cupos o características de la disciplina."
               : "Definí una nueva disciplina para el centro y su esquema de cupos."}
@@ -187,7 +188,7 @@ export function ModalFormActividad({
                   htmlFor="modalidad-grupal"
                   onClick={() => setModalidad("GRUPAL")}
                   className={cn(
-                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
+                    "flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer select-none",
                     modalidad === "GRUPAL"
                       ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
                       : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
@@ -203,7 +204,7 @@ export function ModalFormActividad({
                   />
                   <span
                     className={cn(
-                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                       modalidad === "GRUPAL"
                         ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                         : "border-slate-300 dark:border-slate-600",
@@ -212,10 +213,7 @@ export function ModalFormActividad({
                     {modalidad === "GRUPAL" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                   </span>
                   <div>
-                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Grupal</span>
-                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
-                      Varios alumnos en la misma clase.
-                    </span>
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-white">Grupal</span>
                   </div>
                 </label>
 
@@ -224,7 +222,7 @@ export function ModalFormActividad({
                   htmlFor="modalidad-personalizada"
                   onClick={() => setModalidad("PERSONALIZADA")}
                   className={cn(
-                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
+                    "flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors cursor-pointer select-none",
                     modalidad === "PERSONALIZADA"
                       ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
                       : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
@@ -240,7 +238,7 @@ export function ModalFormActividad({
                   />
                   <span
                     className={cn(
-                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      "flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                       modalidad === "PERSONALIZADA"
                         ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
                         : "border-slate-300 dark:border-slate-600",
@@ -249,10 +247,7 @@ export function ModalFormActividad({
                     {modalidad === "PERSONALIZADA" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                   </span>
                   <div>
-                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Personalizada</span>
-                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
-                      Pocos alumnos, rutina para cada uno.
-                    </span>
+                    <span className="block text-sm font-semibold text-slate-900 dark:text-white">Personalizada</span>
                   </div>
                 </label>
               </div>
@@ -281,11 +276,6 @@ export function ModalFormActividad({
                   : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
               )}
             />
-            <p className="text-xs text-muted-foreground font-medium">
-              {modalidad === "GRUPAL"
-                ? "Opcional en grupales: cuántos alumnos entran a la vez con el/la profesor/a."
-                : "Obligatorio en personalizadas: máximo de alumnos por rutina."}
-            </p>
             {errores.cupoMaximo && (
               <p className="text-xs font-semibold text-red-600 dark:text-red-400">
                 {errores.cupoMaximo}
@@ -294,7 +284,7 @@ export function ModalFormActividad({
           </div>
 
           {/* Checkbox Pide peso y talla */}
-          <div className="flex items-start gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-1">
             <button
               type="button"
               role="checkbox"
@@ -302,7 +292,7 @@ export function ModalFormActividad({
               aria-checked={pidePesoTalla}
               onClick={() => setPidePesoTalla(!pidePesoTalla)}
               className={cn(
-                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-lg border-2 transition-colors",
+                "flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
                 pidePesoTalla
                   ? "border-primary bg-primary text-white"
                   : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
@@ -314,29 +304,12 @@ export function ModalFormActividad({
               <span className="block text-sm font-bold text-slate-900 dark:text-white">
                 Pide peso y talla al inscribirse
               </span>
-              <span className="block text-xs text-muted-foreground font-medium">
-                Para armar la rutina desde la primera clase.
-              </span>
             </div>
           </div>
-
-          {/* Acción opcional de dar de baja la actividad */}
-          {actividad && onDarDeBaja && (
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onDarDeBaja}
-                className="rounded-xl border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-bold text-xs sm:text-sm h-10 px-4"
-              >
-                Dar de baja la actividad
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Footer del mismo color que el body */}
-        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className={PIE_MODAL}>
           <Button
             type="button"
             variant="outline"

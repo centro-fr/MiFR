@@ -351,7 +351,7 @@ export function Paso1DatosPersonales({
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
               <div className="space-y-0.5">
                 <Label htmlFor="apto-medico-toggle" className="text-xs font-bold cursor-pointer text-slate-800 dark:text-slate-200">
-                  ¿Posee certificado de Apto Médico?
+                  Apto Médico
                 </Label>
               </div>
               <Switch
