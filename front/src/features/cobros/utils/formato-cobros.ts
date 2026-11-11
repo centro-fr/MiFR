@@ -11,3 +11,8 @@ export function formatearFechaCobro(fechaIsoOValor: string): string {
     : fechaIsoOValor;
   return formatearFecha(soloFecha);
 }
+
+/** "N° 000042": el número del comprobante con seis dígitos, como se imprime. */
+export function textoNumeroDeComprobante(numero: number): string {
+  return `N° ${String(numero).padStart(6, "0")}`;
+}

@@ -3,10 +3,12 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -28,6 +30,7 @@ import type { PromocionFormValues } from "@/features/promociones/schemas/promoci
 import type { Plan } from "@/types/plan";
 import type { Promocion } from "@/types/promocion";
 import { normalizarParaBuscar } from "@/utils/texto";
+import { BOTON_MODAL, CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const consulta = usePromociones();
@@ -209,19 +212,19 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       />
 
       <Dialog open={promocionAEliminar !== null} onOpenChange={(open) => !open && setPromocionAEliminar(null)}>
-        <DialogContent className="rounded-3xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-black text-xl">¿Eliminar promoción?</DialogTitle>
+        <DialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+          <DialogHeader className={CABECERA_MODAL}>
+            <DialogTitle className={TITULO_MODAL}>¿Eliminar promoción?</DialogTitle>
+            <DialogDescription className={DESCRIPCION_MODAL}>
+              La promoción <strong>{promocionAEliminar?.nombre}</strong> se eliminará y no se aplicará a nuevas inscripciones.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            La promoción <strong>{promocionAEliminar?.nombre}</strong> se eliminará y no se aplicará a nuevas inscripciones. ¿Confirmás?
-          </p>
-          <DialogFooter className="gap-2">
+          <DialogFooter className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"
               onClick={() => setPromocionAEliminar(null)}
-              className="rounded-xl font-bold"
+              className={BOTON_MODAL}
             >
               Cancelar
             </Button>
@@ -237,7 +240,7 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
                   },
                 });
               }}
-              className="rounded-xl bg-rose-600 font-bold text-white hover:bg-rose-700"
+              className={cn(BOTON_MODAL, "bg-rose-600 text-white hover:bg-rose-700")}
             >
               {desactivar.isPending ? "Eliminando..." : "Eliminar"}
             </Button>

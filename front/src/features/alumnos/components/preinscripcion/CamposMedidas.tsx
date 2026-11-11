@@ -3,10 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
 import type { MedidasCorporalesForm } from "../../schemas/medidas-corporales";
+import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
 
 interface CamposMedidasProps {
   /** Actividad elegida que pide las medidas, para explicar por qué aparecen. */
-  actividad: string;
   medidas: MedidasCorporalesForm;
   onChange: (medidas: MedidasCorporalesForm) => void;
   errores: Partial<Record<keyof MedidasCorporalesForm, string>>;
@@ -18,7 +18,7 @@ const CAMPOS = [
 ] as const;
 
 /** US-05: peso y talla, solo cuando alguna actividad de los horarios elegidos los requiere. */
-export function CamposMedidas({ actividad, medidas, onChange, errores }: CamposMedidasProps) {
+export function CamposMedidas({ medidas, onChange, errores }: CamposMedidasProps) {
   return (
     <section aria-labelledby="titulo-medidas" className="space-y-3 p-4 rounded-xl border border-border/80 bg-muted/20">
       <div className="flex items-start gap-2.5">
@@ -27,13 +27,12 @@ export function CamposMedidas({ actividad, medidas, onChange, errores }: CamposM
           <h4 id="titulo-medidas" className="text-sm font-semibold text-foreground">
             Peso y talla
           </h4>
-          <p className="text-xs text-muted-foreground mt-0.5">{actividad} los pide para la pre-inscripción.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className={FILA_DE_CAMPOS_MODAL}>
         {CAMPOS.map(({ campo, id, etiqueta, ejemplo }) => (
-          <div key={campo} className="space-y-1.5">
+          <div key={campo} className={CAMPO_MODAL}>
             <Label htmlFor={id} className="text-xs font-medium">
               {etiqueta} <span className="text-destructive">*</span>
             </Label>

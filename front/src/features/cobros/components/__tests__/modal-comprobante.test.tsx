@@ -34,7 +34,7 @@ describe("ModalComprobante (US-15)", () => {
     },
   };
 
-  it("muestra la cabecera (Logo FR + Comprobante Digital) y el detalle en forma de filas", () => {
+  it("muestra el número, el monto con su fecha y forma de cobro, y el detalle en filas", () => {
     mockUseComprobante.mockReturnValue({
       data: comprobanteEjemplo,
       isLoading: false,
@@ -43,28 +43,25 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    // Cabecera sobria: Logo FR + Comprobante Digital
-    expect(screen.getAllByText("Comprobante Digital").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("N° 000042").length).toBeGreaterThan(0);
+    // Cabecera: título y número del comprobante
+    expect(screen.getAllByText("Comprobante de cobro").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/N° 000042 · Centro de Entrenamiento FR/).length).toBeGreaterThan(0);
 
-    // Detalle en forma de filas
-    expect(screen.getAllByText("Alumno").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Valentina Herrera/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/DNI: 43123456/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Plan").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Plan Básico").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Cuota").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Cuota N° 2").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Fecha de cobro").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Receptor").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Profesora: Carla Ruiz").length).toBeGreaterThan(0);
-
-    // Monto cobrado como fila final destacada
+    // Arriba lo que se busca de un vistazo: cuánto, cuándo y cómo
     expect(screen.getAllByText("Monto cobrado").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/25\.000/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("12/10/2026 · Efectivo").length).toBeGreaterThan(0);
+
+    // Detalle en filas
+    expect(screen.getAllByText(/Valentina Herrera/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("DNI 43123456").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Plan Básico").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("N° 2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Cobró").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Profesora").length).toBeGreaterThan(0);
 
     // Acciones del footer
-    expect(screen.getByRole("button", { name: /Imprimir \/ Guardar comprobante/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Imprimir o guardar/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Cerrar$/i })).toBeInTheDocument();
   });
 
@@ -80,7 +77,7 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    expect(screen.getAllByText("Administración: Carla Ruiz").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Administración").length).toBeGreaterThan(0);
   });
 
   it("muestra estado de carga mientras obtiene el comprobante", () => {
@@ -122,7 +119,7 @@ describe("ModalComprobante (US-15)", () => {
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
     const botonImprimir = screen.getByRole("button", {
-      name: /Imprimir \/ Guardar comprobante/i,
+      name: /Imprimir o guardar/i,
     });
     fireEvent.click(botonImprimir);
 

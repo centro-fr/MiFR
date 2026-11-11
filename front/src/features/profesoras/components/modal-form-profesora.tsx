@@ -11,6 +11,8 @@ import {
   formatearEspecialidades,
   type CrearProfesoraInput,
 } from "@/features/profesoras/schemas/profesora";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   guardando: boolean;
@@ -70,19 +72,19 @@ export function ModalFormProfesora({
       }}
     >
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "w-[96vw] sm:w-full max-w-lg")}
       >
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Dar de alta profesor/a
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Ingresá los datos de contacto y la cuenta Google para el acceso
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             {errorGuardado && (
               <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
                 <AlertDescription className="text-xs font-semibold">{errorGuardado}</AlertDescription>
@@ -96,8 +98,8 @@ export function ModalFormProfesora({
             )}
 
           {/* Nombre y Apellido */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Nombre <span className="text-destructive">*</span>
               </Label>
@@ -110,7 +112,7 @@ export function ModalFormProfesora({
                 className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="apellido" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Apellido <span className="text-destructive">*</span>
               </Label>
@@ -126,7 +128,7 @@ export function ModalFormProfesora({
           </div>
 
           {/* Email de Google */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="email" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Correo electrónico (Google) <span className="text-destructive">*</span>
             </Label>
@@ -139,14 +141,11 @@ export function ModalFormProfesora({
               disabled={guardando}
               className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
             />
-            <p className="text-[11px] text-muted-foreground">
-              Es la cuenta con la que el/la profesor/a podrá iniciar sesión mediante Google Auth.
-            </p>
           </div>
 
           {/* Teléfono y Fecha de Nacimiento */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="telefono" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Teléfono de contacto <span className="text-destructive">*</span>
               </Label>
@@ -160,7 +159,7 @@ export function ModalFormProfesora({
                 className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="fecha_nacimiento" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Fecha de nacimiento <span className="text-destructive">*</span>
               </Label>
@@ -178,7 +177,7 @@ export function ModalFormProfesora({
           </div>
 
           {/* Selector de Especialidades por Actividades */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Actividades especializadas
             </Label>
@@ -191,7 +190,7 @@ export function ModalFormProfesora({
         </div>
 
         {/* Footer del mismo color que el body */}
-        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className={PIE_MODAL}>
           <Button
             type="button"
             variant="outline"

@@ -9,6 +9,8 @@ import { tipoDeTransferencia } from "@/features/transferencias/utils/formato-tra
 import { tramoDePlazo } from "@/features/transferencias/utils/plazo-verificacion";
 import type { Transferencia } from "@/types/transferencia";
 import { formatearPrecio } from "@/utils/moneda";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   transferencia: Transferencia | null;
@@ -126,19 +128,19 @@ export function ModalDetalleAprobacion({
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "max-w-md")}
       >
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {transferencia.alumno.nombre} {transferencia.alumno.apellido}
           </DialogTitle>
-          <DialogDescription className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Transferencia · {textoTipoPago}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {/* Importe */}
           <div className="pt-1">
             <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -277,7 +279,7 @@ export function ModalDetalleAprobacion({
 
         {/* Acciones */}
         {!modoRechazo && (
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-between gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <DialogFooter className={cn(PIE_MODAL, "justify-between")}>
             <Button
               type="button"
               variant="outline"

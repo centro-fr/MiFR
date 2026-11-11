@@ -15,6 +15,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { LARGO_MAXIMO_DETALLE_BAJA, bajaAlumnoFormSchema } from "@/features/alumnos/schemas/alumno";
 import type { MotivoBaja } from "@/types/alumno";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 const ETIQUETAS_MOTIVO: Record<MotivoBaja, string> = {
   ABANDONO: "Dejó de asistir",
@@ -70,19 +72,19 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
         if (!abierto && !dandoDeBaja) onClose();
       }}
     >
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+        <AlertDialogHeader className={CABECERA_MODAL}>
+          <AlertDialogTitle className={TITULO_MODAL}>
             ¿Dar de baja a {nombre}?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <AlertDialogDescription className={DESCRIPCION_MODAL}>
             El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
             poder reactivarse más adelante.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
 
           <fieldset className="flex flex-col gap-2" aria-describedby={errorMotivo ? "error-motivo-baja" : undefined}>
             <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -132,7 +134,7 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
 
           </div>
 
-          <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <AlertDialogFooter className={PIE_MODAL}>
             <AlertDialogCancel asChild>
               <Button
                 type="button"

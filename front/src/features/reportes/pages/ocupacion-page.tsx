@@ -132,9 +132,11 @@ function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
   );
 }
 
+const SIN_FILTROS: FiltrosOcupacion = { idActividad: null, idProfesora: null, modalidad: null };
+
 export function OcupacionReportePage() {
   const [vista, setVista] = useState<"mapa" | "tabla">("mapa");
-  const [filtros, setFiltros] = useState<FiltrosOcupacion>({ idActividad: null, idProfesora: null, modalidad: null });
+  const [filtros, setFiltros] = useState<FiltrosOcupacion>(SIN_FILTROS);
   const consulta = useInformeOcupacion(filtros);
   const profesoras = useProfesorasParaFiltro();
   const actividades = useActividadesParaFiltro();
@@ -161,7 +163,10 @@ export function OcupacionReportePage() {
       acciones={<MenuExportar disabled={horarios.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros>
+        <GrupoDeFiltros
+          onLimpiar={() => setFiltros(SIN_FILTROS)}
+          hayFiltros={filtros.idActividad !== null || filtros.idProfesora !== null || filtros.modalidad !== null}
+        >
           <SelectFiltro
             id="ocupacion-profesora"
             etiqueta="Profesor/a"

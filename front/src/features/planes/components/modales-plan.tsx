@@ -11,6 +11,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsConfirmacion {
   titulo: string;
@@ -34,14 +35,14 @@ function ModalConfirmacion(props: PropsConfirmacion) {
         if (!abierto && !procesando) onClose();
       }}
     >
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 text-left dark:border-slate-800 dark:bg-slate-900">
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+        <AlertDialogHeader className={CABECERA_MODAL}>
           <div className="space-y-0.5">
-            <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</AlertDialogDescription>
+            <AlertDialogTitle className={TITULO_MODAL}>{titulo}</AlertDialogTitle>
+            <AlertDialogDescription className={DESCRIPCION_MODAL}>{descripcion}</AlertDialogDescription>
           </div>
         </AlertDialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {children}
           {error && (
             <Alert role="alert" className="rounded-xl border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
@@ -49,7 +50,7 @@ function ModalConfirmacion(props: PropsConfirmacion) {
             </Alert>
           )}
         </div>
-        <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogFooter className={PIE_MODAL}>
           <AlertDialogCancel asChild>
             <Button type="button" variant="outline" disabled={procesando} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
               Cancelar

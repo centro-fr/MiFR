@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { esMenorDeEdad, obtenerLimitesFechaNacimiento } from "../../utils/edad";
 import { cn } from "@/utils/cn";
 import type { AlumnoFormData } from "../../schemas/alumno.schema";
+import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
 
 const CLASE_CON_ERROR = "border-destructive focus-visible:ring-destructive";
 const MAXIMO_DIGITOS_DNI = 8;
@@ -104,8 +105,8 @@ export function Paso1DatosPersonales({
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* 1. Nombre y Apellido */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="space-y-1.5">
+      <div className={FILA_DE_CAMPOS_MODAL}>
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="alumno-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Nombre <span className="text-destructive">*</span>
           </Label>
@@ -119,7 +120,7 @@ export function Paso1DatosPersonales({
           <MensajeError campo="nombre" errores={errores} />
         </div>
 
-        <div className="space-y-1.5">
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="alumno-apellido" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Apellido <span className="text-destructive">*</span>
           </Label>
@@ -135,8 +136,8 @@ export function Paso1DatosPersonales({
       </div>
 
       {/* 2. DNI y Fecha de nacimiento */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="space-y-1.5">
+      <div className={FILA_DE_CAMPOS_MODAL}>
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="alumno-dni" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             DNI <span className="text-destructive">*</span>
           </Label>
@@ -151,7 +152,7 @@ export function Paso1DatosPersonales({
           <MensajeError campo="dni" errores={errores} />
         </div>
 
-        <div className="space-y-1.5">
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="alumno-fecha-nac" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Fecha de nacimiento <span className="text-destructive">*</span>
           </Label>
@@ -177,7 +178,7 @@ export function Paso1DatosPersonales({
 
       {/* 3. Teléfono y (si es mayor) Email */}
       <div className={cn("grid gap-3 sm:gap-4", !menorDeEdad ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
-        <div className="space-y-1.5">
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="alumno-telefono" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Teléfono <span className="text-muted-foreground font-normal">(opcional)</span>
           </Label>
@@ -193,7 +194,7 @@ export function Paso1DatosPersonales({
         </div>
 
         {!menorDeEdad && (
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="alumno-email" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
               Email <span className="text-destructive">*</span>
             </Label>
@@ -211,8 +212,8 @@ export function Paso1DatosPersonales({
       </div>
 
       {/* 4. Contacto y teléfono de emergencia */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="space-y-1.5">
+      <div className={FILA_DE_CAMPOS_MODAL}>
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="cont-emerg-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Contacto de emergencia <span className="text-destructive">*</span>
           </Label>
@@ -226,7 +227,7 @@ export function Paso1DatosPersonales({
           <MensajeError campo="cont_emerg_nombre" errores={errores} />
         </div>
 
-        <div className="space-y-1.5">
+        <div className={CAMPO_MODAL}>
           <Label htmlFor="cont-emerg-telefono" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
             Teléfono de emergencia <span className="text-destructive">*</span>
           </Label>
@@ -251,8 +252,8 @@ export function Paso1DatosPersonales({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="tutor-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                 Nombre y apellido <span className="text-destructive">*</span>
               </Label>
@@ -266,7 +267,7 @@ export function Paso1DatosPersonales({
               <MensajeError campo="tutor.nombre" errores={errores} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="tutor-fecha-nac" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                 Fecha de nacimiento <span className="text-destructive">*</span>
               </Label>
@@ -282,7 +283,7 @@ export function Paso1DatosPersonales({
               <MensajeError campo="tutor.fecha_nacimiento" errores={errores} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="tutor-telefono" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                 Teléfono <span className="text-destructive">*</span>
               </Label>
@@ -297,7 +298,7 @@ export function Paso1DatosPersonales({
               <MensajeError campo="tutor.telefono" errores={errores} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="tutor-email" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                 Email <span className="text-destructive">*</span>
               </Label>
@@ -334,7 +335,7 @@ export function Paso1DatosPersonales({
 
         {desplegarSalud && (
           <div className="p-4 space-y-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20">
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="alumno-direccion" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Dirección
               </Label>
@@ -362,7 +363,7 @@ export function Paso1DatosPersonales({
             </div>
 
             {datos.apto_medico && (
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="fecha-apto" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Fecha de Emisión del Apto <span className="text-destructive">*</span>
                 </Label>
@@ -379,7 +380,7 @@ export function Paso1DatosPersonales({
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="observaciones" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Observaciones o antecedentes médicos
               </Label>

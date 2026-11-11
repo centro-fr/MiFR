@@ -16,6 +16,8 @@ import { nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
 import type { LiquidacionResumen } from "@/types/honorarios";
 import { formatearPrecio } from "@/utils/moneda";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   /** Se conserva al cerrar, para que el texto no desaparezca mientras el diálogo se va. */
@@ -42,10 +44,10 @@ export function ConfirmarAbono({ liquidacion, abierto, periodo, onClose }: Props
 
   return (
     <AlertDialog open={abierto} onOpenChange={(abrir) => !abrir && !abonar.isPending && onClose()}>
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 text-left dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">¿Marcar como abonada?</AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+        <AlertDialogHeader className={CABECERA_MODAL}>
+          <AlertDialogTitle className={TITULO_MODAL}>¿Marcar como abonada?</AlertDialogTitle>
+          <AlertDialogDescription className={DESCRIPCION_MODAL}>
             {liquidacion && (
               <>
                 <strong className="text-slate-900 dark:text-white">{nombreCompleto(liquidacion.profesora)}</strong> ·{" "}
@@ -55,7 +57,7 @@ export function ConfirmarAbono({ liquidacion, abierto, periodo, onClose }: Props
             Solo deja registro de que ya se le abonó por fuera del sistema: MiFR no mueve dinero.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogFooter className={PIE_MODAL}>
           <AlertDialogCancel disabled={abonar.isPending} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
             Cancelar
           </AlertDialogCancel>

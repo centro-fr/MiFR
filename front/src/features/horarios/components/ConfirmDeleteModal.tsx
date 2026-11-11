@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -35,13 +37,13 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-lg")}>
         {/* Cabecera */}
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <AlertDialogHeader className={CABECERA_MODAL}>
+          <AlertDialogTitle className={TITULO_MODAL}>
             {tieneAlumnosActivos ? 'Programar baja de horario' : '¿Eliminar clase del cronograma?'}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <AlertDialogDescription className={DESCRIPCION_MODAL}>
             {tieneAlumnosActivos
               ? 'Se aplicará cuando venzan las cuotas de los alumnos inscriptos actuales.'
               : 'La clase no tiene alumnos: la baja sale del cronograma de forma inmediata.'}
@@ -49,7 +51,7 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
         </AlertDialogHeader>
 
         {/* Cuerpo */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           <div className="space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40 p-4 text-sm text-slate-700 dark:text-slate-200">
             <div className="flex items-center justify-between gap-3 font-bold text-foreground">
               <span className="text-base">{horario.actividadNombre}</span>
@@ -93,7 +95,7 @@ export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: Conf
         </div>
 
         {/* Footer */}
-        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogFooter className={PIE_MODAL}>
           <AlertDialogCancel asChild>
             <Button
               type="button"

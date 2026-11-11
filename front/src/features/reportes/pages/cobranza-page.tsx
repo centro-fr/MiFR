@@ -90,7 +90,10 @@ function TablaPagos({ informe, cargando, onCambiarPagina }: { informe: InformeCo
 
 export function CobranzaReportePage() {
   const hoy = fechaActualArgentina();
-  const [filtros, setFiltros] = useState<FiltrosCobranza>({ desde: `${hoy.slice(0, 8)}01`, hasta: hoy, formaPago: null, idProfesora: null });
+  const iniciales: FiltrosCobranza = { desde: `${hoy.slice(0, 8)}01`, hasta: hoy, formaPago: null, idProfesora: null };
+  const [filtros, setFiltros] = useState<FiltrosCobranza>(iniciales);
+  // FiltroPeriodo guarda lo que se tipea: al limpiar se vuelve a montar para tomar las fechas iniciales.
+  const [reinicios, setReinicios] = useState(0);
   const [offset, setOffset] = useState(0);
   const consulta = useInformeCobranza(filtros, offset);
   const profesoras = useProfesorasParaFiltro();
@@ -110,6 +113,12 @@ export function CobranzaReportePage() {
     setOffset(0);
   }
 
+  function limpiar() {
+    setFiltros(iniciales);
+    setOffset(0);
+    setReinicios((n) => n + 1);
+  }
+
   return (
     <PaginaReportes
       titulo="Cobranza"
@@ -117,8 +126,8 @@ export function CobranzaReportePage() {
       acciones={<MenuExportar disabled={!informe || informe.total === 0 || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros>
-          <FiltroPeriodo prefijo="cobranza" desde={filtros.desde} hasta={filtros.hasta} onCambiar={filtrar} />
+        <GrupoDeFiltros onLimpiar={limpiar} hayFiltros={JSON.stringify(filtros) !== JSON.stringify(iniciales)}>
+          <FiltroPeriodo key={reinicios} prefijo="cobranza" desde={filtros.desde} hasta={filtros.hasta} onCambiar={filtrar} />
           <SelectFiltro
             id="cobranza-forma"
             etiqueta="Forma de pago"

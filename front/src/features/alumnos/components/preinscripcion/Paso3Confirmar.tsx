@@ -7,6 +7,7 @@ import type { AlumnoFormData } from "../../schemas/alumno.schema";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
+import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
 
 export interface DatosCobroPreinscripcion {
   yaAbono: boolean;
@@ -128,7 +129,7 @@ export function Paso3Confirmar({
           ¿Ya abonó la primera cuota?
         </Label>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className={FILA_DE_CAMPOS_MODAL}>
           {/* Opción: Todavía no */}
           <button
             type="button"
@@ -198,7 +199,7 @@ export function Paso3Confirmar({
               ¿Cómo abonó?
             </Label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={FILA_DE_CAMPOS_MODAL}>
               {/* Radio: Efectivo */}
               <button
                 type="button"
@@ -261,7 +262,7 @@ export function Paso3Confirmar({
 
           {/* Si eligió Efectivo */}
           {datosCobro.formaPago === "EFECTIVO" && (
-            <div className="space-y-1.5 max-w-sm">
+            <div className={cn(CAMPO_MODAL, "max-w-sm")}>
               <Label htmlFor="monto-efectivo" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Monto cobrado <span className="text-destructive">*</span>
               </Label>
@@ -287,8 +288,8 @@ export function Paso3Confirmar({
           {/* Si eligió Transferencia */}
           {datosCobro.formaPago === "TRANSFERENCIA" && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-1.5">
+              <div className={FILA_DE_CAMPOS_MODAL}>
+                <div className={CAMPO_MODAL}>
                   <Label htmlFor="monto-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                     Monto cobrado <span className="text-destructive">*</span>
                   </Label>
@@ -310,7 +311,7 @@ export function Paso3Confirmar({
                   </p>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className={CAMPO_MODAL}>
                   <Label htmlFor="fecha-hora-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                     Fecha y hora <span className="text-destructive">*</span>
                   </Label>
@@ -326,13 +327,10 @@ export function Paso3Confirmar({
                     }
                     className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Cuándo la viste acreditada en tu cuenta.
-                  </p>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="titular-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Titular de la cuenta <span className="text-muted-foreground font-normal">(opcional)</span>
                 </Label>
@@ -348,9 +346,6 @@ export function Paso3Confirmar({
                   }
                   className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Quien hizo la transferencia, si no es el alumno.
-                </p>
               </div>
             </div>
           )}

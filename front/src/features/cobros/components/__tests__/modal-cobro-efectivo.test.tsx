@@ -221,6 +221,6 @@ describe("ModalCobroEfectivo (US-15)", () => {
     expect(selectorPromocion).toBeInTheDocument();
 
     // Verificamos que se renderice el selector con 'Sin promoción'
-    expect(screen.getByText("Sin promoción")).toBeInTheDocument();
+    expect(selectorPromocion).toHaveTextContent("Sin promoción");
   });
 });

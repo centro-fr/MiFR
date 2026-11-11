@@ -25,10 +25,10 @@ function calculoDeLaLinea(linea: LineaAlumno): string | null {
 
 function SituacionDeLaInscripcion({ inscripcion }: { inscripcion: InscripcionDeLaLinea }) {
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-xs text-slate-500 dark:text-slate-400">
       {inscripcion.plan} ·{" "}
       {inscripcion.estado === "BAJA" && inscripcion.fechaBaja ? (
-        <span className="text-rose-700 dark:text-rose-300">Baja el {fechaCorta(inscripcion.fechaBaja)}</span>
+        <span className="font-medium text-slate-700 dark:text-slate-200">Baja el {fechaCorta(inscripcion.fechaBaja)}</span>
       ) : (
         "Activa"
       )}
@@ -39,14 +39,14 @@ function SituacionDeLaInscripcion({ inscripcion }: { inscripcion: InscripcionDeL
 function ItemAlumno({ linea }: { linea: LineaAlumno }) {
   const calculo = calculoDeLaLinea(linea);
   return (
-    <li className="flex items-start justify-between gap-3 py-2">
+    <li className="flex items-start justify-between gap-3 py-1.5">
       <div className="min-w-0">
-        <p className="break-words text-sm font-semibold text-dark dark:text-white">{nombreCompleto(linea.alumno)}</p>
+        <p className="break-words text-sm font-medium text-slate-900 dark:text-white">{nombreCompleto(linea.alumno)}</p>
         {linea.inscripcion && <SituacionDeLaInscripcion inscripcion={linea.inscripcion} />}
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-bold text-dark tabular-nums dark:text-white">{formatearPrecio(linea.monto)}</p>
-        {calculo && <p className="text-sm text-muted-foreground tabular-nums">{calculo}</p>}
+        <p className="text-sm font-medium text-slate-900 tabular-nums dark:text-white">{formatearPrecio(linea.monto)}</p>
+        {calculo && <p className="text-xs text-slate-500 tabular-nums dark:text-slate-400">{calculo}</p>}
       </div>
     </li>
   );
@@ -54,25 +54,18 @@ function ItemAlumno({ linea }: { linea: LineaAlumno }) {
 
 function ItemSuplencia({ linea }: { linea: LineaSuplencia }) {
   const { clase } = linea;
-  const cubrio = linea.concepto === "CLASE_SUPLIDA";
   return (
-    <li className="flex items-start justify-between gap-3 py-2">
+    <li className="flex items-start justify-between gap-3 py-1.5">
       <div className="min-w-0">
-        <p className="break-words text-sm font-semibold text-dark dark:text-white">{quienDeLaSuplencia(linea)}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="break-words text-sm font-medium text-slate-900 dark:text-white">{quienDeLaSuplencia(linea)}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           {clase.actividad} ·{" "}
           <span className="whitespace-nowrap">
             {fechaCorta(clase.fecha)} {clase.horaInicio}–{clase.horaFin}
           </span>
         </p>
       </div>
-      <p
-        className={
-          cubrio
-            ? "shrink-0 text-sm font-bold text-emerald-700 tabular-nums dark:text-emerald-300"
-            : "shrink-0 text-sm font-bold text-rose-700 tabular-nums dark:text-rose-300"
-        }
-      >
+      <p className="shrink-0 text-sm font-medium text-slate-900 tabular-nums dark:text-white">
         {formatearAjuste(linea.monto)}
       </p>
     </li>
@@ -89,7 +82,7 @@ function Cargando() {
   );
 }
 
-const TITULO = "text-xs font-extrabold tracking-wide text-slate-500 uppercase dark:text-slate-400";
+const TITULO = "text-sm font-bold text-slate-800 dark:text-slate-200";
 
 /** Lo que se ve al abrir la tarjeta de una profesora: alumnos a cargo y suplencias del mes. */
 export function DetalleLiquidacion({ id }: { id: number }) {
@@ -112,13 +105,13 @@ export function DetalleLiquidacion({ id }: { id: number }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <section aria-label="Alumnos a cargo">
         <h3 className={TITULO}>Alumnos a cargo ({detalle.alumnos.length})</h3>
         {detalle.alumnos.length === 0 ? (
           <p className="py-2 text-sm text-muted-foreground">No tuvo alumnos a cargo en el mes: su honorario por alumnos es $ 0.</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-dashed divide-slate-200 dark:divide-slate-700">
             {detalle.alumnos.map((linea) => (
               <ItemAlumno key={linea.id} linea={linea} />
             ))}
@@ -128,7 +121,7 @@ export function DetalleLiquidacion({ id }: { id: number }) {
       {detalle.suplencias.length > 0 && (
         <section aria-label="Suplencias">
           <h3 className={TITULO}>Suplencias ({detalle.suplencias.length})</h3>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-dashed divide-slate-200 dark:divide-slate-700">
             {detalle.suplencias.map((linea) => (
               <ItemSuplencia key={linea.id} linea={linea} />
             ))}

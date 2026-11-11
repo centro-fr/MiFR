@@ -17,6 +17,7 @@ import { useDarDeBajaMedicion } from "@/features/rutinas/hooks/use-rutinas";
 import { resumenDeMedidas } from "@/features/rutinas/utils/formato-rutinas";
 import type { Medicion } from "@/types/rutinas";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 // Las dos preguntas que se le hacen a la profesora sobre una medición ya cargada (US-27).
 
@@ -35,12 +36,12 @@ interface PropsConfirmacion {
 function Confirmacion({ abierto, titulo, descripcion, ocupado, onCancelar, children }: PropsConfirmacion) {
   return (
     <AlertDialog open={abierto} onOpenChange={(abriendo) => !abriendo && !ocupado && onCancelar()}>
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 text-left dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</AlertDialogTitle>
-          <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">{descripcion}</AlertDialogDescription>
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+        <AlertDialogHeader className={CABECERA_MODAL}>
+          <AlertDialogTitle className={TITULO_MODAL}>{titulo}</AlertDialogTitle>
+          <AlertDialogDescription className={DESCRIPCION_MODAL}>{descripcion}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogFooter className={PIE_MODAL}>
           <AlertDialogCancel disabled={ocupado} className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
             Cancelar
           </AlertDialogCancel>

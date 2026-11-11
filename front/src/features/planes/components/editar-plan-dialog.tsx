@@ -31,6 +31,7 @@ import {
 import { nombreRepetido } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsEditarPlanDialog {
   plan: Plan | null;
@@ -162,22 +163,22 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
         }}
       >
         <DialogContent
-          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+          className={cn(CONTENIDO_MODAL, "max-w-lg")}
         >
           {/* Encabezado */}
-          <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+          <DialogHeader className={CABECERA_MODAL}>
+            <DialogTitle className={TITULO_MODAL}>
               Editar plan {plan.nombre}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <DialogDescription className={DESCRIPCION_MODAL}>
               Modificá el nombre, precio o descripción del plan.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className={CUERPO_MODAL}>
               {/* Nombre */}
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Nombre <span className="text-destructive">*</span>
                 </Label>
@@ -202,7 +203,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               </div>
 
               {/* Precio */}
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="plan-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Precio <span className="text-destructive">*</span>
                 </Label>
@@ -230,7 +231,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               </div>
 
               {/* Descripción (opcional) */}
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="plan-descripcion" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
                 </Label>
@@ -260,7 +261,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
             </div>
 
             {/* Footer de botones */}
-            <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+            <DialogFooter className={PIE_MODAL}>
               <Button
                 type="button"
                 variant="outline"

@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
+import { BOTON_MODAL, CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
   AsistenciaDeClaseApi,
@@ -203,25 +205,27 @@ function ConfirmarCierre({
         Cerrar asistencia
       </Button>
       <AlertDialog open={abierto} onOpenChange={setAbierto}>
-        <AlertDialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl sm:w-full">
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Cerrar la asistencia de esta clase?</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className={cn(CONTENIDO_MODAL, "w-[calc(100%-2rem)] max-w-md sm:w-full")}>
+          <AlertDialogHeader className={CABECERA_MODAL}>
+            <AlertDialogTitle className={TITULO_MODAL}>¿Cerrar la asistencia de esta clase?</AlertDialogTitle>
+            <AlertDialogDescription className={DESCRIPCION_MODAL}>
               {abiertos > 0
                 ? `${abiertos} ${abiertos === 1 ? "inscripto sin marcar pasará" : "inscriptos sin marcar pasarán"} a ausente.`
                 : "No hay inscriptos sin marcar."}{" "}
               Después del cierre, solo la propietaria podrá corregir las marcas.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={confirmando}>Seguir tomando asistencia</AlertDialogCancel>
+          <AlertDialogFooter className={PIE_MODAL}>
+            <AlertDialogCancel disabled={confirmando} className={BOTON_MODAL}>
+              Seguir tomando asistencia
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={confirmando}
               onClick={(evento) => {
                 evento.preventDefault();
                 void confirmar().catch(() => undefined);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={cn(BOTON_MODAL, "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
             >
               {confirmando ? "Cerrando…" : "Confirmar cierre"}
             </AlertDialogAction>

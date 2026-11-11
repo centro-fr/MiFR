@@ -1,3 +1,4 @@
+import { cn } from "@/utils/cn";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -11,7 +12,6 @@ import {
   Phone,
   Trash2,
   User,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
@@ -21,12 +21,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { Dialog } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  BotonModalPrincipal,
+  BotonModalSecundario,
+  ModalCabecera,
+  ModalContenido,
+  ModalCuerpo,
+  ModalFormulario,
+  ModalPie,
+} from "@/components/ui/estructura-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { diaSemana } from "@/features/alumnos/utils/fecha";
@@ -45,6 +49,7 @@ import {
   parsearEspecialidades,
   type ActualizarDatosProfesoraInput,
 } from "@/features/profesoras/schemas/profesora";
+import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
 
 function formatearFecha(iso: string | null | undefined): string {
   if (!iso) return "-";
@@ -610,32 +615,14 @@ function ModalEdicionProfesora({
 
   return (
     <Dialog open={open} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent
-        hideClose
-        className="w-[96vw] sm:w-full max-w-lg md:max-w-xl rounded-3xl p-6 sm:p-7 shadow-2xl overflow-y-auto max-h-[92vh]"
-      >
-        <DialogHeader className="flex flex-row items-center justify-between pb-3 text-left">
-          <div className="space-y-1">
-            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Editar datos de {datosActuales.nombre} {datosActuales.apellido}
-            </DialogTitle>
-            <p className="text-xs text-muted-foreground font-medium">
-              Modificá los datos personales y de contacto del profesor/a
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Cerrar formulario"
-            className="size-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-1">
+      <ModalContenido ancho="xl" className="w-[96vw] sm:w-full">
+        <ModalCabecera
+          titulo={`Editar datos de ${datosActuales.nombre} ${datosActuales.apellido}`}
+          descripcion="Modificá los datos personales y de contacto del profesor/a"
+          etiquetaCerrar="Cerrar formulario"
+        />
+        <ModalFormulario onSubmit={handleSubmit}>
+          <ModalCuerpo className="gap-4">
           {error && (
             <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
               <AlertDescription className="text-xs font-semibold">{error}</AlertDescription>
@@ -648,8 +635,8 @@ function ModalEdicionProfesora({
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="edit-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Nombre <span className="text-destructive">*</span>
               </Label>
@@ -661,7 +648,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="edit-apellido" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Apellido <span className="text-destructive">*</span>
               </Label>
@@ -673,7 +660,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="edit-dni" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 DNI
               </Label>
@@ -686,7 +673,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="edit-fecha-nac" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Fecha de nacimiento <span className="text-destructive">*</span>
               </Label>
@@ -701,7 +688,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className={cn(CAMPO_MODAL, "sm:col-span-2")}>
               <Label htmlFor="edit-telefono" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Teléfono de contacto <span className="text-destructive">*</span>
               </Label>
@@ -714,7 +701,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className={cn(CAMPO_MODAL, "sm:col-span-2")}>
               <Label htmlFor="edit-direccion" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Dirección
               </Label>
@@ -727,7 +714,7 @@ function ModalEdicionProfesora({
                 className="h-10 rounded-xl"
               />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className={cn(CAMPO_MODAL, "sm:col-span-2")}>
               <Label className="text-xs font-bold text-slate-500">
                 Correo electrónico (Google)
               </Label>
@@ -736,40 +723,27 @@ function ModalEdicionProfesora({
                 disabled
                 className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800 opacity-70 cursor-not-allowed"
               />
-              <p className="text-[11px] text-muted-foreground">
-                El correo electrónico no se puede editar desde acá porque es la cuenta vinculada para el inicio de sesión.
-              </p>
             </div>
           </div>
 
-          {/* Footer con botones Cancelar y Guardar */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={guardando}
-              className="h-11 px-5 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
-            >
+          </ModalCuerpo>
+          <ModalPie>
+            <BotonModalSecundario onClick={onClose} disabled={guardando}>
               Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={guardando}
-              className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-primary-dark transition-colors shadow-xs"
-            >
+            </BotonModalSecundario>
+            <BotonModalPrincipal type="submit" disabled={guardando}>
               {guardando ? (
                 <>
-                  <Loader2 className="size-4 animate-spin mr-2" />
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
                   Guardando cambios...
                 </>
               ) : (
                 "Guardar cambios"
               )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
+            </BotonModalPrincipal>
+          </ModalPie>
+        </ModalFormulario>
+      </ModalContenido>
     </Dialog>
   );
 }

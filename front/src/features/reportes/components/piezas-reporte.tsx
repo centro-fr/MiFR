@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -165,7 +165,7 @@ interface PropsSelect {
   onChange: (valor: string) => void;
 }
 
-/** Un filtro que se aplica al elegir: no hace falta "Generar informe" para algo tan rápido. */
+/** Un filtro que se aplica al elegir, como todos los de Reportes. */
 export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }: PropsSelect) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -184,8 +184,38 @@ export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }:
   );
 }
 
+/** Vuelve todos los filtros a como estaban al entrar. Desactivado si ya están así. */
+export function BotonLimpiarFiltros({ hayFiltros, onLimpiar }: { hayFiltros: boolean; onLimpiar: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onLimpiar}
+      disabled={!hayFiltros}
+      className="min-h-10 shrink-0 rounded-lg font-bold text-slate-700 dark:text-slate-300"
+    >
+      <RotateCcw aria-hidden="true" className="size-4" />
+      Limpiar filtros
+    </Button>
+  );
+}
+
+interface PropsGrupoDeFiltros {
+  children: ReactNode;
+  /** Con onLimpiar aparece "Limpiar filtros" al final de la fila. */
+  onLimpiar?: () => void;
+  hayFiltros?: boolean;
+}
+
 // Los filtros van sobre el fondo de la página: una tarjeta alrededor de inputs con borde se ve como
 // un doble borde.
-export function GrupoDeFiltros({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
+export function GrupoDeFiltros({ children, onLimpiar, hayFiltros = false }: PropsGrupoDeFiltros) {
+  const grilla = <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
+  if (!onLimpiar) return grilla;
+  return (
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+      {grilla}
+      <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={onLimpiar} />
+    </div>
+  );
 }

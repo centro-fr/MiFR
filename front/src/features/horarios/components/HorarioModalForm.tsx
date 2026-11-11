@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/utils/cn';
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface HorarioModalFormProps {
   isOpen: boolean;
@@ -146,20 +147,20 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
       }}
     >
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "w-[96vw] sm:w-full max-w-lg")}
       >
         {/* Cabecera del modal del mismo color que el body */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {horarioEnEdicion ? 'Editar horario' : 'Nuevo horario'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Configurá la actividad, profesor/a, día y franja horaria de la clase.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             {/* Alerta de Conflicto de Superposición / Validación de Horario */}
             {errorMessage && (
               <div className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/20 flex items-start gap-3 animate-in fade-in duration-200 mb-2">
@@ -188,8 +189,8 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               </div>
             )}
           {/* Fila 1: Actividad y Profesora */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="horario-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Actividad <span className="text-destructive">*</span>
               </Label>
@@ -225,7 +226,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               )}
             </div>
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="horario-profesora" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Profesor/a <span className="text-destructive">*</span>
               </Label>
@@ -262,7 +263,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
           </div>
 
           {/* Fila 2: Día (botones horizontales) */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Día <span className="text-destructive">*</span>
             </Label>
@@ -275,7 +276,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                     key={dia.id}
                     onClick={() => setDiaSemana(dia.id)}
                     className={cn(
-                      "h-10 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center",
+                      "h-11 rounded-xl text-sm font-bold transition-all border flex items-center justify-center",
                       isSelected
                         ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900 shadow-xs"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
@@ -289,9 +290,9 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
           </div>
 
           {/* Fila 3: Empieza y Termina */}
-          <div className="space-y-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
+            <div className={FILA_DE_CAMPOS_MODAL}>
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="horario-inicio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Empieza <span className="text-destructive">*</span>
                 </Label>
@@ -311,7 +312,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="horario-fin" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Termina <span className="text-destructive">*</span>
                 </Label>
@@ -331,13 +332,10 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground pt-1">
-              El centro abre de 07:00 a 23:00.
-            </p>
           </div>
 
           {/* Fila 4: Cupo (opcional) */}
-          <div className="space-y-1">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="horario-cupo" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Cupo <span className="text-muted-foreground font-normal">(opcional)</span>
             </Label>
@@ -354,9 +352,6 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               className="w-32 h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
               placeholder={cupoActividadTexto}
             />
-            <p className="text-xs text-muted-foreground pt-1">
-              Si lo dejás vacío usa el de la actividad ({cupoActividadTexto}).
-            </p>
           </div>
 
           {/* Fila 5: Caja en edición con conteo de alumnos y botón eliminar */}
@@ -380,7 +375,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
         </div>
 
         {/* Footer del mismo color que el body */}
-        <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className={PIE_MODAL}>
           <Button
             type="button"
             variant="outline"

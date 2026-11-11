@@ -33,6 +33,7 @@ import { EditorDiaRutina } from "@/features/rutinas/components/editor-dia-rutina
 import type { Rutina } from "@/types/rutinas";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsDialogoRutina {
   abierto: boolean;
@@ -154,21 +155,21 @@ export function DialogoRutina({
   return (
     <>
       <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-        <DialogContent className="flex max-h-[90dvh] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogContent className={cn(CONTENIDO_MODAL, "max-w-2xl")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {esEdicion ? "Editar rutina" : "Nueva rutina"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             {esEdicion
               ? `Para ${nombreAlumno}. Modificá los ejercicios o días de la rutina.`
               : `Para ${nombreAlumno}. Creá una nueva rutina distribuyendo los ejercicios por día.`}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(e) => void guardar(e)} noValidate className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+        <form onSubmit={(e) => void guardar(e)} noValidate className={cn(CUERPO_MODAL, "flex flex-col gap-5 space-y-0")}>
           {/* Nombre de la rutina */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <label htmlFor="nombre-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Nombre <span className="text-primary">*</span>
             </label>
@@ -182,8 +183,8 @@ export function DialogoRutina({
           </div>
 
           {/* Fechas: Desde y Hasta */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
+            <div className={CAMPO_MODAL}>
               <label htmlFor="desde-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Desde <span className="text-primary">*</span>
               </label>
@@ -196,7 +197,7 @@ export function DialogoRutina({
               {errors.desde && <p className="text-xs font-semibold text-rose-600">{errors.desde.message}</p>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <label htmlFor="hasta-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Hasta <span className="font-normal text-slate-400">(opcional)</span>
               </label>
@@ -209,9 +210,6 @@ export function DialogoRutina({
               {errors.hasta && <p className="text-xs font-semibold text-rose-600">{errors.hasta.message}</p>}
             </div>
           </div>
-          <p className="text-xs text-slate-400 dark:text-slate-500 -mt-2">
-            Sin fecha de fin, queda vigente hasta que la termines.
-          </p>
 
           {/* Días y ejercicios */}
           <div className="space-y-3 pt-1">
@@ -274,7 +272,7 @@ export function DialogoRutina({
           </div>
 
           {/* Observaciones */}
-          <div className="space-y-1.5 pt-1">
+          <div className={cn(CAMPO_MODAL, "pt-1")}>
             <label htmlFor="observaciones-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Observaciones <span className="font-normal text-slate-400">(opcional)</span>
             </label>
@@ -288,7 +286,7 @@ export function DialogoRutina({
           </div>
 
           {/* Footer de acciones estilo Cobrar en Alumnos-Lista */}
-          <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <div className={cn(PIE_MODAL, "-mx-6 -mb-5 mt-2")}>
             {esEdicion && rutinaTarget && (
               <Button
                 type="button"
@@ -325,16 +323,16 @@ export function DialogoRutina({
     {/* Diálogo de confirmación para eliminar */}
     {confirmandoEliminar && rutinaTarget && (
       <AlertDialog open={confirmandoEliminar} onOpenChange={setConfirmandoEliminar}>
-        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-          <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
-            <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+          <AlertDialogHeader className={CABECERA_MODAL}>
+            <AlertDialogTitle className={TITULO_MODAL}>
               ¿Eliminar rutina?
             </AlertDialogTitle>
-            <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <AlertDialogDescription className={DESCRIPCION_MODAL}>
               Se eliminará la rutina <strong className="text-slate-900 dark:text-white">&quot;{rutinaTarget.nombre}&quot;</strong> del alumno {nombreAlumno}. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <AlertDialogFooter className={PIE_MODAL}>
             <AlertDialogCancel
               disabled={eliminar.isPending}
               className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"

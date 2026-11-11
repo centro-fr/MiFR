@@ -118,7 +118,7 @@ describe("ModalConfirmarAlta", () => {
 
     fireEvent.click(screen.getByRole("radio", { name: /Transferencia/ }));
 
-    expect(screen.getByText("Queda pendiente de confirmación por la propietaria.")).toBeInTheDocument();
+    expect(screen.getByText(/quedará pendiente de confirmación por la propietaria/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Informar transferencia" })).toBeInTheDocument();
 
     enviar();

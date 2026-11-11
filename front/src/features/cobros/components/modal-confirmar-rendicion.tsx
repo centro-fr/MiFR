@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { formatearPrecio } from "@/utils/moneda";
 import type { CobroSinRendir, TotalDeProfesora } from "../schemas/rendicion";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 export interface DatosRendicionIndividual {
   tipo: "INDIVIDUAL";
@@ -63,19 +65,19 @@ export function ModalConfirmarRendicion({
   return (
     <Dialog open={open} onOpenChange={(abierto) => !abierto && handleCerrar()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "max-w-md")}
       >
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {titulo}
           </DialogTitle>
-          <DialogDescription className="text-sm font-medium text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             {esLote ? "Rendición de lote" : "Rendición individual"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {/* Importe y resumen */}
           <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800/80 dark:bg-slate-800/40">
             <div className="flex items-baseline justify-between">
@@ -109,7 +111,7 @@ export function ModalConfirmarRendicion({
           </div>
 
           {/* Campo de observaciones */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <label
               htmlFor="observaciones-rendicion"
               className="block text-xs font-bold text-slate-700 dark:text-slate-300"
@@ -126,15 +128,10 @@ export function ModalConfirmarRendicion({
             />
           </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Al confirmar, el dinero se marcará como rendido en caja y dejará de figurar como
-            pendiente.
-          </p>
-
         </div>
 
         {/* Acciones */}
-        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <DialogFooter className={PIE_MODAL}>
           <Button
             type="button"
             variant="outline"

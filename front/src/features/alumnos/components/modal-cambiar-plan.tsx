@@ -18,6 +18,8 @@ import { useCambiarPlanYHorarios } from "@/features/alumnos/hooks/use-reactivaci
 import { clasesRequeridasDelPlan } from "@/features/alumnos/utils/plan-y-profesora";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import type { InscripcionDeAlumno } from "@/features/alumnos/schemas/alumno";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   nombre: string;
@@ -164,17 +166,17 @@ export function ModalCambiarPlan({
         if (!abierto && !cambiar.isPending) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[90dvh] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-3xl")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Cambiar plan y horarios
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Para {nombre}. Seleccioná el plan, actividad, profesor/a y horarios.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {tienePlanVigente && (
             <Alert className="rounded-xl border-blue-200 bg-blue-50/70 p-3 text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
               <AlertDescription className="text-xs font-medium leading-relaxed">
@@ -209,7 +211,7 @@ export function ModalCambiarPlan({
           )}
         </div>
 
-        <div className="-mx-6 -mb-6 mt-2 flex items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+        <div className={cn(PIE_MODAL, "-mx-6 -mb-5 mt-2")}>
           <Button
             type="button"
             variant="outline"

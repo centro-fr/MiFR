@@ -27,6 +27,7 @@ import { esPeriodoEnCurso, etiquetaPeriodo, primerDiaDe, ultimoDiaDe } from "@/f
 import type { AlcanceTarifa, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
+import { BOTON_MODAL, BOTON_MODAL_PRINCIPAL, CABECERA_MODAL, DESCRIPCION_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 const CONTROL =
   "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
@@ -38,8 +39,6 @@ interface TextosDelAlcance {
   etiqueta: string;
   unidad: "%" | "$";
   placeholder: string;
-  ayuda: string;
-  ayudaDesde: string;
 }
 
 function textosDelAlcance(alcance: AlcanceTarifa): TextosDelAlcance {
@@ -50,8 +49,6 @@ function textosDelAlcance(alcance: AlcanceTarifa): TextosDelAlcance {
       etiqueta: "Por cada alumno a cargo",
       unidad: "%",
       placeholder: "50",
-      ayuda: "De lo que pagó de la cuota en el mes. Mayor a 0 y hasta 100; podés usar coma para decimales.",
-      ayudaDesde: "Reemplaza al porcentaje actual desde ese día, para todos los profesores. Los honorarios ya cerrados no cambian.",
     };
   }
   return {
@@ -60,8 +57,6 @@ function textosDelAlcance(alcance: AlcanceTarifa): TextosDelAlcance {
     etiqueta: "Por cada hora de suplencia",
     unidad: "$",
     placeholder: "5.000",
-    ayuda: "Monto fijo por hora. A quien faltó se le descuenta lo mismo. Punto para miles y coma para decimales.",
-    ayudaDesde: "Reemplaza a su monto actual desde ese día. Los honorarios ya cerrados no cambian.",
   };
 }
 
@@ -163,18 +158,12 @@ function FormularioTarifa({ alcance, periodo, tarifas, onListo }: PropsFormulari
             maxLength={14}
             placeholder={textos.placeholder}
             aria-invalid={Boolean(errores.valor)}
-            aria-describedby={errores.valor ? "tarifa-valor-error" : "tarifa-valor-ayuda"}
+            aria-describedby={errores.valor ? "tarifa-valor-error" : undefined}
             {...formulario.register("valor")}
             className={cn(CONTROL, esPorcentaje ? "pr-8" : "pl-8")}
           />
         </div>
-        {errores.valor ? (
-          <MensajeError id="tarifa-valor-error" mensaje={errores.valor.message} />
-        ) : (
-          <p id="tarifa-valor-ayuda" className="text-sm text-muted-foreground">
-            {textos.ayuda}
-          </p>
-        )}
+        {errores.valor && <MensajeError id="tarifa-valor-error" mensaje={errores.valor.message} />}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -188,25 +177,19 @@ function FormularioTarifa({ alcance, periodo, tarifas, onListo }: PropsFormulari
           etiquetaCalendario="Abrir calendario para la fecha desde la que rige"
           min={hoy}
           aria-invalid={Boolean(errores.desde)}
-          aria-describedby={errores.desde ? "tarifa-desde-error" : "tarifa-desde-ayuda"}
+          aria-describedby={errores.desde ? "tarifa-desde-error" : undefined}
           className={cn(CONTROL, "md:text-base")}
         />
-        {errores.desde ? (
-          <MensajeError id="tarifa-desde-error" mensaje={errores.desde.message} />
-        ) : (
-          <p id="tarifa-desde-ayuda" className="text-sm text-muted-foreground">
-            {textos.ayudaDesde}
-          </p>
-        )}
+        {errores.desde && <MensajeError id="tarifa-desde-error" mensaje={errores.desde.message} />}
       </div>
 
       {/* Fijos al pie del diálogo: en el celular el formulario no entra entero y Guardar queda siempre a mano.
           El -bottom compensa el relleno del contenedor que scrollea, para que no se vea el contenido por debajo. */}
-      <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-slate-100 bg-white px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6 sm:pb-6 dark:border-slate-800 dark:bg-slate-900">
-        <Button type="button" variant="outline" onClick={onListo} disabled={registrar.isPending} className="min-h-11 rounded-xl font-bold">
+      <div className="sticky -bottom-5 -mx-6 -mb-5 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-900">
+        <Button type="button" variant="outline" onClick={onListo} disabled={registrar.isPending} className={BOTON_MODAL}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={registrar.isPending} className="min-h-11 rounded-xl bg-primary font-extrabold text-white hover:bg-primary-dark">
+        <Button type="submit" disabled={registrar.isPending} className={BOTON_MODAL_PRINCIPAL}>
           {registrar.isPending && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}
           {registrar.isPending ? "Guardando…" : "Guardar tarifa"}
         </Button>
@@ -261,11 +244,11 @@ export function DialogoTarifa({ abierto, periodo, alcance, onClose }: PropsDialo
   const textos = alcance ? textosDelAlcance(alcance) : null;
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-slate-200 bg-white p-0 sm:max-w-lg dark:border-slate-800 dark:bg-slate-900">
-        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 sm:px-6 text-left">
+      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-slate-200 bg-white p-0 sm:max-w-lg sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+        <DialogHeader className={cn(CABECERA_MODAL, "flex flex-row items-center justify-between gap-2 pr-6")}>
           <div className="min-w-0 pr-2">
-            <DialogTitle className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">{textos?.titulo}</DialogTitle>
-            <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">{textos?.descripcion}</DialogDescription>
+            <DialogTitle className={TITULO_MODAL}>{textos?.titulo}</DialogTitle>
+            <DialogDescription className={DESCRIPCION_MODAL}>{textos?.descripcion}</DialogDescription>
           </div>
           <Button
             type="button"
@@ -278,7 +261,7 @@ export function DialogoTarifa({ abierto, periodo, alcance, onClose }: PropsDialo
             <X aria-hidden="true" className="size-5" />
           </Button>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
           {abierto && alcance && <ContenidoDialogo alcance={alcance} periodo={periodo} onClose={onClose} />}
         </div>
       </DialogContent>

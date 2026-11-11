@@ -13,6 +13,7 @@ import {
 } from "@/features/transferencias/schemas/transferencia";
 import type { Transferencia } from "@/types/transferencia";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 // El back guarda el motivo en una sola línea (textoSchema sin multilínea): un salto de línea
 // escrito o pegado se pasa a espacio en vez de rechazarlo al enviar.
@@ -73,18 +74,18 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
 
   return (
     <Dialog open onOpenChange={(abierta) => !abierta && !rechazando && onClose()}>
-      <DialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
         <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+          <DialogHeader className={CABECERA_MODAL}>
+            <DialogTitle className={TITULO_MODAL}>
               Rechazar transferencia
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <DialogDescription className={DESCRIPCION_MODAL}>
               La transferencia de {nombre} no se va a tomar como cuota abonada. El alumno verá el motivo en sus transferencias.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             <div className="flex flex-col gap-2">
               <Label htmlFor="motivo-rechazo" className="text-sm font-bold text-slate-800 dark:text-slate-200">
                 Motivo del rechazo
@@ -122,7 +123,7 @@ export function ModalRechazarTransferencia({ transferencia, rechazando, error, o
             )}
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <DialogFooter className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"

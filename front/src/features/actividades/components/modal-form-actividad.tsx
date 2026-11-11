@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
-import { CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   actividad: Actividad | null;
@@ -113,7 +113,7 @@ export function ModalFormActividad({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             {errorGuardado && (
               <Alert className="rounded-xl border-rose-300 bg-rose-50 p-3 dark:border-rose-900/60 dark:bg-rose-950/40">
                 <AlertDescription className="text-xs font-semibold text-rose-800 dark:text-rose-200">
@@ -134,7 +134,7 @@ export function ModalFormActividad({
           </div>
 
           {/* Nombre */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="actividad-nombre" className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Nombre <span className="text-primary">*</span>
             </Label>
@@ -161,7 +161,7 @@ export function ModalFormActividad({
           </div>
 
           {/* Descripción (opcional) */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="actividad-descripcion" className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Descripción <span className="font-normal text-slate-500">(opcional)</span>
             </Label>
@@ -178,11 +178,11 @@ export function ModalFormActividad({
 
           {/* Modalidad * (solo editable al crear una actividad nueva) */}
           {!actividad && (
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <span className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Modalidad <span className="text-primary">*</span>
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className={FILA_DE_CAMPOS_MODAL}>
                 {/* Grupal */}
                 <label
                   htmlFor="modalidad-grupal"
@@ -255,7 +255,7 @@ export function ModalFormActividad({
           )}
 
           {/* Cupo por clase * */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="actividad-cupo" className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Cupo por clase {modalidad === "PERSONALIZADA" && <span className="text-primary">*</span>}
             </Label>

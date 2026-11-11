@@ -1,15 +1,15 @@
-import { useState, type FormEvent } from "react";
-import { Loader2, RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
-import { Button } from "@/components/ui/button";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
+import { BotonLimpiarFiltros } from "@/features/reportes/components/piezas-reporte";
 import { useActividadesParaFiltro, useProfesorasParaFiltro } from "@/features/reportes/hooks/use-reportes";
 import { filtrosIniciales, type FiltrosDescritos } from "@/features/reportes/utils/formato-informe";
 import type { FiltrosInformeAsistencia } from "@/types/reportes";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-// Filtros del informe (US-33): se combinan libremente y se aplican con "Generar informe".
+// Filtros del informe (US-33): se combinan libremente y se aplican al cambiar cada uno, como en el
+// resto de los reportes. El período se aplica recién cuando las dos fechas son válidas.
 
 const CONTROL =
   "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer";
@@ -39,55 +39,44 @@ function problemaDelPeriodo({ desde, hasta }: Borrador): string | null {
 }
 
 interface PropsFiltros {
-  generando: boolean;
-  onGenerar: (filtros: FiltrosInformeAsistencia, descripcion: FiltrosDescritos) => void;
+  onAplicar: (filtros: FiltrosInformeAsistencia, descripcion: FiltrosDescritos) => void;
 }
 
-export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
+export function FiltrosInforme({ onAplicar }: PropsFiltros) {
   const hoy = fechaActualArgentina();
   const [borrador, setBorrador] = useState(() => borradorInicial(hoy));
-  const [error, setError] = useState<string | null>(null);
   const profesoras = useProfesorasParaFiltro();
   const actividades = useActividadesParaFiltro();
-  const cambiar = (cambios: Partial<Borrador>) => setBorrador((actual) => ({ ...actual, ...cambios }));
+  const error = problemaDelPeriodo(borrador);
+  const hayFiltros = JSON.stringify(borrador) !== JSON.stringify(borradorInicial(hoy));
 
-  function generar(borradorAGenerar: Borrador) {
-    const problema = problemaDelPeriodo(borradorAGenerar);
-    setError(problema);
-    if (problema) return;
-    const profesora = profesoras.data?.find((p) => p.id === borradorAGenerar.idProfesora);
-    const actividad = actividades.data?.find((a) => a.id === borradorAGenerar.idActividad);
-    onGenerar(
+  function aplicar(siguiente: Borrador) {
+    setBorrador(siguiente);
+    if (problemaDelPeriodo(siguiente)) return;
+    const profesora = profesoras.data?.find((p) => p.id === siguiente.idProfesora);
+    const actividad = actividades.data?.find((a) => a.id === siguiente.idActividad);
+    onAplicar(
       {
-        desde: borradorAGenerar.desde,
-        hasta: borradorAGenerar.hasta,
-        idAlumno: borradorAGenerar.alumno?.id ?? null,
-        idProfesora: borradorAGenerar.idProfesora ? Number(borradorAGenerar.idProfesora) : null,
-        idActividad: borradorAGenerar.idActividad ? Number(borradorAGenerar.idActividad) : null,
-        incluirBajas: borradorAGenerar.incluirBajas,
+        desde: siguiente.desde,
+        hasta: siguiente.hasta,
+        idAlumno: siguiente.alumno?.id ?? null,
+        idProfesora: siguiente.idProfesora ? Number(siguiente.idProfesora) : null,
+        idActividad: siguiente.idActividad ? Number(siguiente.idActividad) : null,
+        incluirBajas: siguiente.incluirBajas,
       },
       {
-        alumno: borradorAGenerar.alumno?.nombre ?? null,
+        alumno: siguiente.alumno?.nombre ?? null,
         profesora: profesora ? `${profesora.nombre} ${profesora.apellido}` : null,
         actividad: actividad?.nombre ?? null,
-        incluirBajas: borradorAGenerar.incluirBajas,
+        incluirBajas: siguiente.incluirBajas,
       },
     );
   }
 
-  function alEnviar(evento: FormEvent) {
-    evento.preventDefault();
-    generar(borrador);
-  }
-
-  function limpiar() {
-    const inicial = borradorInicial(hoy);
-    setBorrador(inicial);
-    generar(inicial);
-  }
+  const cambiar = (cambios: Partial<Borrador>) => aplicar({ ...borrador, ...cambios });
 
   return (
-    <form onSubmit={alEnviar} noValidate aria-label="Filtros del informe" className="space-y-4">
+    <div role="group" aria-label="Filtros del informe" className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="informe-desde" className={ETIQUETA}>
@@ -186,27 +175,8 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
           Incluir alumnos dados de baja
         </label>
 
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={limpiar}
-            disabled={generando}
-            className="min-h-[44px] rounded-xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-          >
-            <RotateCcw aria-hidden="true" className="size-4 mr-1.5" />
-            Limpiar filtros
-          </Button>
-          <Button
-            type="submit"
-            disabled={generando}
-            className="min-h-[44px] rounded-xl bg-primary px-5 font-extrabold text-white shadow-md shadow-primary/25 hover:bg-primary-dark transition-all"
-          >
-            {generando && <Loader2 aria-hidden="true" className="animate-spin size-4 mr-1.5" />}
-            Generar informe
-          </Button>
-        </div>
+        <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={() => aplicar(borradorInicial(hoy))} />
       </div>
-    </form>
+    </div>
   );
 }

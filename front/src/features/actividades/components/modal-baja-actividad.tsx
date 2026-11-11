@@ -10,6 +10,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { Actividad } from "@/types/actividad";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   actividad: Actividad;
@@ -29,17 +31,17 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
         if (!abierto) onClose();
       }}
     >
-      <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-        <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogTitle className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white tracking-tight">
+      <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+        <AlertDialogHeader className={CABECERA_MODAL}>
+          <AlertDialogTitle className={TITULO_MODAL}>
             ¿Dar de baja esta actividad?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <AlertDialogDescription className={DESCRIPCION_MODAL}>
             Estás por dar de baja <strong>{actividad.nombre}</strong>. La baja es lógica: sale del catálogo y queda en
             el historial. Si tiene horarios activos, primero hay que darlos de baja.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {errorBaja && (
             <Alert className="rounded-xl border-amber-300 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/40">
               <AlertDescription className="text-xs font-semibold text-amber-900 dark:text-amber-200">
@@ -48,7 +50,7 @@ export function ModalBajaActividad({ actividad, dandoDeBaja, errorBaja, onClose,
             </Alert>
           )}
         </div>
-        <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogFooter className={PIE_MODAL}>
           <AlertDialogCancel asChild>
             <Button
               type="button"

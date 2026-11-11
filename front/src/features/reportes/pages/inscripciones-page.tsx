@@ -145,7 +145,8 @@ function Estadisticas({ filtros, hoy }: { filtros: FiltrosInscripciones; hoy: st
 export function InscripcionesPage() {
   const hoy = fechaActualArgentina();
   const anioActual = Number(hoy.slice(0, 4));
-  const [filtros, setFiltros] = useState<FiltrosInscripciones>({ anio: anioActual, idPlan: null, idProfesora: null });
+  const iniciales: FiltrosInscripciones = { anio: anioActual, idPlan: null, idProfesora: null };
+  const [filtros, setFiltros] = useState<FiltrosInscripciones>(iniciales);
   // La misma consulta que usa Estadisticas: se comparte por la caché.
   const consulta = useEstadisticasInscripciones(filtros);
   const descripcion = useDescripcion(filtros);
@@ -169,7 +170,13 @@ export function InscripcionesPage() {
       acciones={<MenuExportar disabled={!conDatos || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <FiltrosDeInscripciones filtros={filtros} anioActual={anioActual} onCambiar={setFiltros} />
+        <FiltrosDeInscripciones
+          filtros={filtros}
+          anioActual={anioActual}
+          onCambiar={setFiltros}
+          onLimpiar={() => setFiltros(iniciales)}
+          hayFiltros={JSON.stringify(filtros) !== JSON.stringify(iniciales)}
+        />
 
         {/* Con otro año o filtro la comparación arranca de nuevo, con el año anterior. */}
         <Estadisticas key={JSON.stringify(filtros)} filtros={filtros} hoy={hoy} />

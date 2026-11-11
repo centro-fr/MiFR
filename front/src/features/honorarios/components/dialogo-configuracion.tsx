@@ -1,9 +1,11 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/utils/cn";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TarifasDelMes } from "@/features/honorarios/components/tarifas-del-mes";
 import { useDiaDeCierre } from "@/features/honorarios/hooks/use-dia-de-cierre";
+import { CABECERA_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   abierto: boolean;
@@ -30,10 +32,10 @@ function CierreDelMes() {
 export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-border bg-white p-0 sm:max-w-2xl dark:bg-surface-low">
-        <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 px-5 py-4 text-left sm:px-6 dark:border-slate-800">
+      <DialogContent bottomSheetOnMobile hideClose className="gap-0 border-slate-200 bg-white p-0 sm:max-w-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
+        <DialogHeader className={cn(CABECERA_MODAL, "flex flex-row items-center justify-between gap-2 pr-6")}>
           <div className="min-w-0 pr-2">
-            <DialogTitle className="text-lg font-black tracking-tight text-slate-900 sm:text-xl dark:text-white">Configuración</DialogTitle>
+            <DialogTitle className={TITULO_MODAL}>Configuración</DialogTitle>
             <DialogDescription className="sr-only">Configuración de honorarios</DialogDescription>
           </div>
           <Button
@@ -47,10 +49,10 @@ export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
             <X aria-hidden="true" className="size-5" />
           </Button>
         </DialogHeader>
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-5 sm:p-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
           <TarifasDelMes periodo={periodo} embebido />
           <section aria-labelledby="config-cierre" className="border-t border-border pt-5">
-            <h3 id="config-cierre" className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
+            <h3 id="config-cierre" className="text-sm font-bold text-slate-800 dark:text-slate-200">
               Cierre del mes
             </h3>
             <CierreDelMes />
