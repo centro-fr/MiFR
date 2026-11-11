@@ -210,40 +210,35 @@ export function Paso1DatosPersonales({
         )}
       </div>
 
-      {/* 4. En caso de emergencia */}
-      <div className="space-y-3 pt-1">
-        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-          En caso de emergencia
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="cont-emerg-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Contacto de emergencia <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="cont-emerg-nombre"
-              placeholder="Paula Romero (mamá)"
-              value={datos.cont_emerg_nombre || ""}
-              onChange={(e) => actualizarCampo("cont_emerg_nombre", e.target.value)}
-              {...propsDeCampo("cont_emerg_nombre")}
-            />
-            <MensajeError campo="cont_emerg_nombre" errores={errores} />
-          </div>
+      {/* 4. Contacto y teléfono de emergencia */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="cont-emerg-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Contacto de emergencia <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="cont-emerg-nombre"
+            placeholder="Paula Romero (mamá)"
+            value={datos.cont_emerg_nombre || ""}
+            onChange={(e) => actualizarCampo("cont_emerg_nombre", e.target.value)}
+            {...propsDeCampo("cont_emerg_nombre")}
+          />
+          <MensajeError campo="cont_emerg_nombre" errores={errores} />
+        </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="cont-emerg-telefono" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Teléfono de emergencia <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="cont-emerg-telefono"
-              type="tel"
-              placeholder="351 555-6677"
-              value={datos.cont_emerg_telefono || ""}
-              onChange={(e) => actualizarCampo("cont_emerg_telefono", e.target.value)}
-              {...propsDeCampo("cont_emerg_telefono")}
-            />
-            <MensajeError campo="cont_emerg_telefono" errores={errores} />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="cont-emerg-telefono" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Teléfono de emergencia <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="cont-emerg-telefono"
+            type="tel"
+            placeholder="351 555-6677"
+            value={datos.cont_emerg_telefono || ""}
+            onChange={(e) => actualizarCampo("cont_emerg_telefono", e.target.value)}
+            {...propsDeCampo("cont_emerg_telefono")}
+          />
+          <MensajeError campo="cont_emerg_telefono" errores={errores} />
         </div>
       </div>
 
@@ -358,9 +353,6 @@ export function Paso1DatosPersonales({
                 <Label htmlFor="apto-medico-toggle" className="text-xs font-bold cursor-pointer text-slate-800 dark:text-slate-200">
                   ¿Posee certificado de Apto Médico?
                 </Label>
-                <p className="text-[11px] text-muted-foreground">
-                  Indica si presentó constancia médica para realizar actividad física.
-                </p>
               </div>
               <Switch
                 id="apto-medico-toggle"
