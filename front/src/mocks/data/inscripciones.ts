@@ -133,33 +133,33 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     },
     inscripcion(
       5,
-      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [28], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
+      { id_alumno: 5, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30, 32], estado: "BAJA", motivo_baja: "MUDANZA", fecha_baja: "2026-09-01T12:00:00.000Z" },
       200,
     ),
 
     // 5 Vencidas (diasAtras >= 42)
-    inscripcion(11, { id_alumno: 11, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 50),
+    inscripcion(11, { id_alumno: 11, id_plan: 3, id_profesora: 1, ids_horarios: [1, 2, 3, 4, 5], estado: "ACTIVA" }, 50),
     inscripcion(12, { id_alumno: 12, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 45),
-    inscripcion(13, { id_alumno: 13, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 48),
-    inscripcion(14, { id_alumno: 14, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 55),
+    inscripcion(13, { id_alumno: 13, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30, 32], estado: "ACTIVA" }, 48),
+    inscripcion(14, { id_alumno: 14, id_plan: 4, id_profesora: 1, ids_horarios: [6, 7, 8, 9, 10], estado: "ACTIVA" }, 55),
     inscripcion(15, { id_alumno: 15, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 42),
 
     // 5 Por vencer (diasAtras entre 31 y 34, dentro del período de gracia de 5 días)
-    inscripcion(16, { id_alumno: 16, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 32),
-    inscripcion(17, { id_alumno: 17, id_plan: 4, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 33),
+    inscripcion(16, { id_alumno: 16, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 32),
+    inscripcion(17, { id_alumno: 17, id_plan: 4, id_profesora: 2, ids_horarios: [11, 12, 13, 14, 15], estado: "ACTIVA" }, 33),
     inscripcion(18, { id_alumno: 18, id_plan: 1, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 31),
-    inscripcion(19, { id_alumno: 19, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 34),
-    inscripcion(20, { id_alumno: 20, id_plan: 2, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 32),
+    inscripcion(19, { id_alumno: 19, id_plan: 3, id_profesora: 1, ids_horarios: [1, 2, 3, 4, 5], estado: "ACTIVA" }, 34),
+    inscripcion(20, { id_alumno: 20, id_plan: 2, id_profesora: 2, ids_horarios: [11, 13, 15], estado: "ACTIVA" }, 32),
 
     // 5 Al día (diasAtras entre 5 y 15)
-    inscripcion(21, { id_alumno: 21, id_plan: 4, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 10),
+    inscripcion(21, { id_alumno: 21, id_plan: 4, id_profesora: 1, ids_horarios: [6, 7, 8, 9, 10], estado: "ACTIVA" }, 14),
     inscripcion(22, { id_alumno: 22, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 8),
-    inscripcion(23, { id_alumno: 23, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30], estado: "ACTIVA" }, 15),
-    inscripcion(24, { id_alumno: 24, id_plan: 3, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 5),
+    inscripcion(23, { id_alumno: 23, id_plan: 2, id_profesora: 3, ids_horarios: [28, 30, 32], estado: "ACTIVA" }, 15),
+    inscripcion(24, { id_alumno: 24, id_plan: 3, id_profesora: 1, ids_horarios: [1, 2, 3, 4, 5], estado: "ACTIVA" }, 14),
     inscripcion(25, { id_alumno: 25, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
     // Alumnos ausentes sincronizados con US-22
-    inscripcion(26, { id_alumno: 26, id_plan: 3, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 12),
-    inscripcion(27, { id_alumno: 27, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3], estado: "ACTIVA" }, 10),
+    inscripcion(26, { id_alumno: 26, id_plan: 3, id_profesora: 2, ids_horarios: [11, 12, 13, 14, 15], estado: "ACTIVA" }, 21),
+    inscripcion(27, { id_alumno: 27, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 10),
   ];
 }
 
@@ -256,7 +256,7 @@ function transferenciasSemilla(): PagoMock[] {
       observaciones: "Te transferí desde la cuenta de mi hermana. Faltan $3.000, te los llevo en efectivo.",
     }),
     transferenciaPendiente({ id_pago: 10, id_inscripcion: 1, monto: PRECIOS[0], horasDesdeLaCarga: 3, observaciones: "Es mi primera cuota." }),
-    transferenciaResuelta({ id_pago: 11, id_inscripcion: 4, monto: PRECIOS[0], horasDesdeLaCarga: 50 }, { estado: "CONFIRMADO", motivo_rechazo: null }),
+    transferenciaResuelta({ id_pago: 11, id_inscripcion: 4, monto: 22000, horasDesdeLaCarga: 50 }, { estado: "CONFIRMADO", motivo_rechazo: null }),
     transferenciaResuelta(
       { id_pago: 12, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 74 },
       { estado: "RECHAZADO", motivo_rechazo: "No se encontró la transferencia en el extracto" },
@@ -271,7 +271,7 @@ export function pagosSemilla(): PagoMock[] {
     cobroSinRendir(1, 3, PRECIOS[1], 1, 7),
     cobroSinRendir(101, 12, PRECIOS[0], 2, 3),
     cobroSinRendir(102, 14, PRECIOS[3], 1, 16),
-    ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, PRECIOS[0])),
+    ...[2, 3, 4].map((id) => pagoConfirmado(id, 4, 22000)),
     ...[5, 6, 7].map((id) => pagoConfirmado(id, 5, PRECIOS[1])),
     ...transferenciasSemilla(),
 
@@ -288,12 +288,12 @@ export function pagosSemilla(): PagoMock[] {
     pagoConfirmado(119, 19, PRECIOS[2]),
     pagoConfirmado(120, 20, PRECIOS[1]),
 
-    pagoConfirmado(121, 21, PRECIOS[3], 10),
+    pagoConfirmado(121, 21, PRECIOS[3], 14),
     pagoConfirmado(122, 22, PRECIOS[0], 8),
     pagoConfirmado(123, 23, PRECIOS[1], 15),
-    pagoConfirmado(124, 24, PRECIOS[2], 5),
+    pagoConfirmado(124, 24, PRECIOS[2], 14),
     pagoConfirmado(125, 25, PRECIOS[0], 12),
-    pagoConfirmado(126, 26, PRECIOS[2], 12),
+    pagoConfirmado(126, 26, PRECIOS[2], 21),
     pagoConfirmado(127, 27, PRECIOS[1], 10),
   ];
 }

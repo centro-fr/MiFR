@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { AlertCircle, Settings } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { AlertCircle, Settings, Users } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { MenuExportar } from "@/components/menu-exportar";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,10 @@ import { ConfirmarAbono } from "@/features/honorarios/components/confirmar-abono
 import { SelectorMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
 import { DialogoDetalle } from "@/features/honorarios/components/dialogo-detalle";
-import { EncabezadoHonorarios, PestanasHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
+import { EncabezadoHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
 import { AvisoAdvertencias, InformeCargando, InformeConError, InformeVacio } from "@/features/honorarios/components/estados-informe";
 import { InformeImprimible } from "@/features/honorarios/components/informe-imprimible";
-import { EstadoDelMes, ResumenDelMes } from "@/features/honorarios/components/resumen-del-mes";
+import { EstadoDelMes } from "@/features/honorarios/components/estado-del-mes";
 import { TablaHonorarios } from "@/features/honorarios/components/tabla-honorarios";
 import { useDiaDeCierre } from "@/features/honorarios/hooks/use-dia-de-cierre";
 import { useExportarInforme } from "@/features/honorarios/hooks/use-exportar-informe";
@@ -35,6 +35,28 @@ function useDialogoDeFila() {
   };
 }
 
+/**
+ * Al entrar a un mes abierto que todavía no tiene liquidaciones, las calcula sin esperar al botón.
+ * Lo intenta una sola vez por mes (el componente se monta de nuevo al cambiar de mes): si el cálculo
+ * no deja liquidaciones o falla, no se repite en bucle y queda el botón para reintentar.
+ */
+function useCalculoAlEntrar(
+  periodo: string,
+  cantidadDeLiquidaciones: number | undefined,
+  cierre: { isPending: boolean; isError: boolean; diaDeCierre: number },
+  recalcular: () => Promise<void>,
+) {
+  const yaIntentado = useRef(false);
+  const cierreListo = !cierre.isPending && !cierre.isError;
+  const debeCalcular = cantidadDeLiquidaciones === 0 && cierreListo && mesSigueAbierto(periodo, cierre.diaDeCierre);
+
+  useEffect(() => {
+    if (!debeCalcular || yaIntentado.current) return;
+    yaIntentado.current = true;
+    void recalcular();
+  }, [debeCalcular, recalcular]);
+}
+
 function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const informe = useInformeHonorarios(periodo);
   // Sin el día de cierre no se sabe si el mes sigue abierto: se espera junto con el informe.
@@ -42,6 +64,7 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const recalculo = useRecalcularMes(periodo);
   const detalle = useDialogoDeFila();
   const abono = useDialogoDeFila();
+  useCalculoAlEntrar(periodo, informe.data?.liquidaciones.length, cierre, recalculo.recalcular);
 
   if (informe.isPending || cierre.isPending) return <InformeCargando />;
   if (informe.isError) {
@@ -54,13 +77,6 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
   const { liquidaciones } = informe.data;
   const mesAbierto = mesSigueAbierto(periodo, cierre.diaDeCierre);
   const recalcular = () => void recalculo.recalcular();
-
-  // Calcular automáticamente al ingresar si el mes sigue abierto y aún no tiene liquidaciones
-  useEffect(() => {
-    if (mesAbierto && liquidaciones.length === 0 && !recalculo.procesando && !recalculo.error && !informe.isFetching) {
-      void recalculo.recalcular();
-    }
-  }, [mesAbierto, liquidaciones.length, recalculo, informe.isFetching]);
 
   if (liquidaciones.length === 0) {
     if (recalculo.procesando) return <InformeCargando />;
@@ -79,7 +95,6 @@ function LiquidacionDelMes({ periodo }: { periodo: string }) {
       {recalculo.advertencias.length > 0 && (
         <AvisoAdvertencias advertencias={recalculo.advertencias} liquidaciones={liquidaciones} onCerrar={recalculo.descartarAdvertencias} />
       )}
-      <ResumenDelMes informe={informe.data} mesAbierto={mesAbierto} />
       <TablaHonorarios liquidaciones={liquidaciones} onVerDetalle={detalle.abrir} onAbonar={abono.abrir} />
       <DialogoDetalle liquidacion={detalle.fila} abierto={detalle.abierto} periodo={periodo} onClose={detalle.cerrar} />
       <ConfirmarAbono liquidacion={abono.fila} abierto={abono.abierto} periodo={periodo} onClose={abono.cerrar} />
@@ -124,6 +139,17 @@ export function HonorariosPage() {
                 <Settings aria-hidden="true" className="size-4" />
                 Configuración
               </Button>
+              {/* Las suplencias del mes ajustan estos montos: se cargan en su propia pantalla, con el mismo mes. */}
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 rounded-xl border-border bg-white px-4 font-bold text-dark dark:bg-surface-low dark:text-white"
+              >
+                <Link to={{ pathname: "/app/honorarios/suplencias", search: `?mes=${periodo}` }}>
+                  <Users aria-hidden="true" className="size-4" />
+                  Suplencias
+                </Link>
+              </Button>
               <MenuExportar
                 disabled={!informe || informe.liquidaciones.length === 0}
                 preparando={preparando}
@@ -132,7 +158,6 @@ export function HonorariosPage() {
             </>
           }
         />
-        <PestanasHonorarios />
         <LiquidacionDelMes key={periodo} periodo={periodo} />
       </div>
       <DialogoConfiguracion abierto={configAbierta} periodo={periodo} onClose={() => setConfigAbierta(false)} />

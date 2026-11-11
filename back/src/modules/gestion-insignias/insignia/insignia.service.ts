@@ -87,9 +87,9 @@ function insigniaDeFicha(
 // Una mensual obtenida varios meses se muestra una vez en el ranking.
 function resumirObtenidas(obtenidas: InsigniaObtenida[]): InsigniaResumida[] {
   const porCodigo = new Map(
-    obtenidas.map(({ insignia: { codigo, nombre, descripcion, tipo } }) => [
+    obtenidas.map(({ insignia: { codigo, nombre, descripcion, tipo, valor_umbral } }) => [
       codigo,
-      { codigo, nombre, descripcion, tipo },
+      { codigo, nombre, descripcion, tipo, valor_umbral },
     ]),
   );
   return [...porCodigo.values()];

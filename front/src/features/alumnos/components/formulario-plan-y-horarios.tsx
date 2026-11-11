@@ -32,6 +32,14 @@ export interface PropsFormularioPlanYHorarios {
   textoConfirmar: string;
   textoProcesando: string;
   procesando: boolean;
+  /** Si es true, el plan queda bloqueado en el actual (modo solo cambiar horarios). */
+  bloquearPlan?: boolean;
+  /** Si es true, la profesora queda bloqueada en la actual (cambio de horario con misma profe). */
+  bloquearProfesora?: boolean;
+  /** Filtra los horarios para que solo se muestren los de una actividad específica. */
+  actividadExclusiva?: string;
+  /** Aviso informativo sobre cuándo comenzará a regir el plan. */
+  mensajeAviso?: string;
   /** Error del back al guardar (por ejemplo, sin cupo). */
   error: unknown;
   onClose: () => void;
@@ -45,6 +53,10 @@ export function FormularioPlanYHorarios({
   textoConfirmar,
   textoProcesando,
   procesando,
+  bloquearPlan,
+  bloquearProfesora,
+  actividadExclusiva,
+  mensajeAviso,
   error,
   onClose,
   onConfirm,
@@ -54,7 +66,10 @@ export function FormularioPlanYHorarios({
   const [errores, setErrores] = useState<Errores>({});
 
   const plan = planes.find(({ id }) => id === valores.idPlan);
-  const elegibles = horariosElegibles(horarios, plan, valores.idProfesora);
+  const elegiblesBase = horariosElegibles(horarios, plan, valores.idProfesora);
+  const elegibles = actividadExclusiva
+    ? elegiblesBase.filter((h) => h.actividad.toLowerCase() === actividadExclusiva.toLowerCase())
+    : elegiblesBase;
 
   const cambiar = (cambio: Partial<ReactivacionFormValues>) => {
     setValores((actuales) => ajustarSeleccion({ ...actuales, ...cambio }, planes, horarios));
@@ -79,9 +94,23 @@ export function FormularioPlanYHorarios({
 
   return (
     <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
+      {mensajeAviso && (
+        <Alert className="rounded-xl border-blue-200 bg-blue-50/70 p-3 text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
+          <AlertDescription className="text-xs font-medium leading-relaxed">
+            {mensajeAviso}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <CampoSelect id="inscripcion-plan" etiqueta="Plan" error={errores.idPlan}>
         {(props) => (
-          <select {...props} value={valores.idPlan} onChange={(evento) => cambiar({ idPlan: evento.target.value })} className={CLASE_SELECT}>
+          <select
+            {...props}
+            value={valores.idPlan}
+            disabled={bloquearPlan || procesando}
+            onChange={(evento) => cambiar({ idPlan: evento.target.value })}
+            className={CLASE_SELECT}
+          >
             <option value="">Elegí un plan</option>
             {planes.map(({ id, nombre, precio }) => (
               <option key={id} value={id}>
@@ -94,7 +123,13 @@ export function FormularioPlanYHorarios({
 
       <CampoSelect id="inscripcion-profesora" etiqueta="Profesora" error={errores.idProfesora}>
         {(props) => (
-          <select {...props} value={valores.idProfesora} onChange={(evento) => cambiar({ idProfesora: evento.target.value })} className={CLASE_SELECT}>
+          <select
+            {...props}
+            value={valores.idProfesora}
+            disabled={bloquearProfesora || procesando}
+            onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
+            className={CLASE_SELECT}
+          >
             <option value="">Elegí una profesora</option>
             {profesoras.map(({ id, nombre, apellido }) => (
               <option key={id} value={id}>

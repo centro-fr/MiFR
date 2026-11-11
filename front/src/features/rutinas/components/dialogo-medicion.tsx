@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch, type FieldErrors, type UseFormReturn } from "react-hook-form";
-import { ChevronDown, Info } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { CampoFechaDelFormulario } from "@/components/formulario/campo-fecha-del-formulario";
-import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
-import { ConfirmarMedicionDelMismoDia } from "@/features/rutinas/components/confirmaciones-medicion";
-import { AREA_DE_TEXTO, CONTROL, CONTROL_FECHA, ETIQUETA } from "@/features/rutinas/components/estilos-formulario";
-import { DialogoDeCarga, MensajeError, Obligatorio, PieDelFormulario } from "@/features/rutinas/components/formulario";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCorregirMedicion, useRegistrarMedicion } from "@/features/rutinas/hooks/use-rutinas";
 import { MEDIDAS, type CodigoMedida } from "@/features/rutinas/schemas/medidas";
 import {
@@ -20,235 +18,209 @@ import {
   type MedicionFormValues,
 } from "@/features/rutinas/schemas/medicion-form";
 import type { Medicion } from "@/types/rutinas";
-import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-// Peso y cintura son las que más se toman; el resto queda plegado para no llenar el formulario de
-// campos que casi nunca se usan.
-const MEDIDAS_PRINCIPALES: CodigoMedida[] = ["PESO", "CINTURA"];
-const MEDIDAS_ADICIONALES: CodigoMedida[] = ["TALLA", "PECHO", "CADERA", "BRAZO", "PIERNA", "GRASA_CORPORAL"];
-
-const EJEMPLO: Record<CodigoMedida, string> = {
-  PESO: "62,4",
-  TALLA: "168",
-  PECHO: "92",
-  CINTURA: "74",
-  CADERA: "98",
-  BRAZO: "28",
-  PIERNA: "54",
-  GRASA_CORPORAL: "24",
-};
-
-function CampoMedida({ codigo, formulario }: { codigo: CodigoMedida; formulario: UseFormReturn<MedicionFormValues> }) {
-  const { etiqueta, unidad } = MEDIDAS[codigo];
-  const error = formulario.formState.errors.medidas?.[codigo]?.message;
-  const id = `medicion-${codigo.toLowerCase()}`;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={ETIQUETA}>
-        {etiqueta} <span className="font-normal text-muted-foreground">({unidad})</span>
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          maxLength={6}
-          placeholder={`Ej: ${EJEMPLO[codigo]}`}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-          {...formulario.register(`medidas.${codigo}`)}
-          className={cn(CONTROL, "pr-10")}
-        />
-        <span aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm font-bold text-slate-500">
-          {unidad}
-        </span>
-      </div>
-      <MensajeError id={`${id}-error`} mensaje={error} />
-    </div>
-  );
-}
-
-function hayAdicionalesConDatos(valores: MedicionFormValues["medidas"], errores: FieldErrors<MedicionFormValues>["medidas"]): boolean {
-  return MEDIDAS_ADICIONALES.some((codigo) => valores[codigo].trim() !== "" || errores?.[codigo]);
-}
-
-interface PropsFormulario {
+interface PropsDialogoMedicion {
+  abierto: boolean;
   idAlumno: number;
-  /** La que se corrige; null para registrar una nueva. */
+  nombreAlumno: string;
   medicion: Medicion | null;
-  /** Las del alumno, de la más reciente a la más antigua, para avisar si se carga otra el mismo día. */
   mediciones: Medicion[];
-  onListo: () => void;
+  onClose: () => void;
 }
 
-function FormularioMedicion({ idAlumno, medicion, mediciones, onListo }: PropsFormulario) {
+function formatearFechaCorta(fechaIso: string): string {
+  const solo = fechaIso.slice(0, 10);
+  const partes = solo.split("-");
+  const dia = partes[2];
+  const mes = partes[1];
+  return dia && mes ? `${dia}/${mes}` : solo;
+}
+
+export function DialogoMedicion({
+  abierto,
+  idAlumno,
+  nombreAlumno,
+  medicion,
+  mediciones,
+  onClose,
+}: PropsDialogoMedicion) {
   const registrar = useRegistrarMedicion(idAlumno);
   const corregir = useCorregirMedicion(idAlumno);
   const hoy = fechaActualArgentina();
+  const [mostrarMas, setMostrarMas] = useState(false);
+
   const formulario = useForm<MedicionFormValues>({
     resolver: zodResolver(crearMedicionFormSchema(hoy)),
     defaultValues: medicion ? valoresDeMedicion(medicion) : { fecha: hoy, medidas: MEDIDAS_VACIAS, observaciones: "" },
   });
-  // isDirty se lee al renderizar: el formState de react-hook-form solo calcula lo que se lee ahí.
-  const { errors: errores, isDirty: huboCambios } = formulario.formState;
-  const [fecha, medidas] = useWatch({ control: formulario.control, name: ["fecha", "medidas"] });
-  const [verMas, setVerMas] = useState(false);
-  // Lo cargado mientras se pregunta si reemplaza a la medición de ese día o se suma.
-  const [porConfirmar, setPorConfirmar] = useState<{ valores: MedicionFormValues; existente: Medicion } | null>(null);
-  const otraDelDia = (dia: string) => mediciones.find((otra) => otra.fecha === dia && otra.id !== medicion?.id) ?? null;
-  const otraDeLaFecha = otraDelDia(fecha);
-  // Si una medida plegada tiene un valor o un error, se muestra: nunca queda un error escondido.
-  const adicionalesVisibles = verMas || hayAdicionalesConDatos(medidas, errores.medidas);
 
-  // El botón que las despliega desaparece: el foco pasa a la primera medida que aparece.
-  useEffect(() => {
-    if (verMas) formulario.setFocus(`medidas.${MEDIDAS_ADICIONALES[0]}`);
-  }, [verMas, formulario]);
+  const { register, handleSubmit, formState: { errors } } = formulario;
 
-  async function enviar(guardarEnElBack: () => Promise<unknown>, exito: string) {
+  // Mapa de la última medición por código de medida para mostrar "Última: X kg el DD/MM"
+  const ultimasMedidas = useMemo(() => {
+    const mapa = new Map<CodigoMedida, { valor: number; fecha: string }>();
+    for (const m of mediciones) {
+      if (medicion && m.id === medicion.id) continue;
+      for (const item of m.medidas) {
+        const cod = item.codigo as CodigoMedida;
+        if (!mapa.has(cod)) {
+          mapa.set(cod, { valor: item.valor, fecha: m.fecha });
+        }
+      }
+    }
+    return mapa;
+  }, [mediciones, medicion]);
+
+  const enviando = registrar.isPending || corregir.isPending;
+
+  const guardar = handleSubmit(async (valores) => {
     try {
-      await guardarEnElBack();
-      toast.success(exito);
-      onListo();
+      if (medicion) {
+        await corregir.mutateAsync({
+          idRegistro: medicion.id,
+          cuerpo: aCorregirMedicionBody(valores),
+        });
+        toast.success("Medición actualizada.");
+      } else {
+        await registrar.mutateAsync(aRegistrarMedicionBody(idAlumno, valores));
+        toast.success("Medición registrada.");
+      }
+      onClose();
     } catch (error) {
       toast.error(mensajeDeErrorApi(error, "No se pudo guardar la medición."));
     }
-  }
-
-  const registrarNueva = (valores: MedicionFormValues) =>
-    enviar(() => registrar.mutateAsync(aRegistrarMedicionBody(idAlumno, valores)), "Medición guardada.");
-  const reemplazar = (idRegistro: number, valores: MedicionFormValues, exito: string) =>
-    enviar(() => corregir.mutateAsync({ idRegistro, cuerpo: aCorregirMedicionBody(valores) }), exito);
-
-  const guardar = formulario.handleSubmit(async (valores) => {
-    if (medicion) {
-      // Sin cambios no se manda nada: si no, quedaría marcada como corregida sin serlo.
-      if (!huboCambios) return onListo();
-      return reemplazar(medicion.id, valores, "Medición corregida.");
-    }
-    const existente = otraDelDia(valores.fecha);
-    if (existente) return setPorConfirmar({ valores, existente });
-    return registrarNueva(valores);
   });
 
-  function resolverMismoDia(accion: (valores: MedicionFormValues) => Promise<void>) {
-    if (!porConfirmar) return;
-    setPorConfirmar(null);
-    void accion(porConfirmar.valores);
+  function renderCampoMedida(codigo: CodigoMedida) {
+    const def = MEDIDAS[codigo];
+    const ultima = ultimasMedidas.get(codigo);
+    const textoUltima = ultima
+      ? `Última: ${ultima.valor.toString().replace(".", ",")} ${def.unidad} el ${formatearFechaCorta(ultima.fecha)}`
+      : null;
+
+    return (
+      <div key={codigo} className="space-y-1.5">
+        <label htmlFor={`medida-${codigo}`} className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          {def.etiqueta} <span className="font-normal text-slate-400 dark:text-slate-500">(opcional)</span>
+        </label>
+        <div className="relative">
+          <Input
+            id={`medida-${codigo}`}
+            type="number"
+            step="0.1"
+            placeholder={def.unidad === "%" ? "20" : "60"}
+            {...register(`medidas.${codigo}`)}
+            className="h-10 rounded-xl border-slate-200 bg-white pr-10 font-medium dark:border-slate-800 dark:bg-slate-900"
+          />
+          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+            {def.unidad}
+          </span>
+        </div>
+        {textoUltima && (
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+            {textoUltima}
+          </p>
+        )}
+        {errors.medidas?.[codigo] && (
+          <p className="text-xs font-semibold text-rose-600">{errors.medidas[codigo]?.message}</p>
+        )}
+      </div>
+    );
   }
 
   return (
-    <>
-      <form onSubmit={(evento) => void guardar(evento)} noValidate className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="medicion-fecha" className={ETIQUETA}>
-            Fecha <Obligatorio />
-          </label>
-          <div className="sm:max-w-56">
-            <CampoFechaDelFormulario
-              control={formulario.control}
-              name="fecha"
-              id="medicion-fecha"
-              etiquetaCalendario="Abrir calendario para la fecha de la medición"
-              className={CONTROL_FECHA}
-              max={hoy}
-              aria-invalid={Boolean(errores.fecha)}
-              aria-describedby={errores.fecha ? "medicion-fecha-error" : otraDeLaFecha ? "medicion-fecha-aviso" : undefined}
-            />
-          </div>
-          <MensajeError id="medicion-fecha-error" mensaje={errores.fecha?.message} />
-          {!errores.fecha && otraDeLaFecha && (
-            <p id="medicion-fecha-aviso" className="flex items-start gap-1.5 text-sm text-amber-800 dark:text-amber-300">
-              <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-              {medicion
-                ? `Ya hay otra medición del ${formatearFecha(fecha)}. Si guardás, quedan las dos.`
-                : `Ya hay una medición del ${formatearFecha(fecha)}. Al guardar vas a elegir si la reemplazás o sumás esta.`}
-            </p>
-          )}
-        </div>
+    <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
+      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {medicion ? "Corregir medición" : "Registrar medición"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            Para {nombreAlumno}. Cargá las medidas que tomaste, al menos una.
+          </DialogDescription>
+        </DialogHeader>
 
-        <fieldset className="flex flex-col gap-4">
-          <legend className={cn(ETIQUETA, "mb-1")}>Medidas</legend>
-          <p className="-mt-2 text-sm text-muted-foreground">Cargá las que tomaste; como mínimo una.</p>
-          <div className="grid grid-cols-2 gap-3">
-            {MEDIDAS_PRINCIPALES.map((codigo) => (
-              <CampoMedida key={codigo} codigo={codigo} formulario={formulario} />
-            ))}
+        <form onSubmit={(e) => void guardar(e)} noValidate className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+          {/* Fecha */}
+          <div className="space-y-1.5">
+            <label htmlFor="fecha-medicion" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              Fecha <span className="text-primary">*</span>
+            </label>
+            <Input
+              id="fecha-medicion"
+              type="date"
+              max={hoy}
+              {...register("fecha")}
+              className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
+            />
+            {errors.fecha && <p className="text-xs font-semibold text-rose-600">{errors.fecha.message}</p>}
           </div>
-          {adicionalesVisibles ? (
-            <div className="grid grid-cols-2 gap-3">
-              {MEDIDAS_ADICIONALES.map((codigo) => (
-                <CampoMedida key={codigo} codigo={codigo} formulario={formulario} />
-              ))}
-            </div>
-          ) : (
+
+          {/* Grid de medidas principales: Peso, Cintura, Cadera, Brazo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {renderCampoMedida("PESO")}
+            {renderCampoMedida("CINTURA")}
+            {renderCampoMedida("CADERA")}
+            {renderCampoMedida("BRAZO")}
+          </div>
+
+          {/* Toggle de más medidas */}
+          <div className="pt-1">
             <button
               type="button"
-              onClick={() => setVerMas(true)}
-              className="flex min-h-11 items-center gap-1.5 self-start rounded-xl px-1 text-left text-sm font-bold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+              onClick={() => setMostrarMas(!mostrarMas)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:underline cursor-pointer dark:text-slate-400 dark:hover:text-slate-200"
             >
-              <ChevronDown aria-hidden="true" className="size-4" />
-              Más medidas: talla, pecho, cadera, brazo, pierna y grasa
+              {mostrarMas ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              <span>Más medidas: grasa, talla, pecho y pierna</span>
             </button>
+          </div>
+
+          {mostrarMas && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+              {renderCampoMedida("GRASA_CORPORAL")}
+              {renderCampoMedida("TALLA")}
+              {renderCampoMedida("PECHO")}
+              {renderCampoMedida("PIERNA")}
+            </div>
           )}
-          <MensajeError id="medicion-medidas-error" mensaje={errores.medidas?.message} />
-        </fieldset>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="medicion-observaciones" className={ETIQUETA}>
-            Observaciones <span className="font-normal text-muted-foreground">(opcional)</span>
-          </label>
-          <textarea
-            id="medicion-observaciones"
-            rows={3}
-            maxLength={500}
-            placeholder="Ej: tomada en ayunas"
-            aria-invalid={Boolean(errores.observaciones)}
-            aria-describedby={errores.observaciones ? "medicion-observaciones-error" : undefined}
-            {...formulario.register("observaciones")}
-            className={AREA_DE_TEXTO}
-          />
-          <MensajeError id="medicion-observaciones-error" mensaje={errores.observaciones?.message} />
-        </div>
+          {/* Observaciones */}
+          <div className="space-y-1.5 pt-1">
+            <label htmlFor="observaciones-medicion" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              Observaciones <span className="font-normal text-slate-400">(opcional)</span>
+            </label>
+            <textarea
+              id="observaciones-medicion"
+              rows={2}
+              placeholder="Ej: tomada en ayunas"
+              {...register("observaciones")}
+              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            />
+          </div>
 
-        <PieDelFormulario
-          guardando={registrar.isPending || corregir.isPending}
-          textoGuardar={medicion ? "Guardar corrección" : "Guardar medición"}
-          onCancelar={onListo}
-        />
-      </form>
-      <ConfirmarMedicionDelMismoDia
-        existente={porConfirmar?.existente ?? null}
-        onReemplazar={(existente) => resolverMismoDia((valores) => reemplazar(existente.id, valores, "Medición reemplazada."))}
-        onGuardarOtra={() => resolverMismoDia(registrarNueva)}
-        onCancelar={() => setPorConfirmar(null)}
-      />
-    </>
-  );
-}
-
-interface PropsDialogo extends Omit<PropsFormulario, "onListo"> {
-  abierto: boolean;
-  nombreAlumno: string;
-  onClose: () => void;
-}
-
-export function DialogoMedicion({ abierto, nombreAlumno, onClose, ...props }: PropsDialogo) {
-  const { medicion } = props;
-  return (
-    <DialogoDeCarga
-      abierto={abierto}
-      titulo={medicion ? "Corregir medición" : "Registrar medición"}
-      descripcion={
-        medicion
-          ? `La del ${formatearFecha(medicion.fecha)} de ${nombreAlumno}. Lo que guardes reemplaza lo que tenía.`
-          : `Peso y medidas de ${nombreAlumno}. Quedan en su historial de evolución.`
-      }
-      onClose={onClose}
-    >
-      {abierto && <FormularioMedicion {...props} onListo={onClose} />}
-    </DialogoDeCarga>
+          {/* Footer de acciones estilo Cobrar en Alumnos-Lista */}
+          <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={enviando}
+              onClick={onClose}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={enviando}
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+            >
+              {enviando ? "Guardando..." : "Guardar medición"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

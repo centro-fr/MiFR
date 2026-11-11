@@ -206,7 +206,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     id_profesora: idProfesora,
     id_actividad: filtros.id_actividad,
     estado: "TODOS",
-    incluir_bajas: filtros.incluir_bajas,
+    incluir_bajas: false,
     limit: 1,
     offset: 0,
   });
@@ -253,9 +253,9 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     [listaCompletaAlumnos],
   );
 
-  const conteoTodos = consultaTodos.data?.total ?? (filtros.estado === "TODOS" ? (respuesta?.total ?? 0) : 0);
-  const conteoPendientes = consultaPendientes.data?.total ?? (filtros.estado === "PENDIENTE" ? (respuesta?.total ?? 0) : 0);
-  const conteoBajas = consultaBajas.data?.total ?? (filtros.estado === "BAJA" ? (respuesta?.total ?? 0) : 0);
+  const conteoTodos = consultaTodos.data?.total ?? 0;
+  const conteoPendientes = consultaPendientes.data?.total ?? 0;
+  const conteoBajas = consultaBajas.data?.total ?? 0;
 
   const itemsContactar = useMemo((): AlumnoResumen[] => {
     const porIdEnListado = new Map((respuesta?.items ?? []).map((item) => [item.id_alumno, item]));
@@ -522,7 +522,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 : "text-slate-500"
             )}
           >
-            {conteoTodos || (respuesta?.total ?? 0)}
+            {conteoTodos}
           </span>
         </button>
         <button
@@ -609,7 +609,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                 )}
               >
-                {conteoTodos || (respuesta?.total ?? 0)}
+                {conteoTodos}
               </span>
             </button>
 
@@ -802,7 +802,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                       : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                   )}
                 >
-                  {conteoTodos || (respuesta?.total ?? 0)}
+                  {conteoTodos}
                 </span>
               </button>
 

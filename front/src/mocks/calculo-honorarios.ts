@@ -8,7 +8,7 @@ import {
   type LiquidacionMock,
   type TarifaHonorarioMock,
 } from "@/mocks/data/honorarios";
-import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
+import { PLAN_PRECIOS_SEMILLA, type InscripcionMock, type PagoMock } from "@/mocks/data/inscripciones";
 
 // Réplica del cálculo del back para el mock de US-23: CalculadorHonorarios (rama sprint4-honorarios),
 // IInfoInscripciones.aCargoEnPeriodo e IInfoClases.listarSuplidasEnPeriodo. Es puro: recibe las
@@ -57,13 +57,21 @@ function cobradoEnElPeriodo(
   pagos: (PagoMock | CobroHonorariosMock)[],
   desde: string,
   hasta: string,
+  inscripciones?: (InscripcionMock | InscripcionHonorariosMock)[],
 ): Map<number, number> {
   const cobrado = new Map<number, number>();
   for (const cobro of pagos) {
     if ("estado" in cobro && cobro.estado !== "CONFIRMADO") continue;
     const dia = diaArgentina(cobro.fecha_pago);
     if (dia < desde || dia > hasta) continue;
-    cobrado.set(cobro.id_inscripcion, (cobrado.get(cobro.id_inscripcion) ?? 0) + cobro.monto);
+
+    // Los descuentos y promociones no deben afectar los honorarios de los profesores:
+    // se toma el precio de lista para el cálculo de honorarios por alumno a cargo.
+    const inscripcion = inscripciones?.find((i) => i.id_inscripcion === cobro.id_inscripcion);
+    const precioLista = inscripcion ? PLAN_PRECIOS_SEMILLA.find((p) => p.id_plan === inscripcion.id_plan)?.precio : undefined;
+    const montoCalculo = precioLista !== undefined ? Math.max(cobro.monto, precioLista) : cobro.monto;
+
+    cobrado.set(cobro.id_inscripcion, (cobrado.get(cobro.id_inscripcion) ?? 0) + montoCalculo);
   }
   return cobrado;
 }
@@ -98,7 +106,7 @@ function lineasDeAlumnos(
 ) {
   const lineas: LineaCalculada[] = [];
   const advertencias: AdvertenciaCalculada[] = [];
-  const cobrado = cobradoEnElPeriodo(pagos, desde, hasta);
+  const cobrado = cobradoEnElPeriodo(pagos, desde, hasta, inscripciones);
   for (const inscripcion of inscripciones.filter((i) => aCargoEnElPeriodo(i, desde, hasta))) {
     const { id_profesora, id_inscripcion } = inscripcion;
     const tarifa = buscarTarifa(tarifas, "ALUMNO_A_CARGO", null, diaDeLaLinea(inscripcion, hasta));

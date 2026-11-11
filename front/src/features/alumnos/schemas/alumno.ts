@@ -78,7 +78,12 @@ const inscripcionVigenteApiSchema = z.object({
   fecha_inicio: z.string(),
   id_profesora: z.number().int(),
   id_promocion: z.number().int().nullable(),
-  plan: z.object({ id_plan: z.number().int(), nombre: z.string(), tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]) }),
+  plan: z.object({
+    id_plan: z.number().int(),
+    nombre: z.string(),
+    tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]),
+    clases_por_semana: z.number().int().nullable().optional(),
+  }),
   plan_precio: z.object({ precio: precioApiSchema }),
   profesora: z.object({ usuario: nombreApiSchema }),
   horarios: z.array(
@@ -193,7 +198,13 @@ export interface InscripcionDeAlumno {
   id_inscripcion: number;
   estado: "PREINSCRIPTA" | "ACTIVA" | "BAJA";
   /** Precio con el que se inscribió (el vigente en ese momento). */
-  plan: { id_plan: number; nombre: string; tipo: "MENSUAL" | "CLASE_SUELTA"; precio: number };
+  plan: {
+    id_plan: number;
+    nombre: string;
+    tipo: "MENSUAL" | "CLASE_SUELTA";
+    precio: number;
+    clases_por_semana?: number | null;
+  };
   id_profesora: number;
   profesora: string;
   horarios: HorarioDeAlumno[];
@@ -221,6 +232,8 @@ export interface AlumnoDetalle {
   fecha_baja: string | null;
   /** La inscripción vigente más reciente; null si no tiene (por ejemplo, dado de baja). */
   inscripcion: InscripcionDeAlumno | null;
+  /** Todas las inscripciones vigentes (si el alumno tiene más de un plan simultáneo). */
+  inscripciones: InscripcionDeAlumno[];
   /** Solo si está de baja: las inscripciones que cerró su última baja, con la cuota a ese día. */
   inscripciones_de_la_baja: InscripcionDeAlumno[];
 }

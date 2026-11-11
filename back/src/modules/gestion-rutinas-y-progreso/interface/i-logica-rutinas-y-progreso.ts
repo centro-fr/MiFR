@@ -1,13 +1,15 @@
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { ActualizarProgresoInput, RegistrarProgresoInput } from "../progreso/progreso.schemas.js";
 import type { RegistroDeProgreso } from "../progreso/progreso.types.js";
-import type { CrearRutinaInput } from "../rutina/rutina.schemas.js";
+import type { ActualizarRutinaInput, CrearRutinaInput } from "../rutina/rutina.schemas.js";
 import type { Rutina } from "../rutina/rutina.types.js";
 
 // Las partes de ILogicaRutinasYProgreso que usan los controllers de Rutina y de Progreso. La interfaz que
 // provee el subsistema es la unión.
 export interface ILogicaRutinas {
   crearRutina(input: CrearRutinaInput, solicitante: Solicitante): Promise<Rutina>;
+  actualizarRutina(idRutina: number, input: ActualizarRutinaInput, solicitante: Solicitante): Promise<Rutina>;
+  eliminarRutina(idRutina: number, solicitante: Solicitante): Promise<void>;
   listarRutinasDeAlumno(idAlumno: number, solicitante: Solicitante): Promise<Rutina[]>;
   // null: el alumno todav��a no tiene rutina.
   obtenerRutinaVigente(idAlumno: number, solicitante: Solicitante): Promise<Rutina | null>;

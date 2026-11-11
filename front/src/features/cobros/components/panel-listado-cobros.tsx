@@ -302,10 +302,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                       </th>
                     )}
                     <th scope="col" className="px-4 py-3.5">
-                      Monto
+                      Promoción
                     </th>
                     <th scope="col" className="px-4 py-3.5">
-                      Promoción
+                      Monto
                     </th>
                     <th scope="col" className="px-6 py-3.5 text-right">
                       Acciones
@@ -358,15 +358,15 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                             {textoForma}
                           </td>
                         )}
-                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                          {formatearPrecio(cobro.monto)}
-                        </td>
-                        <td className="px-4 py-3.5 text-sm font-medium text-slate-900 dark:text-white">
+                        <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
                           {cobro.promocion ? (
                             cobro.promocion.nombre
                           ) : (
                             <span className="font-normal text-slate-400 dark:text-slate-500">—</span>
                           )}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                          {formatearPrecio(cobro.monto)}
                         </td>
                         <td className="px-6 py-3.5 text-right">
                           <Button
@@ -417,10 +417,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                           </span>
                         )}
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)} ·{" "}
-                          {formatearPrecio(cobro.monto)}
+                          {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)}
                           {filtroForma === "TODOS" ? ` · ${textoForma}` : ""}
                           {cobro.promocion ? ` · Promoción: ${cobro.promocion.nombre}` : ""}
+                          {` · ${formatearPrecio(cobro.monto)}`}
                         </p>
                       </div>
                     </div>

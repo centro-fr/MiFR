@@ -133,6 +133,7 @@ function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
 }
 
 export function OcupacionReportePage() {
+  const [vista, setVista] = useState<"mapa" | "tabla">("mapa");
   const [filtros, setFiltros] = useState<FiltrosOcupacion>({ idActividad: null, idProfesora: null, modalidad: null });
   const consulta = useInformeOcupacion(filtros);
   const profesoras = useProfesorasParaFiltro();
@@ -206,8 +207,43 @@ export function OcupacionReportePage() {
               ]}
               aclaracion="Inscriptos activos sobre el cupo de cada horario. Libre: menos del 60 %; moderado: hasta 84 %; casi lleno: hasta 99 %."
             />
-            <MapaOcupacion horarios={horarios} />
-            <TablaOcupacion horarios={horarios} />
+
+            <div className="flex items-center justify-start">
+              <div role="group" aria-label="Vista del reporte" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                <button
+                  type="button"
+                  aria-pressed={vista === "mapa"}
+                  onClick={() => setVista("mapa")}
+                  className={cn(
+                    "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                    vista === "mapa"
+                      ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+                  )}
+                >
+                  Mapa de calor
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={vista === "tabla"}
+                  onClick={() => setVista("tabla")}
+                  className={cn(
+                    "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                    vista === "tabla"
+                      ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+                  )}
+                >
+                  Tabla
+                </button>
+              </div>
+            </div>
+
+            {vista === "mapa" ? (
+              <MapaOcupacion horarios={horarios} />
+            ) : (
+              <TablaOcupacion horarios={horarios} />
+            )}
           </div>
         )}
       </div>

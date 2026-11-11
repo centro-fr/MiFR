@@ -120,7 +120,9 @@ vi.mock("@/features/planes/hooks/use-planes", () => ({
   }),
   useReactivarPlan: () => ({
     mutate: mockReactivarMutate,
+    mutateAsync: vi.fn(),
     isPending: false,
+    reset: vi.fn(),
   }),
 }));
 

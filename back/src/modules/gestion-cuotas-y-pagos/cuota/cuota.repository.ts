@@ -182,11 +182,14 @@ export class CuotaRepository {
   }
 
   // Suma en la base, de una consulta: una inscripción sin cobros en el período no figura.
+  // Regla de negocio: los descuentos de promociones no afectan los honorarios docentes; se usa el precio de lista.
   async cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>> {
     const filas = await this.prisma.$queryRaw<{ id_inscripcion: number; total: Prisma.Decimal }[]>`
-      SELECT c.id_inscripcion, SUM(p.monto) AS total
+      SELECT c.id_inscripcion, SUM(GREATEST(p.monto, pp.precio)) AS total
       FROM pagos p
       JOIN cuotas c ON c.id_cuota = p.id_cuota
+      JOIN inscripciones i ON i.id_inscripcion = c.id_inscripcion
+      JOIN plan_precios pp ON pp.id_plan_precio = i.id_plan_precio
       WHERE p.estado = 'CONFIRMADO'
         AND c.id_inscripcion = ANY(${idsInscripciones})
         AND p.fecha_pago >= ${desde}

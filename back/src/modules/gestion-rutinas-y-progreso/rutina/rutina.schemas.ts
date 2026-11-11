@@ -50,6 +50,27 @@ export const crearRutinaSchema = z
   });
 
 export const alumnoRutinasParamsSchema = z.object({ id: idDesdeTextoSchema });
+export const rutinaIdParamsSchema = z.object({ id: idDesdeTextoSchema });
+
+// Edición parcial: un campo que no viene queda undefined y no se toca; null borra la fecha de fin o
+// las observaciones. Con una sola fecha en el pedido, el service la compara con la guardada.
+export const actualizarRutinaSchema = z
+  .object({
+    nombre: textoSchema(100).optional(),
+    fecha_desde: fecha.optional(),
+    fecha_hasta: fecha.nullable().optional(),
+    contenido: contenidoRutinaSchema.optional(),
+    observaciones: textoOpcionalSchema(500, { multilinea: true }).optional(),
+  })
+  .refine(
+    ({ fecha_desde, fecha_hasta }) =>
+      fecha_desde === undefined || fecha_hasta === undefined || fecha_hasta === null || fecha_hasta >= fecha_desde,
+    {
+      message: "La fecha de fin no puede ser anterior a la de inicio",
+      path: ["fecha_hasta"],
+    },
+  );
 
 export type ContenidoRutina = z.infer<typeof contenidoRutinaSchema>;
 export type CrearRutinaInput = z.infer<typeof crearRutinaSchema>;
+export type ActualizarRutinaInput = z.infer<typeof actualizarRutinaSchema>;

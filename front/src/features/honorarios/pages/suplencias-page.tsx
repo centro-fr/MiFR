@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Settings, Users } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -12,7 +12,7 @@ import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horari
 import { HORARIOS_QUERY_KEY, PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import { SelectorMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
-import { EncabezadoHonorarios, PestanasHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
+import { EncabezadoHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
 import { useTarifas } from "@/features/honorarios/hooks/use-honorarios";
 import {
   esPeriodoEnCurso,
@@ -23,7 +23,7 @@ import {
   ultimoDiaDe,
 } from "@/features/honorarios/utils/periodo";
 import { ConfirmarEliminarSuplencia } from "@/features/suplencias/components/confirmar-eliminar-suplencia";
-import { EstadoSuplencias, ResumenSuplencias } from "@/features/suplencias/components/resumen-suplencias";
+import { EstadoSuplencias } from "@/features/suplencias/components/estado-suplencias";
 import { SuplenciaDialog } from "@/features/suplencias/components/suplencia-dialog";
 import { TablaSuplencias } from "@/features/suplencias/components/tabla-suplencias";
 import { useActualizarSuplencia, useRegistrarSuplencia, useSuplencias } from "@/features/suplencias/hooks/use-suplencias";
@@ -45,21 +45,12 @@ function SuplenciasConError({ error, onReintentar }: { error: unknown; onReinten
   );
 }
 
-function SinSuplencias({ periodo, abierto, onRegistrar }: { periodo: string; abierto: boolean; onRegistrar: () => void }) {
+// Sin ícono ni botón propio: "Registrar suplencia" ya está en el encabezado, como en el resto de las pantallas.
+function SinSuplencias({ periodo, abierto }: { periodo: string; abierto: boolean }) {
   return (
     <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-14 text-center">
       <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">No hubo suplencias en {etiquetaPeriodo(periodo).toLowerCase()}</h2>
-      <p className="max-w-md text-sm text-muted-foreground">
-        {abierto
-          ? "Cuando alguien cubra una clase, registralo acá: se le paga a quien la cubrió y se le descuenta a quien faltó."
-          : "Ese mes nadie cubrió clases de otro profesor/a."}
-      </p>
-      {abierto && (
-        <Button type="button" onClick={onRegistrar} className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white hover:bg-primary-dark">
-          <Plus aria-hidden="true" className="size-4" />
-          Registrar suplencia
-        </Button>
-      )}
+      {!abierto && <p className="max-w-md text-sm text-muted-foreground">Ese mes nadie cubrió clases de otro profesor/a.</p>}
     </Card>
   );
 }
@@ -130,10 +121,9 @@ export function SuplenciasPage() {
   function contenido() {
     if (consultaSuplencias.isPending) return <SuplenciasCargando />;
     if (consultaSuplencias.isError) return <SuplenciasConError error={consultaSuplencias.error} onReintentar={() => void consultaSuplencias.refetch()} />;
-    if (suplencias.length === 0) return <SinSuplencias periodo={periodo} abierto={abierto} onRegistrar={() => abrirDialogo(null)} />;
+    if (suplencias.length === 0) return <SinSuplencias periodo={periodo} abierto={abierto} />;
     return (
       <>
-        <ResumenSuplencias suplencias={suplencias} montos={montos} />
         <TablaSuplencias suplencias={suplencias} montos={montos} editables={abierto} onEditar={abrirDialogo} onEliminar={setAEliminar} />
         <p className="text-sm text-muted-foreground">
           Le paga el valor por hora de quien cubrió por la duración de la clase. Con el mes cerrado ya no se pueden cambiar.
@@ -143,9 +133,11 @@ export function SuplenciasPage() {
   }
 
   return (
-    <OwnerLayout>
+    // Se vuelve a Honorarios desde las migas de pan (Inicio / Otros / Honorarios / Suplencias), como en la ficha del alumno.
+    <OwnerLayout submiga="Suplencias">
       <div className="min-w-0 space-y-6">
         <EncabezadoHonorarios
+          titulo="Suplencias"
           descripcion="Quién cubrió cada clase del mes. Se le paga a quien la cubrió y se le descuenta a quien faltó."
           acciones={
             <>
@@ -174,7 +166,6 @@ export function SuplenciasPage() {
             </>
           }
         />
-        <PestanasHonorarios cantidadSuplencias={consultaSuplencias.data?.length} />
         <EstadoSuplencias periodo={periodo} />
         {contenido()}
       </div>

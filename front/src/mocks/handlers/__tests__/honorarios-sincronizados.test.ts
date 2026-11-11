@@ -114,4 +114,61 @@ describe("Sincronización de Honorarios con Base en Memoria", () => {
     // 50% de 25000 = 12500
     expect(detalleNuevo!.monto).toBe(12500);
   });
+
+  it("utiliza el precio de lista para el cálculo de honorarios docentes aunque el alumno haya tenido descuento", () => {
+    // Inscripción a Plan Básico (precio de lista: $25.000) con Profesora 1
+    const inscripcionConPromo = {
+      id_inscripcion: 888,
+      id_alumno: 888,
+      id_plan: 1, // Plan Básico ($25.000)
+      id_plan_precio: 1,
+      id_profesora: 1,
+      id_promocion: 2, // Descuento aplicado
+      sin_cargo: false,
+      fecha_inicio: "2026-10-01T00:00:00.000Z",
+      fecha_fin_estimado: null,
+      estado: "ACTIVA" as const,
+      motivo_baja: null,
+      detalle_baja: null,
+      observaciones: null,
+      fecha_alta: "2026-10-01T00:00:00.000Z",
+      fecha_baja: null,
+      ids_horarios: [1],
+    };
+    db.inscripciones.push(inscripcionConPromo);
+
+    // Pago cobrado al alumno con descuento: $22.000 en vez de $25.000
+    const pagoConDescuento = {
+      id_pago: 888,
+      id_cuota: 888,
+      id_inscripcion: 888,
+      forma_pago: "TRANSFERENCIA" as const,
+      estado: "CONFIRMADO" as const,
+      monto: 22000, // Monto neto cobrado al alumno tras el descuento
+      fecha_pago: "2026-10-10T12:00:00.000Z",
+      titular_cuenta_origen: null,
+      fecha_hora_transferencia: null,
+      id_usuario_registra: 1,
+      id_profesora_cobra: null,
+      rendido: true,
+      fecha_rendicion: null,
+      id_usuario_confirma: 1,
+      fecha_confirmacion: "2026-10-10T12:00:00.000Z",
+      motivo_rechazo: null,
+      observaciones: null,
+    };
+    db.pagos.push(pagoConDescuento);
+
+    // Recalcular liquidaciones de octubre
+    liquidarPeriodo(db, "2026-10", [1]);
+
+    const liqLucia = db.liquidaciones.find((l) => l.id_profesora === 1 && l.periodo_desde === "2026-10-01");
+    const detalleConPromo = db.liquidacionDetalles.find(
+      (d) => d.id_liquidacion === liqLucia!.id_liquidacion && d.id_inscripcion === 888,
+    );
+
+    expect(detalleConPromo).toBeDefined();
+    // La profesora recibe el 50% sobre el PRECIO DE LISTA ($25.000), es decir $12.500, no sobre $22.000 ($11.000)
+    expect(detalleConPromo!.monto).toBe(12500);
+  });
 });

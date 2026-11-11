@@ -331,8 +331,8 @@ export const INSCRIPCIONES_DEMO: InscripcionDemo[] = [
     nombrePlan: "Intermedio",
     emailProfesora: "carla.ruiz@example.com",
     codigoActividad: "ENTRENAMIENTO_PERS",
-    dias: [2, 4],
-    horaInicio: "18:00",
+    dias: [1, 3, 5],
+    horaInicio: "15:00",
     estado: "ACTIVA",
   },
 ];

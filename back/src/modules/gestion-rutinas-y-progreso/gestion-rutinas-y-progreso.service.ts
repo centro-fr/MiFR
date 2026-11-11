@@ -3,7 +3,7 @@ import type { ILogicaRutinasYProgreso } from "./interface/i-logica-rutinas-y-pro
 import type { ActualizarProgresoInput, RegistrarProgresoInput } from "./progreso/progreso.schemas.js";
 import type { ProgresoService } from "./progreso/progreso.service.js";
 import type { RegistroDeProgreso } from "./progreso/progreso.types.js";
-import type { CrearRutinaInput } from "./rutina/rutina.schemas.js";
+import type { ActualizarRutinaInput, CrearRutinaInput } from "./rutina/rutina.schemas.js";
 import type { RutinaService } from "./rutina/rutina.service.js";
 import type { Rutina } from "./rutina/rutina.types.js";
 
@@ -16,6 +16,14 @@ export class GestionRutinasYProgresoService implements ILogicaRutinasYProgreso {
 
   crearRutina(input: CrearRutinaInput, solicitante: Solicitante): Promise<Rutina> {
     return this.rutinas.crear(input, solicitante);
+  }
+
+  actualizarRutina(idRutina: number, input: ActualizarRutinaInput, solicitante: Solicitante): Promise<Rutina> {
+    return this.rutinas.actualizar(idRutina, input, solicitante);
+  }
+
+  eliminarRutina(idRutina: number, solicitante: Solicitante): Promise<void> {
+    return this.rutinas.eliminar(idRutina, solicitante);
   }
 
   listarRutinasDeAlumno(idAlumno: number, solicitante: Solicitante): Promise<Rutina[]> {

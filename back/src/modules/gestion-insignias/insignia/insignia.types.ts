@@ -14,7 +14,8 @@ export interface InsigniaAOtorgar {
   fecha_obtencion: Date;
 }
 
-export type InsigniaResumida = Pick<Insignia, "codigo" | "nombre" | "descripcion" | "tipo">;
+// valor_umbral va también en el ranking: el front lo muestra dentro de la medalla (Racha de 25, 100 clases).
+export type InsigniaResumida = Pick<Insignia, "codigo" | "nombre" | "descripcion" | "tipo" | "valor_umbral">;
 
 export interface ProgresoInsignia {
   actual: number;

@@ -124,8 +124,14 @@ describe("Reportes del centro", () => {
     expect(mockPlanes).toHaveBeenLastCalledWith({ idActividad: null, idProfesora: 1 });
   });
 
-  it("ocupación: ordena de más lleno a más vacío y muestra el nivel", () => {
+  it("ocupación: permite alternar entre mapa de calor y tabla, y la tabla ordena de más lleno a más vacío", () => {
     renderizar(<OcupacionReportePage />);
+    expect(screen.getByRole("button", { name: "Mapa de calor" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("region", { name: "Mapa de la semana" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tabla" }));
+    expect(screen.getByRole("button", { name: "Tabla" })).toHaveAttribute("aria-pressed", "true");
+
     const filas = within(screen.getByRole("region", { name: /Horarios/ })).getAllByRole("row");
     expect(within(filas[1]).getByText("HIIT")).toBeInTheDocument();
     expect(within(filas[1]).getByText("Completo")).toBeInTheDocument();

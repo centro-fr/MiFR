@@ -167,10 +167,21 @@ export const reportesCentroHandlers = [
       const plan = db.planes.find((pl) => pl.id_plan === inscripcion?.id_plan);
       const idPromo = p.id_promocion ?? inscripcion?.id_promocion;
       const promo = idPromo ? promociones.find((pr) => pr.id_promocion === idPromo) : null;
+      let monto = p.monto;
+      if (promo && plan) {
+        const precioBase = db.planPrecios.find((pp) => pp.id_plan === plan.id_plan)?.precio;
+        if (precioBase !== undefined && p.monto === precioBase) {
+          const descuento =
+            promo.tipo_descuento === "PORCENTAJE"
+              ? precioBase * (promo.valor / 100)
+              : Math.min(precioBase, promo.valor);
+          monto = Math.round((precioBase - descuento) * 100) / 100;
+        }
+      }
       return {
         id_pago: p.id_pago,
         id_cuota: p.id_cuota,
-        monto: p.monto,
+        monto,
         forma_pago: p.forma_pago,
         fecha_pago: p.fecha_pago,
         alumno: alumnoDe(inscripcion?.id_alumno ?? 0),
@@ -179,9 +190,9 @@ export const reportesCentroHandlers = [
         promocion: promo ? { id_promocion: promo.id_promocion, codigo: promo.codigo, nombre: promo.nombre } : null,
       };
     });
-    const suma = (lista: typeof pagos) => lista.reduce((s, p) => s + p.monto, 0);
-    const efectivo = suma(pagos.filter((p) => p.forma_pago === "EFECTIVO"));
-    const transferencia = suma(pagos.filter((p) => p.forma_pago === "TRANSFERENCIA"));
+    const suma = (lista: typeof datos) => lista.reduce((s, p) => s + p.monto, 0);
+    const efectivo = suma(datos.filter((p) => p.forma_pago === "EFECTIVO"));
+    const transferencia = suma(datos.filter((p) => p.forma_pago === "TRANSFERENCIA"));
     return HttpResponse.json({
       periodo: { desde, hasta },
       resumen: { total_cobrado: efectivo + transferencia, total_efectivo: efectivo, total_transferencia: transferencia, cantidad_pagos: pagos.length },

@@ -1,36 +1,86 @@
-import { createElement } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
 import type { ActividadPublica } from "@/features/publico/schemas/actividades";
-import { diasAbreviados, iconoDeActividad } from "@/features/publico/utils/actividades";
+import { diasEnPalabras, semanaDeLaActividad } from "@/features/publico/utils/actividades";
+import { cn } from "@/utils/cn";
+import { CONTENEDOR_PUBLICO, TITULO_DE_SECCION, VOLANTA } from "./estilos-publicos";
 
-function TarjetaActividad({ actividad }: { actividad: ActividadPublica }) {
+// Hasta 1024 px la fila se reacomoda: el número a la izquierda, el nombre y la descripción a lo ancho, y
+// abajo los días junto a las clases por semana. Con menos ancho, las cinco columnas pisan los nombres largos.
+const GRILLA_DE_FILA =
+  "grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-2.5 lg:grid-cols-[56px_minmax(0,1.25fr)_minmax(0,1.2fr)_auto_104px] lg:gap-x-6 lg:gap-y-0";
+
+function DiasDeLaActividad({ dias }: { dias: number[] }) {
   return (
-    <li className="group flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+    <span className="col-start-2 flex gap-1 lg:col-start-auto">
+      <span className="sr-only">Días: {diasEnPalabras(dias)}</span>
+      {semanaDeLaActividad(dias).map(({ dia, inicial, conClase }) => (
+        <span
+          key={dia}
+          aria-hidden="true"
+          className={cn(
+            "flex size-7 items-center justify-center rounded-lg text-xs font-extrabold",
+            conClase ? "bg-primary text-white" : "text-[#b4bac6]",
+          )}
+        >
+          {inicial}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function FilaActividad({ actividad, numero }: { actividad: ActividadPublica; numero: number }) {
+  const { nombre, descripcion, dias, clases_por_semana: clases } = actividad;
+
+  return (
+    <li
+      className={cn(
+        GRILLA_DE_FILA,
+        "group border-b border-publico-borde py-5 transition-colors duration-200 hover:bg-publico-tinta hover:text-white lg:px-4 lg:py-[22px]",
+      )}
+    >
       <span
         aria-hidden="true"
-        className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white"
+        className="self-start pt-1 font-display text-lg text-[#6b7385] group-hover:text-primary lg:self-center lg:pt-0 lg:text-[22px]"
       >
-        {createElement(iconoDeActividad(actividad.nombre), { className: "size-6" })}
+        {String(numero).padStart(2, "0")}
       </span>
-      <div>
-        <h3 className="text-lg font-black text-foreground">{actividad.nombre}</h3>
-        {actividad.descripcion && (
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{actividad.descripcion}</p>
+      <h3 className="col-span-2 m-0 font-display text-[30px] font-normal uppercase leading-8 wrap-break-word hyphens-auto lg:col-span-1 lg:text-[32px] lg:leading-[34px] xl:text-[40px] xl:leading-[42px]">
+        {nombre}
+      </h3>
+      <p
+        className={cn(
+          "col-span-2 col-start-2 m-0 text-[15px] leading-[22px] text-publico-texto-gris group-hover:text-publico-texto-tenue lg:col-span-1 lg:col-start-auto",
+          !descripcion && "hidden lg:block",
         )}
-      </div>
-      <p className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm">
-        <span className="font-bold text-foreground">{diasAbreviados(actividad.dias)}</span>
-        <span className="text-muted-foreground">
-          {actividad.clases_por_semana} {actividad.clases_por_semana === 1 ? "clase" : "clases"} por semana
-        </span>
+      >
+        {descripcion}
+      </p>
+      <DiasDeLaActividad dias={dias} />
+      <p className="m-0 text-right text-xs leading-[14px] text-publico-texto-gris group-hover:text-publico-texto-tenue lg:text-sm lg:leading-6">
+        <strong className="block font-display text-[22px] font-normal leading-6 text-publico-tinta group-hover:text-white lg:text-[28px] lg:leading-[30px]">
+          {clases}
+        </strong>{" "}
+        <span className="sr-only">{clases === 1 ? "clase" : "clases"} </span>por semana
       </p>
     </li>
   );
 }
 
-// Una tarjeta por actividad con clases, con su descripción y los días en que se da. Si la consulta
-// falla o no hay actividades, la sección no aparece: la home sigue teniendo la portada y el contacto.
+function FilasCargando() {
+  return (
+    <div role="status" aria-label="Cargando las actividades" className="border-t-2 border-publico-tinta">
+      {[1, 2, 3, 4].map((indice) => (
+        <div key={indice} className="border-b border-publico-borde py-6">
+          <div className="h-10 w-2/3 animate-pulse rounded-lg bg-[#e1e4ea] md:w-1/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Una fila por actividad con clases, con su descripción y los días en que se da. Si la consulta
+// falla o no hay actividades, la sección no aparece: la home sigue teniendo el resto.
 export function Actividades() {
   const { data, isPending, isError } = useActividadesPublicas();
   if (isError) return null;
@@ -38,26 +88,22 @@ export function Actividades() {
   if (!isPending && actividades.length === 0) return null;
 
   return (
-    <section id="actividades" aria-labelledby="titulo-actividades" className="scroll-mt-20 pb-16 pt-12 lg:pb-20">
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6">
-        <div className="mb-8 flex flex-col gap-2">
-          <p className="text-sm font-extrabold uppercase tracking-widest text-primary">Actividades</p>
-          <h2 id="titulo-actividades" className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
-            Encontrá tu forma de entrenar
-          </h2>
-        </div>
+    <section id="actividades" aria-labelledby="titulo-actividades" className="bg-publico-niebla text-publico-tinta">
+      <div className={`${CONTENEDOR_PUBLICO} py-16 md:py-28`}>
+        <p className={`${VOLANTA} text-primary-dark`}>Actividades</p>
+        <h2 id="titulo-actividades" className={`${TITULO_DE_SECCION} mb-9`}>
+          Encontrá tu forma
+          <br />
+          de entrenar
+        </h2>
         {isPending ? (
-          <div role="status" aria-label="Cargando las actividades" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((indice) => (
-              <Skeleton key={indice} className="h-48 rounded-3xl" />
-            ))}
-          </div>
+          <FilasCargando />
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {actividades.map((actividad) => (
-              <TarjetaActividad key={actividad.id_actividad} actividad={actividad} />
+          <ol className="m-0 list-none border-t-2 border-publico-tinta p-0">
+            {actividades.map((actividad, indice) => (
+              <FilaActividad key={actividad.id_actividad} actividad={actividad} numero={indice + 1} />
             ))}
-          </ul>
+          </ol>
         )}
       </div>
     </section>

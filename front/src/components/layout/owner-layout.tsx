@@ -557,10 +557,14 @@ function BarraSuperior({ migas }: { migas: Miga[] }) {
 
 interface OwnerLayoutProps {
   children: ReactNode;
+  /** Submiga o etiqueta final para añadir al final del breadcrumb (ej: nombre de alumno en ficha de detalle) */
+  submiga?: string;
+  /** Reemplazo total de migas si la pantalla necesita una estructura específica */
+  migasPersonalizadas?: Miga[];
 }
 
 // Layout de la app autenticada con soporte para switch de roles
-export function OwnerLayout({ children }: OwnerLayoutProps) {
+export function OwnerLayout({ children, submiga, migasPersonalizadas }: OwnerLayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { roles } = usePermissions();
@@ -574,7 +578,11 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
   };
 
   const contadores = useContadoresMenu();
-  const { items, migas } = useOwnerNavigation(contadores, roles, panelActivo);
+  const { items, migas: migasNavegacion } = useOwnerNavigation(contadores, roles, panelActivo);
+  const migasBase = submiga
+    ? migasNavegacion.filter((m) => m.etiqueta !== "Alumnos")
+    : migasNavegacion;
+  const migas = migasPersonalizadas ?? (submiga ? [...migasBase, { etiqueta: submiga }] : migasNavegacion);
   const [abiertoInicial] = useState(leerSidebarAbierto);
 
   return (

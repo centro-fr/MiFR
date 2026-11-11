@@ -21,14 +21,14 @@ const insigniaResumidaSchema = z
     nombre: z.string(),
     descripcion: z.string().nullable(),
     tipo: tipoInsigniaSchema,
+    valor_umbral: z.number().int().openapi({
+      description: "Clases para RACHA y TOTAL_CLASES, porcentaje para MES_PERFECTO, puestos para PODIO_MES",
+    }),
   })
   .openapi("InsigniaResumida");
 
 const insigniaDeFichaSchema = insigniaResumidaSchema
   .extend({
-    valor_umbral: z.number().int().openapi({
-      description: "Clases para RACHA y TOTAL_CLASES, porcentaje para MES_PERFECTO, puestos para PODIO_MES",
-    }),
     obtenida: z.boolean(),
     fecha_obtencion: fechaSchema.nullable().openapi({ description: "La primera vez que la obtuvo" }),
     periodos: z

@@ -59,9 +59,9 @@ export async function darDeBajaPlan(id: string): Promise<void> {
   await apiClient.delete(`/planes/${encodeURIComponent(id)}`);
 }
 
-// Reincorpora un plan dado de baja para volver a ofrecerlo como vigente.
+// Reactivación: vuelve a ofrecer el plan dado de baja en el catálogo.
 export async function reactivarPlan(id: string): Promise<Plan> {
-  const { data } = await apiClient.patch(`/planes/${encodeURIComponent(id)}`, { reactivar: true });
+  const { data } = await apiClient.post(`/planes/${encodeURIComponent(id)}/reactivar`);
   return aPlan(planApiSchema.parse(data));
 }
 

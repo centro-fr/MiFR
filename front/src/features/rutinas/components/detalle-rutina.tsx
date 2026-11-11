@@ -1,4 +1,5 @@
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import { EJERCICIOS_DATASET_ES } from "@/features/rutinas/data/ejercicios-es";
 import { lineaDeLaRutina, seriesPorRepeticiones } from "@/features/rutinas/utils/formato-rutinas";
 import type { DiaDeRutina, Rutina } from "@/types/rutinas";
 import { fechaActualArgentina } from "@/utils/fecha";
@@ -12,15 +13,34 @@ export function ContenidoDeLaRutina({ dias }: { dias: DiaDeRutina[] }) {
         <section key={`${dia.nombre}-${indiceDia}`} aria-label={dia.nombre}>
           <h4 className="text-xs font-extrabold tracking-wide text-slate-500 uppercase dark:text-slate-400">{dia.nombre}</h4>
           <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
-            {dia.ejercicios.map((ejercicio, indice) => (
-              <li key={`${ejercicio.nombre}-${indice}`} className="flex items-baseline justify-between gap-3 py-2">
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 dark:text-white">{ejercicio.nombre}</p>
-                  {ejercicio.notas && <p className="text-sm whitespace-pre-line text-slate-500 dark:text-slate-400">{ejercicio.notas}</p>}
-                </div>
-                <span className="shrink-0 font-bold text-slate-900 tabular-nums dark:text-white">{seriesPorRepeticiones(ejercicio)}</span>
-              </li>
-            ))}
+            {dia.ejercicios.map((ejercicio, indice) => {
+              const gifUrl = EJERCICIOS_DATASET_ES.find(
+                (e) => e.nombre.toLowerCase() === ejercicio.nombre.trim().toLowerCase(),
+              )?.gif_url;
+
+              return (
+                <li key={`${ejercicio.nombre}-${indice}`} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {gifUrl && (
+                      <img
+                        src={`https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/${gifUrl}`}
+                        alt={ejercicio.nombre}
+                        loading="lazy"
+                        className="size-11 rounded-lg object-cover shrink-0 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/${gifUrl}`;
+                        }}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900 dark:text-white">{ejercicio.nombre}</p>
+                      {ejercicio.notas && <p className="text-sm whitespace-pre-line text-slate-500 dark:text-slate-400">{ejercicio.notas}</p>}
+                    </div>
+                  </div>
+                  <span className="shrink-0 font-bold text-slate-900 tabular-nums dark:text-white">{seriesPorRepeticiones(ejercicio)}</span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}

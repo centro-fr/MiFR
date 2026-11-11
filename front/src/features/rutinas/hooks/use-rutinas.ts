@@ -3,13 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
 import {
+  actualizarRutina,
   corregirMedicion,
   crearRutina,
   darDeBajaMedicion,
+  eliminarRutina,
   listarMedicionesDeAlumno,
   listarMisAlumnos,
   listarRutinasDeAlumno,
   registrarMedicion,
+  type ActualizarRutinaBody,
 } from "@/features/rutinas/api/rutinas-api";
 import type { CorregirMedicionBody, CrearRutinaBody, RegistrarMedicionBody } from "@/features/rutinas/schemas/rutinas";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
@@ -50,6 +53,23 @@ export function useCrearRutina(idAlumno: number) {
   return useMutation({
     mutationFn: (cuerpo: CrearRutinaBody) => crearRutina(cuerpo),
     // La anterior también cambia (pasa al historial con fecha de fin): se vuelve a pedir el listado.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: rutinasKey(idAlumno) }),
+  });
+}
+
+export function useActualizarRutina(idAlumno: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idRutina, cuerpo }: { idRutina: number; cuerpo: ActualizarRutinaBody }) =>
+      actualizarRutina(idRutina, cuerpo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: rutinasKey(idAlumno) }),
+  });
+}
+
+export function useEliminarRutina(idAlumno: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idRutina: number) => eliminarRutina(idRutina),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: rutinasKey(idAlumno) }),
   });
 }

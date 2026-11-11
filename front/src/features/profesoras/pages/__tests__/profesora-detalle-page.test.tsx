@@ -83,6 +83,12 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     error: null,
     mutate: mockMutateDarDeBaja,
   }),
+  useReactivarProfesora: () => ({
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: vi.fn(),
+  }),
   useHorariosActivos: () => ({
     data: mockHorariosActivos,
     isPending: false,

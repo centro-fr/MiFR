@@ -36,8 +36,10 @@ describe("obtenerRankingAsistencia (US-30)", () => {
   it("ordena por porcentaje, asistencias y nombre", async () => {
     const ranking = await obtenerRankingAsistencia();
 
-    expect(ranking.datos.map((fila) => fila.porcentaje_asistencia)).toEqual([100, 90, 87.5, 75, 66.67, 50]);
-    expect(ranking.datos.map((fila) => fila.posicion)).toEqual([1, 2, 3, 4, 5, 6]);
+    // Lucas Benítez y Valentina Herrera empatan en 100 % con 12 clases: desempata el apellido.
+    expect(ranking.datos.map((fila) => fila.porcentaje_asistencia)).toEqual([100, 100, 90, 87.5, 75, 66.67, 50]);
+    expect(ranking.datos.map((fila) => fila.apellido).slice(0, 2)).toEqual(["Benítez", "Herrera"]);
+    expect(ranking.datos.map((fila) => fila.posicion)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
   it("envía el período opcional al endpoint", async () => {

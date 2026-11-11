@@ -9,6 +9,8 @@ const repositorio = {
   buscarVigenteDeAlumno: vi.fn(),
   profesoraTieneAlumno: vi.fn(),
   crear: vi.fn(),
+  buscarPorId: vi.fn(),
+  actualizar: vi.fn(),
 };
 const alumnos = { buscarPorId: vi.fn(), buscarPorIdUsuario: vi.fn(), buscarPorIdUsuarioResponsable: vi.fn() };
 const profesoras = { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn() };
@@ -69,6 +71,8 @@ describe("RutinaService", () => {
     profesoras.buscarPorId.mockResolvedValue({ id_profesora: 10 });
     repositorio.profesoraTieneAlumno.mockResolvedValue(false);
     repositorio.crear.mockResolvedValue(RUTINA);
+    repositorio.buscarPorId.mockResolvedValue(null);
+    repositorio.actualizar.mockResolvedValue(RUTINA);
     repositorio.listarDeAlumno.mockResolvedValue([]);
     repositorio.buscarVigenteDeAlumno.mockResolvedValue(null);
     service = new RutinaService(repositorio as unknown as RutinaRepository, alumnos, profesoras);
@@ -274,6 +278,36 @@ describe("RutinaService", () => {
     it("responde 404 si quien pide no es alumno ni tutor", async () => {
       expect(await estado(service.listarPropia(AJENO))).toBe(404);
       expect(repositorio.listarDeAlumno).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("actualizar", () => {
+    const CON_FIN: Rutina = { ...CON_OBSERVACIONES, fecha_hasta: fecha("2026-11-30") };
+
+    beforeEach(() => {
+      repositorio.buscarPorId.mockResolvedValue(CON_FIN);
+    });
+
+    it("pasa al repositorio solo lo que vino en el pedido", async () => {
+      await service.actualizar(1, { nombre: "Fuerza - Mes 2" }, PROPIETARIA);
+
+      expect(repositorio.actualizar).toHaveBeenCalledWith(1, { nombre: "Fuerza - Mes 2" });
+    });
+
+    it("rechaza con 400 una fecha de fin anterior al inicio guardado", async () => {
+      expect(await estado(service.actualizar(1, { fecha_hasta: fecha("2026-10-31") }, PROPIETARIA))).toBe(400);
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("rechaza con 400 un inicio posterior al fin guardado", async () => {
+      expect(await estado(service.actualizar(1, { fecha_desde: fecha("2026-12-01") }, PROPIETARIA))).toBe(400);
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("acepta mover el inicio si se borra la fecha de fin en el mismo pedido", async () => {
+      await service.actualizar(1, { fecha_desde: fecha("2026-12-01"), fecha_hasta: null }, PROPIETARIA);
+
+      expect(repositorio.actualizar).toHaveBeenCalledWith(1, { fecha_desde: fecha("2026-12-01"), fecha_hasta: null });
     });
   });
 });

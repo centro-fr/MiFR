@@ -8,7 +8,9 @@ import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } fr
 import { errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
 import { inscripcionConDatos } from "@/mocks/handlers/serializar";
 import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
-import { precioVigenteDePlan } from "@/mocks/precios";
+import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
+import { asistenciaHistorica } from "@/mocks/data/asistencia-historica";
+import { diaSemana } from "@/features/alumnos/utils/fecha";
 import { normalizarParaBuscar } from "@/utils/texto";
 
 // Mock de /alumnos (alumno.routes.ts) y de POST /alumnos/:id/baja y /reactivar (inscripcion.routes.ts),
@@ -542,6 +544,76 @@ export const alumnosHandlers = [
     const alumno = alumnoDeLaSesion(request) ?? db.alumnos.find((item) => item.estado !== "BAJA");
     if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno asociado");
     return HttpResponse.json(panelAlumnoDe(alumno));
+  }),
+
+  http.get("*/api/v1/alumnos/:id/asistencias", async ({ params }) => {
+    await delay(200);
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+    const alumno = buscarAlumno(id);
+    if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
+
+    // Construcción trazable y dinámica del historial de asistencias a partir de los horarios reales del alumno
+    const hoy = hoyEnArgentina();
+    const marcasHistoricas = asistenciaHistorica(db, hoy).filter((marca) => marca.id_alumno === id);
+
+    const historial = marcasHistoricas.map((marca) => {
+      const horario = db.horarios.find((h) => h.id_horario === marca.id_horario);
+      const actividad = db.actividades.find((a) => a.id_actividad === marca.id_actividad);
+      const prof = db.profesoras.find((p) => p.id_profesora === marca.id_profesora);
+      const usuarioProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
+      const diaNum = horario?.dia_semana ?? 1;
+
+      return {
+        id_clase: Number(marca.fecha.replaceAll("-", "")) * 100 + marca.id_horario,
+        fecha: marca.fecha,
+        dia: diaSemana(diaNum),
+        hora_inicio: horario?.hora_inicio ?? "08:00",
+        hora_fin: horario?.hora_fin ?? "09:00",
+        actividad: actividad?.nombre ?? "Entrenamiento",
+        profesora: usuarioProf ? `${usuarioProf.nombre} ${usuarioProf.apellido}` : "Profesora",
+        asistio: marca.asistio,
+        observaciones: null as string | null,
+      };
+    });
+
+    const asistenciasEnVivo = db.asistencias.filter((reg) => reg.id_alumno === id);
+    for (const reg of asistenciasEnVivo) {
+      const clase = db.clases.find((c) => c.id_clase === reg.id_clase);
+      if (!clase) continue;
+      const horario = db.horarios.find((h) => h.id_horario === clase.id_horario);
+      const actividad = horario ? db.actividades.find((a) => a.id_actividad === horario.id_actividad) : null;
+      const prof = horario ? db.profesoras.find((p) => p.id_profesora === horario.id_profesora) : null;
+      const usuarioProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
+      const diaNum = horario?.dia_semana ?? 1;
+
+      const itemEnVivo = {
+        id_clase: clase.id_clase,
+        fecha: clase.fecha_clase,
+        dia: diaSemana(diaNum),
+        hora_inicio: horario?.hora_inicio ?? "08:00",
+        hora_fin: horario?.hora_fin ?? "09:00",
+        actividad: actividad?.nombre ?? "Entrenamiento",
+        profesora: usuarioProf ? `${usuarioProf.nombre} ${usuarioProf.apellido}` : "Profesora",
+        asistio: reg.asistio,
+        observaciones: reg.observaciones ?? null,
+      };
+
+      const indiceExistente = historial.findIndex((h) => h.fecha === itemEnVivo.fecha && h.hora_inicio === itemEnVivo.hora_inicio);
+      if (indiceExistente >= 0) {
+        historial[indiceExistente] = itemEnVivo;
+      } else {
+        historial.push(itemEnVivo);
+      }
+    }
+
+    historial.sort((a, b) => {
+      const compFecha = b.fecha.localeCompare(a.fecha);
+      if (compFecha !== 0) return compFecha;
+      return b.hora_inicio.localeCompare(a.hora_inicio);
+    });
+
+    return HttpResponse.json(historial);
   }),
 
   http.get("*/api/v1/alumnos/:id", async ({ request, params }) => {

@@ -18,6 +18,7 @@ export interface EjercicioFormValues {
   series: string;
   repeticiones: string;
   notas: string;
+  gif_url?: string;
 }
 
 export interface DiaFormValues {
@@ -40,20 +41,19 @@ export function ejercicioVacio(): EjercicioFormValues {
 }
 
 export function diaVacio(numero: number): DiaFormValues {
-  return { nombre: `Día ${numero}`, ejercicios: [ejercicioVacio()] };
+  return { nombre: `Día ${numero}`, ejercicios: [] };
 }
 
-/**
- * El back no edita rutinas: cambiarla es cargar una nueva. Por eso se parte de la vigente (si hay) y
- * la persona solo toca lo que cambia. Rige desde hoy, porque la anterior se cierra el día previo.
- */
-export function valoresIniciales(hoy: string, vigente: Rutina | null): RutinaFormValues {
-  if (!vigente) return { nombre: "", desde: hoy, hasta: "", dias: [diaVacio(1)], observaciones: "" };
+export function valoresIniciales(hoy: string): RutinaFormValues {
+  return { nombre: "", desde: hoy, hasta: "", dias: [diaVacio(1)], observaciones: "" };
+}
+
+export function valoresDeRutina(rutina: Rutina): RutinaFormValues {
   return {
-    nombre: vigente.nombre,
-    desde: hoy,
-    hasta: "",
-    dias: vigente.dias.map((dia) => ({
+    nombre: rutina.nombre,
+    desde: rutina.desde.slice(0, 10),
+    hasta: rutina.hasta ? rutina.hasta.slice(0, 10) : "",
+    dias: rutina.dias.map((dia) => ({
       nombre: dia.nombre,
       ejercicios: dia.ejercicios.map((ejercicio) => ({
         nombre: ejercicio.nombre,
@@ -62,7 +62,7 @@ export function valoresIniciales(hoy: string, vigente: Rutina | null): RutinaFor
         notas: ejercicio.notas ?? "",
       })),
     })),
-    observaciones: vigente.observaciones ?? "",
+    observaciones: rutina.observaciones ?? "",
   };
 }
 
@@ -96,17 +96,26 @@ function problemasDelEjercicio(ejercicio: EjercicioFormValues, base: (string | n
 function problemasDeLosDias(dias: DiaFormValues[]): Problema[] {
   return dias.flatMap((dia, indiceDia) => {
     const problemaNombre = problemaObligatorio(dia.nombre, "Ponele un nombre al día.", { maximo: LARGO.dia });
+    const problemasDia: Problema[] = [];
+    if (problemaNombre) problemasDia.push([["dias", indiceDia, "nombre"], problemaNombre]);
+    if (dia.ejercicios.length === 0) {
+      problemasDia.push([["dias", indiceDia, "ejercicios"], "Agregá al menos un ejercicio a este día."]);
+    }
     return [
-      ...(problemaNombre ? [[["dias", indiceDia, "nombre"], problemaNombre] as Problema] : []),
+      ...problemasDia,
       ...dia.ejercicios.flatMap((ejercicio, indice) => problemasDelEjercicio(ejercicio, ["dias", indiceDia, "ejercicios", indice])),
     ];
   });
 }
 
-function problemasDeLaRutina(valores: RutinaFormValues): Problema[] {
+function problemasDeLaRutina(valores: RutinaFormValues, nombresExistentes: string[] = []): Problema[] {
   const problemas: Problema[] = [];
   const nombre = problemaObligatorio(valores.nombre, "Ponele un nombre a la rutina.", { maximo: LARGO.nombre });
-  if (nombre) problemas.push([["nombre"], nombre]);
+  if (nombre) {
+    problemas.push([["nombre"], nombre]);
+  } else if (nombresExistentes.map((n) => n.trim().toLowerCase()).includes(valores.nombre.trim().toLowerCase())) {
+    problemas.push([["nombre"], "Ya existe una rutina con este nombre para el alumno."]);
+  }
   if (valores.hasta && valores.desde && valores.hasta < valores.desde) {
     problemas.push([["hasta"], "No puede ser anterior al inicio."]);
   }
@@ -115,24 +124,39 @@ function problemasDeLaRutina(valores: RutinaFormValues): Problema[] {
   return [...problemas, ...problemasDeLosDias(valores.dias)];
 }
 
-const ejercicioSchema = z.object({ nombre: z.string(), series: z.string(), repeticiones: z.string(), notas: z.string() });
+const ejercicioSchema = z.object({
+  nombre: z.string(),
+  series: z.string(),
+  repeticiones: z.string(),
+  notas: z.string(),
+  gif_url: z.string().optional(),
+});
 
-export const rutinaFormSchema = z
-  .object({
-    nombre: z.string(),
-    desde: z.string().min(1, "Elegí desde cuándo rige.").date("Ingresá una fecha válida."),
-    hasta: z.union([z.literal(""), z.string().date("Ingresá una fecha válida.")]),
-    dias: z
-      .array(z.object({ nombre: z.string(), ejercicios: z.array(ejercicioSchema).min(1).max(MAXIMO_EJERCICIOS) }))
-      .min(1)
-      .max(MAXIMO_DIAS),
-    observaciones: z.string(),
-  })
-  .superRefine((valores, ctx) => {
-    for (const [path, message] of problemasDeLaRutina(valores)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
-    }
-  });
+export function crearRutinaFormSchema(nombresExistentes: string[] = []) {
+  return z
+    .object({
+      nombre: z.string(),
+      desde: z.string().min(1, "Elegí desde cuándo rige.").date("Ingresá una fecha válida."),
+      hasta: z.union([z.literal(""), z.string().date("Ingresá una fecha válida.")]),
+      dias: z
+        .array(
+          z.object({
+            nombre: z.string(),
+            ejercicios: z.array(ejercicioSchema).min(1, "Agregá al menos un ejercicio a este día.").max(MAXIMO_EJERCICIOS),
+          }),
+        )
+        .min(1, "La rutina debe tener al menos un día.")
+        .max(MAXIMO_DIAS),
+      observaciones: z.string(),
+    })
+    .superRefine((valores, ctx) => {
+      for (const [path, message] of problemasDeLaRutina(valores, nombresExistentes)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+      }
+    });
+}
+
+export const rutinaFormSchema = crearRutinaFormSchema();
 
 export function aCrearRutinaBody(idAlumno: number, valores: RutinaFormValues): CrearRutinaBody {
   return {

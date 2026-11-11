@@ -1,313 +1,367 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
-import { Info, Plus, Trash2, X } from "lucide-react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { CampoFechaDelFormulario } from "@/components/formulario/campo-fecha-del-formulario";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AREA_DE_TEXTO, CONTROL, CONTROL_FECHA, ETIQUETA } from "@/features/rutinas/components/estilos-formulario";
-import { DialogoDeCarga, MensajeError, Obligatorio, PieDelFormulario } from "@/features/rutinas/components/formulario";
-import { useCrearRutina } from "@/features/rutinas/hooks/use-rutinas";
+import { Input } from "@/components/ui/input";
+import { useActualizarRutina, useCrearRutina, useEliminarRutina } from "@/features/rutinas/hooks/use-rutinas";
 import {
   MAXIMO_DIAS,
-  MAXIMO_EJERCICIOS,
   aCrearRutinaBody,
+  crearRutinaFormSchema,
   diaVacio,
-  ejercicioVacio,
-  rutinaFormSchema,
+  valoresDeRutina,
   valoresIniciales,
   type RutinaFormValues,
 } from "@/features/rutinas/schemas/rutina-form";
+import { textoOpcional } from "@/features/rutinas/schemas/texto-libre";
+import { cargarEjerciciosDataset, type EjercicioSugerido } from "@/features/rutinas/data/catalogo-ejercicios";
+import { EditorDiaRutina } from "@/features/rutinas/components/editor-dia-rutina";
+
 import type { Rutina } from "@/types/rutinas";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 
-type Formulario = UseFormReturn<RutinaFormValues>;
-
-// En el celular cada ejercicio es una tarjeta con sus etiquetas; desde sm, una fila bajo un encabezado.
-const COLUMNAS = "sm:grid-cols-[minmax(0,2fr)_4.5rem_5.5rem_minmax(0,1.5fr)_2.75rem]";
-const ETIQUETA_DE_FILA = "text-xs font-bold text-slate-600 sm:sr-only dark:text-slate-300";
-const ERROR_DE_FILA = "text-xs font-semibold text-rose-700 dark:text-rose-300";
-
-interface PropsCampoDeFila {
-  id: string;
-  etiqueta: string;
-  error?: string;
-  className?: string;
-  children: (props: { id: string; "aria-invalid": boolean; "aria-describedby"?: string }) => ReactNode;
-}
-
-function CampoDeFila({ id, etiqueta, error, className, children }: PropsCampoDeFila) {
-  return (
-    <div className={cn("flex flex-col gap-1", className)}>
-      <label htmlFor={id} className={ETIQUETA_DE_FILA}>
-        {etiqueta}
-      </label>
-      {children({ id, "aria-invalid": Boolean(error), "aria-describedby": error ? `${id}-error` : undefined })}
-      {error && (
-        <p id={`${id}-error`} role="alert" className={ERROR_DE_FILA}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function EjerciciosDelDia({ formulario, indiceDia }: { formulario: Formulario; indiceDia: number }) {
-  const ejercicios = useFieldArray({ control: formulario.control, name: `dias.${indiceDia}.ejercicios` });
-  const errores = formulario.formState.errors.dias?.[indiceDia]?.ejercicios;
-  const nombreDelDia = `día ${indiceDia + 1}`;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div aria-hidden="true" className={cn("hidden gap-2 px-0.5 text-xs font-bold text-slate-500 sm:grid dark:text-slate-400", COLUMNAS)}>
-        <span>Ejercicio</span>
-        <span>Series</span>
-        <span>Reps</span>
-        <span>Notas</span>
-      </div>
-      <ol className="flex flex-col gap-2">
-        {ejercicios.fields.map((campo, indice) => {
-          const base = `rutina-dia${indiceDia}-ej${indice}`;
-          const ruta = `dias.${indiceDia}.ejercicios.${indice}` as const;
-          const error = errores?.[indice];
-          return (
-            <li key={campo.id} className={cn("relative grid grid-cols-2 gap-2 rounded-xl border border-border p-3 pr-12 sm:border-0 sm:p-0 sm:pr-0", COLUMNAS)}>
-              <CampoDeFila id={`${base}-nombre`} etiqueta="Ejercicio" error={error?.nombre?.message} className="col-span-2 sm:col-span-1">
-                {(props) => <input {...props} type="text" maxLength={80} placeholder="Ej: Sentadilla" {...formulario.register(`${ruta}.nombre`)} className={CONTROL} />}
-              </CampoDeFila>
-              <CampoDeFila id={`${base}-series`} etiqueta="Series" error={error?.series?.message}>
-                {(props) => <input {...props} type="text" inputMode="numeric" maxLength={2} placeholder="4" {...formulario.register(`${ruta}.series`)} className={CONTROL} />}
-              </CampoDeFila>
-              <CampoDeFila id={`${base}-reps`} etiqueta="Repeticiones" error={error?.repeticiones?.message}>
-                {(props) => <input {...props} type="text" maxLength={30} placeholder="12" {...formulario.register(`${ruta}.repeticiones`)} className={CONTROL} />}
-              </CampoDeFila>
-              <CampoDeFila id={`${base}-notas`} etiqueta="Notas (opcional)" error={error?.notas?.message} className="col-span-2 sm:col-span-1">
-                {(props) => <input {...props} type="text" maxLength={200} placeholder="Ej: 20 kg" {...formulario.register(`${ruta}.notas`)} className={CONTROL} />}
-              </CampoDeFila>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => ejercicios.remove(indice)}
-                disabled={ejercicios.fields.length === 1}
-                aria-label={`Quitar el ejercicio ${indice + 1} del ${nombreDelDia}`}
-                className="absolute top-2 right-2 size-11 rounded-full text-slate-500 hover:bg-slate-100 hover:text-rose-700 sm:static sm:size-11 dark:hover:bg-slate-800"
-              >
-                <X aria-hidden="true" className="size-5" />
-              </Button>
-            </li>
-          );
-        })}
-      </ol>
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => ejercicios.append(ejercicioVacio())}
-        disabled={ejercicios.fields.length >= MAXIMO_EJERCICIOS}
-        className="min-h-11 self-start rounded-xl px-2 font-bold text-primary hover:bg-pink-50 dark:hover:bg-primary/15"
-      >
-        <Plus aria-hidden="true" />
-        Agregar ejercicio
-      </Button>
-    </div>
-  );
-}
-
-function DiasDeLaRutina({ formulario }: { formulario: Formulario }) {
-  const dias = useFieldArray({ control: formulario.control, name: "dias" });
-  const errores = formulario.formState.errors.dias;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {dias.fields.map((campo, indice) => {
-        const id = `rutina-dia${indice}-nombre`;
-        const error = errores?.[indice]?.nombre?.message;
-        return (
-          <fieldset key={campo.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-slate-50 p-3 sm:p-4 dark:bg-white/5">
-            <legend className="sr-only">Día {indice + 1}</legend>
-            <div className="flex items-end gap-2">
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <label htmlFor={id} className={ETIQUETA}>
-                  Día {indice + 1} <Obligatorio />
-                </label>
-                <input
-                  id={id}
-                  type="text"
-                  maxLength={60}
-                  placeholder="Ej: Piernas"
-                  aria-invalid={Boolean(error)}
-                  aria-describedby={error ? `${id}-error` : undefined}
-                  {...formulario.register(`dias.${indice}.nombre`)}
-                  className={CONTROL}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => dias.remove(indice)}
-                disabled={dias.fields.length === 1}
-                aria-label={`Quitar el día ${indice + 1}`}
-                className="min-h-11 shrink-0 rounded-xl font-bold text-rose-700 hover:text-rose-800 dark:text-rose-300"
-              >
-                <Trash2 aria-hidden="true" />
-                <span className="hidden sm:inline">Quitar día</span>
-              </Button>
-            </div>
-            <MensajeError id={`${id}-error`} mensaje={error} />
-            <EjerciciosDelDia formulario={formulario} indiceDia={indice} />
-          </fieldset>
-        );
-      })}
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => dias.append(diaVacio(dias.fields.length + 1))}
-        disabled={dias.fields.length >= MAXIMO_DIAS}
-        className="min-h-11 self-start rounded-xl font-bold"
-      >
-        <Plus aria-hidden="true" />
-        Agregar día
-      </Button>
-    </div>
-  );
-}
-
-interface PropsFormulario {
+interface PropsDialogoRutina {
+  abierto: boolean;
   idAlumno: number;
-  /** La rutina actual: el formulario parte de ella y, al guardar, pasa al historial. */
-  vigente: Rutina | null;
-  onListo: () => void;
+  nombreAlumno: string;
+  rutinaAEditar?: Rutina | null;
+  rutinasExistentes?: Rutina[];
+  vigente?: Rutina | null;
+  onClose: () => void;
 }
 
-function FormularioRutina({ idAlumno, vigente, onListo }: PropsFormulario) {
-  const crear = useCrearRutina(idAlumno);
-  const formulario = useForm<RutinaFormValues>({
-    resolver: zodResolver(rutinaFormSchema),
-    defaultValues: valoresIniciales(fechaActualArgentina(), vigente),
-  });
-  const errores = formulario.formState.errors;
+export function DialogoRutina({
+  abierto,
+  idAlumno,
+  nombreAlumno,
+  rutinaAEditar,
+  rutinasExistentes,
+  onClose,
+}: PropsDialogoRutina) {
+  const rutinaTarget = rutinaAEditar ?? null;
+  const esEdicion = Boolean(rutinaTarget);
 
-  const guardar = formulario.handleSubmit(async (valores) => {
+  const crear = useCrearRutina(idAlumno);
+  const actualizar = useActualizarRutina(idAlumno);
+  const eliminar = useEliminarRutina(idAlumno);
+  const enviando = crear.isPending || actualizar.isPending || eliminar.isPending;
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+
+  const nombresOcupados = useMemo(
+    () =>
+      (rutinasExistentes ?? [])
+        .filter((r) => (esEdicion ? r.id !== rutinaTarget?.id : true))
+        .map((r) => r.nombre),
+    [rutinasExistentes, esEdicion, rutinaTarget],
+  );
+
+  const schema = useMemo(() => crearRutinaFormSchema(nombresOcupados), [nombresOcupados]);
+
+  const formulario = useForm<RutinaFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: rutinaTarget ? valoresDeRutina(rutinaTarget) : valoresIniciales(fechaActualArgentina()),
+  });
+
+  const { register, control, handleSubmit, formState: { errors } } = formulario;
+  const dias = useFieldArray({ control, name: "dias" });
+  const [diaActivo, setDiaActivo] = useState(0);
+  const [catalogo, setCatalogo] = useState<EjercicioSugerido[] | null>(null);
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(false);
+  const [errorCatalogo, setErrorCatalogo] = useState(false);
+  const [reintentosCatalogo, setReintentosCatalogo] = useState(0);
+
+  const indiceValido = Math.min(Math.max(diaActivo, 0), Math.max(dias.fields.length - 1, 0));
+  const diaSeleccionado = dias.fields[indiceValido];
+
+  useEffect(() => {
+    if (abierto) {
+      formulario.reset(rutinaTarget ? valoresDeRutina(rutinaTarget) : valoresIniciales(fechaActualArgentina()));
+      setDiaActivo(0);
+    }
+  }, [abierto, rutinaTarget, formulario]);
+
+  useEffect(() => {
+    if (!abierto || catalogo !== null) return;
+
+    let activo = true;
+    setCargandoCatalogo(true);
+    setErrorCatalogo(false);
+
+    void cargarEjerciciosDataset()
+      .then((ejercicios) => {
+        if (activo) setCatalogo(ejercicios);
+      })
+      .catch(() => {
+        if (activo) setErrorCatalogo(true);
+      })
+      .finally(() => {
+        if (activo) setCargandoCatalogo(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [abierto, catalogo, reintentosCatalogo]);
+
+  const guardar = handleSubmit(async (valores) => {
     try {
-      await crear.mutateAsync(aCrearRutinaBody(idAlumno, valores));
-      toast.success(vigente ? "Rutina actualizada. La anterior quedó en el historial." : "Rutina guardada.");
-      onListo();
+      if (esEdicion && rutinaTarget) {
+        await actualizar.mutateAsync({
+          idRutina: rutinaTarget.id,
+          cuerpo: {
+            nombre: valores.nombre.trim(),
+            fecha_desde: valores.desde,
+            fecha_hasta: valores.hasta || null,
+            contenido: {
+              dias: valores.dias.map((dia) => ({
+                nombre: dia.nombre.trim(),
+                ejercicios: dia.ejercicios.map((ej) => ({
+                  nombre: ej.nombre.trim(),
+                  series: Number(ej.series.trim()),
+                  repeticiones: ej.repeticiones.trim(),
+                  notas: textoOpcional(ej.notas),
+                })),
+              })),
+            },
+            observaciones: textoOpcional(valores.observaciones),
+          },
+        });
+        toast.success("Rutina actualizada.");
+      } else {
+        await crear.mutateAsync(aCrearRutinaBody(idAlumno, valores));
+        toast.success("Rutina creada.");
+      }
+      onClose();
     } catch (error) {
       toast.error(mensajeDeErrorApi(error, "No se pudo guardar la rutina."));
     }
   });
 
   return (
-    <form onSubmit={(evento) => void guardar(evento)} noValidate className="flex flex-col gap-5">
-      {vigente && (
-        <p className="flex items-start gap-2 rounded-xl bg-sky-50 p-3 text-sm text-sky-900 dark:bg-sky-500/10 dark:text-sky-200">
-          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          Se guarda como una rutina nueva desde la fecha que elijas. La actual pasa al historial.
-        </p>
-      )}
+    <>
+      <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
+        <DialogContent className="flex max-h-[90dvh] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
+          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {esEdicion ? "Editar rutina" : "Nueva rutina"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            {esEdicion
+              ? `Para ${nombreAlumno}. Modificá los ejercicios o días de la rutina.`
+              : `Para ${nombreAlumno}. Creá una nueva rutina distribuyendo los ejercicios por día.`}
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="rutina-nombre" className={ETIQUETA}>
-          Nombre <Obligatorio />
-        </label>
-        <input
-          id="rutina-nombre"
-          type="text"
-          maxLength={100}
-          placeholder="Ej: Fuerza – etapa 1"
-          aria-invalid={Boolean(errores.nombre)}
-          aria-describedby={errores.nombre ? "rutina-nombre-error" : undefined}
-          {...formulario.register("nombre")}
-          className={CONTROL}
-        />
-        <MensajeError id="rutina-nombre-error" mensaje={errores.nombre?.message} />
-      </div>
+        <form onSubmit={(e) => void guardar(e)} noValidate className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+          {/* Nombre de la rutina */}
+          <div className="space-y-1.5">
+            <label htmlFor="nombre-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              Nombre <span className="text-primary">*</span>
+            </label>
+            <Input
+              id="nombre-rutina"
+              placeholder="Ej: Movilidad y core"
+              {...register("nombre")}
+              className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
+            />
+            {errors.nombre && <p className="text-xs font-semibold text-rose-600">{errors.nombre.message}</p>}
+          </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="rutina-desde" className={ETIQUETA}>
-            Desde <Obligatorio />
-          </label>
-          <CampoFechaDelFormulario
-            control={formulario.control}
-            name="desde"
-            id="rutina-desde"
-            etiquetaCalendario="Abrir calendario para la fecha de inicio"
-            className={CONTROL_FECHA}
-            aria-invalid={Boolean(errores.desde)}
-            aria-describedby={errores.desde ? "rutina-desde-error" : undefined}
-          />
-          <MensajeError id="rutina-desde-error" mensaje={errores.desde?.message} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="rutina-hasta" className={ETIQUETA}>
-            Hasta <span className="font-normal text-muted-foreground">(opcional)</span>
-          </label>
-          <CampoFechaDelFormulario
-            control={formulario.control}
-            name="hasta"
-            id="rutina-hasta"
-            etiquetaCalendario="Abrir calendario para la fecha de fin"
-            className={CONTROL_FECHA}
-            aria-invalid={Boolean(errores.hasta)}
-            aria-describedby={errores.hasta ? "rutina-hasta-error" : undefined}
-          />
-          <MensajeError id="rutina-hasta-error" mensaje={errores.hasta?.message} />
-        </div>
-      </div>
+          {/* Fechas: Desde y Hasta */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label htmlFor="desde-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Desde <span className="text-primary">*</span>
+              </label>
+              <Input
+                id="desde-rutina"
+                type="date"
+                {...register("desde")}
+                className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
+              />
+              {errors.desde && <p className="text-xs font-semibold text-rose-600">{errors.desde.message}</p>}
+            </div>
 
-      <section aria-labelledby="rutina-dias-titulo" className="flex flex-col gap-3">
-        <div>
-          <h3 id="rutina-dias-titulo" className={ETIQUETA}>
-            Días y ejercicios
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Hasta {MAXIMO_DIAS} días. Las repeticiones admiten texto, como 8-10 o 30 s.
+            <div className="space-y-1.5">
+              <label htmlFor="hasta-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Hasta <span className="font-normal text-slate-400">(opcional)</span>
+              </label>
+              <Input
+                id="hasta-rutina"
+                type="date"
+                {...register("hasta")}
+                className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
+              />
+              {errors.hasta && <p className="text-xs font-semibold text-rose-600">{errors.hasta.message}</p>}
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500 -mt-2">
+            Sin fecha de fin, queda vigente hasta que la termines.
           </p>
-        </div>
-        <DiasDeLaRutina formulario={formulario} />
-      </section>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="rutina-observaciones" className={ETIQUETA}>
-          Observaciones <span className="font-normal text-muted-foreground">(opcional)</span>
-        </label>
-        <textarea
-          id="rutina-observaciones"
-          rows={3}
-          maxLength={500}
-          placeholder="Ej: si te molesta la rodilla, bajá el peso en sentadilla"
-          aria-invalid={Boolean(errores.observaciones)}
-          aria-describedby={errores.observaciones ? "rutina-observaciones-error" : undefined}
-          {...formulario.register("observaciones")}
-          className={AREA_DE_TEXTO}
-        />
-        <MensajeError id="rutina-observaciones-error" mensaje={errores.observaciones?.message} />
-      </div>
+          {/* Días y ejercicios */}
+          <div className="space-y-3 pt-1">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Días y ejercicios
+            </h3>
 
-      <PieDelFormulario guardando={crear.isPending} textoGuardar="Guardar rutina" onCancelar={onListo} />
-    </form>
-  );
-}
+            {/* Pestañas de días (según reg-de-ejercicios.png) */}
+            <div className="flex flex-wrap items-center gap-2">
+              {dias.fields.map((campo, idx) => {
+                const esActivo = idx === indiceValido;
+                return (
+                  <button
+                    key={campo.id}
+                    type="button"
+                    onClick={() => setDiaActivo(idx)}
+                    className={cn(
+                      "rounded-full px-3.5 py-1 text-xs transition-all cursor-pointer",
+                      esActivo
+                        ? "bg-slate-900 text-white font-bold shadow-2xs dark:bg-slate-100 dark:text-slate-900"
+                        : "border border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200",
+                    )}
+                  >
+                    Día {idx + 1}
+                  </button>
+                );
+              })}
 
-interface PropsDialogo extends Omit<PropsFormulario, "onListo"> {
-  abierto: boolean;
-  nombreAlumno: string;
-  onClose: () => void;
-}
+              {dias.fields.length < MAXIMO_DIAS && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nuevoIndice = dias.fields.length;
+                    dias.append(diaVacio(nuevoIndice + 1));
+                    setDiaActivo(nuevoIndice);
+                  }}
+                  className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 cursor-pointer"
+                >
+                  + Día
+                </button>
+              )}
+            </div>
 
-export function DialogoRutina({ abierto, nombreAlumno, vigente, onClose, idAlumno }: PropsDialogo) {
-  return (
-    <DialogoDeCarga
-      abierto={abierto}
-      titulo={vigente ? "Cambiar rutina" : "Cargar rutina"}
-      descripcion={`Lo que ${nombreAlumno} tiene que hacer en cada día de entrenamiento.`}
-      onClose={onClose}
-      ancho="amplio"
-    >
-      {abierto && <FormularioRutina idAlumno={idAlumno} vigente={vigente} onListo={onClose} />}
-    </DialogoDeCarga>
-  );
+            {diaSeleccionado && (
+              <EditorDiaRutina
+                key={diaSeleccionado.id}
+                formulario={formulario}
+                indiceDia={indiceValido}
+                puedeQuitar={dias.fields.length > 1}
+                onQuitar={() => {
+                  dias.remove(indiceValido);
+                  setDiaActivo(Math.max(0, indiceValido - 1));
+                }}
+                catalogo={catalogo}
+                cargandoCatalogo={cargandoCatalogo}
+                errorCatalogo={errorCatalogo}
+                onReintentarCatalogo={() => setReintentosCatalogo((intentos) => intentos + 1)}
+              />
+            )}
+          </div>
+
+          {/* Observaciones */}
+          <div className="space-y-1.5 pt-1">
+            <label htmlFor="observaciones-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              Observaciones <span className="font-normal text-slate-400">(opcional)</span>
+            </label>
+            <textarea
+              id="observaciones-rutina"
+              rows={2}
+              placeholder="Ej: Ojo: cuidar la rodilla izquierda, sin saltos."
+              {...register("observaciones")}
+              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            />
+          </div>
+
+          {/* Footer de acciones estilo Cobrar en Alumnos-Lista */}
+          <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            {esEdicion && rutinaTarget && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={enviando}
+                onClick={() => setConfirmandoEliminar(true)}
+                className="mr-auto rounded-xl px-3 font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30 cursor-pointer"
+              >
+                <Trash2 className="size-4 mr-1.5" />
+                Eliminar rutina
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={enviando}
+              onClick={onClose}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={enviando}
+              className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark"
+            >
+              {enviando ? "Guardando..." : esEdicion ? "Guardar cambios" : "Crear rutina"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    {/* Diálogo de confirmación para eliminar */}
+    {confirmandoEliminar && rutinaTarget && (
+      <AlertDialog open={confirmandoEliminar} onOpenChange={setConfirmandoEliminar}>
+        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
+          <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
+            <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+              ¿Eliminar rutina?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Se eliminará la rutina <strong className="text-slate-900 dark:text-white">&quot;{rutinaTarget.nombre}&quot;</strong> del alumno {nombreAlumno}. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <AlertDialogCancel
+              disabled={eliminar.isPending}
+              className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              disabled={eliminar.isPending}
+              onClick={async () => {
+                try {
+                  await eliminar.mutateAsync(rutinaTarget.id);
+                  toast.success("Rutina eliminada.");
+                  setConfirmandoEliminar(false);
+                  onClose();
+                } catch (err) {
+                  toast.error(mensajeDeErrorApi(err, "No se pudo eliminar la rutina."));
+                }
+              }}
+              className="rounded-xl bg-rose-600 px-4 font-bold text-white shadow-md hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700"
+            >
+              {eliminar.isPending ? "Eliminando..." : "Eliminar rutina"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+  </>
+);
 }

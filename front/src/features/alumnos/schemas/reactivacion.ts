@@ -36,13 +36,14 @@ const idSeleccionado = (mensaje: string) => z.string().regex(/^\d+$/, mensaje);
 /** Valida el formulario. Las clases por semana dependen del plan elegido, por eso es una fábrica. */
 export function crearReactivacionSchema(clasesPorSemana: number | null) {
   const tope = Math.min(clasesPorSemana ?? MAXIMO_HORARIOS, MAXIMO_HORARIOS);
+  const requeridas = clasesPorSemana ?? 1;
   return z.object({
     idPlan: idSeleccionado("Elegí el plan."),
     idProfesora: idSeleccionado("Elegí la profesora."),
     idsHorarios: z
       .array(z.string())
-      .min(1, "Elegí al menos un horario.")
-      .max(tope, `El plan incluye hasta ${tope} ${tope === 1 ? "clase" : "clases"} por semana.`),
+      .min(requeridas, `Elegí exactamente ${requeridas} ${requeridas === 1 ? "horario" : "horarios"} para este plan.`)
+      .max(tope, `Elegí exactamente ${tope} ${tope === 1 ? "horario" : "horarios"} para este plan.`),
   });
 }
 

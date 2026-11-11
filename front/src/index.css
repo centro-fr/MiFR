@@ -81,6 +81,16 @@
   --color-sidebar-border: #1e293b;
   --color-sidebar-ring: #e91e82;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Titulares de la página pública. Anton se carga solo en esa página (home-page.tsx). */
+  --font-display: "Anton", Impact, "Arial Narrow", sans-serif;
+  /* Página pública: alterna fondos fijos oscuros y claros, no sigue el tema claro/oscuro del sistema. */
+  --color-publico-tinta: #0b0d12;
+  --color-publico-tinta-suave: #12151d;
+  --color-publico-niebla: #f4f5f8;
+  --color-publico-borde: #d6d9e0;
+  --color-publico-texto-claro: #c7ccd6;
+  --color-publico-texto-tenue: #aeb4c2;
+  --color-publico-texto-gris: #4a5263;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
   --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   --shadow-brand-glow: 0 10px 30px -5px rgba(233, 30, 130, 0.35);
@@ -105,8 +115,6 @@
   --animate-nav-in: fade-in 0.18s ease-out both;
   /* Modal centrado: entrada con leve escala y elevación */
   --animate-modal-in: modal-in 0.22s ease-out both;
-  /* Franja de disciplinas de la home: se desplaza sola, en bucle (la lista va duplicada). */
-  --animate-marquesina: marquesina 40s linear infinite;
 }
 
 /* Tokens shadcn: `inline` para que las utilidades (bg-background,
@@ -286,15 +294,6 @@
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes marquesina {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
   }
 }
 

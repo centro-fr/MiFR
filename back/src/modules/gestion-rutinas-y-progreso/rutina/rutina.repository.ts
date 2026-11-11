@@ -34,6 +34,39 @@ export class RutinaRepository {
     return fila ? aRutina(fila) : null;
   }
 
+  async buscarPorId(idRutina: number): Promise<Rutina | null> {
+    const fila = await this.prisma.rutinas.findUnique({ where: { id_rutina: idRutina } });
+    return fila ? aRutina(fila) : null;
+  }
+
+  async eliminar(idRutina: number): Promise<void> {
+    await this.prisma.rutinas.delete({ where: { id_rutina: idRutina } });
+  }
+
+  async actualizar(
+    idRutina: number,
+    cambios: {
+      nombre?: string;
+      fecha_desde?: Date;
+      fecha_hasta?: Date | null;
+      contenido?: ContenidoRutina;
+      observaciones?: string | null;
+    },
+  ): Promise<Rutina> {
+    const data: Prisma.rutinasUpdateInput = {};
+    if (cambios.nombre !== undefined) data.nombre = cambios.nombre;
+    if (cambios.fecha_desde !== undefined) data.fecha_desde = cambios.fecha_desde;
+    if (cambios.fecha_hasta !== undefined) data.fecha_hasta = cambios.fecha_hasta;
+    if (cambios.contenido !== undefined) data.contenido = cambios.contenido as unknown as Prisma.InputJsonValue;
+    if (cambios.observaciones !== undefined) data.observaciones = cambios.observaciones;
+
+    const fila = await this.prisma.rutinas.update({
+      where: { id_rutina: idRutina },
+      data,
+    });
+    return aRutina(fila);
+  }
+
   // Una profesora tiene a su cargo al alumno que tiene en una inscripción que no está dada de baja (US-10).
   async profesoraTieneAlumno(idProfesora: number, idAlumno: number): Promise<boolean> {
     const inscripcion = await this.prisma.inscripciones.findFirst({

@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay } from "msw";
 import { db } from "@/mocks/db";
+import { insigniasObtenidasDe } from "@/mocks/handlers/insignias";
 import { errorApi, usuarioDeLaSesion } from "@/mocks/handlers/respuestas";
 
 const ESTADISTICAS_DEMO: Record<number, { previstas: number; asistidas: number; racha: number }> = {
@@ -9,6 +10,7 @@ const ESTADISTICAS_DEMO: Record<number, { previstas: number; asistidas: number; 
   12: { previstas: 8, asistidas: 6, racha: 2 },
   13: { previstas: 6, asistidas: 4, racha: 1 },
   14: { previstas: 4, asistidas: 2, racha: 0 },
+  27: { previstas: 12, asistidas: 12, racha: 26 },
 };
 
 function alumnoPropioDeSesion(): number | null {
@@ -50,7 +52,7 @@ export const rankingAsistenciaHandlers = [
         clases_previstas: datos.previstas,
         clases_asistidas: datos.asistidas,
         racha_actual: datos.racha,
-        insignias: [],
+        insignias: insigniasObtenidasDe(Number(id)),
         es_propia: Number(id) === propio,
         };
       })

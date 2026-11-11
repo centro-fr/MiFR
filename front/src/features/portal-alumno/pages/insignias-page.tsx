@@ -1,4 +1,5 @@
-import { Award, Flame, LockKeyhole, Star, Trophy } from "lucide-react";
+import { Flame } from "lucide-react";
+import { InsigniaMedalla } from "@/components/insignias/insignia-medalla";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
@@ -8,20 +9,6 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import { useInsignias } from "../hooks/use-insignias";
 import type { FichaInsignias } from "../schemas/insignias";
-
-const ICONOS_POR_TIPO = {
-  RACHA: Flame,
-  TOTAL_CLASES: Star,
-  MES_PERFECTO: Award,
-  PODIO_MES: Trophy,
-} as const;
-
-const COLORES_POR_TIPO = {
-  RACHA: "bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-300",
-  TOTAL_CLASES: "bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
-  MES_PERFECTO: "bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300",
-  PODIO_MES: "bg-pink-100 text-primary dark:bg-pink-950/50 dark:text-pink-200",
-} as const;
 
 function formatearFecha(fecha: string | null): string {
   if (!fecha) return "";
@@ -90,13 +77,11 @@ function Hitos({ ficha }: { ficha: FichaInsignias }) {
 }
 
 function Insignia({ insignia }: { insignia: FichaInsignias["insignias"][number] }) {
-  const Icono = ICONOS_POR_TIPO[insignia.tipo];
   return (
     <li className={`rounded-3xl border p-5 ${insignia.obtenida ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" : "border-dashed border-slate-300 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-900/40"}`}>
       <div className="flex items-start gap-3">
-        <span className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${insignia.obtenida ? COLORES_POR_TIPO[insignia.tipo] : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
-          {insignia.obtenida ? <Icono aria-hidden="true" className="size-6" /> : <LockKeyhole aria-hidden="true" className="size-5" />}
-        </span>
+        {/* La misma medalla que en la ficha y el ranking; en gris mientras no la obtiene. */}
+        <InsigniaMedalla tipo={insignia.tipo} tamano={48} bloqueada={!insignia.obtenida} umbral={insignia.valor_umbral} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{insignia.nombre}</h3>

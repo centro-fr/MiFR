@@ -4,7 +4,7 @@ import { validate } from "../../../shared/middlewares/validate.js";
 import { cualquieraDe } from "../cualquiera-de.js";
 import type { ILogicaRutinas } from "../interface/i-logica-rutinas-y-progreso.js";
 import { createRutinaController } from "./rutina.controller.js";
-import { alumnoRutinasParamsSchema, crearRutinaSchema } from "./rutina.schemas.js";
+import { alumnoRutinasParamsSchema, crearRutinaSchema, rutinaIdParamsSchema, actualizarRutinaSchema } from "./rutina.schemas.js";
 
 // El permiso abre la pantalla; qué alumno puede ver o cargar cada uno lo decide Rutina con el solicitante.
 // Cargar pide RUTINAS_EDITAR; leer, RUTINAS_VER (profesora y propietaria) o RUTINAS_VER_PROPIAS (alumno y tutor).
@@ -19,6 +19,20 @@ export function createRutinaRoutes(logica: ILogicaRutinas, acceso: ControlDeAcce
     acceso.permiso("RUTINAS_EDITAR"),
     validate({ body: crearRutinaSchema }),
     controller.crear,
+  );
+  router.put(
+    "/rutinas/:id",
+    acceso.sesion,
+    acceso.permiso("RUTINAS_EDITAR"),
+    validate({ params: rutinaIdParamsSchema, body: actualizarRutinaSchema }),
+    controller.actualizar,
+  );
+  router.delete(
+    "/rutinas/:id",
+    acceso.sesion,
+    acceso.permiso("RUTINAS_EDITAR"),
+    validate({ params: rutinaIdParamsSchema }),
+    controller.eliminar,
   );
   router.get(
     "/alumnos/:id/rutinas",
