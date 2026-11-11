@@ -18,9 +18,6 @@ export function SelectorEspecialidades({ seleccionadas, onCambiar, disabled = fa
     [actividades],
   );
 
-  const textoResultante = formatearEspecialidades(seleccionadas);
-  const caracteresUsados = textoResultante.length;
-
   const toggleActividad = (nombre: string) => {
     if (disabled) return;
     if (seleccionadas.includes(nombre)) {
@@ -80,17 +77,6 @@ export function SelectorEspecialidades({ seleccionadas, onCambiar, disabled = fa
             </button>
           );
         })}
-      </div>
-
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-        <span>
-          {seleccionadas.length === 0
-            ? "Elegí una o más actividades para asignarle como especialidad."
-            : `${seleccionadas.length} ${seleccionadas.length === 1 ? "actividad seleccionada" : "actividades seleccionadas"}`}
-        </span>
-        <span className={cn("font-semibold", caracteresUsados > 75 ? "text-amber-600 font-bold" : "text-slate-400")}>
-          {caracteresUsados}/80
-        </span>
       </div>
     </div>
   );
