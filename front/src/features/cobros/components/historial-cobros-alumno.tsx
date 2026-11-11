@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Receipt } from "lucide-react";
 import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
@@ -31,8 +30,7 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
           </div>
         ) : pagos.length === 0 ? (
           <div className="p-10 text-center">
-            <Receipt className="mx-auto size-10 text-slate-300 dark:text-slate-600" />
-            <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
               No hay cobros registrados todavía
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

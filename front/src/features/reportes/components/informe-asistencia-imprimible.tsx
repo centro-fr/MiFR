@@ -55,7 +55,7 @@ export function InformeAsistenciaImprimible({ informe, descripcion, generadoEl }
   return createPortal(
     <div className="informe-impresion bg-white font-sans text-slate-900">
       <header className="border-b border-slate-300 pb-3">
-        <p className="text-sm font-semibold text-slate-600">Centro de Entrenamiento FR · MiFR</p>
+        <p className="text-sm font-semibold text-slate-600">Centro de Entrenamiento FR</p>
         <h1 className="mt-1 text-2xl font-bold">Informe de asistencia</h1>
         <p className="mt-1 text-sm text-slate-600">
           {periodoDelInforme(informe.desde, informe.hasta)} · Generado el {fechaHora(generadoEl)}

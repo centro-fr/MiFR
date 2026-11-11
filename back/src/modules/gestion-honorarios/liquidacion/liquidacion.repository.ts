@@ -27,7 +27,21 @@ const CON_DETALLE = {
         select: {
           estado: true,
           fecha_baja: true,
-          plan: { select: { id_plan: true, nombre: true } },
+          plan: {
+            select: {
+              id_plan: true,
+              nombre: true,
+              actividad_exclusiva: { select: { nombre: true } },
+            },
+          },
+          horarios: {
+            select: {
+              horario: {
+                select: { actividad: { select: { nombre: true } } },
+              },
+            },
+            take: 1,
+          },
           alumno: {
             select: { id_alumno: true, usuario: { select: { nombre: true, apellido: true } } },
           },
@@ -99,6 +113,12 @@ async function conDesglose(
 
 function aDetalle(fila: FilaDetallada["detalles"][number]): DetalleLiquidacion {
   const { id_liq_detalle, id_tarifa, concepto, id_inscripcion, id_clase, inscripcion, clase } = fila;
+  // Resuelve la actividad para el detalle de la liquidación: si el plan es monodisciplinar se toma su
+  // actividad exclusiva; de lo contrario se infiere del horario asignado a la inscripción.
+  const actividadInscripcion =
+    inscripcion?.plan?.actividad_exclusiva?.nombre ??
+    inscripcion?.horarios?.[0]?.horario?.actividad?.nombre ??
+    null;
   return {
     id_liq_detalle,
     id_tarifa,
@@ -114,7 +134,8 @@ function aDetalle(fila: FilaDetallada["detalles"][number]): DetalleLiquidacion {
     inscripcion: inscripcion && {
       estado: inscripcion.estado,
       fecha_baja: inscripcion.fecha_baja,
-      plan: inscripcion.plan,
+      plan: { id_plan: inscripcion.plan.id_plan, nombre: inscripcion.plan.nombre },
+      ...(actividadInscripcion ? { actividad: actividadInscripcion } : {}),
     },
     clase: clase && {
       fecha_clase: clase.fecha_clase,

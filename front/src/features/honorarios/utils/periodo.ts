@@ -7,6 +7,41 @@ const PERIODO = /^(\d{4})-(0[1-9]|1[0-2])$/;
 /** Meses que ofrece el selector: el actual y los anteriores, para consultar informes pasados. */
 export const MESES_CONSULTABLES = 12;
 
+export const MESES_DEL_ANIO = [
+  { valor: "01", etiqueta: "Enero" },
+  { valor: "02", etiqueta: "Febrero" },
+  { valor: "03", etiqueta: "Marzo" },
+  { valor: "04", etiqueta: "Abril" },
+  { valor: "05", etiqueta: "Mayo" },
+  { valor: "06", etiqueta: "Junio" },
+  { valor: "07", etiqueta: "Julio" },
+  { valor: "08", etiqueta: "Agosto" },
+  { valor: "09", etiqueta: "Septiembre" },
+  { valor: "10", etiqueta: "Octubre" },
+  { valor: "11", etiqueta: "Noviembre" },
+  { valor: "12", etiqueta: "Diciembre" },
+] as const;
+
+export function nombreDelMes(mes: string | number): string {
+  const numero = typeof mes === "string" ? Number(mes) : mes;
+  const encontrado = MESES_DEL_ANIO[numero - 1];
+  return encontrado ? encontrado.etiqueta : "";
+}
+
+export function aniosConsultablesHonorarios(anioSeleccionado?: number): number[] {
+  const anioActualNum = Number(periodoActual().slice(0, 4));
+  const base = [anioActualNum, anioActualNum - 1, anioActualNum - 2, anioActualNum - 3];
+  if (anioSeleccionado && !base.includes(anioSeleccionado)) {
+    base.push(anioSeleccionado);
+  }
+  return base.sort((a, b) => b - a);
+}
+
+export function esPeriodoFuturo(anio: number, mes: number): boolean {
+  const [anioActual, mesActual] = periodoActual().split("-").map(Number);
+  return anio > anioActual || (anio === anioActual && mes > mesActual);
+}
+
 const FORMATO_MES = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
 
 export function periodoActual(): string {

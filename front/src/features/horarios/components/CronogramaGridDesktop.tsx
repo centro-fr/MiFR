@@ -119,9 +119,6 @@ export const CronogramaGridDesktop: React.FC<CronogramaGridDesktopProps> = ({
 
         {/* Estado vacío sin franjas */}
         <div className="py-16 px-6 text-center bg-white dark:bg-slate-900/20 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-primary/10 flex items-center justify-center text-primary mb-3 shadow-2xs">
-            <Plus className="w-6 h-6" />
-          </div>
           <p className="text-sm font-bold text-slate-900 dark:text-white">
             Cronograma sin franjas horarias
           </p>

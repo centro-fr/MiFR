@@ -54,6 +54,27 @@ export class ActividadRepository {
     });
   }
 
+  /**
+   * Calcula la mayor cantidad de inscriptos vigentes en cualquiera de los horarios de la actividad,
+   * para asegurar que una reducción de cupo no sea menor que los alumnos actualmente asignados.
+   */
+  async maximoInscriptosEnHorarios(idActividad: number): Promise<number> {
+    const horarios = await this.prisma.horarios.findMany({
+      where: { id_actividad: idActividad, fecha_baja: null },
+      select: {
+        id_horario: true,
+        inscripciones: {
+          where: {
+            fecha_hasta: null,
+            inscripcion: { estado: { in: ["PREINSCRIPTA", "ACTIVA"] }, alumno: { estado: { not: "BAJA" } } },
+          },
+          select: { id_inscripcion: true },
+        },
+      },
+    });
+    return horarios.reduce((max, h) => Math.max(max, h.inscripciones.length), 0);
+  }
+
   bajaLogica(id: number): Promise<Actividad> {
     return this.prisma.actividades.update({
       where: { id_actividad: id },

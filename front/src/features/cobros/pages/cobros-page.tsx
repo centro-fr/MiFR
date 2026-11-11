@@ -2,12 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  Banknote,
   ChevronDown,
   Info,
   Search,
   SlidersHorizontal,
-  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -946,17 +944,9 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                             {textoPlazo}
                           </td>
 
-                          {/* Acciones: Ver detalle y Aprobar */}
+                          {/* Acciones: Aprobar */}
                           <td className="px-6 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Ver detalle
-                              </Button>
+                            <div className="flex items-center justify-end">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -1013,15 +1003,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setTransferenciaSeleccionada(transferencia)}
-                          aria-label={`Ver detalle de transferencia de ${nombreCompleto}`}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Ver detalle
-                        </Button>
                         <Button
                           type="button"
                           variant="outline"

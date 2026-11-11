@@ -78,14 +78,16 @@ function aDetalle(api: LiquidacionDetalleApi, tarifas: TarifaHonorario[]): Liqui
     const tarifa = tarifaAplicada(detalle.id_tarifa, tarifas);
     if (detalle.concepto === "ALUMNO_A_CARGO") {
       const { alumno, inscripcion } = detalle;
+      const actividad = (detalle as unknown as { actividad?: string }).actividad ?? inscripcion?.actividad;
       alumnos.push({
         id: detalle.id_liq_detalle,
         monto: detalle.monto,
         tarifa,
         alumno: { nombre: alumno.nombre, apellido: alumno.apellido },
         inscripcion: inscripcion
-          ? { plan: inscripcion.plan.nombre, estado: inscripcion.estado, fechaBaja: inscripcion.fecha_baja }
+          ? { plan: inscripcion.plan.nombre, estado: inscripcion.estado, fechaBaja: inscripcion.fecha_baja, actividad }
           : null,
+        actividad,
       });
       continue;
     }

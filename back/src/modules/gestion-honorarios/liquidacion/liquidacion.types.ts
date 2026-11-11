@@ -59,6 +59,7 @@ export interface DetalleLiquidacion {
     estado: EstadoInscripcion;
     fecha_baja: Date | null;
     plan: { id_plan: number; nombre: string };
+    actividad?: string | null;
   } | null;
   clase: {
     fecha_clase: Date;

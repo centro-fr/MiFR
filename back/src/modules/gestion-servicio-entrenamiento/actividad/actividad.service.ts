@@ -51,6 +51,15 @@ export class ActividadService implements IInfoActividades {
       throw new ValidationError("El cupo máximo es obligatorio para la modalidad PERSONALIZADA");
     }
 
+    if (campos.cupo_maximo !== undefined && campos.cupo_maximo !== null) {
+      const maxInscriptos = await this.repositorio.maximoInscriptosEnHorarios(id);
+      if (maxInscriptos > campos.cupo_maximo) {
+        throw new ValidationError(
+          `No se puede reducir el cupo a ${campos.cupo_maximo}: existen clases con ${maxInscriptos} alumnos inscriptos`,
+        );
+      }
+    }
+
     return this.repositorio.actualizar(id, {
       ...campos,
       ...(reactivar ? { activo: true } : {}),

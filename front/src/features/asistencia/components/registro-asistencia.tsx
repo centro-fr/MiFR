@@ -354,7 +354,6 @@ export function RegistroAsistencia({
       {inscriptos.length === 0 ? (
         <Card className="rounded-2xl border-dashed">
           <CardContent className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-            <Users aria-hidden="true" className="size-9 text-muted-foreground" />
             <h3 className="text-base font-bold text-foreground">No hay alumnos inscriptos</h3>
             <p className="text-sm text-muted-foreground">No se generarán inasistencias para esta clase.</p>
           </CardContent>

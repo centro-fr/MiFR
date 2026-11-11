@@ -12,15 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { ModalBajaPlan } from "@/features/planes/components/modales-plan";
 import {
   useActualizarPlan,
@@ -29,7 +21,6 @@ import {
   useRegistrarPrecioPlan,
 } from "@/features/planes/hooks/use-planes";
 import {
-  aCuerpoActualizacion,
   crearPlanFormSchema,
   erroresDe,
   precioDesdeTexto,
@@ -60,7 +51,6 @@ function hoyEnArgentina(): string {
 }
 
 export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDialog) {
-  const { data: actividades = [] } = useActividades();
   const { data: todosLosPlanes = [] } = usePlanes();
   const actualizar = useActualizarPlan();
   const registrarPrecio = useRegistrarPrecioPlan();
@@ -75,15 +65,14 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
 
   if (!plan) return null;
 
-  const esMensual = valores.tipo === "MENSUAL";
   const nuevoPrecioNum = precioDesdeTexto(valores.precio);
   const precioCambio =
     plan.precioVigente === null
       ? !Number.isNaN(nuevoPrecioNum) && nuevoPrecioNum > 0
       : !Number.isNaN(nuevoPrecioNum) && nuevoPrecioNum !== plan.precioVigente;
-  const cambiosPlan = aCuerpoActualizacion(plan, valores);
-  const hayCambiosPlan = Object.keys(cambiosPlan).length > 0;
-  const sinCambios = !precioCambio && !hayCambiosPlan;
+  const nombreCambio = valores.nombre.trim() !== plan.nombre;
+  const descCambio = (valores.descripcion ?? "").trim() !== (plan.descripcion ?? "").trim();
+  const sinCambios = !precioCambio && !nombreCambio && !descCambio;
   const estaCargando = guardando || actualizar.isPending || registrarPrecio.isPending;
 
   const cambiar = (cambio: Partial<PlanFormValues>) => {
@@ -111,7 +100,16 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
       plan.precioVigente === null
         ? !Number.isNaN(nuevoPrecio) && nuevoPrecio > 0
         : !Number.isNaN(nuevoPrecio) && nuevoPrecio !== plan.precioVigente;
-    const cambios = aCuerpoActualizacion(plan, valoresAGuardar);
+
+    const cambios: { nombre?: string; descripcion?: string | null } = {};
+    if (valoresAGuardar.nombre.trim() !== plan.nombre) {
+      cambios.nombre = valoresAGuardar.nombre.trim();
+    }
+    const descActual = (plan.descripcion ?? "").trim();
+    const descNueva = (valoresAGuardar.descripcion ?? "").trim();
+    if (descNueva !== descActual) {
+      cambios.descripcion = descNueva === "" ? null : descNueva;
+    }
     const hayCambios = Object.keys(cambios).length > 0;
 
     try {
@@ -172,7 +170,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               Editar plan {plan.nombre}
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
-              Modificá las características, actividades y reglas del plan.
+              Modificá el nombre, precio o descripción del plan.
             </DialogDescription>
           </DialogHeader>
 
@@ -203,116 +201,32 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                 )}
               </div>
 
-              {/* Modalidad de cobro */}
+              {/* Precio */}
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Modalidad de cobro <span className="text-destructive">*</span>
+                <Label htmlFor="plan-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                  Precio <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Abono mensual */}
-                  <div
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">
+                    $
+                  </span>
+                  <Input
+                    id="plan-precio"
+                    name="precio"
+                    value={valores.precio}
+                    onChange={(e) => cambiar({ precio: e.target.value })}
+                    placeholder="35000"
                     className={cn(
-                      "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
-                      esMensual
-                        ? "border-2 border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white font-bold"
-                        : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
+                      "h-11 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                      errores.precio && "border-rose-500"
                     )}
-                  >
-                    <div
-                      className={cn(
-                        "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                        esMensual ? "border-slate-900 dark:border-white" : "border-slate-300 dark:border-slate-600"
-                      )}
-                    >
-                      {esMensual && <div className="size-2 rounded-full bg-slate-900 dark:bg-white" />}
-                    </div>
-                    <div>
-                      <span className="text-sm block">Abono mensual</span>
-                      <span className="text-[11px] text-muted-foreground block font-normal">Cuota periódica mensual</span>
-                    </div>
-                  </div>
-
-                  {/* Pase por clase individual */}
-                  <div
-                    className={cn(
-                      "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none",
-                      !esMensual
-                        ? "border-2 border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white font-bold"
-                        : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-500 font-medium"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "size-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                        !esMensual ? "border-slate-900 dark:border-white" : "border-slate-300 dark:border-slate-600"
-                      )}
-                    >
-                      {!esMensual && <div className="size-2 rounded-full bg-slate-900 dark:bg-white" />}
-                    </div>
-                    <div>
-                      <span className="text-sm block">Pase por clase individual</span>
-                      <span className="text-[11px] text-muted-foreground block font-normal">Sin cuota fija mensual</span>
-                    </div>
-                  </div>
+                  />
                 </div>
-              </div>
-
-              {/* Actividad y Precio en grid de 2 columnas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {/* Actividad */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="plan-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Actividad
-                  </Label>
-                  <Select
-                    value={valores.idActividad || "todas"}
-                    onValueChange={(val) => cambiar({ idActividad: val === "todas" ? "" : val })}
-                  >
-                    <SelectTrigger
-                      id="plan-actividad"
-                      aria-label="Actividad"
-                      className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
-                    >
-                      <SelectValue placeholder="Cualquier actividad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Cualquier actividad</SelectItem>
-                      {actividades.map((act) => (
-                        <SelectItem key={act.id} value={act.id}>
-                          {act.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Precio */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="plan-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Precio <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">
-                      $
-                    </span>
-                    <Input
-                      id="plan-precio"
-                      name="precio"
-                      value={valores.precio}
-                      onChange={(e) => cambiar({ precio: e.target.value })}
-                      placeholder="35000"
-                      className={cn(
-                        "h-11 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
-                        errores.precio && "border-rose-500"
-                      )}
-                    />
-                  </div>
-                  {errores.precio && (
-                    <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                      {errores.precio}
-                    </p>
-                  )}
-                </div>
+                {errores.precio && (
+                  <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                    {errores.precio}
+                  </p>
+                )}
               </div>
 
               {/* Descripción (opcional) */}

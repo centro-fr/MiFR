@@ -23,8 +23,17 @@ export function useExportarReporte<Datos>({ preparar, csv }: Exportacion<Datos>)
 
   function imprimir(datos: Datos) {
     // El informe tiene que estar en el DOM antes de abrir el diálogo, y se desmonta al cerrarlo.
+    const tituloOriginal = document.title;
+    document.title = "Centro de Entrenamiento FR";
     flushSync(() => setImpresion({ datos, generadoEl: new Date().toISOString() }));
-    window.addEventListener("afterprint", () => setImpresion(null), { once: true });
+    window.addEventListener(
+      "afterprint",
+      () => {
+        setImpresion(null);
+        document.title = tituloOriginal;
+      },
+      { once: true },
+    );
     window.print();
   }
 

@@ -344,6 +344,43 @@ describe("LiquidacionRepository", () => {
       });
     });
 
+    it("devuelve la actividad de la inscripción si el plan tiene actividad exclusiva o por su horario", async () => {
+      prisma.liquidaciones.findUnique.mockResolvedValue({
+        id_liquidacion: 1,
+        id_profesora: 2,
+        periodo_desde: new Date("2026-10-01"),
+        periodo_hasta: new Date("2026-10-31"),
+        fecha_liquidacion: new Date("2026-11-01"),
+        monto_total: new Prisma.Decimal("5000.00"),
+        estado: "BORRADOR",
+        profesora: { id_profesora: 2, usuario: { nombre: "Carla", apellido: "Ruiz" } },
+        detalles: [
+          {
+            id_liq_detalle: 1,
+            id_tarifa: 3,
+            concepto: "ALUMNO_A_CARGO",
+            id_inscripcion: 5,
+            id_clase: null,
+            monto: new Prisma.Decimal("5000.00"),
+            clase: null,
+            inscripcion: {
+              estado: "ACTIVA",
+              fecha_baja: null,
+              plan: { id_plan: 2, nombre: "Plan Intermedio", actividad_exclusiva: { nombre: "Funcional" } },
+              horarios: [],
+              alumno: { id_alumno: 8, usuario: { nombre: "Luz", apellido: "Gil" } },
+            },
+          },
+        ],
+      });
+
+      const liquidacion = await repositorio.buscarPorId(1);
+
+      expect(liquidacion?.detalles[0]?.inscripcion).toMatchObject({
+        actividad: "Funcional",
+      });
+    });
+
     it("devuelve null si no existe", async () => {
       prisma.liquidaciones.findUnique.mockResolvedValue(null);
 

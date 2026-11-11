@@ -125,11 +125,32 @@ export const actividadesHandlers = [
     const errorCupoPatch = validarCupoActividad(modalidad, cupo);
     if (errorCupoPatch) return errorApi(400, "VALIDATION_ERROR", errorCupoPatch);
 
+    if (cupo !== null && cupo !== undefined) {
+      const horariosActividad = db.horarios.filter((h) => h.id_actividad === id && h.fecha_baja === null);
+      let maxInscriptos = 0;
+      for (const h of horariosActividad) {
+        const inscriptos = db.inscripciones.filter(
+          (ins) => (ins.estado === "ACTIVA" || ins.estado === "PREINSCRIPTA") && ins.ids_horarios.includes(h.id_horario),
+        ).length;
+        if (inscriptos > maxInscriptos) {
+          maxInscriptos = inscriptos;
+        }
+      }
+      if (maxInscriptos > cupo) {
+        return errorApi(
+          400,
+          "VALIDATION_ERROR",
+          `No se puede reducir el cupo a ${cupo}: existen clases con ${maxInscriptos} alumnos inscriptos`,
+        );
+      }
+    }
+
     Object.assign(actividad, {
       nombre: cambios.nombre ?? actividad.nombre,
       descripcion: cambios.descripcion ?? actividad.descripcion,
       modalidad,
       cupo_maximo: cupo,
+      ...(cambios.requiere_medidas !== undefined ? { requiere_medidas: cambios.requiere_medidas } : {}),
     });
     return HttpResponse.json(actividad);
   }),

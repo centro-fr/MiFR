@@ -108,9 +108,6 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
         {horariosDelDia.length === 0 ? (
           <Card className="rounded-lg border-border p-8 text-center shadow-2xs">
             <CardContent className="p-0">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-primary/15 text-primary flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6" />
-              </div>
               <h4 className="text-sm font-bold text-foreground">
                 No hay clases programadas para este día
               </h4>

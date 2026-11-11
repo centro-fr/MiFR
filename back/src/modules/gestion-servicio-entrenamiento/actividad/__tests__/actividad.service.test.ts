@@ -12,6 +12,7 @@ function crearRepositorioMock() {
     buscarPorCodigo: vi.fn(),
     actualizar: vi.fn(),
     bajaLogica: vi.fn(),
+    maximoInscriptosEnHorarios: vi.fn().mockResolvedValue(0),
   };
 }
 
@@ -88,6 +89,14 @@ describe("ActividadService", () => {
     await servicio.actualizar(1, { modalidad: "GRUPAL", cupo_maximo: null });
 
     expect(repositorio.actualizar).toHaveBeenCalledWith(1, { modalidad: "GRUPAL", cupo_maximo: null });
+  });
+
+  it("actualizar rechaza cupo menor a la cantidad de inscriptos en una de sus clases", async () => {
+    repositorio.buscarPorId.mockResolvedValue(actividadBase);
+    repositorio.maximoInscriptosEnHorarios.mockResolvedValue(15);
+
+    await expect(servicio.actualizar(1, { cupo_maximo: 10 })).rejects.toThrow(ValidationError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
   it("actualizar rechaza actividades inactivas", async () => {

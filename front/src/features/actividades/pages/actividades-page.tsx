@@ -83,6 +83,19 @@ export function ActividadesPage() {
     return mapa;
   }, [horarios]);
 
+  // Máximo de inscriptos en una clase para cada actividad
+  const maxInscriptosPorActividad = useMemo(() => {
+    const mapa = new Map<number, number>();
+    for (const h of horarios) {
+      const inscriptos = (h as { inscriptos?: number }).inscriptos ?? 0;
+      const prev = mapa.get(h.id_actividad) ?? 0;
+      if (inscriptos > prev) {
+        mapa.set(h.id_actividad, inscriptos);
+      }
+    }
+    return mapa;
+  }, [horarios]);
+
   const abrirNueva = () => {
     crear.reset();
     setActividadEditar(null);
@@ -565,6 +578,11 @@ export function ActividadesPage() {
         <ModalFormActividad
           key={actividadEditar?.id ?? "nueva"}
           actividad={actividadEditar}
+          maxInscriptosEnClases={
+            actividadEditar
+              ? (maxInscriptosPorActividad.get(Number(actividadEditar.id)) ?? 0)
+              : 0
+          }
           guardando={guardado.isPending || darDeBaja.isPending}
           errorGuardado={
             guardado.isError

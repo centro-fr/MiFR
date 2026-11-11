@@ -19,6 +19,7 @@ import {
   Trophy,
   UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 import type { RoleCode } from "@/types/auth";
 
@@ -88,7 +89,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
   {
-    etiqueta: "Historial",
+    etiqueta: "Historial Cobros",
     icono: Receipt,
     seccion: SECCION_COBROS,
     to: "/app/cobros/listado",
@@ -97,7 +98,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   },
   {
     etiqueta: "Honorarios",
-    icono: Receipt,
+    icono: Wallet,
     seccion: SECCION_PAGOS,
     to: "/app/honorarios",
     descripcion: "Revisa el cálculo del pago mensual para cada profesor/a.",

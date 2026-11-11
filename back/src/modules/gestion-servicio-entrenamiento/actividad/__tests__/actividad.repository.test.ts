@@ -4,6 +4,7 @@ import { ActividadRepository } from "../actividad.repository.js";
 
 const prisma = {
   actividades: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+  horarios: { findMany: vi.fn() },
 };
 
 describe("ActividadRepository", () => {
@@ -70,5 +71,29 @@ describe("ActividadRepository", () => {
       where: { id_actividad: 3 },
       data: { nombre: "GAP avanzado", cupo_maximo: null },
     });
+  });
+
+  it("maximoInscriptosEnHorarios busca los horarios vigentes y calcula el mayor número de inscriptos", async () => {
+    prisma.horarios.findMany.mockResolvedValue([
+      { id_horario: 1, inscripciones: [{ id_inscripcion: 10 }, { id_inscripcion: 11 }] },
+      { id_horario: 2, inscripciones: [{ id_inscripcion: 12 }, { id_inscripcion: 13 }, { id_inscripcion: 14 }] },
+    ]);
+
+    const maximo = await repositorio.maximoInscriptosEnHorarios(3);
+
+    expect(prisma.horarios.findMany).toHaveBeenCalledWith({
+      where: { id_actividad: 3, fecha_baja: null },
+      select: {
+        id_horario: true,
+        inscripciones: {
+          where: {
+            fecha_hasta: null,
+            inscripcion: { estado: { in: ["PREINSCRIPTA", "ACTIVA"] }, alumno: { estado: { not: "BAJA" } } },
+          },
+          select: { id_inscripcion: true },
+        },
+      },
+    });
+    expect(maximo).toBe(3);
   });
 });

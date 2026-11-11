@@ -53,6 +53,9 @@ function horaComoFecha(hora: string): string {
 export function horarioConDatos(horario: HorarioMock) {
   const actividad = db.actividades.find((a) => a.id_actividad === horario.id_actividad)!;
   const profesora = profesoraConNombre(db.profesoras.find((p) => p.id_profesora === horario.id_profesora)!);
+  const inscriptos = db.inscripciones.filter(
+    (ins) => (ins.estado === "ACTIVA" || ins.estado === "PREINSCRIPTA") && ins.ids_horarios.includes(horario.id_horario),
+  ).length;
   return {
     ...horario,
     hora_inicio: horaComoFecha(horario.hora_inicio),
@@ -60,6 +63,7 @@ export function horarioConDatos(horario: HorarioMock) {
     actividad,
     profesora,
     cupo_maximo_efectivo: horario.cupo_maximo ?? actividad.cupo_maximo,
+    inscriptos,
   };
 }
 

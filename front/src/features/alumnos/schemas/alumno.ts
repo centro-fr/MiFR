@@ -207,6 +207,7 @@ export interface InscripcionDeAlumno {
   };
   id_profesora: number;
   profesora: string;
+  id_promocion?: number | null;
   horarios: HorarioDeAlumno[];
   /** Fecha de calendario "AAAA-MM-DD". */
   fecha_inicio: string;

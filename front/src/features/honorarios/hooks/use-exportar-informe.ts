@@ -6,6 +6,7 @@ import type { FormatoExportacion } from "@/components/menu-exportar";
 import type { DatosImpresion } from "@/features/honorarios/components/informe-imprimible";
 import { useCargarDetalles } from "@/features/honorarios/hooks/use-honorarios";
 import { armarCsvHonorarios, nombreArchivoHonorarios } from "@/features/honorarios/utils/exportar-csv";
+import { usePlanes } from "@/features/planes/hooks/use-planes";
 import type { InformeHonorarios } from "@/types/honorarios";
 import { descargarCsv } from "@/utils/csv";
 
@@ -16,13 +17,23 @@ import { descargarCsv } from "@/utils/csv";
  */
 export function useExportarInforme(informe: InformeHonorarios | undefined) {
   const cargarDetalles = useCargarDetalles();
+  const { data: todosLosPlanes = [] } = usePlanes();
   const [preparando, setPreparando] = useState<FormatoExportacion | null>(null);
   const [impresion, setImpresion] = useState<DatosImpresion | null>(null);
 
   function imprimir(datos: DatosImpresion) {
     // El informe tiene que estar en el DOM antes de abrir el diálogo, y se desmonta al cerrarlo.
+    const tituloOriginal = document.title;
+    document.title = "Centro de Entrenamiento FR";
     flushSync(() => setImpresion(datos));
-    window.addEventListener("afterprint", () => setImpresion(null), { once: true });
+    window.addEventListener(
+      "afterprint",
+      () => {
+        setImpresion(null);
+        document.title = tituloOriginal;
+      },
+      { once: true },
+    );
     window.print();
   }
 
@@ -35,7 +46,15 @@ export function useExportarInforme(informe: InformeHonorarios | undefined) {
         descargarCsv(armarCsvHonorarios(informe, detalles), nombreArchivoHonorarios(informe.periodo));
         toast.success("Se descargó la planilla del informe. Abrila con Excel.");
       } else {
-        imprimir({ informe, detalles, generadoEl: new Date().toISOString() });
+        const planesParaImpresion = todosLosPlanes
+          .filter((p) => p.precioVigente !== null)
+          .map((p) => ({ nombre: p.nombre, precio: p.precioVigente! }));
+        imprimir({
+          informe,
+          detalles,
+          generadoEl: new Date().toISOString(),
+          planes: planesParaImpresion,
+        });
       }
     } catch (error) {
       toast.error(mensajeDeErrorApi(error, "No se pudo preparar el informe. Probá de nuevo."));

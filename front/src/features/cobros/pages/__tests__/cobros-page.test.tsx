@@ -5,22 +5,24 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { CobrosPage } from "../cobros-page";
 
-const renderCobrosPage = () => {
+const renderCobrosPage = (initialEntries = ["/app/cobros"]) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <CobrosPage />
       </MemoryRouter>
     </QueryClientProvider>
   );
 };
 
+let mockTransferenciasData: any[] = [];
+
 vi.mock("@/features/transferencias/hooks/use-transferencias", () => ({
   useTransferencias: () => ({
-    data: [],
+    data: mockTransferenciasData,
     isLoading: false,
     refetch: vi.fn(),
   }),
@@ -173,9 +175,11 @@ vi.mock("../../hooks/use-cobros", () => ({
   }),
 }));
 
+let mockRoles = ["PROFESORA"];
+
 vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => ({
-    hasRole: (rol: string) => rol === "PROFESORA",
+    hasRole: (rol: string) => mockRoles.includes(rol),
     hasPermission: () => true,
   }),
 }));
@@ -183,6 +187,8 @@ vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
 describe("CobrosPage (US-15)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTransferenciasData = [];
+    mockRoles = ["PROFESORA"];
   });
 
   it("renderiza la pantalla de cobros con título y listado de alumnos", () => {
@@ -223,5 +229,27 @@ describe("CobrosPage (US-15)", () => {
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Registrar cobro en efectivo")).toBeInTheDocument();
+  });
+
+  it("en la sección Transferencias muestra solo el botón Aprobar y no Ver detalle", () => {
+    mockRoles = ["PROPIETARIA"];
+    mockTransferenciasData = [
+      {
+        id: 1,
+        monto: 25000,
+        estado: "PENDIENTE",
+        realizadaEl: "2026-11-10T21:41:00.000Z",
+        horasDesdeLaCarga: 3,
+        titularCuenta: null,
+        alumno: { id: 1, nombre: "Sofía", apellido: "Medina", telefono: "111" },
+        comprobanteUrl: "https://example.com/c.png",
+      },
+    ];
+
+    renderCobrosPage(["/app/cobros?tab=transferencias"]);
+
+    expect(screen.getAllByText(/Sofía Medina/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Aprobar/i })[0]).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ver detalle/i })).not.toBeInTheDocument();
   });
 });

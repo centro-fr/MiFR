@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowLeftRight,
-  CalendarDays,
   CreditCard,
   MoreHorizontal,
   PenSquare,
@@ -824,7 +823,6 @@ function PlanYHorarios({
   if (!inscripcion) {
     return (
       <Card className="rounded-2xl border-slate-200/80 bg-white p-8 text-center shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-        <CalendarDays className="mx-auto size-10 text-slate-300 dark:text-slate-600 mb-3" />
         <h2 className="text-base font-bold text-slate-900 dark:text-white">Sin plan vigente</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {alumno.estado === "BAJA"

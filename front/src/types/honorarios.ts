@@ -52,6 +52,7 @@ export interface TarifaAplicada {
 
 export interface InscripcionDeLaLinea {
   plan: string;
+  actividad?: string;
   estado: "ACTIVA" | "BAJA";
   /** Timestamp ISO; solo si se dio de baja. */
   fechaBaja: string | null;
@@ -65,6 +66,8 @@ export interface LineaAlumno {
   alumno: { nombre: string; apellido: string };
   /** null mientras el back no mande el plan y la situación de la inscripción. */
   inscripcion: InscripcionDeLaLinea | null;
+  /** Actividad/disciplina a la que pertenece el alumno. */
+  actividad?: string;
 }
 
 export interface ClaseDeSuplencia {

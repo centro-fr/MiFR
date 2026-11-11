@@ -214,4 +214,110 @@ describe('US-03: ModalFormActividad', () => {
     });
   });
 
+  const actividadExistente = {
+    id: '1',
+    codigo: 'FUNC',
+    nombre: 'Acondicionamiento físico',
+    descripcion: 'Entrenamiento general',
+    modalidad: 'GRUPAL' as const,
+    cupoMaximo: 20,
+    activo: true,
+    requiereMedidas: false,
+  };
+
+  test('Al editar una actividad, NO se muestran las opciones de selección de modalidad', () => {
+    render(
+      <ModalFormActividad
+        actividad={actividadExistente}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByLabelText(/^Grupal$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Personalizada$/i)).not.toBeInTheDocument();
+  });
+
+  test('Al editar, permite modificar nombre, descripción, cupo y pide peso y talla', async () => {
+    const mockOnSave = vi.fn();
+
+    render(
+      <ModalFormActividad
+        actividad={actividadExistente}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Funcional Avanzado' } });
+    fireEvent.change(screen.getByLabelText(/Descripción/i), { target: { value: 'Nueva descripción' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Pide peso y talla al inscribirse/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
+        nombre: 'Funcional Avanzado',
+        descripcion: 'Nueva descripción',
+        cupoMaximo: 25,
+        requiereMedidas: true,
+        modalidad: 'GRUPAL',
+      }));
+    });
+  });
+
+  test('Al editar, rechaza un cupo menor a la cantidad máxima de alumnos inscriptos en una de sus clases', async () => {
+    const mockOnSave = vi.fn();
+
+    render(
+      <ModalFormActividad
+        actividad={actividadExistente}
+        maxInscriptosEnClases={12}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    // Intentamos bajar el cupo a 10 cuando hay una clase con 12 inscriptos
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).not.toHaveBeenCalled();
+      expect(screen.getByText(/El cupo no puede ser menor a 12, ya que hay una clase con esa cantidad de alumnos inscriptos/i)).toBeInTheDocument();
+    });
+  });
+
+  test('Al editar, acepta un cupo igual o mayor a la cantidad máxima de inscriptos', async () => {
+    const mockOnSave = vi.fn();
+
+    render(
+      <ModalFormActividad
+        actividad={actividadExistente}
+        maxInscriptosEnClases={12}
+        guardando={false}
+        errorGuardado={null}
+        onClose={vi.fn()}
+        onSave={mockOnSave}
+      />
+    );
+
+    // Ingresamos cupo 12 (exactamente el número de inscriptos)
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
+
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalledWith(expect.objectContaining({
+        cupoMaximo: 12,
+      }));
+    });
+  });
+
 });

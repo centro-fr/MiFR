@@ -5,6 +5,7 @@ import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
@@ -13,14 +14,92 @@ import type { AdvertenciaHonorario, LiquidacionResumen } from "@/types/honorario
 export function InformeCargando() {
   return (
     <div aria-busy="true" aria-label="Cargando el informe" className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-32 rounded-lg" />
+      {/* Barra superior de estado del mes */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-1">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-48 rounded-md" />
+          <Skeleton className="h-4 w-72 sm:w-96 rounded-md" />
+        </div>
+        <Skeleton className="h-8 w-32 rounded-lg shrink-0" />
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {[0, 1, 2].map((indice) => (
-          <Skeleton key={indice} className="h-72 rounded-lg" />
-        ))}
+
+      {/* Contenedor responsivo estructurado como TablaHonorarios */}
+      <div className="@container">
+        {/* Mobile / Tablet: tarjetas skeleton */}
+        <div className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm dark:bg-surface-low">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-9 rounded-full shrink-0" />
+                <Skeleton className="h-4 w-36 flex-1" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-7 w-28" />
+              <div className="space-y-2 pt-1">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Skeleton className="h-8 w-24 rounded-lg" />
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Desktop: tabla skeleton con las mismas columnas y alineaciones */}
+        <Card className="hidden overflow-hidden rounded-lg border-slate-200/80 bg-white shadow-2xs @4xl:block dark:border-slate-800 dark:bg-slate-900">
+          <Table className="w-full text-left text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/60">
+                <TableHead className="px-6 py-3.5 font-bold text-slate-600 dark:text-slate-400">Profesor/a</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Alumnos</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Por sus alumnos</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Suplencias</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Total</TableHead>
+                <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Estado</TableHead>
+                <TableHead className="px-6 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i} className="border-b border-slate-100 dark:border-slate-800">
+                  <TableCell className="px-6 py-3 align-middle">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-9 rounded-full shrink-0" />
+                      <Skeleton className="h-4 w-36" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-12" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 align-middle">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell className="px-6 py-3 text-right align-middle">
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-8 w-24 rounded-lg" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );

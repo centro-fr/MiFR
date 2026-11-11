@@ -134,6 +134,7 @@ function aInscripcion(inscripcion: InscripcionVigenteApi): InscripcionDeAlumno {
     plan: { ...inscripcion.plan, precio: inscripcion.plan_precio.precio },
     id_profesora: inscripcion.id_profesora,
     profesora: nombreCompleto(inscripcion.profesora.usuario),
+    id_promocion: inscripcion.id_promocion,
     horarios: inscripcion.horarios.map(({ id_horario, horario }) => ({
       id_horario,
       id_actividad: horario.id_actividad,

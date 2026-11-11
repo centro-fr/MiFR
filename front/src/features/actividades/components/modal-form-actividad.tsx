@@ -22,6 +22,7 @@ import { cn } from "@/utils/cn";
 
 interface Props {
   actividad: Actividad | null;
+  maxInscriptosEnClases?: number;
   guardando: boolean;
   errorGuardado: string | null;
   onClose: () => void;
@@ -33,6 +34,7 @@ type ErroresCampo = Partial<Record<keyof ActividadFormData, string>>;
 
 export function ModalFormActividad({
   actividad,
+  maxInscriptosEnClases = 0,
   guardando,
   errorGuardado,
   onClose,
@@ -52,12 +54,26 @@ export function ModalFormActividad({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const cupoNumerico = cupo.trim() === "" ? null : Number(cupo);
+
+    if (
+      actividad &&
+      cupoNumerico !== null &&
+      maxInscriptosEnClases > 0 &&
+      cupoNumerico < maxInscriptosEnClases
+    ) {
+      setErrores({
+        cupoMaximo: `El cupo no puede ser menor a ${maxInscriptosEnClases}, ya que hay una clase con esa cantidad de alumnos inscriptos.`,
+      });
+      return;
+    }
+
     const resultado = actividadFormSchema.safeParse({
       codigo: codigo.trim() || undefined,
       nombre,
       descripcion,
       modalidad,
-      cupoMaximo: cupo.trim() === "" ? null : Number(cupo),
+      cupoMaximo: cupoNumerico,
       requiereMedidas: pidePesoTalla,
       activo: activa,
     });
@@ -90,7 +106,7 @@ export function ModalFormActividad({
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
             {actividad
-              ? "Modificá la modalidad, cupos o características de la disciplina."
+              ? "Modificá los cupos o características de la disciplina."
               : "Definí una nueva disciplina para el centro y su esquema de cupos."}
           </DialogDescription>
         </DialogHeader>
@@ -159,87 +175,89 @@ export function ModalFormActividad({
             />
           </div>
 
-          {/* Modalidad * (Tarjetas limpias con selección neutra) */}
-          <div className="space-y-1.5">
-            <span className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-              Modalidad <span className="text-primary">*</span>
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Grupal */}
-              <label
-                htmlFor="modalidad-grupal"
-                onClick={() => setModalidad("GRUPAL")}
-                className={cn(
-                  "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
-                  modalidad === "GRUPAL"
-                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
-                )}
-              >
-                <input
-                  id="modalidad-grupal"
-                  name="modalidad"
-                  type="radio"
-                  checked={modalidad === "GRUPAL"}
-                  onChange={() => setModalidad("GRUPAL")}
-                  className="sr-only"
-                />
-                <span
+          {/* Modalidad * (solo editable al crear una actividad nueva) */}
+          {!actividad && (
+            <div className="space-y-1.5">
+              <span className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                Modalidad <span className="text-primary">*</span>
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Grupal */}
+                <label
+                  htmlFor="modalidad-grupal"
+                  onClick={() => setModalidad("GRUPAL")}
                   className={cn(
-                    "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                     modalidad === "GRUPAL"
-                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
-                      : "border-slate-300 dark:border-slate-600",
+                      ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
+                      : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                   )}
                 >
-                  {modalidad === "GRUPAL" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
-                </span>
-                <div>
-                  <span className="block text-sm font-bold text-slate-900 dark:text-white">Grupal</span>
-                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
-                    Varios alumnos en la misma clase.
+                  <input
+                    id="modalidad-grupal"
+                    name="modalidad"
+                    type="radio"
+                    checked={modalidad === "GRUPAL"}
+                    onChange={() => setModalidad("GRUPAL")}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      modalidad === "GRUPAL"
+                        ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
+                        : "border-slate-300 dark:border-slate-600",
+                    )}
+                  >
+                    {modalidad === "GRUPAL" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                   </span>
-                </div>
-              </label>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Grupal</span>
+                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
+                      Varios alumnos en la misma clase.
+                    </span>
+                  </div>
+                </label>
 
-              {/* Personalizada */}
-              <label
-                htmlFor="modalidad-personalizada"
-                onClick={() => setModalidad("PERSONALIZADA")}
-                className={cn(
-                  "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
-                  modalidad === "PERSONALIZADA"
-                    ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
-                )}
-              >
-                <input
-                  id="modalidad-personalizada"
-                  name="modalidad"
-                  type="radio"
-                  checked={modalidad === "PERSONALIZADA"}
-                  onChange={() => setModalidad("PERSONALIZADA")}
-                  className="sr-only"
-                />
-                <span
+                {/* Personalizada */}
+                <label
+                  htmlFor="modalidad-personalizada"
+                  onClick={() => setModalidad("PERSONALIZADA")}
                   className={cn(
-                    "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all cursor-pointer select-none",
                     modalidad === "PERSONALIZADA"
-                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
-                      : "border-slate-300 dark:border-slate-600",
+                      ? "border-slate-900 bg-slate-50 shadow-xs dark:border-white/80 dark:bg-slate-800 text-slate-900 dark:text-white"
+                      : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60",
                   )}
                 >
-                  {modalidad === "PERSONALIZADA" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
-                </span>
-                <div>
-                  <span className="block text-sm font-bold text-slate-900 dark:text-white">Personalizada</span>
-                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
-                    Pocos alumnos, rutina para cada uno.
+                  <input
+                    id="modalidad-personalizada"
+                    name="modalidad"
+                    type="radio"
+                    checked={modalidad === "PERSONALIZADA"}
+                    onChange={() => setModalidad("PERSONALIZADA")}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                      modalidad === "PERSONALIZADA"
+                        ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
+                        : "border-slate-300 dark:border-slate-600",
+                    )}
+                  >
+                    {modalidad === "PERSONALIZADA" && <span className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
                   </span>
-                </div>
-              </label>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-900 dark:text-white">Personalizada</span>
+                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400 leading-snug font-medium">
+                      Pocos alumnos, rutina para cada uno.
+                    </span>
+                  </div>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Cupo por clase * */}
           <div className="space-y-1.5">
@@ -280,6 +298,7 @@ export function ModalFormActividad({
             <button
               type="button"
               role="checkbox"
+              aria-label="Pide peso y talla al inscribirse"
               aria-checked={pidePesoTalla}
               onClick={() => setPidePesoTalla(!pidePesoTalla)}
               className={cn(

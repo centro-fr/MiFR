@@ -16,6 +16,15 @@ export function ModalComprobante({ idPago, abierto, onClose }: Props) {
   const { data: comprobante, isLoading, error } = useComprobante(idPago, abierto);
 
   function imprimir() {
+    const tituloOriginal = document.title;
+    document.title = "Centro de Entrenamiento FR";
+    window.addEventListener(
+      "afterprint",
+      () => {
+        document.title = tituloOriginal;
+      },
+      { once: true },
+    );
     window.print();
   }
 

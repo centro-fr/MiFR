@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAlumno } from "@/features/alumnos/hooks/use-alumnos";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 import { tipoDeTransferencia } from "@/features/transferencias/utils/formato-transferencia";
 import { tramoDePlazo } from "@/features/transferencias/utils/plazo-verificacion";
 import type { Transferencia } from "@/types/transferencia";
-import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
 
 interface Props {
@@ -45,6 +45,7 @@ export function ModalDetalleAprobacion({
 
   const idAlumno = transferencia?.alumno.id ?? 0;
   const { data: ficha } = useAlumno(idAlumno);
+  const { data: promociones = [] } = usePromociones();
 
   if (!transferencia) return null;
 
@@ -52,6 +53,42 @@ export function ModalDetalleAprobacion({
   const precioPlan = plan?.precio ?? 0;
   const diferencia = precioPlan > 0 ? precioPlan - transferencia.monto : 0;
   const tieneDiferenciaMonto = precioPlan > 0 && diferencia !== 0;
+
+  const idPromocion =
+    (transferencia as unknown as { id_promocion?: number | null }).id_promocion ??
+    ficha?.inscripcion?.id_promocion ??
+    null;
+
+  let textoPromocion = "Sin promoción";
+  if (idPromocion) {
+    const promo = promociones.find((p) => String(p.id) === String(idPromocion));
+    if (promo) {
+      const descuento =
+        promo.tipoDescuento === "PORCENTAJE"
+          ? `${promo.valor}% OFF`
+          : `${formatearPrecio(promo.valor)} OFF`;
+      textoPromocion = `${promo.nombre} (${descuento})`;
+    } else {
+      textoPromocion = "Promoción aplicada";
+    }
+  } else if (precioPlan > 0 && transferencia.monto < precioPlan) {
+    const promoCoincidente = promociones.find((p) => {
+      const aplicaAlPlan = p.planes.some((pl) => String(pl.id) === String(plan?.id_plan));
+      if (!aplicaAlPlan) return false;
+      const descuento =
+        p.tipoDescuento === "PORCENTAJE"
+          ? (precioPlan * p.valor) / 100
+          : p.valor;
+      return Math.round(precioPlan - descuento) === Math.round(transferencia.monto);
+    });
+    if (promoCoincidente) {
+      const descuento =
+        promoCoincidente.tipoDescuento === "PORCENTAJE"
+          ? `${promoCoincidente.valor}% OFF`
+          : `${formatearPrecio(promoCoincidente.valor)} OFF`;
+      textoPromocion = `${promoCoincidente.nombre} (${descuento})`;
+    }
+  }
 
   const tipo = ficha ? tipoDeTransferencia(ficha) : null;
   const estadoCuota = ficha?.inscripcion?.situacion_cuota?.estado;
@@ -102,27 +139,13 @@ export function ModalDetalleAprobacion({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {/* Importe y badge de tiempo */}
-          <div className="flex items-baseline justify-between pt-1">
-            <div>
-              <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Transfirió
-              </span>
-              <span className="text-3xl font-black text-slate-900 dark:text-white">
-                {formatearPrecio(transferencia.monto)}
-              </span>
-            </div>
-
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold",
-                tramo === "vencida"
-                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-              )}
-            >
-              <Clock className="size-3.5" />
-              <span>Hace {transferencia.horasDesdeLaCarga} h</span>
+          {/* Importe */}
+          <div className="pt-1">
+            <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Transfirió
+            </span>
+            <span className="text-3xl font-black text-slate-900 dark:text-white">
+              {formatearPrecio(transferencia.monto)}
             </span>
           </div>
 
@@ -197,13 +220,6 @@ export function ModalDetalleAprobacion({
               </div>
 
               <div className="flex justify-between py-2.5">
-                <span className="text-slate-500 dark:text-slate-400">Tipo de pago</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {textoTipoPago}
-                </span>
-              </div>
-
-              <div className="flex justify-between py-2.5">
                 <span className="text-slate-500 dark:text-slate-400">Plan</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {plan?.nombre ?? "—"}
@@ -214,6 +230,13 @@ export function ModalDetalleAprobacion({
                 <span className="text-slate-500 dark:text-slate-400">Precio del plan</span>
                 <span className="font-bold text-slate-900 dark:text-slate-100">
                   {precioPlan > 0 ? formatearPrecio(precioPlan) : "—"}
+                </span>
+              </div>
+
+              <div className="flex justify-between py-2.5">
+                <span className="text-slate-500 dark:text-slate-400">Promoción</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {textoPromocion}
                 </span>
               </div>
 

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { TablaSkeleton, EstadoErrorCarga } from '@/components/ui/estados-pantalla';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
-import { Plus, CalendarX } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export const HorariosPage: React.FC = () => {
   const {
@@ -280,24 +280,19 @@ export const HorariosPage: React.FC = () => {
             {/* MENSAJE CUANDO EL CRONOGRAMA ESTÁ VACÍO */}
             {totalHorarios === 0 ? (
               <Card className="mb-5 rounded-lg border-amber-200/90 dark:border-amber-500/30 bg-gradient-to-r from-amber-50/90 dark:from-amber-500/10 via-white dark:via-card to-pink-50/70 dark:to-primary/10 p-4 shadow-xs sm:p-5">
-                <CardContent className="flex flex-col items-center justify-between gap-4 p-0 sm:flex-row">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
-                      <CalendarX className="w-5 h-5" />
+                <CardContent className="flex flex-col items-start justify-between gap-4 p-0 sm:flex-row sm:items-center">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-extrabold text-foreground">
+                        Cronograma vacío
+                      </h3>
+                      <Badge variant="outline" className="rounded-full border-0 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 text-sm font-bold text-amber-800 dark:text-amber-200">
+                        Sin clases activas
+                      </Badge>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-extrabold text-foreground">
-                          Cronograma vacío
-                        </h3>
-                        <Badge variant="outline" className="rounded-full border-0 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 text-sm font-bold text-amber-800 dark:text-amber-200">
-                          Sin clases activas
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
-                        Actualmente no hay ninguna clase programada. Asigná la primera clase semanal haciendo clic en <strong>"+ Nueva clase"</strong>.
-                      </p>
-                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                      Actualmente no hay ninguna clase programada. Asigná la primera clase semanal haciendo clic en <strong>"+ Nueva clase"</strong>.
+                    </p>
                   </div>
                   <Button
                     type="button"

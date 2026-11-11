@@ -71,9 +71,6 @@ function ListaCargando() {
 function SinNotificaciones() {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-8 text-center">
-      <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300">
-        <Bell className="size-5" />
-      </span>
       <p className="text-sm font-bold text-slate-800 dark:text-slate-100">No tenés notificaciones</p>
     </div>
   );

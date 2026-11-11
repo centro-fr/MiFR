@@ -34,9 +34,7 @@ export function DialogoConfiguracion({ abierto, periodo, onClose }: Props) {
         <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-slate-100 px-5 py-4 text-left sm:px-6 dark:border-slate-800">
           <div className="min-w-0 pr-2">
             <DialogTitle className="text-lg font-black tracking-tight text-slate-900 sm:text-xl dark:text-white">Configuración</DialogTitle>
-            <DialogDescription className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
-              Se carga una vez. Después cada mes se cierra solo.
-            </DialogDescription>
+            <DialogDescription className="sr-only">Configuración de honorarios</DialogDescription>
           </div>
           <Button
             type="button"

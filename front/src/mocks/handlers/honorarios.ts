@@ -6,6 +6,7 @@ import {
   ALUMNOS_HONORARIOS,
   CLASES_SUPLIDAS_HONORARIOS,
   INSCRIPCIONES_HONORARIOS,
+  PLANES_HONORARIOS,
   type LiquidacionDetalleMock,
   type LiquidacionMock,
   type TarifaHonorarioMock,
@@ -109,16 +110,44 @@ function alumnoDeLaLinea(idInscripcion: number) {
 
 function inscripcionDeLaLinea(idInscripcion: number) {
   const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === idInscripcion);
-  if (!inscripcion) return undefined;
-  const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
-  return {
-    estado: inscripcion.estado as "ACTIVA" | "BAJA",
-    fecha_baja: inscripcion.fecha_baja,
-    plan: {
-      id_plan: inscripcion.id_plan,
-      nombre: plan?.nombre ?? `Plan ${inscripcion.id_plan}`,
-    },
-  };
+  if (inscripcion) {
+    const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
+    let nombreActividad = "Funcional";
+    if (plan?.id_actividad_exclusiva) {
+      const act = db.actividades.find((a) => a.id_actividad === plan.id_actividad_exclusiva);
+      if (act) nombreActividad = act.nombre;
+    } else if (inscripcion.ids_horarios && inscripcion.ids_horarios.length > 0) {
+      const hor = db.horarios.find((h) => h.id_horario === inscripcion.ids_horarios[0]);
+      if (hor) {
+        const act = db.actividades.find((a) => a.id_actividad === hor.id_actividad);
+        if (act) nombreActividad = act.nombre;
+      }
+    }
+    return {
+      estado: inscripcion.estado as "ACTIVA" | "BAJA",
+      fecha_baja: inscripcion.fecha_baja,
+      plan: {
+        id_plan: inscripcion.id_plan,
+        nombre: plan?.nombre ?? `Plan ${inscripcion.id_plan}`,
+      },
+      actividad: nombreActividad,
+    };
+  }
+  const inscripcionMock = INSCRIPCIONES_HONORARIOS.find((i) => i.id_inscripcion === idInscripcion);
+  if (inscripcionMock) {
+    const planMock = PLANES_HONORARIOS.find((p) => p.id_plan === inscripcionMock.id_plan);
+    const actNombre = inscripcionMock.id_plan === 3 ? "Acondicionamiento físico" : "Funcional";
+    return {
+      estado: inscripcionMock.estado as "ACTIVA" | "BAJA",
+      fecha_baja: inscripcionMock.fecha_baja,
+      plan: {
+        id_plan: inscripcionMock.id_plan,
+        nombre: planMock?.nombre ?? `Plan ${inscripcionMock.id_plan}`,
+      },
+      actividad: actNombre,
+    };
+  }
+  return undefined;
 }
 
 function claseDeLaLinea(idClase: number) {

@@ -34,7 +34,7 @@ export function InscripcionesImprimible({ estadisticas, descripcion, hoy, genera
   return createPortal(
     <div className="informe-impresion bg-white font-sans text-slate-900">
       <header className="border-b border-slate-300 pb-3">
-        <p className="text-sm font-semibold text-slate-600">Centro de Entrenamiento FR · MiFR</p>
+        <p className="text-sm font-semibold text-slate-600">Centro de Entrenamiento FR</p>
         <h1 className="mt-1 text-2xl font-bold">Inscripciones · {estadisticas.anio}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {filtros.length > 0 ? filtros.join(" · ") : "Todos los planes y profesoras"} · Generado el {fechaHora(generadoEl)}

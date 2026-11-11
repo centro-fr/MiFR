@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CalendarCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useAsistenciasAlumno } from "../hooks/use-asistencias-alumno";
 
@@ -122,8 +122,7 @@ export function HistorialAsistenciaAlumno({ idAlumno }: Props) {
         </div>
       ) : asistencias.length === 0 ? (
         <div className="p-10 text-center">
-          <CalendarCheck className="mx-auto size-10 text-slate-300 dark:text-slate-600" />
-          <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
             No hay asistencias registradas todavía
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

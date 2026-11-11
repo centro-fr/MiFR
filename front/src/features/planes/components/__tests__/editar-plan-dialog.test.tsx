@@ -62,26 +62,23 @@ describe("EditarPlanDialog", () => {
     mockRegistrarPrecioAsync.mockResolvedValue({ id_plan_precio: 99, precio: 26000 });
   });
 
-  it("renderiza campos simplificados con los valores del plan Kids y sin cantidad de días", () => {
+  it("renderiza únicamente los campos editables (nombre, precio y descripción) y omite modalidad y actividad", () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
     expect(screen.getByRole("heading", { name: "Editar plan Kids" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toHaveValue("Kids");
-    expect(screen.getByText("Abono mensual")).toBeInTheDocument();
-    expect(screen.getByText("Pase por clase individual")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Precio \*/i)).toHaveValue("22.000");
+    expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
 
-    // Textos de ayuda y campos de cantidad de días eliminados
-    expect(screen.queryByText(/La modalidad de cobro no se puede modificar/i)).not.toBeInTheDocument();
+    // Modalidad de cobro y Actividad ya no son editables ni se muestran en el formulario
+    expect(screen.queryByText("Abono mensual")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pase por clase individual")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Actividad")).not.toBeInTheDocument();
+
+    // Otros campos eliminados
     expect(screen.queryByLabelText(/Clases por semana/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Días de gracia/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Días que el alumno puede seguir viniendo/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Si elegís una, al inscribir/i)).not.toBeInTheDocument();
 
-    // Actividad y campo Precio
-    expect(screen.getByLabelText("Actividad")).toBeInTheDocument();
-    expect(screen.getByLabelText(/Precio \*/i)).toHaveValue("22.000");
-
-    expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
     expect(screen.getByRole("button", { name: "Dar de baja el plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
@@ -164,5 +161,26 @@ describe("EditarPlanDialog", () => {
       );
     });
     expect(mockActualizarAsync).not.toHaveBeenCalled();
+  });
+
+  it("permite modificar la descripción y guardarla", async () => {
+    render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
+
+    const textareaDesc = screen.getByLabelText(/Descripción \(opcional\)/i);
+    fireEvent.change(textareaDesc, { target: { value: "Nueva descripción para el grupo" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      expect(mockActualizarAsync).toHaveBeenCalledTimes(1);
+      expect(mockActualizarAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "2",
+          cambios: expect.objectContaining({
+            descripcion: "Nueva descripción para el grupo",
+          }),
+        })
+      );
+    });
   });
 });

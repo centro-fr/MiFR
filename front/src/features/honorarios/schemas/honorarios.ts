@@ -90,12 +90,14 @@ const detalleBaseApiSchema = z.object({
 const detalleAlumnoApiSchema = detalleBaseApiSchema.extend({
   concepto: z.literal("ALUMNO_A_CARGO"),
   alumno: z.object({ id_alumno: idSchema, nombre: z.string(), apellido: z.string() }),
+  actividad: z.string().optional(),
   // Desglose: plan y situación de la inscripción. Las PREINSCRIPTA nunca llegan al detalle.
   inscripcion: z
     .object({
       estado: z.enum(["ACTIVA", "BAJA"]),
       fecha_baja: z.string().nullable(),
       plan: z.object({ id_plan: idSchema, nombre: z.string() }),
+      actividad: z.string().optional(),
     })
     .optional(),
 });

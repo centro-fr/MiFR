@@ -122,7 +122,6 @@ function GruposDeTarifas({ enUnaColumna = false, ...props }: PropsGrupo & { enUn
         <h3 id="tarifa-por-alumno" className={SUBTITULO}>
           Por alumno a cargo
         </h3>
-        <p className="text-sm text-muted-foreground">De lo que pagan sus alumnos. Uno solo para todo el estudio.</p>
         <ul>
           <FilaDeTarifa nombre="Todos" alcance={{ concepto: "ALUMNO_A_CARGO" }} {...props} />
         </ul>

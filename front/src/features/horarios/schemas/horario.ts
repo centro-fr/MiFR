@@ -29,6 +29,7 @@ export const horarioApiSchema = z.object({
   actividad: actividadApiSchema,
   profesora: profesoraApiSchema,
   cupo_maximo_efectivo: z.number().int().nullable(),
+  inscriptos: z.number().int().optional(),
 });
 
 export type HorarioApi = z.infer<typeof horarioApiSchema>;

@@ -35,18 +35,18 @@ describe("useOwnerNavigation: sección Alumnos", () => {
 
 describe("useOwnerNavigation: sección Cobros", () => {
   it("marca Historial de cobros en su ruta y en la raíz de cobros", () => {
-    expect(buscarItem("/app/cobros/listado", "Historial", undefined, "Cobros").esActivo).toBe(true);
-    expect(buscarItem("/app/cobros", "Historial", undefined, "Cobros").esActivo).toBe(true);
+    expect(buscarItem("/app/cobros/listado", "Historial Cobros", undefined, "Cobros").esActivo).toBe(true);
+    expect(buscarItem("/app/cobros", "Historial Cobros", undefined, "Cobros").esActivo).toBe(true);
   });
 
-  it("marca Transferencias por verificar en su ruta sin activar Historial", () => {
+  it("marca Transferencias por verificar en su ruta sin activar Historial Cobros", () => {
     expect(buscarItem("/app/cobros/transferencias", "Transferencias por verificar").esActivo).toBe(true);
-    expect(buscarItem("/app/cobros/transferencias", "Historial", undefined, "Cobros").esActivo).toBe(false);
+    expect(buscarItem("/app/cobros/transferencias", "Historial Cobros", undefined, "Cobros").esActivo).toBe(false);
   });
 
-  it("marca Efectivo a rendir en su ruta sin activar Historial", () => {
+  it("marca Efectivo a rendir en su ruta sin activar Historial Cobros", () => {
     expect(buscarItem("/app/cobros/efectivo", "Efectivo a rendir").esActivo).toBe(true);
-    expect(buscarItem("/app/cobros/efectivo", "Historial", undefined, "Cobros").esActivo).toBe(false);
+    expect(buscarItem("/app/cobros/efectivo", "Historial Cobros", undefined, "Cobros").esActivo).toBe(false);
   });
 });
 
@@ -121,10 +121,10 @@ describe("useOwnerNavigation: orden de secciones y subitems", () => {
     expect(secciones).toEqual(["Alumnos", "Cobros", "Pagos", "Reportes", "Centro"]);
   });
 
-  it("ordena Cobros como: Transferencias por verificar, Efectivo a rendir, Historial", () => {
+  it("ordena Cobros como: Transferencias por verificar, Efectivo a rendir, Historial Cobros", () => {
     const nav = navegacionEn("/app/dashboard");
     const itemsCobros = nav.items.filter((i) => i.seccion === "Cobros").map((i) => i.etiqueta);
-    expect(itemsCobros).toEqual(["Transferencias por verificar", "Efectivo a rendir", "Historial"]);
+    expect(itemsCobros).toEqual(["Transferencias por verificar", "Efectivo a rendir", "Historial Cobros"]);
   });
 
   it("asigna Honorarios a la sección Pagos y genera su breadcrumb correspondiente", () => {
