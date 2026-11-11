@@ -154,7 +154,7 @@ export function RankingReportePage() {
             <ResumenEnTarjetas
               datos={[
                 { etiqueta: "Participantes", valor: String(ranking.total) },
-                { etiqueta: "Asistencia perfecta", valor: String(perfectos), nota: "Vinieron a todas sus clases" },
+                { etiqueta: "Asistencia perfecta", valor: String(perfectos) },
                 { etiqueta: "Racha más larga", valor: rachaMasLarga === 0 ? "—" : `${rachaMasLarga} clases` },
                 { etiqueta: "Asistencia promedio", valor: formatearPorcentaje(promedio) },
               ]}
