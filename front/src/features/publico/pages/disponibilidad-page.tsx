@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { AlertCircle, CalendarDays, Dumbbell, Loader2, MessageCircle, RefreshCw } from "lucide-react";
+import { CalendarDays, Loader2, MessageCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
@@ -8,6 +8,8 @@ import { diasAbreviados, iconoDeActividad } from "@/features/publico/utils/activ
 import { enlacesDeContacto } from "@/features/publico/utils/contacto";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { NOMBRE_DEL_CENTRO } from "@/features/publico/components/marca-centro";
+import { urlDelSitio } from "@/features/publico/utils/sitio";
+import { useTituloDelDocumento } from "@/hooks/use-titulo-del-documento";
 
 function TarjetaDisponibilidad({ actividad }: { actividad: ActividadPublica }) {
   return (
@@ -49,9 +51,12 @@ export function DisponibilidadPage() {
   const { data, isPending, isError, refetch, isFetching } = useActividadesPublicas();
   const { whatsapp } = enlacesDeContacto();
   const actividades = data?.actividades ?? [];
+  const sitio = urlDelSitio();
+  useTituloDelDocumento(`Disponibilidad y horarios · ${NOMBRE_DEL_CENTRO}`);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      {sitio && <link rel="canonical" href={`${sitio}/disponibilidad`} />}
       <header className="border-b border-border bg-background/90">
         <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-primary">

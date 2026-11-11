@@ -1,0 +1,5 @@
+# Solo la página pública es para buscadores. El sistema (/app) pide sesión y no tiene nada que indexar;
+# el login lleva <meta name="robots" content="noindex">.
+User-agent: *
+Allow: /
+Disallow: /app/
