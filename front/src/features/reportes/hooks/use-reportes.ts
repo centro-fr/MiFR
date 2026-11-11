@@ -71,7 +71,7 @@ export function useProfesorasParaFiltro() {
 }
 
 export function useActividadesParaFiltro() {
-  return useQuery({ queryKey: ACTIVIDADES_QUERY_KEY, queryFn: listarActividades, staleTime: CINCO_MINUTOS });
+  return useQuery({ queryKey: ACTIVIDADES_QUERY_KEY, queryFn: () => listarActividades(), staleTime: CINCO_MINUTOS });
 }
 
 function useTextoConEspera(texto: string): string {
