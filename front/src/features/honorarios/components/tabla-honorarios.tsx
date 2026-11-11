@@ -1,7 +1,6 @@
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BadgeEstadoLiquidacion } from "@/features/honorarios/components/badge-estado-liquidacion";
 import { cantidadDeAlumnos, formatearAjuste, inicialesDe, nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import type { LiquidacionResumen } from "@/types/honorarios";
@@ -16,14 +15,15 @@ interface Props {
 
 const BOTON =
   "h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200";
-const CABECERA = "px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400";
-const NUMERO = "px-4 py-4 text-right align-middle tabular-nums whitespace-nowrap";
+// Mismo formato que la tabla del listado de alumnos: encabezado chico en gris, filas separadas por una
+// línea y el avatar rosa con iniciales.
+const NUMERO = "px-4 py-3.5 tabular-nums whitespace-nowrap";
 
 function Avatar({ liquidacion }: { liquidacion: LiquidacionResumen }) {
   return (
     <span
       aria-hidden="true"
-      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-extrabold text-violet-800 ring-1 ring-violet-200 ring-inset dark:bg-violet-500/20 dark:text-violet-200 dark:ring-violet-400/30"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300"
     >
       {inicialesDe(liquidacion.profesora)}
     </span>
@@ -94,50 +94,48 @@ export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props
         ))}
       </ul>
 
-      <Card className="hidden overflow-hidden rounded-lg border-slate-200/80 bg-white shadow-2xs @4xl:block dark:border-slate-800 dark:bg-slate-900">
-        <Table className="w-full text-left text-sm">
-          <TableHeader>
-            <TableRow className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/60">
-              <TableHead className={cn(CABECERA, "px-6")}>Profesor/a</TableHead>
-              <TableHead className={cn(CABECERA, "text-right")}>Alumnos</TableHead>
-              <TableHead className={cn(CABECERA, "text-right")}>Por sus alumnos</TableHead>
-              <TableHead className={cn(CABECERA, "text-right")}>Suplencias</TableHead>
-              <TableHead className={cn(CABECERA, "text-right")}>Total</TableHead>
-              <TableHead className={CABECERA}>Estado</TableHead>
-              <TableHead className={cn(CABECERA, "px-6 text-right")}>
-                Acciones
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs @4xl:block dark:border-slate-700/80 dark:bg-slate-900">
+        <table className="w-full text-left text-sm">
+          <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+            <tr>
+              <th scope="col" className="px-6 py-3.5">Profesor/a</th>
+              <th scope="col" className="px-4 py-3.5">Alumnos</th>
+              <th scope="col" className="px-4 py-3.5">Por sus alumnos</th>
+              <th scope="col" className="px-4 py-3.5">Suplencias</th>
+              <th scope="col" className="px-4 py-3.5">Total</th>
+              <th scope="col" className="px-4 py-3.5">Estado</th>
+              <th scope="col" className="px-6 py-3.5 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {liquidaciones.map((liquidacion) => {
               const { desglose } = liquidacion;
               return (
-                <TableRow key={liquidacion.id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
-                  <TableCell className="px-6 py-3 align-middle">
+                <tr key={liquidacion.id} className="transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60">
+                  <td className="px-6 py-3.5">
                     <div className="flex items-center gap-3">
                       <Avatar liquidacion={liquidacion} />
-                      <span className="font-bold whitespace-nowrap text-dark dark:text-white">{nombreCompleto(liquidacion.profesora)}</span>
+                      <span className="text-sm font-bold whitespace-nowrap text-slate-900 dark:text-white">{nombreCompleto(liquidacion.profesora)}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className={cn(NUMERO, "text-slate-700 dark:text-slate-300")}>{desglose ? desglose.cantidadAlumnos : "—"}</TableCell>
-                  <TableCell className={cn(NUMERO, "text-slate-700 dark:text-slate-300")}>{desglose ? formatearPrecio(desglose.subtotalAlumnos) : "—"}</TableCell>
-                  <TableCell className={cn(NUMERO, "font-semibold", desglose ? colorDelAjuste(desglose.subtotalSuplencias) : "text-muted-foreground")}>
+                  </td>
+                  <td className={cn(NUMERO, "font-medium text-slate-600 dark:text-slate-300")}>{desglose ? desglose.cantidadAlumnos : "—"}</td>
+                  <td className={cn(NUMERO, "font-medium text-slate-700 dark:text-slate-200")}>{desglose ? formatearPrecio(desglose.subtotalAlumnos) : "—"}</td>
+                  <td className={cn(NUMERO, "font-medium", desglose ? colorDelAjuste(desglose.subtotalSuplencias) : "text-muted-foreground")}>
                     {desglose ? formatearAjuste(desglose.subtotalSuplencias) : "—"}
-                  </TableCell>
-                  <TableCell className={cn(NUMERO, "font-black text-dark dark:text-white")}>{formatearPrecio(liquidacion.montoTotal)}</TableCell>
-                  <TableCell className="px-4 py-4 align-middle">
+                  </td>
+                  <td className={cn(NUMERO, "font-bold text-slate-900 dark:text-white")}>{formatearPrecio(liquidacion.montoTotal)}</td>
+                  <td className="px-4 py-3.5">
                     <BadgeEstadoLiquidacion estado={liquidacion.estado} />
-                  </TableCell>
-                  <TableCell className="px-6 py-3 align-middle">
+                  </td>
+                  <td className="px-6 py-3.5">
                     <Acciones liquidacion={liquidacion} onVerDetalle={onVerDetalle} onAbonar={onAbonar} />
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               );
             })}
-          </TableBody>
-        </Table>
-      </Card>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

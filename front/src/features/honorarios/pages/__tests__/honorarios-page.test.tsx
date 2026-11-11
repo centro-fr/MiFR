@@ -113,9 +113,10 @@ describe("HonorariosPage", () => {
     expect(screen.queryByRole("navigation", { name: "Ruta de navegación" })).not.toBeInTheDocument();
   });
 
-  it("renderiza el selector de mes y el botón exportar en el encabezado", () => {
+  it("renderiza los filtros de mes y año y el botón exportar", () => {
     renderizar();
-    expect(screen.getByRole("combobox", { name: /Mes del informe/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Mes" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Año" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Exportar/i })).toBeInTheDocument();
   });
 

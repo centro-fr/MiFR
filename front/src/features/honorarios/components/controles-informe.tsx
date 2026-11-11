@@ -1,4 +1,4 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CONTROL_FILTRO, ETIQUETA_FILTRO, GrupoDeFiltros } from "@/features/reportes/components/piezas-reporte";
 import {
   MESES_DEL_ANIO,
   aniosConsultablesHonorarios,
@@ -6,78 +6,54 @@ import {
   periodoActual,
 } from "@/features/honorarios/utils/periodo";
 
-interface PropsSelectorMes {
+interface PropsFiltrosDelMes {
   periodo: string;
   onChange: (periodo: string) => void;
 }
 
-export function SelectorMes({ periodo, onChange }: PropsSelectorMes) {
+/**
+ * Mes y año del informe, como los filtros de Reportes: se aplican al elegirlos y "Limpiar filtros"
+ * vuelve al mes en curso. Los meses que todavía no llegaron no se pueden elegir.
+ */
+export function FiltrosDelMes({ periodo, onChange }: PropsFiltrosDelMes) {
   const [anio = "2026", mes = "11"] = periodo.split("-");
   const anioNum = Number(anio);
   const anios = aniosConsultablesHonorarios(anioNum);
-
-  function cambiarMes(nuevoMes: string) {
-    onChange(`${anio}-${nuevoMes}`);
-  }
+  const actual = periodoActual();
 
   function cambiarAnio(nuevoAnio: string) {
-    const nuevoAnioNum = Number(nuevoAnio);
-    const [anioAct, mesAct] = periodoActual().split("-").map(Number);
-    let mesAjustado = mes;
-    // Si cambia al año en curso y el mes elegido es futuro, se ajusta al mes en curso
-    if (nuevoAnioNum === anioAct && Number(mes) > mesAct) {
-      mesAjustado = String(mesAct).padStart(2, "0");
-    }
+    const [anioAct, mesAct] = actual.split("-").map(Number);
+    // Al volver al año en curso con un mes que todavía no llegó, se queda en el mes en curso.
+    const mesAjustado = Number(nuevoAnio) === anioAct && Number(mes) > mesAct ? String(mesAct).padStart(2, "0") : mes;
     onChange(`${nuevoAnio}-${mesAjustado}`);
   }
 
   return (
-    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-      <Select value={mes} onValueChange={cambiarMes}>
-        <SelectTrigger
-          aria-label="Mes del informe"
-          className="h-11 w-auto grow basis-36 justify-start gap-2 rounded-xl sm:min-w-36 sm:grow-0 sm:basis-auto [&>svg]:ml-auto border-border bg-white px-3 text-sm font-bold text-dark shadow-xs dark:bg-surface-low dark:text-white"
-        >
-          <span aria-hidden="true" className="font-medium text-muted-foreground">
-            Mes
-          </span>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {MESES_DEL_ANIO.map(({ valor, etiqueta }) => {
-            const deshabilitado = esPeriodoFuturo(anioNum, Number(valor));
-            return (
-              <SelectItem
-                key={valor}
-                value={valor}
-                disabled={deshabilitado}
-                className="min-h-11 pointer-fine:min-h-10"
-              >
-                {etiqueta}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
-
-      <Select value={anio} onValueChange={cambiarAnio}>
-        <SelectTrigger
-          aria-label="Año del informe"
-          className="h-11 w-auto grow basis-28 justify-start gap-2 rounded-xl sm:min-w-28 sm:grow-0 sm:basis-auto [&>svg]:ml-auto border-border bg-white px-3 text-sm font-bold text-dark shadow-xs dark:bg-surface-low dark:text-white"
-        >
-          <span aria-hidden="true" className="font-medium text-muted-foreground">
-            Año
-          </span>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {anios.map((opcionAnio) => (
-            <SelectItem key={opcionAnio} value={String(opcionAnio)} className="min-h-11 pointer-fine:min-h-10">
-              {opcionAnio}
-            </SelectItem>
+    <GrupoDeFiltros onLimpiar={() => onChange(actual)} hayFiltros={periodo !== actual}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="honorarios-mes" className={ETIQUETA_FILTRO}>
+          Mes
+        </label>
+        <select id="honorarios-mes" value={mes} onChange={(evento) => onChange(`${anio}-${evento.target.value}`)} className={CONTROL_FILTRO}>
+          {MESES_DEL_ANIO.map(({ valor, etiqueta }) => (
+            <option key={valor} value={valor} disabled={esPeriodoFuturo(anioNum, Number(valor))}>
+              {etiqueta}
+            </option>
           ))}
-        </SelectContent>
-      </Select>
-    </div>
+        </select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="honorarios-anio" className={ETIQUETA_FILTRO}>
+          Año
+        </label>
+        <select id="honorarios-anio" value={anio} onChange={(evento) => cambiarAnio(evento.target.value)} className={CONTROL_FILTRO}>
+          {anios.map((opcion) => (
+            <option key={opcion} value={opcion}>
+              {opcion}
+            </option>
+          ))}
+        </select>
+      </div>
+    </GrupoDeFiltros>
   );
 }

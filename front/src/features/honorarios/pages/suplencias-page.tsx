@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { HORARIOS_QUERY_KEY, PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
-import { SelectorMes } from "@/features/honorarios/components/controles-informe";
+import { FiltrosDelMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
 import { EncabezadoHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
 import { useTarifas } from "@/features/honorarios/hooks/use-honorarios";
@@ -141,7 +141,6 @@ export function SuplenciasPage() {
           descripcion="Quién cubrió cada clase del mes. Se le paga a quien la cubrió y se le descuenta a quien faltó."
           acciones={
             <>
-              <SelectorMes periodo={periodo} onChange={cambiarPeriodo} />
               <Button
                 type="button"
                 variant="outline"
@@ -166,6 +165,7 @@ export function SuplenciasPage() {
             </>
           }
         />
+        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} />
         <EstadoSuplencias periodo={periodo} />
         {contenido()}
       </div>
