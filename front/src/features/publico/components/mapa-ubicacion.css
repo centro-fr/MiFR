@@ -1,0 +1,82 @@
+/* Leaflet con los colores de la página pública. Va en su propio contexto de apilado: sus capas
+   tienen z-index altos y sin aislarlas taparían el encabezado fijo. */
+.mapa-ubicacion {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.mapa-ubicacion.leaflet-container {
+  background: var(--color-publico-tinta);
+  font-family: var(--font-sans);
+}
+
+/* Oscurece las teselas claras de OpenStreetMap y las tiñe del azul pizarra de la página: invertidas
+   y sin color quedan como un mapa nocturno; el sepia girado a 185° les da el tono. Se filtran solo
+   las teselas: el pin y los controles conservan sus colores. */
+.mapa-ubicacion .leaflet-tile-pane {
+  filter: grayscale(1) invert(1) sepia(1) hue-rotate(185deg) saturate(1.6) brightness(0.8);
+}
+
+.mapa-ubicacion .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--color-publico-texto-tenue);
+}
+
+.mapa-ubicacion .leaflet-control-attribution a {
+  color: var(--color-publico-texto-claro);
+}
+
+.mapa-ubicacion .leaflet-bar a {
+  background: var(--color-publico-tinta);
+  color: #ffffff;
+  border-color: var(--color-publico-borde);
+}
+
+.mapa-ubicacion .leaflet-bar a:hover {
+  background: var(--color-publico-borde);
+}
+
+.mapa-pin {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-primary);
+  transform: rotate(-45deg);
+  box-shadow: 0 0 0 4px rgba(233, 30, 130, 0.25);
+  animation: mapa-pin-latido 1.6s ease-in-out infinite;
+}
+
+/* Onda que sale del pin y se desvanece, para que el local se encuentre de un vistazo. Con
+   movimiento reducido la regla global de index.css corta las dos animaciones y el pin queda quieto. */
+.mapa-pin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(233, 30, 130, 0.45);
+  animation: mapa-pin-onda 1.6s ease-out infinite;
+}
+
+@keyframes mapa-pin-latido {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(233, 30, 130, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(233, 30, 130, 0.12);
+  }
+}
+
+@keyframes mapa-pin-onda {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}

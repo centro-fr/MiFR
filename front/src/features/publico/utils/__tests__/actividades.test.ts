@@ -1,11 +1,19 @@
 import { Dumbbell, Flame, HeartPulse, Swords } from "lucide-react";
 import { describe, expect, it } from "vitest";
-import { diasAbreviados, diasEnPalabras, iconoDeActividad, semanaDeLaActividad } from "../actividades";
+import { diasAbreviados, diasEnPalabras, diasResumidos, iconoDeActividad, semanaDeLaActividad } from "../actividades";
 
 describe("actividades", () => {
   it("diasAbreviados nombra los días con su abreviatura", () => {
     expect(diasAbreviados([1, 3, 5])).toBe("Lun · Mié · Vie");
     expect(diasAbreviados([2, 4, 6])).toBe("Mar · Jue · Sáb");
+  });
+
+  it("diasResumidos junta tres días seguidos o más en un rango y lista el resto", () => {
+    expect(diasResumidos([1, 2, 3, 4, 5])).toBe("Lun a Vie");
+    expect(diasResumidos([4, 2, 3])).toBe("Mar a Jue");
+    expect(diasResumidos([1, 2])).toBe("Lun · Mar");
+    expect(diasResumidos([1, 3, 5])).toBe("Lun · Mié · Vie");
+    expect(diasResumidos([])).toBe("");
   });
 
   it("iconoDeActividad elige el ícono por el nombre y usa la pesa si no reconoce ninguno", () => {

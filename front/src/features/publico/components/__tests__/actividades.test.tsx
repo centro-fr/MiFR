@@ -30,7 +30,7 @@ describe("Actividades", () => {
     expect(screen.getByRole("status", { name: "Cargando las actividades" })).toBeInTheDocument();
   });
 
-  it("muestra cada actividad con su descripción, sus días y sus clases por semana", async () => {
+  it("muestra cada actividad con sus días, resumidos si son seguidos", async () => {
     consultar.mockResolvedValue({
       actividades: [
         {
@@ -38,10 +38,10 @@ describe("Actividades", () => {
           nombre: "Funcional",
           descripcion: "Entrenamiento funcional en grupo",
           modalidad: "GRUPAL",
-          dias: [1, 3, 5],
-          clases_por_semana: 3,
+          dias: [1, 2, 3, 4, 5],
+          clases_por_semana: 5,
         },
-        { id_actividad: 2, nombre: "Combat", descripcion: null, modalidad: "GRUPAL", dias: [2], clases_por_semana: 1 },
+        { id_actividad: 2, nombre: "Combat", descripcion: null, modalidad: "GRUPAL", dias: [2, 4], clases_por_semana: 2 },
       ],
     });
 
@@ -49,11 +49,11 @@ describe("Actividades", () => {
 
     const lista = await screen.findByRole("list");
     const [funcional, combat] = within(lista).getAllByRole("listitem");
-    expect(funcional).toHaveTextContent("Funcional");
-    expect(funcional).toHaveTextContent("Entrenamiento funcional en grupo");
-    expect(funcional).toHaveTextContent("Días: lunes, miércoles y viernes");
-    expect(funcional).toHaveTextContent("3 clases por semana");
-    expect(combat).toHaveTextContent("1 clase por semana");
+    expect(within(funcional).getByRole("heading", { name: "Funcional" })).toBeInTheDocument();
+    expect(funcional).toHaveTextContent("Lun a Vie");
+    expect(funcional).toHaveTextContent("Días: lunes, martes, miércoles, jueves y viernes");
+    expect(combat).toHaveTextContent("Mar · Jue");
+    expect(combat).toHaveTextContent("Días: martes y jueves");
   });
 
   it("no aparece si no hay actividades o si la consulta falla", async () => {

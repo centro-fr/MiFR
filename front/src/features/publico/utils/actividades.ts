@@ -7,7 +7,19 @@ export function diasAbreviados(dias: number[]): string {
   return dias.map((dia) => DIAS_ABREVIADOS[dia - 1] ?? "").join(" · ");
 }
 
-const NOMBRES_DE_DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+// Tres días o más seguidos se resumen como rango ("Lun a Vie"); si no, se listan ("Mar · Jue").
+export function diasResumidos(dias: number[]): string {
+  const ordenados = [...dias].sort((a, b) => a - b);
+  const primero = ordenados[0];
+  const ultimo = ordenados.at(-1);
+  const sonSeguidos = primero !== undefined && ultimo !== undefined && ultimo - primero === ordenados.length - 1;
+  if (ordenados.length >= 3 && sonSeguidos) {
+    return `${DIAS_ABREVIADOS[primero - 1]} a ${DIAS_ABREVIADOS[ultimo - 1]}`;
+  }
+  return diasAbreviados(ordenados);
+}
+
+const NOMBRES_DE_DIAS =["lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const INICIALES_DE_DIAS = ["L", "M", "M", "J", "V", "S"];
 
 export interface DiaDeLaSemana {
