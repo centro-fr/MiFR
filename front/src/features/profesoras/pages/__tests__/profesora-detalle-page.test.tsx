@@ -131,10 +131,9 @@ describe("ProfesoraDetallePage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Lucía Gómez" })).toBeInTheDocument();
     expect(screen.getByText("lucia.gomez@example.com")).toBeInTheDocument();
     expect(screen.getByText("Activa")).toBeInTheDocument();
-    expect(screen.getByText("32111222")).toBeInTheDocument();
+    expect(screen.getByText("32.111.222")).toBeInTheDocument();
     expect(screen.getByText("Av. Corrientes 1234")).toBeInTheDocument();
-    expect(screen.getAllByText("Funcional").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("HIIT").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Funcional, HIIT").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1 clase").length).toBeGreaterThan(0);
   });
 
@@ -235,15 +234,14 @@ describe("ProfesoraDetallePage", () => {
     ];
 
     renderizar("1");
+    fireEvent.click(screen.getByRole("tab", { name: "Clases" }));
 
-    // Subdivisión de días
-    expect(screen.getByText("Lunes")).toBeInTheDocument();
-    expect(screen.getByText("2 clases")).toBeInTheDocument();
-
-    expect(screen.getByText("Miércoles")).toBeInTheDocument();
-    expect(screen.getByText("08:00 - 09:00")).toBeInTheDocument();
-    expect(screen.getByText("10:00 - 11:00")).toBeInTheDocument();
-    expect(screen.getByText("18:00 - 19:00")).toBeInTheDocument();
+    // Una tarjeta por día, con cuántas clases tiene
+    expect(screen.getByRole("heading", { name: "Lunes · 2 clases" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Miércoles · 1 clase" })).toBeInTheDocument();
+    expect(screen.getByText("08:00 a 09:00")).toBeInTheDocument();
+    expect(screen.getByText("10:00 a 11:00")).toBeInTheDocument();
+    expect(screen.getByText("18:00 a 19:00")).toBeInTheDocument();
   });
 
   it("muestra error amigable si el identificador no corresponde a ninguna profesora", () => {
