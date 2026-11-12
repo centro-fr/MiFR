@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, Info, Loader2, RefreshCw, UserCheck } from "lucide-react";
+import { AlertCircle, Info, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";

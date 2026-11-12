@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { usePreciosPlan, useRegistrarPrecioPlan } from "@/features/planes/hooks/use-planes";
 import { crearActualizacionPrecioSchema } from "@/features/planes/schemas/plan";
@@ -219,16 +220,15 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                       <Label htmlFor="fecha-vigencia-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                         Rige desde <span className="text-destructive">*</span>
                       </Label>
-                      <Input
+                      <CampoFecha
                         id="fecha-vigencia-precio"
                         name="fecha_vigencia_desde"
                         aria-label="Fecha de vigencia *"
-                        type="date"
                         min={hoy}
                         required
                         value={fecha}
-                        onChange={(event) => {
-                          setFecha(event.target.value);
+                        onChange={(val) => {
+                          setFecha(val);
                           setErrores((actuales) => ({ ...actuales, fecha_vigencia_desde: undefined }));
                         }}
                         className={cn(

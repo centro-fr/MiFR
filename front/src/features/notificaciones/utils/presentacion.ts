@@ -1,6 +1,6 @@
 import { BellRing, CalendarClock, CalendarX, ClipboardList, PartyPopper, type LucideIcon } from "lucide-react";
 import { rolesConAcceso } from "@/components/layout/owner-navigation";
-import type { TipoNotificacion } from "@/features/notificaciones/schemas/notificaciones";
+import type { Notificacion, TipoNotificacion } from "@/features/notificaciones/schemas/notificaciones";
 import type { RoleCode } from "@/types/auth";
 
 interface PresentacionDelTipo {
@@ -28,8 +28,8 @@ export interface DestinoDeNotificacion {
   etiqueta: string;
 }
 
-// La pantalla donde se resuelve cada aviso. Los de cuota llevan al plan de quien los recibe; el
-// resumen, al Dashboard, donde está el detalle del día.
+// La pantalla donde se resuelve cada aviso. Los de cuota para la propietaria llevan a la ficha del
+// alumno para hacer seguimiento directo; para el alumno o tutor, a su plan; el resumen, al Dashboard.
 const DESTINO_POR_TIPO: Partial<Record<TipoNotificacion, DestinoDeNotificacion>> = {
   CUOTA_POR_VENCER: { to: "/app/mi-plan", etiqueta: "Ver mi plan" },
   CUOTA_VENCIDA: { to: "/app/mi-plan", etiqueta: "Ver mi plan" },
@@ -37,7 +37,19 @@ const DESTINO_POR_TIPO: Partial<Record<TipoNotificacion, DestinoDeNotificacion>>
 };
 
 /** null si el aviso no tiene pantalla propia o si esa pantalla no está en el menú de quien lo ve. */
-export function destinoDe(tipo: TipoNotificacion, roles: readonly RoleCode[]): DestinoDeNotificacion | null {
+export function destinoDe(
+  notificacionOTipo: Notificacion | TipoNotificacion,
+  roles: readonly RoleCode[],
+): DestinoDeNotificacion | null {
+  const notificacion = typeof notificacionOTipo === "string" ? null : notificacionOTipo;
+  const tipo = typeof notificacionOTipo === "string" ? notificacionOTipo : notificacionOTipo.tipo;
+
+  if (tipo === "CUOTA_VENCIDA" && roles.includes("PROPIETARIA")) {
+    if (notificacion?.id_alumno) {
+      return { to: `/app/alumnos/${notificacion.id_alumno}`, etiqueta: "Ver ficha del alumno" };
+    }
+    return { to: "/app/alumnos/listado", etiqueta: "Ver alumnos" };
+  }
   const destino = DESTINO_POR_TIPO[tipo];
   if (!destino) return null;
   return rolesConAcceso(destino.to).some((rol) => roles.includes(rol)) ? destino : null;

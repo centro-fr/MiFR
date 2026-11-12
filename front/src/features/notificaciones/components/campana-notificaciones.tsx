@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AlertCircle, Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { IconoNotificacion, MarcaSinLeer, MomentoNotificacion } from "@/features/notificaciones/components/partes-notificacion";
+import { MarcaSinLeer, MomentoNotificacion } from "@/features/notificaciones/components/partes-notificacion";
 import {
-  NOTIFICACIONES_EN_LA_CAMPANA,
   NOTIFICACIONES_POR_PAGINA,
   useMarcarNotificacionLeida,
   useMarcarTodasLeidas,
@@ -23,7 +22,7 @@ import { destinoDe, etiquetaSinLeer } from "@/features/notificaciones/utils/pres
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { cn } from "@/utils/cn";
 
-// Más de esto no entra en el globito: el número exacto está en la bandeja.
+// Más de esto no entra en el globito de la campana.
 const MAXIMO_EN_EL_CONTADOR = 9;
 
 function ContadorSinLeer({ cantidad }: { cantidad: number }) {
@@ -40,8 +39,14 @@ function ContadorSinLeer({ cantidad }: { cantidad: number }) {
 
 function ItemNotificacion({ notificacion, onAbrir }: { notificacion: Notificacion; onAbrir: (n: Notificacion) => void }) {
   return (
-    <DropdownMenuItem onSelect={() => onAbrir(notificacion)} className="items-start gap-3 rounded-lg px-3 py-2.5">
-      <IconoNotificacion tipo={notificacion.tipo} />
+    <DropdownMenuItem onSelect={() => onAbrir(notificacion)} className="cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5">
+      <span className="mt-1.5 flex size-2 shrink-0 items-center justify-center">
+        {!notificacion.leida ? (
+          <MarcaSinLeer />
+        ) : (
+          <span className="size-2 shrink-0 rounded-full bg-transparent" />
+        )}
+      </span>
       <div className="min-w-0 flex-1">
         <p
           className={cn(
@@ -53,7 +58,6 @@ function ItemNotificacion({ notificacion, onAbrir }: { notificacion: Notificacio
         </p>
         <MomentoNotificacion fecha={notificacion.fecha_generacion} />
       </div>
-      {!notificacion.leida && <MarcaSinLeer className="mt-1.5" />}
     </DropdownMenuItem>
   );
 }
@@ -77,21 +81,19 @@ function SinNotificaciones() {
 }
 
 // Barra superior: la campana con lo que la persona tiene sin leer y sus últimos avisos. Abrir uno lo
-// marca leído y lleva a la pantalla donde se resuelve; el resto, en la bandeja.
+// marca leído y lleva a la pantalla donde se resuelve.
 export function CampanaNotificaciones() {
   const navigate = useNavigate();
   const { roles } = usePermissions();
-  // La misma primera página que la bandeja: comparten la caché, así la campana nunca cuenta otra cosa
-  // que la lista que se ve al tocar "Ver todas".
   const { data, isPending, isError, refetch, isFetching } = useMisNotificaciones(NOTIFICACIONES_POR_PAGINA);
-  const ultimas = data?.datos.slice(0, NOTIFICACIONES_EN_LA_CAMPANA);
+  const notificaciones = data?.datos;
   const marcarLeida = useMarcarNotificacionLeida();
   const marcarTodas = useMarcarTodasLeidas();
   const noLeidas = data?.no_leidas ?? 0;
 
   function abrir(notificacion: Notificacion) {
     if (!notificacion.leida) marcarLeida.mutate(notificacion.id_notificacion);
-    const destino = destinoDe(notificacion.tipo, roles);
+    const destino = destinoDe(notificacion, roles);
     if (destino) navigate(destino.to);
   }
 
@@ -115,25 +117,8 @@ export function CampanaNotificaciones() {
       </Tooltip>
 
       <DropdownMenuContent align="end" className="w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-0">
-        <div className="flex items-center justify-between gap-3 py-2 pr-1.5 pl-4">
-          <div className="min-w-0 py-1">
-            <p className="text-sm font-extrabold text-slate-900 dark:text-white">Notificaciones</p>
-            {noLeidas > 0 && <p className="text-xs text-muted-foreground">{etiquetaSinLeer(noLeidas)}</p>}
-          </div>
-          {noLeidas > 0 && (
-            // preventDefault: el menú queda abierto y se ven las notificaciones ya leídas.
-            <DropdownMenuItem
-              disabled={marcarTodas.isPending}
-              onSelect={(evento) => {
-                evento.preventDefault();
-                marcarTodas.mutate();
-              }}
-              className="min-h-11 shrink-0 rounded-lg px-2 text-sm font-bold whitespace-nowrap text-primary-dark dark:text-pink-300"
-            >
-              <CheckCheck aria-hidden="true" />
-              Marcar todas como leídas
-            </DropdownMenuItem>
-          )}
+        <div className="px-4 py-3">
+          <p className="text-sm font-extrabold text-slate-900 dark:text-white">Notificaciones</p>
         </div>
         <DropdownMenuSeparator className="m-0" />
 
@@ -145,7 +130,6 @@ export function CampanaNotificaciones() {
                 <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
                 No se pudieron cargar las notificaciones.
               </p>
-              {/* preventDefault: el menú queda abierto para ver si esta vez cargaron. */}
               <DropdownMenuItem
                 disabled={isFetching}
                 onSelect={(evento) => {
@@ -158,18 +142,30 @@ export function CampanaNotificaciones() {
               </DropdownMenuItem>
             </>
           )}
-          {ultimas?.length === 0 && <SinNotificaciones />}
-          {ultimas?.map((notificacion) => (
+          {notificaciones?.length === 0 && <SinNotificaciones />}
+          {notificaciones?.map((notificacion) => (
             <ItemNotificacion key={notificacion.id_notificacion} notificacion={notificacion} onAbrir={abrir} />
           ))}
         </div>
 
-        <DropdownMenuSeparator className="m-0" />
-        <div className="p-1.5">
-          <DropdownMenuItem asChild className="min-h-11 justify-center rounded-lg text-sm font-bold text-primary-dark dark:text-pink-300">
-            <Link to="/app/notificaciones">Ver todas</Link>
-          </DropdownMenuItem>
-        </div>
+        {noLeidas > 0 && (
+          <>
+            <DropdownMenuSeparator className="m-0" />
+            <div className="p-1.5">
+              <DropdownMenuItem
+                disabled={marcarTodas.isPending}
+                onSelect={(evento) => {
+                  evento.preventDefault();
+                  marcarTodas.mutate();
+                }}
+                className="min-h-10 cursor-pointer justify-center gap-1.5 rounded-lg text-sm font-bold text-primary focus:bg-primary/10 focus:text-primary"
+              >
+                <CheckCheck aria-hidden="true" className="size-4" />
+                Marcar todas como leídas
+              </DropdownMenuItem>
+            </div>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

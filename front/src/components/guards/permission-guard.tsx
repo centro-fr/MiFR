@@ -1,5 +1,4 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { ShieldX } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { SessionSplash } from "@/components/guards/session-splash";

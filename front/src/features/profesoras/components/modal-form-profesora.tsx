@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { SelectorEspecialidades } from "@/features/profesoras/components/selector-especialidades";
 import {
   crearProfesoraSchema,
@@ -164,11 +165,10 @@ export function ModalFormProfesora({
               <Label htmlFor="fecha_nacimiento" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Fecha de nacimiento <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <CampoFecha
                 id="fecha_nacimiento"
-                type="date"
                 value={fechaNacimiento}
-                onChange={(e) => setFechaNacimiento(e.target.value)}
+                onChange={setFechaNacimiento}
                 max={fechaMaximaMayorEdad}
                 min="1920-01-01"
                 disabled={guardando}

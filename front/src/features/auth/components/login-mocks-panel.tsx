@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { USUARIOS_SEMILLA, type UsuarioSemilla } from "@/mocks/data/semilla";
 import type { AuthErrorCode, RoleCode } from "@/types/auth";
 
@@ -70,18 +71,17 @@ export default function LoginMocksPanel({ errorCode, isLoading, onSelect }: Prop
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="login-mocks-rol">Rol</Label>
-              <select
+              <SelectorDesplegable
                 id="login-mocks-rol"
-                value={idPerfil}
-                onChange={(e) => setIdPerfil(Number(e.target.value))}
-                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
-              >
-                {PERFILES.map((opcion) => (
-                  <option key={opcion.id_usuario} value={opcion.id_usuario}>
-                    {etiquetaDePerfil(opcion)}
-                  </option>
-                ))}
-              </select>
+                aria-label="Rol"
+                valor={String(idPerfil)}
+                opciones={PERFILES.map((opcion) => ({
+                  valor: String(opcion.id_usuario),
+                  texto: etiquetaDePerfil(opcion),
+                }))}
+                onChange={(v) => setIdPerfil(Number(v))}
+                variante="formulario"
+              />
             </div>
 
             <div className="space-y-1.5">

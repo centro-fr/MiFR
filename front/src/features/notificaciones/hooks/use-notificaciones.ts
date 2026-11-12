@@ -52,16 +52,9 @@ export function useMarcarTodasLeidas() {
 }
 
 export function useResumenDiario() {
-  const queryClient = useQueryClient();
   return useQuery({
     queryKey: RESUMEN_DIARIO_QUERY_KEY,
-    queryFn: async () => {
-      const resumen = await obtenerResumenDiario();
-      // Pedir el resumen genera la notificación del día (desde HORA_RESUMEN_DIARIO): la campana la
-      // muestra sin esperar a su próxima consulta.
-      void queryClient.invalidateQueries({ queryKey: MIS_NOTIFICACIONES_QUERY_KEY });
-      return resumen;
-    },
+    queryFn: obtenerResumenDiario,
     staleTime: UN_MINUTO,
   });
 }

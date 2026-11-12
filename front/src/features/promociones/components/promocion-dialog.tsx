@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { promocionFormSchema, type PromocionFormValues } from "@/features/promociones/schemas/promocion";
 import type { Promocion } from "@/types/promocion";
@@ -130,7 +131,12 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
             {/* Fechas de vigencia */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Campo id="promocion-desde" label="Desde" error={formulario.formState.errors.fechaDesde?.message}>
-                <Input id="promocion-desde" type="date" {...formulario.register("fechaDesde")} className="h-11 rounded-xl" />
+                <CampoFecha
+                  id="promocion-desde"
+                  value={formulario.watch("fechaDesde") ?? ""}
+                  onChange={(v) => formulario.setValue("fechaDesde", v, { shouldValidate: true })}
+                  className="h-11 rounded-xl"
+                />
               </Campo>
 
               <div className="space-y-1.5">
@@ -140,14 +146,12 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                   opcional={permanente}
                   error={!permanente ? formulario.formState.errors.fechaHasta?.message : undefined}
                 >
-                  <Input
+                  <CampoFecha
                     id="promocion-hasta"
-                    type="date"
                     disabled={permanente}
-                    {...formulario.register("fechaHasta")}
                     value={permanente ? "" : (fechaHastaValue ?? "")}
-                    onChange={(e) => {
-                      formulario.setValue("fechaHasta", e.target.value, { shouldValidate: true });
+                    onChange={(v) => {
+                      formulario.setValue("fechaHasta", v, { shouldValidate: true });
                     }}
                     className={cn(
                       "h-11 rounded-xl",

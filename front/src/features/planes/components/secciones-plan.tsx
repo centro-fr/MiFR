@@ -1,4 +1,5 @@
 import { Info, TriangleAlert } from "lucide-react";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Textarea } from "@/components/ui/textarea";
 import { BadgeModalidad } from "@/features/planes/components/badges-plan";
 import { CampoPlan, SeccionPlan } from "@/features/planes/components/campo-plan";
@@ -154,24 +155,25 @@ function AvisoModalidad({ actividad }: { actividad: Actividad | undefined }) {
 
 export function SeccionActividad({ valores, errores, onChange, actividades }: PropsSeccion & { actividades: Actividad[] }) {
   const actividad = actividades.find(({ id }) => id === valores.idActividad);
-  const grupo = (modalidad: Actividad["modalidad"]) => actividades.filter((a) => a.modalidad === modalidad);
   return (
     <SeccionPlan titulo="2. Actividad y profesor/a" color="bg-blue-500">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <CampoPlan id="plan-actividad" etiqueta="Actividad" error={errores.idActividad} ayuda="Elegí una si el plan es solo para esa actividad.">
           {(control) => (
-            <select {...control} value={valores.idActividad} onChange={(evento) => onChange({ idActividad: evento.target.value })} className={CLASE_CONTROL}>
-              <option value="">Cualquier actividad</option>
-              {(["GRUPAL", "PERSONALIZADA"] as const).map((modalidad) => (
-                <optgroup key={modalidad} label={modalidad === "GRUPAL" ? "Grupales" : "Personalizadas"}>
-                  {grupo(modalidad).map(({ id, nombre }) => (
-                    <option key={id} value={id}>
-                      {nombre}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <SelectorDesplegable
+              id={control.id}
+              aria-label="Actividad"
+              valor={valores.idActividad}
+              opciones={[
+                { valor: "", texto: "Cualquier actividad" },
+                ...actividades.map((a) => ({
+                  valor: a.id,
+                  texto: `${a.nombre} (${a.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"})`,
+                })),
+              ]}
+              onChange={(val) => onChange({ idActividad: val })}
+              variante="formulario"
+            />
           )}
         </CampoPlan>
         <div className="flex min-w-0 flex-col gap-1.5">

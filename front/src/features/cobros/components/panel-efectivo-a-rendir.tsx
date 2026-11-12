@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
@@ -166,26 +167,18 @@ export function PanelEfectivoARendir() {
 
           {/* Select Profesora en píldora */}
           <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="filtro-profesora-rendicion" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Profesora
-              </label>
-              <select
-                id="filtro-profesora-rendicion"
-                aria-label="Profesora"
-                value={filtroProfesora}
-                onChange={(e) => setFiltroProfesora(e.target.value)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="TODAS">Todas</option>
-                {opcionesProfesoras.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="filtro-profesora-rendicion"
+              etiqueta="Profesora"
+              aria-label="Profesora"
+              valor={filtroProfesora}
+              opciones={[
+                { valor: "TODAS", texto: "Todas" },
+                ...opcionesProfesoras.map((p) => ({ valor: p.id, texto: p.nombre })),
+              ]}
+              onChange={setFiltroProfesora}
+              variante="pildora"
+            />
 
             {hayFiltrosActivos && (
               <Button

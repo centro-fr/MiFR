@@ -291,30 +291,12 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // US-25 y US-26: la bandeja de la campana es de todos los roles; configurar los avisos (días de
-        // aviso de la cuota y hora del resumen diario) es solo de la propietaria, como en el back.
         path: "notificaciones",
-        element: guardiaDeSeccion("notificaciones"),
-        children: [
-          {
-            index: true,
-            lazy: paginaPerezosa(() => import("@/features/notificaciones/pages/bandeja-notificaciones-page"), "BandejaNotificacionesPage"),
-          },
-          {
-            path: "configuracion",
-            element: (
-              <PermissionGuard roles={["PROPIETARIA"]} permission="PARAMETROS_EDITAR">
-                <Outlet />
-              </PermissionGuard>
-            ),
-            children: [
-              {
-                index: true,
-                lazy: paginaPerezosa(() => import("@/features/notificaciones/pages/configuracion-avisos-page"), "ConfiguracionAvisosPage"),
-              },
-            ],
-          },
-        ],
+        loader: redirigirA("/app/dashboard"),
+      },
+      {
+        path: "notificaciones/*",
+        loader: redirigirA("/app/dashboard"),
       },
       {
         path: "seguridad/permisos",

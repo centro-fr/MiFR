@@ -19,6 +19,7 @@ export const notificacionSchema = z.object({
   tipo: tipoNotificacionSchema,
   // Solo en los avisos de cuota.
   id_cuota: z.number().int().positive().nullable(),
+  id_alumno: z.number().int().positive().nullable().optional(),
   mensaje: z.string(),
   fecha_generacion: z.string().datetime({ offset: true }),
   leida: z.boolean(),

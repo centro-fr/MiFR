@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Trophy } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import type { FiltrosRankingAsistencia } from "../api/ranking-asistencia-api";
 import { MedallaPuesto } from "./medalla-puesto";
@@ -35,14 +35,26 @@ function FiltroPeriodo({ onAplicar }: { onAplicar: (filtros: FiltrosRankingAsist
         onAplicar({ desde: desde || undefined, hasta: hasta || undefined });
       }}
     >
-      <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-        Desde
-        <input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className={CAMPO_FECHA} />
-      </label>
-      <label className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-        Hasta
-        <input type="date" value={hasta} onChange={(event) => setHasta(event.target.value)} className={CAMPO_FECHA} />
-      </label>
+      <div className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+        <label htmlFor="ranking-desde">Desde</label>
+        <CampoFecha
+          id="ranking-desde"
+          aria-label="Desde"
+          value={desde}
+          onChange={setDesde}
+          className={CAMPO_FECHA}
+        />
+      </div>
+      <div className="flex flex-1 flex-col gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+        <label htmlFor="ranking-hasta">Hasta</label>
+        <CampoFecha
+          id="ranking-hasta"
+          aria-label="Hasta"
+          value={hasta}
+          onChange={setHasta}
+          className={CAMPO_FECHA}
+        />
+      </div>
       <Button type="submit" className="min-h-[44px] rounded-xl bg-primary font-bold text-white">
         Aplicar período
       </Button>

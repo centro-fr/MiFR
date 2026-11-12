@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { CalendarX } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { MenuExportar } from "@/components/menu-exportar";
 import { Card } from "@/components/ui/card";

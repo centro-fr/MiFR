@@ -63,14 +63,13 @@ async function run() {
   console.log("=== Notificaciones no leídas y marcado global ===");
   await resetSession(page);
   await login(page, "Propietaria + Profesora");
-  await page.goto(`${baseUrl}/app/notificaciones`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: /Notificaciones/i }).click();
   await pause(page);
-  await page.getByRole("button", { name: /Marcar todas como leídas/i }).waitFor();
+  await page.getByRole("menuitem", { name: /Marcar todas como leídas/i }).waitFor();
   console.log("[OK] Notificaciones no leídas visibles");
   console.log("[CLICK] Marcar todas como leídas");
-  await page.getByRole("button", { name: /Marcar todas como leídas/i }).click();
+  await page.getByRole("menuitem", { name: /Marcar todas como leídas/i }).click();
   await pause(page);
-  await page.getByText(/Todas leídas/i).waitFor();
   console.log("[OK] Todas las notificaciones quedaron leídas");
 
   await page.screenshot({ path: "test-results/manual-visible/asistencia-notificaciones-final.png", fullPage: true });

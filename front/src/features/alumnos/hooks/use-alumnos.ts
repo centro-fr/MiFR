@@ -39,7 +39,15 @@ export function useAlumnos({ limit, offset, ...filtros }: FiltrosAlumnos) {
 export function useListaCompletaAlumnos() {
   return useQuery({
     queryKey: [...ALUMNOS_QUERY_KEY, "lista-completa"],
-    queryFn: () => listarAlumnosRecientesPrimero({ busqueda: "", estado: "TODOS", incluir_bajas: true }),
+    queryFn: () =>
+      listarAlumnosRecientesPrimero({
+        busqueda: "",
+        estado: "TODOS",
+        id_plan: "",
+        id_profesora: "",
+        id_actividad: "",
+        incluir_bajas: true,
+      }),
     staleTime: 60_000,
   });
 }

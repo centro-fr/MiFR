@@ -7,6 +7,7 @@ import { mensajeDeErrorApi } from "@/api/errores";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { useCorregirMedicion, useRegistrarMedicion } from "@/features/rutinas/hooks/use-rutinas";
 import { MEDIDAS, type CodigoMedida } from "@/features/rutinas/schemas/medidas";
 import {
@@ -55,7 +56,7 @@ export function DialogoMedicion({
     defaultValues: medicion ? valoresDeMedicion(medicion) : { fecha: hoy, medidas: MEDIDAS_VACIAS, observaciones: "" },
   });
 
-  const { register, handleSubmit, formState: { errors } } = formulario;
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = formulario;
 
   // Mapa de la última medición por código de medida para mostrar "Última: X kg el DD/MM"
   const ultimasMedidas = useMemo(() => {
@@ -147,11 +148,12 @@ export function DialogoMedicion({
             <label htmlFor="fecha-medicion" className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Fecha <span className="text-primary">*</span>
             </label>
-            <Input
+            <CampoFecha
               id="fecha-medicion"
-              type="date"
+              name="fecha"
               max={hoy}
-              {...register("fecha")}
+              value={watch("fecha") ?? ""}
+              onChange={(v) => setValue("fecha", v, { shouldValidate: true })}
               className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
             />
             {errors.fecha && <p className="text-xs font-semibold text-rose-600">{errors.fecha.message}</p>}

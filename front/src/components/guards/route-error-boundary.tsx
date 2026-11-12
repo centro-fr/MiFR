@@ -1,5 +1,5 @@
 import { isRouteErrorResponse, useRouteError, useNavigate } from "react-router-dom";
-import { AlertCircle, RotateCcw, Home } from "lucide-react";
+import { RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function RouteErrorBoundary() {

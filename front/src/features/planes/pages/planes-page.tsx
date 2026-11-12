@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { Search, Tag } from "lucide-react";
+import { Search } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";

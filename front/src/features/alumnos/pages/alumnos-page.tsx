@@ -2,12 +2,10 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Search,
   SlidersHorizontal,
-  Users,
 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
@@ -36,6 +34,7 @@ import { listarAlumnosInactivos } from "@/features/inactivos/api/inactivos-api";
 import { generarEnlaceWhatsApp, obtenerContactoPrioritario } from "@/features/inactivos/utils/formato-inactivos";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { cn } from "@/utils/cn";
 
 const TAMANO_PAGINA = 10;
@@ -398,89 +397,61 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
           <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
             {/* Select Plan */}
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="desktop-filtro-plan" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Plan
-              </label>
-              <select
-                id="desktop-filtro-plan"
-                aria-label="Plan"
-                value={filtros.id_plan}
-                onChange={(e) => cambiarFiltro("id_plan", e.target.value)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="">Todos</option>
-                {opciones.planes.map((p) => (
-                  <option key={p.id} value={p.id}>{p.etiqueta}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="desktop-filtro-plan"
+              etiqueta="Plan"
+              aria-label="Plan"
+              valor={filtros.id_plan}
+              todos="Todos"
+              opciones={opciones.planes}
+              onChange={(v) => cambiarFiltro("id_plan", v)}
+              variante="pildora"
+            />
 
             {/* Select Profesora (si corresponde) */}
             {!soloACargo && (
-              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                <label htmlFor="desktop-filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  Profesora
-                </label>
-                <select
-                  id="desktop-filtro-profesora"
-                  aria-label="Profesor/a"
-                  value={filtros.id_profesora}
-                  onChange={(e) => cambiarFiltro("id_profesora", e.target.value)}
-                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                >
-                  <option value="">Todas</option>
-                  {opciones.profesoras.map((p) => (
-                    <option key={p.id} value={p.id}>{p.etiqueta}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-              </div>
+              <SelectorDesplegable
+                id="desktop-filtro-profesora"
+                etiqueta="Profesora"
+                aria-label="Profesor/a"
+                valor={filtros.id_profesora}
+                todos="Todas"
+                opciones={opciones.profesoras}
+                onChange={(v) => cambiarFiltro("id_profesora", v)}
+                variante="pildora"
+              />
             )}
 
             {/* Select Actividad */}
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="desktop-filtro-actividad" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Actividad
-              </label>
-              <select
-                id="desktop-filtro-actividad"
-                aria-label="Actividad"
-                value={filtros.id_actividad}
-                onChange={(e) => cambiarFiltro("id_actividad", e.target.value)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="">Todas</option>
-                {opciones.actividades.map((a) => (
-                  <option key={a.id} value={a.id}>{a.etiqueta}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="desktop-filtro-actividad"
+              etiqueta="Actividad"
+              aria-label="Actividad"
+              valor={filtros.id_actividad}
+              todos="Todas"
+              opciones={opciones.actividades}
+              onChange={(v) => cambiarFiltro("id_actividad", v)}
+              variante="pildora"
+            />
 
             {/* Select Cuota */}
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="desktop-filtro-cuota" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Cuota
-              </label>
-              <select
-                id="desktop-filtro-cuota"
-                aria-label="Cuota"
-                value={filtroCuota}
-                onChange={(e) => {
-                  setPagina(0);
-                  setFiltroCuota(e.target.value);
-                }}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="">Todas</option>
-                <option value="AL_DIA">Al día</option>
-                <option value="POR_VENCER">Por vencer</option>
-                <option value="VENCIDA">Vencida</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="desktop-filtro-cuota"
+              etiqueta="Cuota"
+              aria-label="Cuota"
+              valor={filtroCuota}
+              todos="Todas"
+              opciones={[
+                { valor: "AL_DIA", texto: "Al día" },
+                { valor: "POR_VENCER", texto: "Por vencer" },
+                { valor: "VENCIDA", texto: "Vencida" },
+              ]}
+              onChange={(v) => {
+                setPagina(0);
+                setFiltroCuota(v);
+              }}
+              variante="pildora"
+            />
           </div>
         </div>
 

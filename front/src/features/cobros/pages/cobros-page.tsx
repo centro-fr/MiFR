@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  ChevronDown,
   Info,
   Search,
   SlidersHorizontal,
@@ -13,6 +12,7 @@ import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { apiClient } from "@/api/client";
 import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
@@ -474,48 +474,32 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
 
               {/* Selects secundarios en píldoras */}
               <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
-                <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                  <label htmlFor="filtro-plan-cobros" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    Plan
-                  </label>
-                  <select
-                    id="filtro-plan-cobros"
-                    aria-label="Plan"
-                    value={filtroPlan}
-                    onChange={(e) => setFiltroPlan(e.target.value)}
-                    className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                  >
-                    <option value="TODOS">Todos</option>
-                    {planes.map((p) => (
-                      <option key={p.id} value={String(p.id)}>
-                        {p.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-                </div>
+                <SelectorDesplegable
+                  id="filtro-plan-cobros"
+                  etiqueta="Plan"
+                  aria-label="Plan"
+                  valor={filtroPlan}
+                  opciones={[
+                    { valor: "TODOS", texto: "Todos" },
+                    ...planes.map((p) => ({ valor: String(p.id), texto: p.nombre })),
+                  ]}
+                  onChange={setFiltroPlan}
+                  variante="pildora"
+                />
 
                 {!soloACargo && (
-                  <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                    <label htmlFor="filtro-profesora-cobros" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      Profesora
-                    </label>
-                    <select
-                      id="filtro-profesora-cobros"
-                      aria-label="Profesora"
-                      value={filtroProfesora}
-                      onChange={(e) => setFiltroProfesora(e.target.value)}
-                      className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                    >
-                      <option value="TODAS">Todas</option>
-                      {opcionesProfesoras.map((prof) => (
-                        <option key={prof} value={prof}>
-                          {prof}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-                  </div>
+                  <SelectorDesplegable
+                    id="filtro-profesora-cobros"
+                    etiqueta="Profesora"
+                    aria-label="Profesora"
+                    valor={filtroProfesora}
+                    opciones={[
+                      { valor: "TODAS", texto: "Todas" },
+                      ...opcionesProfesoras.map((prof) => ({ valor: prof, texto: prof })),
+                    ]}
+                    onChange={setFiltroProfesora}
+                    variante="pildora"
+                  />
                 )}
 
                 {hayFiltrosCuotasActivos && (

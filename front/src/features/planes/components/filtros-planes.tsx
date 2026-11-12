@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { CLASE_CONTROL } from "@/features/planes/components/estilos";
 import { SIN_ACTIVIDAD, type EstadoFiltro, type FiltrosPlanes } from "@/features/planes/utils/planes";
 import type { ActividadDelPlan } from "@/types/plan";
@@ -45,37 +46,31 @@ export function FiltrosPlanesBar({ filtros, actividades, onChange }: Props) {
           <label htmlFor="filtro-actividad" className={CLASE_ETIQUETA}>
             Actividad
           </label>
-          <select
+          <SelectorDesplegable
             id="filtro-actividad"
-            value={filtros.idActividad}
-            onChange={(evento) => onChange({ idActividad: evento.target.value })}
-            className={CLASE_CONTROL}
-          >
-            <option value="">Todas las actividades</option>
-            <option value={SIN_ACTIVIDAD}>Sirven para cualquier actividad</option>
-            {actividades.map(({ id, nombre }) => (
-              <option key={id} value={id}>
-                {nombre}
-              </option>
-            ))}
-          </select>
+            aria-label="Actividad"
+            valor={filtros.idActividad}
+            opciones={[
+              { valor: "", texto: "Todas las actividades" },
+              { valor: SIN_ACTIVIDAD, texto: "Sirven para cualquier actividad" },
+              ...actividades.map(({ id, nombre }) => ({ valor: id, texto: nombre })),
+            ]}
+            onChange={(v) => onChange({ idActividad: v })}
+            variante="formulario"
+          />
         </div>
         <div className="min-w-0">
           <label htmlFor="filtro-estado" className={CLASE_ETIQUETA}>
             Estado
           </label>
-          <select
+          <SelectorDesplegable
             id="filtro-estado"
-            value={filtros.estado}
-            onChange={(evento) => onChange({ estado: evento.target.value as EstadoFiltro })}
-            className={CLASE_CONTROL}
-          >
-            {ESTADOS.map(({ valor, texto }) => (
-              <option key={valor} value={valor}>
-                {texto}
-              </option>
-            ))}
-          </select>
+            aria-label="Estado"
+            valor={filtros.estado}
+            opciones={ESTADOS}
+            onChange={(v) => onChange({ estado: v as EstadoFiltro })}
+            variante="formulario"
+          />
         </div>
       </div>
     </div>

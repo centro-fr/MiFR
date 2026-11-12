@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Users } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Card } from "@/components/ui/card";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";

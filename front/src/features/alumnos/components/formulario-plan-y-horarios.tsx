@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,6 @@ import type { HorarioElegible, InscripcionAnterior } from "@/types/alumno";
 
 // Elegir plan, profesora y horarios con las reglas del back que se pueden ver antes de enviar.
 // Lo usan la reactivación (US-08) y el cambio de plan u horarios desde la ficha.
-
-const CLASE_SELECT =
-  "min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 type Errores = Partial<Record<keyof ReactivacionFormValues, string>>;
 
@@ -104,39 +102,41 @@ export function FormularioPlanYHorarios({
 
       <CampoSelect id="inscripcion-plan" etiqueta="Plan" error={errores.idPlan}>
         {(props) => (
-          <select
-            {...props}
-            value={valores.idPlan}
+          <SelectorDesplegable
+            id={props.id}
+            aria-invalid={props["aria-invalid"]}
+            aria-describedby={props["aria-describedby"]}
+            valor={valores.idPlan}
             disabled={bloquearPlan || procesando}
-            onChange={(evento) => cambiar({ idPlan: evento.target.value })}
-            className={CLASE_SELECT}
-          >
-            <option value="">Elegí un plan</option>
-            {planes.map(({ id, nombre, precio }) => (
-              <option key={id} value={id}>
-                {precio === null ? nombre : `${nombre} (${formatearPrecio(precio)})`}
-              </option>
-            ))}
-          </select>
+            placeholder="Elegí un plan"
+            todos="Elegí un plan"
+            opciones={planes.map(({ id, nombre, precio }) => ({
+              valor: id,
+              texto: precio === null ? nombre : `${nombre} (${formatearPrecio(precio)})`,
+            }))}
+            onChange={(v) => cambiar({ idPlan: v })}
+            variante="formulario"
+          />
         )}
       </CampoSelect>
 
       <CampoSelect id="inscripcion-profesora" etiqueta="Profesora" error={errores.idProfesora}>
         {(props) => (
-          <select
-            {...props}
-            value={valores.idProfesora}
+          <SelectorDesplegable
+            id={props.id}
+            aria-invalid={props["aria-invalid"]}
+            aria-describedby={props["aria-describedby"]}
+            valor={valores.idProfesora}
             disabled={bloquearProfesora || procesando}
-            onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
-            className={CLASE_SELECT}
-          >
-            <option value="">Elegí una profesora</option>
-            {profesoras.map(({ id, nombre, apellido }) => (
-              <option key={id} value={id}>
-                {nombre} {apellido}
-              </option>
-            ))}
-          </select>
+            placeholder="Elegí una profesora"
+            todos="Elegí una profesora"
+            opciones={profesoras.map(({ id, nombre, apellido }) => ({
+              valor: id,
+              texto: `${nombre} ${apellido}`,
+            }))}
+            onChange={(v) => cambiar({ idProfesora: v })}
+            variante="formulario"
+          />
         )}
       </CampoSelect>
 

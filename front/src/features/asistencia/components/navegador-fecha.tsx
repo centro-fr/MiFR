@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Button } from "@/components/ui/button";
 import { sumarDias } from "@/features/asistencia/utils/formato-clase";
 
@@ -19,15 +20,15 @@ export function NavegadorFecha({ fecha, hoy, onChange }: NavegadorFechaProps) {
       <Button type="button" variant="outline" onClick={() => onChange(sumarDias(fecha, -1))} aria-label="Día anterior" className={CLASE_FLECHA}>
         <ChevronLeft aria-hidden="true" />
       </Button>
-      <input
-        type="date"
-        aria-label="Elegir fecha"
-        value={fecha}
-        max={hoy}
-        // Mientras se escribe a mano el valor queda vacío: recién se navega con una fecha completa.
-        onChange={(evento) => evento.target.value && onChange(evento.target.value)}
-        className="h-10 min-w-0 flex-1 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:h-11 sm:w-40 sm:flex-none"
-      />
+      <div className="w-40 min-w-0 sm:flex-none">
+        <CampoFecha
+          aria-label="Elegir fecha"
+          value={fecha}
+          max={hoy}
+          onChange={(proxima) => proxima && onChange(proxima)}
+          className="h-10 rounded-xl border-border bg-card px-3 text-sm font-semibold text-foreground shadow-xs pointer-coarse:h-11"
+        />
+      </div>
       <Button
         type="button"
         variant="outline"

@@ -5,6 +5,7 @@ import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { useActualizarAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import {
   aCuerpoEdicion,
@@ -130,12 +131,13 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
                 aria-invalid={Boolean(errores.usuario?.dni)}
               />
             </Campo>
-            <Campo etiqueta="Fecha de nacimiento *" error={errores.usuario?.fecha_nacimiento?.message}>
-              <Input
-                type="date"
+            <Campo id="campo-fecha-nacimiento" etiqueta="Fecha de nacimiento *" error={errores.usuario?.fecha_nacimiento?.message}>
+              <CampoFecha
+                id="campo-fecha-nacimiento"
                 min={limitesFechaNacimiento.min}
                 max={limitesFechaNacimiento.max}
-                {...formulario.register("usuario.fecha_nacimiento")}
+                value={formulario.watch("usuario.fecha_nacimiento") ?? ""}
+                onChange={(v) => formulario.setValue("usuario.fecha_nacimiento", v, { shouldDirty: true, shouldValidate: true })}
                 aria-invalid={Boolean(errores.usuario?.fecha_nacimiento)}
               />
             </Campo>
@@ -222,14 +224,13 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
                 Apto médico presentado
               </label>
               {aptoMedico && (
-                <Campo etiqueta="Fecha del apto médico" error={errores.fecha_apto_medico?.message}>
-                  <Input
-                    type="date"
+                <Campo id="campo-fecha-apto" etiqueta="Fecha del apto médico" error={errores.fecha_apto_medico?.message}>
+                  <CampoFecha
+                    id="campo-fecha-apto"
                     min={fechaNacimiento || undefined}
                     max={limitesFechaNacimiento.max}
-                    {...formulario.register("fecha_apto_medico", {
-                      setValueAs: (valor: string) => (valor === "" ? null : valor),
-                    })}
+                    value={formulario.watch("fecha_apto_medico") ?? ""}
+                    onChange={(v) => formulario.setValue("fecha_apto_medico", v || null, { shouldDirty: true, shouldValidate: true })}
                     aria-invalid={Boolean(errores.fecha_apto_medico)}
                   />
                 </Campo>
@@ -279,7 +280,16 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
   );
 }
 
-function Campo({ etiqueta, error, children }: { etiqueta: string; error?: string; children: ReactNode }) {
+function Campo({ id, etiqueta, error, children }: { id?: string; etiqueta: string; error?: string; children: ReactNode }) {
+  if (id) {
+    return (
+      <div className="grid gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
+        <label htmlFor={id}>{etiqueta}</label>
+        {children}
+        {error ? <span className="font-normal text-rose-700 dark:text-rose-300">{error}</span> : null}
+      </div>
+    );
+  }
   return (
     <label className="grid gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
       {etiqueta}

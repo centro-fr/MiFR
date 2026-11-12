@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
-import { AlertTriangle, CircleCheck, RefreshCw, Settings2 } from "lucide-react";
+import { AlertTriangle, CircleCheck, RefreshCw } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,13 +86,6 @@ export function ResumenDelDia() {
           {resumen && <p className="text-sm text-muted-foreground">{diaDelResumen(resumen.fecha)} · lo que tenés pendiente</p>}
         </div>
         <div className="flex shrink-0 items-center">
-          <Can permission="PARAMETROS_EDITAR">
-            <Button asChild variant="ghost" size="icon" className="size-11 rounded-lg text-slate-500 dark:text-slate-300">
-              <Link to="/app/notificaciones/configuracion" aria-label="Configurar los avisos" title="Configurar los avisos">
-                <Settings2 aria-hidden="true" className="size-4" />
-              </Link>
-            </Button>
-          </Can>
           <Button
             type="button"
             variant="ghost"

@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 import { z } from "zod";
-import { generarAvisosDeCuota, generarResumenDiario } from "@/mocks/avisos";
+import { generarAvisosDeCuota } from "@/mocks/avisos";
 import { db } from "@/mocks/db";
 import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
@@ -172,30 +172,9 @@ function resumenDiario() {
   };
 }
 
-// armarMensajeResumen del back: el texto de la notificación diaria, con los montos sin formato.
-function mensajeDelResumen(resumen: ReturnType<typeof resumenDiario>): string {
-  if (resumen.sin_novedades) return "Todo al día";
-  const { transferencias, efectivo, cuotas_vencidas } = resumen;
-  const partes: string[] = [];
-  const s = (cantidad: number) => (cantidad > 1 ? "s" : "");
-  if (transferencias.cantidad > 0) {
-    partes.push(`${transferencias.cantidad} transferencia${s(transferencias.cantidad)} por confirmar ($${transferencias.total})`);
-  }
-  if (efectivo.cantidad > 0) {
-    partes.push(`${efectivo.cantidad} cobro${s(efectivo.cantidad)} en efectivo sin rendir ($${efectivo.total})`);
-  }
-  if (cuotas_vencidas.cantidad_alumnos > 0) {
-    partes.push(
-      `${cuotas_vencidas.cantidad_alumnos} alumno${s(cuotas_vencidas.cantidad_alumnos)} con cuotas vencidas ($${cuotas_vencidas.monto_estimado})`,
-    );
-  }
-  return partes.length > 0 ? `Resumen diario: ${partes.join(", ")}.` : "Todo al día";
-}
-
-// Lo que en el back hacen el intervalo de index.ts y la consulta de la bandeja.
+// Lo que en el back hacen el intervalo de index.ts y la consulta de la campana.
 function generarAvisosDelDia(): void {
   generarAvisosDeCuota();
-  generarResumenDiario(() => mensajeDelResumen(resumenDiario()));
 }
 
 // La sesión del mock es de `usuarios` y los avisos de cuota van a `usuariosPersonas` (los alumnos y
@@ -211,8 +190,8 @@ function notificacionesDe(usuario: UsuarioSemilla) {
 }
 
 // NotificacionPropia: sin el destinatario.
-function propia({ id_notificacion, tipo, id_cuota, mensaje, fecha_generacion, leida }: (typeof db.notificaciones)[number]) {
-  return { id_notificacion, tipo, id_cuota, mensaje, fecha_generacion, leida };
+function propia({ id_notificacion, tipo, id_cuota, id_alumno, mensaje, fecha_generacion, leida }: (typeof db.notificaciones)[number]) {
+  return { id_notificacion, tipo, id_cuota, id_alumno: id_alumno ?? null, mensaje, fecha_generacion, leida };
 }
 
 // paginacionSchema(20) del back: limit de 1 a 100 y offset, los dos solo dígitos.
@@ -253,7 +232,6 @@ export const notificacionesHandlers = [
     const denegado = verificarAcceso(request, { rol: "PROPIETARIA" });
     if (denegado) return denegado;
     const resumen = resumenDiario();
-    generarResumenDiario(() => mensajeDelResumen(resumen));
     return HttpResponse.json(resumen);
   }),
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -172,14 +173,14 @@ export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }:
       <label htmlFor={id} className={ETIQUETA_FILTRO}>
         {etiqueta}
       </label>
-      <select id={id} value={valor} onChange={(evento) => onChange(evento.target.value)} className={CONTROL}>
-        <option value="">{todos}</option>
-        {opciones.map((opcion) => (
-          <option key={opcion.valor} value={opcion.valor}>
-            {opcion.texto}
-          </option>
-        ))}
-      </select>
+      <SelectorDesplegable
+        id={id}
+        valor={valor}
+        todos={todos}
+        opciones={opciones}
+        onChange={onChange}
+        variante="formulario"
+      />
     </div>
   );
 }

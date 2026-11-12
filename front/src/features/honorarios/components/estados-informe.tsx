@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import { AlertTriangle, Calculator, Loader2, X } from "lucide-react";
+import { AlertTriangle, Loader2, X } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";

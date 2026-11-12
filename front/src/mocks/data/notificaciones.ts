@@ -9,6 +9,7 @@ export interface NotificacionMock {
   id_usuario: number;
   tipo: TipoNotificacionMock;
   id_cuota: number | null;
+  id_alumno?: number | null;
   mensaje: string;
   fecha_generacion: string;
   leida: boolean;

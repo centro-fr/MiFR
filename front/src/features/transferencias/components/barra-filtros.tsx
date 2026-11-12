@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import {
   hayFiltrosActivos,
   type FiltrosTransferencias,
@@ -72,55 +74,32 @@ export function BarraFiltros({ estado, filtros, onEstado, onChange, onLimpiar }:
 
         <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
           {conEstado && (
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <span className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Estado
-              </span>
-              <select
-                aria-label="Estado"
-                value={estado}
-                onChange={(evento) => onEstado(evento.target.value as EstadoTransferencia)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                {ESTADOS.map(({ valor, texto }) => (
-                  <option key={valor} value={valor}>
-                    {texto}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              etiqueta="Estado"
+              aria-label="Estado"
+              valor={estado}
+              opciones={ESTADOS}
+              onChange={(v) => onEstado?.(v as EstadoTransferencia)}
+              variante="pildora"
+            />
           )}
-          <div className="h-10 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-            <span className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              Fecha
-            </span>
-            <input
-              type="date"
+          <div className="w-40 sm:w-44">
+            <CampoFecha
               aria-label="Fecha de la transferencia"
+              placeholder="dd/mm/aaaa"
               value={filtros.fecha}
-              onChange={(evento) => cambiar({ fecha: evento.target.value })}
-              className="bg-transparent text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:text-slate-200"
+              onChange={(fecha) => cambiar({ fecha })}
+              className="h-10 rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-sm font-semibold shadow-2xs"
             />
           </div>
-          <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-            <span className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              Orden
-            </span>
-            <select
-              aria-label="Ordenar"
-              value={filtros.orden}
-              onChange={(evento) => cambiar({ orden: evento.target.value as OrdenTransferencias })}
-              className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-            >
-              {ORDENES.map(({ valor, texto }) => (
-                <option key={valor} value={valor}>
-                  {texto}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-          </div>
+          <SelectorDesplegable
+            etiqueta="Orden"
+            aria-label="Ordenar"
+            valor={filtros.orden}
+            opciones={ORDENES}
+            onChange={(v) => cambiar({ orden: v as OrdenTransferencias })}
+            variante="pildora"
+          />
           {activos && (
             <Button type="button" variant="ghost" onClick={onLimpiar} className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark">
               Limpiar filtros

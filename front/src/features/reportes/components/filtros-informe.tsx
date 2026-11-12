@@ -1,8 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
-import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { useActividadesParaFiltro, useProfesorasParaFiltro } from "@/features/reportes/hooks/use-reportes";
 import { filtrosIniciales, type FiltrosDescritos } from "@/features/reportes/utils/formato-informe";
 import type { FiltrosInformeAsistencia } from "@/types/reportes";
@@ -124,36 +131,68 @@ export function FiltrosInforme({ generando, onGenerar }: PropsFiltros) {
           <label htmlFor="informe-profesora" className={ETIQUETA}>
             Profesor/a
           </label>
-          <select
-            id="informe-profesora"
-            value={borrador.idProfesora}
-            onChange={(evento) => cambiar({ idProfesora: evento.target.value })}
-            className={CONTROL}
+          <Select
+            value={borrador.idProfesora || "TODAS"}
+            onValueChange={(val) => cambiar({ idProfesora: val === "TODAS" ? "" : val })}
           >
-            <option value={TODAS}>Todo el equipo</option>
-            {profesoras.data?.map((p) => (
-              <option key={p.id} value={p.id}>{`${p.nombre} ${p.apellido}`}</option>
-            ))}
-          </select>
+            <SelectTrigger
+              id="informe-profesora"
+              className={cn(CONTROL, "justify-between px-3.5 focus:border-primary focus:ring-2 focus:ring-primary/20")}
+            >
+              <SelectValue placeholder="Todo el equipo" />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+              <SelectItem
+                value="TODAS"
+                className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
+              >
+                Todo el equipo
+              </SelectItem>
+              {profesoras.data?.map((p) => (
+                <SelectItem
+                  key={p.id}
+                  value={String(p.id)}
+                  className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
+                >
+                  {`${p.nombre} ${p.apellido}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="informe-actividad" className={ETIQUETA}>
             Actividad
           </label>
-          <select
-            id="informe-actividad"
-            value={borrador.idActividad}
-            onChange={(evento) => cambiar({ idActividad: evento.target.value })}
-            className={CONTROL}
+          <Select
+            value={borrador.idActividad || "TODAS"}
+            onValueChange={(val) => cambiar({ idActividad: val === "TODAS" ? "" : val })}
           >
-            <option value={TODAS}>Todas las actividades</option>
-            {actividades.data?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              id="informe-actividad"
+              className={cn(CONTROL, "justify-between px-3.5 focus:border-primary focus:ring-2 focus:ring-primary/20")}
+            >
+              <SelectValue placeholder="Todas las actividades" />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+              <SelectItem
+                value="TODAS"
+                className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
+              >
+                Todas las actividades
+              </SelectItem>
+              {actividades.data?.map((a) => (
+                <SelectItem
+                  key={a.id}
+                  value={String(a.id)}
+                  className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
+                >
+                  {a.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">

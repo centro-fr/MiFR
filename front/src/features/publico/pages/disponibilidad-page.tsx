@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { AlertCircle, CalendarDays, Dumbbell, Loader2, MessageCircle, RefreshCw } from "lucide-react";
+import { CalendarDays, Loader2, MessageCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";

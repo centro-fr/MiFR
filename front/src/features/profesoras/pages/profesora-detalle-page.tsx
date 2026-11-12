@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Label } from "@/components/ui/label";
 import { diaSemana } from "@/features/alumnos/utils/fecha";
 import { calcularEdad } from "@/features/alumnos/schemas/alumno";
@@ -690,11 +691,10 @@ function ModalEdicionProfesora({
               <Label htmlFor="edit-fecha-nac" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Fecha de nacimiento <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <CampoFecha
                 id="edit-fecha-nac"
-                type="date"
                 value={fechaNacimiento}
-                onChange={(e) => setFechaNacimiento(e.target.value)}
+                onChange={setFechaNacimiento}
                 max={fechaMaximaMayorEdad}
                 min="1920-01-01"
                 disabled={guardando}

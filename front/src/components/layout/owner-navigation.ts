@@ -196,7 +196,6 @@ const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to"
  * Roles cuyo menú ofrece la ruta. El router lo usa como guardia.
  */
 export function rolesConAcceso(ruta: string): RoleCode[] {
-  if (ruta === "/app/notificaciones") return ["PROPIETARIA", "PROFESORA", "ALUMNO", "TUTOR"];
   if (ruta === "/app/alumnos") return ["PROPIETARIA", "PROFESORA"];
   if (ruta === "/app/cobros") return ["PROPIETARIA", "PROFESORA"];
   if (ruta === "/app/pagos") return ["PROPIETARIA"];

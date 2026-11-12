@@ -3,8 +3,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { suplenciaFormSchema, type SuplenciaFormValues } from "@/features/suplencias/schemas/suplencia";
@@ -85,10 +85,12 @@ export function SuplenciaDialog({
         <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex flex-col flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <Campo label="Fecha de la clase" error={formulario.formState.errors.fechaClase?.message}>
-            <Input
-              type="date"
+            <CampoFecha
+              name="fechaClase"
+              aria-label="Fecha de la clase"
               disabled={Boolean(suplencia)}
-              {...formulario.register("fechaClase")}
+              value={formulario.watch("fechaClase") ?? ""}
+              onChange={(v) => formulario.setValue("fechaClase", v, { shouldValidate: true })}
               className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
             />
           </Campo>

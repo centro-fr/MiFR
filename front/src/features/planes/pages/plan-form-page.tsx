@@ -1,5 +1,5 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, Loader2, SearchX } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";

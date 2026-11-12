@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { apiClient } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { formatearFecha, inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { informeCobranzaApiSchema } from "@/features/reportes/schemas/informes-centro";
@@ -151,29 +152,18 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               !mostrarFiltrosMobile && "hidden xl:flex",
             )}
           >
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label
-                htmlFor="filtro-profesora-cobros-historial"
-                className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap"
-              >
-                Cobró
-              </label>
-              <select
-                id="filtro-profesora-cobros-historial"
-                aria-label="Cobró"
-                value={filtroProfesora}
-                onChange={(e) => setFiltroProfesora(e.target.value)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="TODAS">Cualquiera</option>
-                {opcionesProfesoras.map((nombre) => (
-                  <option key={nombre} value={nombre}>
-                    {nombre}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="filtro-profesora-cobros-historial"
+              etiqueta="Cobró"
+              aria-label="Cobró"
+              valor={filtroProfesora}
+              opciones={[
+                { valor: "TODAS", texto: "Cualquiera" },
+                ...opcionesProfesoras.map((nombre) => ({ valor: nombre, texto: nombre })),
+              ]}
+              onChange={setFiltroProfesora}
+              variante="pildora"
+            />
 
             {hayFiltrosActivos && (
               <Button

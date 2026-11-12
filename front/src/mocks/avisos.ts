@@ -2,22 +2,9 @@ import type { SituacionCuotaApi } from "@/features/alumnos/schemas/alumno";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import type { NotificacionMock } from "@/mocks/data/notificaciones";
 import { db, siguienteId } from "@/mocks/db";
-import { hoyEnArgentina } from "@/mocks/precios";
 import { situacionCuotaDe } from "@/mocks/situacion-cuota";
 
-// Réplica de PlanificadorNotificaciones (US-25) y de la notificación del resumen diario (US-26) del
-// back, con sus mismos textos. Como allá, volver a generar no duplica: hay un aviso por cuota y
-// tipo, y un resumen por día.
-
-type NuevaNotificacion = Pick<NotificacionMock, "id_usuario" | "tipo" | "id_cuota" | "mensaje">;
-
-const ZONA_ARGENTINA = "America/Argentina/Buenos_Aires";
-const FORMATO_DIA = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA_ARGENTINA, year: "numeric", month: "2-digit", day: "2-digit" });
-const FORMATO_HORA = new Intl.DateTimeFormat("en-GB", { timeZone: ZONA_ARGENTINA, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-
-function valorDe(clave: string) {
-  return db.parametros.find((parametro) => parametro.clave === clave)?.valor;
-}
+type NuevaNotificacion = Pick<NotificacionMock, "id_usuario" | "tipo" | "id_cuota" | "id_alumno" | "mensaje">;
 
 function registrar(nueva: NuevaNotificacion): void {
   db.notificaciones.push({
@@ -52,49 +39,55 @@ function tipoDeAviso({ estado, dias_restantes }: SituacionCuotaApi, diasPrevios:
   return null;
 }
 
-// Los avisos del menor le llegan a su tutor (US-06).
-function avisoDeCuota(inscripcion: InscripcionMock, diasPrevios: number): NuevaNotificacion | null {
-  const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
-  const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
-  if (inscripcion.estado !== "ACTIVA" || plan?.tipo !== "MENSUAL" || !alumno || alumno.estado === "BAJA") return null;
-
-  const situacion = situacionCuotaDe(inscripcion);
-  const idCuota = idCuotaVigente(inscripcion);
-  const tipo = tipoDeAviso(situacion, diasPrevios, plan.dias_gracia);
-  if (situacion.tiene_pago_pendiente || !situacion.fecha_vencimiento || idCuota === null || !tipo) return null;
-
-  const persona = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario);
-  const deQuien = alumno.id_usuario_responsable === null ? "Tu cuota" : `La cuota de ${persona?.nombre} ${persona?.apellido}`;
-  const fecha = formatoArgentino(situacion.fecha_vencimiento);
-  const cuando = situacion.dias_restantes === 0 ? `vence hoy, ${fecha}` : tipo === "CUOTA_VENCIDA" ? `venció el ${fecha}` : `vence el ${fecha}`;
-  return {
-    id_usuario: alumno.id_usuario_responsable ?? alumno.id_usuario,
-    tipo,
-    id_cuota: idCuota,
-    mensaje: `${deQuien} del plan ${plan.nombre} ${cuando}.`,
-  };
-}
-
-/** Los avisos de cuota por vencer (DIAS_AVISO_VENCIMIENTO antes) y vencida. */
+/** Avisos de cuota: 3 días antes para el alumno/tutor, y para la propietaria solo cuotas vencidas con nombre y apellido. */
 export function generarAvisosDeCuota(): void {
-  const diasPrevios = Number(valorDe("DIAS_AVISO_VENCIMIENTO"));
+  // Siempre 3 días de aviso previo antes de vencer
+  const diasPrevios = 3;
   for (const inscripcion of db.inscripciones) {
-    const aviso = avisoDeCuota(inscripcion, diasPrevios);
-    if (aviso && !yaSeAviso(aviso)) registrar(aviso);
+    const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
+    const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
+    if (inscripcion.estado !== "ACTIVA" || plan?.tipo !== "MENSUAL" || !alumno || alumno.estado === "BAJA") continue;
+
+    const situacion = situacionCuotaDe(inscripcion);
+    const idCuota = idCuotaVigente(inscripcion);
+    const tipo = tipoDeAviso(situacion, diasPrevios, plan.dias_gracia);
+    if (situacion.tiene_pago_pendiente || !situacion.fecha_vencimiento || idCuota === null || !tipo) continue;
+
+    const persona = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario);
+    const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido}`.trim() : "el alumno";
+
+    // Aviso para el alumno / tutor:
+    const deQuien = alumno.id_usuario_responsable === null ? "Tu cuota" : `La cuota de ${nombreCompleto}`;
+    const fecha = formatoArgentino(situacion.fecha_vencimiento);
+    const cuando = situacion.dias_restantes === 0 ? `vence hoy, ${fecha}` : tipo === "CUOTA_VENCIDA" ? `venció el ${fecha}` : `vence el ${fecha}`;
+    const destinatarioAlumno = alumno.id_usuario_responsable ?? alumno.id_usuario;
+
+    const avisoAlumno: NuevaNotificacion = {
+      id_usuario: destinatarioAlumno,
+      tipo,
+      id_cuota: idCuota,
+      id_alumno: alumno.id_alumno,
+      mensaje: `${deQuien} del plan ${plan.nombre} ${cuando}.`,
+    };
+    if (!yaSeAviso(avisoAlumno)) registrar(avisoAlumno);
+
+    // Para la propietaria: SOLO cuotas vencidas nombrando nombre y apellido del alumno vencido
+    if (tipo === "CUOTA_VENCIDA") {
+      for (const propietaria of db.usuarios.filter((u) => u.roles.includes("PROPIETARIA") && u.estado !== "INACTIVO")) {
+        const avisoPropietaria: NuevaNotificacion = {
+          id_usuario: propietaria.id_usuario,
+          tipo: "CUOTA_VENCIDA",
+          id_cuota: idCuota,
+          id_alumno: alumno.id_alumno,
+          mensaje: `La cuota de ${nombreCompleto} venció.`,
+        };
+        if (!yaSeAviso(avisoPropietaria)) registrar(avisoPropietaria);
+      }
+    }
   }
 }
 
-/** A partir de HORA_RESUMEN_DIARIO, uno por día para cada propietaria. El texto se arma solo si hace falta. */
-export function generarResumenDiario(armarMensaje: () => string): void {
-  if (FORMATO_HORA.format(new Date()) < String(valorDe("HORA_RESUMEN_DIARIO"))) return;
-  const hoy = hoyEnArgentina();
-  let mensaje: string | null = null;
-  for (const { id_usuario } of db.usuarios.filter((u) => u.roles.includes("PROPIETARIA") && u.estado !== "INACTIVO")) {
-    const yaLoTiene = db.notificaciones.some(
-      (n) => n.id_usuario === id_usuario && n.tipo === "RESUMEN_DIARIO" && FORMATO_DIA.format(new Date(n.fecha_generacion)) === hoy,
-    );
-    if (yaLoTiene) continue;
-    mensaje ??= armarMensaje();
-    registrar({ id_usuario, tipo: "RESUMEN_DIARIO", id_cuota: null, mensaje });
-  }
+/** Desactivada: ya no se generan notificaciones de resumen diario en la campanita */
+export function generarResumenDiario(_armarMensaje?: () => string): void {
+  // La notificación de resumen diario fue eliminada; el resumen sigue disponible en el dashboard.
 }

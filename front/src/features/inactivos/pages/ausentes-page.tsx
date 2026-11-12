@@ -2,10 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ChevronDown,
   Search,
   SlidersHorizontal,
-  UserCheck,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
@@ -14,6 +12,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { cn } from "@/lib/utils";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
@@ -254,63 +253,47 @@ export function AusentesPage() {
             {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
             <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
               {/* Select Plan */}
-              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                <label htmlFor="filtro-plan" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  Plan
-                </label>
-                <select
-                  id="filtro-plan"
-                  aria-label="Plan"
-                  value={filtroPlan}
-                  onChange={(e) => setFiltroPlan(e.target.value)}
-                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                >
-                  <option value="TODOS">Todos</option>
-                  {(consultaPlanes.data ?? []).map((p) => (
-                    <option key={p.id} value={String(p.id)}>{p.nombre}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-              </div>
+              <SelectorDesplegable
+                id="filtro-plan"
+                etiqueta="Plan"
+                aria-label="Plan"
+                valor={filtroPlan}
+                opciones={[
+                  { valor: "TODOS", texto: "Todos" },
+                  ...(consultaPlanes.data ?? []).map((p) => ({ valor: String(p.id), texto: p.nombre })),
+                ]}
+                onChange={setFiltroPlan}
+                variante="pildora"
+              />
 
               {/* Select Profesora */}
-              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                <label htmlFor="filtro-profesora" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  Profesora
-                </label>
-                <select
-                  id="filtro-profesora"
-                  aria-label="Profesora"
-                  value={filtroProfesora}
-                  onChange={(e) => setFiltroProfesora(e.target.value)}
-                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                >
-                  <option value="TODAS">Todas</option>
-                  {(consultaProfesoras.data ?? []).map((p) => (
-                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-              </div>
+              <SelectorDesplegable
+                id="filtro-profesora"
+                etiqueta="Profesora"
+                aria-label="Profesora"
+                valor={filtroProfesora}
+                opciones={[
+                  { valor: "TODAS", texto: "Todas" },
+                  ...(consultaProfesoras.data ?? []).map((p) => ({ valor: p.id, texto: `${p.nombre} ${p.apellido}` })),
+                ]}
+                onChange={setFiltroProfesora}
+                variante="pildora"
+              />
 
               {/* Select Faltas */}
-              <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-                <label htmlFor="filtro-inasistencias" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  Faltas
-                </label>
-                <select
-                  id="filtro-inasistencias"
-                  aria-label="Faltas"
-                  value={filtroInasistencias}
-                  onChange={(e) => setFiltroInasistencias(e.target.value)}
-                  className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-                >
-                  <option value="DEFAULT">{umbral} o más</option>
-                  <option value="4">4 o más</option>
-                  <option value="5">5 o más</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-              </div>
+              <SelectorDesplegable
+                id="filtro-inasistencias"
+                etiqueta="Faltas"
+                aria-label="Faltas"
+                valor={filtroInasistencias}
+                opciones={[
+                  { valor: "DEFAULT", texto: `${umbral} o más` },
+                  { valor: "4", texto: "4 o más" },
+                  { valor: "5", texto: "5 o más" },
+                ]}
+                onChange={setFiltroInasistencias}
+                variante="pildora"
+              />
 
               {/* Botón limpiar filtros */}
               {hayFiltrosActivos && (

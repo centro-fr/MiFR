@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,9 +13,6 @@ const PERIODOS: { valor: PeriodoPendientes; texto: string }[] = [
   { valor: "7", texto: "Últimos 7 días" },
   { valor: "30", texto: "Últimos 30 días" },
 ];
-
-const CLASE_SELECT =
-  "min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus-visible:outline-2 focus-visible:outline-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 interface Props {
   filtros: Filtros;
@@ -44,31 +42,25 @@ export function FiltrosPendientes({ filtros, planes, onChange, onLimpiar }: Prop
           className="min-h-[44px] rounded-xl border-slate-200 bg-white pl-9 text-slate-900 placeholder:text-slate-500 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       </div>
-      <select
-        aria-label="Período de la pre-inscripción"
-        value={filtros.periodo}
-        onChange={(evento) => cambiar({ periodo: evento.target.value as PeriodoPendientes })}
-        className={CLASE_SELECT}
-      >
-        {PERIODOS.map(({ valor, texto }) => (
-          <option key={valor} value={valor}>
-            {texto}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Plan"
-        value={filtros.idPlan}
-        onChange={(evento) => cambiar({ idPlan: evento.target.value })}
-        className={CLASE_SELECT}
-      >
-        <option value="">Todos los planes</option>
-        {planes.map((plan) => (
-          <option key={plan.id} value={plan.id}>
-            {plan.nombre}
-          </option>
-        ))}
-      </select>
+      <div className="min-w-[160px]">
+        <SelectorDesplegable
+          aria-label="Período de la pre-inscripción"
+          valor={filtros.periodo}
+          opciones={PERIODOS}
+          onChange={(v) => cambiar({ periodo: v as PeriodoPendientes })}
+          variante="formulario"
+        />
+      </div>
+      <div className="min-w-[180px]">
+        <SelectorDesplegable
+          aria-label="Plan"
+          valor={filtros.idPlan}
+          todos="Todos los planes"
+          opciones={planes}
+          onChange={(v) => cambiar({ idPlan: v })}
+          variante="formulario"
+        />
+      </div>
       {hayFiltrosActivos(filtros) && (
         <Button
           type="button"

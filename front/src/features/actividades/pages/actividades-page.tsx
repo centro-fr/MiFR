@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarPlus, ChevronDown, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import {
   Table,
   TableBody,
@@ -287,23 +288,19 @@ export function ActividadesPage() {
             </div>
 
             {/* Select Modalidad en píldora idéntico a image.png */}
-            <div className="h-10 relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
-              <label htmlFor="filtro-modalidad" className="mr-2 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                Modalidad:
-              </label>
-              <select
-                id="filtro-modalidad"
-                aria-label="Modalidad"
-                value={filtroModalidad}
-                onChange={(e) => setFiltroModalidad(e.target.value as ModalidadFiltro)}
-                className="appearance-none bg-white pr-6 text-sm font-semibold text-slate-800 outline-none cursor-pointer dark:bg-slate-900 dark:text-slate-200"
-              >
-                <option value="TODAS">Todas</option>
-                <option value="GRUPAL">Grupales</option>
-                <option value="PERSONALIZADA">Personalizadas</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 size-4 text-slate-400" />
-            </div>
+            <SelectorDesplegable
+              id="filtro-modalidad"
+              etiqueta="Modalidad:"
+              aria-label="Modalidad"
+              valor={filtroModalidad}
+              opciones={[
+                { valor: "TODAS", texto: "Todas" },
+                { valor: "GRUPAL", texto: "Grupales" },
+                { valor: "PERSONALIZADA", texto: "Personalizadas" },
+              ]}
+              onChange={(v) => setFiltroModalidad(v as ModalidadFiltro)}
+              variante="pildora"
+            />
 
             {/* Limpiar filtros */}
             {hayFiltrosActivos && (

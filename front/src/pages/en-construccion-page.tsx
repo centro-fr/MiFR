@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Construction, House } from "lucide-react";
+import { ArrowLeft, House } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

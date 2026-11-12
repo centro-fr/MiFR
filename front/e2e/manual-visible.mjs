@@ -17,24 +17,22 @@ const roles = [
       "/app/pagos",
       "/app/honorarios",
       "/app/comunidad",
-      "/app/notificaciones",
-      "/app/notificaciones/configuracion",
     ],
   },
   {
     name: "profesora",
     option: "Profesora",
-    routes: ["/app/hoy", "/app/alumnos/listado", "/app/comunidad", "/app/notificaciones"],
+    routes: ["/app/hoy", "/app/alumnos/listado", "/app/comunidad"],
   },
   {
     name: "alumno",
     option: "Alumno",
-    routes: ["/app/inicio", "/app/mi-plan", "/app/progreso", "/app/comunidad", "/app/notificaciones"],
+    routes: ["/app/inicio", "/app/mi-plan", "/app/progreso", "/app/comunidad"],
   },
   {
     name: "tutor",
     option: "Tutor",
-    routes: ["/app/inicio", "/app/progreso", "/app/comunidad", "/app/notificaciones"],
+    routes: ["/app/inicio", "/app/progreso", "/app/comunidad"],
   },
 ];
 
@@ -257,9 +255,9 @@ async function inspectStudentMetrics(page) {
 
 async function inspectNotifications(page) {
   console.log("=== Validación interactiva de notificaciones ===");
-  await visit(page, "/app/notificaciones", "notificaciones-inicial");
-  await clickVisible(page, 'button:has-text("Marcar todas como leídas")', "Marcar todas las notificaciones como leídas");
-  await assertText(page, /notificaciones/i, "Bandeja de notificaciones");
+  await clickVisible(page, 'button[aria-label*="Notificaciones"]', "Abrir campana de notificaciones");
+  await clickVisible(page, 'button:has-text("Marcar todas como leídas"), [role="menuitem"]:has-text("Marcar todas como leídas")', "Marcar todas las notificaciones como leídas");
+  await assertText(page, /notificaciones/i, "Desplegable de notificaciones");
 }
 
 run().catch((error) => {

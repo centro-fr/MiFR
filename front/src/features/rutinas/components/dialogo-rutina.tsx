@@ -16,6 +16,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { useActualizarRutina, useCrearRutina, useEliminarRutina } from "@/features/rutinas/hooks/use-rutinas";
 import {
   MAXIMO_DIAS,
@@ -187,10 +188,11 @@ export function DialogoRutina({
               <label htmlFor="desde-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Desde <span className="text-primary">*</span>
               </label>
-              <Input
+              <CampoFecha
                 id="desde-rutina"
-                type="date"
-                {...register("desde")}
+                name="desde"
+                value={formulario.watch("desde") ?? ""}
+                onChange={(v) => formulario.setValue("desde", v, { shouldValidate: true })}
                 className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
               />
               {errors.desde && <p className="text-xs font-semibold text-rose-600">{errors.desde.message}</p>}
@@ -200,10 +202,11 @@ export function DialogoRutina({
               <label htmlFor="hasta-rutina" className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 Hasta <span className="font-normal text-slate-400">(opcional)</span>
               </label>
-              <Input
+              <CampoFecha
                 id="hasta-rutina"
-                type="date"
-                {...register("hasta")}
+                name="hasta"
+                value={formulario.watch("hasta") ?? ""}
+                onChange={(v) => formulario.setValue("hasta", v, { shouldValidate: true })}
                 className="h-10 rounded-xl border-slate-200 bg-white font-medium dark:border-slate-800 dark:bg-slate-900"
               />
               {errors.hasta && <p className="text-xs font-semibold text-rose-600">{errors.hasta.message}</p>}
