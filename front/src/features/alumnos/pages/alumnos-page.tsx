@@ -24,6 +24,7 @@ import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situaci
 import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
 import { compararAlumnosPorCuota, etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
+import { ListadoAlumnosProfesora } from "@/features/alumnos/components/listado-alumnos-profesora";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
 import type { ResultadoPreinscripcion } from "@/features/alumnos/hooks/use-preinscripcion";
 import { formatearDni } from "@/features/alumnos/utils/formato-ficha";
@@ -36,6 +37,7 @@ import { listarAlumnosInactivos } from "@/features/inactivos/api/inactivos-api";
 import { generarEnlaceWhatsApp, obtenerContactoPrioritario } from "@/features/inactivos/utils/formato-inactivos";
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
 
 const TAMANO_PAGINA = 10;
@@ -123,7 +125,19 @@ function ErrorAlCargar({ mensaje, onReintentar }: { mensaje: string; onReintenta
 
 export function AlumnosPage() {
   const { panelActivo, tieneLosDosPaneles } = usePanelActivo();
+  const esMobile = useIsMobile();
   const enPanelDeProfesora = panelActivo === "PROFESORA";
+  if (enPanelDeProfesora && esMobile) {
+    return (
+      <OwnerLayout>
+        {tieneLosDosPaneles ? (
+          <ConMiIdDeProfesora>{(idProfesora) => <ListadoAlumnosProfesora idProfesora={idProfesora} />}</ConMiIdDeProfesora>
+        ) : (
+          <ListadoAlumnosProfesora />
+        )}
+      </OwnerLayout>
+    );
+  }
   return (
     <OwnerLayout>
       {enPanelDeProfesora && tieneLosDosPaneles ? (
