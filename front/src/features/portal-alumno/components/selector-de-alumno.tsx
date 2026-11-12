@@ -11,8 +11,8 @@ import { cn } from "@/utils/cn";
 import { useAlumnoElegido } from "../hooks/use-alumno-elegido";
 
 /**
- * En la barra superior, para el tutor con más de un menor: elige de quién ver los datos y la elección vale
- * para todas las pantallas del portal. Con un solo alumno no se muestra.
+ * En la barra superior, para el tutor: elige de quién ver los datos (sus menores y, si también entrena, él
+ * mismo) y la elección vale para todas las pantallas del portal. Con un solo alumno no se muestra.
  */
 export function SelectorDeAlumno({ sobreFondoOscuro = false }: { sobreFondoOscuro?: boolean }) {
   const { alumnos, elegido, elegirAlumno } = useAlumnoElegido();
@@ -22,19 +22,20 @@ export function SelectorDeAlumno({ sobreFondoOscuro = false }: { sobreFondoOscur
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Viendo los datos de ${elegido.nombre} ${elegido.apellido}. Cambiar`}
+          aria-label={`Viendo los datos de ${elegido.propio ? "vos" : `${elegido.nombre} ${elegido.apellido}`}. Cambiar`}
           className={cn(
             "flex h-9 max-w-[42vw] shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors",
-            // Los colores del ítem activo del sidebar: lo que se está mirando.
+            // Neutro como los demás botones de la barra; el rosa queda solo en el ícono.
             sobreFondoOscuro
-              ? "border-primary/30 bg-[#281525] text-white hover:border-primary/50"
-              : "border-pink-200 bg-pink-50 text-primary-dark hover:bg-pink-100 dark:border-primary/40 dark:bg-primary/15 dark:text-pink-200",
+              ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
+              : "border-border bg-card text-foreground hover:bg-slate-100 dark:hover:bg-white/10",
           )}
         >
-          <UsersRound aria-hidden="true" className="size-4 shrink-0 text-primary dark:text-pink-300" />
+          <UsersRound aria-hidden="true" className={cn("size-4 shrink-0", sobreFondoOscuro ? "text-pink-300" : "text-primary dark:text-pink-300")} />
           <span className="truncate">
             {elegido.nombre}
             <span className="hidden sm:inline"> {elegido.apellido}</span>
+            {elegido.propio && " (vos)"}
           </span>
           <ChevronDown aria-hidden="true" className="size-4 shrink-0 opacity-70" />
         </button>
@@ -45,6 +46,7 @@ export function SelectorDeAlumno({ sobreFondoOscuro = false }: { sobreFondoOscur
           {alumnos.map((alumno) => (
             <DropdownMenuRadioItem key={alumno.id} value={String(alumno.id)} className="min-h-10">
               {alumno.nombre} {alumno.apellido}
+              {alumno.propio && " (vos)"}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
