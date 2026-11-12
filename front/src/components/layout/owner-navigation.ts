@@ -2,7 +2,6 @@ import {
   ArrowLeftRight,
   Banknote,
   BarChart3,
-  BookOpen,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
