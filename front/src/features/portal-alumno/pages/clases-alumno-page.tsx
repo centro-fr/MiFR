@@ -2,7 +2,7 @@ import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { AvisoVacio, CAJA, EncabezadoPantalla, FILA } from "@/components/movil/piezas";
 import { EstadoErrorCarga, TablaSkeleton } from "@/components/ui/estados-pantalla";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useVistaAmplia } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import type { PanelAlumno } from "../schemas/panel-alumno";
@@ -15,7 +15,7 @@ function fechaCorta(fecha: string): string {
   return `${diaCorto(fecha)} ${dia}/${mes}`;
 }
 
-/** Escritorio: las mismas clases en tabla. */
+/** Pantallas anchas: las mismas clases en tabla. */
 function TablaClases({ clases }: { clases: ClaseProxima[] }) {
   return (
     <div className={cn(CAJA, "overflow-x-auto")}>
@@ -72,7 +72,7 @@ function FilaClase({ clase }: { clase: ClaseProxima }) {
 
 function Contenido() {
   const consulta = usePanelAlumno();
-  const esMobile = useIsMobile();
+  const vistaAmplia = useVistaAmplia();
   if (consulta.isPending) return <TablaSkeleton ariaLabel="Cargando tus clases" filas={5} />;
   if (consulta.isError) {
     return (
@@ -84,7 +84,7 @@ function Contenido() {
   }
   const clases = consulta.data.proximas_clases;
   if (clases.length === 0) return <AvisoVacio>No tenés clases agendadas.</AvisoVacio>;
-  if (!esMobile) return <TablaClases clases={clases} />;
+  if (vistaAmplia) return <TablaClases clases={clases} />;
   return (
     <ul aria-label="Próximas clases" className={cn(CAJA, "overflow-hidden")}>
       {clases.map((clase) => (

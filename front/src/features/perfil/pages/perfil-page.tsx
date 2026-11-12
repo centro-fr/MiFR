@@ -11,13 +11,15 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { MisInsignias } from "@/features/portal-alumno/components/mis-insignias";
 import { usePanelAlumno } from "@/features/portal-alumno/hooks/use-panel-alumno";
 import { listarProfesoras } from "@/features/profesoras/api/profesoras-api";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { homePathForRoles, type AuthUser } from "@/types/auth";
 import { inicialesDeNombre } from "@/utils/texto";
 
-// Perfil de la profesora y del alumno: sus datos, solo de lectura porque los carga la propietaria. En el
+// Perfil de la profesora y del alumno: sus datos, solo de lectura porque los carga la propietaria, y las
+// insignias del alumno. En el
 // celular, con el diseño mobile y el cierre de sesión; en escritorio, con el formato de las fichas (el
 // cierre de sesión y el tema están en el sidebar y en la barra superior).
 
@@ -84,6 +86,15 @@ function AvisoEmail() {
   );
 }
 
+interface PropsVista {
+  nombre: string;
+  datos: DatosDelPerfil;
+  /** Carga o error de los datos; null con los datos listos. */
+  contenido: ReactNode;
+  /** Lo propio de cada rol debajo de los datos (las insignias del alumno). */
+  extra?: ReactNode;
+}
+
 /** La propietaria que también dicta vuelve a su panel (en el celular no tiene el switch del sidebar). */
 function IrAlPanelDePropietaria() {
   const navigate = useNavigate();
@@ -103,7 +114,7 @@ function IrAlPanelDePropietaria() {
   );
 }
 
-function PerfilMovil({ nombre, datos, contenido }: { nombre: string; datos: DatosDelPerfil; contenido: ReactNode }) {
+function PerfilMovil({ nombre, datos, contenido, extra }: PropsVista) {
   const { logout } = useAuth();
   const { tieneLosDosPaneles } = usePanelActivo();
   return (
@@ -129,6 +140,7 @@ function PerfilMovil({ nombre, datos, contenido }: { nombre: string; datos: Dato
           ]}
         />
       )}
+      {extra}
       {tieneLosDosPaneles && <IrAlPanelDePropietaria />}
       <button
         type="button"
@@ -142,7 +154,7 @@ function PerfilMovil({ nombre, datos, contenido }: { nombre: string; datos: Dato
   );
 }
 
-function PerfilEscritorio({ nombre, datos, contenido }: { nombre: string; datos: DatosDelPerfil; contenido: ReactNode }) {
+function PerfilEscritorio({ nombre, datos, contenido, extra }: PropsVista) {
   return (
     <div className="@container min-w-0 space-y-6">
       <header className="flex min-w-0 items-center gap-4">
@@ -168,11 +180,12 @@ function PerfilEscritorio({ nombre, datos, contenido }: { nombre: string; datos:
           </div>
         </>
       )}
+      {extra}
     </div>
   );
 }
 
-function Perfil({ user, datos, consulta }: { user: AuthUser; datos: DatosDelPerfil; consulta: Consulta }) {
+function Perfil({ user, datos, consulta, extra }: { user: AuthUser; datos: DatosDelPerfil; consulta: Consulta; extra?: ReactNode }) {
   const esMobile = useIsMobile();
   const nombre = `${user.nombre} ${user.apellido}`;
   const contenido = consulta.isPending ? (
@@ -185,9 +198,9 @@ function Perfil({ user, datos, consulta }: { user: AuthUser; datos: DatosDelPerf
     />
   ) : null;
   return esMobile ? (
-    <PerfilMovil nombre={nombre} datos={datos} contenido={contenido} />
+    <PerfilMovil nombre={nombre} datos={datos} contenido={contenido} extra={extra} />
   ) : (
-    <PerfilEscritorio nombre={nombre} datos={datos} contenido={contenido} />
+    <PerfilEscritorio nombre={nombre} datos={datos} contenido={contenido} extra={extra} />
   );
 }
 
@@ -198,7 +211,7 @@ function PerfilDeLaProfesora({ user }: { user: AuthUser }) {
 
 function PerfilDelAlumno({ user }: { user: AuthUser }) {
   const { datos, consulta } = useDatosDelAlumno(user);
-  return <Perfil user={user} datos={datos} consulta={consulta} />;
+  return <Perfil user={user} datos={datos} consulta={consulta} extra={<MisInsignias />} />;
 }
 
 export function PerfilPage() {

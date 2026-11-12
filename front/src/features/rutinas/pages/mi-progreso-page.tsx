@@ -4,6 +4,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { AvisoVacio, CAJA } from "@/components/movil/piezas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GraficoEvolucion } from "@/features/rutinas/components/grafico-evolucion";
+import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejercicio";
 import { ErrorDeCarga } from "@/features/rutinas/components/tarjeta";
 import { resolverGifUrl } from "@/features/rutinas/data/catalogo-ejercicios";
 import { useMedicionesDeAlumno, useMisAlumnos, useNombresDeProfesoras, useRutinasDeAlumno } from "@/features/rutinas/hooks/use-rutinas";
@@ -17,11 +18,9 @@ import {
   seriesPorRepeticiones,
 } from "@/features/rutinas/utils/formato-rutinas";
 import type { AlumnoConsultable, Rutina } from "@/types/rutinas";
-import { MiProgresoEscritorio } from "@/features/rutinas/components/mi-progreso-escritorio";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
 
-// US-28 con el diseño mobile: el alumno consulta sus rutinas (la vigente y las anteriores) y su progreso;
+// US-28: el alumno consulta sus rutinas (la vigente y las anteriores) y su progreso;
 // el tutor, los de sus menores. Solo lectura: lo carga la profesora desde la ficha (US-27).
 
 function diaYMes(fecha: string): string {
@@ -87,19 +86,9 @@ function RutinaPlegable({ rutina, abierta, onAlternar }: { rutina: Rutina; abier
           </div>
           <ol aria-label="Ejercicios">
             {dia.ejercicios.map((ejercicio, indice) => {
-              const gif = resolverGifUrl(ejercicio.nombre);
               return (
                 <li key={`${ejercicio.nombre}-${indice}`} className="flex items-center gap-3 border-t border-border py-2.5">
-                  {gif ? (
-                    <img
-                      src={gif}
-                      alt={ejercicio.nombre}
-                      loading="lazy"
-                      className="size-13 shrink-0 rounded-lg border border-border bg-white object-cover"
-                    />
-                  ) : (
-                    <span aria-hidden="true" className="size-13 shrink-0 rounded-lg border border-border bg-slate-50 dark:bg-white/5" />
-                  )}
+                  <MiniaturaEjercicio nombre={ejercicio.nombre} gifUrl={resolverGifUrl(ejercicio.nombre)} className="size-13" />
                   <span className="min-w-0 flex-1">
                     <span className="block font-bold">{ejercicio.nombre}</span>
                     {ejercicio.notas && <span className="block text-xs text-muted-foreground">{ejercicio.notas}</span>}
@@ -139,9 +128,9 @@ function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
   const titulo = alumno.propio ? "Tu rutina" : `Rutina de ${alumno.nombre}`;
 
   return (
-    <>
+    <div className="flex min-w-0 flex-col gap-4">
       <div>
-        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">{titulo}</h1>
+        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">{titulo}</h1>
         {autora && <p className="mt-0.5 text-sm text-muted-foreground">La armó {autora}</p>}
       </div>
       {rutinas.length === 0 ? (
@@ -162,7 +151,7 @@ function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
           </div>
         ))
       )}
-    </>
+    </div>
   );
 }
 
@@ -276,7 +265,8 @@ function Contenido() {
         </Aviso>
       ) : (
         // La key reinicia las consultas y el estado de las rutinas al cambiar de menor.
-        <div key={elegido.id} className="flex flex-col gap-4">
+        // Con lugar, la rutina a la izquierda y el progreso al costado.
+        <div key={elegido.id} className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <MisRutinas alumno={elegido} />
           <MiProgreso alumno={elegido} />
         </div>
@@ -286,11 +276,9 @@ function Contenido() {
 }
 
 export function MiProgresoPage() {
-  const esMobile = useIsMobile();
-  if (!esMobile) return <MiProgresoEscritorio />;
   return (
     <OwnerLayout>
-      <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-4">
         <Contenido />
       </div>
     </OwnerLayout>
