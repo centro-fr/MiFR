@@ -140,9 +140,9 @@ export function SelectorDesplegable({
       {/* Botón trigger elegante */}
       <button
         type="button"
-        tabIndex={-1}
-        aria-hidden="true"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
         onClick={() => setAbierto((prev) => !prev)}
         className={cn(
           "flex items-center justify-between gap-2 outline-none select-none transition-colors",

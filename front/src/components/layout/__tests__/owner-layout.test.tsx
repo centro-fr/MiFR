@@ -65,4 +65,17 @@ describe("OwnerLayout: migas de pan y submiga", () => {
     expect(sidebarContent).toBeInTheDocument();
     expect(sidebarContent.scrollTop).toBe(180);
   });
+
+  it("renderiza el botón de colapsar menú (SidebarTrigger) en la cabecera superior", () => {
+    render(
+      <MemoryRouter initialEntries={["/app/inicio"]}>
+        <OwnerLayout>
+          <div>Contenido</div>
+        </OwnerLayout>
+      </MemoryRouter>,
+    );
+
+    const trigger = document.querySelector('[data-sidebar="trigger"]');
+    expect(trigger).toBeInTheDocument();
+  });
 });

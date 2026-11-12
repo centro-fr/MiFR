@@ -1,12 +1,13 @@
 import { Fragment, useId, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -323,34 +324,6 @@ function NavegacionPrincipal({ items }: { items: ItemConEstado[] }) {
   );
 }
 
-/** Contraer/expandir el menú en desktop. */
-function BotonColapsarMenu() {
-  const { state, isMobile, toggleSidebar } = useSidebar();
-  if (isMobile) return null;
-
-  const contraido = state === "collapsed";
-  const Icono = contraido ? PanelLeftOpen : PanelLeftClose;
-  const etiqueta = contraido ? "Expandir menú" : "Contraer menú";
-  return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          onClick={toggleSidebar}
-          aria-expanded={!contraido}
-          tooltip={`${etiqueta} (Ctrl+B)`}
-          aria-label={etiqueta}
-          className={cn(
-            CLASES_ITEM,
-            "w-fit text-slate-400 hover:text-white group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center!",
-          )}
-        >
-          <Icono aria-hidden="true" />
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
-  );
-}
-
 /** Switch de roles Propietaria / Profesora en el header del menú */
 function SwitchRoles({
   roles,
@@ -487,10 +460,6 @@ function MenuLateral({
         <NavegacionPrincipal items={items} />
       </SidebarContent>
 
-      <SidebarGroup className="py-0 px-2 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:py-0">
-        <BotonColapsarMenu />
-      </SidebarGroup>
-
       <BloqueUsuario />
       <SidebarRail />
     </Sidebar>
@@ -537,16 +506,19 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
   );
 }
 
-/** Barra superior: botón mobile, logo, migas de pan, notificaciones y alternar tema */
+/** Barra superior: trigger del menú lateral, migas de pan, notificaciones y alternar tema */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
-      <SidebarTrigger className="-ml-2 h-11 w-11 shrink-0 text-slate-500 md:hidden dark:text-slate-300" />
-      <div className="flex items-center gap-2.5 md:hidden">
-        <LogoMarca />
-        <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
+      <div className="flex items-center gap-2 min-w-0">
+        <SidebarTrigger className="-ml-1 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white" />
+        <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+        <div className="flex items-center gap-2.5 md:hidden">
+          <LogoMarca />
+          <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>
+        </div>
+        <MigasDePan migas={migas} />
       </div>
-      <MigasDePan migas={migas} />
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <CampanaNotificaciones />
         <ThemeToggle compacto />
