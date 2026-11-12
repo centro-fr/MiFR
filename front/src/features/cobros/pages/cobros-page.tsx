@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { apiClient } from "@/api/client";
 import { fichaAlumnoApiSchema, paginaAlumnosApiSchema } from "@/features/alumnos/schemas/alumno";
 import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
@@ -400,14 +401,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                 )}
 
                 {hayFiltrosCuotasActivos && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={limpiarFiltrosCuotas}
-                    className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-                  >
-                    Limpiar filtros
-                  </Button>
+                  <BotonLimpiarFiltros onLimpiar={limpiarFiltrosCuotas} />
                 )}
               </div>
             </div>
@@ -508,14 +502,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                     Probá ajustando la búsqueda o el filtro de estado.
                   </p>
                   {hayFiltrosCuotasActivos && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={limpiarFiltrosCuotas}
-                      className="h-8 rounded-lg text-xs"
-                    >
-                      Limpiar filtros
-                    </Button>
+                    <BotonLimpiarFiltros onLimpiar={limpiarFiltrosCuotas} className="mt-2" />
                   )}
                 </div>
               ) : (

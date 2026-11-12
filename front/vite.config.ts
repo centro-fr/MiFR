@@ -2,7 +2,7 @@
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
 
   // Sin VITE_SITIO_URL, index.html publica URLs relativas en Open Graph y las vistas previas de un
   // enlace salen sin imagen. Avisa al compilar en lugar de cortar el build (CI y builds locales).
-  const avisarSiFaltaLaUrlDelSitio = {
+  const avisarSiFaltaLaUrlDelSitio: Plugin = {
     name: 'avisar-si-falta-la-url-del-sitio',
     apply: 'build' as const,
     buildStart() {

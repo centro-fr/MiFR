@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Button } from "@/components/ui/button";
@@ -185,21 +185,8 @@ export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }:
   );
 }
 
-/** Vuelve todos los filtros a como estaban al entrar. Desactivado si ya están así. */
-export function BotonLimpiarFiltros({ hayFiltros, onLimpiar }: { hayFiltros: boolean; onLimpiar: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={onLimpiar}
-      disabled={!hayFiltros}
-      className="min-h-10 shrink-0 rounded-lg font-bold text-slate-700 dark:text-slate-300"
-    >
-      <RotateCcw aria-hidden="true" className="size-4" />
-      Limpiar filtros
-    </Button>
-  );
-}
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
+export { BotonLimpiarFiltros };
 
 interface PropsGrupoDeFiltros {
   children: ReactNode;

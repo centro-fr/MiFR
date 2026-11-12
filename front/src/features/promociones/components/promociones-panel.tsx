@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { cn } from "@/utils/cn";
 import { Card } from "@/components/ui/card";
 import {
@@ -140,16 +141,11 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
             />
           </div>
           {hayFiltros && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
+            <BotonLimpiarFiltros
+              onLimpiar={() => {
                 setBusqueda("");
               }}
-              className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-            >
-              Limpiar filtros
-            </Button>
+            />
           )}
         </div>
       </section>

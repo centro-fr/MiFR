@@ -7,12 +7,12 @@ import {
   Clock,
   Search,
   Users,
-  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { NavegadorFecha } from "@/features/asistencia/components/navegador-fecha";
 import { EstadoClase } from "@/features/asistencia/components/fila-clase";
@@ -345,15 +345,7 @@ export function ClasesDelDia({
               })}
 
               {hayFiltros && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={limpiarFiltros}
-                  className="h-9 px-2.5 text-xs font-bold text-muted-foreground hover:text-dark dark:hover:text-white"
-                >
-                  <X className="mr-1 size-3.5" />
-                  Limpiar
-                </Button>
+                <BotonLimpiarFiltros onLimpiar={limpiarFiltros} texto="Limpiar" className="h-9" />
               )}
             </div>
           </div>
@@ -376,14 +368,7 @@ export function ClasesDelDia({
               <p className="max-w-sm text-sm text-muted-foreground">
                 No hay clases que coincidan con la búsqueda o el filtro seleccionado.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={limpiarFiltros}
-                className="mt-1 h-9 rounded-lg text-xs font-bold"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={limpiarFiltros} className="mt-1" />
             </Card>
           ) : (
             <>

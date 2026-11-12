@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { formatearFecha, inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { informeCobranzaApiSchema } from "@/features/reportes/schemas/informes-centro";
@@ -166,14 +167,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
             />
 
             {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={limpiarFiltros}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={limpiarFiltros} />
             )}
           </div>
         </div>
@@ -258,14 +252,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 : "Los cobros confirmados figurarán en este historial con su comprobante."}
             </p>
             {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={limpiarFiltros}
-                className="h-8 rounded-lg text-xs"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={limpiarFiltros} className="mt-2" />
             )}
           </div>
         ) : (

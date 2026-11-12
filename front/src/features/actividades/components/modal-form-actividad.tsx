@@ -40,7 +40,6 @@ export function ModalFormActividad({
   errorGuardado,
   onClose,
   onSave,
-  onDarDeBaja,
 }: Props) {
   const [codigo, setCodigo] = useState(actividad?.codigo ?? "");
   const [nombre, setNombre] = useState(actividad?.nombre ?? "");

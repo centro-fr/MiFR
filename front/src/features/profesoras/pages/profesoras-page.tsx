@@ -7,6 +7,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import {
   Table,
   TableBody,
@@ -145,16 +146,11 @@ export function ProfesorasPage() {
               />
             </div>
             {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
+              <BotonLimpiarFiltros
+                onLimpiar={() => {
                   setBusqueda("");
                 }}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-              >
-                Limpiar filtros
-              </Button>
+              />
             )}
           </div>
         </section>

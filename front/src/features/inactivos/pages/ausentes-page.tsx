@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { cn } from "@/lib/utils";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { listarProfesoras } from "@/features/horarios/api/horarios-api";
@@ -297,14 +298,7 @@ export function AusentesPage() {
 
               {/* Botón limpiar filtros */}
               {hayFiltrosActivos && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={limpiarFiltros}
-                  className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-                >
-                  Limpiar filtros
-                </Button>
+                <BotonLimpiarFiltros onLimpiar={limpiarFiltros} />
               )}
             </div>
           </div>
@@ -397,14 +391,7 @@ export function AusentesPage() {
                     : "Cuando registres acciones de seguimiento, se agruparán en esta pestaña."}
               </p>
               {hayFiltrosActivos && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={limpiarFiltros}
-                  className="mt-2 rounded-xl font-bold text-xs"
-                >
-                  Limpiar filtros
-                </Button>
+                <BotonLimpiarFiltros onLimpiar={limpiarFiltros} className="mt-2" />
               )}
             </div>
           </div>

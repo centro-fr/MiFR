@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
@@ -181,14 +182,7 @@ export function PanelEfectivoARendir() {
             />
 
             {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={limpiarFiltros}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={limpiarFiltros} />
             )}
           </div>
         </div>
@@ -306,14 +300,7 @@ export function PanelEfectivoARendir() {
                   : "No hay cobros en efectivo en mano de las profesoras pendientes de entrega."}
               </p>
               {hayFiltrosActivos && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={limpiarFiltros}
-                  className="h-8 rounded-lg text-xs"
-                >
-                  Limpiar filtros
-                </Button>
+                <BotonLimpiarFiltros onLimpiar={limpiarFiltros} className="mt-2" />
               )}
             </div>
           ) : (

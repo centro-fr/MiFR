@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import {
   Table,
   TableBody,
@@ -304,14 +305,7 @@ export function ActividadesPage() {
 
             {/* Limpiar filtros */}
             {hayFiltrosActivos && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={limpiarFiltros}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={limpiarFiltros} />
             )}
           </div>
         </section>
@@ -637,14 +631,7 @@ function EmptyActividades({
             : "Creá la primera disciplina del centro para empezar a diagramar horarios y planes."}
       </p>
       {esFiltro ? (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onLimpiarFiltros}
-          className="mt-2 h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-        >
-          Limpiar filtros
-        </Button>
+        <BotonLimpiarFiltros onLimpiar={onLimpiarFiltros ?? (() => {})} className="mt-2" />
       ) : !esBajas ? (
         <Button
           type="button"

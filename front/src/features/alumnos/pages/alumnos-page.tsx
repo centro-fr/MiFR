@@ -35,6 +35,7 @@ import { generarEnlaceWhatsApp, obtenerContactoPrioritario } from "@/features/in
 import { usePlanes } from "@/features/planes/hooks/use-planes";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { cn } from "@/utils/cn";
 
 const TAMANO_PAGINA = 10;
@@ -610,20 +611,16 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   : "Cuando haya alumnos registrados, vas a poder consultarlos desde acá."}
             </p>
             {(busqueda || filtrando) && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
+              <BotonLimpiarFiltros
+                onLimpiar={() => {
                   setBusqueda("");
                   setFiltros(FILTROS_INICIALES);
                   setFiltroCuota("");
                   setSoloContactar(false);
                   setPagina(0);
                 }}
-                className="min-h-[40px] rounded-lg font-bold"
-              >
-                Limpiar búsqueda y filtros
-              </Button>
+                texto="Limpiar búsqueda y filtros"
+              />
             )}
           </div>
         </div>
