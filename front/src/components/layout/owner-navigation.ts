@@ -52,6 +52,8 @@ export interface ItemMenu {
   contador?: ContadorMenu;
   /** Si tiene hijos, el ítem es un grupo desplegable. */
   hijos?: SubItemMenu[];
+  /** En la barra inferior del celular va al centro y resaltado (el Inicio del alumno). */
+  destacado?: boolean;
 }
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";

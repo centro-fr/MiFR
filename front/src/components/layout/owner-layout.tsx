@@ -35,7 +35,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
+import { AppMovilLayout } from "./app-movil-layout";
 import { panelExclusivoDeLaRuta, type Panel } from "./owner-navigation";
 import { useContadoresMenu } from "./use-contadores-menu";
 import { useOwnerNavigation, type ItemConEstado, type Miga } from "./use-owner-navigation";
@@ -561,14 +563,25 @@ interface OwnerLayoutProps {
   submiga?: string;
   /** Reemplazo total de migas si la pantalla necesita una estructura específica */
   migasPersonalizadas?: Miga[];
+  /** Celular de profesora y alumno: título de la barra superior (por defecto, el ítem activo del menú). */
+  tituloMovil?: string;
+  /** Celular de profesora y alumno: a dónde lleva la flecha de volver en una pantalla de detalle. */
+  volverA?: string;
+}
+
+// La profesora y el alumno usan la app sobre todo desde el celular: ahí tienen barra inferior. La
+// propietaria que también dicta la tiene en su panel de Profesora y vuelve al suyo desde Perfil.
+function usaAppMovil(panel: RoleCode | undefined, esMobile: boolean): boolean {
+  return esMobile && panel !== undefined && panel !== "PROPIETARIA";
 }
 
 // Layout de la app autenticada con soporte para switch de roles
-export function OwnerLayout({ children, submiga, migasPersonalizadas }: OwnerLayoutProps) {
+export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovil, volverA }: OwnerLayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { roles } = usePermissions();
   const { panelActivo, elegirPanel } = usePanelActivo();
+  const esMobile = useIsMobile();
 
   // En una pantalla que ofrecen los dos paneles (Alumnos) se queda: cambia lo que muestra.
   const cambiarPanel = (panel: Panel) => {
@@ -584,6 +597,15 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas }: OwnerLay
     : migasNavegacion;
   const migas = migasPersonalizadas ?? (submiga ? [...migasBase, { etiqueta: submiga }] : migasNavegacion);
   const [abiertoInicial] = useState(leerSidebarAbierto);
+
+  if (usaAppMovil(panelActivo, esMobile)) {
+    const titulo = tituloMovil ?? items.find((item) => item.esActivo)?.etiqueta ?? "MiFR";
+    return (
+      <AppMovilLayout items={items} titulo={titulo} volverA={volverA}>
+        {children}
+      </AppMovilLayout>
+    );
+  }
 
   return (
     <SidebarProvider
