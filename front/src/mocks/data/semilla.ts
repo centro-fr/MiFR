@@ -90,6 +90,23 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
     fecha_nacimiento: "1996-11-25",
     direccion: "Mitre 432",
   },
+  // Alumnos que además son tutores: en el selector ven su propia ficha y la de sus menores (US-28).
+  {
+    id_usuario: 10,
+    email: "paula.romero@example.com",
+    nombre: "Paula",
+    apellido: "Romero",
+    roles: ["ALUMNO", "TUTOR"],
+    etiquetaDePrueba: "Alumno + Tutor con 2 a cargo",
+  },
+  {
+    id_usuario: 11,
+    email: "carlos.fernandez@example.com",
+    nombre: "Carlos",
+    apellido: "Fernández",
+    roles: ["ALUMNO", "TUTOR"],
+    etiquetaDePrueba: "Alumno + Tutor con 1 a cargo",
+  },
 ];
 
 // Usuario con el que arranca la sesión del mock: la propietaria multi-rol de la seed.

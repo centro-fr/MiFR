@@ -162,6 +162,10 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     inscripcion(27, { id_alumno: 27, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 10),
     // Benjamín López, segundo menor a cargo de Mariana López.
     inscripcion(28, { id_alumno: 28, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 9),
+    // Alumnos que además son tutores (Carlos y Paula) y la hija de Paula.
+    inscripcion(29, { id_alumno: 29, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 12),
+    inscripcion(30, { id_alumno: 30, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 6),
+    inscripcion(31, { id_alumno: 31, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 15),
   ];
 }
 

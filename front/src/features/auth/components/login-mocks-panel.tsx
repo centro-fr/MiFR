@@ -32,11 +32,12 @@ function rangoDePerfil({ roles }: UsuarioSemilla): number {
 }
 
 // Un usuario representante por combinación de roles: lo que cambia el menú y los permisos es
-// el perfil, no la persona.
+// el perfil, no la persona. Los que tienen una etiqueta de prueba (un caso puntual, como el tutor con
+// varios menores) se ofrecen aparte aunque compartan los roles.
 function perfilesDeLaSemilla(): UsuarioSemilla[] {
   const porRoles = new Map<string, UsuarioSemilla>();
   for (const usuario of USUARIOS_SEMILLA) {
-    const clave = [...usuario.roles].sort().join("+");
+    const clave = usuario.etiquetaDePrueba ?? [...usuario.roles].sort().join("+");
     if (!porRoles.has(clave)) porRoles.set(clave, usuario);
   }
   return [...porRoles.values()].sort((a, b) => rangoDePerfil(a) - rangoDePerfil(b));
