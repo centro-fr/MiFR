@@ -453,7 +453,15 @@ function armarComprobante(pago: PagoParaComprobante): Comprobante {
     cuota: { numero: cuota.numero_cuota, vencimiento: cuota.fecha_vencimiento, monto: cuota.monto },
     precio_lista,
     descuento,
-    promocion: descuento > 0 ? promocion : null,
+    promocion:
+      descuento > 0 && promocion
+        ? {
+            codigo: promocion.codigo,
+            nombre: promocion.nombre,
+            tipo_descuento: promocion.tipo_descuento,
+            valor: Number(promocion.valor),
+          }
+        : null,
     registrado_por: usuario_registra,
     profesora_cobra: profesora_cobra?.usuario ?? null,
   };

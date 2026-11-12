@@ -128,4 +128,48 @@ describe("ModalComprobante (US-15)", () => {
 
     printSpy.mockRestore();
   });
+
+  it("muestra el descuento aplicado (-20% o -$4.000) en lugar del código de promoción", () => {
+    mockUseComprobante.mockReturnValue({
+      data: {
+        ...comprobanteEjemplo,
+        promocion: {
+          codigo: "VERANO26",
+          nombre: "Verano 2026",
+          tipo_descuento: "PORCENTAJE",
+          valor: 20,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
+
+    expect(screen.getAllByText("Verano 2026").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("-20%").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Código:/i)).not.toBeInTheDocument();
+  });
+
+  it("muestra el descuento en monto fijo cuando la promoción es de monto fijo", () => {
+    mockUseComprobante.mockReturnValue({
+      data: {
+        ...comprobanteEjemplo,
+        promocion: {
+          codigo: "DESCFIDEL",
+          nombre: "Fidelidad",
+          tipo_descuento: "MONTO_FIJO",
+          valor: 4000,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
+
+    expect(screen.getAllByText("Fidelidad").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/-\$\s*4\.000/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Código:/i)).not.toBeInTheDocument();
+  });
 });

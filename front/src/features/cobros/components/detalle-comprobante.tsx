@@ -38,8 +38,23 @@ function QuienCobro({ comprobante }: { comprobante: ComprobantePago }) {
   );
 }
 
+function textoDescuento(comprobante: ComprobantePago): string | null {
+  const promo = comprobante.promocion;
+  if (promo?.tipo_descuento === "PORCENTAJE" && promo.valor != null) {
+    return `-${promo.valor}%`;
+  }
+  if (promo?.tipo_descuento === "MONTO_FIJO" && promo.valor != null) {
+    return `-${formatearPrecio(promo.valor)}`;
+  }
+  if (comprobante.descuento != null && comprobante.descuento > 0) {
+    return `-${formatearPrecio(comprobante.descuento)}`;
+  }
+  return null;
+}
+
 export function FilasComprobante({ comprobante }: { comprobante: ComprobantePago }) {
   const { alumno } = comprobante;
+  const descuentoAplicado = textoDescuento(comprobante);
 
   return (
     <ListaDeDetalle>
@@ -51,9 +66,11 @@ export function FilasComprobante({ comprobante }: { comprobante: ComprobantePago
       {comprobante.promocion && (
         <FilaDeDetalle etiqueta="Promoción">
           {comprobante.promocion.nombre}
-          <span className="block text-xs font-normal text-slate-500 dark:text-slate-400">
-            Código: {comprobante.promocion.codigo}
-          </span>
+          {descuentoAplicado && (
+            <span className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              {descuentoAplicado}
+            </span>
+          )}
         </FilaDeDetalle>
       )}
       <FilaDeDetalle etiqueta="Cuota">N° {comprobante.cuota.numero}</FilaDeDetalle>

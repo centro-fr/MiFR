@@ -180,7 +180,7 @@ export interface Comprobante {
   // US-13: el precio de lista del plan el día del cobro y el descuento de la promoción, si la tuvo.
   precio_lista: number | null;
   descuento: number;
-  promocion: { codigo: string; nombre: string } | null;
+  promocion: { codigo: string; nombre: string; tipo_descuento?: string; valor?: number } | null;
   registrado_por: NombreCompleto;
   profesora_cobra: NombreCompleto | null;
 }
@@ -193,7 +193,7 @@ export type PagoParaComprobante = Pago & {
     monto: number;
     inscripcion: {
       plan: { nombre: string };
-      promocion: { codigo: string; nombre: string } | null;
+      promocion: { codigo: string; nombre: string; tipo_descuento: string; valor: unknown } | null;
       alumno: {
         id_usuario: number;
         id_usuario_responsable: number | null;

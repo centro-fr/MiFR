@@ -286,7 +286,14 @@ export const pagosHandlers = [
         dni: usuarioAlumno?.dni ?? null,
       },
       plan: plan?.nombre ?? "Plan",
-      promocion: promocionObj ? { codigo: promocionObj.codigo, nombre: promocionObj.nombre } : null,
+      promocion: promocionObj
+        ? {
+            codigo: promocionObj.codigo,
+            nombre: promocionObj.nombre,
+            tipo_descuento: promocionObj.tipo_descuento,
+            valor: promocionObj.valor,
+          }
+        : null,
       cuota: {
         numero: pago.id_cuota,
         vencimiento: pago.fecha_pago,

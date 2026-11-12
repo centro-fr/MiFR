@@ -103,8 +103,10 @@ export const comprobantePagoSchema = z.object({
   descuento: z.number().optional(),
   promocion: z
     .object({
-      codigo: z.string(),
+      codigo: z.string().optional(),
       nombre: z.string(),
+      tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]).optional(),
+      valor: z.number().optional(),
     })
     .nullable()
     .optional(),
