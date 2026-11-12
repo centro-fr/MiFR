@@ -5,11 +5,27 @@ import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 
-const ESTADOS: Record<Promocion["estado"], string> = {
-  ACTIVA: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-  PROGRAMADA: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-  VENCIDA: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  DESACTIVADA: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+const ESTADOS: Record<Promocion["estado"], { badge: string; dot: string; label: string }> = {
+  ACTIVA: {
+    badge: "border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+    label: "Activa",
+  },
+  PROGRAMADA: {
+    badge: "border-blue-200/60 bg-blue-50 text-blue-700 dark:border-blue-800/40 dark:bg-blue-950/40 dark:text-blue-300",
+    dot: "bg-blue-500",
+    label: "Programada",
+  },
+  VENCIDA: {
+    badge: "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    dot: "bg-slate-400",
+    label: "Vencida",
+  },
+  DESACTIVADA: {
+    badge: "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300",
+    dot: "bg-rose-500",
+    label: "Desactivada",
+  },
 };
 
 function descuento(promocion: Promocion): string {
@@ -121,11 +137,15 @@ export function ListaPromociones({
                   <td className="px-4 py-3.5">
                     <span
                       className={cn(
-                        "inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold capitalize",
-                        ESTADOS[promocion.estado],
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shadow-2xs",
+                        ESTADOS[promocion.estado].badge,
                       )}
                     >
-                      {promocion.estado.toLowerCase()}
+                      <span
+                        className={cn("size-1.5 rounded-full shrink-0", ESTADOS[promocion.estado].dot)}
+                        aria-hidden="true"
+                      />
+                      {ESTADOS[promocion.estado].label}
                     </span>
                   </td>
 
@@ -194,11 +214,15 @@ export function ListaPromociones({
                   </span>
                   <span
                     className={cn(
-                      "inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold capitalize",
-                      ESTADOS[promocion.estado],
+                      "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap shadow-2xs",
+                      ESTADOS[promocion.estado].badge,
                     )}
                   >
-                    {promocion.estado.toLowerCase()}
+                    <span
+                      className={cn("size-1.5 rounded-full shrink-0", ESTADOS[promocion.estado].dot)}
+                      aria-hidden="true"
+                    />
+                    {ESTADOS[promocion.estado].label}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">

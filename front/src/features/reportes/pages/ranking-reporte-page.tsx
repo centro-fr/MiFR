@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ListaInsignias } from "@/components/insignias/insignia-medalla";
 import { MenuExportar } from "@/components/menu-exportar";
 import { MedallaPuesto } from "@/features/portal-alumno/components/medalla-puesto";
@@ -57,6 +58,14 @@ function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
 }
 
 function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
+  const total = ranking.datos.length;
+  const paginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
+  const rangoInicio = total > 0 ? pagina * TAMANO_PAGINA + 1 : 0;
+  const rangoFin = Math.min((pagina + 1) * TAMANO_PAGINA, total);
+  const datosPaginados = ranking.datos.slice(pagina * TAMANO_PAGINA, (pagina + 1) * TAMANO_PAGINA);
+
   return (
     <SeccionReporte
       id="titulo-ranking"
@@ -75,7 +84,7 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
             </tr>
           </thead>
           <tbody>
-            {ranking.datos.map((fila) => (
+            {datosPaginados.map((fila) => (
               <tr key={fila.id_alumno} className={fila.posicion <= 3 ? "bg-amber-50/40 dark:bg-amber-400/5" : undefined}>
                 <td className={TD}>
                   <MedallaPuesto posicion={fila.posicion} tamanio="chico" />
@@ -99,6 +108,42 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
           </tbody>
         </table>
       </div>
+
+      {total > TAMANO_PAGINA && (
+        <nav
+          aria-label="Paginación de ranking"
+          className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row text-xs border-t border-slate-100 pt-3 dark:border-slate-800"
+        >
+          <p aria-live="polite" className="text-slate-500 dark:text-slate-400 font-medium">
+            {rangoInicio}–{rangoFin} de {total} participantes
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pagina === 0}
+              onClick={() => setPagina((actual) => Math.max(0, actual - 1))}
+              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+            >
+              <ChevronLeft aria-hidden="true" className="mr-1 size-3.5" />
+              Anterior
+            </Button>
+            <span className="px-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+              {pagina + 1} / {paginas}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pagina + 1 >= paginas}
+              onClick={() => setPagina((actual) => Math.min(paginas - 1, actual + 1))}
+              className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+            >
+              Siguiente
+              <ChevronRight aria-hidden="true" className="ml-1 size-3.5" />
+            </Button>
+          </div>
+        </nav>
+      )}
     </SeccionReporte>
   );
 }

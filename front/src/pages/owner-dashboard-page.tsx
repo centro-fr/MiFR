@@ -51,16 +51,18 @@ export function OwnerDashboardPage() {
 
         <IndicadoresDashboard />
 
-        {/* Clases de hoy suele ser la lista más larga: va sola a la izquierda. A la derecha, los
-            bloques cortos. En el celular se apilan y lo que hay que resolver queda primero. */}
+        {/* En móvil: 1) PorVerificar, 2) VencenHoy, 3) ClasesDeHoy, 4) PlanesElegidos.
+            En desktop (xl): Columna izquierda: ClasesDeHoy (lista larga). Columna derecha: PorVerificar, VencenHoy, PlanesElegidos. */}
         <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-5 xl:col-start-2 xl:row-start-1">
             <PorVerificar />
             <VencenHoy />
-            <PlanesElegidos />
           </div>
-          <div className="min-w-0 xl:col-start-1 xl:row-start-1">
+          <div className="min-w-0 xl:col-start-1 xl:row-start-1 xl:row-span-2">
             <ClasesDeHoy />
+          </div>
+          <div className="min-w-0 xl:col-start-2 xl:row-start-2">
+            <PlanesElegidos />
           </div>
         </div>
 

@@ -5,13 +5,14 @@ import { FiltrosDelMes } from "../controles-informe";
 vi.mock("@/features/honorarios/utils/periodo", async (original) => ({
   ...(await original<typeof import("@/features/honorarios/utils/periodo")>()),
   periodoActual: () => "2026-11",
+  ultimoMesCerrado: () => "2026-10",
 }));
 
 describe("FiltrosDelMes (mes y año, como los filtros de Reportes)", () => {
   it("muestra el mes y el año del informe", () => {
-    render(<FiltrosDelMes periodo="2026-11" onChange={vi.fn()} />);
+    render(<FiltrosDelMes periodo="2026-10" onChange={vi.fn()} />);
 
-    expect(screen.getByLabelText("Mes")).toHaveValue("11");
+    expect(screen.getByLabelText("Mes")).toHaveValue("10");
     expect(screen.getByLabelText("Año")).toHaveValue("2026");
   });
 
@@ -26,13 +27,13 @@ describe("FiltrosDelMes (mes y año, como los filtros de Reportes)", () => {
     expect(onChange).toHaveBeenLastCalledWith("2025-10");
   });
 
-  it("Limpiar filtros vuelve al mes en curso y no hace falta si ya está en él", () => {
+  it("Limpiar filtros vuelve al último mes que cerró y no hace falta si ya está en él", () => {
     const onChange = vi.fn();
-    const { rerender } = render(<FiltrosDelMes periodo="2026-11" onChange={onChange} />);
+    const { rerender } = render(<FiltrosDelMes periodo="2026-10" onChange={onChange} />);
     expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeDisabled();
 
     rerender(<FiltrosDelMes periodo="2025-03" onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-    expect(onChange).toHaveBeenLastCalledWith("2026-11");
+    expect(onChange).toHaveBeenLastCalledWith("2026-10");
   });
 });

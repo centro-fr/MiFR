@@ -4,7 +4,7 @@ import {
   MESES_DEL_ANIO,
   aniosConsultablesHonorarios,
   esPeriodoFuturo,
-  periodoActual,
+  ultimoMesCerrado,
 } from "@/features/honorarios/utils/periodo";
 
 interface PropsFiltrosDelMes {
@@ -14,23 +14,24 @@ interface PropsFiltrosDelMes {
 
 /**
  * Mes y año del informe, como los filtros de Reportes: se aplican al elegirlos y "Limpiar filtros"
- * vuelve al mes en curso. Los meses que todavía no llegaron no se pueden elegir.
+ * vuelve al último mes que cerró. Los meses que todavía no finalizaron no se pueden elegir.
  */
 export function FiltrosDelMes({ periodo, onChange }: PropsFiltrosDelMes) {
-  const [anio = "2026", mes = "11"] = periodo.split("-");
+  const cerrado = ultimoMesCerrado();
+  const [anioCerrado, mesCerrado] = cerrado.split("-");
+  const [anio = anioCerrado, mes = mesCerrado] = periodo.split("-");
   const anioNum = Number(anio);
   const anios = aniosConsultablesHonorarios(anioNum);
-  const actual = periodoActual();
 
   function cambiarAnio(nuevoAnio: string) {
-    const [anioAct, mesAct] = actual.split("-").map(Number);
-    // Al volver al año en curso con un mes que todavía no llegó, se queda en el mes en curso.
-    const mesAjustado = Number(nuevoAnio) === anioAct && Number(mes) > mesAct ? String(mesAct).padStart(2, "0") : mes;
+    const [anioCer, mesCer] = cerrado.split("-").map(Number);
+    // Al volver al año del último mes cerrado con un mes que todavía no finalizó, se queda en el último mes cerrado.
+    const mesAjustado = Number(nuevoAnio) === anioCer && Number(mes) > mesCer ? String(mesCer).padStart(2, "0") : mes;
     onChange(`${nuevoAnio}-${mesAjustado}`);
   }
 
   return (
-    <GrupoDeFiltros onLimpiar={() => onChange(actual)} hayFiltros={periodo !== actual}>
+    <GrupoDeFiltros onLimpiar={() => onChange(cerrado)} hayFiltros={periodo !== cerrado}>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="honorarios-mes" className={ETIQUETA_FILTRO}>
           Mes

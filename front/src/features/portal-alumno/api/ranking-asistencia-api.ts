@@ -4,9 +4,13 @@ import { rankingAsistenciaSchema, type RankingAsistencia } from "../schemas/rank
 export interface FiltrosRankingAsistencia {
   desde?: string;
   hasta?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export async function obtenerRankingAsistencia(filtros: FiltrosRankingAsistencia = {}): Promise<RankingAsistencia> {
-  const { data } = await apiClient.get("/reportes/ranking-asistencia", { params: filtros });
+  const { data } = await apiClient.get("/reportes/ranking-asistencia", {
+    params: { limit: 100, ...filtros },
+  });
   return rankingAsistenciaSchema.parse(data);
 }

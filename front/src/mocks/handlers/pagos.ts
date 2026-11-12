@@ -2,7 +2,7 @@ import { http, HttpResponse, delay } from "msw";
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
 import { precioVigenteDePlan } from "@/mocks/precios";
-import { precioConPromocion } from "@/mocks/handlers/promociones";
+import { precioConPromocion, promociones } from "@/mocks/handlers/promociones";
 import type { InscripcionMock, PagoMock } from "@/mocks/data/inscripciones";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
@@ -272,6 +272,8 @@ export const pagosHandlers = [
       ? db.profesoras.find((pr) => pr.id_profesora === pago.id_profesora_cobra)
       : null;
     const profesoraUsuario = profesora ? db.usuarios.find((u) => u.id_usuario === profesora.id_usuario) : null;
+    const idPromo = (pago as { id_promocion?: number | null }).id_promocion ?? inscripcion.id_promocion ?? null;
+    const promocionObj = idPromo ? promociones.find((p) => p.id_promocion === idPromo) : null;
 
     return HttpResponse.json({
       numero: pago.id_pago,
@@ -284,6 +286,7 @@ export const pagosHandlers = [
         dni: usuarioAlumno?.dni ?? null,
       },
       plan: plan?.nombre ?? "Plan",
+      promocion: promocionObj ? { codigo: promocionObj.codigo, nombre: promocionObj.nombre } : null,
       cuota: {
         numero: pago.id_cuota,
         vencimiento: pago.fecha_pago,

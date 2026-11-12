@@ -3,6 +3,5 @@ export const PESTANAS_REPORTES = [
   { etiqueta: "Inscripciones", ruta: "inscripciones" },
   { etiqueta: "Planes", ruta: "planes" },
   { etiqueta: "Ocupación", ruta: "ocupacion" },
-  { etiqueta: "Asistencia", ruta: "asistencia" },
   { etiqueta: "Ranking", ruta: "ranking" },
 ] as const;

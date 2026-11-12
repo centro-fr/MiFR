@@ -94,6 +94,11 @@ export class AsistenciaService implements IInfoAsistencia {
     return this.repositorio.completarAusentes(clase.id_clase, inscriptos, fechaRegistro);
   }
 
+  async completarPresentes(clase: ClaseConDatos, fechaRegistro: Date): Promise<number> {
+    const inscriptos = await this.inscripciones.listarParaAsistencia(clase.id_horario, clase.fecha_clase);
+    return this.repositorio.completarPresentes(clase.id_clase, inscriptos, fechaRegistro);
+  }
+
   private marcaDe(idClase: number, solicitante: Solicitante) {
     return { idClase, idUsuario: solicitante.idUsuario, fechaRegistro: new Date() };
   }

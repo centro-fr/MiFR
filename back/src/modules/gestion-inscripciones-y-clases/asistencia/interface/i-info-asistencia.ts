@@ -19,6 +19,8 @@ export interface IInfoAsistencia {
   // Registra ausentes a los inscriptos vigentes sin marcar; no toca a los ya marcados. Devuelve
   // cuántos ausentes agregó.
   completarAusentes(clase: ClaseConDatos, fechaRegistro: Date): Promise<number>;
+  // RN: Registra presentes a los inscriptos vigentes cuando una clase no tuvo ninguna asistencia marcada.
+  completarPresentes(clase: ClaseConDatos, fechaRegistro: Date): Promise<number>;
   // De una sola consulta. Solo cuentan las clases cerradas (DICTADA): una abierta todavía puede cambiar.
   // Una inscripción sin marcas en clases cerradas no figura.
   rachasDeInasistencia(idsInscripciones: number[]): Promise<Map<number, RachaDeInasistencia>>;

@@ -48,6 +48,14 @@ export function FilasComprobante({ comprobante }: { comprobante: ComprobantePago
         {alumno.dni && <span className="block text-xs font-normal text-slate-500 dark:text-slate-400">DNI {alumno.dni}</span>}
       </FilaDeDetalle>
       <FilaDeDetalle etiqueta="Plan">{comprobante.plan}</FilaDeDetalle>
+      {comprobante.promocion && (
+        <FilaDeDetalle etiqueta="Promoción">
+          {comprobante.promocion.nombre}
+          <span className="block text-xs font-normal text-slate-500 dark:text-slate-400">
+            Código: {comprobante.promocion.codigo}
+          </span>
+        </FilaDeDetalle>
+      )}
       <FilaDeDetalle etiqueta="Cuota">N° {comprobante.cuota.numero}</FilaDeDetalle>
       <FilaDeDetalle etiqueta="Cobró">
         <QuienCobro comprobante={comprobante} />

@@ -28,36 +28,42 @@ export function nombreDelMes(mes: string | number): string {
   return encontrado ? encontrado.etiqueta : "";
 }
 
+export function sumarMeses(periodo: string, meses: number): string {
+  const [anio, mes] = periodo.split("-").map(Number);
+  const fecha = new Date(Date.UTC(anio, mes - 1 + meses, 1));
+  return fecha.toISOString().slice(0, 7);
+}
+
+export function periodoActual(): string {
+  return fechaActualArgentina().slice(0, 7);
+}
+
+/** Último mes finalizado/cerrado: el nuevo mes se muestra solo cuando haya finalizado. */
+export function ultimoMesCerrado(): string {
+  return sumarMeses(periodoActual(), -1);
+}
+
 export function aniosConsultablesHonorarios(anioSeleccionado?: number): number[] {
-  const anioActualNum = Number(periodoActual().slice(0, 4));
-  const base = [anioActualNum, anioActualNum - 1, anioActualNum - 2, anioActualNum - 3];
+  const anioCerradoNum = Number(ultimoMesCerrado().slice(0, 4));
+  const base = [anioCerradoNum, anioCerradoNum - 1, anioCerradoNum - 2, anioCerradoNum - 3];
   if (anioSeleccionado && !base.includes(anioSeleccionado)) {
     base.push(anioSeleccionado);
   }
   return base.sort((a, b) => b - a);
 }
 
+/** Un período no está disponible si es el mes en curso o futuro (aún no finalizó). */
 export function esPeriodoFuturo(anio: number, mes: number): boolean {
-  const [anioActual, mesActual] = periodoActual().split("-").map(Number);
-  return anio > anioActual || (anio === anioActual && mes > mesActual);
+  const [anioCerrado, mesCerrado] = ultimoMesCerrado().split("-").map(Number);
+  return anio > anioCerrado || (anio === anioCerrado && mes > mesCerrado);
 }
 
 const FORMATO_MES = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
 
-export function periodoActual(): string {
-  return fechaActualArgentina().slice(0, 7);
-}
-
-/** El mes de la URL si es válido y ya empezó; si no, el actual. No se liquida un mes que no empezó. */
+/** El mes de la URL si es válido y ya finalizó; si no, el último mes que cerró. */
 export function periodoDesdeParametro(valor: string | null): string {
-  const actual = periodoActual();
-  return valor !== null && PERIODO.test(valor) && valor <= actual ? valor : actual;
-}
-
-function sumarMeses(periodo: string, meses: number): string {
-  const [anio, mes] = periodo.split("-").map(Number);
-  const fecha = new Date(Date.UTC(anio, mes - 1 + meses, 1));
-  return fecha.toISOString().slice(0, 7);
+  const cerrado = ultimoMesCerrado();
+  return valor !== null && PERIODO.test(valor) && valor <= cerrado ? valor : cerrado;
 }
 
 /** Del más reciente al más antiguo, empezando por el mes actual. */

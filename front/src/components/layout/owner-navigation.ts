@@ -64,7 +64,7 @@ const SECCION_REPORTES = "Reportes";
 const SECCION_CENTRO = "Centro";
 
 export const ITEMS_PROPIETARIA: ItemMenu[] = [
-  { etiqueta: "Dashboard", icono: LayoutDashboard, to: "/app/dashboard" },
+  { etiqueta: "Inicio", icono: House, to: "/app/dashboard" },
   {
     etiqueta: "Listado",
     icono: Users,
@@ -106,7 +106,6 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
   { etiqueta: "Inscripciones", icono: BarChart3, seccion: SECCION_REPORTES, to: "/app/reportes/inscripciones", subrutasDe: "/app/reportes" },
   { etiqueta: "Planes más elegidos", icono: Tags, seccion: SECCION_REPORTES, to: "/app/reportes/planes" },
   { etiqueta: "Ocupación", icono: CalendarClock, seccion: SECCION_REPORTES, to: "/app/reportes/ocupacion" },
-  { etiqueta: "Asistencia", icono: BookOpen, seccion: SECCION_REPORTES, to: "/app/reportes/asistencia" },
   { etiqueta: "Ranking", icono: Trophy, seccion: SECCION_REPORTES, to: "/app/reportes/ranking" },
   { etiqueta: "Actividades", icono: Dumbbell, seccion: SECCION_CENTRO, to: "/app/actividades" },
   { etiqueta: "Profesores", icono: GraduationCap, seccion: SECCION_CENTRO, to: "/app/profesoras", subrutasDe: "/app/profesoras", descripcion: "Plantel de profesores, especialidades y staff." },

@@ -31,12 +31,37 @@ import { cn } from "@/utils/cn";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
-const NIVEL: Record<NivelOcupacion, { texto: string; estilo: string; barra: string }> = {
-  COMPLETO: { texto: "Completo", estilo: "bg-rose-50 text-rose-800 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/30", barra: "bg-rose-500" },
-  CASI_LLENO: { texto: "Casi lleno", estilo: "bg-orange-50 text-orange-800 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-200 dark:ring-orange-400/30", barra: "bg-orange-400" },
-  MODERADO: { texto: "Moderado", estilo: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/30", barra: "bg-amber-400" },
-  LIBRE: { texto: "Libre", estilo: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/30", barra: "bg-emerald-500" },
-  SIN_CUPO: { texto: "Sin cupo", estilo: "bg-slate-100 text-slate-700 ring-slate-200 dark:bg-white/5 dark:text-slate-300 dark:ring-white/10", barra: "bg-slate-400" },
+const NIVEL: Record<NivelOcupacion, { texto: string; badge: string; dot: string; barra: string }> = {
+  COMPLETO: {
+    texto: "Completo",
+    badge: "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300",
+    dot: "bg-rose-500",
+    barra: "bg-rose-500",
+  },
+  CASI_LLENO: {
+    texto: "Casi lleno",
+    badge: "border-orange-200/60 bg-orange-50 text-orange-700 dark:border-orange-800/40 dark:bg-orange-950/40 dark:text-orange-300",
+    dot: "bg-orange-500",
+    barra: "bg-orange-400",
+  },
+  MODERADO: {
+    texto: "Moderado",
+    badge: "border-amber-200/60 bg-amber-50 text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300",
+    dot: "bg-amber-500",
+    barra: "bg-amber-400",
+  },
+  LIBRE: {
+    texto: "Libre",
+    badge: "border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+    barra: "bg-emerald-500",
+  },
+  SIN_CUPO: {
+    texto: "Sin cupo",
+    badge: "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    dot: "bg-slate-400",
+    barra: "bg-slate-400",
+  },
 };
 
 /** De más lleno a más vacío; los sin cupo, al final. */
@@ -52,7 +77,7 @@ function inscriptosDe(horario: HorarioOcupado): string {
 
 function aTabla(informe: InformeOcupacion, detalle: string): TablaExportable {
   return {
-    titulo: "Ocupación de horarios",
+    titulo: "Ocupación",
     detalle,
     resumen: [
       ["Horarios", String(informe.totalHorarios)],
@@ -119,7 +144,13 @@ function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
                   )}
                 </td>
                 <td className={TD}>
-                  <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ring-1 ring-inset", NIVEL[h.nivel].estilo)}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shadow-2xs",
+                      NIVEL[h.nivel].badge,
+                    )}
+                  >
+                    <span className={cn("size-1.5 rounded-full shrink-0", NIVEL[h.nivel].dot)} aria-hidden="true" />
                     {NIVEL[h.nivel].texto}
                   </span>
                 </td>
@@ -158,7 +189,7 @@ export function OcupacionReportePage() {
 
   return (
     <PaginaReportes
-      titulo="Ocupación de horarios"
+      titulo="Ocupación"
       subtitulo={detalle}
       acciones={<MenuExportar disabled={horarios.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
@@ -206,11 +237,10 @@ export function OcupacionReportePage() {
             <ResumenEnTarjetas
               datos={[
                 { etiqueta: "Horarios", valor: String(informe.totalHorarios) },
-                { etiqueta: "Completos", valor: String(informe.porNivel.COMPLETO), nota: `${informe.porNivel.CASI_LLENO} casi llenos` },
-                { etiqueta: "Libres", valor: String(informe.porNivel.LIBRE), nota: "Menos del 60 %" },
+                { etiqueta: "Completos", valor: String(informe.porNivel.COMPLETO) },
+                { etiqueta: "Libres", valor: String(informe.porNivel.LIBRE) },
                 { etiqueta: "Ocupación total", valor: formatearPorcentaje(informe.ocupacionTotal) },
               ]}
-              aclaracion="Inscriptos activos sobre el cupo de cada horario. Libre: menos del 60 %; moderado: hasta 84 %; casi lleno: hasta 99 %."
             />
 
             <div className="flex items-center justify-start">

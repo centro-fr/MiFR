@@ -123,6 +123,27 @@ export class AsistenciaRepository {
     return count;
   }
 
+  // RN: Si una clase no tiene marcada ninguna asistencia debe pasarse a todos los alumnos como presentes.
+  async completarPresentes(
+    idClase: number,
+    inscriptos: InscriptoDeHorario[],
+    fechaRegistro: Date,
+  ): Promise<number> {
+    if (inscriptos.length === 0) return 0;
+    const { count } = await clienteEnCurso(this.prisma).asistencias.createMany({
+      data: inscriptos.map(({ id_alumno, id_inscripcion }) => ({
+        id_clase: idClase,
+        id_alumno,
+        id_inscripcion,
+        asistio: true,
+        id_usuario_registra: null,
+        fecha_registro: fechaRegistro,
+      })),
+      skipDuplicates: true,
+    });
+    return count;
+  }
+
   // Las clases se ordenan por su inicio (día y hora del horario): dos del mismo día no empatan. Las
   // ausencias que cuentan son las posteriores a la última clase a la que asistió, o todas si nunca asistió.
   async rachasDeInasistencia(idsInscripciones: number[]): Promise<Map<number, RachaDeInasistencia>> {

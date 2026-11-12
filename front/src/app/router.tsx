@@ -163,8 +163,8 @@ export const router = createBrowserRouter([
           { index: true, loader: redirigirA("/app/reportes/inscripciones") },
           // US-35: inscriptos por mes.
           { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
-          // US-33: informe de asistencia.
-          { path: "asistencia", lazy: paginaPerezosa(() => import("@/features/reportes/pages/informe-asistencia-page"), "InformeAsistenciaPage") },
+          // US-33: informe de asistencia retirado (redirige al ranking).
+          { path: "asistencia", loader: redirigirA("/app/reportes/ranking") },
           // US-36: planes más elegidos.
           { path: "planes", lazy: paginaPerezosa(() => import("@/features/reportes/pages/planes-page"), "PlanesReportePage") },
           // US-37: ocupación de horarios.

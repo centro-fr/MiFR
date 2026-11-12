@@ -20,8 +20,8 @@ export class CierreAsistenciaService {
     private readonly unidadDeTrabajo: IUnidadDeTrabajo,
   ) {}
 
-  // El botón genera los ausentes siempre, aunque no se haya marcado a nadie: puede que no haya
-  // venido ningún alumno. Cerrar una clase ya cerrada devuelve la clase sin tocar nada.
+  // Si la clase tiene marcas manuales, se completan con ausente los inscriptos no marcados.
+  // RN: Si una clase no tiene marcada ninguna asistencia, debe pasarse a todos los alumnos como presentes.
   async cerrarManualmente(idClase: number, solicitante: Solicitante): Promise<ClaseConDatos> {
     const clase = await this.clases.obtenerPara(idClase, solicitante);
     if (clase.estado === "CANCELADA") throw new ConflictError("La clase está cancelada");
@@ -31,7 +31,12 @@ export class CierreAsistenciaService {
     return this.unidadDeTrabajo.ejecutar(async () => {
       const cerrada = await this.clases.cerrar(idClase, ahora);
       if (!cerrada) return this.clases.obtenerPara(idClase, solicitante);
-      await this.asistencias.completarAusentes(cerrada, ahora);
+      const conMarcas = await this.asistencias.tieneMarcasManuales(idClase);
+      if (conMarcas) {
+        await this.asistencias.completarAusentes(cerrada, ahora);
+      } else {
+        await this.asistencias.completarPresentes(cerrada, ahora);
+      }
       return cerrada;
     });
   }
@@ -52,13 +57,16 @@ export class CierreAsistenciaService {
     return cerradas;
   }
 
-  // Sin ninguna marca a mano se entiende que no se tomó asistencia, y no se inventan faltas.
+  // RN: Si una clase no tiene marcada ninguna asistencia debe pasarse a todos los alumnos como presentes.
   private cerrarAutomaticamente(clase: ClaseConDatos, ahora: Date): Promise<boolean> {
     return this.unidadDeTrabajo.ejecutar(async () => {
       const cerrada = await this.clases.cerrar(clase.id_clase, ahora);
       if (!cerrada) return false;
-      if (await this.asistencias.tieneMarcasManuales(clase.id_clase)) {
+      const conMarcas = await this.asistencias.tieneMarcasManuales(clase.id_clase);
+      if (conMarcas) {
         await this.asistencias.completarAusentes(cerrada, ahora);
+      } else {
+        await this.asistencias.completarPresentes(cerrada, ahora);
       }
       return true;
     });

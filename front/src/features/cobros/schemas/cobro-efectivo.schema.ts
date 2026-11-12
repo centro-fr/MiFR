@@ -99,6 +99,15 @@ export const comprobantePagoSchema = z.object({
     numero: z.number().int(),
     vencimiento: z.string(),
   }),
+  precio_lista: z.number().nullable().optional(),
+  descuento: z.number().optional(),
+  promocion: z
+    .object({
+      codigo: z.string(),
+      nombre: z.string(),
+    })
+    .nullable()
+    .optional(),
   registrado_por: z.object({
     nombre: z.string(),
     apellido: z.string(),

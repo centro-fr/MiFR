@@ -28,7 +28,7 @@ function crearMocks() {
       listarAbiertasHasta: vi.fn().mockResolvedValue([]),
       cerrar: vi.fn(async (id: number, _fecha: Date): Promise<ClaseConDatos | null> => clase(id, "DICTADA")),
     },
-    asistencias: { tieneMarcasManuales: vi.fn(), completarAusentes: vi.fn() },
+    asistencias: { tieneMarcasManuales: vi.fn(), completarAusentes: vi.fn(), completarPresentes: vi.fn() },
     parametros: { obtener: vi.fn().mockResolvedValue(0) },
     unidadDeTrabajo: { ejecutar: vi.fn(<T>(operacion: () => Promise<T>) => operacion()) },
   };
@@ -48,14 +48,25 @@ describe("CierreAsistenciaService", () => {
     );
   });
 
-  it("cerrarManualmente cierra la clase y registra ausentes aunque no se haya marcado a nadie", async () => {
+  it("cerrarManualmente registra presentes a todos si la clase no tuvo marcas manuales (RN)", async () => {
+    mocks.asistencias.tieneMarcasManuales.mockResolvedValue(false);
     const cerrada = await servicio.cerrarManualmente(20, PROFESORA);
 
     expect(mocks.clases.obtenerPara).toHaveBeenCalledWith(20, PROFESORA);
     expect(mocks.unidadDeTrabajo.ejecutar).toHaveBeenCalledTimes(1);
     const [, fechaCierre] = mocks.clases.cerrar.mock.calls[0]!;
+    expect(mocks.asistencias.completarPresentes).toHaveBeenCalledWith(cerrada, fechaCierre);
+    expect(mocks.asistencias.completarAusentes).not.toHaveBeenCalled();
+    expect(cerrada.estado).toBe("DICTADA");
+  });
+
+  it("cerrarManualmente completa ausentes a los no marcados si la clase tuvo marcas manuales", async () => {
+    mocks.asistencias.tieneMarcasManuales.mockResolvedValue(true);
+    const cerrada = await servicio.cerrarManualmente(20, PROFESORA);
+
+    const [, fechaCierre] = mocks.clases.cerrar.mock.calls[0]!;
     expect(mocks.asistencias.completarAusentes).toHaveBeenCalledWith(cerrada, fechaCierre);
-    expect(mocks.asistencias.tieneMarcasManuales).not.toHaveBeenCalled();
+    expect(mocks.asistencias.completarPresentes).not.toHaveBeenCalled();
     expect(cerrada.estado).toBe("DICTADA");
   });
 
@@ -123,7 +134,7 @@ describe("CierreAsistenciaService", () => {
     await expect(servicio.procesarCierresAutomaticos(new Date("2026-10-13T02:00:00Z"))).resolves.toBe(1);
   });
 
-  it("procesarCierresAutomaticos completa ausentes solo si alguien marcó a mano", async () => {
+  it("procesarCierresAutomaticos completa ausentes si hubo marcas a mano, o presentes si no hubo marcas", async () => {
     const ahora = new Date("2026-10-13T00:00:00Z");
     mocks.clases.listarAbiertasHasta.mockResolvedValue([clase(20), clase(21)]);
     mocks.asistencias.tieneMarcasManuales.mockImplementation(async (id: number) => id === 20);
@@ -131,6 +142,8 @@ describe("CierreAsistenciaService", () => {
     await expect(servicio.procesarCierresAutomaticos(ahora)).resolves.toBe(2);
     expect(mocks.asistencias.completarAusentes).toHaveBeenCalledTimes(1);
     expect(mocks.asistencias.completarAusentes).toHaveBeenCalledWith(clase(20, "DICTADA"), ahora);
+    expect(mocks.asistencias.completarPresentes).toHaveBeenCalledTimes(1);
+    expect(mocks.asistencias.completarPresentes).toHaveBeenCalledWith(clase(21, "DICTADA"), ahora);
   });
 
   it("procesarCierresAutomaticos no cuenta ni completa una clase que otro cierre ya cerró", async () => {
