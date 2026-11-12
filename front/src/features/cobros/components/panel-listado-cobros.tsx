@@ -268,11 +268,11 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
-                    <th scope="col" className="px-5 py-3.5 whitespace-nowrap">
-                      N° Recibo
-                    </th>
                     <th scope="col" className="px-5 py-3.5">
                       Alumno
+                    </th>
+                    <th scope="col" className="px-5 py-3.5 whitespace-nowrap">
+                      N° Recibo
                     </th>
                     <th scope="col" className="px-4 py-3.5">
                       Plan
@@ -313,9 +313,6 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                         key={cobro.id_pago}
                         className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
                       >
-                        <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          {nroReciboTexto}
-                        </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
@@ -334,6 +331,9 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {nroReciboTexto}
                         </td>
                         <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
                           {cobro.plan.nombre}
