@@ -15,8 +15,7 @@ function renderizar(ruta: string, user: AuthUser | null, isLoading = false) {
       <Routes>
         <Route path="/login" element={<GuestOnlyRoute>Formulario de login</GuestOnlyRoute>} />
         <Route path="/app/dashboard" element={<ProtectedRoute>Panel de la propietaria</ProtectedRoute>} />
-        <Route path="/app/hoy" element={<ProtectedRoute>Clases de hoy</ProtectedRoute>} />
-        <Route path="/app/inicio" element={<ProtectedRoute>Inicio del alumno</ProtectedRoute>} />
+        <Route path="/app/inicio" element={<ProtectedRoute>Inicio</ProtectedRoute>} />
         <Route path="/app/actividades" element={<ProtectedRoute>Contenido protegido</ProtectedRoute>} />
       </Routes>
     </MemoryRouter>,
@@ -52,8 +51,8 @@ describe("GuestOnlyRoute", () => {
 
   it.each([
     [["PROPIETARIA"], "Panel de la propietaria"],
-    [["PROFESORA"], "Clases de hoy"],
-    [["ALUMNO"], "Inicio del alumno"],
+    [["PROFESORA"], "Inicio"],
+    [["ALUMNO"], "Inicio"],
   ] as const)("con sesión %j: redirige a su pantalla de inicio", (roles, pantalla) => {
     renderizar("/login", crearUsuario([...roles]));
     expect(screen.getByText(pantalla)).toBeInTheDocument();

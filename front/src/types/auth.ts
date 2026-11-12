@@ -26,6 +26,6 @@ export type AuthErrorCode =
 
 export function homePathForRoles(roles: readonly RoleCode[]): string {
   if (roles.includes("PROPIETARIA")) return "/app/dashboard";
-  if (roles.includes("PROFESORA")) return "/app/hoy";
+  if (roles.includes("PROFESORA")) return "/app/inicio";
   return "/app/inicio";
 }

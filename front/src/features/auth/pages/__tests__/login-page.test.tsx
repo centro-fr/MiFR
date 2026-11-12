@@ -31,8 +31,7 @@ function renderLogin(login: AuthContextValue["login"]) {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/app/dashboard" element={<p>Panel de la propietaria</p>} />
-          <Route path="/app/hoy" element={<p>Clases de hoy</p>} />
-          <Route path="/app/inicio" element={<p>Inicio del alumno</p>} />
+          <Route path="/app/inicio" element={<p>Inicio</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -63,8 +62,8 @@ describe("LoginPage (US-01)", () => {
 
   it.each([
     ["PROPIETARIA", "Panel de la propietaria"],
-    ["PROFESORA", "Clases de hoy"],
-    ["ALUMNO", "Inicio del alumno"],
+    ["PROFESORA", "Inicio"],
+    ["ALUMNO", "Inicio"],
   ] as [RoleCode, string][])("al elegir el perfil %s ingresa a su pantalla de inicio", async (rol, pantalla) => {
     const login = vi.fn().mockResolvedValue(crearUsuario([rol]));
     renderLogin(login);
@@ -88,7 +87,7 @@ describe("LoginPage (US-01)", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo iniciar sesión con ese perfil.");
 
     fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
-    expect(await screen.findByText("Clases de hoy")).toBeInTheDocument();
+    expect(await screen.findByText("Inicio")).toBeInTheDocument();
     expect(login).toHaveBeenCalledTimes(2);
   });
 });
