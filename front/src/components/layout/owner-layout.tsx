@@ -509,10 +509,10 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
 /** Barra superior: trigger del menú lateral, migas de pan, notificaciones y alternar tema */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light px-4 sm:px-6 lg:px-8 dark:bg-canvas">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light px-3 sm:px-4 dark:bg-canvas">
       <div className="flex items-center gap-2 min-w-0">
         <SidebarTrigger className="-ml-1 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white" />
-        <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+        <Separator orientation="vertical" className="h-4 hidden md:block" />
         <div className="flex items-center gap-2.5 md:hidden">
           <LogoMarca />
           <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>
