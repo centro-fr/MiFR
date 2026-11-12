@@ -17,29 +17,34 @@ interface Props {
   titulo: string;
   /** Pantalla de detalle (asistencia, ficha): la flecha de volver reemplaza al logo. */
   volverA?: string;
+  /** Al medio de la barra superior: el selector de menor del tutor. */
+  centro?: ReactNode;
 }
 
 function iniciales(nombre: string, apellido: string): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toLocaleUpperCase("es");
 }
 
-function BarraSuperior({ titulo, volverA }: Pick<Props, "titulo" | "volverA">) {
+function BarraSuperior({ titulo, volverA, centro }: Pick<Props, "titulo" | "volverA" | "centro">) {
   const { user } = useAuth();
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 bg-dark pr-2 pl-3 text-white">
-      {volverA ? (
-        <Link
-          to={volverA}
-          aria-label="Volver"
-          className="-ml-2 flex size-11 items-center justify-center rounded-lg text-slate-300 hover:text-white"
-        >
-          <ChevronLeft aria-hidden="true" className="size-5" />
-        </Link>
-      ) : (
-        <LogoFr className="size-7" />
-      )}
-      <span className="truncate text-base font-bold">{titulo}</span>
-      <div className="ml-auto flex items-center gap-0.5">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-sidebar-border bg-sidebar pr-2 pl-3 text-sidebar-foreground">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {volverA ? (
+          <Link
+            to={volverA}
+            aria-label="Volver"
+            className="-ml-2 flex size-11 items-center justify-center rounded-lg text-slate-300 hover:text-white"
+          >
+            <ChevronLeft aria-hidden="true" className="size-5" />
+          </Link>
+        ) : (
+          <LogoFr className="size-7" />
+        )}
+        <span className="truncate text-base font-bold">{titulo}</span>
+      </div>
+      {centro}
+      <div className="flex flex-1 items-center justify-end gap-0.5">
         <CampanaNotificaciones sobreFondoOscuro />
         <Link
           to="/app/perfil"
@@ -112,11 +117,11 @@ function BarraInferior({ items }: { items: ItemConEstado[] }) {
   );
 }
 
-export function AppMovilLayout({ children, items, titulo, volverA }: Props) {
+export function AppMovilLayout({ children, items, titulo, volverA, centro }: Props) {
   return (
     <EnAppMovilContext.Provider value>
       <div className="flex min-h-dvh flex-col bg-bg-light text-foreground dark:bg-canvas">
-        <BarraSuperior titulo={titulo} volverA={volverA} />
+        <BarraSuperior titulo={titulo} volverA={volverA} centro={centro} />
         <main className="flex w-full min-w-0 flex-1 flex-col gap-4 px-4 pt-5 pb-28">{children}</main>
         <BarraInferior items={items} />
       </div>

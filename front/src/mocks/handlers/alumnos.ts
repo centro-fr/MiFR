@@ -324,18 +324,23 @@ function esSoloProfesora(request: Request): boolean {
   return roles.includes("PROFESORA") && !roles.includes("PROPIETARIA");
 }
 
-function alumnoDeLaSesion(request: Request): AlumnoMock | undefined {
+function idsDeLaSesion(request: Request): number[] {
   const usuario = usuarioDeLaSesion(request);
-  if (!usuario) return undefined;
+  if (!usuario) return [];
   const persona = db.usuariosPersonas.find(
     (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
   );
-  const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
-  return db.alumnos.find(
-    (alumno) =>
-      idsCandidatos.includes(alumno.id_usuario) ||
-      (alumno.id_usuario_responsable !== null && idsCandidatos.includes(alumno.id_usuario_responsable)),
-  );
+  return [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+}
+
+/** El alumno es quien inició sesión o un menor a su cargo. */
+function esDeLaSesion(request: Request, alumno: AlumnoMock): boolean {
+  const ids = idsDeLaSesion(request);
+  return ids.includes(alumno.id_usuario) || (alumno.id_usuario_responsable !== null && ids.includes(alumno.id_usuario_responsable));
+}
+
+function alumnoDeLaSesion(request: Request): AlumnoMock | undefined {
+  return db.alumnos.find((alumno) => esDeLaSesion(request, alumno));
 }
 
 function diaDeSemana(fecha: Date): number {
@@ -541,6 +546,14 @@ export const alumnosHandlers = [
   // endpoint del backend cuando esté disponible.
   http.get("*/api/v1/alumnos/mi-panel", async ({ request }) => {
     await delay(300);
+    // Con ?id_alumno= el tutor pide el de uno de sus menores; solo si es propio o está a su cargo.
+    const pedido = Number(new URL(request.url).searchParams.get("id_alumno"));
+    if (pedido) {
+      const alumno = db.alumnos.find((item) => item.id_alumno === pedido);
+      if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno");
+      if (!esDeLaSesion(request, alumno)) return errorApi(403, "FORBIDDEN", "No tiene permisos para ver este alumno");
+      return HttpResponse.json(panelAlumnoDe(alumno));
+    }
     const alumno = alumnoDeLaSesion(request) ?? db.alumnos.find((item) => item.estado !== "BAJA");
     if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno asociado");
     return HttpResponse.json(panelAlumnoDe(alumno));

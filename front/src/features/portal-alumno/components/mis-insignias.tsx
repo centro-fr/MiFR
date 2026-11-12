@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/utils/cn";
+import { useAlumnoElegido } from "../hooks/use-alumno-elegido";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import { useInsignias } from "../hooks/use-insignias";
 import type { FichaInsignias } from "../schemas/insignias";
@@ -53,6 +54,8 @@ const GRILLA = "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3";
 
 export function MisInsignias() {
   const panel = usePanelAlumno();
+  const { elegido } = useAlumnoElegido();
+  const titulo = elegido && !elegido.propio ? `Insignias de ${elegido.nombre}` : "Mis insignias";
   const consulta = useInsignias(panel.data?.id_alumno);
   const error = panel.error ?? consulta.error;
 
@@ -90,7 +93,7 @@ export function MisInsignias() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 id="titulo-mis-insignias" className="text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
-            Mis insignias
+            {titulo}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">Desbloqueá nuevos logros con tu asistencia.</p>
         </div>

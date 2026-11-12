@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { MisInsignias } from "@/features/portal-alumno/components/mis-insignias";
+import { useAlumnoElegido } from "@/features/portal-alumno/hooks/use-alumno-elegido";
 import { usePanelAlumno } from "@/features/portal-alumno/hooks/use-panel-alumno";
 import { listarProfesoras } from "@/features/profesoras/api/profesoras-api";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -61,18 +62,21 @@ function useDatosDeLaProfesora(user: AuthUser): { datos: DatosDelPerfil; consult
 
 function useDatosDelAlumno(user: AuthUser): { datos: DatosDelPerfil; consulta: Consulta } {
   const consulta = usePanelAlumno();
+  const { elegido } = useAlumnoElegido();
   const plan = consulta.data?.plan;
+  // El tutor ve el plan del menor que eligió en la barra superior.
+  const deQuien = elegido && !elegido.propio ? ` de ${elegido.nombre}` : "";
   return {
     consulta,
     datos: {
-      rol: "Alumno/a",
+      rol: deQuien ? "Tutor/a" : "Alumno/a",
       email: user.email,
       resumen: plan
         ? [
-            { etiqueta: "Plan", valor: plan.nombre },
+            { etiqueta: `Plan${deQuien}`, valor: plan.nombre },
             { etiqueta: "Profesor/a", valor: plan.profesora },
           ]
-        : [{ etiqueta: "Plan", valor: "Sin plan vigente" }],
+        : [{ etiqueta: `Plan${deQuien}`, valor: "Sin plan vigente" }],
     },
   };
 }

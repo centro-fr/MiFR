@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
+import { SelectorDeAlumno } from "@/features/portal-alumno/components/selector-de-alumno";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -509,10 +510,11 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
 }
 
 /** Barra superior: trigger del menú lateral, migas de pan, notificaciones y alternar tema */
-function BarraSuperior({ migas }: { migas: Miga[] }) {
+/** `centro`: el selector de menor del tutor, al medio de la barra. */
+function BarraSuperior({ migas, centro }: { migas: Miga[]; centro?: ReactNode }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light pl-1.5 pr-3 sm:pl-2 sm:pr-4 dark:bg-canvas">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
         <Separator orientation="vertical" className="h-4 hidden md:block" />
         <div className="flex items-center gap-2.5 md:hidden">
@@ -521,7 +523,8 @@ function BarraSuperior({ migas }: { migas: Miga[] }) {
         </div>
         <MigasDePan migas={migas} />
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      {centro}
+      <div className="flex flex-1 shrink-0 items-center justify-end gap-2">
         <CampanaNotificaciones />
         <ThemeToggle compacto />
       </div>
@@ -570,10 +573,13 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovi
   const migas = migasPersonalizadas ?? (submiga ? [...migasBase, { etiqueta: submiga }] : migasNavegacion);
   const [abiertoInicial] = useState(leerSidebarAbierto);
 
+  // El tutor elige de quién ver los datos desde la barra; solo el portal del alumno lo usa.
+  const esPortalDelAlumno = panelActivo === "ALUMNO" || panelActivo === "TUTOR";
+
   if (usaAppMovil(panelActivo, esMobile)) {
     const titulo = tituloMovil ?? items.find((item) => item.esActivo)?.etiqueta ?? "MiFR";
     return (
-      <AppMovilLayout items={items} titulo={titulo} volverA={volverA}>
+      <AppMovilLayout items={items} titulo={titulo} volverA={volverA} centro={esPortalDelAlumno && <SelectorDeAlumno sobreFondoOscuro />}>
         {children}
       </AppMovilLayout>
     );
@@ -586,7 +592,7 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovi
     >
       <MenuLateral items={items} roles={roles} rolActivo={panelActivo} onCambiarRol={cambiarPanel} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <BarraSuperior migas={migas} />
+        <BarraSuperior migas={migas} centro={esPortalDelAlumno && <SelectorDeAlumno />} />
         <main className="flex w-full min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>

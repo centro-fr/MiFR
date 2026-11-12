@@ -7,7 +7,8 @@ import { GraficoEvolucion } from "@/features/rutinas/components/grafico-evolucio
 import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejercicio";
 import { ErrorDeCarga } from "@/features/rutinas/components/tarjeta";
 import { resolverGifUrl } from "@/features/rutinas/data/catalogo-ejercicios";
-import { useMedicionesDeAlumno, useMisAlumnos, useNombresDeProfesoras, useRutinasDeAlumno } from "@/features/rutinas/hooks/use-rutinas";
+import { useAlumnoElegido } from "@/features/portal-alumno/hooks/use-alumno-elegido";
+import { useMedicionesDeAlumno, useNombresDeProfesoras, useRutinasDeAlumno } from "@/features/rutinas/hooks/use-rutinas";
 import { MEDIDAS } from "@/features/rutinas/schemas/medidas";
 import {
   describirDiferencia,
@@ -30,8 +31,7 @@ function diaYMes(fecha: string): string {
 
 function detalleDeLaRutina(rutina: Rutina): string {
   const periodo = rutina.hasta ? `del ${diaYMes(rutina.desde)} al ${diaYMes(rutina.hasta)}` : `desde el ${diaYMes(rutina.desde)}`;
-  const dias = `${rutina.dias.length} ${rutina.dias.length === 1 ? "día" : "días"}`;
-  return `${rutina.vigente ? "Vigente · " : ""}${periodo.charAt(0).toLocaleUpperCase("es")}${periodo.slice(1)} · ${dias}`;
+  return `${rutina.vigente ? "Vigente · " : ""}${periodo.charAt(0).toLocaleUpperCase("es")}${periodo.slice(1)}`;
 }
 
 /** La vigente primero y después las anteriores, de la más reciente a la más vieja. */
@@ -104,9 +104,24 @@ function RutinaPlegable({ rutina, abierta, onAlternar }: { rutina: Rutina; abier
   );
 }
 
-function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
+/** Título de la pantalla, arriba de la grilla para que la rutina y el progreso arranquen a la misma altura. */
+function EncabezadoRutina({ alumno }: { alumno: AlumnoConsultable }) {
   const consulta = useRutinasDeAlumno(alumno.id, true);
   const nombres = useNombresDeProfesoras();
+  const vigente = consulta.data?.find((rutina) => rutina.vigente);
+  const autora = vigente && nombres.get(vigente.idProfesora);
+  return (
+    <div>
+      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
+        {alumno.propio ? "Tu rutina" : `Rutina de ${alumno.nombre}`}
+      </h1>
+      {autora && <p className="mt-0.5 text-sm text-muted-foreground">La armó {autora}</p>}
+    </div>
+  );
+}
+
+function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
+  const consulta = useRutinasDeAlumno(alumno.id, true);
   const rutinas = useMemo(() => enOrden(consulta.data ?? []), [consulta.data]);
   const [abierta, setAbierta] = useState<number | null | undefined>(undefined);
   // Al entrar se ve abierta la primera (la vigente, si hay).
@@ -123,16 +138,8 @@ function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
       />
     );
   }
-  const vigente = rutinas.find((rutina) => rutina.vigente);
-  const autora = vigente && nombres.get(vigente.idProfesora);
-  const titulo = alumno.propio ? "Tu rutina" : `Rutina de ${alumno.nombre}`;
-
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div>
-        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">{titulo}</h1>
-        {autora && <p className="mt-0.5 text-sm text-muted-foreground">La armó {autora}</p>}
-      </div>
       {rutinas.length === 0 ? (
         <AvisoVacio>
           {alumno.propio ? "Tu profesora todavía no cargó una rutina." : `Su profesora todavía no le cargó una rutina a ${alumno.nombre}.`}
@@ -203,28 +210,6 @@ function MiProgreso({ alumno }: { alumno: AlumnoConsultable }) {
   );
 }
 
-/** El tutor con más de un menor elige de quién ver la rutina. */
-function SelectorDeAlumno({ alumnos, elegido, onElegir }: { alumnos: AlumnoConsultable[]; elegido: number; onElegir: (id: number) => void }) {
-  return (
-    <div role="group" aria-label="Ver la rutina de" className="flex flex-wrap gap-2">
-      {alumnos.map((alumno) => (
-        <button
-          key={alumno.id}
-          type="button"
-          aria-pressed={alumno.id === elegido}
-          onClick={() => onElegir(alumno.id)}
-          className={cn(
-            "min-h-11 rounded-xl border px-4 text-sm font-bold",
-            alumno.id === elegido ? "border-primary bg-pink-50 text-primary-dark dark:bg-primary/15 dark:text-pink-300" : "border-border bg-card",
-          )}
-        >
-          {alumno.nombre} {alumno.apellido}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function Aviso({ children }: { children: string }) {
   return (
     <p className={cn(CAJA, "flex items-start gap-2 p-4 text-sm")}>
@@ -235,8 +220,7 @@ function Aviso({ children }: { children: string }) {
 }
 
 function Contenido() {
-  const consulta = useMisAlumnos();
-  const [idElegido, setIdElegido] = useState<number | null>(null);
+  const { consulta, elegido } = useAlumnoElegido();
 
   if (consulta.isPending) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (consulta.isError) {
@@ -250,13 +234,10 @@ function Contenido() {
     );
   }
 
-  const alumnos = consulta.data;
-  const elegido = alumnos.find((alumno) => alumno.id === idElegido) ?? alumnos[0];
   if (!elegido) return <Aviso>No encontramos una ficha de alumno vinculada a tu cuenta. Consultá en el centro.</Aviso>;
 
   return (
     <>
-      {alumnos.length > 1 && <SelectorDeAlumno alumnos={alumnos} elegido={elegido.id} onElegir={setIdElegido} />}
       {elegido.dadoDeBaja ? (
         <Aviso>
           {elegido.propio
@@ -264,11 +245,14 @@ function Contenido() {
             : `La inscripción de ${elegido.nombre} está dada de baja: ya no se puede consultar su rutina ni su progreso.`}
         </Aviso>
       ) : (
-        // La key reinicia las consultas y el estado de las rutinas al cambiar de menor.
-        // Con lugar, la rutina a la izquierda y el progreso al costado.
-        <div key={elegido.id} className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <MisRutinas alumno={elegido} />
-          <MiProgreso alumno={elegido} />
+        // La key reinicia las consultas y el estado de las rutinas al cambiar de menor. Con lugar, la
+        // rutina a la izquierda y el progreso al costado.
+        <div key={elegido.id} className="flex flex-col gap-4">
+          <EncabezadoRutina alumno={elegido} />
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <MisRutinas alumno={elegido} />
+            <MiProgreso alumno={elegido} />
+          </div>
         </div>
       )}
     </>
