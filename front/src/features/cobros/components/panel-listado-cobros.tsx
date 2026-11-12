@@ -268,10 +268,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
-                    <th scope="col" className="px-5 py-3.5">
+                    <th scope="col" className="px-6 py-3.5">
                       Alumno
                     </th>
-                    <th scope="col" className="px-5 py-3.5 whitespace-nowrap">
+                    <th scope="col" className="px-4 py-3.5">
                       N° Recibo
                     </th>
                     <th scope="col" className="px-4 py-3.5">
@@ -313,7 +313,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                         key={cobro.id_pago}
                         className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
                       >
-                        <td className="px-5 py-3.5">
+                        <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
                               {inicialesDe(cobro.alumno.nombre, cobro.alumno.apellido)}
@@ -332,7 +332,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
                           {nroReciboTexto}
                         </td>
                         <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -384,6 +384,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                   ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
                   : nombrePropietaria;
                 const textoForma = cobro.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia";
+                const nroReciboTexto = `#${String(cobro.id_pago).padStart(6, "0")}`;
 
                 return (
                   <div
@@ -408,10 +409,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                           </span>
                         )}
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
-                            #{String(cobro.id_pago).padStart(6, "0")}
-                          </span>{" "}
-                          · {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)}
+                          {nroReciboTexto} · {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)}
                           {filtroForma === "TODOS" ? ` · ${textoForma}` : ""}
                           {cobro.promocion ? ` · Promoción: ${cobro.promocion.nombre}` : ""}
                           {` · ${formatearPrecio(cobro.monto)}`}
