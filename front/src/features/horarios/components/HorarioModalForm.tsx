@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Actividad } from '../../../types/actividad';
 import type { Profesora, DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
@@ -12,13 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SelectorDesplegable } from '@/components/formulario/selector-desplegable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,8 +75,6 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
   );
   const [cupoPropio, setCupoPropio] = useState<number | null>(horarioEnEdicion?.cupoPropio ?? null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const primerCampoRef = useRef<HTMLButtonElement>(null);
 
   const selectedActividad = actividades.find((a) => a.id === actividadId);
   const cupoActividadTexto = textoCupo(selectedActividad?.cupoMaximo ?? null);
@@ -194,28 +186,18 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               <Label htmlFor="horario-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Actividad <span className="text-destructive">*</span>
               </Label>
-              <Select value={actividadId} onValueChange={setActividadId}>
-                <SelectTrigger
-                  id="horario-actividad"
-                  ref={primerCampoRef}
-                  className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-                >
-                  <SelectValue placeholder={actividades.length === 0 ? "Sin actividades activas" : "Seleccionar actividad"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {actividades.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-muted-foreground">
-                      No hay actividades activas.
-                    </div>
-                  ) : (
-                    actividades.map((act) => (
-                      <SelectItem key={act.id} value={act.id}>
-                        {act.nombre}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <SelectorDesplegable
+                id="horario-actividad"
+                aria-label="Actividad"
+                valor={actividadId}
+                placeholder={actividades.length === 0 ? "Sin actividades activas" : "Seleccionar actividad"}
+                opciones={actividades.map((act) => ({
+                  valor: act.id,
+                  texto: act.nombre,
+                }))}
+                onChange={setActividadId}
+                variante="formulario"
+              />
               {actividades.length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                   No hay actividades.{" "}
@@ -230,27 +212,18 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               <Label htmlFor="horario-profesora" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Profesor/a <span className="text-destructive">*</span>
               </Label>
-              <Select value={profesoraId} onValueChange={setProfesoraId}>
-                <SelectTrigger
-                  id="horario-profesora"
-                  className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-                >
-                  <SelectValue placeholder={profesoras.length === 0 ? "Sin profesores activos" : "Seleccionar profesor/a"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {profesoras.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-muted-foreground">
-                      No hay profesores activos.
-                    </div>
-                  ) : (
-                    profesoras.map((prof) => (
-                      <SelectItem key={prof.id} value={prof.id}>
-                        {prof.nombre} {prof.apellido}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <SelectorDesplegable
+                id="horario-profesora"
+                aria-label="Profesor/a"
+                valor={profesoraId}
+                placeholder={profesoras.length === 0 ? "Sin profesores activos" : "Seleccionar profesor/a"}
+                opciones={profesoras.map((prof) => ({
+                  valor: prof.id,
+                  texto: `${prof.nombre} ${prof.apellido}`,
+                }))}
+                onChange={setProfesoraId}
+                variante="formulario"
+              />
               {profesoras.length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                   No hay profesores.{" "}

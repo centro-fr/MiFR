@@ -12,14 +12,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { TablaSkeleton, EstadoErrorCarga } from '@/components/ui/estados-pantalla';
+import { SelectorDesplegable } from '@/components/formulario/selector-desplegable';
+import { BotonLimpiarFiltros } from '@/components/ui/boton-limpiar-filtros';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { Plus } from 'lucide-react';
 
@@ -219,56 +214,37 @@ export const HorariosPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <div className="flex flex-wrap items-center gap-3">
             {/* Profesor/a */}
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 shadow-2xs">
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Profesor/a</span>
-              <Select value={filtroProfesora} onValueChange={setFiltroProfesora}>
-                <SelectTrigger
-                  aria-label="Filtrar por profesor/a"
-                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[70px]"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODAS">Todos</SelectItem>
-                  {profesoras.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.nombre} {prof.apellido}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SelectorDesplegable
+              id="filtro-profesora"
+              etiqueta="Profesor/a"
+              aria-label="Filtrar por profesor/a"
+              valor={filtroProfesora}
+              todos="Todos"
+              opciones={profesoras.map((prof) => ({
+                valor: prof.id,
+                texto: `${prof.nombre} ${prof.apellido}`,
+              }))}
+              onChange={setFiltroProfesora}
+              variante="pildora"
+            />
 
             {/* Actividad */}
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 shadow-2xs">
-              <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">Actividad</span>
-              <Select value={filtroActividad} onValueChange={setFiltroActividad}>
-                <SelectTrigger
-                  aria-label="Filtrar por disciplina"
-                  className="border-0 bg-transparent p-0 h-auto font-bold text-slate-900 dark:text-slate-100 shadow-none focus:ring-0 gap-1.5 text-xs sm:text-sm min-w-[70px]"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODAS">Todas</SelectItem>
-                  {actividades.map((act) => (
-                    <SelectItem key={act.id} value={act.id}>
-                      {act.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SelectorDesplegable
+              id="filtro-actividad"
+              etiqueta="Actividad"
+              aria-label="Filtrar por disciplina"
+              valor={filtroActividad}
+              todos="Todas"
+              opciones={actividades.map((act) => ({
+                valor: act.id,
+                texto: act.nombre,
+              }))}
+              onChange={setFiltroActividad}
+              variante="pildora"
+            />
 
             {isFilterActive && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={resetFilters}
-                className="min-h-[36px] text-xs font-bold text-primary hover:text-primary-dark"
-              >
-                Limpiar filtros
-              </Button>
+              <BotonLimpiarFiltros onLimpiar={resetFilters} />
             )}
           </div>
         </div>

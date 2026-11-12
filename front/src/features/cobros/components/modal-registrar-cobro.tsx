@@ -22,7 +22,7 @@ import { formatearPrecio } from "@/utils/moneda";
 import { calcularCotizacionCobro, type CotizacionCobro } from "@/features/cobros/api/cobros-api";
 import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
@@ -118,19 +118,20 @@ function SelectorPromocion({
       <label htmlFor="promocion-cobro" className="text-sm font-bold text-slate-800 dark:text-slate-200">
         Descuento
       </label>
-      <Select value={seleccionada} onValueChange={onChange}>
-        <SelectTrigger id="promocion-cobro" className="h-11 rounded-xl border-slate-200 dark:border-white/15">
-          <SelectValue placeholder="Sin promoción" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="SIN_PROMOCION">Sin promoción</SelectItem>
-          {promociones.map((promocion) => (
-            <SelectItem key={promocion.id} value={promocion.id}>
-              {promocion.nombre} · {promocion.tipoDescuento === "PORCENTAJE" ? `${promocion.valor}% OFF` : `${formatearPrecio(promocion.valor)} OFF`}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SelectorDesplegable
+        id="promocion-cobro"
+        aria-label="Descuento"
+        valor={seleccionada}
+        opciones={[
+          { valor: "SIN_PROMOCION", texto: "Sin promoción" },
+          ...promociones.map((promocion) => ({
+            valor: promocion.id,
+            texto: `${promocion.nombre} · ${promocion.tipoDescuento === "PORCENTAJE" ? `${promocion.valor}% OFF` : `${formatearPrecio(promocion.valor)} OFF`}`,
+          })),
+        ]}
+        onChange={onChange}
+        variante="formulario"
+      />
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { promocionFormSchema, type PromocionFormValues } from "@/features/promociones/schemas/promocion";
 import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
@@ -98,21 +98,20 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
             </Campo>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Campo label="Tipo de descuento" error={formulario.formState.errors.tipoDescuento?.message}>
-                <Select
-                  value={tipo}
-                  onValueChange={(value) =>
-                    formulario.setValue("tipoDescuento", value as PromocionFormValues["tipoDescuento"])
+              <Campo id="promocion-tipo-descuento" label="Tipo de descuento" error={formulario.formState.errors.tipoDescuento?.message}>
+                <SelectorDesplegable
+                  id="promocion-tipo-descuento"
+                  aria-label="Tipo de descuento"
+                  valor={tipo}
+                  opciones={[
+                    { valor: "PORCENTAJE", texto: "Porcentaje" },
+                    { valor: "MONTO_FIJO", texto: "Monto fijo" },
+                  ]}
+                  onChange={(value) =>
+                    formulario.setValue("tipoDescuento", value as PromocionFormValues["tipoDescuento"], { shouldValidate: true })
                   }
-                >
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PORCENTAJE">Porcentaje</SelectItem>
-                    <SelectItem value="MONTO_FIJO">Monto fijo</SelectItem>
-                  </SelectContent>
-                </Select>
+                  variante="formulario"
+                />
               </Campo>
               <Campo
                 id="promocion-valor"

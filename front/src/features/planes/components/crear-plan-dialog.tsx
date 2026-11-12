@@ -13,15 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Textarea } from "@/components/ui/textarea";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { useCrearPlan, usePlanes } from "@/features/planes/hooks/use-planes";
@@ -87,8 +79,6 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
   };
 
   const esMensual = valores.tipo === "MENSUAL";
-  const actividadesGrupales = actividades.filter((a) => a.modalidad === "GRUPAL" && a.activo);
-  const actividadesPersonalizadas = actividades.filter((a) => a.modalidad === "PERSONALIZADA" && a.activo);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -228,28 +218,17 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 <Label htmlFor="nuevo-plan-frecuencia" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Clases por semana <span className="text-destructive">*</span>
                 </Label>
-                <Select
-                  value={valores.frecuencia}
-                  onValueChange={(val) => cambiar({ frecuencia: val as FrecuenciaElegida })}
-                >
-                  <SelectTrigger
-                    id="nuevo-plan-frecuencia"
-                    aria-label="Clases por semana *"
-                    className={cn(
-                      "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
-                      errores.frecuencia && "border-rose-500"
-                    )}
-                  >
-                    <SelectValue placeholder="Seleccionar frecuencia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OPCIONES_FRECUENCIA.map((opcion) => (
-                      <SelectItem key={opcion.valor} value={opcion.valor}>
-                        {opcion.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SelectorDesplegable
+                  id="nuevo-plan-frecuencia"
+                  aria-label="Clases por semana *"
+                  valor={valores.frecuencia}
+                  opciones={OPCIONES_FRECUENCIA.map((opcion) => ({
+                    valor: opcion.valor,
+                    texto: opcion.label,
+                  }))}
+                  onChange={(val) => cambiar({ frecuencia: val as FrecuenciaElegida })}
+                  variante="formulario"
+                />
                 {errores.frecuencia && (
                   <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
                     {errores.frecuencia}
@@ -290,41 +269,18 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
               <Label htmlFor="nuevo-plan-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Actividad
               </Label>
-              <Select
-                value={valores.idActividad}
-                onValueChange={(val) => cambiar({ idActividad: val === "TODAS" ? "" : val })}
-              >
-                <SelectTrigger
-                  id="nuevo-plan-actividad"
-                  aria-label="Actividad"
-                  className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
-                >
-                  <SelectValue placeholder="Cualquier actividad" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TODAS">Cualquier actividad</SelectItem>
-                  {actividadesGrupales.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel className="text-xs font-bold text-primary">Grupales</SelectLabel>
-                      {actividadesGrupales.map((act) => (
-                        <SelectItem key={act.id} value={act.id}>
-                          {act.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                  {actividadesPersonalizadas.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel className="text-xs font-bold text-primary">Personalizadas</SelectLabel>
-                      {actividadesPersonalizadas.map((act) => (
-                        <SelectItem key={act.id} value={act.id}>
-                          {act.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                </SelectContent>
-              </Select>
+              <SelectorDesplegable
+                id="nuevo-plan-actividad"
+                aria-label="Actividad"
+                valor={valores.idActividad}
+                todos="Cualquier actividad"
+                opciones={actividades.filter((a) => a.activo).map((act) => ({
+                  valor: act.id,
+                  texto: act.nombre,
+                }))}
+                onChange={(val) => cambiar({ idActividad: val })}
+                variante="formulario"
+              />
             </div>
 
             {/* Precio inicial */}

@@ -168,7 +168,7 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
                 { valor: "", texto: "Cualquier actividad" },
                 ...actividades.map((a) => ({
                   valor: a.id,
-                  texto: `${a.nombre} (${a.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"})`,
+                  texto: a.nombre,
                 })),
               ]}
               onChange={(val) => onChange({ idActividad: val })}

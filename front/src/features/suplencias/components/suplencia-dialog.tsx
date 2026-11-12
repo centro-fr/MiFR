@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Textarea } from "@/components/ui/textarea";
 import { suplenciaFormSchema, type SuplenciaFormValues } from "@/features/suplencias/schemas/suplencia";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
@@ -98,48 +98,38 @@ export function SuplenciaDialog({
           </Campo>
 
           <Campo label="Horario" error={formulario.formState.errors.idHorario?.message}>
-            <Select
-              value={idHorario}
-              onValueChange={(value) => formulario.setValue("idHorario", value, { shouldValidate: true })}
-            >
-              <SelectTrigger
-                disabled={Boolean(suplencia)}
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
-              >
-                <SelectValue placeholder={horariosDisponibles.length === 0 ? "No hay clases este día" : "Elegí actividad y horario"} />
-              </SelectTrigger>
-              <SelectContent>
-                {horariosDisponibles.length === 0 ? (
-                  <SelectItem disabled value="_sin_clases">
-                    No hay clases registradas en este día de la semana
-                  </SelectItem>
-                ) : (
-                  horariosDisponibles.map((horario) => (
-                    <SelectItem key={horario.id_horario} value={String(horario.id_horario)}>
-                      {horario.actividad.nombre} · {horario.hora_inicio.slice(11, 16)} hs · {horario.profesora.usuario.nombre} {horario.profesora.usuario.apellido}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            <SelectorDesplegable
+              id="suplencia-horario"
+              name="idHorario"
+              aria-label="Horario"
+              disabled={Boolean(suplencia)}
+              conOpcionesNativas={false}
+              placeholder={horariosDisponibles.length === 0 ? "No hay clases este día" : "Elegí actividad y horario"}
+              valor={idHorario}
+              opciones={horariosDisponibles.map((horario) => ({
+                valor: String(horario.id_horario),
+                texto: `${horario.actividad.nombre} · ${horario.hora_inicio.slice(11, 16)} hs · ${horario.profesora.usuario.nombre} ${horario.profesora.usuario.apellido}`,
+              }))}
+              onChange={(value) => formulario.setValue("idHorario", value, { shouldValidate: true })}
+              variante="formulario"
+            />
           </Campo>
 
           <Campo label="Profesor/a suplente" error={formulario.formState.errors.idProfesoraSuplente?.message}>
-            <Select
-              value={idProfesoraSuplente}
-              onValueChange={(value) => formulario.setValue("idProfesoraSuplente", value, { shouldValidate: true })}
-            >
-              <SelectTrigger className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold">
-                <SelectValue placeholder="Elegí un/a profesor/a" />
-              </SelectTrigger>
-              <SelectContent>
-                {profesorasDisponibles.map((profesora) => (
-                  <SelectItem key={profesora.id} value={profesora.id}>
-                    {profesora.nombre} {profesora.apellido}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectorDesplegable
+              id="suplencia-profesora"
+              name="idProfesoraSuplente"
+              aria-label="Profesor/a suplente"
+              placeholder="Elegí un/a profesor/a"
+              conOpcionesNativas={false}
+              valor={idProfesoraSuplente}
+              opciones={profesorasDisponibles.map((profesora) => ({
+                valor: profesora.id,
+                texto: `${profesora.nombre} ${profesora.apellido}`,
+              }))}
+              onChange={(value) => formulario.setValue("idProfesoraSuplente", value, { shouldValidate: true })}
+              variante="formulario"
+            />
           </Campo>
 
           <Campo label="Motivo" error={formulario.formState.errors.motivo?.message} obligatorio={false}>

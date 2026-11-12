@@ -1,4 +1,5 @@
-import { CONTROL_FILTRO, ETIQUETA_FILTRO, GrupoDeFiltros } from "@/features/reportes/components/piezas-reporte";
+import { ETIQUETA_FILTRO, GrupoDeFiltros } from "@/features/reportes/components/piezas-reporte";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import {
   MESES_DEL_ANIO,
   aniosConsultablesHonorarios,
@@ -34,25 +35,33 @@ export function FiltrosDelMes({ periodo, onChange }: PropsFiltrosDelMes) {
         <label htmlFor="honorarios-mes" className={ETIQUETA_FILTRO}>
           Mes
         </label>
-        <select id="honorarios-mes" value={mes} onChange={(evento) => onChange(`${anio}-${evento.target.value}`)} className={CONTROL_FILTRO}>
-          {MESES_DEL_ANIO.map(({ valor, etiqueta }) => (
-            <option key={valor} value={valor} disabled={esPeriodoFuturo(anioNum, Number(valor))}>
-              {etiqueta}
-            </option>
-          ))}
-        </select>
+        <SelectorDesplegable
+          id="honorarios-mes"
+          aria-label="Mes"
+          valor={mes}
+          conOpcionesNativas
+          opciones={MESES_DEL_ANIO.map(({ valor, etiqueta }) => ({
+            valor,
+            texto: etiqueta,
+            disabled: esPeriodoFuturo(anioNum, Number(valor)),
+          }))}
+          onChange={(nuevoMes) => onChange(`${anio}-${nuevoMes}`)}
+          variante="formulario"
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="honorarios-anio" className={ETIQUETA_FILTRO}>
           Año
         </label>
-        <select id="honorarios-anio" value={anio} onChange={(evento) => cambiarAnio(evento.target.value)} className={CONTROL_FILTRO}>
-          {anios.map((opcion) => (
-            <option key={opcion} value={opcion}>
-              {opcion}
-            </option>
-          ))}
-        </select>
+        <SelectorDesplegable
+          id="honorarios-anio"
+          aria-label="Año"
+          valor={anio}
+          conOpcionesNativas
+          opciones={anios.map((opcion) => ({ valor: String(opcion), texto: String(opcion) }))}
+          onChange={(nuevoAnio) => cambiarAnio(nuevoAnio)}
+          variante="formulario"
+        />
       </div>
     </GrupoDeFiltros>
   );

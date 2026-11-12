@@ -6,6 +6,7 @@ export interface OpcionSelectorBase {
   valor: string;
   texto: string;
   grupo?: string;
+  disabled?: boolean;
 }
 
 export type OpcionEntrada =
@@ -30,6 +31,7 @@ export interface SelectorDesplegableProps {
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
   icono?: ReactNode;
+  conOpcionesNativas?: boolean;
 }
 
 function normalizarOpciones(opciones: OpcionEntrada[], todos?: string): OpcionSelectorBase[] {
@@ -70,6 +72,7 @@ export function SelectorDesplegable({
   "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedBy,
   icono,
+  conOpcionesNativas = true,
 }: SelectorDesplegableProps) {
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
@@ -137,12 +140,9 @@ export function SelectorDesplegable({
       {/* Botón trigger elegante */}
       <button
         type="button"
+        tabIndex={-1}
+        aria-hidden="true"
         disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={abierto}
-        aria-label={etiqueta ? `${etiqueta} - selector` : ariaLabel ? `${ariaLabel} - selector` : undefined}
-        aria-invalid={ariaInvalid}
-        aria-describedby={ariaDescribedBy}
         onClick={() => setAbierto((prev) => !prev)}
         className={cn(
           "flex items-center justify-between gap-2 outline-none select-none transition-colors",
@@ -165,23 +165,29 @@ export function SelectorDesplegable({
         />
       </button>
 
-      {/* Select nativo oculto pero accesible para pruebas automatizadas y soporte de formularios */}
+      {/* Select nativo para accesibilidad total (combobox nativo), lectores de pantalla y pruebas automatizadas */}
       <select
         ref={selectNativoRef}
         id={id}
         name={name}
-        aria-label={!etiqueta ? ariaLabel : undefined}
+        aria-label={ariaLabel || undefined}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
         value={valor}
         disabled={disabled}
-        tabIndex={-1}
+        tabIndex={0}
         onChange={(e) => onChange(e.target.value)}
         className="pointer-events-none absolute inset-0 size-full opacity-0"
       >
-        {opcionesNormalizadas.map((op) => (
-          <option key={op.valor} value={op.valor}>
-            {op.texto}
-          </option>
-        ))}
+        {conOpcionesNativas ? (
+          opcionesNormalizadas.map((op) => (
+            <option key={op.valor} value={op.valor} disabled={op.disabled}>
+              {op.texto}
+            </option>
+          ))
+        ) : valor ? (
+          <option value={valor}>{textoAMostrar}</option>
+        ) : null}
       </select>
 
       {/* Menú flotante desplegable estilizado con el color de marca #E91E82 */}
@@ -196,17 +202,21 @@ export function SelectorDesplegable({
         >
           {opcionesNormalizadas.map((op) => {
             const estaSeleccionado = op.valor === valor;
+            const estaDeshabilitado = op.disabled;
             return (
               <div
                 key={op.valor}
                 role="option"
                 aria-selected={estaSeleccionado}
-                onClick={() => seleccionar(op.valor)}
+                aria-disabled={estaDeshabilitado}
+                onClick={() => !estaDeshabilitado && seleccionar(op.valor)}
                 className={cn(
-                  "flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors select-none",
-                  estaSeleccionado
-                    ? "bg-primary/10 font-bold text-primary dark:bg-primary/20 dark:text-pink-400"
-                    : "text-slate-700 hover:bg-primary/10 hover:text-primary dark:text-slate-200",
+                  "flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors select-none",
+                  estaDeshabilitado
+                    ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
+                    : estaSeleccionado
+                      ? "cursor-pointer bg-primary/10 font-bold text-primary dark:bg-primary/20 dark:text-pink-400"
+                      : "cursor-pointer text-slate-700 hover:bg-primary/10 hover:text-primary dark:text-slate-200",
                 )}
               >
                 <span className="truncate">{op.texto}</span>

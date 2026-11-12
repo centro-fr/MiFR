@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { BotonLimpiarFiltros } from "@/features/reportes/components/piezas-reporte";
@@ -120,68 +114,40 @@ export function FiltrosInforme({ onAplicar }: PropsFiltros) {
           <label htmlFor="informe-profesora" className={ETIQUETA}>
             Profesor/a
           </label>
-          <Select
-            value={borrador.idProfesora || "TODAS"}
-            onValueChange={(val) => cambiar({ idProfesora: val === "TODAS" ? "" : val })}
-          >
-            <SelectTrigger
-              id="informe-profesora"
-              className={cn(CONTROL, "justify-between px-3.5 focus:border-primary focus:ring-2 focus:ring-primary/20")}
-            >
-              <SelectValue placeholder="Todo el equipo" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-              <SelectItem
-                value="TODAS"
-                className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
-              >
-                Todo el equipo
-              </SelectItem>
-              {profesoras.data?.map((p) => (
-                <SelectItem
-                  key={p.id}
-                  value={String(p.id)}
-                  className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
-                >
-                  {`${p.nombre} ${p.apellido}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectorDesplegable
+            id="informe-profesora"
+            aria-label="Profesor/a"
+            valor={borrador.idProfesora}
+            todos="Todo el equipo"
+            opciones={
+              profesoras.data?.map((p) => ({
+                valor: String(p.id),
+                texto: `${p.nombre} ${p.apellido}`,
+              })) ?? []
+            }
+            onChange={(val) => cambiar({ idProfesora: val })}
+            variante="formulario"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="informe-actividad" className={ETIQUETA}>
             Actividad
           </label>
-          <Select
-            value={borrador.idActividad || "TODAS"}
-            onValueChange={(val) => cambiar({ idActividad: val === "TODAS" ? "" : val })}
-          >
-            <SelectTrigger
-              id="informe-actividad"
-              className={cn(CONTROL, "justify-between px-3.5 focus:border-primary focus:ring-2 focus:ring-primary/20")}
-            >
-              <SelectValue placeholder="Todas las actividades" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-              <SelectItem
-                value="TODAS"
-                className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
-              >
-                Todas las actividades
-              </SelectItem>
-              {actividades.data?.map((a) => (
-                <SelectItem
-                  key={a.id}
-                  value={String(a.id)}
-                  className="cursor-pointer rounded-xl font-medium focus:bg-primary/10 focus:text-primary data-[state=checked]:font-bold data-[state=checked]:text-primary"
-                >
-                  {a.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectorDesplegable
+            id="informe-actividad"
+            aria-label="Actividad"
+            valor={borrador.idActividad}
+            todos="Todas las actividades"
+            opciones={
+              actividades.data?.map((a) => ({
+                valor: String(a.id),
+                texto: a.nombre,
+              })) ?? []
+            }
+            onChange={(val) => cambiar({ idActividad: val })}
+            variante="formulario"
+          />
         </div>
 
         <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
