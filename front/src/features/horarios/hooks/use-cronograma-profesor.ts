@@ -28,6 +28,7 @@ function aHorarioDocente(api: HorarioApi): Horario {
     horaFin: horaDesdeApi(api.hora_fin),
     cupoPropio: api.cupo_maximo,
     cupoMaximo: api.cupo_maximo_efectivo,
+    inscriptos: api.inscriptos,
   };
 }
 
