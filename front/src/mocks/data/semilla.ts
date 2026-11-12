@@ -17,6 +17,8 @@ export interface UsuarioSemilla {
   fecha_nacimiento?: string;
   direccion?: string | null;
   estado?: "ACTIVO" | "INACTIVO";
+  /** Cómo se ofrece en el login de prueba, si dice algo más que sus roles. */
+  etiquetaDePrueba?: string;
 }
 
 export interface HorarioSemilla {
@@ -67,7 +69,15 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
   { id_usuario: 5, email: "valentina.lopez@example.com", nombre: "Valentina", apellido: "López", roles: ["ALUMNO"] },
   { id_usuario: 6, email: "julian.fernandez@example.com", nombre: "Julián", apellido: "Fernández", roles: ["ALUMNO"] },
   { id_usuario: 7, email: "micaela.garcia@example.com", nombre: "Micaela", apellido: "García", roles: ["ALUMNO"] },
-  { id_usuario: 8, email: "mariana.lopez@example.com", nombre: "Mariana", apellido: "López", roles: ["TUTOR"] },
+  // Tutora de Lucía Benítez y Benjamín López: para probar el selector de menores (US-28).
+  {
+    id_usuario: 8,
+    email: "mariana.lopez@example.com",
+    nombre: "Mariana",
+    apellido: "López",
+    roles: ["TUTOR"],
+    etiquetaDePrueba: "Tutor + 2 alumnos a cargo",
+  },
   {
     id_usuario: 9,
     email: "sofia.martinez@example.com",

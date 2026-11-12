@@ -31,7 +31,7 @@ const roles = [
   },
   {
     name: "tutor",
-    option: "Tutor",
+    option: "Tutor + 2 alumnos a cargo",
     routes: ["/app/inicio", "/app/progreso", "/app/comunidad"],
   },
 ];

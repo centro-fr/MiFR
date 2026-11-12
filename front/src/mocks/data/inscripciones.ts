@@ -160,6 +160,8 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     // Alumnos ausentes sincronizados con US-22
     inscripcion(26, { id_alumno: 26, id_plan: 3, id_profesora: 2, ids_horarios: [11, 12, 13, 14, 15], estado: "ACTIVA" }, 21),
     inscripcion(27, { id_alumno: 27, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 10),
+    // Benjamín López, segundo menor a cargo de Mariana López.
+    inscripcion(28, { id_alumno: 28, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 9),
   ];
 }
 

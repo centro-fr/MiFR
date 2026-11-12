@@ -70,6 +70,8 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
   persona(128, "Carlos", "Fernández", { dni: "31888999", email: "carlos.fernandez@example.com", telefono: "+5491133334444", fecha_nacimiento: "1983-05-20", direccion: "Av. San Juan 740" }, "ACTIVO"),
   // Alumno Lucas Benítez (129)
   persona(129, "Lucas", "Benítez", { dni: "39777888", email: "lucas.benitez@example.com", telefono: "+5491177778888", fecha_nacimiento: "1997-11-23", direccion: "Bv. Chacabuco 320" }, "ACTIVO"),
+  // Segundo menor a cargo de Mariana López (126): la tutora elige de quién ver la rutina (US-28).
+  persona(130, "Benjamín", "López", { dni: "55321987", fecha_nacimiento: "2016-02-10", direccion: "Mitre 202" }, "ACTIVO"),
 ];
 
 type DatosPersona = Partial<Omit<UsuarioPersonaMock, "id_usuario" | "nombre" | "apellido" | "estado">> & { fecha_nacimiento: string };
@@ -278,5 +280,13 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
     fecha_apto_medico: "2026-03-01T00:00:00.000Z",
     cont_emerg_nombre: "Mirta Benítez",
     cont_emerg_telefono: "+5491177778889",
+  }),
+  alumno(28, 130, {
+    estado: "ACTIVO",
+    id_usuario_responsable: 126,
+    apto_medico: true,
+    fecha_apto_medico: "2026-03-10T00:00:00.000Z",
+    cont_emerg_nombre: "Mariana López",
+    cont_emerg_telefono: "11 4455-1226",
   }),
 ];

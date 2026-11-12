@@ -23,8 +23,8 @@ const NOMBRE_ROL: Record<RoleCode, string> = {
   TUTOR: "Tutor",
 };
 
-function etiquetaDePerfil({ roles }: UsuarioSemilla): string {
-  return roles.map((rol) => NOMBRE_ROL[rol]).join(" + ");
+function etiquetaDePerfil({ roles, etiquetaDePrueba }: UsuarioSemilla): string {
+  return etiquetaDePrueba ?? roles.map((rol) => NOMBRE_ROL[rol]).join(" + ");
 }
 
 function rangoDePerfil({ roles }: UsuarioSemilla): number {
