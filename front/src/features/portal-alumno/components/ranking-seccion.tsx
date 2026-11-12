@@ -6,7 +6,7 @@ import { AvatarIniciales, AvisoVacio, CAJA, EncabezadoPantalla, FILA } from "@/c
 import { EstadoErrorCarga, TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { nombreDelMes } from "@/features/asistencia/utils/semana";
 import { TablaRanking } from "@/features/reportes/pages/ranking-reporte-page";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useVistaAmplia } from "@/hooks/use-mobile";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { cn } from "@/utils/cn";
 import { useInsignias } from "../hooks/use-insignias";
@@ -20,7 +20,7 @@ import { DialogoCompartirRanking, type DatosParaCompartir } from "./compartir-ra
 
 // US-30 y US-31: sección Ranking de la profesora y del alumno. El contenido es el mismo en el celular y en
 // escritorio (título del mes, puesto, insignias, compartir, selector de mes de la profesora); solo cambia el
-// formato: lista en el celular y la tabla del reporte en escritorio.
+// formato: lista en el celular y en tablet, y la tabla del reporte en pantallas anchas.
 
 type FilaDelRanking = RankingAsistencia["datos"][number];
 
@@ -131,7 +131,7 @@ function MisInsignias() {
       <h2 id="titulo-insignias" className="text-base font-bold">
         Tus insignias
       </h2>
-      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+      <ul className="grid grid-cols-3 gap-2 xl:grid-cols-6">
         {consulta.data.insignias.map((insignia) => (
           <TarjetaInsignia key={insignia.codigo} insignia={insignia} />
         ))}
@@ -181,7 +181,7 @@ function subtitulo(ranking: RankingAsistencia | undefined, esProfesora: boolean)
 }
 
 export function RankingSeccion({ esProfesora }: { esProfesora: boolean }) {
-  const esMobile = useIsMobile();
+  const vistaAmplia = useVistaAmplia();
   const hoy = fechaActualArgentina();
   const [mes, setMes] = useState(() => hoy.slice(0, 7));
   const [compartiendo, setCompartiendo] = useState(false);
@@ -209,10 +209,10 @@ export function RankingSeccion({ esProfesora }: { esProfesora: boolean }) {
         />
       ) : ranking.datos.length === 0 ? (
         <AvisoVacio>Todavía no hay ranking: se necesitan al menos {ranking.minimo_clases} clases previstas en el período.</AvisoVacio>
-      ) : esMobile ? (
-        <ListaRanking ranking={ranking} esProfesora={esProfesora} />
-      ) : (
+      ) : vistaAmplia ? (
         <TablaRanking ranking={ranking} conCriterio={false} />
+      ) : (
+        <ListaRanking ranking={ranking} esProfesora={esProfesora} />
       )}
 
       {!esProfesora && <MisInsignias />}

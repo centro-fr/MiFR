@@ -8,8 +8,6 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { nombreDelMes } from "@/features/asistencia/utils/semana";
 import { fechaActualArgentina } from "@/utils/fecha";
-import { PanelAlumnoEscritorio } from "../components/panel-alumno-escritorio";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
 import { useInsignias } from "../hooks/use-insignias";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
@@ -17,7 +15,7 @@ import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
 import type { PanelAlumno } from "../schemas/panel-alumno";
 import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-panel";
 
-// US-29: inicio del alumno (diseño mobile). Su cuota, la próxima clase, cómo viene con la asistencia y
+// US-29: inicio del alumno. Su cuota, la próxima clase, cómo viene con la asistencia y
 // un acceso al ranking; las insignias ganadas van bajo el saludo (US-31).
 
 const SIN_FILTROS = {};
@@ -95,9 +93,13 @@ function ProximaClase({ clase }: { clase: PanelAlumno["proximas_clases"][number]
 
 function Indicadores({ panel }: { panel: PanelAlumno }) {
   const insignias = useInsignias(panel.id_alumno);
+  // Las clases del mes salen del ranking del mes, así coinciden con lo que se ve en Ranking.
+  const ranking = useRankingAsistencia(SIN_FILTROS);
   const hoy = fechaActualArgentina();
+  const propia = ranking.data?.propias[0];
   const delMes = panel.historial_asistencias.filter((registro) => registro.fecha.slice(0, 7) === hoy.slice(0, 7));
-  const presentes = delMes.filter((registro) => registro.estado === "PRESENTE").length;
+  const asistidas = propia?.clases_asistidas ?? delMes.filter((registro) => registro.estado === "PRESENTE").length;
+  const previstas = propia?.clases_previstas ?? delMes.length;
   const racha = insignias.data?.racha.actual;
   return (
     <dl className="grid grid-cols-2 gap-3">
@@ -116,7 +118,7 @@ function Indicadores({ panel }: { panel: PanelAlumno }) {
       <div className={cn(CAJA, "px-4 py-3.5")}>
         <dt className="text-sm font-semibold text-muted-foreground first-letter:uppercase">En {nombreDelMes(hoy)}</dt>
         <dd className="mt-0.5 text-xl leading-7 font-extrabold tabular-nums">
-          {presentes} de {delMes.length}
+          {ranking.isPending ? <Skeleton className="h-7 w-20" /> : `${asistidas} de ${previstas}`}
         </dd>
       </div>
     </dl>
@@ -127,7 +129,7 @@ function AccesoAlRanking() {
   const consulta = useRankingAsistencia(SIN_FILTROS);
   const propia = consulta.data?.propias[0];
   return (
-    <Link to="/app/ranking" className={cn(CAJA, "flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5")}>
+    <Link to="/app/ranking" className={cn(CAJA, "flex h-full items-center gap-3 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5")}>
       <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
         <Trophy className="size-4.5" />
       </span>
@@ -142,7 +144,7 @@ function Saludo({ panel }: { panel: PanelAlumno }) {
   const ganadas = insignias.data?.insignias.filter((insignia) => insignia.obtenida) ?? [];
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">Hola, {panel.alumno.nombre}</h1>
+      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">Hola, {panel.alumno.nombre}</h1>
       {ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}
     </div>
   );
@@ -168,23 +170,26 @@ function Contenido() {
     );
   }
   const panel = consulta.data;
+  // En el celular, una columna; con lugar, la cuota y la próxima clase lado a lado, y abajo los números.
   return (
     <>
       <Saludo panel={panel} />
-      <TarjetaCuota plan={panel.plan} />
-      <ProximaClase clase={panel.proximas_clases[0]} />
-      <Indicadores panel={panel} />
-      <AccesoAlRanking />
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <TarjetaCuota plan={panel.plan} />
+        <ProximaClase clase={panel.proximas_clases[0]} />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Indicadores panel={panel} />
+        <AccesoAlRanking />
+      </div>
     </>
   );
 }
 
 export function PanelAlumnoPage() {
-  const esMobile = useIsMobile();
-  if (!esMobile) return <PanelAlumnoEscritorio />;
   return (
     <OwnerLayout>
-      <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-4">
         <Contenido />
       </div>
     </OwnerLayout>

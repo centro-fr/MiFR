@@ -6,3 +6,11 @@ const MOBILE_BREAKPOINT = 768;
 export function useIsMobile(): boolean {
   return useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
 }
+
+/**
+ * Hay lugar para una tabla ancha al lado del sidebar (desde 1280 px). Por debajo, en tablet y notebooks
+ * chicas, la tabla no entra y se usa la lista del celular.
+ */
+export function useVistaAmplia(): boolean {
+  return useMediaQuery("(min-width: 1280px)");
+}
