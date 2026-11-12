@@ -57,7 +57,11 @@ function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
   };
 }
 
-function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
+/**
+ * La tabla del ranking: la usa este reporte y, sola, la sección Ranking de profesora y alumno en escritorio.
+ * `conCriterio`: el criterio de quién entra es para la propietaria; a los demás no se les muestra.
+ */
+export function TablaRanking({ ranking, conCriterio = true }: { ranking: RankingAsistencia; conCriterio?: boolean }) {
   const [pagina, setPagina] = useState(0);
   const TAMANO_PAGINA = 10;
   const total = ranking.datos.length;
@@ -70,7 +74,7 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
     <SeccionReporte
       id="titulo-ranking"
       titulo={`Ranking (${ranking.total})`}
-      descripcion={`Solo alumnos activos con al menos ${ranking.minimo_clases} clases previstas en el período.`}
+      descripcion={conCriterio ? `Solo alumnos activos con al menos ${ranking.minimo_clases} clases previstas en el período.` : undefined}
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-sm">
@@ -85,7 +89,11 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
           </thead>
           <tbody>
             {datosPaginados.map((fila) => (
-              <tr key={fila.id_alumno} className={fila.posicion <= 3 ? "bg-amber-50/40 dark:bg-amber-400/5" : undefined}>
+              <tr
+                key={fila.id_alumno}
+                aria-current={fila.es_propia || undefined}
+                className={cn(fila.posicion <= 3 && "bg-amber-50/40 dark:bg-amber-400/5", fila.es_propia && "bg-pink-50 dark:bg-primary/10")}
+              >
                 <td className={TD}>
                   <MedallaPuesto posicion={fila.posicion} tamanio="chico" />
                 </td>
@@ -94,6 +102,7 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <span className="font-semibold whitespace-nowrap text-slate-900 dark:text-white">
                       {fila.nombre} {fila.apellido}
+                      {fila.es_propia && " (vos)"}
                     </span>
                     <ListaInsignias insignias={fila.insignias} tamano={22} className="gap-1" />
                   </div>

@@ -3,9 +3,9 @@ import {
   Banknote,
   BarChart3,
   BookOpen,
+  CalendarCheck,
   CalendarClock,
   CalendarDays,
-  CreditCard,
   Dumbbell,
   Gift,
   GraduationCap,
@@ -15,7 +15,6 @@ import {
   Receipt,
   Tag,
   Tags,
-  TrendingUp,
   Trophy,
   UserRound,
   Users,
@@ -52,6 +51,8 @@ export interface ItemMenu {
   contador?: ContadorMenu;
   /** Si tiene hijos, el ítem es un grupo desplegable. */
   hijos?: SubItemMenu[];
+  /** En la barra inferior del celular va al centro y resaltado (el Inicio del alumno). */
+  destacado?: boolean;
 }
 
 const SUBRUTAS_DE_ALUMNOS = "/app/alumnos";
@@ -116,23 +117,35 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
 
 const PERFIL: ItemMenu = { etiqueta: "Perfil", icono: UserRound, to: "/app/perfil" };
 
+// Inicio de la profesora: sus clases y las cuotas de sus alumnos que vencen hoy. En la barra inferior del
+// celular va al medio, como el del alumno.
 const CLASES_PROFESORA: ItemMenu[] = [
-  { etiqueta: "Hoy", icono: CalendarClock, to: "/app/hoy", descripcion: "Las clases del día y la toma de asistencia." },
-  { etiqueta: "Mis clases", icono: BookOpen, to: "/app/mis-clases", descripcion: "El historial de tus clases y sus asistencias." },
+  {
+    etiqueta: "Inicio",
+    icono: House,
+    to: "/app/inicio",
+    destacado: true,
+    descripcion: "Tus clases de hoy y las cuotas de tus alumnos que vencen hoy.",
+  },
+  {
+    etiqueta: "Mis clases",
+    icono: CalendarCheck,
+    to: "/app/hoy",
+    descripcion: "Tu semana de clases y la toma de asistencia.",
+  },
 ];
 
 export const ITEMS_PROFESORA: ItemMenu[] = [
   ...CLASES_PROFESORA,
   { etiqueta: "Alumnos", icono: Users, to: "/app/alumnos/listado", subrutasDe: SUBRUTAS_DE_ALUMNOS },
-  { etiqueta: "Cobros", icono: Banknote, to: "/app/cobros" },
   { etiqueta: "Ranking", icono: Trophy, to: "/app/ranking" },
   PERFIL,
 ];
 
 const PANEL_ALUMNO: ItemMenu[] = [
-  { etiqueta: "Inicio", icono: House, to: "/app/inicio" },
-  { etiqueta: "Mi plan", icono: CreditCard, to: "/app/mi-plan" },
-  { etiqueta: "Progreso", icono: TrendingUp, to: "/app/progreso" },
+  { etiqueta: "Inicio", icono: House, to: "/app/inicio", destacado: true },
+  { etiqueta: "Clases", icono: CalendarDays, to: "/app/clases" },
+  { etiqueta: "Rutina", icono: Dumbbell, to: "/app/rutina" },
   { etiqueta: "Ranking", icono: Trophy, to: "/app/ranking" },
 ];
 
@@ -184,7 +197,7 @@ const GRUPO_DEL_ROL: Record<RoleCode, Pick<ItemMenu, "etiqueta" | "icono" | "to"
     etiqueta: "Profesor/a",
     icono: Presentation,
     to: "/app/profesora",
-    descripcion: "Tus clases como profesor/a: las de hoy y su historial.",
+    descripcion: "Tus clases como profesor/a y la toma de asistencia.",
     items: CLASES_PROFESORA,
   },
   ALUMNO: { etiqueta: "Alumno", icono: GraduationCap, items: PANEL_ALUMNO },

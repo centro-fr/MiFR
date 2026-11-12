@@ -5,7 +5,7 @@ import { homePathForRoles } from "@/types/auth";
 describe("homePathForRoles", () => {
   it.each([
     [["PROPIETARIA"], "/app/dashboard"],
-    [["PROFESORA"], "/app/hoy"],
+    [["PROFESORA"], "/app/inicio"],
     [["ALUMNO"], "/app/inicio"],
     [["TUTOR"], "/app/inicio"],
   ] as const)("%j lleva a %s", (roles, ruta) => {

@@ -1,236 +1,191 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import {
-  AlertCircle,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Dumbbell,
-  Flame,
-  Trophy,
-  XCircle,
-} from "lucide-react";
+import { ChevronRight, Trophy } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { ListaInsignias } from "@/components/insignias/insignia-medalla";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AvisoVacio, CAJA } from "@/components/movil/piezas";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { Skeleton } from "@/components/ui/skeleton";
+import { nombreDelMes } from "@/features/asistencia/utils/semana";
+import { fechaActualArgentina } from "@/utils/fecha";
+import { PanelAlumnoEscritorio } from "../components/panel-alumno-escritorio";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/utils/cn";
+import { useInsignias } from "../hooks/use-insignias";
 import { usePanelAlumno } from "../hooks/use-panel-alumno";
+import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
 import type { PanelAlumno } from "../schemas/panel-alumno";
+import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-panel";
 
-const ESTADO_CUOTA = {
-  AL_DIA: { etiqueta: "Cuota al día", clases: "border-emerald-200 bg-emerald-50 text-emerald-700", icono: CheckCircle2 },
-  EN_GRACIA: { etiqueta: "Por vencer", clases: "border-amber-200 bg-amber-50 text-amber-700", icono: Clock3 },
-  VENCIDA: { etiqueta: "Cuota vencida", clases: "border-rose-200 bg-rose-50 text-rose-700", icono: AlertCircle },
-} as const;
+// US-29: inicio del alumno (diseño mobile). Su cuota, la próxima clase, cómo viene con la asistencia y
+// un acceso al ranking; las insignias ganadas van bajo el saludo (US-31).
 
-function formatearFecha(fecha: string): string {
-  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" }).format(new Date(`${fecha}T12:00:00`));
+const SIN_FILTROS = {};
+
+const ESTADO_CUOTA: Record<NonNullable<PanelAlumno["plan"]>["estado_cuota"], { texto: string; clases: string }> = {
+  AL_DIA: { texto: "Al día", clases: "text-foreground" },
+  EN_GRACIA: { texto: "Por vencer", clases: "text-amber-800 dark:text-amber-300" },
+  VENCIDA: { texto: "Vencida", clases: "text-red-700 dark:text-red-400" },
+};
+
+function diaYMesCorto(fecha: string): string {
+  const [, mes, dia] = fecha.slice(0, 10).split("-");
+  return `${dia}/${mes}`;
 }
 
-function Encabezado({ nombre }: { nombre: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-        Hola, {nombre}
-      </h1>
-      <p className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground">
-        Este es el resumen de tu actividad en MiFR.
-      </p>
-    </div>
-  );
-}
-
-function PlanCard({ plan }: { plan: NonNullable<PanelAlumno["plan"]> }) {
+function TarjetaCuota({ plan }: { plan: PanelAlumno["plan"] }) {
+  if (!plan) return <AvisoVacio>No tenés un plan vigente. Consultá en el centro.</AvisoVacio>;
   const estado = ESTADO_CUOTA[plan.estado_cuota];
-  const IconoEstado = estado.icono;
-
+  const frecuencia =
+    plan.tipo === "CLASE_SUELTA"
+      ? "Clase suelta"
+      : plan.clases_por_semana
+        ? `${plan.clases_por_semana} ${plan.clases_por_semana === 1 ? "clase" : "clases"} por semana`
+        : null;
   return (
-    <Card className="rounded-3xl border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Mi plan</p>
-            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900 dark:text-white">{plan.nombre}</h2>
-          </div>
-          <Badge variant="outline" className={`rounded-full px-3 py-1 text-xs font-extrabold ${estado.clases}`}>
-            <IconoEstado aria-hidden="true" className="mr-1.5 size-3.5" />
-            {estado.etiqueta}
-          </Badge>
+    <section aria-labelledby="titulo-cuota" className={cn(CAJA, "flex flex-col gap-3 p-4")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="titulo-cuota" className="text-sm font-semibold text-muted-foreground">
+            Tu cuota
+          </h2>
+          <div className={cn("text-[22px] leading-[30px] font-extrabold", estado.clases)}>{estado.texto}</div>
         </div>
-
-        <div className="grid gap-3 text-sm sm:grid-cols-3">
-          <DatoPlan etiqueta="Vencimiento" valor={formatearFecha(plan.fecha_vencimiento)} />
-          <DatoPlan
-            etiqueta={plan.dias_restantes >= 0 ? "Días restantes" : "Días vencida"}
-            valor={Math.abs(plan.dias_restantes).toString()}
-          />
-          <DatoPlan etiqueta="Profesora" valor={plan.profesora} />
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button asChild className="min-h-[44px] flex-1 rounded-xl bg-primary font-extrabold text-white hover:bg-primary-dark">
-            <Link to="/app/mi-plan">Ver detalle del plan</Link>
-          </Button>
-          <Button asChild variant="outline" className="min-h-[44px] flex-1 rounded-xl font-bold">
-            <Link to="/app/progreso">Mi progreso</Link>
-          </Button>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">{plan.estado_cuota === "VENCIDA" ? "Venció el" : "Vence el"}</div>
+          <div className="font-bold tabular-nums">{diaYMesCorto(plan.fecha_vencimiento)}</div>
         </div>
       </div>
-    </Card>
-  );
-}
-
-function DatoPlan({ etiqueta, valor }: { etiqueta: string; valor: string }) {
-  return (
-    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/60">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{etiqueta}</p>
-      <p className="mt-1 truncate text-sm font-extrabold text-slate-900 dark:text-white">{valor}</p>
-    </div>
-  );
-}
-
-function ProximasClases({ clases }: { clases: PanelAlumno["proximas_clases"] }) {
-  return (
-    <Seccion titulo="Próximas clases" icono={<CalendarDays aria-hidden="true" className="size-5" />}>
-      {clases.length === 0 ? (
-        <Vacio mensaje="No tenés clases próximas inscriptas." />
-      ) : (
-        <div className="space-y-3">
-          {clases.map((clase) => (
-            <div key={clase.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
-              <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-pink-50 text-primary dark:bg-pink-950/40">
-                <span className="text-xs font-bold">{formatearFecha(clase.fecha)}</span>
-                <Clock3 aria-hidden="true" className="mt-0.5 size-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{clase.actividad}</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {clase.hora_inicio} a {clase.hora_fin} · {clase.profesora}
-                </p>
-              </div>
-              {clase.cupo_disponible !== null ? (
-                <span className="shrink-0 text-right text-xs font-bold text-slate-500">{clase.cupo_disponible} lugares</span>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
-    </Seccion>
-  );
-}
-
-function HistorialAsistencias({ asistencias }: { asistencias: PanelAlumno["historial_asistencias"] }) {
-  return (
-    <Seccion titulo="Mi historial" icono={<Dumbbell aria-hidden="true" className="size-5" />}>
-      {asistencias.length === 0 ? (
-        <Vacio mensaje="Todavía no hay asistencias registradas." />
-      ) : (
-        <div className="space-y-2">
-          {asistencias.map((asistencia) => {
-            const presente = asistencia.estado === "PRESENTE";
-            return (
-              <div key={asistencia.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
-                {presente ? <CheckCircle2 className="size-5 text-emerald-500" /> : <XCircle className="size-5 text-rose-500" />}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{asistencia.actividad}</p>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    {formatearFecha(asistencia.fecha)} · {asistencia.profesora}
-                  </p>
-                </div>
-                <span className={`text-xs font-extrabold ${presente ? "text-emerald-600" : "text-rose-600"}`}>
-                  {presente ? "Presente" : "Ausente"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Seccion>
-  );
-}
-
-function Seccion({ titulo, icono, children }: { titulo: string; icono: ReactNode; children: ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-primary">{icono}</span>
-        <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">{titulo}</h2>
+      <div className="border-t border-border pt-3 text-sm text-slate-700 dark:text-slate-300">
+        {[plan.nombre, frecuencia].filter(Boolean).join(" · ")}
       </div>
-      {children}
     </section>
   );
 }
 
-function Vacio({ mensaje }: { mensaje: string }) {
-  return <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">{mensaje}</div>;
+function ProximaClase({ clase }: { clase: PanelAlumno["proximas_clases"][number] | undefined }) {
+  return (
+    <section aria-labelledby="titulo-proxima" className={cn(CAJA, "p-4")}>
+      <h2 id="titulo-proxima" className="mb-3 border-b border-border pb-2 text-sm font-semibold text-muted-foreground">
+        Tu próxima clase
+      </h2>
+      {clase ? (
+        <div className="flex items-center gap-3.5">
+          <div
+            aria-hidden="true"
+            className="flex h-14 w-13 shrink-0 flex-col items-center justify-center rounded-[10px] bg-primary/10 text-primary-dark dark:text-pink-300"
+          >
+            <span className="text-xs font-bold uppercase">{diaCorto(clase.fecha)}</span>
+            <span className="text-xl leading-6 font-extrabold tabular-nums">{numeroDelDia(clase.fecha)}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-base leading-[22px] font-bold">{clase.actividad}</div>
+            <div className="text-sm text-slate-700 tabular-nums dark:text-slate-300">
+              {cuandoEsLaClase(clase.fecha, fechaActualArgentina())} de {clase.hora_inicio.slice(0, 5)} a {clase.hora_fin.slice(0, 5)}
+            </div>
+            <div className="text-xs text-muted-foreground">Con {clase.profesora}</div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No tenés clases agendadas.</p>
+      )}
+    </section>
+  );
 }
 
-function AccesosRanking() {
+function Indicadores({ panel }: { panel: PanelAlumno }) {
+  const insignias = useInsignias(panel.id_alumno);
+  const hoy = fechaActualArgentina();
+  const delMes = panel.historial_asistencias.filter((registro) => registro.fecha.slice(0, 7) === hoy.slice(0, 7));
+  const presentes = delMes.filter((registro) => registro.estado === "PRESENTE").length;
+  const racha = insignias.data?.racha.actual;
   return (
-    <Card className="rounded-3xl border-slate-200 bg-slate-900 p-5 text-white shadow-sm dark:border-slate-800 sm:p-6">
-      <div className="flex items-center gap-2">
-        <Flame aria-hidden="true" className="size-5 text-pink-300" />
-        <h2 className="text-lg font-black">Seguí avanzando</h2>
+    <dl className="grid grid-cols-2 gap-3">
+      <div className={cn(CAJA, "px-4 py-3.5")}>
+        <dt className="text-sm font-semibold text-muted-foreground">Racha de asistencia</dt>
+        <dd className="mt-0.5 text-xl leading-7 font-extrabold">
+          {insignias.isError ? (
+            <span aria-label="Sin datos">—</span>
+          ) : racha === undefined ? (
+            <Skeleton className="h-7 w-20" />
+          ) : (
+            `${racha} ${racha === 1 ? "clase" : "clases"}`
+          )}
+        </dd>
       </div>
-      <p className="mt-1 text-sm text-slate-300">Próximamente vas a poder consultar tu racha, insignias y posición en el ranking.</p>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-        <Button asChild variant="secondary" className="min-h-[44px] rounded-xl font-extrabold">
-          <Link to="/app/ranking"><Trophy aria-hidden="true" className="mr-2 size-4" /> Ranking</Link>
-        </Button>
-        <Button asChild variant="outline" className="min-h-[44px] rounded-xl border-white/20 bg-transparent font-extrabold text-white hover:bg-white/10">
-          <Link to="/app/progreso">Ver mi progreso</Link>
-        </Button>
+      <div className={cn(CAJA, "px-4 py-3.5")}>
+        <dt className="text-sm font-semibold text-muted-foreground first-letter:uppercase">En {nombreDelMes(hoy)}</dt>
+        <dd className="mt-0.5 text-xl leading-7 font-extrabold tabular-nums">
+          {presentes} de {delMes.length}
+        </dd>
       </div>
-    </Card>
+    </dl>
+  );
+}
+
+function AccesoAlRanking() {
+  const consulta = useRankingAsistencia(SIN_FILTROS);
+  const propia = consulta.data?.propias[0];
+  return (
+    <Link to="/app/ranking" className={cn(CAJA, "flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5")}>
+      <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+        <Trophy className="size-4.5" />
+      </span>
+      <span className="flex-1 font-bold">{propia ? `Vas ${propia.posicion}.º en el ranking` : "Mirá el ranking del mes"}</span>
+      <ChevronRight aria-hidden="true" className="size-4.5 text-muted-foreground" />
+    </Link>
+  );
+}
+
+function Saludo({ panel }: { panel: PanelAlumno }) {
+  const insignias = useInsignias(panel.id_alumno);
+  const ganadas = insignias.data?.insignias.filter((insignia) => insignia.obtenida) ?? [];
+  return (
+    <div>
+      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">Hola, {panel.alumno.nombre}</h1>
+      {ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}
+    </div>
+  );
+}
+
+function Contenido() {
+  const consulta = usePanelAlumno();
+  if (consulta.isPending) {
+    return (
+      <div aria-busy="true" aria-label="Cargando tu inicio" className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+      </div>
+    );
+  }
+  if (consulta.isError) {
+    return (
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(consulta.error, "No se pudo cargar tu inicio.")}
+        onReintentar={() => void consulta.refetch()}
+      />
+    );
+  }
+  const panel = consulta.data;
+  return (
+    <>
+      <Saludo panel={panel} />
+      <TarjetaCuota plan={panel.plan} />
+      <ProximaClase clase={panel.proximas_clases[0]} />
+      <Indicadores panel={panel} />
+      <AccesoAlRanking />
+    </>
   );
 }
 
 export function PanelAlumnoPage() {
-  const consulta = usePanelAlumno();
-
-  if (consulta.isPending) {
-    return (
-      <OwnerLayout>
-        <div aria-busy="true" aria-label="Cargando tu panel" className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-72" />
-          </div>
-          <Skeleton className="h-48 rounded-3xl" />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Skeleton className="h-64 rounded-3xl" />
-            <Skeleton className="h-64 rounded-3xl" />
-          </div>
-        </div>
-      </OwnerLayout>
-    );
-  }
-
-  if (consulta.isError) {
-    return (
-      <OwnerLayout>
-        <EstadoErrorCarga
-          mensaje={mensajeDeErrorApi(consulta.error, "No se pudo cargar tu panel.")}
-          onReintentar={() => void consulta.refetch()}
-        />
-      </OwnerLayout>
-    );
-  }
-
-  const panel = consulta.data;
+  const esMobile = useIsMobile();
+  if (!esMobile) return <PanelAlumnoEscritorio />;
   return (
     <OwnerLayout>
-      <div className="min-w-0 space-y-6">
-        <Encabezado nombre={panel.alumno.nombre} />
-        {panel.plan ? <PlanCard plan={panel.plan} /> : <Vacio mensaje="Todavía no tenés un plan activo." />}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ProximasClases clases={panel.proximas_clases} />
-          <HistorialAsistencias asistencias={panel.historial_asistencias} />
-        </div>
-        <AccesosRanking />
+      <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-4">
+        <Contenido />
       </div>
     </OwnerLayout>
   );

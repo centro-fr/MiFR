@@ -88,7 +88,7 @@ describe("PermissionGuard", () => {
     });
 
     esperarAccesoDenegado();
-    expect(screen.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/app/hoy");
+    expect(screen.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/app/inicio");
   });
 
   // Rol y permiso se exigen juntos: si la matriz quita el permiso, se pierde el acceso.

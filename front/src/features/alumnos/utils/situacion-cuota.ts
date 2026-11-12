@@ -148,3 +148,8 @@ export function compararAlumnosPorCuota<
   return 0;
 }
 
+/** Debe la cuota quien no la tiene al día: por vencer, vencida o sin pagar todavía. */
+export function debeLaCuota(alumno: { situacion_cuota: Pick<SituacionCuota, "estado"> | null }): boolean {
+  const estado = alumno.situacion_cuota?.estado;
+  return estado !== undefined && estado !== "AL_DIA" && estado !== "CLASE_SUELTA_VIGENTE";
+}

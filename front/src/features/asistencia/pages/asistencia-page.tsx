@@ -1,180 +1,111 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
-import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
-import { ClasesDelDia } from "@/features/asistencia/components/clases-del-dia";
+import { EstadoErrorCarga, TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { RegistroAsistencia } from "@/features/asistencia/components/registro-asistencia";
-import { fechaActualArgentina } from "@/utils/fecha";
+import { SemanaDeClases } from "@/features/asistencia/components/semana-de-clases";
+import { TomaDeAsistencia } from "@/features/asistencia/components/toma-de-asistencia";
 import {
   useAsistenciaDeClase,
   useCerrarAsistencia,
-  useClasesAsistencia,
   useMarcarAsistencia,
   useMarcarTodosPresentes,
 } from "@/features/asistencia/hooks/use-asistencia";
-import { useAuth } from "@/features/auth/hooks/use-auth";
-import { listarProfesoras } from "@/features/horarios/api/horarios-api";
-import { PROFESORAS_QUERY_KEY } from "@/features/horarios/hooks/useHorarios";
+import { ConMiIdDeProfesora } from "@/features/horarios/components/con-mi-id-de-profesora";
+import { TableroMisClases } from "@/features/horarios/components/tablero-mis-clases";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface VistaProps {
-  propietaria: boolean;
-}
+const MIS_CLASES = "/app/hoy";
 
-function fechaConsultaDe(valor: string | null, hoy: string): string {
-  if (!valor || !/^\d{4}-\d{2}-\d{2}$/.test(valor) || valor > hoy) return hoy;
-  const fecha = new Date(`${valor}T00:00:00.000Z`);
-  return Number.isFinite(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor ? valor : hoy;
-}
-
-// Quién dicta cada clase, por id: la clase solo trae el id de la profesora. Es la misma consulta
-// (y la misma caché) que usan Horarios y el filtro de Alumnos.
-function useNombresDeProfesoras(habilitada: boolean): ReadonlyMap<number, string> {
-  const { data } = useQuery({ queryKey: PROFESORAS_QUERY_KEY, queryFn: listarProfesoras, staleTime: 5 * 60_000, enabled: habilitada });
-  return useMemo(() => new Map((data ?? []).map((p) => [Number(p.id), `${p.nombre} ${p.apellido}`])), [data]);
-}
-
-function VistaAsistencia({ propietaria }: VistaProps) {
-  const { id } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useAuth();
-  const fechaHoy = fechaActualArgentina();
-  const fechaSeleccionada = propietaria ? fechaConsultaDe(searchParams.get("fecha"), fechaHoy) : fechaHoy;
-  const rutaBase = propietaria ? "/app/asistencia" : "/app/hoy";
-  const volver = propietaria ? `${rutaBase}?fecha=${encodeURIComponent(fechaSeleccionada)}` : rutaBase;
-  const consultaClases = useClasesAsistencia(propietaria ? fechaSeleccionada : undefined, id === undefined);
-  const consultaAsistencia = useAsistenciaDeClase(id);
+function AsistenciaDeLaClase({ idClase, esMobile }: { idClase: string; esMobile: boolean }) {
+  const { hasRole } = usePermissions();
+  const consulta = useAsistenciaDeClase(idClase);
   const marcar = useMarcarAsistencia();
   const marcarTodos = useMarcarTodosPresentes();
   const cerrar = useCerrarAsistencia();
-  const profesoras = useNombresDeProfesoras(propietaria && id === undefined);
 
-  // Consulta de profesoras para asociar a la usuaria multi-rol con su id_profesora
-  const { data: listaProfesoras } = useQuery({
-    queryKey: PROFESORAS_QUERY_KEY,
-    queryFn: listarProfesoras,
-    staleTime: 5 * 60_000,
-    enabled: !propietaria && id === undefined,
-  });
+  async function ejecutar(accion: () => Promise<void>, exito: string, falla: string, relanzar = false) {
+    try {
+      await accion();
+      toast.success(exito);
+    } catch (error) {
+      toast.error(mensajeDeErrorApi(error, falla));
+      if (relanzar) throw error;
+    }
+  }
 
-  const idProfesoraActual = useMemo(() => {
-    if (!user || !listaProfesoras || listaProfesoras.length === 0) return null;
-    const prof = listaProfesoras.find(
-      (p) =>
-        p.nombre.trim().toLowerCase() === user.nombre.trim().toLowerCase() &&
-        p.apellido.trim().toLowerCase() === user.apellido.trim().toLowerCase(),
+  if (consulta.isPending) return <TablaSkeleton ariaLabel="Cargando la lista de inscriptos" filas={6} />;
+  if (!consulta.data) {
+    return (
+      <EstadoErrorCarga
+        mensaje={mensajeDeErrorApi(consulta.error, "No se pudo cargar la asistencia.")}
+        onReintentar={() => void consulta.refetch()}
+      />
     );
-    return prof ? Number(prof.id) : null;
-  }, [user, listaProfesoras]);
-
-  const clasesFiltradas = useMemo(() => {
-    const todas = consultaClases.data ?? [];
-    if (propietaria) return todas;
-    // En el menú de profesora ("Hoy"), la usuaria (incluso si es Propietaria)
-    // solo debe visualizar sus propias clases asignadas para tomar asistencia.
-    if (idProfesoraActual !== null) {
-      return todas.filter((c) => c.id_prof_dictante === idProfesoraActual);
-    }
-    return todas;
-  }, [consultaClases.data, propietaria, idProfesoraActual]);
-
-  const informarError = (error: unknown, mensaje: string) => {
-    const detalle = mensajeDeErrorApi(error, mensaje);
-    toast.error(detalle);
-  };
-
-  async function marcarAlumno(idAlumno: number, asistio: boolean) {
-    if (!id) return;
-    try {
-      await marcar.mutateAsync({ idClase: id, idAlumno, asistio });
-      toast.success("Asistencia guardada.");
-    } catch (error) {
-      informarError(error, "No se pudo guardar la asistencia.");
-    }
   }
 
-  async function marcarInscriptosPresentes() {
-    if (!id) return;
-    try {
-      await marcarTodos.mutateAsync(id);
-      toast.success("Los inscriptos quedaron marcados como presentes.");
-    } catch (error) {
-      informarError(error, "No se pudo marcar a todos como presentes.");
-    }
-  }
-
-  async function cerrarVentana() {
-    if (!id) return;
-    try {
-      await cerrar.mutateAsync(id);
-      toast.success("Asistencia cerrada. Los inscriptos sin marcar quedaron ausentes.");
-    } catch (error) {
-      informarError(error, "No se pudo cerrar la asistencia.");
-      throw error;
-    }
-  }
-
-  function cambiarFecha(fecha: string) {
-    if (!fecha) return;
-    setSearchParams({ fecha });
-  }
-
+  // Mismas acciones; en el celular con el diseño mobile y en escritorio con la tabla.
+  const Vista = esMobile ? TomaDeAsistencia : RegistroAsistencia;
   return (
-    <OwnerLayout>
-      <div className="space-y-6 min-w-0">
+    <Vista
+      datos={consulta.data}
+      volver={MIS_CLASES}
+      propietaria={hasRole("PROPIETARIA")}
+      guardando={marcar.isPending || marcarTodos.isPending || cerrar.isPending}
+      error={consulta.isError ? mensajeDeErrorApi(consulta.error, "No se pudo actualizar la asistencia.") : null}
+      alMarcar={(idAlumno, asistio) =>
+        ejecutar(() => marcar.mutateAsync({ idClase, idAlumno, asistio }), "Asistencia guardada.", "No se pudo guardar la asistencia.")
+      }
+      alMarcarTodos={() =>
+        ejecutar(
+          () => marcarTodos.mutateAsync(idClase),
+          "Los inscriptos quedaron marcados como presentes.",
+          "No se pudo marcar a todos como presentes.",
+        )
+      }
+      alCerrar={() =>
+        ejecutar(
+          () => cerrar.mutateAsync(idClase),
+          "Asistencia cerrada. Los inscriptos sin marcar quedaron ausentes.",
+          "No se pudo cerrar la asistencia.",
+          true,
+        )
+      }
+      reintentar={() => void consulta.refetch()}
+    />
+  );
+}
+
+/**
+ * US-20 y US-04: "Mis clases" (/app/hoy) y la toma de asistencia de una clase (/app/hoy/:id). En el
+ * celular, con el diseño mobile (la semana con las clases reales de hoy); en escritorio, el cronograma
+ * semanal (tablero por hora y día) y la tabla de asistencia.
+ */
+export function ClasesDeHoyPage() {
+  const { id } = useParams();
+  const esMobile = useIsMobile();
+  if (!esMobile) {
+    return (
+      <OwnerLayout submiga={id ? "Asistencia" : undefined}>
         {id ? (
-          consultaAsistencia.isPending ? (
-            <TablaSkeleton ariaLabel="Cargando la lista de inscriptos" filas={6} />
-          ) : consultaAsistencia.isError && !consultaAsistencia.data ? (
-            <EstadoErrorCarga
-              mensaje={mensajeDeErrorApi(consultaAsistencia.error, "No se pudo cargar la asistencia.")}
-              onReintentar={() => void consultaAsistencia.refetch()}
-            />
-          ) : consultaAsistencia.data ? (
-            <RegistroAsistencia
-              datos={consultaAsistencia.data}
-              volver={volver}
-              propietaria={Boolean(user?.roles.includes("PROPIETARIA"))}
-              guardando={marcar.isPending || marcarTodos.isPending || cerrar.isPending}
-              error={
-                consultaAsistencia.isError
-                  ? mensajeDeErrorApi(consultaAsistencia.error, "No se pudo actualizar la asistencia.")
-                  : null
-              }
-              alMarcar={marcarAlumno}
-              alMarcarTodos={marcarInscriptosPresentes}
-              alCerrar={cerrarVentana}
-              reintentar={() => void consultaAsistencia.refetch()}
-            />
-          ) : null
+          <AsistenciaDeLaClase idClase={id} esMobile={false} />
         ) : (
-          <ClasesDelDia
-            clases={clasesFiltradas}
-            baseRuta={rutaBase}
-            fecha={fechaSeleccionada}
-            error={
-              consultaClases.isError
-                ? mensajeDeErrorApi(consultaClases.error, "No se pudieron cargar las clases.")
-                : null
-            }
-            cargando={consultaClases.isPending}
-            propietaria={propietaria}
-            profesoras={profesoras}
-            onFechaChange={propietaria ? cambiarFecha : undefined}
-            onReintentar={() => void consultaClases.refetch()}
-          />
+          <ConMiIdDeProfesora>{(idProfesora) => <TableroMisClases idProfesora={idProfesora} />}</ConMiIdDeProfesora>
+        )}
+      </OwnerLayout>
+    );
+  }
+  return (
+    <OwnerLayout tituloMovil={id ? "Asistencia" : undefined} volverA={id ? MIS_CLASES : undefined}>
+      <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-4">
+        {id ? (
+          <AsistenciaDeLaClase idClase={id} esMobile />
+        ) : (
+          <ConMiIdDeProfesora>{(idProfesora) => <SemanaDeClases idProfesora={idProfesora} />}</ConMiIdDeProfesora>
         )}
       </div>
     </OwnerLayout>
   );
-}
-
-export function AsistenciaPage() {
-  return <VistaAsistencia propietaria />;
-}
-
-export function ClasesDeHoyPage() {
-  return <VistaAsistencia propietaria={false} />;
 }

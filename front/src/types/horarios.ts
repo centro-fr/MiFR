@@ -34,6 +34,8 @@ export interface Horario {
   cupoPropio: number | null;
   /** Cupo que rige: el propio o, si no tiene, el de la actividad. null = sin límite. */
   cupoMaximo: number | null;
+  /** Alumnos inscriptos, si el back lo informó (GET /horarios lo trae). */
+  inscriptos?: number;
 }
 
 export interface HorarioFormData {

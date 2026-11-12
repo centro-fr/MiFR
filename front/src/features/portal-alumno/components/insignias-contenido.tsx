@@ -1,7 +1,6 @@
 import { Flame } from "lucide-react";
 import { InsigniaMedalla } from "@/components/insignias/insignia-medalla";
 import { mensajeDeErrorApi } from "@/api/errores";
-import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -161,13 +160,5 @@ export function InsigniasContenido() {
         </ul>
       </section>
     </div>
-  );
-}
-
-export function InsigniasPage() {
-  return (
-    <OwnerLayout>
-      <InsigniasContenido />
-    </OwnerLayout>
   );
 }

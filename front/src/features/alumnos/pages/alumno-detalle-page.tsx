@@ -63,6 +63,7 @@ function iniciales(nombre: string, apellido: string): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toLocaleUpperCase("es");
 }
 
+/** Ficha del alumno: la misma para la propietaria y la profesora; los permisos deciden qué puede editar cada una. */
 export function AlumnoDetallePage() {
   const { id: idRuta } = useParams();
   const idAlumno = Number(idRuta);
@@ -160,7 +161,7 @@ export function AlumnoDetallePage() {
   const esBaja = alumno?.estado === "BAJA";
 
   return (
-    <OwnerLayout submiga={alumno ? nombreCompleto : undefined}>
+    <OwnerLayout submiga={alumno ? nombreCompleto : undefined} tituloMovil="Ficha del alumno" volverA="/app/alumnos/listado">
       <div className="w-full min-w-0 space-y-6 pb-10">
 
         {!idValido ? (

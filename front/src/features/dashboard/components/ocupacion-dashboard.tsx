@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
+import { ERROR_EN_TARJETA, TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
 import { GrillaDeOcupacion, LeyendaOcupacion, OcupacionPorDia } from "@/features/reportes/components/mapa-ocupacion";
 import { useActividadesParaFiltro, useInformeOcupacion } from "@/features/reportes/hooks/use-reportes";
 import { cn } from "@/utils/cn";
@@ -57,6 +59,13 @@ export function OcupacionDashboard() {
       <div className="py-4">
         {consulta.isPending ? (
           <Skeleton aria-label="Cargando la ocupación" className="h-56 w-full rounded-lg" />
+        ) : consulta.isError ? (
+          <EstadoErrorCarga
+            className={ERROR_EN_TARJETA}
+            mensaje={mensajeDeErrorApi(consulta.error, "No se pudo cargar la ocupación.")}
+            reintentando={consulta.isFetching}
+            onReintentar={() => void consulta.refetch()}
+          />
         ) : horarios.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">No hay horarios con alumnos.</p>
         ) : (

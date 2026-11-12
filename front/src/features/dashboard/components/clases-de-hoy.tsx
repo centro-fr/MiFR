@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClasesAsistencia } from "@/features/asistencia/hooks/use-asistencia";
-import { TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
+import { ERROR_EN_TARJETA, TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
 import { clasesDeHoy, horaActualArgentina, type EstadoClaseHoy } from "@/features/dashboard/utils/dashboard";
 import { useProfesorasParaFiltro } from "@/features/reportes/hooks/use-reportes";
 import { cn } from "@/utils/cn";
@@ -26,7 +28,7 @@ const ESTILO: Record<EstadoClaseHoy, { badge: string; dot: string }> = {
   },
 };
 
-function BadgeEstadoClase({ estado }: { estado: EstadoClaseHoy }) {
+export function BadgeEstadoClase({ estado }: { estado: EstadoClaseHoy }) {
   const { badge, dot } = ESTILO[estado];
   return (
     <span
@@ -58,6 +60,13 @@ export function ClasesDeHoy() {
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
         </div>
+      ) : clases.isError ? (
+        <EstadoErrorCarga
+          className={ERROR_EN_TARJETA}
+          mensaje={mensajeDeErrorApi(clases.error, "No se pudieron cargar las clases de hoy.")}
+          reintentando={clases.isFetching}
+          onReintentar={() => void clases.refetch()}
+        />
       ) : filas.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Hoy no hay clases.</p>
       ) : (

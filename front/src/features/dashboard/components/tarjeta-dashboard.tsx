@@ -16,6 +16,9 @@ interface Props {
   children: ReactNode;
 }
 
+/** EstadoErrorCarga dentro de una tarjeta: sin su propio borde ni fondo. */
+export const ERROR_EN_TARJETA = "border-0 bg-transparent py-6 shadow-none dark:bg-transparent";
+
 // Un bloque del dashboard: título, contenido y, si hay más para ver, un enlace al pie.
 export function TarjetaDashboard({ id, titulo, subtitulo, acciones, pie, resumen, className, children }: Props) {
   return (

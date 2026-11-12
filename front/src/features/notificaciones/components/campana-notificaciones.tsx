@@ -25,12 +25,15 @@ import { cn } from "@/utils/cn";
 // Más de esto no entra en el globito de la campana.
 const MAXIMO_EN_EL_CONTADOR = 9;
 
-function ContadorSinLeer({ cantidad }: { cantidad: number }) {
+function ContadorSinLeer({ cantidad, sobreFondoOscuro }: { cantidad: number; sobreFondoOscuro: boolean }) {
   if (cantidad === 0) return null;
   return (
     <span
       aria-hidden="true"
-      className="absolute top-1.5 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 ring-bg-light tabular-nums dark:ring-canvas"
+      className={cn(
+        "absolute top-1.5 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 tabular-nums",
+        sobreFondoOscuro ? "ring-dark" : "ring-bg-light dark:ring-canvas",
+      )}
     >
       {cantidad > MAXIMO_EN_EL_CONTADOR ? `${MAXIMO_EN_EL_CONTADOR}+` : cantidad}
     </span>
@@ -81,8 +84,9 @@ function SinNotificaciones() {
 }
 
 // Barra superior: la campana con lo que la persona tiene sin leer y sus últimos avisos. Abrir uno lo
-// marca leído y lleva a la pantalla donde se resuelve.
-export function CampanaNotificaciones() {
+// marca leído y lleva a la pantalla donde se resuelve; el resto, en la bandeja.
+/** `sobreFondoOscuro`: en la barra superior oscura del celular (profesora y alumno). */
+export function CampanaNotificaciones({ sobreFondoOscuro = false }: { sobreFondoOscuro?: boolean }) {
   const navigate = useNavigate();
   const { roles } = usePermissions();
   const { data, isPending, isError, refetch, isFetching } = useMisNotificaciones(NOTIFICACIONES_POR_PAGINA);
@@ -106,10 +110,15 @@ export function CampanaNotificaciones() {
               variant="ghost"
               size="icon"
               aria-label={noLeidas > 0 ? `Notificaciones: ${etiquetaSinLeer(noLeidas)}` : "Notificaciones"}
-              className="relative h-11 w-11 cursor-pointer justify-center rounded-xl p-0 text-slate-600 transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-white/10"
+              className={cn(
+                "relative h-11 w-11 cursor-pointer justify-center rounded-xl p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                sobreFondoOscuro
+                  ? "text-slate-300 hover:bg-white/10 hover:text-white"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10",
+              )}
             >
               <Bell aria-hidden="true" className="size-5 shrink-0" />
-              <ContadorSinLeer cantidad={noLeidas} />
+              <ContadorSinLeer cantidad={noLeidas} sobreFondoOscuro={sobreFondoOscuro} />
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>

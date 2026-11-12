@@ -28,11 +28,11 @@ export interface DestinoDeNotificacion {
   etiqueta: string;
 }
 
-// La pantalla donde se resuelve cada aviso. Los de cuota para la propietaria llevan a la ficha del
-// alumno para hacer seguimiento directo; para el alumno o tutor, a su plan; el resumen, al Dashboard.
+// La pantalla donde se resuelve cada aviso. Los de cuota llevan al inicio de quien los recibe, donde está su cuota; el
+// resumen, al Dashboard, donde está el detalle del día.
 const DESTINO_POR_TIPO: Partial<Record<TipoNotificacion, DestinoDeNotificacion>> = {
-  CUOTA_POR_VENCER: { to: "/app/mi-plan", etiqueta: "Ver mi plan" },
-  CUOTA_VENCIDA: { to: "/app/mi-plan", etiqueta: "Ver mi plan" },
+  CUOTA_POR_VENCER: { to: "/app/inicio", etiqueta: "Ver mi cuota" },
+  CUOTA_VENCIDA: { to: "/app/inicio", etiqueta: "Ver mi cuota" },
   RESUMEN_DIARIO: { to: "/app/dashboard", etiqueta: "Ver el resumen" },
 };
 
