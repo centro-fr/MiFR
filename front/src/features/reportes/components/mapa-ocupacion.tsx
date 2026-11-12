@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { SeccionReporte } from "@/features/reportes/components/piezas-reporte";
 import { formatearPorcentaje } from "@/features/reportes/utils/formato-informe";
-import { armarMapaDeOcupacion, type CeldaDelMapa, type NivelDeCelda } from "@/features/reportes/utils/mapa-ocupacion";
+import { armarMapaDeOcupacion, DIAS_DEL_MAPA, type CeldaDelMapa, type NivelDeCelda } from "@/features/reportes/utils/mapa-ocupacion";
 import type { HorarioOcupado } from "@/types/reportes";
 import { cn } from "@/utils/cn";
 
@@ -48,48 +49,120 @@ function Leyenda() {
   );
 }
 
+interface PropsGrilla {
+  horarios: HorarioOcupado[];
+  /** Con "Solo baja demanda" las franjas que no están libres se ven apagadas. */
+  soloBajaDemanda?: boolean;
+}
+
+/** La grilla días × horas. La comparten el reporte de Ocupación y el Dashboard. */
+export function GrillaDeOcupacion({ horarios, soloBajaDemanda = false }: PropsGrilla) {
+  const franjas = armarMapaDeOcupacion(horarios);
+  return (
+    <div className="overflow-x-auto">
+      <div
+        role="group"
+        aria-label="Ocupación por día y hora de inicio"
+        className="grid min-w-[560px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] gap-1 tabular-nums"
+      >
+        <span />
+        {DIAS_CORTOS.slice(1).map((dia) => (
+          <span key={dia} className="text-center text-xs font-bold text-muted-foreground">
+            {dia}
+          </span>
+        ))}
+        {franjas.map((franja) => (
+          <div key={franja.hora} className="contents">
+            <span className="flex items-center text-xs font-semibold text-muted-foreground">{franja.hora}</span>
+            {franja.celdas.map((celda) => {
+              const descripcion = descripcionDeLaCelda(celda);
+              const apagada = soloBajaDemanda && celda.nivel !== "LIBRE";
+              return (
+                <span
+                  key={celda.dia}
+                  role="img"
+                  aria-label={descripcion}
+                  title={descripcion}
+                  className={cn(
+                    "flex h-8 items-center justify-center rounded-md text-xs font-bold",
+                    apagada ? COLOR.SIN_ACTIVIDAD.celda : COLOR[celda.nivel].celda,
+                    apagada && "text-transparent",
+                  )}
+                >
+                  {valorDeLaCelda(celda)}
+                </span>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export { Leyenda as LeyendaOcupacion };
+
+/**
+ * En el celular la semana no entra: se elige un día y se listan sus franjas con su barra. Solo se
+ * ofrecen los días que tienen clases.
+ */
+export function OcupacionPorDia({ horarios }: { horarios: HorarioOcupado[] }) {
+  const franjas = armarMapaDeOcupacion(horarios);
+  const dias = DIAS_DEL_MAPA.filter((dia) => franjas.some((franja) => franja.celdas[dia - 1].nivel !== "SIN_ACTIVIDAD"));
+  const [elegido, setElegido] = useState<number | null>(null);
+  const dia: number = elegido !== null && dias.some((opcion) => opcion === elegido) ? elegido : (dias[0] ?? 1);
+  const celdas = franjas.map((franja) => franja.celdas[dia - 1]).filter((celda) => celda.nivel !== "SIN_ACTIVIDAD");
+
+  return (
+    <div>
+      <div role="group" aria-label="Día" className="grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
+        {dias.map((opcion) => (
+          <button
+            key={opcion}
+            type="button"
+            aria-pressed={opcion === dia}
+            onClick={() => setElegido(opcion)}
+            className={cn(
+              "min-h-11 rounded-md text-sm transition-colors",
+              opcion === dia
+                ? "bg-white font-bold text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "font-medium text-slate-500 dark:text-slate-400",
+            )}
+          >
+            {DIAS_CORTOS[opcion]}
+          </button>
+        ))}
+      </div>
+      <ul aria-label={`Ocupación del ${DIAS[dia].toLowerCase()}`} className="mt-1">
+        {celdas.map((celda) => (
+          <li key={celda.hora} className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-b-0 dark:border-slate-800">
+            <span className="w-11 shrink-0 text-sm font-semibold tabular-nums text-slate-500 dark:text-slate-400">{celda.hora}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900 dark:text-white">
+              {celda.horarios.map((horario) => horario.actividad).join(" · ")}
+            </span>
+            <span
+              role="img"
+              aria-label={descripcionDeLaCelda(celda)}
+              className={cn("min-w-12 shrink-0 rounded-full px-2 text-center text-xs leading-6 font-bold tabular-nums", COLOR[celda.nivel].celda)}
+            >
+              {valorDeLaCelda(celda)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** US-37: el mismo mapa de calor del Dashboard, con los filtros del reporte. */
 export function MapaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
-  const franjas = armarMapaDeOcupacion(horarios);
   return (
     <SeccionReporte
       id="titulo-mapa-ocupacion"
       titulo="Mapa de la semana"
       descripcion="Qué tan llena está cada franja. Si a la misma hora hay dos clases, se suman sus inscriptos y sus cupos."
     >
-      <div className="overflow-x-auto">
-        <div
-          role="group"
-          aria-label="Ocupación por día y hora de inicio"
-          className="grid min-w-[560px] grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] gap-1 tabular-nums"
-        >
-          <span />
-          {DIAS_CORTOS.slice(1).map((dia) => (
-            <span key={dia} className="text-center text-xs font-bold text-muted-foreground">
-              {dia}
-            </span>
-          ))}
-          {franjas.map((franja) => (
-            <div key={franja.hora} className="contents">
-              <span className="flex items-center text-xs font-semibold text-muted-foreground">{franja.hora}</span>
-              {franja.celdas.map((celda) => {
-                const descripcion = descripcionDeLaCelda(celda);
-                return (
-                  <span
-                    key={celda.dia}
-                    role="img"
-                    aria-label={descripcion}
-                    title={descripcion}
-                    className={cn("flex h-8 items-center justify-center rounded-md text-xs font-bold", COLOR[celda.nivel].celda)}
-                  >
-                    {valorDeLaCelda(celda)}
-                  </span>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
+      <GrillaDeOcupacion horarios={horarios} />
       <Leyenda />
     </SeccionReporte>
   );

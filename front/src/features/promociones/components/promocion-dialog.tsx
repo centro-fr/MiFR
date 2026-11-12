@@ -18,6 +18,7 @@ import { promocionFormSchema, type PromocionFormValues } from "@/features/promoc
 import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   abierto: boolean;
@@ -76,19 +77,19 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "max-w-lg")}
       >
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {promocion ? "Editar promoción" : "Nueva promoción"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Definí el descuento, vigencia y planes aplicables de la promoción.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             <Campo id="promocion-codigo" label="Código" error={formulario.formState.errors.codigo?.message}>
               <Input id="promocion-codigo" {...formulario.register("codigo")} className="h-11 rounded-xl" placeholder="VERANO26" />
             </Campo>
@@ -139,7 +140,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                 />
               </Campo>
 
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Campo
                   id="promocion-hasta"
                   label="Hasta"
@@ -234,7 +235,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
             )}
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <DialogFooter className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"
@@ -272,7 +273,7 @@ function Campo({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={CAMPO_MODAL}>
       <Label htmlFor={id} className="text-sm font-bold">
         {label} {!opcional && <span className="text-destructive">*</span>}
       </Label>

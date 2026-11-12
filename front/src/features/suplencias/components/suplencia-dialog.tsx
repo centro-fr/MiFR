@@ -12,6 +12,8 @@ import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { Suplencia } from "@/types/suplencia";
 import { fechaActualArgentina } from "@/utils/fecha";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   abierto: boolean;
@@ -72,18 +74,18 @@ export function SuplenciaDialog({
 
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90dvh] max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-lg md:max-w-xl")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {suplencia ? "Editar suplencia" : "Registrar suplencia"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Indicá la fecha, horario a cubrir y el/la profesor/a que estará a cargo.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
           <Campo label="Fecha de la clase" error={formulario.formState.errors.fechaClase?.message}>
             <CampoFecha
               name="fechaClase"
@@ -156,7 +158,7 @@ export function SuplenciaDialog({
 
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <DialogFooter className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"
@@ -192,7 +194,7 @@ function Campo({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={CAMPO_MODAL}>
       <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
         {label} {obligatorio && <span className="text-destructive">*</span>}
       </Label>

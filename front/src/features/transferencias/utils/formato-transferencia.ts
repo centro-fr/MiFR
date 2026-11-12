@@ -1,3 +1,4 @@
+import type { TipoTransferencia } from "@/types/transferencia";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import type { EstadoTransferencia } from "@/types/transferencia";
 
@@ -41,8 +42,7 @@ export function etiquetaEstado(estado: EstadoTransferencia): string {
   return ETIQUETA_ESTADO[estado];
 }
 
-/** Tipo de la spec (primera cuota / renovación / cuota vencida). */
-export type TipoTransferencia = "PRIMERA_CUOTA" | "CUOTA_VENCIDA" | "RENOVACION";
+export type { TipoTransferencia } from "@/types/transferencia";
 
 const ETIQUETA_TIPO: Record<TipoTransferencia, string> = {
   PRIMERA_CUOTA: "Primera cuota",

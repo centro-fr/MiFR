@@ -126,8 +126,10 @@ function PorAlumno({ informe, cargando, onCambiarPagina }: { informe: InformeCuo
   );
 }
 
+const SIN_FILTROS: FiltrosCuotasVencidas = { idProfesora: null, idPlan: null };
+
 export function CuotasVencidasReportePage() {
-  const [filtros, setFiltros] = useState<FiltrosCuotasVencidas>({ idProfesora: null, idPlan: null });
+  const [filtros, setFiltros] = useState<FiltrosCuotasVencidas>(SIN_FILTROS);
   const [offset, setOffset] = useState(0);
   const consulta = useCuotasVencidas(filtros, offset);
   const profesoras = useProfesorasParaFiltro();
@@ -144,6 +146,11 @@ export function CuotasVencidasReportePage() {
     setOffset(0);
   }
 
+  function limpiar() {
+    setFiltros(SIN_FILTROS);
+    setOffset(0);
+  }
+
   return (
     <PaginaReportes
       titulo="Cuotas vencidas"
@@ -151,7 +158,7 @@ export function CuotasVencidasReportePage() {
       acciones={<MenuExportar disabled={!informe || informe.total === 0 || consulta.isFetching} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros>
+        <GrupoDeFiltros onLimpiar={limpiar} hayFiltros={filtros.idProfesora !== null || filtros.idPlan !== null}>
           <SelectFiltro
             id="vencidas-profesora"
             etiqueta="Profesor/a"

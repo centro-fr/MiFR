@@ -1,26 +1,29 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { animarEntradaDelEncabezado } from "@/features/publico/animaciones/animaciones-publicas";
+import { useAnimacion } from "@/features/publico/animaciones/use-animacion";
 import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
 import { enlacesDeContacto } from "@/features/publico/utils/contacto";
 import { homePathForRoles } from "@/types/auth";
+import { cn } from "@/utils/cn";
+import { CONTENEDOR_PUBLICO } from "./estilos-publicos";
 import { NOMBRE_DEL_CENTRO } from "./marca-centro";
 
-const BOTON_ACCESO =
-  "inline-flex h-[42px] items-center rounded-full border border-white/30 px-[18px] text-sm font-bold text-white transition-colors hover:bg-white/10";
+const ACCESO = "inline-flex h-11 items-center text-sm font-bold text-white transition-colors hover:text-primary";
 
-// Con sesión iniciada, el mismo botón lleva al panel en lugar de volver a pedir el login.
+const SUBRAYADO_AL_PASAR =
+  "bg-[linear-gradient(var(--color-primary),var(--color-primary))] bg-size-[0_2px] bg-left-bottom bg-no-repeat pb-1 transition-[background-size,color] duration-200 hover:bg-size-[100%_2px] hover:text-white";
+
+// Con sesión iniciada, el mismo enlace lleva al panel en lugar de volver a pedir el login.
 function AccesoAlSistema() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div aria-hidden="true" className="h-[42px] w-32" />;
+  if (isLoading) return <div aria-hidden="true" className="h-11 w-20" />;
 
-  return user ? (
-    <Link to={homePathForRoles(user.roles)} className={BOTON_ACCESO}>
-      Ir a mi panel
-    </Link>
-  ) : (
-    <Link to="/login" className={BOTON_ACCESO}>
-      Iniciar sesión
+  return (
+    <Link to={user ? homePathForRoles(user.roles) : "/login"} className={ACCESO}>
+      Ir a MiFR
     </Link>
   );
 }
@@ -34,33 +37,53 @@ function useEnlacesDeSecciones() {
 
   return [
     hayActividades && { href: "#actividades", texto: "Actividades" },
-    { href: "#empezar", texto: "Cómo empezar" },
-    { href: "#app", texto: "La app" },
+    { href: "#ubicacion", texto: "Ubicación" },
     hayContacto && { href: "#contacto", texto: "Contacto" },
   ].filter((enlace) => enlace !== false);
 }
 
-// Va sobre la portada oscura y se va con el scroll. En mobile el menú se oculta: las secciones se
-// recorren bajando.
+const ALTURA_DEL_ENCABEZADO_PX = 80;
+
+// Sobre la foto de la portada va transparente; al bajar toma el fondo oscuro para seguir legible.
+function useConFondo() {
+  const [conFondo, setConFondo] = useState(false);
+
+  useEffect(() => {
+    const actualizar = () => setConFondo(window.scrollY > ALTURA_DEL_ENCABEZADO_PX);
+    actualizar();
+    window.addEventListener("scroll", actualizar, { passive: true });
+    return () => window.removeEventListener("scroll", actualizar);
+  }, []);
+
+  return conFondo;
+}
+
+// Fijo arriba. En mobile el menú se oculta: las secciones se recorren bajando.
 export function EncabezadoPublico() {
+  const raiz = useRef<HTMLElement>(null);
   const enlaces = useEnlacesDeSecciones();
+  const conFondo = useConFondo();
+  useAnimacion(raiz, animarEntradaDelEncabezado);
 
   return (
-    <header className="absolute inset-x-0 top-0 z-10">
-      <div className="mx-auto flex w-full max-w-[1288px] items-center justify-between gap-6 px-4 py-3.5 md:px-6 md:py-5">
-        <a href="#inicio" className="flex min-w-0 items-center gap-3 rounded-xl">
-          <LogoFr />
-          <span className="hidden truncate text-base font-extrabold md:block">{NOMBRE_DEL_CENTRO}</span>
+    <header
+      ref={raiz}
+      className={cn(
+        "fixed inset-x-0 top-0 z-20 transition-[background-color,box-shadow] duration-300",
+        conFondo && "bg-publico-tinta shadow-[0_1px_0_var(--color-publico-borde)]",
+      )}
+    >
+      <div className={`${CONTENEDOR_PUBLICO} flex h-20 items-center justify-between gap-6`}>
+        <a href="#inicio" aria-label={NOMBRE_DEL_CENTRO} className="flex items-center gap-2.5 text-[15px] font-extrabold">
+          <LogoFr className="size-[34px]" />
+          FR
         </a>
-        <nav aria-label="Secciones" className="hidden items-center gap-8 text-sm font-semibold text-publico-texto-claro lg:flex">
+        <nav aria-label="Secciones" className="hidden gap-8 text-sm font-semibold text-publico-texto-claro md:flex">
           {enlaces.map(({ href, texto }) => (
-            <a key={href} href={href} className="transition-colors hover:text-white">
+            <a key={href} href={href} className={SUBRAYADO_AL_PASAR}>
               {texto}
             </a>
           ))}
-          <Link to="/disponibilidad" className="transition-colors hover:text-white">
-            Disponibilidad
-          </Link>
         </nav>
         <AccesoAlSistema />
       </div>

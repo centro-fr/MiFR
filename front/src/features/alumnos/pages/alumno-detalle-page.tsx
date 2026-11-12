@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import { mensajeDeErrorApi } from "@/api/errores";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
 import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { AvatarFicha, FilaDato, PestanasFicha, TarjetaResumen } from "@/components/ficha/piezas-ficha";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -101,25 +102,6 @@ export function AlumnoDetallePage() {
     setEditando(false);
     toast.success("Los datos del alumno se actualizaron.");
     void consulta.refetch();
-  }
-
-  function navegarPestanas(evento: KeyboardEvent<HTMLButtonElement>, indice: number) {
-    const indiceSiguiente =
-      evento.key === "ArrowRight"
-        ? (indice + 1) % secciones.length
-        : evento.key === "ArrowLeft"
-          ? (indice - 1 + secciones.length) % secciones.length
-          : evento.key === "Home"
-            ? 0
-            : evento.key === "End"
-              ? secciones.length - 1
-              : -1;
-    if (indiceSiguiente < 0) return;
-    evento.preventDefault();
-    const siguiente = secciones[indiceSiguiente];
-    if (!siguiente) return;
-    setSeccion(siguiente.id);
-    document.getElementById(`tab-${siguiente.id}`)?.focus();
   }
 
   // Información calculada para los 4 KPIs superiores
@@ -251,18 +233,7 @@ export function AlumnoDetallePage() {
             {/* Header del Alumno: Avatar con dot + Nombre + Mini badges + Botones */}
             <header className="flex flex-col @4xl:flex-row @4xl:items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="relative inline-flex shrink-0">
-                  <span className="flex size-16 items-center justify-center rounded-full bg-pink-100 text-2xl font-black text-primary shadow-2xs dark:bg-pink-950/60 dark:text-pink-300">
-                    {iniciales(alumno.usuario.nombre, alumno.usuario.apellido)}
-                  </span>
-                  <span
-                    className={cn(
-                      "absolute bottom-0.5 right-0.5 size-3.5 rounded-full ring-2 ring-white dark:ring-slate-900",
-                      esBaja ? "bg-rose-500" : "bg-emerald-500",
-                    )}
-                    aria-hidden="true"
-                  />
-                </div>
+                <AvatarFicha iniciales={iniciales(alumno.usuario.nombre, alumno.usuario.apellido)} activo={!esBaja} />
                 <div className="min-w-0 space-y-1.5">
                   <h1 className="text-2xl @xl:text-3xl font-black tracking-tight text-slate-900 dark:text-white truncate">
                     {nombreCompleto}
@@ -415,83 +386,22 @@ export function AlumnoDetallePage() {
 
             {/* 4 Tarjetas de Resumen / KPIs */}
             <section aria-label="Resumen del alumno" className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4 gap-4">
-              {/* KPI 1: Plan */}
-              <Card className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Plan</span>
-                <p className="mt-2 text-xl font-black text-slate-900 dark:text-white truncate">
-                  {planNombre}
-                </p>
-                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                  {planSubtitulo}
-                </p>
-              </Card>
-
-              {/* KPI 2: Profesor/a */}
-              <Card className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Profesora</span>
-                <p className="mt-2 text-xl font-black text-slate-900 dark:text-white truncate">
-                  {profesoraNombre}
-                </p>
-                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 truncate">
-                  {profesoraSubtitulo}
-                </p>
-              </Card>
-
-              {/* KPI 3: Cuota */}
-              <Card className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Cuota</span>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className={cn("size-2.5 rounded-full shrink-0", cuotaVisual.dot)} />
-                  <span className={cn("text-xl font-black", cuotaVisual.colorTexto)}>
-                    {cuotaVisual.texto}
+              <TarjetaResumen etiqueta="Plan" valor={planNombre} detalle={planSubtitulo} />
+              <TarjetaResumen etiqueta="Profesora" valor={profesoraNombre} detalle={profesoraSubtitulo} />
+              <TarjetaResumen
+                etiqueta="Cuota"
+                valor={
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", cuotaVisual.dot)} />
+                    <span className={cuotaVisual.colorTexto}>{cuotaVisual.texto}</span>
                   </span>
-                </div>
-                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                  {cuotaSubtitulo}
-                </p>
-              </Card>
-
-              {/* KPI 4: Alta */}
-              <Card className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Alta</span>
-                <p className="mt-2 text-xl font-black text-slate-900 dark:text-white">
-                  {altaFecha}
-                </p>
-                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                  {altaAntiguedad}
-                </p>
-              </Card>
+                }
+                detalle={cuotaSubtitulo}
+              />
+              <TarjetaResumen etiqueta="Alta" valor={altaFecha} detalle={altaAntiguedad} />
             </section>
 
-            {/* Pestañas horizontales con subrayado fucsia activo */}
-            <div
-              className="flex items-center gap-4 @xl:gap-6 border-b border-slate-200 dark:border-slate-800 pt-2 overflow-x-auto scrollbar-none"
-              role="tablist"
-              aria-orientation="horizontal"
-              aria-label="Secciones de la ficha"
-            >
-              {secciones.map((item, indice) => (
-                <button
-                  key={item.id}
-                  id={`tab-${item.id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={seccion === item.id}
-                  aria-controls="panel-ficha-alumno"
-                  tabIndex={seccion === item.id ? 0 : -1}
-                  onClick={() => setSeccion(item.id)}
-                  onKeyDown={(evento) => navegarPestanas(evento, indice)}
-                  className={cn(
-                    "flex items-center gap-2 pb-3 text-sm font-bold border-b-2 whitespace-nowrap transition-colors focus-visible:outline-none",
-                    seccion === item.id
-                      ? "border-primary text-slate-900 dark:text-white"
-                      : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                  )}
-                >
-                  <span>{item.etiqueta}</span>
-                </button>
-              ))}
-            </div>
+            <PestanasFicha secciones={secciones} actual={seccion} onCambiar={setSeccion} idPanel="panel-ficha-alumno" />
 
             {/* Panel de Contenido de la Ficha */}
             <section
@@ -758,50 +668,6 @@ export function AlumnoDetallePage() {
         )}
       </div>
     </OwnerLayout>
-  );
-}
-
-function FilaDato({
-  etiqueta,
-  valor,
-  destacado = false,
-  href,
-}: {
-  etiqueta: string;
-  valor: string;
-  destacado?: boolean;
-  href?: string;
-}) {
-  return (
-    <div className="flex items-center py-3.5 first:pt-1 last:pb-1 text-sm">
-      <span className="w-32 shrink-0 @xl:w-36 text-slate-500 dark:text-slate-400 font-normal">
-        {etiqueta}
-      </span>
-      {href ? (
-        <a
-          href={href}
-          className={cn(
-            "min-w-0 font-semibold wrap-anywhere hover:underline",
-            destacado ? "text-primary dark:text-pink-300" : "text-slate-800 dark:text-slate-200"
-          )}
-        >
-          {valor}
-        </a>
-      ) : (
-        <span
-          className={cn(
-            "min-w-0 wrap-anywhere",
-            destacado
-              ? "font-semibold text-primary dark:text-pink-300"
-              : valor.startsWith("Sin ")
-                ? "font-normal text-slate-500 dark:text-slate-400"
-                : "font-semibold text-slate-900 dark:text-white"
-          )}
-        >
-          {valor}
-        </span>
-      )}
-    </div>
   );
 }
 

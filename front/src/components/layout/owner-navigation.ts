@@ -24,7 +24,7 @@ import {
 import type { RoleCode } from "@/types/auth";
 
 /** Contadores que puede mostrar una sub-opción; el número lo resuelve el layout. */
-export type ContadorMenu = "PENDIENTES_DE_ALTA" | "TRANSFERENCIAS_PENDIENTES";
+export type ContadorMenu = "POR_VERIFICAR";
 
 export interface SubItemMenu {
   etiqueta: string;
@@ -74,12 +74,12 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     subrutasDe: SUBRUTAS_DE_ALUMNOS,
   },
   {
-    etiqueta: "Transferencias por verificar",
+    etiqueta: "Por verificar",
     icono: ArrowLeftRight,
     seccion: SECCION_COBROS,
-    to: "/app/cobros/transferencias",
-    contador: "TRANSFERENCIAS_PENDIENTES",
-    descripcion: "Transferencias informadas pendientes de aprobación o rechazo.",
+    to: "/app/por-verificar",
+    contador: "POR_VERIFICAR",
+    descripcion: "Transferencias informadas y altas nuevas que esperan su pago.",
   },
   {
     etiqueta: "Efectivo a rendir",

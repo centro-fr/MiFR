@@ -20,6 +20,8 @@ import {
 } from "@/features/rutinas/schemas/medicion-form";
 import type { Medicion } from "@/types/rutinas";
 import { fechaActualArgentina } from "@/utils/fecha";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsDialogoMedicion {
   abierto: boolean;
@@ -101,7 +103,7 @@ export function DialogoMedicion({
       : null;
 
     return (
-      <div key={codigo} className="space-y-1.5">
+      <div key={codigo} className={CAMPO_MODAL}>
         <label htmlFor={`medida-${codigo}`} className="text-xs font-bold text-slate-800 dark:text-slate-200">
           {def.etiqueta} <span className="font-normal text-slate-400 dark:text-slate-500">(opcional)</span>
         </label>
@@ -132,19 +134,19 @@ export function DialogoMedicion({
 
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && onClose()}>
-      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-border p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-        <DialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 pr-12 text-left dark:bg-white/5">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-lg")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             {medicion ? "Corregir medición" : "Registrar medición"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Para {nombreAlumno}. Cargá las medidas que tomaste, al menos una.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={(e) => void guardar(e)} noValidate className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+        <form onSubmit={(e) => void guardar(e)} noValidate className={cn(CUERPO_MODAL, "flex flex-col gap-5 space-y-0")}>
           {/* Fecha */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <label htmlFor="fecha-medicion" className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Fecha <span className="text-primary">*</span>
             </label>
@@ -160,7 +162,7 @@ export function DialogoMedicion({
           </div>
 
           {/* Grid de medidas principales: Peso, Cintura, Cadera, Brazo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className={FILA_DE_CAMPOS_MODAL}>
             {renderCampoMedida("PESO")}
             {renderCampoMedida("CINTURA")}
             {renderCampoMedida("CADERA")}
@@ -189,7 +191,7 @@ export function DialogoMedicion({
           )}
 
           {/* Observaciones */}
-          <div className="space-y-1.5 pt-1">
+          <div className={cn(CAMPO_MODAL, "pt-1")}>
             <label htmlFor="observaciones-medicion" className="text-xs font-bold text-slate-800 dark:text-slate-200">
               Observaciones <span className="font-normal text-slate-400">(opcional)</span>
             </label>
@@ -203,7 +205,7 @@ export function DialogoMedicion({
           </div>
 
           {/* Footer de acciones estilo Cobrar en Alumnos-Lista */}
-          <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+          <div className={cn(PIE_MODAL, "-mx-6 -mb-5 mt-2")}>
             <Button
               type="button"
               variant="outline"

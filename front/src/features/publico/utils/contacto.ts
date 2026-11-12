@@ -3,7 +3,7 @@ import { enlaceWhatsApp } from "@/features/alumnos/utils/formato-ficha";
 // Los datos de contacto del centro no los guarda el back: se configuran al publicar el front
 // (VITE_INSTAGRAM_USUARIO y VITE_WHATSAPP_NUMERO). Sin configurar, el botón no se muestra.
 
-export const MENSAJE_WHATSAPP = "Hola! Quiero sumarme a FR Centro de Entrenamiento.";
+export const MENSAJE_WHATSAPP = "Hola! Quiero sumarme al Centro de Entrenamiento FR.";
 
 export interface EnlacesDeContacto {
   instagram: string | null;

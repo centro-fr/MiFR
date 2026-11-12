@@ -15,6 +15,8 @@ import {
 import { formatearPrecio } from "@/features/alumnos/utils/pendientes-de-alta";
 import { ajustarSeleccion, etiquetaHorario, horariosElegibles, valoresIniciales } from "@/features/alumnos/utils/reactivacion";
 import type { HorarioElegible, InscripcionAnterior } from "@/types/alumno";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 // Elegir plan, profesora y horarios con las reglas del back que se pueden ver antes de enviar.
 // Lo usan la reactivación (US-08) y el cambio de plan u horarios desde la ficha.
@@ -157,7 +159,7 @@ export function FormularioPlanYHorarios({
         </Alert>
       )}
 
-      <div className="-mx-6 -mb-6 mt-6 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className={cn(PIE_MODAL, "-mx-6 -mb-5 mt-6")}>
         <Button
           type="button"
           variant="outline"
@@ -294,12 +296,12 @@ export function DialogoPlanYHorarios({ titulo, descripcion, procesando, onClose,
         if (!abierto && !procesando) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-lg")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>{titulo}</DialogTitle>
+          <DialogDescription className={DESCRIPCION_MODAL}>{descripcion}</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className={CUERPO_MODAL}>
           {children}
         </div>
       </DialogContent>

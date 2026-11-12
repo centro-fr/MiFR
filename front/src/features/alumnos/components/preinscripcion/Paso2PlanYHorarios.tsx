@@ -8,6 +8,7 @@ import { actividadesDelPlan, clasesRequeridasDelPlan } from "../../utils/plan-y-
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
+import { CAMPO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Paso2PlanYHorariosProps {
   planes: PlanApiRespuesta[];
@@ -383,7 +384,7 @@ export function Paso2PlanYHorarios({
       </div>
 
       {/* 5. FECHA DE INICIO: "Empieza el" */}
-      <div className="space-y-1.5 max-w-xs">
+      <div className={cn(CAMPO_MODAL, "max-w-xs")}>
         <Label htmlFor="fecha-inicio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
           Empieza el
         </Label>

@@ -5,7 +5,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { MenuExportar } from "@/components/menu-exportar";
 import { Button } from "@/components/ui/button";
 import { ConfirmarAbono } from "@/features/honorarios/components/confirmar-abono";
-import { SelectorMes } from "@/features/honorarios/components/controles-informe";
+import { FiltrosDelMes } from "@/features/honorarios/components/controles-informe";
 import { DialogoConfiguracion } from "@/features/honorarios/components/dialogo-configuracion";
 import { DialogoDetalle } from "@/features/honorarios/components/dialogo-detalle";
 import { EncabezadoHonorarios } from "@/features/honorarios/components/encabezado-honorarios";
@@ -128,7 +128,6 @@ export function HonorariosPage() {
           descripcion="Revisa el calculo del pago mensual para cada profesor/a"
           acciones={
             <>
-              <SelectorMes periodo={periodo} onChange={cambiarPeriodo} />
               <Button
                 type="button"
                 variant="outline"
@@ -158,6 +157,7 @@ export function HonorariosPage() {
             </>
           }
         />
+        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} />
         <LiquidacionDelMes key={periodo} periodo={periodo} />
       </div>
       <DialogoConfiguracion abierto={configAbierta} periodo={periodo} onClose={() => setConfigAbierta(false)} />

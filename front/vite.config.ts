@@ -22,8 +22,20 @@ export default defineConfig(({ mode }) => {
   // a la página (recomendación de Google para el login con popup).
   const headers = { 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' }
 
+  // Sin VITE_SITIO_URL, index.html publica URLs relativas en Open Graph y las vistas previas de un
+  // enlace salen sin imagen. Avisa al compilar en lugar de cortar el build (CI y builds locales).
+  const avisarSiFaltaLaUrlDelSitio = {
+    name: 'avisar-si-falta-la-url-del-sitio',
+    apply: 'build' as const,
+    buildStart() {
+      if (!env.VITE_SITIO_URL?.trim()) {
+        this.warn('VITE_SITIO_URL está vacía: las etiquetas Open Graph van a quedar con URLs relativas.')
+      }
+    },
+  }
+
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), avisarSiFaltaLaUrlDelSitio],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

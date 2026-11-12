@@ -20,6 +20,8 @@ import { usePreinscripcion, type ResultadoPreinscripcion } from "../../hooks/use
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface ModalPreinscripcionProps {
   open: boolean;
@@ -111,18 +113,18 @@ export function ModalPreinscripcion({
   return (
     <Dialog open={open} onOpenChange={cerrarModal}>
       <DialogContent
-        className="flex max-h-[90dvh] w-[96vw] sm:w-full max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "w-[96vw] sm:w-full max-w-2xl")}
         onInteractOutside={(e) => {
           if (enviando) e.preventDefault();
         }}
       >
         {/* Encabezado del mismo color que el body */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
+        <DialogHeader className={CABECERA_MODAL}>
           <div className="space-y-0.5">
-            <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            <DialogTitle className={TITULO_MODAL}>
               Nueva pre-inscripción
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+            <DialogDescription className={DESCRIPCION_MODAL}>
               Queda pendiente de alta hasta el primer cobro.
             </DialogDescription>
           </div>
@@ -130,7 +132,7 @@ export function ModalPreinscripcion({
 
         {/* Si ya se completó con éxito, mostrar la Pantalla de Éxito */}
         {exito ? (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className={CUERPO_MODAL}>
             <PantallaExito
               yaAbono={datosCobro.yaAbono}
               onCargarOtro={reiniciar}
@@ -146,7 +148,7 @@ export function ModalPreinscripcion({
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className={CUERPO_MODAL}>
               {/* Stepper de 3 Pasos */}
               <StepperBar pasoActual={paso} irAPaso={(p) => setPaso(p)} />
 
@@ -185,7 +187,6 @@ export function ModalPreinscripcion({
                   {actividadQuePideMedidas && (
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                       <CamposMedidas
-                        actividad={actividadQuePideMedidas}
                         medidas={medidas}
                         onChange={setMedidas}
                         errores={erroresMedidas}
@@ -212,7 +213,7 @@ export function ModalPreinscripcion({
           </div>
 
           {/* Footer del mismo color que el body */}
-          <div className="shrink-0 flex items-center justify-between border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className={cn(PIE_MODAL, "justify-between")}>
               {paso > 1 ? (
                 <Button
                   type="button"

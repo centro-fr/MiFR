@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { FilaDeDetalle, ListaDeDetalle } from "@/components/detalle/lista-de-detalle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,8 @@ import type { Promocion } from "@/types/promocion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
+import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 
@@ -38,16 +41,12 @@ function erroresDe(issues: { path: PropertyKey[]; message: string }[]): Errores 
 
 function ResumenPreInscripcion({ pendiente }: { pendiente: PreInscripcionPendiente }) {
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-xl bg-slate-50 p-3 text-sm dark:bg-white/5">
-      <dt className="text-muted-foreground">Plan</dt>
-      <dd className="text-right font-bold">
-        {pendiente.nombrePlan} · {formatearPrecio(pendiente.precio)}
-      </dd>
-      <dt className="text-muted-foreground">Profesora</dt>
-      <dd className="text-right font-bold">{pendiente.profesora}</dd>
-      <dt className="text-muted-foreground">Horario</dt>
-      <dd className="text-right font-bold">{textoHorarios(pendiente.horarios)}</dd>
-    </dl>
+    <ListaDeDetalle>
+      <FilaDeDetalle etiqueta="Plan">{pendiente.nombrePlan}</FilaDeDetalle>
+      <FilaDeDetalle etiqueta="Precio de lista">{formatearPrecio(pendiente.precio)}</FilaDeDetalle>
+      <FilaDeDetalle etiqueta="Profesora">{pendiente.profesora}</FilaDeDetalle>
+      <FilaDeDetalle etiqueta="Horario">{textoHorarios(pendiente.horarios)}</FilaDeDetalle>
+    </ListaDeDetalle>
   );
 }
 
@@ -157,11 +156,8 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
   const nombre = `${pendiente.nombre} ${pendiente.apellido}`;
 
   const etiquetasForma: EtiquetasFormaDeCobro = {
-    EFECTIVO: { titulo: "Efectivo", detalle: "Lo cobraste en el centro." },
-    TRANSFERENCIA: {
-      titulo: "Transferencia",
-      detalle: esPropietaria ? "Ya la viste acreditada en tu cuenta." : "Queda pendiente de confirmación por la propietaria.",
-    },
+    EFECTIVO: { titulo: "Efectivo" },
+    TRANSFERENCIA: { titulo: "Transferencia" },
   };
 
   const esTransferenciaProfesora = valores.formaPago === "TRANSFERENCIA" && !esPropietaria;
@@ -202,12 +198,12 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
         if (!abierto && !confirmando) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+      <DialogContent className={cn(CONTENIDO_MODAL, "max-w-lg")}>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Confirmar alta de {nombre}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             {esTransferenciaProfesora
               ? "Informá los datos de la transferencia. Al guardarla, quedará pendiente de confirmación por la propietaria para dar el alta definitiva."
               : "Registrá el cobro o la transferencia de su primera cuota. Al guardarlo, queda activo e inscripto en el plan y los horarios que eligió."}
@@ -215,7 +211,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
         </DialogHeader>
 
         <form onSubmit={confirmar} noValidate className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+          <div className={cn(CUERPO_MODAL, "flex flex-col gap-5 space-y-0")}>
             <ResumenPreInscripcion pendiente={pendiente} />
           {pendiente.reserva?.vencida && <AvisoReservaVencida vence={pendiente.reserva.vence} />}
           <div className="flex flex-col gap-1.5">
@@ -259,11 +255,12 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
             etiquetas={etiquetasForma}
           />
 
-          <Campo id="monto-primer-pago" etiqueta="Monto cobrado" ayuda="Sin puntos de miles, por ejemplo 25000 o 25000,50." error={errores.monto} obligatorio>
+          <Campo id="monto-primer-pago" etiqueta="Monto cobrado" error={errores.monto} obligatorio>
             {(describedBy) => (
               <Input
                 id="monto-primer-pago"
                 inputMode="decimal"
+                placeholder="Ej: 25000"
                 value={valores.monto}
                 onChange={(evento) => cambiar({ monto: evento.target.value })}
                 aria-invalid={errores.monto !== undefined}
@@ -292,7 +289,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
 
           </div>
 
-          <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"

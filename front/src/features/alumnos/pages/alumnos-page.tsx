@@ -210,17 +210,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     offset: 0,
   });
 
-  const consultaPendientes = useAlumnos({
-    busqueda: busquedaDebounced,
-    id_plan: filtros.id_plan,
-    id_profesora: idProfesora,
-    id_actividad: filtros.id_actividad,
-    estado: "PENDIENTE",
-    incluir_bajas: false,
-    limit: 1,
-    offset: 0,
-  });
-
   const consultaBajas = useAlumnos({
     busqueda: busquedaDebounced,
     id_plan: filtros.id_plan,
@@ -253,7 +242,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   );
 
   const conteoTodos = consultaTodos.data?.total ?? 0;
-  const conteoPendientes = consultaPendientes.data?.total ?? 0;
   const conteoBajas = consultaBajas.data?.total ?? 0;
 
   const itemsContactar = useMemo((): AlumnoResumen[] => {
@@ -307,7 +295,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     setFiltros((anteriores) => ({ ...anteriores, [nombre]: valor }));
   }
 
-  function seleccionarTabEstado(estadoTab: "TODOS" | "PENDIENTE" | "BAJA" | "CONTACTAR") {
+  function seleccionarTabEstado(estadoTab: "TODOS" | "BAJA" | "CONTACTAR") {
     setPagina(0);
     if (estadoTab === "CONTACTAR") {
       setSoloContactar((prev) => !prev);
@@ -317,8 +305,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
     setSoloContactar(false);
     if (estadoTab === "BAJA") {
       setFiltros((prev) => ({ ...prev, estado: "BAJA", incluir_bajas: true }));
-    } else if (estadoTab === "PENDIENTE") {
-      setFiltros((prev) => ({ ...prev, estado: "PENDIENTE", incluir_bajas: false }));
     } else {
       setFiltros((prev) => ({ ...prev, estado: "TODOS", incluir_bajas: false }));
     }
@@ -498,25 +484,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
         </button>
         <button
           type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            !soloContactar && filtros.estado === "PENDIENTE"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
-          )}
-        >
-          <span>Pendientes</span>
-          <span
-            className={cn(
-              !soloContactar && filtros.estado === "PENDIENTE" ? "text-primary font-black" : "text-slate-500"
-            )}
-          >
-            {conteoPendientes}
-          </span>
-        </button>
-        <button
-          type="button"
           onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
           className={cn(
             "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
@@ -581,29 +548,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 )}
               >
                 {conteoTodos}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                !soloContactar && filtros.estado === "PENDIENTE"
-                  ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-              )}
-            >
-              <span>Pendientes de alta</span>
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                  !soloContactar && filtros.estado === "PENDIENTE"
-                    ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                )}
-              >
-                {conteoPendientes}
               </span>
             </button>
 
@@ -774,29 +718,6 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                   )}
                 >
                   {conteoTodos}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => seleccionarTabEstado(filtros.estado === "PENDIENTE" ? "TODOS" : "PENDIENTE")}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
-                  !soloContactar && filtros.estado === "PENDIENTE"
-                    ? "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-                )}
-              >
-                <span>Pendientes de alta</span>
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-xs font-extrabold",
-                    !soloContactar && filtros.estado === "PENDIENTE"
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                  )}
-                >
-                  {conteoPendientes}
                 </span>
               </button>
 

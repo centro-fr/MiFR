@@ -81,16 +81,17 @@
   --color-sidebar-border: #1e293b;
   --color-sidebar-ring: #e91e82;
   --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
-  /* Titulares de la página pública. Anton se carga solo en esa página (home-page.tsx). */
-  --font-display: "Anton", Impact, "Arial Narrow", sans-serif;
-  /* Página pública: alterna fondos fijos oscuros y claros, no sigue el tema claro/oscuro del sistema. */
-  --color-publico-tinta: #0b0d12;
-  --color-publico-tinta-suave: #12151d;
-  --color-publico-niebla: #f4f5f8;
-  --color-publico-borde: #d6d9e0;
-  --color-publico-texto-claro: #c7ccd6;
-  --color-publico-texto-tenue: #aeb4c2;
-  --color-publico-texto-gris: #4a5263;
+  /* Titulares de la página pública. Archivo se carga solo en esa página (home-page.tsx). */
+  --font-display: "Archivo", "Arial Black", sans-serif;
+  /* Página pública: fondo oscuro fijo, no sigue el tema claro/oscuro del sistema. Usa el mismo
+     azul pizarra que el sidebar, así el sitio y el sistema se sienten la misma marca. */
+  --color-publico-tinta: var(--color-sidebar);
+  --color-publico-superficie: #162033;
+  --color-publico-borde: var(--color-sidebar-border);
+  --color-publico-borde-fuerte: #475569;
+  --color-publico-texto-suave: #e2e8f0;
+  --color-publico-texto-claro: #cbd5e1;
+  --color-publico-texto-tenue: #94a3b8;
   --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
   --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   --shadow-brand-glow: 0 10px 30px -5px rgba(233, 30, 130, 0.35);
@@ -141,6 +142,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+}
+
+/* El menú de la página pública lleva a anclas de la misma página: el salto se hace deslizando. */
+html:has(.pagina-publica) {
+  scroll-behavior: smooth;
 }
 
 @keyframes pulse-glow {

@@ -22,6 +22,7 @@ import {
   obtenerContactoPrioritario,
 } from "@/features/inactivos/utils/formato-inactivos";
 import { enlaceTelefono } from "@/features/alumnos/utils/formato-ficha";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
   alumno: AlumnoInactivo | null;
@@ -32,21 +33,18 @@ interface Props {
 const OPCIONES_ESTADO: Array<{
   valor: "CONTACTADO" | "IGNORADO";
   titulo: string;
-  descripcion: string;
   icono: typeof Clock;
   colorActivo: string;
 }> = [
     {
       valor: "CONTACTADO",
       titulo: "Contactado",
-      descripcion: "Se envió mensaje o se llamó para conocer el motivo de la inasistencia e incentivar el regreso.",
       icono: Clock,
       colorActivo: "border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white",
     },
     {
       valor: "IGNORADO",
       titulo: "Ignorar por ahora",
-      descripcion: "Se decide no contactar en este momento. Se oculta del listado principal de alertas.",
       icono: Ban,
       colorActivo: "border-slate-900 bg-slate-50 dark:border-white dark:bg-white/10 text-slate-900 dark:text-white",
     },
@@ -99,19 +97,19 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
   return (
     <Dialog open={abierto} onOpenChange={(abrir) => !abrir && !guardando && onClose()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "max-w-lg md:max-w-xl")}
       >
         {/* Encabezado con título */}
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Seguimiento de alumno
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Acción proactiva para incentivar el reintegro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className={CUERPO_MODAL}>
           {/* Tarjeta de resumen del alumno y plan */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -197,9 +195,7 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
 
         {/* Opciones de seguimiento */}
         <div className="space-y-3 pt-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Actualizar estado de seguimiento
-          </label>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Actualizar estado de seguimiento</h3>
 
           <div className="grid grid-cols-1 gap-2.5">
             {OPCIONES_ESTADO.map((opcion) => {
@@ -234,9 +230,6 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
                       <Icono className="size-4" />
                       <span className="text-sm font-bold">{opcion.titulo}</span>
                     </div>
-                    <p className="mt-1 text-xs opacity-90 leading-relaxed font-medium">
-                      {opcion.descripcion}
-                    </p>
                   </div>
                 </button>
               );
@@ -262,7 +255,7 @@ export function ModalGestionInactividad({ alumno, abierto, onClose }: Props) {
       </div>
 
       {/* Footer con botones Cancelar y Guardar */}
-      <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+      <DialogFooter className={PIE_MODAL}>
         <Button
           type="button"
           variant="outline"

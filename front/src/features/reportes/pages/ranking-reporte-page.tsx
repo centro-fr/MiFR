@@ -105,6 +105,8 @@ function TablaRanking({ ranking }: { ranking: RankingAsistencia }) {
 
 export function RankingReportePage() {
   const [filtros, setFiltros] = useState<{ desde?: string; hasta?: string }>({});
+  // FiltroPeriodo guarda lo que se tipea: al limpiar se vuelve a montar vacío.
+  const [reinicios, setReinicios] = useState(0);
   const consulta = useRankingAsistencia(filtros);
   const ranking = consulta.data;
   const detalle = ranking ? periodoDelInforme(ranking.periodo.desde.slice(0, 10), ranking.periodo.hasta.slice(0, 10)) : "Mes en curso";
@@ -122,8 +124,15 @@ export function RankingReportePage() {
       acciones={<MenuExportar disabled={!ranking || ranking.datos.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros>
+        <GrupoDeFiltros
+          onLimpiar={() => {
+            setFiltros({});
+            setReinicios((n) => n + 1);
+          }}
+          hayFiltros={Boolean(filtros.desde || filtros.hasta)}
+        >
           <FiltroPeriodo
+            key={reinicios}
             prefijo="ranking"
             desde={filtros.desde ?? ""}
             hasta={filtros.hasta ?? ""}
@@ -145,7 +154,7 @@ export function RankingReportePage() {
             <ResumenEnTarjetas
               datos={[
                 { etiqueta: "Participantes", valor: String(ranking.total) },
-                { etiqueta: "Asistencia perfecta", valor: String(perfectos), nota: "Vinieron a todas sus clases" },
+                { etiqueta: "Asistencia perfecta", valor: String(perfectos) },
                 { etiqueta: "Racha más larga", valor: rachaMasLarga === 0 ? "—" : `${rachaMasLarga} clases` },
                 { etiqueta: "Asistencia promedio", valor: formatearPorcentaje(promedio) },
               ]}

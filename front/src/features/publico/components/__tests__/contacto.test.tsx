@@ -14,7 +14,7 @@ describe("enlaces de contacto", () => {
 
   it("enlaceWhatsAppConMensaje arma wa.me con el mensaje solo si el número es internacional", () => {
     expect(enlaceWhatsAppConMensaje("+54 9 379 412-3456")).toBe(
-      "https://wa.me/5493794123456?text=Hola!%20Quiero%20sumarme%20a%20FR%20Centro%20de%20Entrenamiento.",
+      "https://wa.me/5493794123456?text=Hola!%20Quiero%20sumarme%20al%20Centro%20de%20Entrenamiento%20FR.",
     );
     expect(enlaceWhatsAppConMensaje("379 412-3456")).toBeNull();
     expect(enlaceWhatsAppConMensaje(undefined)).toBeNull();

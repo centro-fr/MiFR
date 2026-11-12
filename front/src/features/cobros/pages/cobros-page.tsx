@@ -2,11 +2,9 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
-  Info,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { toast } from "sonner";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Input } from "@/components/ui/input";
@@ -30,16 +28,6 @@ import { PanelEfectivoARendir } from "@/features/cobros/components/panel-efectiv
 import { PanelListadoCobros } from "@/features/cobros/components/panel-listado-cobros";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
-import { BarraFiltros } from "@/features/transferencias/components/barra-filtros";
-import { ModalDetalleAprobacion } from "@/features/transferencias/components/modal-detalle-aprobacion";
-import {
-  useAprobarTransferencia,
-  useRechazarTransferencia,
-  useTransferencias,
-} from "@/features/transferencias/hooks/use-transferencias";
-import { FILTROS_INICIALES, filtrarTransferencias } from "@/features/transferencias/utils/filtros-transferencias";
-import { tramoDePlazo } from "@/features/transferencias/utils/plazo-verificacion";
-import type { Transferencia } from "@/types/transferencia";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
 import { normalizarParaBuscar } from "@/utils/texto";
@@ -70,17 +58,6 @@ function formatearFechaCorta(fecha: string | null | undefined): string {
   return partes ? `${partes[2]}/${partes[1]}` : "—";
 }
 
-function formatearFechaHoraCorta(fechaIso: string | null | undefined): string {
-  if (!fechaIso) return "—";
-  const d = new Date(fechaIso);
-  if (isNaN(d.getTime())) return "—";
-  const dia = String(d.getDate()).padStart(2, "0");
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const horas = String(d.getHours()).padStart(2, "0");
-  const minutos = String(d.getMinutes()).padStart(2, "0");
-  return `${dia}/${mes} ${horas}:${minutos}`;
-}
-
 export function CobrosPage() {
   const { panelActivo, tieneLosDosPaneles } = usePanelActivo();
   const enPanelDeProfesora = panelActivo === "PROFESORA";
@@ -108,9 +85,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const seccionDeRuta = pathname.endsWith("/transferencias")
-    ? "transferencias"
-    : pathname.endsWith("/efectivo")
+  const seccionDeRuta = pathname.endsWith("/efectivo")
       ? "efectivo"
       : pathname.endsWith("/listado")
         ? "listado"
@@ -119,7 +94,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           : null;
   const tabActiva = !soloACargo
     ? (seccionDeRuta ??
-        (tabParam === "transferencias" || tabParam === "efectivo" || tabParam === "listado"
+        (tabParam === "efectivo" || tabParam === "listado"
           ? tabParam
           : "cuotas"))
     : "cuotas";
@@ -170,39 +145,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
       promociones,
     );
   }, [alumnoDetalleSeleccionado, alumnoSeleccionado, promociones]);
-
-  // Modal flotante de transferencias
-  const [transferenciaSeleccionada, setTransferenciaSeleccionada] =
-    useState<Transferencia | null>(null);
-
-  const aprobarTransferencia = useAprobarTransferencia();
-  const rechazarTransferencia = useRechazarTransferencia();
-
-  // Consulta de transferencias pendientes
-  const {
-    data: transferenciasData,
-    isLoading: cargandoTransferencias,
-    isError: errorTransferencias,
-    refetch: recargarTransferencias,
-  } = useTransferencias("PENDIENTE", { orden: "desc" });
-
-  const transferenciasPendientes = useMemo<Transferencia[]>(() => {
-    if (!transferenciasData) return [];
-    if (Array.isArray(transferenciasData)) return transferenciasData;
-    if ("pages" in (transferenciasData as Record<string, unknown>)) {
-      const pages = (transferenciasData as { pages: Transferencia[][] }).pages;
-      return Array.isArray(pages) ? pages.flat() : [];
-    }
-    return [];
-  }, [transferenciasData]);
-
-  // US-17: búsqueda, fecha y orden sobre las pendientes ya cargadas (el back no los ofrece).
-  const [filtrosTransferencias, setFiltrosTransferencias] = useState(FILTROS_INICIALES);
-  const transferenciasVisibles = useMemo(
-    () => filtrarTransferencias(transferenciasPendientes, filtrosTransferencias),
-    [transferenciasPendientes, filtrosTransferencias]
-  );
-  const limpiarFiltrosTransferencias = () => setFiltrosTransferencias(FILTROS_INICIALES);
 
   // Consulta de alumnos activos con su inscripción
   const {
@@ -360,54 +302,11 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     void recargarAlumnos();
   }
 
-  const handleAprobarTransferencia = (
-    transferencia: Transferencia,
-    confirmarMontoDistinto: boolean
-  ) => {
-    aprobarTransferencia.mutate(
-      { id: transferencia.id, confirmarMontoDistinto },
-      {
-        onSuccess: () => {
-          setTransferenciaSeleccionada(null);
-          void recargarAlumnos();
-          void recargarTransferencias();
-          toast.success("Transferencia aprobada", {
-            description: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido} quedó al día.`,
-          });
-        },
-        onError: () => {
-          toast.error("No se pudo aprobar la transferencia");
-        },
-      }
-    );
-  };
-
-  const handleRechazarTransferencia = (transferencia: Transferencia, motivo: string) => {
-    rechazarTransferencia.mutate(
-      { id: transferencia.id, motivo },
-      {
-        onSuccess: () => {
-          setTransferenciaSeleccionada(null);
-          void recargarAlumnos();
-          void recargarTransferencias();
-          toast.success("Transferencia rechazada", {
-            description: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}: el motivo quedó registrado.`,
-          });
-        },
-        onError: () => {
-          toast.error("No se pudo rechazar la transferencia");
-        },
-      }
-    );
-  };
-
   const tituloSeccion = soloACargo
     ? "Cobros"
     : tabActiva === "listado"
       ? "Historial"
-      : tabActiva === "transferencias"
-        ? "Transferencias por verificar"
-        : tabActiva === "efectivo"
+      : tabActiva === "efectivo"
           ? "Efectivo a rendir"
           : "Cuotas";
 
@@ -415,9 +314,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
     ? "Registrá el cobro de la cuota de tus alumnos, en efectivo o por transferencia."
     : tabActiva === "listado"
       ? "Consultá los cobros confirmados, filtrá por forma de pago o profesor/a y descargá su comprobante."
-      : tabActiva === "transferencias"
-        ? "Verificá en tu cuenta las transferencias informadas por los alumnos y aprobalas o rechazalas."
-        : tabActiva === "efectivo"
+      : tabActiva === "efectivo"
           ? "Controlá el efectivo cobrado por las profesoras pendiente de entrega y el historial rendido."
           : "Buscá el estado de cuota de los alumnos y registrá cobros en efectivo o por transferencia.";
 
@@ -800,212 +697,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         </div>
       )}
 
-      {/* TAB 2: TRANSFERENCIAS POR VERIFICAR */}
-      {tabActiva === "transferencias" && (
-        <div className="space-y-4 w-full min-w-0 max-w-full">
-          {/* Banner celeste de aviso */}
-          <div className="flex items-center gap-3 rounded-lg border border-sky-200/80 bg-sky-50/60 p-4 text-xs font-semibold text-sky-900 dark:border-sky-800/40 dark:bg-sky-950/20 dark:text-sky-200">
-            <Info className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
-            <span>
-              Fijate en tu cuenta que la plata haya entrado y aprobala. Tenés 24 h desde que se
-              informó.
-            </span>
-          </div>
-
-          {transferenciasPendientes.length > 0 && (
-            <BarraFiltros
-              filtros={filtrosTransferencias}
-              onChange={setFiltrosTransferencias}
-              onLimpiar={limpiarFiltrosTransferencias}
-            />
-          )}
-
-          {/* TABLA DE TRANSFERENCIAS */}
-          {cargandoTransferencias ? (
-            <TablaSkeleton ariaLabel="Cargando transferencias" filas={4} />
-          ) : errorTransferencias ? (
-            <EstadoErrorCarga
-              mensaje="No se pudieron cargar las transferencias por verificar."
-              onReintentar={() => void recargarTransferencias()}
-            />
-          ) : transferenciasPendientes.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                No hay transferencias pendientes
-              </h3>
-              <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
-                Cuando se informe una transferencia, va a figurar acá para su verificación.
-              </p>
-            </div>
-          ) : transferenciasVisibles.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-slate-200/80 bg-white px-5 py-14 text-center shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Sin resultados</h3>
-              <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
-                Ninguna transferencia pendiente coincide con los filtros.
-              </p>
-              <Button type="button" variant="outline" onClick={limpiarFiltrosTransferencias} className="h-8 rounded-lg text-xs">
-                Limpiar filtros
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-              {/* Desktop Table */}
-              <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                    <tr>
-                      <th scope="col" className="px-6 py-3.5">
-                        Alumno
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Fecha
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Titular
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Transfirió
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Informada
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-right">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {transferenciasVisibles.map((transferencia) => {
-                      const tramo = tramoDePlazo(transferencia);
-                      const fechaFormateada = formatearFechaHoraCorta(
-                        transferencia.realizadaEl
-                      );
-                      const textoPlazo =
-                        tramo === "vencida"
-                          ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
-                          : `Hace ${transferencia.horasDesdeLaCarga} h`;
-
-                      return (
-                        <tr
-                          key={transferencia.id}
-                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
-                        >
-                          {/* Alumno */}
-                          <td className="px-6 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                                {inicialesDe(
-                                  transferencia.alumno.nombre,
-                                  transferencia.alumno.apellido
-                                )}
-                              </span>
-                              <Link
-                                to={`/app/alumnos/${transferencia.alumno.id}`}
-                                className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
-                              >
-                                {transferencia.alumno.nombre} {transferencia.alumno.apellido}
-                              </Link>
-                            </div>
-                          </td>
-
-                          {/* Fecha */}
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                            {fechaFormateada}
-                          </td>
-
-                          {/* Titular */}
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                            {transferencia.titularCuenta || "—"}
-                          </td>
-
-                          {/* Transfirió */}
-                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                            {formatearPrecio(transferencia.monto)}
-                          </td>
-
-                          {/* Informada (texto simple sin colores ni fondos) */}
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                            {textoPlazo}
-                          </td>
-
-                          {/* Acciones: Aprobar */}
-                          <td className="px-6 py-3.5 text-right">
-                            <div className="flex items-center justify-end">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setTransferenciaSeleccionada(transferencia)}
-                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Aprobar
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Rows */}
-              <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
-                {transferenciasVisibles.map((transferencia) => {
-                  const tramo = tramoDePlazo(transferencia);
-                  const fechaFormateada = formatearFechaHoraCorta(
-                    transferencia.realizadaEl
-                  );
-                  const textoPlazo =
-                    tramo === "vencida"
-                      ? `Hace ${transferencia.horasDesdeLaCarga} h · pasó el plazo`
-                      : `Hace ${transferencia.horasDesdeLaCarga} h`;
-                  const nombreCompleto = `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}`;
-
-                  return (
-                    <div
-                      key={transferencia.id}
-                      className="flex items-center justify-between gap-3 px-4 py-3.5"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                          {inicialesDe(
-                            transferencia.alumno.nombre,
-                            transferencia.alumno.apellido
-                          )}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            to={`/app/alumnos/${transferencia.alumno.id}`}
-                            className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
-                          >
-                            {nombreCompleto}
-                          </Link>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                            {fechaFormateada} · {formatearPrecio(transferencia.monto)} · {textoPlazo}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setTransferenciaSeleccionada(transferencia)}
-                          aria-label={`Aprobar transferencia de ${nombreCompleto}`}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Aprobar
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* TAB 0: HISTORIAL DE COBROS */}
       {tabActiva === "listado" && <PanelListadoCobros onVerComprobante={(id) => setComprobanteId(id)} />}
 
@@ -1032,7 +723,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           onTransferenciaInformada={() => {
             setAlumnoSeleccionado(null);
             void recargarAlumnos();
-            void recargarTransferencias();
           }}
         />
       )}
@@ -1046,18 +736,6 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
         />
       )}
 
-      {/* Modal flotante de aprobación y detalle de transferencia */}
-      {transferenciaSeleccionada && (
-        <ModalDetalleAprobacion
-          open={transferenciaSeleccionada !== null}
-          transferencia={transferenciaSeleccionada}
-          onClose={() => setTransferenciaSeleccionada(null)}
-          onAprobar={handleAprobarTransferencia}
-          onRechazar={handleRechazarTransferencia}
-          aprobando={aprobarTransferencia.isPending}
-          rechazando={rechazarTransferencia.isPending}
-        />
-      )}
     </div>
   );
 }

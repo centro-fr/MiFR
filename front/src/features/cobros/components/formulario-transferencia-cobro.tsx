@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ModalCuerpo, ModalFormulario } from "@/components/ui/estructura-modal";
 import { Input } from "@/components/ui/input";
 import { ALUMNOS_QUERY_KEY } from "@/features/alumnos/hooks/use-alumnos";
 import { fechaHoraParaInput } from "@/features/alumnos/schemas/primer-pago";
@@ -31,6 +32,8 @@ interface Props {
   onMontoChange: (monto: string) => void;
   titularInicial?: string;
   onCancelar: () => void;
+  /** Lo que el modal muestra antes de los campos (detalle del cobro, descuento, forma de cobro). */
+  encabezado?: ReactNode;
   onInformada: () => void;
   onExito?: (idPago: number) => void;
 }
@@ -47,6 +50,7 @@ export function FormularioTransferenciaCobro({
   onMontoChange,
   titularInicial = "",
   onCancelar,
+  encabezado,
   onInformada,
   onExito,
 }: Props) {
@@ -120,7 +124,9 @@ export function FormularioTransferenciaCobro({
   const enviando = informar.isPending || enviandoDirecto;
 
   return (
-    <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
+    <ModalFormulario onSubmit={confirmar}>
+      <ModalCuerpo>
+      {encabezado}
       <Campo id="monto-transferencia" etiqueta="Monto" error={errores.monto}>
         {(describedBy) => (
           <Input
@@ -164,12 +170,13 @@ export function FormularioTransferenciaCobro({
           <AlertDescription className="text-sm text-rose-900 dark:text-rose-200">{errorApi}</AlertDescription>
         </Alert>
       )}
+      </ModalCuerpo>
       <BotonesDeCobro
         onCancelar={onCancelar}
         enviando={enviando}
         texto={esPropietaria ? "Confirmar cobro" : "Informar transferencia"}
         textoEnviando={esPropietaria ? "Registrando cobro..." : "Informando..."}
       />
-    </form>
+    </ModalFormulario>
   );
 }

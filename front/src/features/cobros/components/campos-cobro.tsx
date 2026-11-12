@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { LockKeyhole } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BotonModalPrincipal, BotonModalSecundario, ModalPie } from "@/components/ui/estructura-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -112,7 +112,7 @@ const FORMATO_FECHA_HORA = new Intl.DateTimeFormat("es-AR", {
 export function FechaHoraAutomatica({ error }: { error?: string }) {
   const ahora = useMinutoActual();
   return (
-    <Campo id="fecha-hora-transferencia" etiqueta="Fecha y hora" ayuda="Se registra automáticamente con la fecha y hora actual." error={error}>
+    <Campo id="fecha-hora-transferencia" etiqueta="Fecha y hora" error={error}>
       {(describedBy) => (
         <div className="relative">
           <Input
@@ -166,19 +166,13 @@ interface BotonesDeCobroProps {
 /** Pie de los formularios de cobro: cancelar y la acción principal, que es el envío del form. */
 export function BotonesDeCobro({ onCancelar, enviando, texto, textoEnviando }: BotonesDeCobroProps) {
   return (
-    <div className="-mx-6 -mb-6 mt-2 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
-      <Button
-        type="button"
-        variant="outline"
-        disabled={enviando}
-        onClick={onCancelar}
-        className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-      >
+    <ModalPie>
+      <BotonModalSecundario disabled={enviando} onClick={onCancelar}>
         Cancelar
-      </Button>
-      <Button type="submit" disabled={enviando} className="rounded-xl bg-primary px-4 font-bold text-white shadow-md hover:bg-primary-dark">
+      </BotonModalSecundario>
+      <BotonModalPrincipal type="submit" disabled={enviando}>
         {enviando ? textoEnviando : texto}
-      </Button>
-    </div>
+      </BotonModalPrincipal>
+    </ModalPie>
   );
 }

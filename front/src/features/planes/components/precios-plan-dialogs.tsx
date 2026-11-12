@@ -21,6 +21,7 @@ import type { Plan } from "@/types/plan";
 import { formatearPrecio } from "@/utils/moneda";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 function hoyEnArgentina(): string {
   const partes = new Intl.DateTimeFormat("en-CA", {
@@ -152,23 +153,23 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         }}
       >
         <DialogContent
-          className="flex max-h-[90dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+          className={cn(CONTENIDO_MODAL, "max-w-lg")}
         >
           {plan && (
             <>
               {/* Encabezado */}
-              <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-                <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+              <DialogHeader className={CABECERA_MODAL}>
+                <DialogTitle className={TITULO_MODAL}>
                   Cambiar precio de {plan.nombre}
                 </DialogTitle>
-                <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+                <DialogDescription className={DESCRIPCION_MODAL}>
                   Ingresá el nuevo importe y la fecha a partir de la cual empezará a regir.
                 </DialogDescription>
               </DialogHeader>
 
               {/* Formulario */}
               <form onSubmit={validar} className="flex flex-col flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className={CUERPO_MODAL}>
                 {/* Caja Precio actual */}
                 <div className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
                   <p className="text-xs font-semibold text-muted-foreground">Precio actual</p>
@@ -183,9 +184,9 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                 </div>
 
                 {/* Inputs en 2 columnas: Nuevo precio y Rige desde */}
-                <div className="space-y-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1.5">
+                <div className={CAMPO_MODAL}>
+                  <div className={FILA_DE_CAMPOS_MODAL}>
+                    <div className={CAMPO_MODAL}>
                       <Label htmlFor="nuevo-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                         Nuevo precio <span className="text-destructive">*</span>
                       </Label>
@@ -216,7 +217,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className={CAMPO_MODAL}>
                       <Label htmlFor="fecha-vigencia-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                         Rige desde <span className="text-destructive">*</span>
                       </Label>
@@ -243,11 +244,10 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground pt-0.5">Hoy o una fecha futura.</p>
                 </div>
 
                 {/* Nota opcional */}
-                <div className="space-y-1.5">
+                <div className={CAMPO_MODAL}>
                   <Label htmlFor="nota-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                     Nota <span className="text-muted-foreground font-normal">(opcional)</span>
                   </Label>
@@ -278,7 +278,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                     Precios anteriores
                   </h4>
                   {consultaPrecios.isPending ? (
-                    <div className="space-y-1.5">
+                    <div className={CAMPO_MODAL}>
                       <Skeleton className="h-6 w-full rounded-lg" />
                       <Skeleton className="h-6 w-full rounded-lg" />
                     </div>
@@ -306,7 +306,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                 </div>
 
                 {/* Footer de botones */}
-                <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+                <DialogFooter className={PIE_MODAL}>
                   <Button
                     type="button"
                     variant="outline"
@@ -339,20 +339,20 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
         open={confirmacionAbierta}
         onOpenChange={(abierto) => !registrar.isPending && setConfirmacionAbierta(abierto)}
       >
-        <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
-          <AlertDialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 text-left dark:border-slate-800 dark:bg-slate-900">
+        <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+          <AlertDialogHeader className={CABECERA_MODAL}>
             <div className="space-y-0.5">
-              <AlertDialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              <AlertDialogTitle className={TITULO_MODAL}>
                 ¿Confirmar actualización?
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
+              <AlertDialogDescription className={DESCRIPCION_MODAL}>
                 {precioValidado.success
                   ? `El nuevo precio de ${formatearPrecio(precioValidado.data.precio)} aplicará desde el ${fechaLegible(fecha)}. Las cuotas ya cobradas no se modificarán.`
                   : "Revisá el precio y la fecha de vigencia antes de guardar."}
               </AlertDialogDescription>
             </div>
           </AlertDialogHeader>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
             {registrar.isError && (
               <p
                 role="alert"
@@ -362,7 +362,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
               </p>
             )}
           </div>
-          <AlertDialogFooter className="shrink-0 flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <AlertDialogFooter className={PIE_MODAL}>
             <AlertDialogCancel asChild>
               <Button
                 type="button"
@@ -404,11 +404,11 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
         bottomSheetOnMobile
         className="gap-0 border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-900 sm:max-w-lg"
       >
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Historial de precios
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             {plan
               ? `Cambios de vigencia de ${plan.nombre}. Los importes históricos son de solo lectura.`
               : ""}
@@ -481,7 +481,7 @@ export function HistorialPreciosDialog({ plan, onClose }: PropsHistorialPrecios)
             </ol>
           )}
         </div>
-        <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <DialogFooter className={PIE_MODAL}>
           <Button
             type="button"
             variant="outline"

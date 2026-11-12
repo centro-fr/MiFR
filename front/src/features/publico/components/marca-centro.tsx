@@ -1,1 +1,1 @@
-export const NOMBRE_DEL_CENTRO = "FR Centro de Entrenamiento";
+export const NOMBRE_DEL_CENTRO = "Centro de Entrenamiento FR";

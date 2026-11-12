@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { AlertTriangle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ModalCuerpo, ModalFormulario } from "@/components/ui/estructura-modal";
 import { Input } from "@/components/ui/input";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { esMontoDistinto } from "@/features/cobros/api/cobros-api";
@@ -26,6 +27,8 @@ interface Props {
   monto: string;
   onMontoChange: (monto: string) => void;
   onCancelar: () => void;
+  /** Lo que el modal muestra antes de los campos (detalle del cobro, descuento, forma de cobro). */
+  encabezado?: ReactNode;
   /** Con el id del pago, para mostrar su comprobante. */
   onExito: (idPago: number) => void;
 }
@@ -82,7 +85,7 @@ function ConfirmacionMontoDistinto({ monto, precio, marcado, error, onChange }: 
 }
 
 /** US-15: cobro en efectivo de la cuota. Queda confirmado en el acto y emite el comprobante. */
-export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVigente, monto, onMontoChange, onCancelar, onExito }: Props) {
+export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVigente, monto, onMontoChange, onCancelar, onExito, encabezado }: Props) {
   const { hasRole } = usePermissions();
   const esSoloProfesora = hasRole("PROFESORA") && !hasRole("PROPIETARIA");
   const registrar = useRegistrarCobroEfectivo();
@@ -130,7 +133,9 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
   }
 
   return (
-    <form onSubmit={confirmar} noValidate className="flex flex-col gap-4">
+    <ModalFormulario onSubmit={confirmar}>
+      <ModalCuerpo>
+      {encabezado}
       {esSoloProfesora && <AvisoRendicion />}
       <Campo id="monto-cobro" etiqueta="Monto" error={errores.monto}>
         {(describedBy) => (
@@ -165,7 +170,8 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
           <AlertDescription className="text-sm text-rose-900 dark:text-rose-200">{errorApi}</AlertDescription>
         </Alert>
       )}
+      </ModalCuerpo>
       <BotonesDeCobro onCancelar={onCancelar} enviando={registrar.isPending} texto="Confirmar cobro" textoEnviando="Registrando cobro..." />
-    </form>
+    </ModalFormulario>
   );
 }

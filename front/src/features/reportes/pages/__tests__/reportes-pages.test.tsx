@@ -207,11 +207,34 @@ describe("Páginas de Reportes (Estandarización)", () => {
     expect(within(bajas).getByText("38 %")).toBeInTheDocument();
   });
 
-  it("renderiza la página de asistencia con su período y filtros", () => {
+  it("renderiza la página de asistencia con filtros que se aplican solos, sin botón de generar", () => {
     renderizarConRuta("/app/reportes/asistencia", <InformeAsistenciaPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Informe de asistencia" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Generar informe" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Generar informe" })).not.toBeInTheDocument();
+
+    // Sin cambios no hay nada que limpiar; al marcar un filtro se habilita.
+    const limpiar = screen.getByRole("button", { name: "Limpiar filtros" });
+    expect(limpiar).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Incluir alumnos dados de baja" }));
+    expect(limpiar).toBeEnabled();
+
+    fireEvent.click(limpiar);
+    expect(screen.getByRole("checkbox", { name: "Incluir alumnos dados de baja" })).not.toBeChecked();
+    expect(limpiar).toBeDisabled();
+  });
+
+  it("los demás reportes ofrecen limpiar los filtros elegidos", () => {
+    renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
+
+    const limpiar = screen.getByRole("button", { name: "Limpiar filtros" });
+    expect(limpiar).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Plan"), { target: { value: "2" } });
+    expect(limpiar).toBeEnabled();
+
+    fireEvent.click(limpiar);
+    expect(screen.getByLabelText("Plan")).toHaveValue("");
+    expect(limpiar).toBeDisabled();
   });
 });

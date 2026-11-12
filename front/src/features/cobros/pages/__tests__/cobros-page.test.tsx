@@ -230,26 +230,4 @@ describe("CobrosPage (US-15)", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Registrar cobro en efectivo")).toBeInTheDocument();
   });
-
-  it("en la sección Transferencias muestra solo el botón Aprobar y no Ver detalle", () => {
-    mockRoles = ["PROPIETARIA"];
-    mockTransferenciasData = [
-      {
-        id: 1,
-        monto: 25000,
-        estado: "PENDIENTE",
-        realizadaEl: "2026-11-10T21:41:00.000Z",
-        horasDesdeLaCarga: 3,
-        titularCuenta: null,
-        alumno: { id: 1, nombre: "Sofía", apellido: "Medina", telefono: "111" },
-        comprobanteUrl: "https://example.com/c.png",
-      },
-    ];
-
-    renderCobrosPage(["/app/cobros?tab=transferencias"]);
-
-    expect(screen.getAllByText(/Sofía Medina/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /Aprobar/i })[0]).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Ver detalle/i })).not.toBeInTheDocument();
-  });
 });

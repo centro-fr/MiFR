@@ -21,6 +21,7 @@ import { MEDIDAS, type CodigoMedida } from "@/features/rutinas/schemas/medidas";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { Rutina } from "@/types/rutinas";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsRutinaYProgreso {
   idAlumno: number;
@@ -460,16 +461,16 @@ export function RutinaYProgreso({ idAlumno, nombreAlumno, admiteCargas }: PropsR
           open={Boolean(rutinaAEliminar)}
           onOpenChange={(abrir) => !abrir && !eliminarRutina.isPending && setRutinaAEliminar(null)}
         >
-          <AlertDialogContent className="flex max-h-[90dvh] max-w-md flex-col gap-0 overflow-hidden rounded-2xl border-border bg-white p-0 shadow-2xl sm:rounded-2xl dark:bg-surface-low">
-            <AlertDialogHeader className="shrink-0 border-b border-border bg-slate-50/70 px-6 py-4 text-left dark:bg-white/5">
-              <AlertDialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+          <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+            <AlertDialogHeader className={CABECERA_MODAL}>
+              <AlertDialogTitle className={TITULO_MODAL}>
                 ¿Eliminar rutina?
               </AlertDialogTitle>
-              <AlertDialogDescription className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              <AlertDialogDescription className={DESCRIPCION_MODAL}>
                 Se eliminará la rutina <strong className="text-slate-900 dark:text-white">&quot;{rutinaAEliminar.nombre}&quot;</strong> del alumno {nombreAlumno}. Esta acción no se puede deshacer.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-border bg-slate-50/70 px-6 py-4 dark:bg-white/5">
+            <AlertDialogFooter className={PIE_MODAL}>
               <AlertDialogCancel
                 disabled={eliminarRutina.isPending}
                 className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/10"

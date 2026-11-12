@@ -230,10 +230,15 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        // Redirección de la ruta histórica de pendientes de alta hacia Transferencias por verificar
-        path: "alumnos/pendientes",
-        loader: redirigirA("/app/cobros/transferencias"),
+        // Issue #49: "Por verificar" une las transferencias por verificar (US-17) y las altas nuevas que
+        // esperan su primer pago (US-07). Las rutas anteriores de cada lista llevan acá.
+        path: "por-verificar",
+        element: guardiaDeSeccion("por-verificar"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/por-verificar/pages/por-verificar-page"), "PorVerificarPage") },
+        ],
       },
+      { path: "alumnos/pendientes", loader: redirigirA("/app/por-verificar") },
       {
         // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
         path: "ausentes",
@@ -303,7 +308,7 @@ export const router = createBrowserRouter([
         loader: redirigirA("/app/dashboard"),
       },
       {
-        // Cobros (US-15 a US-19): Listado, Cuotas, Transferencias por verificar y Efectivo a rendir (propietaria),
+        // Cobros (US-15 a US-19): Listado, Cuotas y Efectivo a rendir (propietaria),
         // o cobro de cuotas de alumnos a cargo (profesora).
         path: "cobros",
         element: guardiaDeSeccion("cobros"),
@@ -311,7 +316,7 @@ export const router = createBrowserRouter([
           { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
           { path: "listado", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
           { path: "cuotas", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
-          { path: "transferencias", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "transferencias", loader: redirigirA("/app/por-verificar") },
           { path: "efectivo", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
         ],
       },

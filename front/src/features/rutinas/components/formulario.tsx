@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 // Piezas que comparten los formularios de rutina y de medición, con el mismo estilo que el diálogo de
 // tarifas de honorarios: en el celular se abren desde abajo y el pie con Guardar queda siempre a mano.
@@ -33,7 +34,7 @@ interface PropsPie {
 /** El -bottom compensa el relleno del contenedor que scrollea, para que no se vea el contenido por debajo. */
 export function PieDelFormulario({ guardando, textoGuardar, onCancelar }: PropsPie) {
   return (
-    <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900 sm:-bottom-6 sm:-mx-6 sm:-mb-6">
+    <div className="sticky -bottom-5 -mx-6 -mb-5 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
       <Button
         type="button"
         variant="outline"
@@ -71,11 +72,11 @@ export function DialogoDeCarga({ abierto, titulo, descripcion, onClose, ancho = 
       <DialogContent
         className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900", ancho === "amplio" ? "sm:max-w-3xl" : "sm:max-w-lg")}
       >
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">{titulo}</DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">{descripcion}</DialogDescription>
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>{titulo}</DialogTitle>
+          <DialogDescription className={DESCRIPCION_MODAL}>{descripcion}</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">{children}</div>
+        <div className={CUERPO_MODAL}>{children}</div>
       </DialogContent>
     </Dialog>
   );

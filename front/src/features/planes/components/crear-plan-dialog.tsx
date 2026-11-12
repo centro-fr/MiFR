@@ -38,6 +38,7 @@ import {
 } from "@/features/planes/schemas/plan";
 import { estaVigente } from "@/features/planes/utils/planes";
 import { cn } from "@/utils/cn";
+import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface PropsCrearPlanDialog {
   abierto: boolean;
@@ -130,21 +131,21 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
   return (
     <Dialog open={abierto} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="flex max-h-[90dvh] max-w-lg md:max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white p-0 shadow-2xl sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900"
+        className={cn(CONTENIDO_MODAL, "max-w-lg md:max-w-xl")}
       >
-        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white px-6 py-4 pr-12 text-left dark:border-slate-800 dark:bg-slate-900">
-          <DialogTitle className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        <DialogHeader className={CABECERA_MODAL}>
+          <DialogTitle className={TITULO_MODAL}>
             Nuevo plan
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 dark:text-slate-400">
+          <DialogDescription className={DESCRIPCION_MODAL}>
             Configurá las condiciones del plan y su precio inicial.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className={CUERPO_MODAL}>
           {/* Nombre */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label htmlFor="nuevo-plan-nombre" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Nombre <span className="text-destructive">*</span>
             </Label>
@@ -168,20 +169,20 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
           </div>
 
           {/* Modalidad de cobro (Abono mensual / Pase por clase individual) */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
               Modalidad de cobro <span className="text-destructive">*</span>
             </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className={FILA_DE_CAMPOS_MODAL}>
               {/* Abono mensual */}
               <button
                 type="button"
                 onClick={() => cambiar({ tipo: "MENSUAL" })}
                 className={cn(
-                  "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none text-left cursor-pointer",
+                  "flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors select-none cursor-pointer",
                   esMensual
-                    ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 font-medium hover:bg-slate-100/60"
+                    ? "border-slate-900 bg-slate-50 font-semibold text-slate-900 dark:border-white/80 dark:bg-slate-800 dark:text-white"
+                    : "border-slate-200 bg-white font-medium text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 )}
               >
                 <div
@@ -192,10 +193,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 >
                   {esMensual && <div className="size-2 rounded-full bg-primary" />}
                 </div>
-                <div>
-                  <span className="text-sm block">Abono mensual</span>
-                  <span className="text-[11px] text-muted-foreground block font-normal">Cuota periódica mensual</span>
-                </div>
+                <span className="text-sm">Abono mensual</span>
               </button>
 
               {/* Pase por clase individual */}
@@ -203,10 +201,10 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 type="button"
                 onClick={() => cambiar({ tipo: "CLASE_SUELTA" })}
                 className={cn(
-                  "flex items-center gap-2.5 p-3 rounded-2xl border transition-colors select-none text-left cursor-pointer",
+                  "flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors select-none cursor-pointer",
                   !esMensual
-                    ? "border-2 border-primary bg-pink-50/40 dark:bg-primary/10 text-slate-900 dark:text-white font-bold"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 text-slate-500 font-medium hover:bg-slate-100/60"
+                    ? "border-slate-900 bg-slate-50 font-semibold text-slate-900 dark:border-white/80 dark:bg-slate-800 dark:text-white"
+                    : "border-slate-200 bg-white font-medium text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                 )}
               >
                 <div
@@ -217,24 +215,16 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 >
                   {!esMensual && <div className="size-2 rounded-full bg-primary" />}
                 </div>
-                <div>
-                  <span className="text-sm block">Pase por clase individual</span>
-                  <span className="text-[11px] text-muted-foreground block font-normal">Sin cuota fija mensual</span>
-                </div>
+                <span className="text-sm">Pase por clase individual</span>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground pt-0.5">
-              {esMensual
-                ? "Abono recurrente con cuota periódica y frecuencia semanal."
-                : "Se abona por cada clase individual asistida."}
-            </p>
           </div>
 
           {/* Frecuencia y Días de gracia (si es mensual) */}
           {esMensual && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className={FILA_DE_CAMPOS_MODAL}>
               {/* Clases por semana */}
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="nuevo-plan-frecuencia" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Clases por semana <span className="text-destructive">*</span>
                 </Label>
@@ -268,7 +258,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
               </div>
 
               {/* Días de gracia */}
-              <div className="space-y-1.5">
+              <div className={CAMPO_MODAL}>
                 <Label htmlFor="nuevo-plan-gracia" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Días de gracia <span className="text-destructive">*</span>
                 </Label>
@@ -284,7 +274,6 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                     errores.diasGracia && "border-rose-500 focus-visible:ring-rose-500"
                   )}
                 />
-                <p className="text-xs text-muted-foreground">Tolerancia para abonar la cuota.</p>
                 {errores.diasGracia && (
                   <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
                     {errores.diasGracia}
@@ -295,9 +284,9 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
           )}
 
           {/* Actividad y Precio en grid de 2 columnas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className={FILA_DE_CAMPOS_MODAL}>
             {/* Actividad */}
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="nuevo-plan-actividad" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Actividad
               </Label>
@@ -336,13 +325,10 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                   )}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground pt-0.5">
-                {valores.idActividad ? "Abono exclusivo para la disciplina seleccionada." : "El alumno puede cursar cualquier disciplina."}
-              </p>
             </div>
 
             {/* Precio inicial */}
-            <div className="space-y-1.5">
+            <div className={CAMPO_MODAL}>
               <Label htmlFor="nuevo-plan-precio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Precio inicial <span className="text-destructive">*</span>
               </Label>
@@ -361,9 +347,6 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                   )}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                {esMensual ? "Valor de la cuota mensual." : "Valor por cada clase."}
-              </p>
               {errores.precio && (
                 <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
                   {errores.precio}
@@ -373,7 +356,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
           </div>
 
           {/* Descripción (opcional) */}
-          <div className="space-y-1.5">
+          <div className={CAMPO_MODAL}>
             <div className="flex items-center justify-between">
               <Label htmlFor="nuevo-plan-descripcion" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                 Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
@@ -403,7 +386,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
 
           </div>
 
-          <DialogFooter className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-slate-100 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+          <DialogFooter className={PIE_MODAL}>
             <Button
               type="button"
               variant="outline"

@@ -107,8 +107,10 @@ function TablaPlanes({ estadisticas }: { estadisticas: EstadisticasPlanes }) {
   );
 }
 
+const SIN_FILTROS: FiltrosPlanesReporte = { idActividad: null, idProfesora: null };
+
 export function PlanesReportePage() {
-  const [filtros, setFiltros] = useState<FiltrosPlanesReporte>({ idActividad: null, idProfesora: null });
+  const [filtros, setFiltros] = useState<FiltrosPlanesReporte>(SIN_FILTROS);
   const consulta = useEstadisticasPlanes(filtros);
   const profesoras = useProfesorasParaFiltro();
   const actividades = useActividadesParaFiltro();
@@ -131,7 +133,10 @@ export function PlanesReportePage() {
       acciones={<MenuExportar disabled={!conDatos} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros>
+        <GrupoDeFiltros
+          onLimpiar={() => setFiltros(SIN_FILTROS)}
+          hayFiltros={filtros.idActividad !== null || filtros.idProfesora !== null}
+        >
           <SelectFiltro
             id="planes-profesora"
             etiqueta="Profesor/a"

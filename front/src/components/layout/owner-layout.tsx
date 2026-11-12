@@ -73,11 +73,11 @@ function Contador({ valor, className }: { valor?: number; className?: string }) 
       <span
         aria-hidden="true"
         className={cn(
-          "size-5 flex items-center justify-center rounded-full bg-primary text-white text-xs font-black shadow-xs shrink-0 select-none",
+          "flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-xs font-black tabular-nums text-white shadow-xs select-none",
           className,
         )}
       >
-        !
+        {valor > 99 ? "99+" : valor}
       </span>
       <span className="sr-only">, {valor === 1 ? "1 pendiente por verificar" : `${valor} pendientes por verificar`}</span>
     </>
@@ -130,7 +130,7 @@ function GrupoContraido({ item }: { item: ItemConEstado }) {
           <SidebarMenuButton isActive={item.esActivo} tooltip={item.etiqueta} className={cn(CLASES_ITEM, "relative")}>
             <Icono aria-hidden="true" />
             <span>{item.etiqueta}</span>
-            <Contador valor={item.contador} className="absolute top-0.5 right-0.5 size-4 text-[10px]" />
+            <Contador valor={item.contador} className="absolute top-0.5 right-0.5 h-4 min-w-4 px-0.5 text-[10px]" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">

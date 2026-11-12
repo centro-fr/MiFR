@@ -10,3 +10,13 @@ globalThis.React = React;
 afterEach(() => {
   cleanup();
 });
+
+// jsdom no trae ResizeObserver y Radix lo usa en controles dentro de un <form> (el input oculto de
+// RadioGroup, Select, Switch). Alcanza con uno que no observe nada: los tests no miden tamaños.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

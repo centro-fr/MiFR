@@ -81,11 +81,10 @@ export function InformeAsistenciaPage() {
   const conDatos = Boolean(informe && (informe.resumen.clasesDictadas > 0 || informe.totalAlumnos > 0));
   const aplicados = filtrosAplicados(descripcion);
 
-  function generar(nuevos: FiltrosInformeAsistencia, nuevaDescripcion: FiltrosDescritos) {
+  function aplicar(nuevos: FiltrosInformeAsistencia, nuevaDescripcion: FiltrosDescritos) {
     setFiltros(nuevos);
     setDescripcion(nuevaDescripcion);
     setOffset(0);
-    if (JSON.stringify(nuevos) === JSON.stringify(filtros) && offset === 0) void consulta.refetch();
   }
 
   return (
@@ -106,7 +105,7 @@ export function InformeAsistenciaPage() {
       }
     >
       <div className="space-y-6 min-w-0">
-        <FiltrosInforme generando={consulta.isFetching && !consulta.isPlaceholderData} onGenerar={generar} />
+        <FiltrosInforme onAplicar={aplicar} />
 
         {consulta.isPending && <Cargando />}
 
