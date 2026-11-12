@@ -129,7 +129,7 @@ describe("ModalComprobante (US-15)", () => {
     printSpy.mockRestore();
   });
 
-  it("muestra el descuento aplicado (-20% o -$4.000) en lugar del código de promoción", () => {
+  it("muestra el descuento aplicado (ej: 20% OFF o -$4.000) al lado del nombre de la promoción", () => {
     mockUseComprobante.mockReturnValue({
       data: {
         ...comprobanteEjemplo,
@@ -146,12 +146,11 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    expect(screen.getAllByText("Verano 2026").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("-20%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Verano 2026\s*\(20%\s*OFF\)/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Código:/i)).not.toBeInTheDocument();
   });
 
-  it("muestra el descuento en monto fijo cuando la promoción es de monto fijo", () => {
+  it("muestra el descuento en monto fijo cuando la promoción es de monto fijo al lado del nombre", () => {
     mockUseComprobante.mockReturnValue({
       data: {
         ...comprobanteEjemplo,
@@ -168,8 +167,7 @@ describe("ModalComprobante (US-15)", () => {
 
     render(<ModalComprobante idPago={42} abierto={true} onClose={vi.fn()} />);
 
-    expect(screen.getAllByText("Fidelidad").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/-\$\s*4\.000/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Fidelidad\s*\(-?\$\s*4\.000\)/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Código:/i)).not.toBeInTheDocument();
   });
 });
