@@ -509,9 +509,9 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
 /** Barra superior: trigger del menú lateral, migas de pan, notificaciones y alternar tema */
 function BarraSuperior({ migas }: { migas: Miga[] }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light px-3 sm:px-4 dark:bg-canvas">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light pl-1.5 pr-3 sm:pl-2 sm:pr-4 dark:bg-canvas">
       <div className="flex items-center gap-2 min-w-0">
-        <SidebarTrigger className="-ml-1 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
+        <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
         <Separator orientation="vertical" className="h-4 hidden md:block" />
         <div className="flex items-center gap-2.5 md:hidden">
           <LogoMarca />

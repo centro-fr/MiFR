@@ -927,7 +927,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       )}
 
       {/* Paginación */}
-      {respuesta && respuesta.total > 0 && (
+      {respuesta && respuesta.total > TAMANO_PAGINA && (
         <nav
           aria-label="Paginación de alumnos"
           className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row text-xs"

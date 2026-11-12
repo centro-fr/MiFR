@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import {
   Table,
   TableBody,
@@ -72,6 +73,8 @@ export function ActividadesPage() {
   const [pestana, setPestana] = useState<PestanaEstadoActividad>("VIGENTES");
   const [busqueda, setBusqueda] = useState("");
   const [filtroModalidad, setFiltroModalidad] = useState<ModalidadFiltro>("TODAS");
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
 
   const guardado = actividadEditar ? actualizar : crear;
 
@@ -164,6 +167,7 @@ export function ActividadesPage() {
   const limpiarFiltros = () => {
     setBusqueda("");
     setFiltroModalidad("TODAS");
+    setPagina(0);
   };
 
   const handleReactivar = (actividad: Actividad) => {
@@ -196,6 +200,15 @@ export function ActividadesPage() {
       );
     });
   }, [actividades, pestana, busqueda, filtroModalidad]);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [pestana, busqueda, filtroModalidad]);
+
+  const listaPaginada = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return listaFiltrada.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [listaFiltrada, pagina]);
 
   const cabeceraPestanasDesktop = (
     <div className="hidden xl:flex items-center gap-2 p-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
@@ -365,8 +378,9 @@ export function ActividadesPage() {
         ) : (
           <>
             {/* Mobile Cards */}
-            <div className="grid grid-cols-1 gap-3.5 pb-8 md:grid-cols-2 xl:hidden">
-              {listaFiltrada.map((actividad) => {
+            <div className="space-y-3 pb-8 xl:hidden">
+              <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+                {listaPaginada.map((actividad) => {
                 const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                 return (
                   <Card
@@ -454,6 +468,17 @@ export function ActividadesPage() {
                   </Card>
                 );
               })}
+              </div>
+
+              {listaFiltrada.length > TAMANO_PAGINA && (
+                <PaginacionTabla
+                  pagina={pagina}
+                  total={listaFiltrada.length}
+                  tamanoPagina={TAMANO_PAGINA}
+                  onCambiarPagina={setPagina}
+                  etiquetaItems="actividades"
+                />
+              )}
             </div>
 
             {/* Desktop Table */}
@@ -472,7 +497,7 @@ export function ActividadesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-100 font-medium dark:divide-slate-800">
-                  {listaFiltrada.map((actividad) => {
+                  {listaPaginada.map((actividad) => {
                     const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
                     return (
                       <TableRow
@@ -559,6 +584,18 @@ export function ActividadesPage() {
                   })}
                 </TableBody>
               </Table>
+
+              {listaFiltrada.length > TAMANO_PAGINA && (
+                <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+                  <PaginacionTabla
+                    pagina={pagina}
+                    total={listaFiltrada.length}
+                    tamanoPagina={TAMANO_PAGINA}
+                    onCambiarPagina={setPagina}
+                    etiquetaItems="actividades"
+                  />
+                </div>
+              )}
             </div>
           </>
         )}

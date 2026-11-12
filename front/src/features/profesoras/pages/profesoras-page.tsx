@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import {
   Table,
   TableBody,
@@ -63,6 +64,8 @@ export function ProfesorasPage() {
   const [formAbierto, setFormAbierto] = useState(false);
   const [pestana, setPestana] = useState<PestanaEstado>("ACTIVAS");
   const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
 
   const abrirNueva = () => {
     crearMutation.reset();
@@ -106,6 +109,15 @@ export function ProfesorasPage() {
       return coincideNombre || coincideEspecialidad;
     });
   }, [profesoras, pestana, busqueda]);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [pestana, busqueda]);
+
+  const listaPaginada = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return listaFiltrada.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [listaFiltrada, pagina]);
 
   const hayFiltrosActivos = busqueda.trim().length > 0;
 
@@ -347,7 +359,7 @@ export function ProfesorasPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {listaFiltrada.map((prof) => {
+                  {listaPaginada.map((prof) => {
                     const clases = horariosPorProfesora.get(prof.id) ?? [];
                     const conteoHorarios = clases.length;
                     const especialidades = parsearEspecialidades(prof.especialidad);
@@ -439,11 +451,23 @@ export function ProfesorasPage() {
                   })}
                 </TableBody>
               </Table>
+
+              {listaFiltrada.length > TAMANO_PAGINA && (
+                <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+                  <PaginacionTabla
+                    pagina={pagina}
+                    total={listaFiltrada.length}
+                    tamanoPagina={TAMANO_PAGINA}
+                    onCambiarPagina={setPagina}
+                    etiquetaItems="profesores"
+                  />
+                </div>
+              )}
             </div>
 
             {/* VISTA MÓVIL (TARJETAS) */}
             <div className="sm:hidden flex flex-col gap-3">
-              {listaFiltrada.map((prof) => {
+              {listaPaginada.map((prof) => {
                 const clases = horariosPorProfesora.get(prof.id) ?? [];
                 const conteoHorarios = clases.length;
                 const especialidades = parsearEspecialidades(prof.especialidad);
@@ -526,6 +550,16 @@ export function ProfesorasPage() {
                   </div>
                 );
               })}
+
+              {listaFiltrada.length > TAMANO_PAGINA && (
+                <PaginacionTabla
+                  pagina={pagina}
+                  total={listaFiltrada.length}
+                  tamanoPagina={TAMANO_PAGINA}
+                  onCambiarPagina={setPagina}
+                  etiquetaItems="profesores"
+                />
+              )}
             </div>
           </>
         )}

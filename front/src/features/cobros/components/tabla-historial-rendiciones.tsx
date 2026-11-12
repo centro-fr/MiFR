@@ -1,5 +1,7 @@
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { formatearPrecio } from "@/utils/moneda";
 import type { CobroRendido } from "../schemas/rendicion";
@@ -20,6 +22,18 @@ function formatearFechaHora(fechaIso: string): string {
 }
 
 export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
+  const TAMANO_PAGINA = 10;
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [rendiciones]);
+
+  const rendicionesPaginadas = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return rendiciones.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [rendiciones, pagina]);
+
   if (cargando) {
     return <TablaSkeleton conTarjeta={false} ariaLabel="Cargando historial de rendiciones" filas={4} />;
   }
@@ -62,7 +76,7 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {rendiciones.map((rendicion) => {
+            {rendicionesPaginadas.map((rendicion) => {
               const nombreAlumno = `${rendicion.alumno.nombre} ${rendicion.alumno.apellido}`;
               const nombreProfesora = `${rendicion.profesora.nombre} ${rendicion.profesora.apellido}`;
 
@@ -105,7 +119,7 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
 
       {/* Mobile Rows */}
       <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
-        {rendiciones.map((rendicion) => {
+        {rendicionesPaginadas.map((rendicion) => {
           const nombreAlumno = `${rendicion.alumno.nombre} ${rendicion.alumno.apellido}`;
           const nombreProfesora = `${rendicion.profesora.nombre} ${rendicion.profesora.apellido}`;
 
@@ -137,6 +151,18 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
           );
         })}
       </div>
+
+      {rendiciones.length > TAMANO_PAGINA && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          <PaginacionTabla
+            pagina={pagina}
+            total={rendiciones.length}
+            tamanoPagina={TAMANO_PAGINA}
+            onCambiarPagina={setPagina}
+            etiquetaItems="rendiciones"
+          />
+        </div>
+      )}
     </>
   );
 }

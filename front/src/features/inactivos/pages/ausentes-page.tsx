@@ -9,6 +9,7 @@ import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
 import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
@@ -90,6 +91,8 @@ export function AusentesPage() {
   const [filtroPlan, setFiltroPlan] = useState<string>("TODOS");
   const [filtroInasistencias, setFiltroInasistencias] = useState<string>("DEFAULT");
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
 
   const registrar = useRegistrarSeguimiento();
   const quitar = useQuitarSeguimiento();
@@ -171,6 +174,16 @@ export function AusentesPage() {
     });
   }, [alumnos, busquedaDebounced]);
 
+  // Al cambiar filtros o pestaña, reiniciar a la primera página
+  useEffect(() => {
+    setPagina(0);
+  }, [tabActual, busquedaDebounced, filtroProfesora, filtroPlan, filtroInasistencias]);
+
+  const alumnosPaginados = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return alumnosFiltrados.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [alumnosFiltrados, pagina]);
+
   const hayFiltrosActivos =
     busquedaDebounced.trim() !== "" ||
     filtroProfesora !== "TODAS" ||
@@ -183,6 +196,7 @@ export function AusentesPage() {
     setFiltroProfesora("TODAS");
     setFiltroPlan("TODOS");
     setFiltroInasistencias("DEFAULT");
+    setPagina(0);
   }
 
   async function handleContactar(alumno: AlumnoInactivo) {
@@ -398,8 +412,9 @@ export function AusentesPage() {
         ) : (
           <>
             {/* VISTA MOBILE: Lista agrupada limpia y en tonos neutros igual que en Listado */}
-            <div className="lg:hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
-              {alumnosFiltrados.map((alumno) => {
+            <div className="space-y-3 lg:hidden">
+              <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+                {alumnosPaginados.map((alumno) => {
                 const contacto = obtenerContactoPrioritario(alumno);
                 const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
                 const inicialesAlumno = iniciales(`${alumno.alumno.nombre} ${alumno.alumno.apellido}`);
@@ -561,6 +576,17 @@ export function AusentesPage() {
                   </div>
                 );
               })}
+              </div>
+
+              {alumnosFiltrados.length > TAMANO_PAGINA && (
+                <PaginacionTabla
+                  pagina={pagina}
+                  total={alumnosFiltrados.length}
+                  tamanoPagina={TAMANO_PAGINA}
+                  onCambiarPagina={setPagina}
+                  etiquetaItems="alumnos"
+                />
+              )}
             </div>
 
             {/* VISTA DESKTOP: Tabla exactamente como en image.png */}
@@ -629,7 +655,7 @@ export function AusentesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-                    {alumnosFiltrados.map((alumno) => {
+                    {alumnosPaginados.map((alumno) => {
                       const contacto = obtenerContactoPrioritario(alumno);
                       const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
                       const inicialesAlumno = iniciales(`${alumno.alumno.nombre} ${alumno.alumno.apellido}`);
@@ -819,6 +845,18 @@ export function AusentesPage() {
                   </tbody>
                 </table>
               </div>
+
+              {alumnosFiltrados.length > TAMANO_PAGINA && (
+                <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+                  <PaginacionTabla
+                    pagina={pagina}
+                    total={alumnosFiltrados.length}
+                    tamanoPagina={TAMANO_PAGINA}
+                    onCambiarPagina={setPagina}
+                    etiquetaItems="alumnos"
+                  />
+                </div>
+              )}
             </div>
           </>
         )}

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { CalendarClock } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { MapaOcupacion } from "@/features/reportes/components/mapa-ocupacion";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
 import {
@@ -111,6 +112,18 @@ function aTabla(informe: InformeOcupacion, detalle: string): TablaExportable {
 }
 
 function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
+  const TAMANO_PAGINA = 10;
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [horarios]);
+
+  const horariosPaginados = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return horarios.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [horarios, pagina]);
+
   return (
     <SeccionReporte id="titulo-ocupacion" titulo={`Horarios (${horarios.length})`} descripcion="De más lleno a más vacío.">
       <div className="overflow-x-auto">
@@ -127,7 +140,7 @@ function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
             </tr>
           </thead>
           <tbody>
-            {horarios.map((h) => (
+            {horariosPaginados.map((h) => (
               <tr key={h.id}>
                 <th scope="row" className={`${TD} text-left font-semibold text-slate-900 dark:text-white`}>{h.actividad}</th>
                 <td className={`${TD} text-slate-700 dark:text-slate-300`}>{DIAS[h.diaSemana]}</td>
@@ -159,6 +172,18 @@ function TablaOcupacion({ horarios }: { horarios: HorarioOcupado[] }) {
           </tbody>
         </table>
       </div>
+
+      {horarios.length > TAMANO_PAGINA && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          <PaginacionTabla
+            pagina={pagina}
+            total={horarios.length}
+            tamanoPagina={TAMANO_PAGINA}
+            onCambiarPagina={setPagina}
+            etiquetaItems="horarios"
+          />
+        </div>
+      )}
     </SeccionReporte>
   );
 }

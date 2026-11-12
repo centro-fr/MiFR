@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Tags } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
 import {
   BarraPorcentaje,
@@ -62,6 +63,18 @@ function aTabla(estadisticas: EstadisticasPlanes, detalle: string): TablaExporta
 }
 
 function TablaPlanes({ estadisticas }: { estadisticas: EstadisticasPlanes }) {
+  const TAMANO_PAGINA = 10;
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [estadisticas.planes]);
+
+  const planesPaginados = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return estadisticas.planes.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [estadisticas.planes, pagina]);
+
   const maximo = Math.max(...estadisticas.planes.map((plan) => plan.alumnos), 1);
   return (
     <SeccionReporte id="titulo-planes" titulo={`Alumnos por plan (${estadisticas.planes.length})`}>
@@ -78,7 +91,7 @@ function TablaPlanes({ estadisticas }: { estadisticas: EstadisticasPlanes }) {
             </tr>
           </thead>
           <tbody>
-            {estadisticas.planes.map((plan, indice) => (
+            {planesPaginados.map((plan, indice) => (
               <tr key={plan.id}>
                 <th scope="row" className={`${TD} text-left font-semibold text-slate-900 dark:text-white`}>
                   {plan.nombre}
@@ -103,6 +116,18 @@ function TablaPlanes({ estadisticas }: { estadisticas: EstadisticasPlanes }) {
           </tbody>
         </table>
       </div>
+
+      {estadisticas.planes.length > TAMANO_PAGINA && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          <PaginacionTabla
+            pagina={pagina}
+            total={estadisticas.planes.length}
+            tamanoPagina={TAMANO_PAGINA}
+            onCambiarPagina={setPagina}
+            etiquetaItems="planes"
+          />
+        </div>
+      )}
     </SeccionReporte>
   );
 }

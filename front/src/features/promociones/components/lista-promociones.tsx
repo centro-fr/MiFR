@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
@@ -58,6 +59,18 @@ export function ListaPromociones({
   onReactivar?: (promocion: Promocion) => void;
   reactivandoId?: string | null;
 }) {
+  const TAMANO_PAGINA = 10;
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [promociones]);
+
+  const promocionesPaginadas = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return promociones.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [promociones, pagina]);
+
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
       {cabecera}
@@ -91,7 +104,7 @@ export function ListaPromociones({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-            {promociones.map((promocion) => {
+            {promocionesPaginadas.map((promocion) => {
               const editable = promocion.activo && promocion.estado !== "VENCIDA";
               const esTodosLosPlanes =
                 (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
@@ -186,7 +199,7 @@ export function ListaPromociones({
 
       {/* Vista Mobile: Cards apiladas */}
       <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800/60">
-        {promociones.map((promocion) => {
+        {promocionesPaginadas.map((promocion) => {
           const editable = promocion.activo && promocion.estado !== "VENCIDA";
           const esTodosLosPlanes =
             (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
@@ -263,6 +276,18 @@ export function ListaPromociones({
           );
         })}
       </div>
+
+      {promociones.length > TAMANO_PAGINA && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+          <PaginacionTabla
+            pagina={pagina}
+            total={promociones.length}
+            tamanoPagina={TAMANO_PAGINA}
+            onCambiarPagina={setPagina}
+            etiquetaItems="promociones"
+          />
+        </div>
+      )}
     </div>
   );
 }

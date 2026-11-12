@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { BadgeEstadoPlan } from "@/features/planes/components/badges-plan";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
@@ -36,7 +37,7 @@ interface AccionesDeLaTarjeta {
 
 export function ListaPlanes({
   planes,
-  total,
+  total: _total,
   cabecera,
   onEditarPlan,
   onVerHistorial,
@@ -47,6 +48,18 @@ export function ListaPlanes({
   total: number;
   cabecera?: ReactNode;
 } & AccionesDeLaTarjeta) {
+  const TAMANO_PAGINA = 10;
+  const [pagina, setPagina] = useState(0);
+
+  useEffect(() => {
+    setPagina(0);
+  }, [planes]);
+
+  const planesPaginados = useMemo(() => {
+    const inicio = pagina * TAMANO_PAGINA;
+    return planes.slice(inicio, inicio + TAMANO_PAGINA);
+  }, [planes, pagina]);
+
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
@@ -75,7 +88,7 @@ export function ListaPlanes({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {planes.map((plan) => {
+              {planesPaginados.map((plan) => {
                 const vigente = estaVigente(plan);
                 return (
                   <tr
@@ -195,7 +208,7 @@ export function ListaPlanes({
 
         {/* Vista Mobile: Filas agrupadas como en Alumnos - Listado */}
         <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
-          {planes.map((plan) => {
+          {planesPaginados.map((plan) => {
             const vigente = estaVigente(plan);
             const resumenPrecio =
               plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente);
@@ -290,13 +303,19 @@ export function ListaPlanes({
             );
           })}
         </div>
-      </div>
 
-      {planes.length < total && (
-        <p className="text-sm text-muted-foreground">
-          Mostrando {planes.length} de {total} {total === 1 ? "plan" : "planes"}.
-        </p>
-      )}
+        {planes.length > TAMANO_PAGINA && (
+          <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+            <PaginacionTabla
+              pagina={pagina}
+              total={planes.length}
+              tamanoPagina={TAMANO_PAGINA}
+              onCambiarPagina={setPagina}
+              etiquetaItems="planes"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

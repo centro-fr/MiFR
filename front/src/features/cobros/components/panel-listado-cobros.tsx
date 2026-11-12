@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
+import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
 import { formatearFecha, inicialesDe } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { informeCobranzaApiSchema } from "@/features/reportes/schemas/informes-centro";
@@ -38,6 +39,8 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
   const [filtroProfesora, setFiltroProfesora] = useState<string>("TODAS");
   const [filtroForma, setFiltroForma] = useState<FiltroFormaCobro>("TODOS");
   const [mostrarFiltrosMobile, setMostrarFiltrosMobile] = useState(false);
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
 
   const hoy = fechaActualArgentina();
   const { data: cobranzaData, isLoading, isError, refetch } = useQuery({
@@ -120,7 +123,12 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
     setBusqueda("");
     setFiltroProfesora("TODAS");
     setFiltroForma("TODOS");
+    setPagina(0);
   };
+
+  const cobrosPaginados = useMemo(() => {
+    return cobrosFiltrados.slice(pagina * TAMANO_PAGINA, (pagina + 1) * TAMANO_PAGINA);
+  }, [cobrosFiltrados, pagina]);
 
   return (
     <div className="space-y-4">
@@ -135,7 +143,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               id="buscar-cobros-historial"
               aria-label="Buscar por alumno, plan o N° de recibo"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPagina(0);
+              }}
               placeholder="Buscar por alumno, plan o N° de recibo..."
               autoComplete="off"
               className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
@@ -169,7 +180,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 { valor: "TODAS", texto: "Cualquiera" },
                 ...opcionesProfesoras.map((nombre) => ({ valor: nombre, texto: nombre })),
               ]}
-              onChange={setFiltroProfesora}
+              onChange={(v) => {
+                setFiltroProfesora(v);
+                setPagina(0);
+              }}
               variante="pildora"
             />
 
@@ -188,7 +202,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
             <button
               key={pestana.id}
               type="button"
-              onClick={() => setFiltroForma(pestana.id)}
+              onClick={() => {
+                setFiltroForma(pestana.id);
+                setPagina(0);
+              }}
               className={cn(
                 "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
                 activa
@@ -215,7 +232,10 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 key={pestana.id}
                 type="button"
                 aria-label={pestana.etiqueta}
-                onClick={() => setFiltroForma(pestana.id)}
+                onClick={() => {
+                  setFiltroForma(pestana.id);
+                  setPagina(0);
+                }}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
                   activa
@@ -300,7 +320,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {cobrosFiltrados.map((cobro) => {
+                  {cobrosPaginados.map((cobro) => {
                     const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                     const nombreQuienCobro = cobro.profesora_cobra
                       ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
@@ -378,7 +398,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
             </div>
 
             <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
-              {cobrosFiltrados.map((cobro) => {
+              {cobrosPaginados.map((cobro) => {
                 const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                 const nombreQuienCobro = cobro.profesora_cobra
                   ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
@@ -429,6 +449,18 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                 );
               })}
             </div>
+
+            {cobrosFiltrados.length > TAMANO_PAGINA && (
+              <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+                <PaginacionTabla
+                  pagina={pagina}
+                  total={cobrosFiltrados.length}
+                  tamanoPagina={TAMANO_PAGINA}
+                  onCambiarPagina={setPagina}
+                  etiquetaItems="cobros"
+                />
+              </div>
+            )}
           </>
         )}
       </div>

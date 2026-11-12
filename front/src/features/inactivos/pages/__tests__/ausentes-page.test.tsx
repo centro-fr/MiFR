@@ -222,8 +222,8 @@ describe("AusentesPage", () => {
     expect(screen.queryByRole("columnheader", { name: /Estado/i })).not.toBeInTheDocument();
 
     // Al cambiar a "Todos", aparece la columna Estado
-    const botonesTodos = screen.getAllByRole("button", { name: /Todos/i });
-    fireEvent.click(botonesTodos[0]);
+    const botonesPestanaTodos = screen.getAllByRole("button", { name: /Todos\s*\d+/i });
+    fireEvent.click(botonesPestanaTodos[botonesPestanaTodos.length - 1]);
 
     expect(screen.getByRole("columnheader", { name: /Estado/i })).toBeInTheDocument();
   });
