@@ -50,7 +50,7 @@ function Cargando() {
   );
 }
 
-function ErrorAlCargar({ onClose }: { onClose: () => void }) {
+function ErrorAlCargar({ onClose, reintentando, onReintentar }: { onClose: () => void; reintentando: boolean; onReintentar: () => void }) {
   return (
     <>
       <ModalCabecera titulo={TITULO} descripcion="No se pudo cargar el comprobante" />
@@ -62,6 +62,9 @@ function ErrorAlCargar({ onClose }: { onClose: () => void }) {
       </ModalCuerpo>
       <ModalPie>
         <BotonModalSecundario onClick={onClose}>Cerrar</BotonModalSecundario>
+        <BotonModalPrincipal disabled={reintentando} onClick={onReintentar}>
+          Reintentar
+        </BotonModalPrincipal>
       </ModalPie>
     </>
   );
@@ -111,7 +114,7 @@ function ComprobanteImprimible({ comprobante }: { comprobante: ComprobantePago }
 }
 
 export function ModalComprobante({ idPago, abierto, onClose }: Props) {
-  const { data: comprobante, isLoading, error } = useComprobante(idPago, abierto);
+  const { data: comprobante, isLoading, error, isFetching, refetch } = useComprobante(idPago, abierto);
 
   return (
     <>
@@ -120,7 +123,7 @@ export function ModalComprobante({ idPago, abierto, onClose }: Props) {
           {isLoading ? (
             <Cargando />
           ) : error || !comprobante ? (
-            <ErrorAlCargar onClose={onClose} />
+            <ErrorAlCargar onClose={onClose} reintentando={isFetching} onReintentar={() => void refetch()} />
           ) : (
             <Comprobante comprobante={comprobante} onClose={onClose} />
           )}

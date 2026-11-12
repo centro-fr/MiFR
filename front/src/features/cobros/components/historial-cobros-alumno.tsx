@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
@@ -10,7 +12,7 @@ interface Props {
 }
 
 export function HistorialCobrosAlumno({ alumno }: Props) {
-  const { data: pagos = [], isLoading } = useHistorialPagos({
+  const { data: pagos = [], isLoading, isError, error, isFetching, refetch } = useHistorialPagos({
     idAlumno: alumno.id_alumno,
   });
 
@@ -28,6 +30,13 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
             <span className="mr-2 size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             Cargando cobros…
           </div>
+        ) : isError ? (
+          <EstadoErrorCarga
+            className="border-0 shadow-none"
+            mensaje={mensajeDeErrorApi(error, "No se pudieron cargar los cobros.")}
+            reintentando={isFetching}
+            onReintentar={() => void refetch()}
+          />
         ) : pagos.length === 0 ? (
           <div className="p-10 text-center">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">

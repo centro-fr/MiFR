@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useListaCompletaAlumnos } from "@/features/alumnos/hooks/use-alumnos";
-import { TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
-import { cuotasQueVencenHoy } from "@/features/dashboard/utils/dashboard";
+import { ERROR_EN_TARJETA, TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
+import { cuotasQueVencenHoy, type CuotaQueVenceHoy } from "@/features/dashboard/utils/dashboard";
 import { useEstadisticasPlanes } from "@/features/reportes/hooks/use-reportes";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { formatearPrecio } from "@/utils/moneda";
@@ -11,17 +13,17 @@ import { formatearPrecio } from "@/utils/moneda";
 const SIN_FILTROS_PLANES = { idActividad: null, idProfesora: null } as const;
 const MAXIMO = 6;
 
-/** Cuotas que vencen hoy (US-17/US-25): a quién recordarle que pague antes de la clase. */
-export function VencenHoy() {
-  const alumnos = useListaCompletaAlumnos();
-  const planes = useEstadisticasPlanes(SIN_FILTROS_PLANES);
-  const hoy = fechaActualArgentina();
+interface PropsTarjeta {
+  cuotas: CuotaQueVenceHoy[];
+  cargando: boolean;
+  /** Error al traer los alumnos; con él se ofrece reintentar en lugar de "no vence ninguna". */
+  error: unknown;
+  reintentando: boolean;
+  onReintentar: () => void;
+}
 
-  const cuotas = useMemo(() => {
-    const precios = new Map((planes.data?.planes ?? []).flatMap((plan) => (plan.precioVigente === null ? [] : [[plan.nombre, plan.precioVigente] as const])));
-    return cuotasQueVencenHoy(alumnos.data ?? [], hoy, precios);
-  }, [alumnos.data, planes.data, hoy]);
-
+/** La tarjeta del dashboard con las cuotas que vencen hoy: la usan la propietaria y la profesora. */
+export function TarjetaVencenHoy({ cuotas, cargando, error, reintentando, onReintentar }: PropsTarjeta) {
   return (
     <TarjetaDashboard
       id="titulo-vencen-hoy"
@@ -29,11 +31,18 @@ export function VencenHoy() {
       pie={{ texto: "Ver listado", to: "/app/alumnos/listado" }}
       resumen={cuotas.length > MAXIMO ? `${cuotas.length} cuotas` : undefined}
     >
-      {alumnos.isPending ? (
+      {cargando ? (
         <div aria-busy="true" aria-label="Cargando las cuotas que vencen hoy" className="space-y-3 py-3">
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
         </div>
+      ) : error ? (
+        <EstadoErrorCarga
+          className={ERROR_EN_TARJETA}
+          mensaje={mensajeDeErrorApi(error, "No se pudieron cargar las cuotas.")}
+          reintentando={reintentando}
+          onReintentar={onReintentar}
+        />
       ) : cuotas.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Hoy no vence ninguna cuota.</p>
       ) : (
@@ -57,5 +66,27 @@ export function VencenHoy() {
         </ul>
       )}
     </TarjetaDashboard>
+  );
+}
+
+/** Cuotas que vencen hoy (US-17/US-25): a quién recordarle que pague antes de la clase. */
+export function VencenHoy() {
+  const alumnos = useListaCompletaAlumnos();
+  const planes = useEstadisticasPlanes(SIN_FILTROS_PLANES);
+  const hoy = fechaActualArgentina();
+
+  const cuotas = useMemo(() => {
+    const precios = new Map((planes.data?.planes ?? []).flatMap((plan) => (plan.precioVigente === null ? [] : [[plan.nombre, plan.precioVigente] as const])));
+    return cuotasQueVencenHoy(alumnos.data ?? [], hoy, precios);
+  }, [alumnos.data, planes.data, hoy]);
+
+  return (
+    <TarjetaVencenHoy
+      cuotas={cuotas}
+      cargando={alumnos.isPending}
+      error={alumnos.error}
+      reintentando={alumnos.isFetching}
+      onReintentar={() => void alumnos.refetch()}
+    />
   );
 }

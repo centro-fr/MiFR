@@ -1,5 +1,7 @@
+import { mensajeDeErrorApi } from "@/api/errores";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
+import { ERROR_EN_TARJETA, TarjetaDashboard } from "@/features/dashboard/components/tarjeta-dashboard";
 import { useEstadisticasPlanes } from "@/features/reportes/hooks/use-reportes";
 import { cn } from "@/utils/cn";
 
@@ -30,6 +32,13 @@ export function PlanesElegidos() {
           <Skeleton className="h-8 w-full rounded-lg" />
           <Skeleton className="h-8 w-full rounded-lg" />
         </div>
+      ) : consulta.isError ? (
+        <EstadoErrorCarga
+          className={ERROR_EN_TARJETA}
+          mensaje={mensajeDeErrorApi(consulta.error, "No se pudieron cargar los planes.")}
+          reintentando={consulta.isFetching}
+          onReintentar={() => void consulta.refetch()}
+        />
       ) : planes.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Todavía no hay alumnos activos.</p>
       ) : (
