@@ -1,12 +1,23 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LogoFr } from "@/components/marca/logo-fr";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/utils/cn";
+import { homePathForRoles } from "@/types/auth";
 import { EnAppMovilContext, ordenEnLaBarra } from "./en-app-movil";
 import type { ItemConEstado } from "./use-owner-navigation";
+import { usePanelActivo } from "./use-panel-activo";
+import { panelExclusivoDeLaRuta, type Panel } from "./owner-navigation";
 
 // Shell de la app en el celular para la profesora y el alumno: barra superior oscura con el título de
 // la pantalla y barra de navegación inferior. En desktop esos roles usan el sidebar de OwnerLayout.
@@ -23,10 +34,62 @@ function iniciales(nombre: string, apellido: string): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toLocaleUpperCase("es");
 }
 
+function SelectorRolMovil() {
+  const { roles } = usePermissions();
+  const { panelActivo, elegirPanel } = usePanelActivo();
+  const navigate = useNavigate();
+
+  const tieneLosDos = roles.includes("PROPIETARIA") && roles.includes("PROFESORA");
+  if (!tieneLosDos) return null;
+
+  const cambiarRol = (nuevoPanel: Panel) => {
+    elegirPanel(nuevoPanel);
+    const panelDeLaRuta = panelExclusivoDeLaRuta(window.location.pathname);
+    if (panelDeLaRuta && panelDeLaRuta !== nuevoPanel) {
+      navigate(homePathForRoles([nuevoPanel]));
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Cambiar vista de rol"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-white hover:bg-white/10 transition-colors cursor-pointer border border-white/20 bg-white/5"
+        >
+          <span>{panelActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
+          <ChevronDown className="size-3.5 text-slate-300" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
+        <DropdownMenuItem
+          onClick={() => cambiarRol("PROPIETARIA")}
+          className={cn(
+            "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+            panelActivo === "PROPIETARIA" && "bg-primary/20 text-white font-bold",
+          )}
+        >
+          Propietaria
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => cambiarRol("PROFESORA")}
+          className={cn(
+            "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+            panelActivo === "PROFESORA" && "bg-primary/20 text-white font-bold",
+          )}
+        >
+          Profesora
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function BarraSuperior({ titulo, volverA }: Pick<Props, "titulo" | "volverA">) {
   const { user } = useAuth();
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 bg-dark pr-2 pl-3 text-white">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 bg-sidebar border-b border-sidebar-border pr-2 pl-3 text-white">
       {volverA ? (
         <Link
           to={volverA}
@@ -38,9 +101,16 @@ function BarraSuperior({ titulo, volverA }: Pick<Props, "titulo" | "volverA">) {
       ) : (
         <LogoFr className="size-7" />
       )}
-      <span className="truncate text-base font-bold">{titulo}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="truncate text-base font-bold text-white">{titulo}</span>
+        <SelectorRolMovil />
+      </div>
       <div className="ml-auto flex items-center gap-0.5">
         <CampanaNotificaciones sobreFondoOscuro />
+        <ThemeToggle
+          compacto
+          className="text-slate-300 hover:bg-white/10 hover:text-white"
+        />
         <Link
           to="/app/perfil"
           aria-label="Mi cuenta"

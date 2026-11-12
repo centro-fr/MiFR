@@ -39,7 +39,7 @@ function tipoDeAviso({ estado, dias_restantes }: SituacionCuotaApi, diasPrevios:
   return null;
 }
 
-/** Avisos de cuota: 3 días antes para el alumno/tutor, y para la propietaria solo cuotas vencidas con nombre y apellido. */
+/** Avisos de cuota: 3 días antes para el alumno/tutor, y para la propietaria y profesora a cargo solo cuotas vencidas con nombre y apellido. */
 export function generarAvisosDeCuota(): void {
   // Siempre 3 días de aviso previo antes de vencer
   const diasPrevios = 3;
@@ -71,8 +71,9 @@ export function generarAvisosDeCuota(): void {
     };
     if (!yaSeAviso(avisoAlumno)) registrar(avisoAlumno);
 
-    // Para la propietaria: SOLO cuotas vencidas nombrando nombre y apellido del alumno vencido
+    // Para la propietaria y profesora a cargo: SOLO cuotas vencidas nombrando nombre y apellido del alumno vencido
     if (tipo === "CUOTA_VENCIDA") {
+      // Propietarias
       for (const propietaria of db.usuarios.filter((u) => u.roles.includes("PROPIETARIA") && u.estado !== "INACTIVO")) {
         const avisoPropietaria: NuevaNotificacion = {
           id_usuario: propietaria.id_usuario,
@@ -82,6 +83,22 @@ export function generarAvisosDeCuota(): void {
           mensaje: `La cuota de ${nombreCompleto} venció.`,
         };
         if (!yaSeAviso(avisoPropietaria)) registrar(avisoPropietaria);
+      }
+
+      // Profesora a cargo del alumno
+      const profe = db.profesoras.find((p) => p.id_profesora === inscripcion.id_profesora && p.fecha_baja === null);
+      if (profe) {
+        const usuarioProfe = db.usuarios.find((u) => u.id_usuario === profe.id_usuario && u.estado !== "INACTIVO");
+        if (usuarioProfe) {
+          const avisoProfesora: NuevaNotificacion = {
+            id_usuario: usuarioProfe.id_usuario,
+            tipo: "CUOTA_VENCIDA",
+            id_cuota: idCuota,
+            id_alumno: alumno.id_alumno,
+            mensaje: `La cuota de ${nombreCompleto} venció.`,
+          };
+          if (!yaSeAviso(avisoProfesora)) registrar(avisoProfesora);
+        }
       }
     }
   }

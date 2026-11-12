@@ -32,7 +32,7 @@ function ContadorSinLeer({ cantidad, sobreFondoOscuro }: { cantidad: number; sob
       aria-hidden="true"
       className={cn(
         "absolute top-1.5 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 tabular-nums",
-        sobreFondoOscuro ? "ring-dark" : "ring-bg-light dark:ring-canvas",
+        sobreFondoOscuro ? "ring-sidebar" : "ring-bg-light dark:ring-canvas",
       )}
     >
       {cantidad > MAXIMO_EN_EL_CONTADOR ? `${MAXIMO_EN_EL_CONTADOR}+` : cantidad}

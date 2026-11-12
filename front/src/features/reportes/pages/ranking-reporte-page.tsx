@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ListaInsignias } from "@/components/insignias/insignia-medalla";
 import { MenuExportar } from "@/components/menu-exportar";
 import { MedallaPuesto } from "@/features/portal-alumno/components/medalla-puesto";
+import { SelectorDeAnio, SelectorDeMes } from "@/features/portal-alumno/components/ranking-seccion";
 import { useRankingAsistencia } from "@/features/portal-alumno/hooks/use-ranking-asistencia";
 import type { RankingAsistencia } from "@/features/portal-alumno/schemas/ranking-asistencia";
-import { FiltroPeriodo } from "@/features/reportes/components/filtro-periodo";
+import { periodoDelAnio, periodoDelMes, periodoGeneral } from "@/features/portal-alumno/utils/mes-del-ranking";
+import { tituloDelRanking } from "@/features/portal-alumno/utils/titulo-del-ranking";
 import { PaginaReportes } from "@/features/reportes/components/pagina-reportes";
 import {
   BarraPorcentaje,
@@ -19,13 +21,13 @@ import {
   TD_NUMERO,
   TH,
   TH_NUMERO,
-  GrupoDeFiltros,
 } from "@/features/reportes/components/piezas-reporte";
 import { TablaImprimible } from "@/features/reportes/components/tabla-imprimible";
 import { useExportarTabla } from "@/features/reportes/hooks/use-exportar-tabla";
-import { formatearPorcentaje, periodoDelInforme } from "@/features/reportes/utils/formato-informe";
+import { formatearPorcentaje } from "@/features/reportes/utils/formato-informe";
 import type { TablaExportable } from "@/features/reportes/utils/tabla-exportable";
 import { cn } from "@/utils/cn";
+import { fechaActualArgentina } from "@/utils/fecha";
 
 // US-30: pestaña "Ranking" de Reportes. Lo mismo que ven profesora, alumno y tutor en su sección Ranking
 // (puesto, clases, asistencia y racha), en una tabla para la propietaria. El podio lleva medallas de oro,
@@ -44,7 +46,7 @@ function racha(fila: Fila): string {
 
 function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
   return {
-    titulo: "Ranking de asistencia",
+    titulo: "Ranking",
     detalle,
     resumen: [
       ["Participantes", String(ranking.total)],
@@ -158,12 +160,21 @@ export function TablaRanking({ ranking, conCriterio = true }: { ranking: Ranking
 }
 
 export function RankingReportePage() {
-  const [filtros, setFiltros] = useState<{ desde?: string; hasta?: string }>({});
-  // FiltroPeriodo guarda lo que se tipea: al limpiar se vuelve a montar vacío.
-  const [reinicios, setReinicios] = useState(0);
-  const consulta = useRankingAsistencia(filtros);
+  const hoy = fechaActualArgentina();
+  const anioActual = Number(hoy.slice(0, 4));
+  const [tipoRanking, setTipoRanking] = useState<"mensual" | "anual" | "general">("mensual");
+  const [mes, setMes] = useState(() => hoy.slice(0, 7));
+  const [anio, setAnio] = useState(() => anioActual);
+
+  const filtroPeriodo =
+    tipoRanking === "mensual"
+      ? periodoDelMes(mes, hoy)
+      : tipoRanking === "anual"
+        ? periodoDelAnio(String(anio), hoy)
+        : periodoGeneral(hoy);
+  const consulta = useRankingAsistencia(filtroPeriodo);
   const ranking = consulta.data;
-  const detalle = ranking ? periodoDelInforme(ranking.periodo.desde.slice(0, 10), ranking.periodo.hasta.slice(0, 10)) : "Mes en curso";
+  const detalle = ranking ? tituloDelRanking(ranking.periodo, hoy) : "Ranking de asistencia";
   const { exportar, preparando, impresion } = useExportarTabla(() =>
     ranking ? Promise.resolve(aTabla(ranking, detalle)) : Promise.reject(new Error("El ranking todavía no cargó.")),
   );
@@ -173,26 +184,61 @@ export function RankingReportePage() {
 
   return (
     <PaginaReportes
-      titulo="Ranking de asistencia"
+      titulo="Ranking"
       subtitulo={detalle}
       acciones={<MenuExportar disabled={!ranking || ranking.datos.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
-        <GrupoDeFiltros
-          onLimpiar={() => {
-            setFiltros({});
-            setReinicios((n) => n + 1);
-          }}
-          hayFiltros={Boolean(filtros.desde || filtros.hasta)}
-        >
-          <FiltroPeriodo
-            key={reinicios}
-            prefijo="ranking"
-            desde={filtros.desde ?? ""}
-            hasta={filtros.hasta ?? ""}
-            onCambiar={(periodo) => setFiltros(periodo)}
-          />
-        </GrupoDeFiltros>
+        <div className="flex flex-wrap items-center gap-3">
+          <div role="group" aria-label="Tipo de ranking" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+            <button
+              type="button"
+              aria-pressed={tipoRanking === "mensual"}
+              onClick={() => setTipoRanking("mensual")}
+              className={cn(
+                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                tipoRanking === "mensual"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+              )}
+            >
+              Mensual
+            </button>
+            <button
+              type="button"
+              aria-pressed={tipoRanking === "anual"}
+              onClick={() => setTipoRanking("anual")}
+              className={cn(
+                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                tipoRanking === "anual"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+              )}
+            >
+              Anual
+            </button>
+            <button
+              type="button"
+              aria-pressed={tipoRanking === "general"}
+              onClick={() => setTipoRanking("general")}
+              className={cn(
+                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                tipoRanking === "general"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+              )}
+            >
+              General
+            </button>
+          </div>
+
+          {tipoRanking === "mensual" && (
+            <SelectorDeMes mes={mes} mesActual={hoy.slice(0, 7)} onCambiar={setMes} />
+          )}
+          {tipoRanking === "anual" && (
+            <SelectorDeAnio anio={anio} anioActual={anioActual} onCambiar={setAnio} />
+          )}
+        </div>
 
         {consulta.isPending && <CargandoReporte />}
         {consulta.isError && <ErrorDelReporte error={consulta.error} reintentando={consulta.isFetching} onReintentar={() => void consulta.refetch()} />}

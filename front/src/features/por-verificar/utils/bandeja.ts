@@ -95,13 +95,16 @@ export function armarBandeja(transferencias: Transferencia[], altas: PreInscripc
 
   const deTransferencias: PendientePorVerificar[] = transferencias.map((original) => {
     const transferencia = conTipo(original);
+    const tipoTexto = transferencia.tipo ? etiquetaTipo(transferencia.tipo) : null;
+    const cuotaOPlan = tipoTexto ?? transferencia.plan ?? "Renovación";
+
     return {
       tipo: "TRANSFERENCIA",
       clave: `transferencia-${transferencia.id}`,
       idAlumno: transferencia.alumno.id,
       alumno: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}`,
       concepto: TRANSFERENCIA,
-      cuotaOPlan: transferencia.tipo ? etiquetaTipo(transferencia.tipo) : null,
+      cuotaOPlan,
       cuando: cuandoDeTransferencia(transferencia),
       dato: datoDeTransferencia(transferencia),
       detalle: detalleDeTransferencia(transferencia),

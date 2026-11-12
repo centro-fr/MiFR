@@ -44,7 +44,7 @@ export function destinoDe(
   const notificacion = typeof notificacionOTipo === "string" ? null : notificacionOTipo;
   const tipo = typeof notificacionOTipo === "string" ? notificacionOTipo : notificacionOTipo.tipo;
 
-  if (tipo === "CUOTA_VENCIDA" && roles.includes("PROPIETARIA")) {
+  if (tipo === "CUOTA_VENCIDA" && (roles.includes("PROPIETARIA") || roles.includes("PROFESORA"))) {
     if (notificacion?.id_alumno) {
       return { to: `/app/alumnos/${notificacion.id_alumno}`, etiqueta: "Ver ficha del alumno" };
     }

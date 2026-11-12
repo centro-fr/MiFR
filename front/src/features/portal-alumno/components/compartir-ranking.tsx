@@ -63,7 +63,7 @@ function TarjetaRanking({ datos, refSvg }: { datos: DatosParaCompartir; refSvg: 
           {datos.periodo}
         </text>
         <text x={150} y={150} textAnchor="middle" fontSize={14} fontWeight={600} fill="#d6dae3">
-          Ranking de asistencia
+          Ranking
         </text>
         <text x={150} y={236} textAnchor="middle" fontSize={80} fontWeight={800} letterSpacing={-2} fill="#e91e82">
           {datos.posicion}.º

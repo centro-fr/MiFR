@@ -33,3 +33,23 @@ export function periodoDelMes(mes: string, hoy: string): FiltrosRankingAsistenci
   const ultimoDia = new Date(Date.UTC(anio, numero, 0)).getUTCDate();
   return { desde: `${mes}-01`, hasta: `${mes}-${String(ultimoDia).padStart(2, "0")}` };
 }
+
+/**
+ * Período anual para el ranking (ej: "2026").
+ * Si es el año en curso, va desde el 1 de enero hasta hoy (o el 31 de diciembre si es año anterior).
+ */
+export function periodoDelAnio(anioStr: string, hoy: string): FiltrosRankingAsistencia {
+  const anioActual = hoy.slice(0, 4);
+  if (anioStr === anioActual) {
+    return { desde: `${anioStr}-01-01`, hasta: hoy };
+  }
+  return { desde: `${anioStr}-01-01`, hasta: `${anioStr}-12-31` };
+}
+
+/**
+ * Período histórico general (todos los tiempos).
+ * Desde una fecha muy temprana hasta hoy.
+ */
+export function periodoGeneral(hoy: string): FiltrosRankingAsistencia {
+  return { desde: "2000-01-01", hasta: hoy };
+}

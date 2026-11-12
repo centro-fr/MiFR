@@ -40,27 +40,70 @@ export const rankingAsistenciaHandlers = [
     if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
 
     const propio = alumnoPropioDeSesion();
+    const url = new URL(request.url);
+    const desdeQuery = url.searchParams.get("desde");
+    const hastaQuery = url.searchParams.get("hasta");
+    const periodo = {
+      desde: desdeQuery ?? "2026-11-01",
+      hasta: hastaQuery ?? "2026-11-30",
+    };
+
+    // Para que las cards y datos varíen dinámicamente según el mes/año/general seleccionado:
+    // Si no se pasaron filtros o es el mes por defecto de test (noviembre 2026 completo), mantenemos ESTADISTICAS_DEMO
+    const esDefaultDemo = !desdeQuery && !hastaQuery;
+    const seed = (periodo.desde + periodo.hasta).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const esGeneral = periodo.desde <= "2000-01-01";
+    const esAnual = !esGeneral && periodo.desde.endsWith("01-01");
+
     const filas = Object.entries(ESTADISTICAS_DEMO)
       .filter(([id]) => db.alumnos.some((alumno) => alumno.id_alumno === Number(id) && alumno.estado === "ACTIVO"))
       .map(([id, datos]) => {
-        const persona = personaPublica(Number(id));
+        const idNum = Number(id);
+        const persona = personaPublica(idNum);
+
+        // Variación según el período seleccionado
+        let previstas = datos.previstas;
+        let asistidas = datos.asistidas;
+        let racha = datos.racha;
+
+        if (esDefaultDemo) {
+          // Mantiene exactamente los datos semilla para los tests unitarios
+        } else if (esGeneral) {
+          previstas = datos.previstas * 12 + (idNum % 7) * 4;
+          asistidas = Math.min(previstas, Math.floor(previstas * (0.85 + ((idNum + seed) % 15) / 100)));
+          racha = Math.max(datos.racha, (idNum * 3) % 25 + 5);
+        } else if (esAnual) {
+          previstas = datos.previstas * 8 + (idNum % 5) * 2;
+          asistidas = Math.min(previstas, Math.floor(previstas * (0.8 + ((idNum + seed) % 20) / 100)));
+          racha = Math.max(1, (datos.racha + (idNum % 4)) % 15);
+        } else {
+          // Mensual pasado: ajustamos según el mes específico (usando seed)
+          const offsetMes = (idNum + seed) % 4;
+          previstas = Math.max(4, datos.previstas - offsetMes);
+          const faltas = ((idNum * 3 + seed) % 3);
+          asistidas = Math.max(1, Math.min(previstas, previstas - faltas));
+          racha = (datos.racha + seed) % 12;
+        }
+
+        const porcentaje = Number(((asistidas / previstas) * 100).toFixed(2));
+
         return {
-        id_alumno: Number(id),
-        nombre: persona.nombre,
-        apellido: persona.apellido,
-        porcentaje_asistencia: Number(((datos.asistidas / datos.previstas) * 100).toFixed(2)),
-        clases_previstas: datos.previstas,
-        clases_asistidas: datos.asistidas,
-        racha_actual: datos.racha,
-        insignias: insigniasObtenidasDe(Number(id)),
-        es_propia: Number(id) === propio,
+          id_alumno: idNum,
+          nombre: persona.nombre,
+          apellido: persona.apellido,
+          porcentaje_asistencia: porcentaje,
+          clases_previstas: previstas,
+          clases_asistidas: asistidas,
+          racha_actual: racha,
+          insignias: insigniasObtenidasDe(idNum),
+          es_propia: idNum === propio,
         };
       })
       .sort((a, b) => b.porcentaje_asistencia - a.porcentaje_asistencia || b.clases_asistidas - a.clases_asistidas || `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`, "es"))
       .map((fila, index) => ({ ...fila, posicion: index + 1 }));
 
     return HttpResponse.json({
-      periodo: { desde: "2026-11-01", hasta: "2026-11-30" },
+      periodo,
       actividad: null,
       minimo_clases: 4,
       datos: filas,
