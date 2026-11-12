@@ -333,7 +333,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
             Listado
           </h1>
           <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-            Buscá un alumno y abrí su ficha
+            Búsqueda y gestión de alumnos
           </p>
         </div>
         <Button
