@@ -43,6 +43,7 @@ describe("DialogoRutina", () => {
     crearRutina.mockResolvedValue();
   });
 
+  // Recorre varios días y pestañas: con toda la suite en paralelo supera los 5 s por defecto.
   it("cada día conserva su nombre y sus ejercicios al agregar días y cambiar de pestaña", () => {
     renderDialogo();
 
@@ -62,7 +63,7 @@ describe("DialogoRutina", () => {
     tocar("Día 2");
     expect(screen.getByLabelText("Nombre del día")).toHaveValue("Día 2");
     expect(nombresDeEjerciciosVisibles()).toEqual(["Remo"]);
-  });
+  }, 15_000);
 
   it("guarda todos los días cargados de una sola vez", async () => {
     renderDialogo();
