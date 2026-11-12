@@ -86,16 +86,12 @@ function ItemDeLaBarra({ item }: { item: ItemConEstado }) {
       aria-current={actual}
       className={cn(
         "flex h-13 flex-col items-center justify-end gap-1 text-xs",
+        // La sección activa se marca solo con el color y el peso, sin fondo.
         item.esActivo ? "font-bold text-primary-dark dark:text-pink-300" : "font-semibold text-muted-foreground",
       )}
     >
-      <span
-        className={cn(
-          "flex h-7 w-12 items-center justify-center rounded-full",
-          item.esActivo && "bg-primary/12",
-        )}
-      >
-        <Icono aria-hidden="true" className="size-5" />
+      <span className="flex h-7 items-center justify-center">
+        <Icono aria-hidden="true" className="size-5" strokeWidth={item.esActivo ? 2.4 : 2} />
       </span>
       {item.etiqueta}
     </Link>
