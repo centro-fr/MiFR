@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
@@ -18,7 +18,7 @@ import {
   esPeriodoEnCurso,
   etiquetaPeriodo,
   mesSigueAbierto,
-  periodoDesdeParametro,
+  periodoActual,
   primerDiaDe,
   ultimoDiaDe,
 } from "@/features/honorarios/utils/periodo";
@@ -47,21 +47,37 @@ function SuplenciasConError({ error, onReintentar }: { error: unknown; onReinten
 
 // Sin ícono ni botón propio: "Registrar suplencia" ya está en el encabezado, como en el resto de las pantallas.
 function SinSuplencias({ periodo, abierto }: { periodo: string; abierto: boolean }) {
+  const textoTitulo =
+    periodo === "TODOS"
+      ? "No hay suplencias registradas"
+      : `No hubo suplencias en ${etiquetaPeriodo(periodo).toLowerCase()}`;
   return (
     <Card className="flex flex-col items-center gap-3 rounded-lg border-border px-5 py-14 text-center">
-      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">No hubo suplencias en {etiquetaPeriodo(periodo).toLowerCase()}</h2>
-      {!abierto && <p className="max-w-md text-sm text-muted-foreground">Ese mes nadie cubrió clases de otro profesor/a.</p>}
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">{textoTitulo}</h2>
+      {periodo === "TODOS" ? (
+        <p className="max-w-md text-sm text-muted-foreground">
+          Las suplencias que se registren figurarán en este listado.
+        </p>
+      ) : (
+        !abierto && <p className="max-w-md text-sm text-muted-foreground">Ese mes nadie cubrió clases de otro profesor/a.</p>
+      )}
     </Card>
   );
 }
 
-// US-24: las suplencias del mes, dentro de Honorarios. Se registran y corrigen mientras el mes sigue
-// abierto; cuando se cierran los honorarios quedan fijas, igual que la liquidación.
+// US-24: suplencias de clases cubiertas entre profesoras.
 export function SuplenciasPage() {
   const [parametros, setParametros] = useSearchParams();
-  const periodo = periodoDesdeParametro(parametros.get("mes"));
-  const abierto = mesSigueAbierto(periodo);
-  const filtros = useMemo(() => ({ desde: primerDiaDe(periodo), hasta: ultimoDiaDe(periodo) }), [periodo]);
+  const paramMes = parametros.get("mes");
+  const periodo = paramMes && paramMes !== "TODOS" && /^\d{4}-\d{2}$/.test(paramMes) ? paramMes : "TODOS";
+  const esTodos = periodo === "TODOS";
+  const abierto = esTodos ? true : mesSigueAbierto(periodo);
+
+  const filtros = useMemo(() => {
+    if (esTodos) return {};
+    return { desde: primerDiaDe(periodo), hasta: ultimoDiaDe(periodo) };
+  }, [esTodos, periodo]);
+
   const consultaSuplencias = useSuplencias(filtros);
   const consultaTarifas = useTarifas();
   const consultaHorarios = useQuery({ queryKey: HORARIOS_QUERY_KEY, queryFn: listarHorarios, staleTime: 5 * 60_000 });
@@ -73,16 +89,33 @@ export function SuplenciasPage() {
   const [aEliminar, setAEliminar] = useState<Suplencia | null>(null);
   const [configAbierta, setConfigAbierta] = useState(false);
 
+  const [pagina, setPagina] = useState(0);
+  const TAMANO_PAGINA = 10;
+
   const suplencias = useMemo(() => consultaSuplencias.data ?? [], [consultaSuplencias.data]);
+  const total = suplencias.length;
+  const paginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
+  const rangoInicio = total > 0 ? pagina * TAMANO_PAGINA + 1 : 0;
+  const rangoFin = Math.min((pagina + 1) * TAMANO_PAGINA, total);
+  const suplenciasPaginadas = useMemo(
+    () => suplencias.slice(pagina * TAMANO_PAGINA, (pagina + 1) * TAMANO_PAGINA),
+    [suplencias, pagina, TAMANO_PAGINA],
+  );
+
   const montos = useMemo(() => {
     const tarifas = consultaTarifas.data ?? [];
     return new Map(suplencias.map((suplencia) => [suplencia.idClase, montoDeLaSuplencia(suplencia, tarifas)]));
   }, [suplencias, consultaTarifas.data]);
 
   function cambiarPeriodo(nuevo: string) {
+    setPagina(0);
     setParametros((actuales) => {
       const siguientes = new URLSearchParams(actuales);
-      siguientes.set("mes", nuevo);
+      if (nuevo === "TODOS" || !nuevo) {
+        siguientes.delete("mes");
+      } else {
+        siguientes.set("mes", nuevo);
+      }
       return siguientes;
     });
   }
@@ -124,7 +157,50 @@ export function SuplenciasPage() {
     if (suplencias.length === 0) return <SinSuplencias periodo={periodo} abierto={abierto} />;
     return (
       <>
-        <TablaSuplencias suplencias={suplencias} montos={montos} editables={abierto} onEditar={abrirDialogo} onEliminar={setAEliminar} />
+        <TablaSuplencias
+          suplencias={suplenciasPaginadas}
+          montos={montos}
+          editables={abierto}
+          onEditar={abrirDialogo}
+          onEliminar={setAEliminar}
+        />
+
+        {total > TAMANO_PAGINA && (
+          <nav
+            aria-label="Paginación de suplencias"
+            className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row text-xs"
+          >
+            <p aria-live="polite" className="text-slate-500 dark:text-slate-400 font-medium">
+              {rangoInicio}–{rangoFin} de {total} suplencias
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagina === 0}
+                onClick={() => setPagina((actual) => Math.max(0, actual - 1))}
+                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+              >
+                <ChevronLeft aria-hidden="true" className="mr-1 size-3.5" />
+                Anterior
+              </Button>
+              <span className="px-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                {pagina + 1} / {paginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pagina + 1 >= paginas}
+                onClick={() => setPagina((actual) => Math.min(paginas - 1, actual + 1))}
+                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+              >
+                Siguiente
+                <ChevronRight aria-hidden="true" className="ml-1 size-3.5" />
+              </Button>
+            </div>
+          </nav>
+        )}
+
         <p className="text-sm text-muted-foreground">
           Le paga el valor por hora de quien cubrió por la duración de la clase. Con el mes cerrado ya no se pueden cambiar.
         </p>
@@ -138,7 +214,7 @@ export function SuplenciasPage() {
       <div className="min-w-0 space-y-6">
         <EncabezadoHonorarios
           titulo="Suplencias"
-          descripcion="Quién cubrió cada clase del mes. Se le paga a quien la cubrió y se le descuenta a quien faltó."
+          descripcion="Quién cubrió cada clase. Se le paga a quien la cubrió y se le descuenta a quien faltó."
           acciones={
             <>
               <Button
@@ -151,22 +227,20 @@ export function SuplenciasPage() {
                 <Settings aria-hidden="true" className="size-4" />
                 Configuración
               </Button>
-              {abierto && (
-                <Button
-                  type="button"
-                  aria-haspopup="dialog"
-                  onClick={() => abrirDialogo(null)}
-                  className="h-11 rounded-xl bg-primary px-4 font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"
-                >
-                  <Plus aria-hidden="true" className="size-4" />
-                  Registrar suplencia
-                </Button>
-              )}
+              <Button
+                type="button"
+                aria-haspopup="dialog"
+                onClick={() => abrirDialogo(null)}
+                className="h-11 rounded-xl bg-primary px-4 font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Registrar suplencia
+              </Button>
             </>
           }
         />
-        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} />
-        <EstadoSuplencias periodo={periodo} />
+        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} permitirTodos />
+        {!esTodos && <EstadoSuplencias periodo={periodo} />}
         {contenido()}
       </div>
 
@@ -186,10 +260,10 @@ export function SuplenciasPage() {
         }
         onClose={() => setDialogoAbierto(false)}
         onSubmit={guardar}
-        fechaSugerida={esPeriodoEnCurso(periodo) ? fechaActualArgentina() : ultimoDiaDe(periodo)}
+        fechaSugerida={periodo !== "TODOS" && !esPeriodoEnCurso(periodo) ? ultimoDiaDe(periodo) : fechaActualArgentina()}
       />
       <ConfirmarEliminarSuplencia suplencia={aEliminar} onClose={() => setAEliminar(null)} />
-      <DialogoConfiguracion abierto={configAbierta} periodo={periodo} onClose={() => setConfigAbierta(false)} />
+      <DialogoConfiguracion abierto={configAbierta} periodo={periodo === "TODOS" ? periodoActual() : periodo} onClose={() => setConfigAbierta(false)} />
     </OwnerLayout>
   );
 }

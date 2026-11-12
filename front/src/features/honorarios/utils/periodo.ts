@@ -44,26 +44,32 @@ export function ultimoMesCerrado(): string {
 }
 
 export function aniosConsultablesHonorarios(anioSeleccionado?: number): number[] {
-  const anioCerradoNum = Number(ultimoMesCerrado().slice(0, 4));
-  const base = [anioCerradoNum, anioCerradoNum - 1, anioCerradoNum - 2, anioCerradoNum - 3];
+  const anioActualNum = Number(periodoActual().slice(0, 4));
+  const base = [anioActualNum, anioActualNum - 1, anioActualNum - 2, anioActualNum - 3];
   if (anioSeleccionado && !base.includes(anioSeleccionado)) {
     base.push(anioSeleccionado);
   }
   return base.sort((a, b) => b - a);
 }
 
-/** Un período no está disponible si es el mes en curso o futuro (aún no finalizó). */
-export function esPeriodoFuturo(anio: number, mes: number): boolean {
+/** Para Honorarios: no disponible si aún no finalizó (mes en curso o futuro). */
+export function esPeriodoNoFinalizado(anio: number, mes: number): boolean {
   const [anioCerrado, mesCerrado] = ultimoMesCerrado().split("-").map(Number);
   return anio > anioCerrado || (anio === anioCerrado && mes > mesCerrado);
 }
 
+/** Para Suplencias y filtros generales: no disponible si es estrictamente futuro. */
+export function esPeriodoFuturo(anio: number, mes: number): boolean {
+  const [anioActual, mesActual] = periodoActual().split("-").map(Number);
+  return anio > anioActual || (anio === anioActual && mes > mesActual);
+}
+
 const FORMATO_MES = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
 
-/** El mes de la URL si es válido y ya finalizó; si no, el último mes que cerró. */
+/** El mes de la URL si es válido; si no, el último mes que cerró. */
 export function periodoDesdeParametro(valor: string | null): string {
   const cerrado = ultimoMesCerrado();
-  return valor !== null && PERIODO.test(valor) && valor <= cerrado ? valor : cerrado;
+  return valor !== null && PERIODO.test(valor) ? valor : cerrado;
 }
 
 /** Del más reciente al más antiguo, empezando por el mes actual. */

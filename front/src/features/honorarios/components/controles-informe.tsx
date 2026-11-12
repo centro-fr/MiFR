@@ -4,34 +4,59 @@ import {
   MESES_DEL_ANIO,
   aniosConsultablesHonorarios,
   esPeriodoFuturo,
+  esPeriodoNoFinalizado,
+  periodoActual,
   ultimoMesCerrado,
 } from "@/features/honorarios/utils/periodo";
 
 interface PropsFiltrosDelMes {
   periodo: string;
   onChange: (periodo: string) => void;
+  soloCerrados?: boolean;
+  permitirTodos?: boolean;
 }
 
 /**
- * Mes y año del informe, como los filtros de Reportes: se aplican al elegirlos y "Limpiar filtros"
- * vuelve al último mes que cerró. Los meses que todavía no finalizaron no se pueden elegir.
+ * Mes y año del informe:
+ * - En Honorarios (soloCerrados=true): solo meses finalizados/cerrados.
+ * - En Suplencias (permitirTodos=true): permite listar todas o filtrar por mes (incluyendo el actual).
  */
-export function FiltrosDelMes({ periodo, onChange }: PropsFiltrosDelMes) {
+export function FiltrosDelMes({
+  periodo,
+  onChange,
+  soloCerrados = true,
+  permitirTodos = false,
+}: PropsFiltrosDelMes) {
   const cerrado = ultimoMesCerrado();
-  const [anioCerrado, mesCerrado] = cerrado.split("-");
-  const [anio = anioCerrado, mes = mesCerrado] = periodo.split("-");
+  const actual = periodoActual();
+  const valorDefecto = permitirTodos ? "TODOS" : cerrado;
+
+  const esTodos = periodo === "TODOS" || !periodo;
+  const [anio = actual.slice(0, 4), mes = esTodos ? "" : actual.slice(5, 7)] = esTodos ? [actual.slice(0, 4), ""] : periodo.split("-");
   const anioNum = Number(anio);
   const anios = aniosConsultablesHonorarios(anioNum);
 
   function cambiarAnio(nuevoAnio: string) {
-    const [anioCer, mesCer] = cerrado.split("-").map(Number);
-    // Al volver al año del último mes cerrado con un mes que todavía no finalizó, se queda en el último mes cerrado.
-    const mesAjustado = Number(nuevoAnio) === anioCer && Number(mes) > mesCer ? String(mesCer).padStart(2, "0") : mes;
+    if (esTodos) {
+      onChange(`${nuevoAnio}-01`);
+      return;
+    }
+    const maxMes = soloCerrados ? Number(cerrado.slice(5, 7)) : Number(actual.slice(5, 7));
+    const maxAnio = soloCerrados ? Number(cerrado.slice(0, 4)) : Number(actual.slice(0, 4));
+    const mesAjustado = Number(nuevoAnio) === maxAnio && Number(mes) > maxMes ? String(maxMes).padStart(2, "0") : mes;
     onChange(`${nuevoAnio}-${mesAjustado}`);
   }
 
+  const estaDeshabilitado = (valorMes: string) => {
+    const mesNum = Number(valorMes);
+    return soloCerrados ? esPeriodoNoFinalizado(anioNum, mesNum) : esPeriodoFuturo(anioNum, mesNum);
+  };
+
   return (
-    <GrupoDeFiltros onLimpiar={() => onChange(cerrado)} hayFiltros={periodo !== cerrado}>
+    <GrupoDeFiltros
+      onLimpiar={() => onChange(valorDefecto)}
+      hayFiltros={periodo !== valorDefecto}
+    >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="honorarios-mes" className={ETIQUETA_FILTRO}>
           Mes
@@ -40,13 +65,20 @@ export function FiltrosDelMes({ periodo, onChange }: PropsFiltrosDelMes) {
           id="honorarios-mes"
           aria-label="Mes"
           valor={mes}
+          todos={permitirTodos ? "Todos los meses" : undefined}
           conOpcionesNativas
           opciones={MESES_DEL_ANIO.map(({ valor, etiqueta }) => ({
             valor,
             texto: etiqueta,
-            disabled: esPeriodoFuturo(anioNum, Number(valor)),
+            disabled: estaDeshabilitado(valor),
           }))}
-          onChange={(nuevoMes) => onChange(`${anio}-${nuevoMes}`)}
+          onChange={(nuevoMes) => {
+            if (!nuevoMes || nuevoMes === "TODOS") {
+              onChange("TODOS");
+            } else {
+              onChange(`${anio}-${nuevoMes}`);
+            }
+          }}
           variante="formulario"
         />
       </div>

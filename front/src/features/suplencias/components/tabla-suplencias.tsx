@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fechaCorta, nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
+import { mesSigueAbierto } from "@/features/honorarios/utils/periodo";
 import type { Suplencia } from "@/types/suplencia";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
@@ -65,7 +66,8 @@ function Acciones({
 
 /** Una fila por clase cubierta. En el celular y la tablet, una tarjeta por cada una. */
 export function TablaSuplencias({ suplencias, montos, editables, onEditar, onEliminar }: Props) {
-  const puedeEditar = (suplencia: Suplencia) => editables && suplencia.estadoClase !== "CANCELADA";
+  const puedeEditar = (suplencia: Suplencia) =>
+    (editables && mesSigueAbierto(suplencia.fechaClase.slice(0, 7))) && suplencia.estadoClase !== "CANCELADA";
   return (
     <>
       <ul aria-label="Suplencias del mes" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">

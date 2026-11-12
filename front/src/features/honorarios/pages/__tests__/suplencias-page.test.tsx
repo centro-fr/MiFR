@@ -118,12 +118,12 @@ describe("SuplenciasPage", () => {
     expect(screen.getByRole("alertdialog", { name: "¿Eliminar la suplencia?" })).toBeInTheDocument();
   });
 
-  it("con el mes cerrado no se registra ni se corrige nada", () => {
+  it("con el mes cerrado no se corrigen las suplencias de ese mes, pero el botón de registrar sigue disponible", () => {
     mockAbierto = false;
     renderizar();
 
     expect(screen.getByRole("status")).toHaveTextContent("Octubre está cerrado.");
-    expect(screen.queryByRole("button", { name: "Registrar suplencia" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Registrar suplencia" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Editar la suplencia/ })).not.toBeInTheDocument();
   });
 

@@ -157,7 +157,7 @@ export function HonorariosPage() {
             </>
           }
         />
-        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} />
+        <FiltrosDelMes periodo={periodo} onChange={cambiarPeriodo} soloCerrados />
         <LiquidacionDelMes key={periodo} periodo={periodo} />
       </div>
       <DialogoConfiguracion abierto={configAbierta} periodo={periodo} onClose={() => setConfigAbierta(false)} />
