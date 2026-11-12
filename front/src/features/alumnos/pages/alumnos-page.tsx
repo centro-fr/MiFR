@@ -330,7 +330,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Alumnos
+            Listado
           </h1>
           <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
             Buscá un alumno y abrí su ficha

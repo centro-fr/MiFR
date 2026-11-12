@@ -146,7 +146,7 @@ describe("AlumnosPage", () => {
   it("presenta resultados para mobile y desktop y conecta filtros y paginación", () => {
     renderListado();
 
-    expect(screen.getByRole("heading", { name: "Alumnos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Listado" })).toBeInTheDocument();
     expect(screen.getAllByText("Camila Pérez")).toHaveLength(2);
     expect(screen.getAllByText("Activo").length).toBeGreaterThanOrEqual(2);
     expect(
