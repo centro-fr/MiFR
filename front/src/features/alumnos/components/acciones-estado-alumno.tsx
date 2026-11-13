@@ -21,13 +21,21 @@ export function AccionesEstadoAlumno({ alumno }: Props) {
   return alumno.estado === "BAJA" ? (
     <Reactivar idAlumno={alumno.id_alumno} nombre={nombre} deuda={deudaAlIrse(alumno.inscripciones_de_la_baja)} />
   ) : (
-    <DarDeBaja idAlumno={alumno.id_alumno} nombre={nombre} />
+    <DarDeBaja idAlumno={alumno.id_alumno} nombre={nombre} inscripciones={alumno.inscripciones} />
   );
 }
 
 const CLASE_BOTON = "min-h-[48px] w-full shrink-0 rounded-xl px-4 font-bold sm:w-auto";
 
-function DarDeBaja({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
+function DarDeBaja({
+  idAlumno,
+  nombre,
+  inscripciones,
+}: {
+  idAlumno: number;
+  nombre: string;
+  inscripciones: AlumnoDetalle["inscripciones"];
+}) {
   const darDeBaja = useDarDeBajaAlumno(idAlumno);
   const [abierto, setAbierto] = useState(false);
 
@@ -38,12 +46,12 @@ function DarDeBaja({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
 
   // mutateAsync y no mutate: al refrescarse la ficha, este botón pasa a ser "Reactivar" y se
   // desmonta antes de que corra el onSuccess de mutate, que React Query descarta en ese caso.
-  const confirmar = (motivo: MotivoBaja, detalle?: string) => {
+  const confirmar = (motivo: MotivoBaja, detalle?: string, idInscripcion?: number) => {
     darDeBaja
-      .mutateAsync({ motivo, detalle })
+      .mutateAsync({ motivo, detalle, idInscripcion })
       .then(() => {
         setAbierto(false);
-        toast.info(`${nombre} quedó dado de baja`);
+        toast.info(idInscripcion ? `Se dio de baja el plan seleccionado de ${nombre}` : `${nombre} quedó dado de baja`);
       })
       .catch(() => {
         // El error ya se muestra en el modal (darDeBaja.isError).
@@ -64,6 +72,7 @@ function DarDeBaja({ idAlumno, nombre }: { idAlumno: number; nombre: string }) {
       {abierto && (
         <ModalBajaAlumno
           nombre={nombre}
+          inscripciones={inscripciones}
           dandoDeBaja={darDeBaja.isPending}
           errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.") : null}
           onClose={() => setAbierto(false)}

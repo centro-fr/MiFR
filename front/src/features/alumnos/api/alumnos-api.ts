@@ -71,7 +71,7 @@ function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | 
   );
 }
 
-function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
+function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota, planes_activos }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
@@ -80,6 +80,7 @@ function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, 
     email: usuario.email ?? responsable?.email ?? null,
     estado: ESTADO_EN_PANTALLA[estado],
     plan: inscripcion?.nombre_plan ?? null,
+    planes_activos,
     profesora: inscripcion?.nombre_profesora ?? null,
     situacion_cuota: aSituacionCuota(situacion_cuota),
   };
@@ -199,8 +200,12 @@ export async function actualizarAlumno(id: number, cambios: ActualizarAlumnoBody
 
 // Baja lógica (US-08): el back da de baja las inscripciones vigentes con el motivo y cierra sus
 // horarios (libera el cupo). Responde 409 si ya estaba de baja.
-export async function darDeBajaAlumno(id: number, motivo: MotivoBaja, detalle?: string): Promise<void> {
+export async function darDeBajaAlumno(id: number, motivo: MotivoBaja, detalle?: string, idInscripcion?: number): Promise<void> {
   // Sin detalle no viaja: el back lo guarda como NULL.
-  const cuerpo: BajaAlumnoBody = { motivo_baja: motivo, ...(detalle && { detalle_baja: detalle }) };
+  const cuerpo: BajaAlumnoBody = {
+    motivo_baja: motivo,
+    ...(detalle && { detalle_baja: detalle }),
+    ...(idInscripcion && { id_inscripcion: idInscripcion }),
+  };
   await apiClient.post(`/alumnos/${id}/baja`, cuerpo);
 }

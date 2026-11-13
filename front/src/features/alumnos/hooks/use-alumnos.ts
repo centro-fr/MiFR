@@ -88,7 +88,8 @@ export function useActualizarAlumno(id: number) {
 export function useDarDeBajaAlumno(id: number) {
   const invalidar = useInvalidarTodoAlumnos();
   return useMutation({
-    mutationFn: ({ motivo, detalle }: { motivo: MotivoBaja; detalle?: string }) => darDeBajaAlumno(id, motivo, detalle),
+    mutationFn: ({ motivo, detalle, idInscripcion }: { motivo: MotivoBaja; detalle?: string; idInscripcion?: number }) =>
+      darDeBajaAlumno(id, motivo, detalle, idInscripcion),
     onSuccess: invalidar,
   });
 }

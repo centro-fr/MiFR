@@ -55,7 +55,25 @@ function alumnoEnListado(alumno: AlumnoMock) {
           ids_horarios: resumen.horarios.map((h) => h.id_horario),
         }
       : null,
-    situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
+    situacion_cuota: (() => {
+      const activas = db.inscripciones.filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "ACTIVA");
+      if (activas.length === 0) return vigente ? situacionCuotaDe(vigente) : null;
+      const prioridad = {
+        VENCIDA: 0,
+        CLASE_SUELTA_VENCIDA: 1,
+        PENDIENTE_DE_PAGO: 2,
+        POR_VENCER: 3,
+        AL_DIA: 4,
+        CLASE_SUELTA_VIGENTE: 5,
+      } as const;
+      return activas
+        .map((i) => situacionCuotaDe(i))
+        .sort((a, b) => prioridad[a.estado] - prioridad[b.estado])[0];
+    })(),
+    planes_activos: db.inscripciones
+      .filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "ACTIVA")
+      .map((i) => db.planes.find((p) => p.id_plan === i.id_plan)?.nombre ?? "")
+      .filter(Boolean),
   };
 }
 
@@ -744,7 +762,17 @@ export const alumnosHandlers = [
     if (alumno.estado === "BAJA") return errorApi(409, "CONFLICT", "El alumno ya está dado de baja");
 
     const ahora = new Date().toISOString();
-    const { motivo_baja, detalle_baja = null } = cuerpo.data;
+    const { motivo_baja, detalle_baja = null, id_inscripcion } = cuerpo.data;
+    if (id_inscripcion) {
+      const inscripcion = vigentesDe(id).find((i) => i.id_inscripcion === id_inscripcion);
+      if (!inscripcion) return errorApi(404, "NOT_FOUND", "Inscripción no encontrada");
+      Object.assign(inscripcion, { estado: "BAJA", motivo_baja, detalle_baja, fecha_baja: ahora });
+      if (vigentesDe(id).length === 0) {
+        Object.assign(alumno, { estado: "BAJA", fecha_baja: ahora });
+        datosPersonales(alumno.id_usuario).estado = "INACTIVO";
+      }
+      return HttpResponse.json({ mensaje: "Plan dado de baja" });
+    }
     for (const inscripcion of vigentesDe(id)) {
       Object.assign(inscripcion, { estado: "BAJA", motivo_baja, detalle_baja, fecha_baja: ahora });
     }

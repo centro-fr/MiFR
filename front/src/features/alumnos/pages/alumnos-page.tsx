@@ -847,7 +847,17 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
 
                         {/* Plan */}
                         <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                          {alumno.plan ?? "Sin plan"}
+                          <div className="flex items-center gap-1.5">
+                            <span>{alumno.plan ?? "Sin plan"}</span>
+                            {alumno.planes_activos && alumno.planes_activos.length > 1 && (
+                              <span
+                                title={alumno.planes_activos.join(" · ")}
+                                className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-pink-300"
+                              >
+                                +{alumno.planes_activos.length - 1}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Cuota */}

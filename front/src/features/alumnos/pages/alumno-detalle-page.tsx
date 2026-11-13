@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -78,6 +80,7 @@ export function AlumnoDetallePage() {
   const [modalPlanHorariosAbierto, setModalPlanHorariosAbierto] = useState(false);
   const [editando, setEditando] = useState(false);
   const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
+  const [inscripcionCobroElegida, setInscripcionCobroElegida] = useState<InscripcionDeAlumno | null>(null);
   const [menuAccionesAbierto, setMenuAccionesAbierto] = useState(false);
   const [modalBajaAbierto, setModalBajaAbierto] = useState(false);
   const [modalReactivarAbierto, setModalReactivarAbierto] = useState(false);
@@ -387,7 +390,15 @@ export function AlumnoDetallePage() {
 
             {/* 4 Tarjetas de Resumen / KPIs */}
             <section aria-label="Resumen del alumno" className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4 gap-4">
-              <TarjetaResumen etiqueta="Plan" valor={planNombre} detalle={planSubtitulo} />
+              <TarjetaResumen
+                etiqueta="Plan"
+                valor={alumno.inscripciones.length > 1 ? `${planNombre} (+${alumno.inscripciones.length - 1})` : planNombre}
+                detalle={
+                  alumno.inscripciones.length > 1
+                    ? alumno.inscripciones.map((i) => i.plan.nombre).join(" · ")
+                    : planSubtitulo
+                }
+              />
               <TarjetaResumen etiqueta="Profesora" valor={profesoraNombre} detalle={profesoraSubtitulo} />
               <TarjetaResumen
                 etiqueta="Cuota"
@@ -595,16 +606,69 @@ export function AlumnoDetallePage() {
               <ModalCambiarPlan
                 nombre={nombreCompleto}
                 inscripcion={alumno.inscripcion}
+                inscripciones={alumno.inscripciones}
                 tienePlanVigente={Boolean(alumno.estado === "ACTIVO" && alumno.inscripcion && alumno.inscripcion.estado !== "BAJA")}
                 onClose={() => setModalPlanHorariosAbierto(false)}
               />
             )}
 
             {/* Modal de Cobro */}
-            {modalCobroAbierto && alumno.inscripcion && (
+            {modalCobroAbierto && alumno.inscripciones.length >= 2 && !inscripcionCobroElegida && (
+              <Dialog
+                open
+                onOpenChange={(abierto) => {
+                  if (!abierto) {
+                    setModalCobroAbierto(false);
+                    setInscripcionCobroElegida(null);
+                  }
+                }}
+              >
+                <DialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+                  <DialogHeader className={CABECERA_MODAL}>
+                    <DialogTitle className={TITULO_MODAL}>Registrar cobro</DialogTitle>
+                    <DialogDescription className={DESCRIPCION_MODAL}>
+                      {nombreCompleto} tiene {alumno.inscripciones.length} planes activos. Elegí de cuál querés registrar el cobro:
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className={cn(CUERPO_MODAL, "space-y-2")}>
+                    {alumno.inscripciones.map((item) => (
+                      <button
+                        key={item.id_inscripcion}
+                        type="button"
+                        onClick={() => setInscripcionCobroElegida(item)}
+                        className="flex w-full cursor-pointer flex-col items-start gap-0.5 rounded-xl border border-slate-200 px-4 py-3 text-left transition-colors hover:border-primary hover:bg-primary/5 dark:border-white/15 dark:hover:border-primary dark:hover:bg-primary/10"
+                      >
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">{item.plan.nombre}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{item.profesora}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <DialogFooter className={PIE_MODAL}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setModalCobroAbierto(false);
+                        setInscripcionCobroElegida(null);
+                      }}
+                      className="rounded-xl border-slate-200 bg-white px-4 font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                      Cancelar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            {modalCobroAbierto && (alumno.inscripciones.length < 2 || inscripcionCobroElegida) && (() => {
+              const insc = inscripcionCobroElegida ?? alumno.inscripcion;
+              if (!insc) return null;
+              return (
               <ModalRegistrarCobro
                 abierto={modalCobroAbierto}
-                onClose={() => setModalCobroAbierto(false)}
+                onClose={() => {
+                  setModalCobroAbierto(false);
+                  setInscripcionCobroElegida(null);
+                }}
                 alumno={{
                   id_alumno: alumno.id_alumno,
                   nombre: alumno.usuario.nombre,
@@ -612,15 +676,15 @@ export function AlumnoDetallePage() {
                   dni: alumno.usuario.dni,
                 }}
                 inscripcion={{
-                  id_inscripcion: alumno.inscripcion.id_inscripcion,
-                  id_plan: alumno.inscripcion.plan.id_plan,
-                  nombre_plan: alumno.inscripcion.plan.nombre,
-                  precio_vigente: alumno.inscripcion.plan.precio,
-                  situacion_cuota: alumno.inscripcion.situacion_cuota,
+                  id_inscripcion: insc.id_inscripcion,
+                  id_plan: insc.plan.id_plan,
+                  nombre_plan: insc.plan.nombre,
+                  precio_vigente: insc.plan.precio,
+                  situacion_cuota: insc.situacion_cuota,
                 }}
                 plan={{
-                  id: String(alumno.inscripcion.plan.id_plan),
-                  nombre: alumno.inscripcion.plan.nombre,
+                  id: String(insc.plan.id_plan),
+                  nombre: insc.plan.nombre,
                 }}
                 onExito={() => {
                   setModalCobroAbierto(false);
@@ -632,20 +696,26 @@ export function AlumnoDetallePage() {
                   void consulta.refetch();
                 }}
               />
-            )}
+              );
+            })()}
             {/* Modal Baja Alumno */}
             {modalBajaAbierto && (
               <ModalBajaAlumno
                 nombre={nombreCompleto}
+                inscripciones={alumno.inscripciones}
                 dandoDeBaja={darDeBaja.isPending}
                 errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.") : null}
                 onClose={() => setModalBajaAbierto(false)}
-                onConfirm={(motivo, detalle) => {
+                onConfirm={(motivo, detalle, idInscripcion) => {
                   darDeBaja
-                    .mutateAsync({ motivo, detalle })
+                    .mutateAsync({ motivo, detalle, idInscripcion })
                     .then(() => {
                       setModalBajaAbierto(false);
-                      toast.info(`${nombreCompleto} quedó dado de baja`);
+                      toast.info(
+                        idInscripcion
+                          ? `Se dio de baja el plan seleccionado de ${nombreCompleto}`
+                          : `${nombreCompleto} quedó dado de baja`,
+                      );
                       void consulta.refetch();
                     })
                     .catch(() => {});
@@ -685,7 +755,9 @@ function PlanYHorarios({
   planSubtitulo: string;
   profesoraNombre: string;
 }) {
-  const { inscripcion } = alumno;
+  const [idInscripcionElegida, setIdInscripcionElegida] = useState<number | null>(null);
+  const inscripciones = alumno.inscripciones.length > 0 ? alumno.inscripciones : alumno.inscripcion ? [alumno.inscripcion] : [];
+  const inscripcion = inscripciones.find((i) => i.id_inscripcion === idInscripcionElegida) ?? inscripciones[0] ?? null;
 
   if (!inscripcion) {
     return (
@@ -719,6 +791,40 @@ function PlanYHorarios({
 
   return (
     <div className="space-y-6">
+      {inscripciones.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Planes activos del alumno">
+          {inscripciones.map((item) => {
+            const activa = item.id_inscripcion === inscripcion.id_inscripcion;
+            const estadoCuota = item.situacion_cuota?.estado;
+            return (
+              <button
+                key={item.id_inscripcion}
+                type="button"
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setIdInscripcionElegida(item.id_inscripcion)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer",
+                  activa
+                    ? "border-primary bg-primary text-white shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                )}
+              >
+                <span>{item.plan.nombre}</span>
+                {estadoCuota && estadoCuota !== "AL_DIA" && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "size-2 rounded-full",
+                      estadoCuota === "VENCIDA" ? "bg-red-500" : "bg-amber-400",
+                    )}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {inscripcion.reserva && <AvisoReserva reserva={inscripcion.reserva} />}
 
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 gap-4">
@@ -735,7 +841,7 @@ function PlanYHorarios({
                   Plan
                 </span>
                 <span className="min-w-0 font-semibold text-slate-900 dark:text-white wrap-anywhere">
-                  {planNombre}
+                  {inscripciones.length > 1 ? inscripcion.plan.nombre : planNombre}
                 </span>
               </div>
               <div className="flex items-center py-3.5">

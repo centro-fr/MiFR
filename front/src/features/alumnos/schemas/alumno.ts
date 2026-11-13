@@ -129,6 +129,7 @@ export const paginaAlumnosApiSchema = z.object({
         })
         .nullable(),
       situacion_cuota: situacionCuotaOpcionalSchema,
+      planes_activos: z.array(z.string()).optional(),
     }),
   ),
   total: z.number().int(),
@@ -163,6 +164,7 @@ export interface AlumnoResumen {
   inasistencias_consecutivas?: number;
   estado: EstadoAlumno;
   plan: string | null;
+  planes_activos?: string[];
   profesora: string | null;
   /** La de su inscripción vigente; null si no tiene una. */
   situacion_cuota: SituacionCuota | null;
@@ -479,6 +481,7 @@ export const bajaAlumnoBodySchema = z
   .object({
     motivo_baja: motivoBajaSchema,
     detalle_baja: z.string().trim().min(1).max(LARGO_MAXIMO_DETALLE_BAJA).optional(),
+    id_inscripcion: z.number().int().positive().optional(),
   })
   .refine((baja) => baja.detalle_baja === undefined || baja.motivo_baja === "OTRO", {
     message: "El detalle solo se carga con el motivo OTRO",
