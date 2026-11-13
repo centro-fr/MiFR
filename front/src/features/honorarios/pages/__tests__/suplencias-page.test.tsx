@@ -115,7 +115,7 @@ describe("SuplenciasPage", () => {
     fireEvent.click(screen.getByLabelText(/Cerrar formulario/));
 
     fireEvent.click(within(screen.getByRole("table")).getByRole("button", { name: "Eliminar la suplencia del 16/10/2026" }));
-    expect(screen.getByRole("alertdialog", { name: "¿Eliminar la suplencia?" })).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", { name: "¿Seguro que desea eliminar?" })).toBeInTheDocument();
   });
 
   it("con el mes cerrado no se corrigen las suplencias de ese mes, pero el botón de registrar sigue disponible", () => {

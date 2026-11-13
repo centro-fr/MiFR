@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, CircleAlert, Clock, Loader2, LockKeyhole, Users } from "lucide-react";
+import { ArrowLeft, Check, CircleAlert, Clock, Loader2, LockKeyhole, Users, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { cn } from "@/utils/cn";
+import { BOTON_FILA, BOTON_FILA_PELIGRO } from "@/components/ui/estilos-lista";
 import { BOTON_MODAL, CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 import { Card, CardContent } from "@/components/ui/card";
 import type {
@@ -43,15 +45,6 @@ interface Props {
   reintentar: () => void;
 }
 
-const ESTADO_CUOTA: Record<NonNullable<InscriptoConAsistenciaApi["situacion_cuota"]>["estado"], string> = {
-  AL_DIA: "Al día",
-  POR_VENCER: "Por vencer",
-  VENCIDA: "Vencida",
-  CLASE_SUELTA_VIGENTE: "Clase vigente",
-  CLASE_SUELTA_VENCIDA: "Clase vencida",
-  PENDIENTE_DE_PAGO: "Sin transferencia confirmada",
-};
-
 function etiquetaEstadoClase(estado: ClaseApi["estado"]): string {
   if (estado === "DICTADA") return "Asistencia cerrada";
   if (estado === "CANCELADA") return "Clase cancelada";
@@ -60,22 +53,11 @@ function etiquetaEstadoClase(estado: ClaseApi["estado"]): string {
 
 function EstadoCuota({ inscripto }: { inscripto: InscriptoConAsistenciaApi }) {
   const situacion = inscripto.situacion_cuota;
-  if (!situacion) return <Badge variant="outline">Sin datos de cuota</Badge>;
+  if (!situacion) return <BadgeSituacionCuota situacion={null} />;
   const advertencia = !situacion.puede_asistir;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Badge
-        variant="outline"
-        className={
-          advertencia
-            ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
-            : situacion.estado === "VENCIDA" || situacion.estado === "CLASE_SUELTA_VENCIDA"
-              ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
-              : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-        }
-      >
-        {ESTADO_CUOTA[situacion.estado]}
-      </Badge>
+      <BadgeSituacionCuota situacion={situacion} />
       {situacion.tiene_pago_pendiente && (
         <span className="text-xs text-muted-foreground">Transferencia pendiente de verificación</span>
       )}
@@ -103,26 +85,37 @@ function BotonesAsistencia({
   const presente = inscripto.asistencia === "presente";
   const ausente = inscripto.asistencia === "ausente";
   return (
-    <div className="grid grid-cols-2 gap-2" aria-label={`Asistencia de ${inscripto.nombre} ${inscripto.apellido}`}>
+    <div className="flex items-center gap-2 xl:justify-end" aria-label={`Asistencia de ${inscripto.nombre} ${inscripto.apellido}`}>
       <Button
         type="button"
-        variant={presente ? "default" : "outline"}
+        variant="outline"
         aria-pressed={presente}
         disabled={!editable || guardando}
         onClick={() => alMarcar(true)}
-        className="min-h-11 rounded-xl"
+        className={cn(
+          BOTON_FILA,
+          "flex-1 xl:flex-initial [&_svg]:size-3.5",
+          presente
+            ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-600"
+            : "hover:text-emerald-600 dark:hover:text-emerald-400",
+        )}
       >
         <Check aria-hidden="true" />
         Presente
       </Button>
       <Button
         type="button"
-        variant={ausente ? "destructive" : "outline"}
+        variant="outline"
         aria-pressed={ausente}
         disabled={!editable || guardando}
         onClick={() => alMarcar(false)}
-        className="min-h-11 rounded-xl"
+        className={cn(
+          BOTON_FILA_PELIGRO,
+          "flex-1 xl:flex-initial [&_svg]:size-3.5",
+          ausente && "border-rose-600 bg-rose-600 text-white hover:bg-rose-700 hover:text-white dark:border-rose-600 dark:bg-rose-600 dark:text-white dark:hover:bg-rose-700",
+        )}
       >
+        <X aria-hidden="true" />
         Ausente
       </Button>
     </div>
@@ -199,7 +192,7 @@ function ConfirmarCierre({
         variant="destructive"
         disabled={guardando || confirmando}
         onClick={() => setAbierto(true)}
-        className="min-h-11 w-full rounded-xl sm:w-auto"
+        className="h-9 min-h-0 w-full rounded-lg px-3 text-xs font-semibold sm:w-auto [&_svg]:size-3.5"
       >
         {confirmando && <Loader2 aria-hidden="true" className="animate-spin" />}
         Cerrar asistencia
@@ -260,40 +253,54 @@ export function RegistroAsistencia({
     <div className="space-y-6 min-w-0">
       <Link
         to={volver}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
         Volver a las clases
       </Link>
 
-      <header className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl xl:text-3xl font-black text-dark dark:text-white tracking-tight">
-              {clase.horario.actividad.nombre}
-            </h1>
-            <Badge variant="outline">{clase.horario.actividad.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"}</Badge>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
+      <header className="space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+            {clase.horario.actividad.nombre}
+          </h1>
+          <Badge variant="outline" className="rounded-full font-semibold">
+            {clase.horario.actividad.modalidad === "GRUPAL" ? "Grupal" : "Personalizada"}
+          </Badge>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold shadow-2xs",
+              clase.estado === "PROGRAMADA"
+                ? "border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300"
+                : clase.estado === "CANCELADA"
+                  ? "border-rose-200/60 bg-rose-50 text-rose-700 dark:border-rose-800/40 dark:bg-rose-950/40 dark:text-rose-300"
+                  : "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                clase.estado === "PROGRAMADA"
+                  ? "bg-emerald-500"
+                  : clase.estado === "CANCELADA"
+                    ? "bg-rose-500"
+                    : "bg-slate-400",
+              )}
+            />
+            {etiquetaEstadoClase(clase.estado)}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>
             <span className="inline-block first-letter:uppercase">{fechaLarga(clase.fecha_clase)}</span> · {hora}
-          </p>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+          </span>
+          <span aria-hidden="true" className="hidden sm:inline">·</span>
+          <span className="inline-flex items-center gap-1.5">
             <Users aria-hidden="true" className="size-4" />
             {inscriptos.length} {inscriptos.length === 1 ? "inscripto" : "inscriptos"}
-          </p>
+          </span>
         </div>
-        <Badge
-          variant="outline"
-          className={
-            clase.estado === "PROGRAMADA"
-              ? "w-fit border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
-              : clase.estado === "CANCELADA"
-                ? "w-fit border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
-                : "w-fit border-slate-200 bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-200"
-          }
-        >
-          {etiquetaEstadoClase(clase.estado)}
-        </Badge>
       </header>
 
       {clase.estado === "DICTADA" && (
@@ -340,18 +347,28 @@ export function RegistroAsistencia({
           <p className="text-sm text-muted-foreground">
             {puedeEditar ? "Las marcas se guardan al instante." : "Esta lista está en modo de solo lectura."}
           </p>
+          {puedeEditar && clase.estado === "PROGRAMADA" && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Si no se marca nada, se pondrán todos como presentes.
+            </p>
+          )}
         </div>
-        {puedeEditar && clase.estado === "PROGRAMADA" && inscriptos.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={guardando}
-            onClick={() => void alMarcarTodos()}
-            className="min-h-11 w-full rounded-xl sm:w-auto"
-          >
-            <Check aria-hidden="true" />
-            Marcar todos presentes
-          </Button>
+        {puedeEditar && clase.estado === "PROGRAMADA" && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {inscriptos.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={guardando}
+                onClick={() => void alMarcarTodos()}
+                className={cn(BOTON_FILA, "h-9 w-full sm:w-auto [&_svg]:size-3.5")}
+              >
+                <Check aria-hidden="true" />
+                Marcar todos presentes
+              </Button>
+            )}
+            <ConfirmarCierre abiertos={sinMarcar} guardando={guardando} alConfirmar={alCerrar} />
+          </div>
         )}
       </div>
 
@@ -375,54 +392,50 @@ export function RegistroAsistencia({
               />
             ))}
           </div>
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:block">
-            <table className="w-full table-fixed text-left text-sm">
-              <caption className="sr-only">Asistencia de {clase.horario.actividad.nombre}</caption>
-              <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="w-[24%] px-5 py-4">Alumno</th>
-                  <th className="w-[30%] px-5 py-4">Estado de cuota</th>
-                  <th className="w-[20%] px-5 py-4">Registro</th>
-                  <th className="w-[26%] px-5 py-4">Marcar asistencia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {inscriptos.map((inscripto) => (
-                  <tr key={inscripto.id_alumno}>
-                    <td className="px-5 py-4 font-bold">
-                      {inscripto.nombre} {inscripto.apellido}
-                      {inscripto.observaciones && (
-                        <p className="mt-1 break-words text-xs font-normal text-muted-foreground">
-                          {inscripto.observaciones}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-5 py-4"><EstadoCuota inscripto={inscripto} /></td>
-                    <td className="px-5 py-4">
-                      {inscripto.asistencia === "sin_marcar"
-                        ? <span className="text-muted-foreground">Sin marcar</span>
-                        : <Badge variant="outline">{inscripto.asistencia === "presente" ? "Presente" : "Ausente"}</Badge>}
-                    </td>
-                    <td className="px-5 py-4">
-                      <BotonesAsistencia
-                        inscripto={inscripto}
-                        editable={puedeEditar && !cancelada}
-                        guardando={guardando}
-                        alMarcar={(asistio) => void alMarcar(inscripto.id_alumno, asistio)}
-                      />
-                    </td>
+          <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900 xl:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <caption className="sr-only">Asistencia de {clase.horario.actividad.nombre}</caption>
+                <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                  <tr>
+                    <th scope="col" className="px-6 py-3.5">Alumno</th>
+                    <th scope="col" className="px-4 py-3.5">Estado de cuota</th>
+                    <th scope="col" className="px-4 py-3.5">Registro</th>
+                    <th scope="col" className="px-6 py-3.5 text-right">Marcar asistencia</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {inscriptos.map((inscripto) => (
+                    <tr key={inscripto.id_alumno} className="transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60">
+                      <td className="px-6 py-3.5 font-semibold text-slate-900 dark:text-slate-100">
+                        {inscripto.nombre} {inscripto.apellido}
+                        {inscripto.observaciones && (
+                          <p className="mt-1 break-words text-xs font-normal text-muted-foreground">
+                            {inscripto.observaciones}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5"><EstadoCuota inscripto={inscripto} /></td>
+                      <td className="px-4 py-3.5">
+                        {inscripto.asistencia === "sin_marcar"
+                          ? <span className="text-muted-foreground">Sin marcar</span>
+                          : <Badge variant="outline">{inscripto.asistencia === "presente" ? "Presente" : "Ausente"}</Badge>}
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
+                        <BotonesAsistencia
+                          inscripto={inscripto}
+                          editable={puedeEditar && !cancelada}
+                          guardando={guardando}
+                          alMarcar={(asistio) => void alMarcar(inscripto.id_alumno, asistio)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
-      )}
-
-      {puedeEditar && clase.estado === "PROGRAMADA" && (
-        <footer className="sticky bottom-3 z-10 -mx-2 rounded-2xl border border-border bg-background/95 p-3 shadow-lg backdrop-blur sm:static sm:mx-0 sm:flex sm:justify-end sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none">
-          <ConfirmarCierre abiertos={sinMarcar} guardando={guardando} alConfirmar={alCerrar} />
-        </footer>
       )}
     </div>
   );

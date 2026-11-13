@@ -25,6 +25,7 @@ export interface MarcaDeAsistencia {
 }
 
 const MARCA_DEL_HISTORIAL = {
+  id_inscripcion: true,
   asistio: true,
   observaciones: true,
   clase: {
@@ -38,12 +39,14 @@ const MARCA_DEL_HISTORIAL = {
 } satisfies Prisma.asistenciasSelect;
 
 function aMarcaDelAlumno({
+  id_inscripcion,
   asistio,
   observaciones,
   clase,
 }: Prisma.asistenciasGetPayload<{ select: typeof MARCA_DEL_HISTORIAL }>): MarcaDelAlumno {
   return {
     id_clase: clase.id_clase,
+    id_inscripcion,
     fecha_clase: clase.fecha_clase,
     hora_inicio: clase.horario.hora_inicio,
     hora_fin: clase.horario.hora_fin,

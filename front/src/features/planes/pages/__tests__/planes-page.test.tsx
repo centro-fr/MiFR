@@ -157,9 +157,11 @@ describe("PlanesPage", () => {
 
     expect(screen.getByRole("heading", { name: "Básico" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Intermedio" })).toBeInTheDocument();
-    expect(screen.getByText(/Sube el 01\/11/i)).toBeInTheDocument();
-    expect(screen.getByText("2 clases por semana")).toBeInTheDocument();
-    expect(screen.getByText("3 clases por semana")).toBeInTheDocument();
+    // El aviso de la suba va en la tabla y en la lista del celular.
+    expect(screen.getAllByText(/Sube el 01\/11/i)).toHaveLength(2);
+    // En la tabla y en la lista del celular.
+    expect(screen.getAllByText("2 clases por semana")).toHaveLength(2);
+    expect(screen.getAllByText("3 clases por semana")).toHaveLength(2);
   });
 
   it("muestra el encabezado y el estado vacío de promociones en la ruta /app/planes/promociones", () => {

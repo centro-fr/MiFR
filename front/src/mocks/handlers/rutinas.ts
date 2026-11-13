@@ -359,8 +359,10 @@ export const rutinasHandlers = [
     await delay(300);
     const lectura = lecturaDelAlumno(request, params.id);
     if ("error" in lectura) return lectura.error;
+    const idInscripcion = Number(new URL(request.url).searchParams.get("id_inscripcion"));
     const rutinas = db.rutinas
       .filter((r) => r.id_alumno === lectura.idAlumno)
+      .filter((r) => !idInscripcion || r.id_inscripcion === undefined || r.id_inscripcion === idInscripcion)
       .sort((a, b) => b.fecha_desde.localeCompare(a.fecha_desde) || b.id_rutina - a.id_rutina);
     return HttpResponse.json(rutinas.map((rutina) => visiblePara(lectura.alcance, rutinaConFechas(rutina))));
   }),

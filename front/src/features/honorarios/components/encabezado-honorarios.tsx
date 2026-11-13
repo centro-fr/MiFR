@@ -17,10 +17,10 @@ export function EncabezadoHonorarios({
     <div className="@container">
       <div className="flex flex-col gap-4 @3xl:flex-row @3xl:items-center @3xl:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             {titulo}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
             {descripcion}
           </p>
         </div>

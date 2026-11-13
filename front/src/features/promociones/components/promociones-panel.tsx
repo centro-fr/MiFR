@@ -4,16 +4,8 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Button } from "@/components/ui/button";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
-import { cn } from "@/utils/cn";
+import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,7 +23,6 @@ import type { PromocionFormValues } from "@/features/promociones/schemas/promoci
 import type { Plan } from "@/types/plan";
 import type { Promocion } from "@/types/promocion";
 import { normalizarParaBuscar } from "@/utils/texto";
-import { BOTON_MODAL, CABECERA_MODAL, CONTENIDO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 export function PromocionesPanel({ planes }: { planes: Plan[] }) {
   const consulta = usePromociones();
@@ -59,7 +50,6 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
       const esTodos = planes.length > 0 && p.planes.length >= planes.length;
       return [
         p.nombre,
-        p.codigo,
         ...(esTodos ? ["todos"] : []),
         ...p.planes.map((pl) => pl.nombre),
       ].some((v) => normalizarParaBuscar(v).includes(q));
@@ -82,7 +72,6 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
 
   const guardar = (datos: PromocionFormValues) => {
     const cuerpo = {
-      codigo: datos.codigo.trim().toUpperCase(),
       nombre: datos.nombre.trim(),
       tipo_descuento: datos.tipoDescuento,
       valor: Number(datos.valor.replace(",", ".")),
@@ -107,10 +96,10 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
     <section className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             Promociones
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
             Descuentos y beneficios vigentes para aplicar en las inscripciones.
           </p>
         </div>
@@ -207,42 +196,24 @@ export function PromocionesPanel({ planes }: { planes: Plan[] }) {
         onSubmit={guardar}
       />
 
-      <Dialog open={promocionAEliminar !== null} onOpenChange={(open) => !open && setPromocionAEliminar(null)}>
-        <DialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
-          <DialogHeader className={CABECERA_MODAL}>
-            <DialogTitle className={TITULO_MODAL}>¿Eliminar promoción?</DialogTitle>
-            <DialogDescription className={DESCRIPCION_MODAL}>
-              La promoción <strong>{promocionAEliminar?.nombre}</strong> se eliminará y no se aplicará a nuevas inscripciones.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className={PIE_MODAL}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPromocionAEliminar(null)}
-              className={BOTON_MODAL}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={desactivar.isPending}
-              onClick={() => {
-                if (!promocionAEliminar) return;
-                desactivar.mutate(promocionAEliminar.id, {
-                  onSuccess: () => {
-                    setPromocionAEliminar(null);
-                    toast.success("Promoción eliminada");
-                  },
-                });
-              }}
-              className={cn(BOTON_MODAL, "bg-rose-600 text-white hover:bg-rose-700")}
-            >
-              {desactivar.isPending ? "Eliminando..." : "Eliminar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {promocionAEliminar && (
+        <ConfirmarAccion
+          titulo="¿Seguro que desea eliminar?"
+          descripcion="Deja de aplicarse a nuevas inscripciones."
+          textoConfirmar="Eliminar"
+          textoConfirmando="Eliminando…"
+          confirmando={desactivar.isPending}
+          onConfirmar={() =>
+            desactivar.mutate(promocionAEliminar.id, {
+              onSuccess: () => {
+                setPromocionAEliminar(null);
+                toast.success("Promoción eliminada");
+              },
+            })
+          }
+          onCancelar={() => setPromocionAEliminar(null)}
+        />
+      )}
     </section>
   );
 }

@@ -17,7 +17,6 @@ import type { ILogicaServicioEntrenamiento } from "../../interface/i-logica-serv
 
 const promocion = {
   id_promocion: 4,
-  codigo: "VERANO26",
   tipo_descuento: "PORCENTAJE",
   valor: 20,
   fecha_desde: "2026-12-01T00:00:00.000Z",
@@ -26,7 +25,6 @@ const promocion = {
   estado: "PROGRAMADA",
 };
 const alta = {
-  codigo: "verano26",
   nombre: "Verano 2026",
   tipo_descuento: "PORCENTAJE",
   valor: 20,
@@ -110,7 +108,6 @@ describe("rutas de promociones", () => {
     expect(creada.status).toBe(201);
     expect(logica.crearPromocion).toHaveBeenCalledWith({
       ...alta,
-      codigo: "VERANO26",
       fecha_desde: new Date("2026-12-01T00:00:00Z"),
       fecha_hasta: new Date("2027-02-28T00:00:00Z"),
     });
@@ -124,7 +121,7 @@ describe("rutas de promociones", () => {
       "PROMOCION_MODIFICADA",
       "PROMOCION_DESACTIVADA",
     ]);
-    expect(eventos[0]).toMatchObject({ por: 1, id_promocion: 4, codigo: "VERANO26", ids_planes: [1] });
+    expect(eventos[0]).toMatchObject({ por: 1, id_promocion: 4, ids_planes: [1] });
   });
 
   it.each([

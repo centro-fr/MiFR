@@ -4,7 +4,7 @@ import { AvisoVacio, CAJA, EncabezadoPantalla, FILA } from "@/components/movil/p
 import { EstadoErrorCarga, TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { useVistaAmplia } from "@/hooks/use-mobile";
 import { cn } from "@/utils/cn";
-import { usePanelAlumno } from "../hooks/use-panel-alumno";
+import { usePlanElegido } from "../hooks/use-plan-elegido";
 import type { PanelAlumno } from "../schemas/panel-alumno";
 import { diaCorto, numeroDelDia } from "../utils/fechas-del-panel";
 
@@ -71,7 +71,7 @@ function FilaClase({ clase }: { clase: ClaseProxima }) {
 }
 
 function Contenido() {
-  const consulta = usePanelAlumno();
+  const { consulta, vista } = usePlanElegido();
   const vistaAmplia = useVistaAmplia();
   if (consulta.isPending) return <TablaSkeleton ariaLabel="Cargando tus clases" filas={5} />;
   if (consulta.isError) {
@@ -82,7 +82,7 @@ function Contenido() {
       />
     );
   }
-  const clases = consulta.data.proximas_clases;
+  const clases = vista?.proximas_clases ?? consulta.data.proximas_clases;
   if (clases.length === 0) return <AvisoVacio>No tenés clases agendadas.</AvisoVacio>;
   if (vistaAmplia) return <TablaClases clases={clases} />;
   return (

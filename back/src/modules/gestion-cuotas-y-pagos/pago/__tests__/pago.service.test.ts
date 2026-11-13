@@ -461,7 +461,7 @@ describe("PagoService", () => {
     });
 
     it("muestra el precio de lista y lo que descontó la promoción (US-13)", async () => {
-      const promocion = { codigo: "VERANO26", nombre: "Verano" };
+      const promocion = { nombre: "Verano" };
       mocks.repositorio.buscarParaComprobante.mockResolvedValue({
         ...paraComprobante,
         cuota: {
@@ -480,7 +480,7 @@ describe("PagoService", () => {
     });
 
     it("sin precio de lista ese día, o si la promoción ya no aplicaba, no muestra descuento", async () => {
-      const promocion = { codigo: "VERANO26", nombre: "Verano" };
+      const promocion = { nombre: "Verano" };
       const conPromocion = {
         ...paraComprobante,
         cuota: { ...paraComprobante.cuota, inscripcion: { ...paraComprobante.cuota.inscripcion, promocion } },

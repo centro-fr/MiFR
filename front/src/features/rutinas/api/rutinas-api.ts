@@ -44,8 +44,10 @@ function aMedicion(api: MedicionApi): Medicion {
  * Todas las rutinas del alumno, de la más reciente a la más antigua; la vigente viene marcada. Con este
  * listado alcanza: no hace falta pedir aparte GET /alumnos/:id/rutinas/vigente.
  */
-export async function listarRutinasDeAlumno(idAlumno: number): Promise<Rutina[]> {
-  const { data } = await apiClient.get(`/alumnos/${encodeURIComponent(idAlumno)}/rutinas`);
+export async function listarRutinasDeAlumno(idAlumno: number, idInscripcion?: number | null): Promise<Rutina[]> {
+  const { data } = await apiClient.get(`/alumnos/${encodeURIComponent(idAlumno)}/rutinas`, {
+    params: idInscripcion ? { id_inscripcion: idInscripcion } : undefined,
+  });
   return z.array(rutinaApiSchema).parse(data).map(aRutina);
 }
 

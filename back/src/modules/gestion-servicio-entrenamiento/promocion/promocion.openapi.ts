@@ -17,7 +17,6 @@ import {
 const promocionSchema = z
   .object({
     id_promocion: z.number().int(),
-    codigo: z.string(),
     nombre: z.string(),
     tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
     valor: z.number().openapi({ description: "Porcentaje (menor a 100) o monto fijo en pesos" }),
@@ -39,7 +38,7 @@ export function registrarDocumentacionPromociones(registro: OpenAPIRegistry): vo
   const reglas =
     "Un porcentaje va de más de 0 a menos de 100; un monto fijo tiene que ser menor que el precio vigente de cada uno de sus " +
     "planes a `fecha_desde` (400). Los planes tienen que existir y estar vigentes (400). Dos promociones " +
-    "activas no se superponen en fechas sobre un mismo plan (409), y el código no se repite (409).";
+    "activas no se superponen en fechas sobre un mismo plan (409).";
 
   registro.registerPath({
     method: "get",
@@ -81,7 +80,6 @@ export function registrarDocumentacionPromociones(registro: OpenAPIRegistry): vo
       body: cuerpoJson(
         camposDePromocion.openapi("CrearPromocion", {
           example: {
-            codigo: "VERANO26",
             nombre: "Verano 2026",
             tipo_descuento: "PORCENTAJE",
             valor: 20,

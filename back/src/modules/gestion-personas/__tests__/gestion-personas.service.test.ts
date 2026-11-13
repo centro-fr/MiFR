@@ -151,9 +151,41 @@ describe("GestionPersonasService", () => {
           id_alumno: 4,
           inscripcion: { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" },
           situacion_cuota: SITUACION,
+          inscripciones: [
+            { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico", situacion_cuota: SITUACION },
+          ],
         },
       ]);
       expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+    });
+
+    it("un alumno con varios planes trae todas sus vigentes y lo representa la más reciente", async () => {
+      const AL_DIA = { ...HABILITACION, estado: "AL_DIA" };
+      mocks.inscripciones.resumirInscripcionesVigentes.mockResolvedValue([
+        { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" },
+        { id_alumno: 4, id_inscripcion: 7, nombre_plan: "Intermedio" },
+      ]);
+      mocks.cuotas.habilitacionDeInscripciones.mockResolvedValue(
+        new Map([
+          [9, HABILITACION],
+          [7, AL_DIA],
+        ]),
+      );
+
+      const [alumno] = (await servicio.listarAlumnos(consulta, PROPIETARIA)).datos;
+
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9, 7]);
+      expect(alumno.inscripcion).toEqual({ id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" });
+      expect(alumno.situacion_cuota).toEqual(SITUACION);
+      expect(alumno.inscripciones).toEqual([
+        { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico", situacion_cuota: SITUACION },
+        {
+          id_alumno: 4,
+          id_inscripcion: 7,
+          nombre_plan: "Intermedio",
+          situacion_cuota: { ...SITUACION, estado: "AL_DIA" },
+        },
+      ]);
     });
 
     it("una inscripción que Cuota no encuentra sale sin situación de cuota", async () => {
@@ -217,7 +249,9 @@ describe("GestionPersonasService", () => {
 
       const pagina = await servicio.listarAlumnos(consulta, PROPIETARIA);
 
-      expect(pagina.datos).toEqual([{ id_alumno: 4, inscripcion: null, situacion_cuota: null }]);
+      expect(pagina.datos).toEqual([
+        { id_alumno: 4, inscripcion: null, situacion_cuota: null, inscripciones: [] },
+      ]);
     });
   });
 
@@ -252,8 +286,16 @@ describe("GestionPersonasService", () => {
       expect(mocks.alumnos.buscarPorIds).toHaveBeenCalledWith([3, 4]);
       expect(pagina).toEqual({
         datos: [
-          { id_alumno: 3, inscripcion: { id_alumno: 3, id_inscripcion: 30 }, situacion_cuota: SITUACION },
-          { id_alumno: 4, inscripcion: { id_alumno: 4, id_inscripcion: 40 }, situacion_cuota: SITUACION },
+          expect.objectContaining({
+            id_alumno: 3,
+            inscripcion: { id_alumno: 3, id_inscripcion: 30 },
+            situacion_cuota: SITUACION,
+          }),
+          expect.objectContaining({
+            id_alumno: 4,
+            inscripcion: { id_alumno: 4, id_inscripcion: 40 },
+            situacion_cuota: SITUACION,
+          }),
         ],
         total: 3,
         limit: 2,

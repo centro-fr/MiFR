@@ -8,6 +8,7 @@ import {
   type FiltrosAlumnos,
 } from "@/features/alumnos/api/alumnos-api";
 import type { ActualizarAlumnoBody, RespuestaAlumnos } from "@/features/alumnos/schemas/alumno";
+import { unaFilaPorPlan } from "@/features/alumnos/utils/filas-por-plan";
 import type { MotivoBaja } from "@/types/alumno";
 
 // Todo lo de alumnos cuelga de esta clave: una baja, un alta o una edición refrescan el listado,
@@ -20,13 +21,17 @@ export function fichaAlumnoQueryKey(id: number) {
 
 /**
  * Listado del más reciente al más antiguo. Se pide completo una vez por combinación de filtros y la
- * página se recorta acá: cambiar de página no vuelve a consultar al back.
+ * página se recorta acá: cambiar de página no vuelve a consultar al back. Con `unaFilaPorPlan`, quien
+ * tiene varios planes vigentes ocupa una fila por plan, y el total cuenta filas.
  */
-export function useAlumnos({ limit, offset, ...filtros }: FiltrosAlumnos) {
+export function useAlumnos({ limit, offset, ...filtros }: FiltrosAlumnos, opciones: { unaFilaPorPlan?: boolean } = {}) {
   return useQuery({
     queryKey: [...ALUMNOS_QUERY_KEY, "listado", filtros],
     queryFn: () => listarAlumnosRecientesPrimero(filtros),
-    select: (todos): RespuestaAlumnos => ({ items: todos.slice(offset, offset + limit), total: todos.length, limit, offset }),
+    select: (alumnos): RespuestaAlumnos => {
+      const todos = opciones.unaFilaPorPlan ? unaFilaPorPlan(alumnos, filtros) : alumnos;
+      return { items: todos.slice(offset, offset + limit), total: todos.length, limit, offset };
+    },
     placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
@@ -88,7 +93,8 @@ export function useActualizarAlumno(id: number) {
 export function useDarDeBajaAlumno(id: number) {
   const invalidar = useInvalidarTodoAlumnos();
   return useMutation({
-    mutationFn: ({ motivo, detalle }: { motivo: MotivoBaja; detalle?: string }) => darDeBajaAlumno(id, motivo, detalle),
+    mutationFn: ({ motivo, detalle, idInscripcion }: { motivo: MotivoBaja; detalle?: string; idInscripcion?: number }) =>
+      darDeBajaAlumno(id, motivo, detalle, idInscripcion),
     onSuccess: invalidar,
   });
 }

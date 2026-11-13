@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -33,13 +34,18 @@ interface Props {
   nombre: string;
   dandoDeBaja: boolean;
   errorBaja: string | null;
+  inscripciones?: { id_inscripcion: number; plan: { nombre: string } }[];
   onClose: () => void;
   /** `detalle` solo llega con "Otro motivo" y si se escribió algo. */
-  onConfirm: (motivo: MotivoBaja, detalle?: string) => void;
+  onConfirm: (motivo: MotivoBaja, detalle?: string, idInscripcion?: number) => void;
 }
 
 // US-08: la baja es lógica y conserva el historial. El motivo se guarda en inscripciones.motivo_baja.
-export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
+export function ModalBajaAlumno({ nombre: _nombre, inscripciones = [], dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
+  const tieneVariosPlanes = inscripciones.length >= 2;
+  const [alcance, setAlcance] = useState<"" | "UNO" | "TODOS">("");
+  const [idInscripcion, setIdInscripcion] = useState<number>(inscripciones[0]?.id_inscripcion ?? 0);
+  const [errorAlcance, setErrorAlcance] = useState<string | null>(null);
   const [motivo, setMotivo] = useState<string>("");
   const [detalle, setDetalle] = useState("");
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
@@ -49,15 +55,20 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
   const confirmar = (evento: FormEvent) => {
     evento.preventDefault();
     const resultado = bajaAlumnoFormSchema.safeParse({ motivo: motivo || undefined, detalle: esOtroMotivo ? detalle : undefined });
-    if (!resultado.success) {
-      const { fieldErrors } = resultado.error.flatten();
-      setErrorMotivo(fieldErrors.motivo?.[0] ?? null);
-      setErrorDetalle(fieldErrors.detalle?.[0] ?? null);
+    const faltaAlcance = tieneVariosPlanes && !alcance;
+    if (!resultado.success || faltaAlcance) {
+      if (faltaAlcance) setErrorAlcance("Elegí qué querés dar de baja");
+      if (!resultado.success) {
+        const { fieldErrors } = resultado.error.flatten();
+        setErrorMotivo(fieldErrors.motivo?.[0] ?? null);
+        setErrorDetalle(fieldErrors.detalle?.[0] ?? null);
+      }
       return;
     }
     const { motivo: motivoElegido, detalle: detalleEscrito } = resultado.data;
-    if (detalleEscrito) onConfirm(motivoElegido, detalleEscrito);
-    else onConfirm(motivoElegido);
+    const inscripcionObjetivo = tieneVariosPlanes && alcance === "UNO" ? idInscripcion : undefined;
+    if (detalleEscrito) onConfirm(motivoElegido, detalleEscrito, inscripcionObjetivo);
+    else onConfirm(motivoElegido, undefined, inscripcionObjetivo);
   };
 
   const elegirMotivo = (valor: string) => {
@@ -75,7 +86,7 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
       <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
         <AlertDialogHeader className={CABECERA_MODAL}>
           <AlertDialogTitle className={TITULO_MODAL}>
-            ¿Dar de baja a {nombre}?
+            ¿Seguro que desea realizar la baja?
           </AlertDialogTitle>
           <AlertDialogDescription className={DESCRIPCION_MODAL}>
             El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a
@@ -124,6 +135,56 @@ export function ModalBajaAlumno({ nombre, dandoDeBaja, errorBaja, onClose, onCon
                 setErrorDetalle(null);
               }}
             />
+          )}
+
+          {tieneVariosPlanes && (
+            <fieldset className="flex flex-col gap-2" aria-describedby={errorAlcance ? "error-alcance-baja" : undefined}>
+              <legend className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">
+                Alcance de la baja <span className="text-rose-600" aria-hidden="true">*</span>
+                <span className="sr-only">(obligatorio)</span>
+              </legend>
+              <RadioGroup
+                value={alcance}
+                onValueChange={(valor) => {
+                  setAlcance(valor as "UNO" | "TODOS");
+                  setErrorAlcance(null);
+                }}
+                aria-invalid={errorAlcance !== null}
+                className="grid grid-cols-1 gap-2"
+              >
+                <Label
+                  htmlFor="alcance-baja-uno"
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:has-data-[state=checked]:border-white dark:has-data-[state=checked]:bg-white/10"
+                >
+                  <RadioGroupItem id="alcance-baja-uno" value="UNO" />
+                  Dar de baja un solo plan
+                </Label>
+                {alcance === "UNO" && (
+                  <SelectorDesplegable
+                    aria-label="Plan a dar de baja"
+                    valor={String(idInscripcion)}
+                    opciones={inscripciones.map((i) => ({
+                      valor: String(i.id_inscripcion),
+                      texto: i.plan.nombre,
+                    }))}
+                    onChange={(v) => setIdInscripcion(Number(v))}
+                    variante="formulario"
+                  />
+                )}
+                <Label
+                  htmlFor="alcance-baja-todos"
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 has-data-[state=checked]:border-slate-900 has-data-[state=checked]:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:has-data-[state=checked]:border-white dark:has-data-[state=checked]:bg-white/10"
+                >
+                  <RadioGroupItem id="alcance-baja-todos" value="TODOS" />
+                  Dar de baja al alumno completo (todos los planes)
+                </Label>
+              </RadioGroup>
+              {errorAlcance && (
+                <p id="error-alcance-baja" className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                  {errorAlcance}
+                </p>
+              )}
+            </fieldset>
           )}
 
           {errorBaja && (

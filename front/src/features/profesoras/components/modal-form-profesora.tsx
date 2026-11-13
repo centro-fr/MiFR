@@ -110,7 +110,7 @@ export function ModalFormProfesora({
                 onChange={(e) => setNombre(e.target.value)}
                 placeholder="Ej: Laura"
                 disabled={guardando}
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+                className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
             <div className={CAMPO_MODAL}>
@@ -123,7 +123,7 @@ export function ModalFormProfesora({
                 onChange={(e) => setApellido(e.target.value)}
                 placeholder="Ej: García"
                 disabled={guardando}
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+                className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ export function ModalFormProfesora({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ejemplo@gmail.com"
               disabled={guardando}
-              className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+              className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
             />
           </div>
 
@@ -157,7 +157,7 @@ export function ModalFormProfesora({
                 onChange={(e) => setTelefono(e.target.value)}
                 placeholder="Ej: 11 2345-6789"
                 disabled={guardando}
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+                className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
             <div className={CAMPO_MODAL}>
@@ -171,7 +171,7 @@ export function ModalFormProfesora({
                 max={fechaMaximaMayorEdad}
                 min="1920-01-01"
                 disabled={guardando}
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
+                className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />
             </div>
           </div>

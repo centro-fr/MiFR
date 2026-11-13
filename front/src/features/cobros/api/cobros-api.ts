@@ -20,7 +20,6 @@ export const cotizacionCobroSchema = z.object({
   promocion: z
     .object({
       id_promocion: z.number().int(),
-      codigo: z.string(),
       nombre: z.string(),
     })
     .nullable(),
@@ -63,7 +62,7 @@ export function calcularCotizacionCobro(
     descuento,
     monto: redondearMonto(Math.max(0, datos.precioLista - descuento)),
     promocion: promocion
-      ? { id_promocion: Number(promocion.id), codigo: promocion.codigo, nombre: promocion.nombre }
+      ? { id_promocion: Number(promocion.id), nombre: promocion.nombre }
       : null,
   };
 }

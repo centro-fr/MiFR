@@ -12,6 +12,9 @@ export function tituloDelRanking(periodo: { desde: string; hasta: string }, hoy:
   const hasta = periodo.hasta.slice(0, 10);
   const anio = desde.slice(0, 4);
   const mismoAnio = anio === hasta.slice(0, 4);
+  if (desde.slice(0, 4) <= "2000" && hasta >= hoy) {
+    return "Ranking histórico general";
+  }
   if (desde.endsWith("-01") && desde.slice(0, 7) === hasta.slice(0, 7)) {
     return `Ranking de ${nombreDelMes(desde)}${anio === hoy.slice(0, 4) ? "" : ` ${anio}`}`;
   }

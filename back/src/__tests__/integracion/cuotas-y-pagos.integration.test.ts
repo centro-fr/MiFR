@@ -7,7 +7,7 @@ import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { armarCuotasYPagos, UN_DIA_EN_MS } from "./cobro.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
-import { crearAlumno, crearHorarioDePrueba } from "./fabricas.js";
+import { crearAlumno, crearHorarioDePrueba, crearInscripcionDePrueba } from "./fabricas.js";
 
 // Casos PI-33 en adelante: cuotas y pagos (US-15, US-16, US-17) y el precio que aplica el cobro
 // (US-12) sobre los datos de db:seed:demo. Sofía Medina está pre-inscripta en el Básico y sin
@@ -687,5 +687,118 @@ describe("PI-52: el historial de cuotas y pagos en la ficha", () => {
     expect(deCarla.status).toBe(200);
     expect(deCarla.body.historial_cuotas).toBeNull();
     expect(deCarla.body.inscripciones[0].situacion_cuota).toMatchObject({ estado: "AL_DIA" });
+  });
+});
+
+// Valentina suma el Básico con Carla los sábados, además de su Intermedio: un plan por actividad.
+async function sumarleElBasicoAValentina(): Promise<number> {
+  const idPlan = datos.idPlan.get("Básico")!;
+  const precio = await prisma.plan_precios.findFirstOrThrow({
+    where: { id_plan: idPlan },
+    select: { id_plan_precio: true },
+  });
+  const { id_horario } = await crearHorarioDePrueba(prisma, {
+    id_actividad: datos.idActividad.get("FUNCIONAL")!,
+    id_profesora: idCarla,
+    dia_semana: 6,
+    hora_inicio: "10:00",
+    hora_fin: "11:00",
+  });
+  const { id_inscripcion } = await crearInscripcionDePrueba(prisma, {
+    id_alumno: datos.idAlumno.get(DNI_VALENTINA)!,
+    plan: { id_plan: idPlan, id_plan_precio: precio.id_plan_precio },
+    id_profesora: idCarla,
+    id_horario,
+    fecha_inicio: new Date("2026-01-05T00:00:00Z"),
+  });
+  return id_inscripcion;
+}
+
+describe("PI-95: el listado de alumnos trae todas las inscripciones vigentes de cada uno", () => {
+  it("el alumno con dos planes trae los dos, cada uno con su cuota, y lo representa el más reciente", async () => {
+    const idBasico = await sumarleElBasicoAValentina();
+    const idIntermedio = datos.idInscripcion.get(DNI_VALENTINA)!;
+
+    const listado = await pedir("get", "/alumnos?limit=100", EMAIL_MULTIROL_DEMO);
+
+    expect(listado.status).toBe(200);
+    const valentina = listado.body.datos.find(
+      (alumno: { id_alumno: number }) => alumno.id_alumno === datos.idAlumno.get(DNI_VALENTINA),
+    );
+    expect(valentina.inscripcion).toMatchObject({ id_inscripcion: idIntermedio, nombre_plan: "Intermedio" });
+    expect(valentina.situacion_cuota).toMatchObject({ estado: "AL_DIA" });
+    expect(valentina.inscripciones).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idIntermedio,
+        nombre_plan: "Intermedio",
+        situacion_cuota: expect.objectContaining({ estado: "AL_DIA" }),
+      }),
+      expect.objectContaining({
+        id_inscripcion: idBasico,
+        nombre_plan: "Básico",
+        nombre_profesora: "Carla Ruiz",
+        situacion_cuota: expect.objectContaining({ estado: "PENDIENTE_DE_PAGO" }),
+      }),
+    ]);
+  });
+
+  it("el alumno con un plan trae uno y el dado de baja ninguno", async () => {
+    const idSofia = datos.idAlumno.get(DNI_SOFIA)!;
+    const baja = await pedir("post", `/alumnos/${idSofia}/baja`, EMAIL_MULTIROL_DEMO, {
+      motivo_baja: "ABANDONO",
+    });
+    expect(baja.status).toBe(200);
+
+    const listado = await pedir("get", "/alumnos?limit=100&incluirBajas=true", EMAIL_MULTIROL_DEMO);
+
+    const porId = new Map(
+      listado.body.datos.map((alumno: { id_alumno: number; inscripciones: unknown[] }) => [
+        alumno.id_alumno,
+        alumno.inscripciones,
+      ]),
+    );
+    expect(porId.get(datos.idAlumno.get(DNI_VALENTINA))).toHaveLength(1);
+    expect(porId.get(idSofia)).toEqual([]);
+  });
+});
+
+describe("PI-96: las transferencias de dos planes del mismo alumno", () => {
+  it("cada plan informa la suya, el listado las distingue por inscripción y se revisan de a una", async () => {
+    const idBasico = await sumarleElBasicoAValentina();
+    const idIntermedio = datos.idInscripcion.get(DNI_VALENTINA)!;
+    const informar = (id_inscripcion: number, monto: number) =>
+      pedir("post", "/pagos/transferencia", EMAIL_CARLA, {
+        id_inscripcion,
+        monto,
+        fecha_hora_transferencia: HACE_UNA_HORA(),
+      });
+
+    const delIntermedio = await informar(idIntermedio, 30000);
+    const delBasico = await informar(idBasico, 25000);
+    expect([delIntermedio.status, delBasico.status]).toEqual([201, 201]);
+
+    const pendientes = await pedir("get", "/pagos/transferencias?estado=PENDIENTE", EMAIL_MULTIROL_DEMO);
+    expect(pendientes.body.total).toBe(2);
+    expect(pendientes.body.datos).toEqual([
+      expect.objectContaining({
+        id_pago: delIntermedio.body.id_pago,
+        id_inscripcion: idIntermedio,
+        plan: "Intermedio",
+      }),
+      expect.objectContaining({ id_pago: delBasico.body.id_pago, id_inscripcion: idBasico, plan: "Básico" }),
+    ]);
+
+    const aprobada = await pedir("post", `/pagos/${delBasico.body.id_pago}/aprobar`, EMAIL_MULTIROL_DEMO);
+
+    expect(aprobada.status).toBe(200);
+    const estados = await prisma.pagos.findMany({
+      where: { id_pago: { in: [delIntermedio.body.id_pago, delBasico.body.id_pago] } },
+      select: { id_pago: true, estado: true },
+      orderBy: { id_pago: "asc" },
+    });
+    expect(estados).toEqual([
+      { id_pago: delIntermedio.body.id_pago, estado: "PENDIENTE" },
+      { id_pago: delBasico.body.id_pago, estado: "CONFIRMADO" },
+    ]);
   });
 });

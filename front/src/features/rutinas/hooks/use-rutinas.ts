@@ -30,10 +30,10 @@ export function useMisAlumnos() {
   return useQuery({ queryKey: [...RUTINAS_QUERY_KEY, "mis-alumnos"], queryFn: listarMisAlumnos, staleTime: 5 * UN_MINUTO });
 }
 
-export function useRutinasDeAlumno(idAlumno: number, enabled: boolean) {
+export function useRutinasDeAlumno(idAlumno: number, enabled: boolean, idInscripcion?: number | null) {
   return useQuery({
-    queryKey: rutinasKey(idAlumno),
-    queryFn: () => listarRutinasDeAlumno(idAlumno),
+    queryKey: [...rutinasKey(idAlumno), idInscripcion ?? null],
+    queryFn: () => listarRutinasDeAlumno(idAlumno, idInscripcion),
     staleTime: UN_MINUTO,
     enabled,
   });

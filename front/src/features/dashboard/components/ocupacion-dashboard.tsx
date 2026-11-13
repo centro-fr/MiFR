@@ -8,7 +8,7 @@ import { useActividadesParaFiltro, useInformeOcupacion } from "@/features/report
 import { cn } from "@/utils/cn";
 
 const CONTROL =
-  "min-h-11 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-800 pointer-fine:min-h-9 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
+  "h-10 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 
 /** Ocupación de horarios (US-37): la semana como mapa de calor; en el celular, un día a la vez. */
 export function OcupacionDashboard() {

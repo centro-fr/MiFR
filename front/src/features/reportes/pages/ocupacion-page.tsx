@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { CalendarClock } from "lucide-react";
 import { MenuExportar } from "@/components/menu-exportar";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
@@ -269,34 +270,15 @@ export function OcupacionReportePage() {
             />
 
             <div className="flex items-center justify-start">
-              <div role="group" aria-label="Vista del reporte" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-                <button
-                  type="button"
-                  aria-pressed={vista === "mapa"}
-                  onClick={() => setVista("mapa")}
-                  className={cn(
-                    "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-                    vista === "mapa"
-                      ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-                  )}
-                >
-                  Mapa de calor
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={vista === "tabla"}
-                  onClick={() => setVista("tabla")}
-                  className={cn(
-                    "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-                    vista === "tabla"
-                      ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-                  )}
-                >
-                  Tabla
-                </button>
-              </div>
+              <PestanasFiltro
+                etiqueta="Vista del reporte"
+                opciones={[
+                  { id: "mapa", etiqueta: "Mapa de calor" },
+                  { id: "tabla", etiqueta: "Tabla" },
+                ]}
+                valor={vista}
+                onCambiar={setVista}
+              />
             </div>
 
             {vista === "mapa" ? (

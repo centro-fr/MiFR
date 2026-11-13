@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
-import { SelectorDeAlumno } from "@/features/portal-alumno/components/selector-de-alumno";
+import { SelectorDelPortal } from "@/features/portal-alumno/components/selector-del-portal";
 import { LogoFr } from "@/components/marca/logo-fr";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -51,7 +51,7 @@ const COOKIE_SIDEBAR = "sidebar_state";
 
 /** Ítem de navegación con estilo refinado según diseño oscuro */
 const CLASES_ITEM =
-  "h-11 pointer-fine:h-9.5 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-slate-800/70 hover:text-white [&>svg]:size-5 [&>svg]:text-slate-400 hover:[&>svg]:text-white data-[active=true]:bg-[#281525] data-[active=true]:text-white data-[active=true]:font-bold data-[active=true]:[&>svg]:text-primary group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden transition-colors";
+  "h-11 pointer-fine:h-9.5 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-slate-800/70 hover:text-white [&>svg]:size-4 [&>svg]:text-slate-400 hover:[&>svg]:text-white data-[active=true]:bg-[#281525] data-[active=true]:text-white data-[active=true]:font-bold data-[active=true]:[&>svg]:text-primary group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden transition-colors";
 
 function leerSidebarAbierto(): boolean {
   try {
@@ -62,7 +62,11 @@ function leerSidebarAbierto(): boolean {
 }
 
 function LogoMarca() {
-  return <LogoFr className="size-8" />;
+  return (
+    <div className="flex size-8 shrink-0 items-center justify-center">
+      <LogoFr className="size-8" />
+    </div>
+  );
 }
 
 /**
@@ -112,12 +116,6 @@ function ItemSimple({ item, alNavegar }: PropsItem) {
           <Icono aria-hidden="true" />
           <span className="flex-1 truncate">{item.etiqueta}</span>
           <Contador valor={item.contador} />
-          {item.esActivo && (
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-primary shrink-0 ml-auto group-data-[collapsible=icon]:hidden"
-            />
-          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -286,8 +284,8 @@ interface PropsSeccion {
 function SeccionMenu({ seccion, contraido, alNavegar }: PropsSeccion) {
   const idTitulo = useId();
   return (
-    <SidebarGroup className="py-1">
-      {seccion.titulo && !contraido && (
+    <SidebarGroup className="py-1 group-data-[collapsible=icon]:px-0">
+      {seccion.titulo && (
         <SidebarGroupLabel
           id={idTitulo}
           className="text-[11px] font-bold tracking-wider uppercase text-slate-400/90 px-3"
@@ -295,7 +293,7 @@ function SeccionMenu({ seccion, contraido, alNavegar }: PropsSeccion) {
           {seccion.titulo}
         </SidebarGroupLabel>
       )}
-      <SidebarMenu aria-labelledby={seccion.titulo && !contraido ? idTitulo : undefined}>
+      <SidebarMenu aria-labelledby={seccion.titulo ? idTitulo : undefined}>
         {seccion.items.map((item) => {
           const clave = item.to ?? item.etiqueta;
           if (!item.hijos) return <ItemSimple key={clave} item={item} alNavegar={alNavegar} />;
@@ -337,13 +335,12 @@ function SwitchRoles({
   rolActivo?: RoleCode;
   onCambiarRol: (panel: Panel) => void;
 }) {
-  const { state } = useSidebar();
-  if (!roles.includes("PROPIETARIA") || !roles.includes("PROFESORA") || state === "collapsed") {
+  if (!roles.includes("PROPIETARIA") || !roles.includes("PROFESORA")) {
     return null;
   }
 
   return (
-    <div className="px-3 pt-3 pb-1 group-data-[collapsible=icon]:hidden">
+    <div className="hidden md:block px-3 pt-3 pb-1 group-data-[collapsible=icon]:hidden">
       <div className="grid grid-cols-2 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 gap-1">
         <button
           type="button"
@@ -388,11 +385,11 @@ function BloqueUsuario() {
   };
 
   return (
-    <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2">
+    <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2">
       <div className="flex items-center gap-3 w-full group-data-[collapsible=icon]:justify-center">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Avatar className="size-9 shrink-0 border border-white/10 shadow-xs cursor-default">
+            <Avatar className="size-8 shrink-0 border border-white/10 shadow-xs cursor-default">
               {user?.fotoUrl && (
                 <AvatarImage
                   src={user.fotoUrl}
@@ -449,7 +446,7 @@ function MenuLateral({
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border bg-sidebar">
       <SidebarHeader className="h-14 flex flex-row items-center border-b border-sidebar-border px-3.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
-        <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
+        <div className="flex w-full items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
           <LogoMarca />
           <span className="truncate text-base font-black tracking-tight text-white group-data-[collapsible=icon]:hidden">
             MiFR
@@ -509,24 +506,84 @@ function MigasDePan({ migas }: { migas: Miga[] }) {
   );
 }
 
+interface PropsBarraSuperior {
+  migas: Miga[];
+  roles: readonly RoleCode[];
+  rolActivo?: RoleCode;
+  onCambiarRol: (panel: Panel) => void;
+}
+
 /** Barra superior: trigger del menú lateral, migas de pan, notificaciones y alternar tema */
 /** `centro`: el selector de menor del tutor, al medio de la barra. */
-function BarraSuperior({ migas, centro }: { migas: Miga[]; centro?: ReactNode }) {
+function BarraSuperior({
+  migas,
+  roles,
+  rolActivo,
+  onCambiarRol,
+  centro,
+}: PropsBarraSuperior & { centro?: ReactNode }) {
+  const tieneLosDos = roles.includes("PROPIETARIA") && roles.includes("PROFESORA");
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-bg-light pl-1.5 pr-3 sm:pl-2 sm:pr-4 dark:bg-canvas">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border md:border-border max-md:border-sidebar-border bg-bg-light max-md:bg-sidebar max-md:text-white pl-1.5 pr-3 sm:pl-2 sm:pr-4 dark:bg-canvas">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
-        <Separator orientation="vertical" className="h-4 hidden md:block" />
-        <div className="flex items-center gap-2.5 md:hidden">
+        <div className="ml-1 md:hidden">
           <LogoMarca />
-          <span className="text-sm font-extrabold text-dark dark:text-white">MiFR Centro</span>
         </div>
+        <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 max-md:ml-0 max-md:text-white max-md:hover:bg-white/10 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
+        <Separator orientation="vertical" className="h-4 hidden md:block" />
+        {!tieneLosDos && (
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="text-sm font-extrabold text-white">MiFR Centro</span>
+          </div>
+        )}
         <MigasDePan migas={migas} />
       </div>
       {centro}
+      {!centro && tieneLosDos && (
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Cambiar vista de rol"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-colors cursor-pointer"
+              >
+                <span>{rolActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
+                <ChevronDown className="size-4 shrink-0 text-slate-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
+              <DropdownMenuItem
+                onClick={() => onCambiarRol("PROPIETARIA")}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+                  rolActivo === "PROPIETARIA" && "bg-primary/20 text-white font-bold",
+                )}
+              >
+                Propietaria
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onCambiarRol("PROFESORA")}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+                  rolActivo === "PROFESORA" && "bg-primary/20 text-white font-bold",
+                )}
+              >
+                Profesora
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       <div className="flex flex-1 shrink-0 items-center justify-end gap-2">
-        <CampanaNotificaciones />
-        <ThemeToggle compacto />
+        <div className="max-md:hidden">
+          <CampanaNotificaciones />
+        </div>
+        <div className="md:hidden">
+          <CampanaNotificaciones sobreFondoOscuro />
+        </div>
+        <ThemeToggle compacto className="max-md:text-slate-300 max-md:hover:bg-white/10 max-md:hover:text-white" />
       </div>
     </header>
   );
@@ -579,7 +636,7 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovi
   if (usaAppMovil(panelActivo, esMobile)) {
     const titulo = tituloMovil ?? items.find((item) => item.esActivo)?.etiqueta ?? "MiFR";
     return (
-      <AppMovilLayout items={items} titulo={titulo} volverA={volverA} centro={esPortalDelAlumno && <SelectorDeAlumno sobreFondoOscuro />}>
+      <AppMovilLayout items={items} titulo={titulo} volverA={volverA} centro={esPortalDelAlumno && <SelectorDelPortal sobreFondoOscuro />}>
         {children}
       </AppMovilLayout>
     );
@@ -592,7 +649,13 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovi
     >
       <MenuLateral items={items} roles={roles} rolActivo={panelActivo} onCambiarRol={cambiarPanel} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <BarraSuperior migas={migas} centro={esPortalDelAlumno && <SelectorDeAlumno />} />
+        <BarraSuperior
+          migas={migas}
+          roles={roles}
+          rolActivo={panelActivo}
+          onCambiarRol={cambiarPanel}
+          centro={esPortalDelAlumno && <SelectorDelPortal />}
+        />
         <main className="flex w-full min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>

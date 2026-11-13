@@ -134,7 +134,6 @@ describe("ModalComprobante (US-15)", () => {
       data: {
         ...comprobanteEjemplo,
         promocion: {
-          codigo: "VERANO26",
           nombre: "Verano 2026",
           tipo_descuento: "PORCENTAJE",
           valor: 20,
@@ -155,7 +154,6 @@ describe("ModalComprobante (US-15)", () => {
       data: {
         ...comprobanteEjemplo,
         promocion: {
-          codigo: "DESCFIDEL",
           nombre: "Fidelidad",
           tipo_descuento: "MONTO_FIJO",
           valor: 4000,

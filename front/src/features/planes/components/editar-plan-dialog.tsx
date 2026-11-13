@@ -13,10 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ModalBajaPlan } from "@/features/planes/components/modales-plan";
 import {
   useActualizarPlan,
-  useDarDeBajaPlan,
   usePlanes,
   useRegistrarPrecioPlan,
 } from "@/features/planes/hooks/use-planes";
@@ -55,13 +53,11 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
   const { data: todosLosPlanes = [] } = usePlanes();
   const actualizar = useActualizarPlan();
   const registrarPrecio = useRegistrarPrecioPlan();
-  const darDeBaja = useDarDeBajaPlan();
 
   const [valores, setValores] = useState<PlanFormValues>(() =>
     plan ? valoresDelPlan(plan) : ({} as PlanFormValues)
   );
   const [errores, setErrores] = useState<ErroresPlanForm>({});
-  const [bajaAbierta, setBajaAbierta] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
   if (!plan) return null;
@@ -142,21 +138,8 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
     void guardar(valores);
   };
 
-  const confirmarBaja = async () => {
-    try {
-      await darDeBaja.mutateAsync(plan.id);
-      toast.info(`Plan "${plan.nombre}" dado de baja`);
-      setBajaAbierta(false);
-      onExito?.();
-      onClose();
-    } catch {
-      // El error se muestra en el modal de baja
-    }
-  };
-
   return (
-    <>
-      <Dialog
+    <Dialog
         open={plan !== null}
         onOpenChange={(abierto) => {
           if (!abierto && !estaCargando) onClose();
@@ -168,7 +151,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
           {/* Encabezado */}
           <DialogHeader className={CABECERA_MODAL}>
             <DialogTitle className={TITULO_MODAL}>
-              Editar plan {plan.nombre}
+              Editar plan
             </DialogTitle>
             <DialogDescription className={DESCRIPCION_MODAL}>
               Modificá el nombre, precio o descripción del plan.
@@ -191,7 +174,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   onChange={(e) => cambiar({ nombre: e.target.value })}
                   placeholder="Nombre del plan"
                   className={cn(
-                    "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                    "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
                     errores.nombre && "border-rose-500"
                   )}
                 />
@@ -218,7 +201,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                     onChange={(e) => cambiar({ precio: e.target.value })}
                     placeholder="35000"
                     className={cn(
-                      "h-11 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                      "h-10 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                       errores.precio && "border-rose-500"
                     )}
                   />
@@ -246,18 +229,6 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium"
                 />
               </div>
-
-              {/* Botón Dar de baja el plan */}
-              <div className="pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setBajaAbierta(true)}
-                  className="rounded-xl border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-bold text-xs sm:text-sm h-10 px-4"
-                >
-                  Dar de baja el plan
-                </Button>
-              </div>
             </div>
 
             {/* Footer de botones */}
@@ -282,17 +253,5 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Modal confirmación de baja */}
-      {bajaAbierta && (
-        <ModalBajaPlan
-          nombre={plan.nombre}
-          dandoDeBaja={darDeBaja.isPending}
-          error={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja el plan.") : null}
-          onClose={() => setBajaAbierta(false)}
-          onConfirm={() => void confirmarBaja()}
-        />
-      )}
-    </>
   );
 }

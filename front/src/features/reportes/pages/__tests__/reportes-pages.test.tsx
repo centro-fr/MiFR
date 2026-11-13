@@ -197,7 +197,7 @@ describe("Páginas de Reportes (Estandarización)", () => {
     renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
     const seccion = screen.getByRole("region", { name: "Mes a mes, año contra año" });
 
-    fireEvent.click(within(seccion).getByRole("button", { name: "Bajas" }));
+    fireEvent.click(within(seccion).getByRole("tab", { name: "Bajas" }));
     expect(within(seccion).getByText(/abril es el mes con más bajas/)).toBeInTheDocument();
 
     const bajas = screen.getByRole("region", { name: "Bajas del año" });

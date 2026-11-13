@@ -37,10 +37,10 @@ Todas las vistas deben mantener la misma jerarquía de encabezado con título `h
 {/* ENCABEZADO PRINCIPAL */}
 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
   <div className="min-w-0">
-    <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
       {tituloPagina}
     </h1>
-    <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+    <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
       {descripcionPagina}
     </p>
   </div>
@@ -192,7 +192,7 @@ Para páginas que alternan entre diferentes sub-vistas o estados (como Cobros y 
           variant="outline"
           onClick={onClose}
           disabled={guardando}
-          className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+          className="h-11 px-6 rounded-xl font-bold text-xs sm:text-sm border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:text-white"
         >
           Cancelar
         </Button>
@@ -298,7 +298,7 @@ Para vistas basadas en tarjetas (como la nueva pantalla de Planes):
       type="button"
       variant="outline"
       onClick={onAccionSecundaria}
-      className="flex-1 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+      className="flex-1 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
     >
       Cambiar precio
     </Button>
@@ -306,7 +306,7 @@ Para vistas basadas en tarjetas (como la nueva pantalla de Planes):
       type="button"
       variant="outline"
       onClick={onEditar}
-      className="px-6 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200"
+      className="px-6 h-11 rounded-xl font-bold text-sm border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
     >
       Editar
     </Button>

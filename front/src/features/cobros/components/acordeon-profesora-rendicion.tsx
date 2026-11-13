@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { AlertCircle, ChevronDown, Clock } from "lucide-react";
+import { BOTON_FILA, LISTA_MOVIL } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
@@ -96,7 +98,7 @@ export function AcordeonProfesoraRendicion({
                 onRendirLote(profesora);
               }}
               aria-label={`Rendir todo el efectivo de ${nombreCompleto}`}
-              className="h-9 rounded-xl bg-primary px-3 text-xs font-bold text-white shadow-2xs hover:bg-primary-dark"
+              className="h-8 min-h-0 shrink-0 rounded-lg bg-primary px-3 text-xs font-semibold text-white shadow-2xs hover:bg-primary-dark"
             >
               Rendir todo
             </Button>
@@ -194,10 +196,9 @@ export function AcordeonProfesoraRendicion({
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
                               onClick={() => onRendirIndividual(cobro)}
                               aria-label={`Rendir cobro de ${cobro.alumno.nombre} ${cobro.alumno.apellido}`}
-                              className="h-7 rounded-lg border-slate-200 text-xs font-semibold hover:text-primary dark:border-slate-700"
+                              className={BOTON_FILA}
                             >
                               Rendir
                             </Button>
@@ -209,59 +210,44 @@ export function AcordeonProfesoraRendicion({
                 </table>
               </div>
 
-              {/* Tarjetas Mobile */}
-              <div className="grid gap-2.5 xl:hidden">
+              {/* Mobile: filas con el contenido arriba y la acción abajo */}
+              <ul aria-label="Cobros sin rendir" className={cn(LISTA_MOVIL, "xl:hidden")}>
                 {cobros.map((cobro) => {
                   const dias = cobro.dias_sin_rendir;
-                  const esAtrasado = dias >= 15;
+                  const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                   return (
-                    <div
+                    <FilaMovil
                       key={cobro.id_pago}
-                      className="w-full min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 text-xs shadow-2xs dark:border-slate-800 dark:bg-slate-900"
-                    >
-                      <div className="flex items-center justify-between gap-2 min-w-0">
-                        <span className="font-bold text-slate-900 dark:text-white truncate flex-1 min-w-0">
-                          {cobro.alumno.nombre} {cobro.alumno.apellido}
-                        </span>
+                      titulo={nombreAlumno}
+                      insignia={
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shrink-0",
-                            esAtrasado
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                            dias >= 15
                               ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-200"
-                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
                           )}
                         >
-                          <Clock className="size-2.5" />
-                          <span>{dias === 0 ? "Hoy" : `Hace ${dias} d`}</span>
+                          <Clock aria-hidden="true" className="size-2.5" />
+                          {dias === 0 ? "Hoy" : `Hace ${dias} d`}
                         </span>
-                      </div>
-
-                      <div className="mt-1.5 flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span>{cobro.plan}</span>
-                        <span className="font-extrabold text-slate-900 dark:text-white text-sm">
-                          {formatearPrecio(cobro.monto)}
-                        </span>
-                      </div>
-
-                      <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800">
-                        <span className="text-[11px] text-slate-400">
-                          Cobrado: {formatearFechaCorta(cobro.fecha_pago)}
-                        </span>
+                      }
+                      detalle={[cobro.plan, formatearPrecio(cobro.monto), `Cobrado ${formatearFechaCorta(cobro.fecha_pago)}`]}
+                      acciones={
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
                           onClick={() => onRendirIndividual(cobro)}
-                          aria-label={`Rendir cobro de ${cobro.alumno.nombre} ${cobro.alumno.apellido}`}
-                          className="h-7 rounded-lg text-xs font-bold hover:text-primary"
+                          aria-label={`Rendir cobro de ${nombreAlumno}`}
+                          className={BOTON_FILA}
                         >
                           Rendir
                         </Button>
-                      </div>
-                    </div>
+                      }
+                    />
                   );
                 })}
-              </div>
+              </ul>
             </>
           )}
         </div>

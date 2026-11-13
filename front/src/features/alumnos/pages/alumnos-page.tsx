@@ -5,22 +5,31 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  SlidersHorizontal,
 } from "lucide-react";
+import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { Can } from "@/components/guards/can";
+import { BOTON_FILA, BOTON_FILA_PELIGRO, LISTA_MOVIL } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
 import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { obtenerAlumno, type FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
-import { useAlumnos, useListaCompletaAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import { useAlumnos, useDarDeBajaAlumno, useListaCompletaAlumnos } from "@/features/alumnos/hooks/use-alumnos";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
+import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
 import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
+import type { MotivoBaja } from "@/types/alumno";
 import { compararAlumnosPorCuota, etiquetaCuota } from "@/features/alumnos/utils/situacion-cuota";
+import { claveDeFila } from "@/features/alumnos/utils/filas-por-plan";
+import { datosDeCobro } from "@/features/alumnos/utils/cobro-de-inscripcion";
 import { ModalPreinscripcion } from "@/features/alumnos/components/preinscripcion/ModalPreinscripcion";
 import { ListadoAlumnosProfesora } from "@/features/alumnos/components/listado-alumnos-profesora";
 import { useFormasDePrimerPago } from "@/features/alumnos/hooks/use-formas-de-primer-pago";
@@ -170,14 +179,22 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   const puedeCobrar = useFormasDePrimerPago().length > 0;
   const [idInscripcionACobrar, setIdInscripcionACobrar] = useState<number | null>(null);
   const terminarCobro = useCallback(() => setIdInscripcionACobrar(null), []);
-  const [idAlumnoACobrar, setIdAlumnoACobrar] = useState<number | null>(null);
+  // Cada fila es una inscripción: el cobro va contra el plan de la fila.
+  const [cobroDeLaFila, setCobroDeLaFila] = useState<{ idAlumno: number; idInscripcion: number | null } | null>(null);
   const [comprobanteId, setComprobanteId] = useState<number | null>(null);
+  const [alumnoBaja, setAlumnoBaja] = useState<AlumnoResumen | null>(null);
+  const darDeBaja = useDarDeBajaAlumno(alumnoBaja?.id_alumno ?? 0);
 
   const { data: alumnoDetalleCobro } = useQuery({
-    queryKey: ["alumnos", "cobro-listado", idAlumnoACobrar],
-    queryFn: () => obtenerAlumno(idAlumnoACobrar!),
-    enabled: idAlumnoACobrar !== null,
+    queryKey: ["alumnos", "cobro-listado", cobroDeLaFila?.idAlumno],
+    queryFn: () => obtenerAlumno(cobroDeLaFila!.idAlumno),
+    enabled: cobroDeLaFila !== null,
   });
+  const inscripcionACobrar =
+    cobroDeLaFila && alumnoDetalleCobro
+      ? (alumnoDetalleCobro.inscripciones.find((i) => i.id_inscripcion === cobroDeLaFila.idInscripcion) ??
+        alumnoDetalleCobro.inscripcion)
+      : null;
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => setBusquedaDebounced(busqueda.trim()), 300);
@@ -214,16 +231,19 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   }, [paginaInactivos]);
 
   // Consultas ligeras de conteo para los tabs de estado
-  const consultaTodos = useAlumnos({
-    busqueda: busquedaDebounced,
-    id_plan: filtros.id_plan,
-    id_profesora: idProfesora,
-    id_actividad: filtros.id_actividad,
-    estado: "TODOS",
-    incluir_bajas: false,
-    limit: 1,
-    offset: 0,
-  });
+  const consultaTodos = useAlumnos(
+    {
+      busqueda: busquedaDebounced,
+      id_plan: filtros.id_plan,
+      id_profesora: idProfesora,
+      id_actividad: filtros.id_actividad,
+      estado: "TODOS",
+      incluir_bajas: false,
+      limit: 1,
+      offset: 0,
+    },
+    { unaFilaPorPlan: true },
+  );
 
   const consultaBajas = useAlumnos({
     busqueda: busquedaDebounced,
@@ -237,13 +257,16 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
   });
 
   // Consulta principal para la tabla y paginación
-  const consulta = useAlumnos({
-    busqueda: busquedaDebounced,
-    ...filtros,
-    id_profesora: idProfesora,
-    limit: TAMANO_PAGINA,
-    offset: pagina * TAMANO_PAGINA,
-  });
+  const consulta = useAlumnos(
+    {
+      busqueda: busquedaDebounced,
+      ...filtros,
+      id_profesora: idProfesora,
+      limit: TAMANO_PAGINA,
+      offset: pagina * TAMANO_PAGINA,
+    },
+    { unaFilaPorPlan: true },
+  );
 
   const respuesta = consulta.data;
   const paginas = Math.max(1, Math.ceil((respuesta?.total ?? 0) / TAMANO_PAGINA));
@@ -343,10 +366,10 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       {/* Encabezado */}
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             Listado
           </h1>
-          <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+          <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-normal">
             Búsqueda y gestión de alumnos
           </p>
         </div>
@@ -383,20 +406,15 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           </div>
 
           {/* Botón de filtros para mobile */}
-          <button
-            type="button"
-            aria-label="Filtros adicionales"
-            onClick={() => setMostrarFiltrosMobile((v) => !v)}
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              (mostrarFiltrosMobile || hayFiltrosActivos(busquedaDebounced, filtros, filtroCuota)) && "border-primary text-primary"
-            )}
-          >
-            <SlidersHorizontal className="size-4" />
-          </button>
+          <BotonFiltrosMovil
+            abierto={mostrarFiltrosMobile}
+            activos={hayFiltrosActivos(busquedaDebounced, filtros, filtroCuota)}
+            onAlternar={() => setMostrarFiltrosMobile((v) => !v)}
+            idPanel="filtros-del-listado"
+          />
 
           {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
-          <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+          <div id="filtros-del-listado" className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
             {/* Select Plan */}
             <SelectorDesplegable
               id="desktop-filtro-plan"
@@ -475,61 +493,17 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
       </section>
 
       {/* Tabs de estado para mobile */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado("TODOS")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            !soloContactar && filtros.estado === "TODOS"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
-          )}
-        >
-          <span>Todos</span>
-          <span
-            className={cn(
-              !soloContactar && filtros.estado === "TODOS"
-                ? "text-primary font-black"
-                : "text-slate-500"
-            )}
-          >
-            {conteoTodos}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado(filtros.estado === "BAJA" ? "TODOS" : "BAJA")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            !soloContactar && filtros.estado === "BAJA"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
-          )}
-        >
-          <span>Bajas</span>
-          <span
-            className={cn(!soloContactar && filtros.estado === "BAJA" ? "text-primary font-black" : "text-slate-500")}
-          >
-            {conteoBajas}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => seleccionarTabEstado("CONTACTAR")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            soloContactar
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
-          )}
-        >
-          <span>Contactar</span>
-          <span className={cn(soloContactar ? "text-primary font-black" : "text-slate-500")}>
-            {conteoContactar}
-          </span>
-        </button>
-      </div>
+      <PestanasFiltro
+        className="lg:hidden"
+        etiqueta="Estado de los alumnos"
+        opciones={[
+          { id: "TODOS", etiqueta: "Todos", conteo: conteoTodos },
+          { id: "BAJA", etiqueta: "Bajas", conteo: conteoBajas },
+          { id: "CONTACTAR", etiqueta: "Contactar", conteo: conteoContactar },
+        ]}
+        valor={soloContactar ? "CONTACTAR" : filtros.estado === "BAJA" ? "BAJA" : "TODOS"}
+        onCambiar={(id) => seleccionarTabEstado(id === "BAJA" && filtros.estado === "BAJA" ? "TODOS" : id)}
+      />
 
       {/* Feedback de carga y errores */}
       {consulta.isPending ? (
@@ -640,8 +614,8 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
         </div>
       ) : (
         <>
-          {/* Vista Mobile: Lista agrupada limpia en tonos neutros igual que en Ausentes */}
-          <div className="lg:hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+          {/* Vista Mobile: lista de filas (contenido arriba, acciones abajo), como en las demás pantallas */}
+          <ul aria-label="Alumnos" className={cn(LISTA_MOVIL, "lg:hidden")}>
             {itemsVisibles.map((alumno) => {
               const faltasSeguidas =
                 alumno.inasistencias_consecutivas ??
@@ -649,61 +623,68 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                 0;
               const baseSubtitulo = alumno.plan || (alumno.dni ? `DNI ${formatearDni(alumno.dni)}` : "Sin plan");
               const estadoCuotaMobile = alumno.situacion_cuota ? etiquetaCuota(alumno.situacion_cuota.estado) : null;
-              const textoFaltasMobile = `${faltasSeguidas} faltas`;
-              const subtitulo = [baseSubtitulo, estadoCuotaMobile, textoFaltasMobile].filter(Boolean).join(" · ");
+              const subtitulo = [baseSubtitulo, estadoCuotaMobile, `${faltasSeguidas} faltas`];
               const cuotaCobrable =
                 alumno.situacion_cuota?.estado === "POR_VENCER" ||
                 alumno.situacion_cuota?.estado === "VENCIDA" ||
                 alumno.situacion_cuota?.estado === "CLASE_SUELTA_VENCIDA";
+              const irALaFicha = () => navigate(`/app/alumnos/${alumno.id_alumno}`);
 
               return (
-                <Link
-                  key={alumno.id_alumno}
-                  to={`/app/alumnos/${alumno.id_alumno}`}
-                  className="flex items-center justify-between gap-3 p-3.5 transition-colors hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:bg-slate-700/40"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-pink-700 dark:bg-pink-950/70 dark:text-pink-200">
-                      {iniciales(alumno.nombre_completo)}
-                    </span>
-                    <div className="min-w-0">
-                      <h2 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
-                        {alumno.nombre_completo}
-                      </h2>
-                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                        {subtitulo}
-                      </p>
+                <FilaMovil
+                  key={claveDeFila(alumno)}
+                  avatar={alumno.nombre_completo}
+                  titulo={
+                    <Link
+                      to={`/app/alumnos/${alumno.id_alumno}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {alumno.nombre_completo}
                       {/* Spans accesibles que satisfacen pruebas y selectores */}
-                      <span className={cn("hidden", colorEstado(alumno.estado))}>
-                        {etiquetaEstado(alumno.estado)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {cuotaCobrable && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setIdAlumnoACobrar(alumno.id_alumno);
-                        }}
-                        aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
-                        className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                      >
-                        Cobrar
+                      <span className={cn("hidden", colorEstado(alumno.estado))}>{etiquetaEstado(alumno.estado)}</span>
+                    </Link>
+                  }
+                  detalle={subtitulo}
+                  onAbrir={irALaFicha}
+                  acciones={
+                    <>
+                      {cuotaCobrable && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCobroDeLaFila({ idAlumno: alumno.id_alumno, idInscripcion: alumno.id_inscripcion ?? null })}
+                          aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
+                          className={BOTON_FILA}
+                        >
+                          Cobrar
+                        </Button>
+                      )}
+                      <Button type="button" variant="outline" onClick={irALaFicha} className={BOTON_FILA}>
+                        Ver ficha
                       </Button>
-                    )}
-                    <span className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200">
-                      Ver ficha
-                    </span>
-                  </div>
-                </Link>
+                      {alumno.estado !== "BAJA" && (
+                        <Can permission="ALUMNOS_EDITAR">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              darDeBaja.reset();
+                              setAlumnoBaja(alumno);
+                            }}
+                            aria-label={`Dar de baja a ${alumno.nombre_completo}`}
+                            className={BOTON_FILA_PELIGRO}
+                          >
+                            Dar de baja
+                          </Button>
+                        </Can>
+                      )}
+                    </>
+                  }
+                />
               );
             })}
-          </div>
+          </ul>
 
           {/* Vista Desktop: Tabla limpia exactamente como en la imagen */}
           <div className="hidden overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs lg:block dark:border-slate-700/80 dark:bg-slate-900">
@@ -816,7 +797,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
 
                     return (
                       <tr
-                        key={alumno.id_alumno}
+                        key={claveDeFila(alumno)}
                         onClick={() => navigate(`/app/alumnos/${alumno.id_alumno}`)}
                         className="group cursor-pointer transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60"
                       >
@@ -909,7 +890,7 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                                   variant="outline"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setIdAlumnoACobrar(alumno.id_alumno);
+                                    setCobroDeLaFila({ idAlumno: alumno.id_alumno, idInscripcion: alumno.id_inscripcion ?? null });
                                   }}
                                   aria-label={`Cobrar cuota de ${alumno.nombre_completo}`}
                                   className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
@@ -928,6 +909,23 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
                             >
                               Ver ficha
                             </Button>
+                            {alumno.estado !== "BAJA" && (
+                              <Can permission="ALUMNOS_EDITAR">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    darDeBaja.reset();
+                                    setAlumnoBaja(alumno);
+                                  }}
+                                  aria-label={`Dar de baja a ${alumno.nombre_completo}`}
+                                  className={BOTON_FILA_PELIGRO}
+                                >
+                                  Dar de baja
+                                </Button>
+                              </Can>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -991,34 +989,18 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           <CobroInmediato idInscripcion={idInscripcionACobrar} onTerminar={terminarCobro} />
         </Suspense>
       )}
-      {idAlumnoACobrar !== null && alumnoDetalleCobro?.inscripcion && (
+      {alumnoDetalleCobro && inscripcionACobrar && (
         <ModalRegistrarCobro
-          abierto={idAlumnoACobrar !== null}
-          onClose={() => setIdAlumnoACobrar(null)}
-          alumno={{
-            id_alumno: alumnoDetalleCobro.id_alumno,
-            nombre: alumnoDetalleCobro.usuario.nombre,
-            apellido: alumnoDetalleCobro.usuario.apellido,
-            dni: alumnoDetalleCobro.usuario.dni,
-          }}
-          inscripcion={{
-            id_inscripcion: alumnoDetalleCobro.inscripcion.id_inscripcion,
-            id_plan: alumnoDetalleCobro.inscripcion.plan.id_plan,
-            nombre_plan: alumnoDetalleCobro.inscripcion.plan.nombre,
-            precio_vigente: alumnoDetalleCobro.inscripcion.plan.precio,
-            situacion_cuota: alumnoDetalleCobro.inscripcion.situacion_cuota,
-          }}
-          plan={{
-            id: String(alumnoDetalleCobro.inscripcion.plan.id_plan),
-            nombre: alumnoDetalleCobro.inscripcion.plan.nombre,
-          }}
+          abierto
+          onClose={() => setCobroDeLaFila(null)}
+          {...datosDeCobro(alumnoDetalleCobro, inscripcionACobrar)}
           onExito={(idPago) => {
-            setIdAlumnoACobrar(null);
+            setCobroDeLaFila(null);
             setComprobanteId(idPago);
             void consulta.refetch();
           }}
           onTransferenciaInformada={() => {
-            setIdAlumnoACobrar(null);
+            setCobroDeLaFila(null);
             void consulta.refetch();
           }}
         />
@@ -1028,6 +1010,29 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
           idPago={comprobanteId}
           abierto={comprobanteId !== null}
           onClose={() => setComprobanteId(null)}
+        />
+      )}
+      {alumnoBaja && (
+        <ModalBajaAlumno
+          nombre={alumnoBaja.nombre_completo}
+          dandoDeBaja={darDeBaja.isPending}
+          errorBaja={
+            darDeBaja.isError
+              ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.")
+              : null
+          }
+          onClose={() => setAlumnoBaja(null)}
+          onConfirm={(motivo: MotivoBaja, detalle?: string) => {
+            darDeBaja.mutate(
+              { motivo, detalle, idInscripcion: alumnoBaja.id_inscripcion ?? undefined },
+              {
+                onSuccess: () => {
+                  toast.info(`${alumnoBaja.nombre_completo} dado de baja`);
+                  setAlumnoBaja(null);
+                },
+              },
+            );
+          }}
         />
       )}
     </div>

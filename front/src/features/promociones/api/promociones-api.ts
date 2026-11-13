@@ -6,7 +6,6 @@ import type { Promocion } from "@/types/promocion";
 function aPromocion(api: z.infer<typeof promocionApiSchema>): Promocion {
   return {
     id: String(api.id_promocion),
-    codigo: api.codigo,
     nombre: api.nombre,
     tipoDescuento: api.tipo_descuento,
     valor: api.valor,

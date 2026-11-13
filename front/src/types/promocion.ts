@@ -8,7 +8,6 @@ export interface PlanDePromocion {
 
 export interface Promocion {
   id: string;
-  codigo: string;
   nombre: string;
   tipoDescuento: TipoDescuento;
   valor: number;

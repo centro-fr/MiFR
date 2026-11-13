@@ -15,6 +15,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TablaSkeleton, EstadoErrorCarga } from '@/components/ui/estados-pantalla';
 import { SelectorDesplegable } from '@/components/formulario/selector-desplegable';
 import { BotonLimpiarFiltros } from '@/components/ui/boton-limpiar-filtros';
+import { BotonFiltrosMovil } from '@/components/ui/boton-filtros-movil';
+import { clasePanelFiltros } from '@/components/ui/estilos-lista';
 import type { DiaSemana, Horario, HorarioFormData } from '../../../types/horarios';
 import { Plus } from 'lucide-react';
 
@@ -46,6 +48,7 @@ export const HorariosPage: React.FC = () => {
   } = useHorarios();
 
   const [selectedMobileDay, setSelectedMobileDay] = useState<DiaSemana>('LUNES');
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
   // Protección para no perder cambios en borrador si se recarga o cierra la ventana
   useEffect(() => {
@@ -166,10 +169,10 @@ export const HorariosPage: React.FC = () => {
         <div className="space-y-6 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
                 Horarios
               </h1>
-              <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+              <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
                 La semana del centro: qué clase hay, con quién y cuántos lugares quedan.
               </p>
             </div>
@@ -194,10 +197,10 @@ export const HorariosPage: React.FC = () => {
         {/* ENCABEZADO */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Horarios
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+            <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
               La semana del centro: qué clase hay, con quién y cuántos lugares quedan.
             </p>
           </div>
@@ -210,9 +213,16 @@ export const HorariosPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* BARRA DE FILTROS RESPONSIVE */}
+        {/* BARRA DE FILTROS RESPONSIVE: en el celular, detrás del botón "Filtros" */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-3">
+          <BotonFiltrosMovil
+            abierto={filtrosAbiertos}
+            activos={isFilterActive}
+            onAlternar={() => setFiltrosAbiertos((v) => !v)}
+            idPanel="filtros-horarios"
+            conTexto
+          />
+          <div id="filtros-horarios" className={clasePanelFiltros(filtrosAbiertos)}>
             {/* Profesor/a */}
             <SelectorDesplegable
               id="filtro-profesora"

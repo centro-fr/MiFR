@@ -146,7 +146,7 @@ export function ModalFormActividad({
               maxLength={60}
               placeholder={actividad ? "" : "Ej: Funcional"}
               className={cn(
-                "h-11 rounded-xl border px-3.5 py-2 font-bold text-slate-900 dark:text-slate-100 transition-colors focus:border-primary",
+                "h-10 rounded-xl border px-3.5 py-2 font-bold text-slate-900 dark:text-slate-100 transition-colors focus:border-primary",
                 errores.nombre
                   ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-950"
                   : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
@@ -171,7 +171,7 @@ export function ModalFormActividad({
               onChange={(e) => setDescripcion(e.target.value)}
               maxLength={255}
               placeholder={actividad ? "" : "Lo que ven los alumnos en la web"}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-medium text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors focus:border-primary"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-medium text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors focus:border-primary"
             />
           </div>
 
@@ -269,7 +269,7 @@ export function ModalFormActividad({
               value={cupo}
               onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
               className={cn(
-                "h-11 w-36 rounded-xl border px-3.5 py-2 font-bold text-slate-900 dark:text-slate-100 transition-colors focus:border-primary",
+                "h-10 w-36 rounded-xl border px-3.5 py-2 font-bold text-slate-900 dark:text-slate-100 transition-colors focus:border-primary",
                 errores.cupoMaximo
                   ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-950"
                   : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",

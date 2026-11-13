@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { etiquetaDelMes, periodoDelMes, sumarMeses } from "../mes-del-ranking";
+import { etiquetaDelMes, periodoDelAnio, periodoDelMes, sumarMeses } from "../mes-del-ranking";
 
 describe("mes del ranking", () => {
   it("cambia de mes, también de año", () => {
@@ -15,5 +15,10 @@ describe("mes del ranking", () => {
   it("pide el mes en curso sin filtros y un mes pasado completo", () => {
     expect(periodoDelMes("2026-11", "2026-11-12")).toEqual({});
     expect(periodoDelMes("2026-02", "2026-11-12")).toEqual({ desde: "2026-02-01", hasta: "2026-02-28" });
+  });
+
+  it("calcula el período anual correctamente", () => {
+    expect(periodoDelAnio("2026", "2026-11-12")).toEqual({ desde: "2026-01-01", hasta: "2026-11-12" });
+    expect(periodoDelAnio("2025", "2026-11-12")).toEqual({ desde: "2025-01-01", hasta: "2025-12-31" });
   });
 });

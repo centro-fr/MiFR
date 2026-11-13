@@ -51,6 +51,10 @@ const transferenciaSchema = pagoSchema.extend({ alumno: alumnoSchema }).openapi(
 // También lo muestra el resumen diario de la propietaria (US-26).
 export const transferenciaEnRevisionSchema = transferenciaSchema
   .extend({
+    id_inscripcion: z.number().int().openapi({
+      description:
+        "La inscripción que paga: un alumno con varios planes informa una transferencia por cada uno",
+    }),
     plan: z.string().openapi({ description: "El plan de la cuota que paga" }),
     monto_esperado: z
       .number()
@@ -85,7 +89,7 @@ const comprobanteSchema = z
       .nullable()
       .openapi({ description: "El precio del plan el día del cobro (US-12)" }),
     descuento: z.number().openapi({ description: "Lo que descontó la promoción; 0 si no tuvo (US-13)" }),
-    promocion: z.object({ codigo: z.string(), nombre: z.string() }).nullable(),
+    promocion: z.object({ nombre: z.string() }).nullable(),
     registrado_por: nombreSchema,
     profesora_cobra: nombreSchema.nullable(),
   })

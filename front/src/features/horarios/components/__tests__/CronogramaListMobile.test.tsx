@@ -35,8 +35,11 @@ describe("CronogramaListMobile", () => {
     render(<CronogramaListMobile {...defaultProps} horarios={[horario]} />);
 
     expect(screen.getByText("Funcional Grupal")).toBeInTheDocument();
-    expect(screen.getByText("Lucía Gómez")).toBeInTheDocument();
+    // Hora, profesora, modalidad y cupo van uno debajo del otro, como en las demás listas.
     expect(screen.getByText("10:00 - 11:00 hs")).toBeInTheDocument();
+    expect(screen.getByText("Lucía Gómez")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Eliminar" })).toBeInTheDocument();
   });
 
   it("permite cambiar de día seleccionado al hacer clic en una pestaña", () => {

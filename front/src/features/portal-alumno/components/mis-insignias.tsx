@@ -95,7 +95,7 @@ export function MisInsignias() {
           <h2 id="titulo-mis-insignias" className="text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
             {titulo}
           </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">Desbloqueá nuevos logros con tu asistencia.</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">Desbloqueá nuevos logros con tu asistencia.</p>
         </div>
         {insignias && (
           <Badge className="rounded-full bg-primary px-3 py-1 font-black text-white">

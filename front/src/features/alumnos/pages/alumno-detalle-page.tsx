@@ -44,6 +44,8 @@ import { HistorialCobrosAlumno } from "@/features/cobros/components/historial-co
 import { HistorialAsistenciaAlumno } from "@/features/alumnos/components/historial-asistencia-alumno";
 import { HistorialPlanesAlumno } from "@/features/alumnos/components/historial-planes-alumno";
 import { ModalRegistrarCobro } from "@/features/cobros/components/modal-registrar-cobro";
+import { ModalElegirPlanACobrar } from "@/features/alumnos/components/cobro-por-plan";
+import { datosDeCobro } from "@/features/alumnos/utils/cobro-de-inscripcion";
 import { RutinaYProgreso } from "@/features/rutinas/components/rutina-y-progreso";
 
 type SeccionFicha = "datos" | "plan" | "progreso" | "cobros" | "asistencia";
@@ -78,6 +80,7 @@ export function AlumnoDetallePage() {
   const [modalPlanHorariosAbierto, setModalPlanHorariosAbierto] = useState(false);
   const [editando, setEditando] = useState(false);
   const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
+  const [inscripcionCobroElegida, setInscripcionCobroElegida] = useState<InscripcionDeAlumno | null>(null);
   const [menuAccionesAbierto, setMenuAccionesAbierto] = useState(false);
   const [modalBajaAbierto, setModalBajaAbierto] = useState(false);
   const [modalReactivarAbierto, setModalReactivarAbierto] = useState(false);
@@ -98,6 +101,16 @@ export function AlumnoDetallePage() {
     ...(puedeVerCobros ? [{ id: "cobros" as const, etiqueta: "Cobros" }] : []),
     { id: "asistencia", etiqueta: "Asistencia" },
   ];
+
+  // Con un solo plan se cobra directo; con varios, primero se elige cuál.
+  const inscripcionesVigentes = alumno?.inscripciones ?? (alumno?.inscripcion ? [alumno.inscripcion] : []);
+  const inscripcionACobrar =
+    inscripcionCobroElegida ?? (inscripcionesVigentes.length < 2 ? (alumno?.inscripcion ?? inscripcionesVigentes[0] ?? null) : null);
+
+  function cerrarCobro() {
+    setModalCobroAbierto(false);
+    setInscripcionCobroElegida(null);
+  }
 
   function terminarEdicion() {
     setEditando(false);
@@ -209,14 +222,14 @@ export function AlumnoDetallePage() {
                 type="button"
                 variant="outline"
                 onClick={() => setEditando(false)}
-                className="h-9 gap-2 rounded-xl border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="h-9 gap-2 rounded-xl border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
               >
                 <ArrowLeft aria-hidden="true" className="size-4" />
                 Volver
               </Button>
             </div>
             <header className="mb-5">
-              <h1 className="mt-1 break-words text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
                 Editar ficha de {nombreCompleto}
               </h1>
             </header>
@@ -236,7 +249,7 @@ export function AlumnoDetallePage() {
               <div className="flex items-center gap-4 min-w-0">
                 <AvatarFicha iniciales={iniciales(alumno.usuario.nombre, alumno.usuario.apellido)} activo={!esBaja} />
                 <div className="min-w-0 space-y-1.5">
-                  <h1 className="text-2xl @xl:text-3xl font-black tracking-tight text-slate-900 dark:text-white truncate">
+                  <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
                     {nombreCompleto}
                   </h1>
                   <ListaInsignias insignias={insigniasObtenidas} />
@@ -251,9 +264,9 @@ export function AlumnoDetallePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setEditando(true)}
-                    className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs @xl:px-4 @xl:text-sm @3xl:flex-none font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs @xl:px-4 @xl:text-sm @3xl:flex-none font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                   >
-                    <PenSquare aria-hidden="true" className="mr-2 hidden size-4 text-slate-600 @xs:block dark:text-slate-300" />
+                    <PenSquare aria-hidden="true" className="mr-2 hidden size-4 @xs:block" />
                     Editar datos
                   </Button>
                 )}
@@ -281,9 +294,9 @@ export function AlumnoDetallePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setModalPlanHorariosAbierto(true)}
-                    className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                   >
-                    <ArrowLeftRight aria-hidden="true" className="size-4 text-slate-600 dark:text-slate-300" />
+                    <ArrowLeftRight aria-hidden="true" className="size-4" />
                     <span>Cambiar plan y horarios</span>
                   </Button>
                 )}
@@ -294,7 +307,7 @@ export function AlumnoDetallePage() {
                       type="button"
                       variant="outline"
                       onClick={() => setModalReactivarAbierto(true)}
-                      className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-emerald-700 shadow-2xs hover:bg-emerald-50 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-400"
+                      className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-emerald-700 shadow-2xs hover:bg-emerald-50 dark:border-emerald-800/80 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-300"
                     >
                       <UserPlus aria-hidden="true" className="size-4" />
                       <span>Dar de alta</span>
@@ -307,7 +320,7 @@ export function AlumnoDetallePage() {
                         darDeBaja.reset();
                         setModalBajaAbierto(true);
                       }}
-                      className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 dark:border-rose-800 dark:bg-slate-800 dark:text-rose-400"
+                      className="hidden @3xl:inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-xs @xl:text-sm font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 dark:border-rose-800/80 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40 dark:hover:border-rose-700 dark:hover:text-rose-300"
                     >
                       <UserMinus aria-hidden="true" className="size-4" />
                       <span>Dar de baja</span>
@@ -322,7 +335,7 @@ export function AlumnoDetallePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setMenuAccionesAbierto(!menuAccionesAbierto)}
-                    className="size-10 rounded-xl border border-slate-200 bg-white p-0 text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    className="size-10 rounded-xl border border-slate-200 bg-white p-0 text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
                     aria-label="Más acciones"
                   >
                     <MoreHorizontal aria-hidden="true" className="size-4" />
@@ -387,7 +400,15 @@ export function AlumnoDetallePage() {
 
             {/* 4 Tarjetas de Resumen / KPIs */}
             <section aria-label="Resumen del alumno" className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4 gap-4">
-              <TarjetaResumen etiqueta="Plan" valor={planNombre} detalle={planSubtitulo} />
+              <TarjetaResumen
+                etiqueta="Plan"
+                valor={(alumno.inscripciones?.length ?? 0) > 1 ? `${planNombre} (+${(alumno.inscripciones?.length ?? 0) - 1})` : planNombre}
+                detalle={
+                  (alumno.inscripciones?.length ?? 0) > 1
+                    ? (alumno.inscripciones ?? []).map((i) => i.plan.nombre).join(" · ")
+                    : planSubtitulo
+                }
+              />
               <TarjetaResumen etiqueta="Profesora" valor={profesoraNombre} detalle={profesoraSubtitulo} />
               <TarjetaResumen
                 etiqueta="Cuota"
@@ -595,39 +616,31 @@ export function AlumnoDetallePage() {
               <ModalCambiarPlan
                 nombre={nombreCompleto}
                 inscripcion={alumno.inscripcion}
+                inscripciones={alumno.inscripciones ?? (alumno.inscripcion ? [alumno.inscripcion] : [])}
                 tienePlanVigente={Boolean(alumno.estado === "ACTIVO" && alumno.inscripcion && alumno.inscripcion.estado !== "BAJA")}
                 onClose={() => setModalPlanHorariosAbierto(false)}
               />
             )}
 
             {/* Modal de Cobro */}
-            {modalCobroAbierto && alumno.inscripcion && (
+            {modalCobroAbierto && (alumno.inscripciones?.length ?? 0) >= 2 && !inscripcionCobroElegida && (
+              <ModalElegirPlanACobrar
+                inscripciones={alumno.inscripciones ?? []}
+                onElegir={setInscripcionCobroElegida}
+                onCancelar={cerrarCobro}
+              />
+            )}
+            {modalCobroAbierto && inscripcionACobrar && (
               <ModalRegistrarCobro
-                abierto={modalCobroAbierto}
-                onClose={() => setModalCobroAbierto(false)}
-                alumno={{
-                  id_alumno: alumno.id_alumno,
-                  nombre: alumno.usuario.nombre,
-                  apellido: alumno.usuario.apellido,
-                  dni: alumno.usuario.dni,
-                }}
-                inscripcion={{
-                  id_inscripcion: alumno.inscripcion.id_inscripcion,
-                  id_plan: alumno.inscripcion.plan.id_plan,
-                  nombre_plan: alumno.inscripcion.plan.nombre,
-                  precio_vigente: alumno.inscripcion.plan.precio,
-                  situacion_cuota: alumno.inscripcion.situacion_cuota,
-                }}
-                plan={{
-                  id: String(alumno.inscripcion.plan.id_plan),
-                  nombre: alumno.inscripcion.plan.nombre,
-                }}
+                abierto
+                onClose={cerrarCobro}
+                {...datosDeCobro(alumno, inscripcionACobrar)}
                 onExito={() => {
-                  setModalCobroAbierto(false);
+                  cerrarCobro();
                   void consulta.refetch();
                 }}
                 onTransferenciaInformada={() => {
-                  setModalCobroAbierto(false);
+                  cerrarCobro();
                   toast.info("Transferencia informada.");
                   void consulta.refetch();
                 }}
@@ -637,15 +650,20 @@ export function AlumnoDetallePage() {
             {modalBajaAbierto && (
               <ModalBajaAlumno
                 nombre={nombreCompleto}
+                inscripciones={alumno.inscripciones ?? (alumno.inscripcion ? [alumno.inscripcion] : [])}
                 dandoDeBaja={darDeBaja.isPending}
                 errorBaja={darDeBaja.isError ? mensajeDeErrorApi(darDeBaja.error, "No se pudo dar de baja al alumno.") : null}
                 onClose={() => setModalBajaAbierto(false)}
-                onConfirm={(motivo, detalle) => {
+                onConfirm={(motivo, detalle, idInscripcion) => {
                   darDeBaja
-                    .mutateAsync({ motivo, detalle })
+                    .mutateAsync({ motivo, detalle, idInscripcion })
                     .then(() => {
                       setModalBajaAbierto(false);
-                      toast.info(`${nombreCompleto} quedó dado de baja`);
+                      toast.info(
+                        idInscripcion
+                          ? `Se dio de baja el plan seleccionado de ${nombreCompleto}`
+                          : `${nombreCompleto} quedó dado de baja`,
+                      );
                       void consulta.refetch();
                     })
                     .catch(() => {});
@@ -685,7 +703,9 @@ function PlanYHorarios({
   planSubtitulo: string;
   profesoraNombre: string;
 }) {
-  const { inscripcion } = alumno;
+  const [idInscripcionElegida, setIdInscripcionElegida] = useState<number | null>(null);
+  const inscripciones = (alumno.inscripciones?.length ?? 0) > 0 ? alumno.inscripciones! : alumno.inscripcion ? [alumno.inscripcion] : [];
+  const inscripcion = inscripciones.find((i) => i.id_inscripcion === idInscripcionElegida) ?? inscripciones[0] ?? null;
 
   if (!inscripcion) {
     return (
@@ -719,6 +739,40 @@ function PlanYHorarios({
 
   return (
     <div className="space-y-6">
+      {inscripciones.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Planes activos del alumno">
+          {inscripciones.map((item) => {
+            const activa = item.id_inscripcion === inscripcion.id_inscripcion;
+            const estadoCuota = item.situacion_cuota?.estado;
+            return (
+              <button
+                key={item.id_inscripcion}
+                type="button"
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setIdInscripcionElegida(item.id_inscripcion)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors cursor-pointer",
+                  activa
+                    ? "border-primary bg-primary text-white shadow-2xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                )}
+              >
+                <span>{item.plan.nombre}</span>
+                {estadoCuota && estadoCuota !== "AL_DIA" && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "size-2 rounded-full",
+                      estadoCuota === "VENCIDA" ? "bg-red-500" : "bg-amber-400",
+                    )}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {inscripcion.reserva && <AvisoReserva reserva={inscripcion.reserva} />}
 
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 gap-4">
@@ -735,7 +789,7 @@ function PlanYHorarios({
                   Plan
                 </span>
                 <span className="min-w-0 font-semibold text-slate-900 dark:text-white wrap-anywhere">
-                  {planNombre}
+                  {inscripciones.length > 1 ? inscripcion.plan.nombre : planNombre}
                 </span>
               </div>
               <div className="flex items-center py-3.5">

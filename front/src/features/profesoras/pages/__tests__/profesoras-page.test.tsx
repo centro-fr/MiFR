@@ -78,6 +78,12 @@ vi.mock("@/features/profesoras/hooks/use-profesoras", () => ({
     error: null,
     mutate: mockMutateReactivar,
   }),
+  useDarDeBajaProfesora: () => ({
+    isPending: false,
+    isError: false,
+    error: null,
+    mutate: vi.fn(),
+  }),
   useHorariosActivos: () => ({
     data: mockHorariosActivos,
     isPending: false,
@@ -182,10 +188,12 @@ describe("ProfesorasPage (US-38)", () => {
     );
   });
 
-  it("no muestra botones destructivos directos en la lista ni datos redundantes de contacto en la celda", () => {
+  it("muestra el botón 'Dar de baja' en la lista y abre el modal de confirmación", () => {
     renderizar();
-    // No hay botones "Dar de baja" directos en la tabla
-    expect(screen.queryByRole("button", { name: /Dar de baja/i })).not.toBeInTheDocument();
+    const botonesBaja = screen.getAllByRole("button", { name: /Dar de baja/i });
+    expect(botonesBaja.length).toBeGreaterThan(0);
+    fireEvent.click(botonesBaja[0]);
+    expect(screen.getByRole("alertdialog", { name: "¿Seguro que desea realizar la baja?" })).toBeInTheDocument();
   });
 
   it("enlaza a la ficha de cada profesora mediante su enlace accesible", () => {

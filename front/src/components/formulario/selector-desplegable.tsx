@@ -148,7 +148,7 @@ export function SelectorDesplegable({
           "flex items-center justify-between gap-2 outline-none select-none transition-colors",
           esPildora
             ? "cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200"
-            : "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-800 shadow-2xs hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer",
+            : "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer",
           botonClassName,
         )}
       >

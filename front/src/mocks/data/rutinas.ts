@@ -11,6 +11,7 @@ interface EjercicioMock {
 export interface RutinaMock {
   id_rutina: number;
   id_alumno: number;
+  id_inscripcion?: number;
   id_profesora: number;
   nombre: string;
   fecha_desde: string;
@@ -95,6 +96,7 @@ export function rutinasSemilla(): RutinaMock[] {
     {
       id_rutina: 1,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       nombre: "Adaptación",
       fecha_desde: "2026-06-01",
@@ -111,6 +113,7 @@ export function rutinasSemilla(): RutinaMock[] {
     {
       id_rutina: 2,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       nombre: "Fuerza – etapa 1",
       fecha_desde: "2026-10-01",
@@ -144,6 +147,7 @@ export function registrosProgresoSemilla(): RegistroProgresoMock[] {
     {
       id_registro: 4,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       fecha: "2026-10-14",
       observaciones: "Tomada en ayunas",

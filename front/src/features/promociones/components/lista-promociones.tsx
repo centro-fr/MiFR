@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BOTON_FILA, BOTON_FILA_PELIGRO, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
@@ -44,6 +46,53 @@ function formatearVigencia(desde: string, hasta: string): string {
   return `${d} al ${h}`;
 }
 
+function BadgeEstadoPromocion({ estado }: { estado: Promocion["estado"] }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shadow-2xs",
+        ESTADOS[estado].badge,
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full shrink-0", ESTADOS[estado].dot)} aria-hidden="true" />
+      {ESTADOS[estado].label}
+    </span>
+  );
+}
+
+// "Todos" cuando aplica a todos los planes (o no se eligió ninguno).
+function nombresDePlanes(promocion: Promocion, totalPlanes: number | undefined): string {
+  const aTodos =
+    promocion.planes.length === 0 || (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes);
+  return aTodos ? "Todos" : promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
+}
+
+function esEditable(promocion: Promocion): boolean {
+  return promocion.activo && promocion.estado !== "VENCIDA";
+}
+
+interface AccionesPromocionProps {
+  promocion: Promocion;
+  onEditar: (promocion: Promocion) => void;
+  onDesactivar: (promocion: Promocion) => void;
+}
+
+/** Editar y Eliminar: los mismos en la tabla y en la lista del celular. */
+function AccionesPromocion({ promocion, onEditar, onDesactivar }: AccionesPromocionProps) {
+  return (
+    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+      {esEditable(promocion) && (
+        <Button type="button" variant="outline" onClick={() => onEditar(promocion)} className={BOTON_FILA}>
+          Editar
+        </Button>
+      )}
+      <Button type="button" variant="outline" onClick={() => onDesactivar(promocion)} className={BOTON_FILA_PELIGRO}>
+        Eliminar
+      </Button>
+    </div>
+  );
+}
+
 export function ListaPromociones({
   promociones,
   cabecera,
@@ -84,9 +133,6 @@ export function ListaPromociones({
                 Promoción
               </th>
               <th scope="col" className="px-4 py-3.5">
-                Código
-              </th>
-              <th scope="col" className="px-4 py-3.5">
                 Descuento
               </th>
               <th scope="col" className="px-4 py-3.5">
@@ -105,15 +151,7 @@ export function ListaPromociones({
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {promocionesPaginadas.map((promocion) => {
-              const editable = promocion.activo && promocion.estado !== "VENCIDA";
-              const esTodosLosPlanes =
-                (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
-                promocion.planes.length === 0;
-              const nombresPlanes = esTodosLosPlanes
-                ? "Todos"
-                : promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
-              const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
-
+              const editable = esEditable(promocion);
               return (
                 <tr
                   key={promocion.id}
@@ -131,64 +169,24 @@ export function ListaPromociones({
                     </h2>
                   </td>
 
-                  <td className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                    {promocion.codigo}
-                  </td>
-
                   <td className="px-4 py-3.5 font-bold text-sm text-slate-900 dark:text-white tabular-nums">
                     {descuento(promocion)}
                   </td>
 
                   <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {nombresPlanes}
+                    {nombresDePlanes(promocion, totalPlanes)}
                   </td>
 
                   <td className="px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300">
-                    {vigencia}
+                    {formatearVigencia(promocion.fechaDesde, promocion.fechaHasta)}
                   </td>
 
                   <td className="px-4 py-3.5">
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shadow-2xs",
-                        ESTADOS[promocion.estado].badge,
-                      )}
-                    >
-                      <span
-                        className={cn("size-1.5 rounded-full shrink-0", ESTADOS[promocion.estado].dot)}
-                        aria-hidden="true"
-                      />
-                      {ESTADOS[promocion.estado].label}
-                    </span>
+                    <BadgeEstadoPromocion estado={promocion.estado} />
                   </td>
 
                   <td className="px-6 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {editable && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditar(promocion);
-                          }}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Editar
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDesactivar(promocion);
-                        }}
-                        className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
+                    <AccionesPromocion promocion={promocion} onEditar={onEditar} onDesactivar={onDesactivar} />
                   </td>
                 </tr>
               );
@@ -197,85 +195,23 @@ export function ListaPromociones({
         </table>
       </div>
 
-      {/* Vista Mobile: Cards apiladas */}
-      <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800/60">
-        {promocionesPaginadas.map((promocion) => {
-          const editable = promocion.activo && promocion.estado !== "VENCIDA";
-          const esTodosLosPlanes =
-            (totalPlanes !== undefined && totalPlanes > 0 && promocion.planes.length >= totalPlanes) ||
-            promocion.planes.length === 0;
-          const nombresPlanes = esTodosLosPlanes
-            ? "Todos"
-            : promocion.planes.map((plan) => plan.nombre).join(", ") || "—";
-          const vigencia = formatearVigencia(promocion.fechaDesde, promocion.fechaHasta);
-
-          return (
-            <div
-              key={promocion.id}
-              onClick={() => {
-                if (editable) onEditar(promocion);
-              }}
-              className={cn(
-                "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
-                editable && "cursor-pointer",
-              )}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                    {promocion.nombre}
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap shadow-2xs",
-                      ESTADOS[promocion.estado].badge,
-                    )}
-                  >
-                    <span
-                      className={cn("size-1.5 rounded-full shrink-0", ESTADOS[promocion.estado].dot)}
-                      aria-hidden="true"
-                    />
-                    {ESTADOS[promocion.estado].label}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-bold text-slate-700 dark:text-slate-200">{promocion.codigo}</span> · {descuento(promocion)} · {nombresPlanes}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {vigencia}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {editable && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditar(promocion);
-                    }}
-                    className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                  >
-                    Editar
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDesactivar(promocion);
-                  }}
-                  className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-rose-600 dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Vista Mobile: Filas agrupadas como en Alumnos - Listado */}
+      <ul aria-label="Promociones" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
+        {promocionesPaginadas.map((promocion) => (
+          <FilaMovil
+            key={promocion.id}
+            titulo={promocion.nombre}
+            insignia={<BadgeEstadoPromocion estado={promocion.estado} />}
+            detalle={[
+              descuento(promocion),
+              nombresDePlanes(promocion, totalPlanes),
+              formatearVigencia(promocion.fechaDesde, promocion.fechaHasta),
+            ]}
+            onAbrir={esEditable(promocion) ? () => onEditar(promocion) : undefined}
+            acciones={<AccionesPromocion promocion={promocion} onEditar={onEditar} onDesactivar={onDesactivar} />}
+          />
+        ))}
+      </ul>
 
       {promociones.length > TAMANO_PAGINA && (
         <div className="border-t border-slate-100 p-3 dark:border-slate-800">

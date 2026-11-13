@@ -202,7 +202,7 @@ describe("InscripcionRepository", () => {
       });
     });
 
-    it("resumirInscripcionesVigentes deja la más reciente de cada alumno, sin consultar si no hay ids", async () => {
+    it("resumirInscripcionesVigentes trae todas las vigentes de cada alumno, sin consultar si no hay ids", async () => {
       await expect(repositorio.resumirInscripcionesVigentes([])).resolves.toEqual([]);
       expect(prisma.inscripciones.findMany).not.toHaveBeenCalled();
 
@@ -229,6 +229,11 @@ describe("InscripcionRepository", () => {
           nombre_profesora: "Lucía Gómez",
           ids_horarios: [8],
         },
+        expect.objectContaining({ id_alumno: 5, id_inscripcion: 12, id_plan: 1 }),
+      ]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].orderBy).toEqual([
+        { fecha_inicio: "desc" },
+        { id_inscripcion: "desc" },
       ]);
     });
 

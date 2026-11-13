@@ -35,4 +35,6 @@ export interface Transferencia {
   tipo?: TipoTransferencia | null;
   /** Nombre del plan que paga, del momento en que se informó. */
   plan?: string | null;
+  /** La inscripción que paga: un alumno con varios planes informa una transferencia por cada uno. */
+  idInscripcion?: number | null;
 }

@@ -231,7 +231,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
               );
               cambiar({ monto: String(nuevaCotizacion.monto).replace(".", ","), confirmarMontoDistinto: false });
             }}>
-              <SelectTrigger id="promocion-primer-pago" className="h-11 rounded-xl border-slate-200 dark:border-white/15">
+              <SelectTrigger id="promocion-primer-pago" className="h-10 rounded-xl border-slate-200 dark:border-white/15">
                 <SelectValue placeholder="Sin promoción" />
               </SelectTrigger>
               <SelectContent>

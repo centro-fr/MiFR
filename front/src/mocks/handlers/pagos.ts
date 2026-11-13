@@ -180,16 +180,31 @@ const rechazarSchema = z.object({
 
 // TransferenciaEnRevision: el pago con el alumno y las horas desde que se cargó.
 function transferenciaEnRevision(pago: PagoMock) {
-  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)!;
-  const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno)!;
-  const usuario = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario)!;
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion);
+  const alumno = inscripcion ? db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno) : null;
+  const usuario = alumno ? db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario) : null;
+  const plan = inscripcion ? db.planes.find((p) => p.id_plan === inscripcion.id_plan) : null;
   const horas = Math.floor((Date.now() - new Date(pago.fecha_pago).getTime()) / UNA_HORA_EN_MS);
+  const tipo = inscripcion?.estado === "PREINSCRIPTA" ? "PRIMERA_CUOTA" : "RENOVACION";
+
   return {
     ...pago,
-    alumno: { id_alumno: alumno.id_alumno, nombre: usuario.nombre, apellido: usuario.apellido },
+    alumno: {
+      id_alumno: alumno?.id_alumno ?? 0,
+      nombre: usuario?.nombre ?? "Alumno",
+      apellido: usuario?.apellido ?? "",
+    },
+    plan: plan?.nombre ?? null,
+    monto_esperado: (inscripcion ? precioVigente(inscripcion.id_plan) : null) ?? pago.monto,
+    tipo,
     horas_desde_la_carga: horas,
     supera_24_horas: pago.estado === "PENDIENTE" && horas >= HORAS_PARA_REVISAR,
   };
+}
+
+function nombrePlanDeInscripcion(idInscripcion: number): string | null {
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === idInscripcion);
+  return (inscripcion && db.planes.find((p) => p.id_plan === inscripcion.id_plan)?.nombre) ?? null;
 }
 
 function idAlumnoDe(pago: PagoMock): number | undefined {
@@ -288,7 +303,6 @@ export const pagosHandlers = [
       plan: plan?.nombre ?? "Plan",
       promocion: promocionObj
         ? {
-            codigo: promocionObj.codigo,
             nombre: promocionObj.nombre,
             tipo_descuento: promocionObj.tipo_descuento,
             valor: promocionObj.valor,
@@ -330,7 +344,7 @@ export const pagosHandlers = [
     // Ordenar los más recientes primero
     pagos.sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime());
 
-    return HttpResponse.json(pagos);
+    return HttpResponse.json(pagos.map((pago) => ({ ...pago, nombre_plan: nombrePlanDeInscripcion(pago.id_inscripcion) })));
   }),
 
   http.post("*/api/v1/pagos/efectivo", async ({ request }) => {

@@ -227,6 +227,7 @@ export class PagoRepository {
     return filas.map(({ cuota, ...fila }) => ({
       ...aPago(fila),
       alumno: { id_alumno: cuota.inscripcion.alumno.id_alumno, ...cuota.inscripcion.alumno.usuario },
+      id_inscripcion: cuota.id_inscripcion,
       plan: cuota.inscripcion.plan.nombre,
       tipo_plan: cuota.inscripcion.plan.tipo,
       numero_cuota: cuota.numero_cuota,
@@ -270,7 +271,7 @@ export class PagoRepository {
               select: {
                 id_plan: true,
                 plan: { select: { nombre: true } },
-                promocion: { select: { codigo: true, nombre: true, tipo_descuento: true, valor: true } },
+                promocion: { select: { nombre: true, tipo_descuento: true, valor: true } },
                 alumno: {
                   select: {
                     id_usuario: true,

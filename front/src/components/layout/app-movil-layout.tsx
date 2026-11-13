@@ -1,12 +1,23 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { CampanaNotificaciones } from "@/features/notificaciones/components/campana-notificaciones";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LogoFr } from "@/components/marca/logo-fr";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/utils/cn";
+import { homePathForRoles } from "@/types/auth";
 import { EnAppMovilContext, ordenEnLaBarra } from "./en-app-movil";
 import type { ItemConEstado } from "./use-owner-navigation";
+import { usePanelActivo } from "./use-panel-activo";
+import { panelExclusivoDeLaRuta, type Panel } from "./owner-navigation";
 
 // Shell de la app en el celular para la profesora y el alumno: barra superior oscura con el título de
 // la pantalla y barra de navegación inferior. En desktop esos roles usan el sidebar de OwnerLayout.
@@ -23,6 +34,58 @@ interface Props {
 
 function iniciales(nombre: string, apellido: string): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toLocaleUpperCase("es");
+}
+
+function SelectorRolMovil() {
+  const { roles } = usePermissions();
+  const { panelActivo, elegirPanel } = usePanelActivo();
+  const navigate = useNavigate();
+
+  const tieneLosDos = roles.includes("PROPIETARIA") && roles.includes("PROFESORA");
+  if (!tieneLosDos) return null;
+
+  const cambiarRol = (nuevoPanel: Panel) => {
+    elegirPanel(nuevoPanel);
+    const panelDeLaRuta = panelExclusivoDeLaRuta(window.location.pathname);
+    if (panelDeLaRuta && panelDeLaRuta !== nuevoPanel) {
+      navigate(homePathForRoles([nuevoPanel]));
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Cambiar vista de rol"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-colors cursor-pointer"
+        >
+          <span>{panelActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
+          <ChevronDown className="size-4 shrink-0 text-slate-400" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
+        <DropdownMenuItem
+          onClick={() => cambiarRol("PROPIETARIA")}
+          className={cn(
+            "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+            panelActivo === "PROPIETARIA" && "bg-primary/20 text-white font-bold",
+          )}
+        >
+          Propietaria
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => cambiarRol("PROFESORA")}
+          className={cn(
+            "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+            panelActivo === "PROFESORA" && "bg-primary/20 text-white font-bold",
+          )}
+        >
+          Profesora
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function BarraSuperior({ titulo, volverA, centro }: Pick<Props, "titulo" | "volverA" | "centro">) {
@@ -43,9 +106,13 @@ function BarraSuperior({ titulo, volverA, centro }: Pick<Props, "titulo" | "volv
         )}
         <span className="truncate text-base font-bold">{titulo}</span>
       </div>
-      {centro}
+      {centro || <SelectorRolMovil />}
       <div className="flex flex-1 items-center justify-end gap-0.5">
         <CampanaNotificaciones sobreFondoOscuro />
+        <ThemeToggle
+          compacto
+          className="text-slate-300 hover:bg-white/10 hover:text-white"
+        />
         <Link
           to="/app/perfil"
           aria-label="Mi cuenta"

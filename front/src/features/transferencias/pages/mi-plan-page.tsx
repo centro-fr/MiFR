@@ -56,7 +56,7 @@ export function MiPlanPage() {
         {/* ENCABEZADO PRINCIPAL (Segun crear-nueva-vista skill) */}
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Mi plan y transferencias
             </h1>
             <Badge
@@ -66,7 +66,7 @@ export function MiPlanPage() {
               {conteoTransferencias} {conteoTransferencias === 1 ? "pago" : "pagos"}
             </Badge>
           </div>
-          <p className="mt-1 text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-400">
+          <p className="mt-1.5 text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-400">
             Consultá el estado de tu cuota, los datos bancarios y tu historial de pagos.
           </p>
         </div>

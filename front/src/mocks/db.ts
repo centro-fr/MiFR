@@ -135,6 +135,16 @@ export const db: BaseMock = {
       leida: false,
     },
     {
+      id_notificacion: 3,
+      id_usuario: 1,
+      tipo: "CUOTA_VENCIDA",
+      id_cuota: 901,
+      id_alumno: 4,
+      mensaje: "La cuota de Camila Pérez venció.",
+      fecha_generacion: new Date(Date.now() - 60_000).toISOString(),
+      leida: false,
+    },
+    {
       id_notificacion: 4,
       id_usuario: 4,
       tipo: "CUOTA_POR_VENCER",

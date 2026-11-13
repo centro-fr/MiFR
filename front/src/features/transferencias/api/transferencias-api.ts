@@ -74,6 +74,7 @@ function aTransferencia(api: TransferenciaApi): Transferencia {
     superaPlazo: api.supera_24_horas ?? false,
     tipo: esTipoTransferencia(api.tipo) ? api.tipo : null,
     plan: api.plan ?? null,
+    idInscripcion: api.id_inscripcion ?? null,
   };
 }
 

@@ -114,21 +114,24 @@ export const fichaAlumnoApiSchema = alumnoApiSchema.extend({
 
 export type FichaAlumnoApi = z.infer<typeof fichaAlumnoApiSchema>;
 
-// AlumnoEnListado del back: cada fila trae el resumen de su inscripción vigente más reciente.
+const resumenInscripcionApiSchema = z.object({
+  id_inscripcion: z.number().int(),
+  estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
+  id_plan: z.number().int(),
+  nombre_plan: z.string(),
+  id_profesora: z.number().int(),
+  nombre_profesora: z.string(),
+});
+
+// AlumnoEnListado del back: cada fila trae el resumen de su inscripción vigente más reciente y, en
+// `inscripciones`, todas las vigentes con su situación de cuota (un alumno puede tener un plan por
+// actividad). El default tolera un back que todavía no las manda.
 export const paginaAlumnosApiSchema = z.object({
   datos: z.array(
     alumnoApiSchema.extend({
-      inscripcion: z
-        .object({
-          id_inscripcion: z.number().int(),
-          estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
-          id_plan: z.number().int(),
-          nombre_plan: z.string(),
-          id_profesora: z.number().int(),
-          nombre_profesora: z.string(),
-        })
-        .nullable(),
+      inscripcion: resumenInscripcionApiSchema.nullable(),
       situacion_cuota: situacionCuotaOpcionalSchema,
+      inscripciones: z.array(resumenInscripcionApiSchema.extend({ situacion_cuota: situacionCuotaOpcionalSchema })).optional(),
     }),
   ),
   total: z.number().int(),
@@ -154,6 +157,16 @@ export interface SituacionCuota {
   tiene_pago_pendiente: boolean;
 }
 
+/** Una inscripción vigente del alumno, como la resume el listado. */
+export interface InscripcionEnListado {
+  id_inscripcion: number;
+  id_plan: number;
+  plan: string;
+  id_profesora: number;
+  profesora: string;
+  situacion_cuota: SituacionCuota | null;
+}
+
 export interface AlumnoResumen {
   id_alumno: number;
   nombre_completo: string;
@@ -162,10 +175,14 @@ export interface AlumnoResumen {
   email?: string | null;
   inasistencias_consecutivas?: number;
   estado: EstadoAlumno;
+  /** La inscripción que muestra la fila: la más reciente o, en el listado por plan, la de su plan. */
+  id_inscripcion?: number | null;
   plan: string | null;
   profesora: string | null;
-  /** La de su inscripción vigente; null si no tiene una. */
+  /** La de la inscripción de la fila; null si no tiene una. */
   situacion_cuota: SituacionCuota | null;
+  /** Todas sus inscripciones vigentes, la más reciente primero. */
+  inscripciones?: InscripcionEnListado[];
 }
 
 export interface RespuestaAlumnos {
@@ -479,6 +496,7 @@ export const bajaAlumnoBodySchema = z
   .object({
     motivo_baja: motivoBajaSchema,
     detalle_baja: z.string().trim().min(1).max(LARGO_MAXIMO_DETALLE_BAJA).optional(),
+    id_inscripcion: z.number().int().positive().optional(),
   })
   .refine((baja) => baja.detalle_baja === undefined || baja.motivo_baja === "OTRO", {
     message: "El detalle solo se carga con el motivo OTRO",

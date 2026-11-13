@@ -278,7 +278,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
                   className={cn(
-                    "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                    "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                     hayErrorHorario && "border-rose-500 focus-visible:ring-rose-500/20",
                   )}
                   required
@@ -298,7 +298,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
                   className={cn(
-                    "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                    "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                     hayErrorHorario && "border-rose-500 focus-visible:ring-rose-500/20",
                   )}
                   required
@@ -322,7 +322,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 const digitos = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
                 setCupoPropio(digitos ? parseInt(digitos, 10) : null);
               }}
-              className="w-32 h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+              className="w-32 h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
               placeholder={cupoActividadTexto}
             />
           </div>
@@ -338,7 +338,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   type="button"
                   variant="outline"
                   onClick={onDelete}
-                  className="h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 font-bold text-xs hover:bg-rose-50"
+                  className="h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 font-bold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30"
                 >
                   Eliminar horario
                 </Button>

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/api/client";
-import { aAlumnoDetalle, darDeBajaAlumno, obtenerAlumno } from "../alumnos-api";
+import { aAlumnoDetalle, darDeBajaAlumno, listarAlumnosRecientesPrimero, obtenerAlumno, type FiltrosDelListado } from "../alumnos-api";
 import { fichaAlumnoApiSchema, type FichaAlumnoApi } from "../../schemas/alumno";
 
 vi.mock("@/api/client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
@@ -103,5 +103,42 @@ describe("llamadas a la API", () => {
     await darDeBajaAlumno(2, "MUDANZA");
 
     expect(apiClient.post).toHaveBeenCalledWith("/alumnos/2/baja", { motivo_baja: "MUDANZA" });
+  });
+});
+
+const FILTROS: FiltrosDelListado = { busqueda: "", estado: "TODOS", id_plan: "", id_profesora: "", id_actividad: "", incluir_bajas: false };
+
+describe("listarAlumnosRecientesPrimero", () => {
+  const RESUMEN = { id_inscripcion: 3, estado: "ACTIVA", id_plan: 2, nombre_plan: "Plan Intermedio", id_profesora: 1, nombre_profesora: "Lucía Gómez" };
+  const VENCIDA = { estado: "VENCIDA", fecha_vencimiento: "2026-10-01T00:00:00.000Z", dias_restantes: -3, puede_asistir: false, tiene_pago_pendiente: false };
+
+  function filaDelListado(cambios: object) {
+    // La fila del listado no trae las inscripciones de la ficha: sin `cambios`, es la de un back anterior.
+    return { ...respuestaApi({ estado: "ACTIVO" }), inscripciones: undefined, inscripcion: RESUMEN, situacion_cuota: VENCIDA, ...cambios };
+  }
+
+  beforeEach(() => vi.mocked(apiClient.get).mockReset());
+
+  it("trae todas las inscripciones vigentes del alumno, cada una con su cuota", async () => {
+    const segunda = { ...RESUMEN, id_inscripcion: 34, id_plan: 1, nombre_plan: "Plan Básico", situacion_cuota: null };
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { datos: [filaDelListado({ inscripciones: [{ ...RESUMEN, situacion_cuota: VENCIDA }, segunda] })], total: 1, limit: 100, offset: 0 },
+    });
+
+    const [alumno] = await listarAlumnosRecientesPrimero(FILTROS);
+
+    expect(alumno.id_inscripcion).toBe(3);
+    expect(alumno.inscripciones).toEqual([
+      expect.objectContaining({ id_inscripcion: 3, plan: "Plan Intermedio", situacion_cuota: expect.objectContaining({ fecha_vencimiento: "2026-10-01" }) }),
+      expect.objectContaining({ id_inscripcion: 34, plan: "Plan Básico", situacion_cuota: null }),
+    ]);
+  });
+
+  it("con un back que no manda las inscripciones, usa la más reciente", async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { datos: [filaDelListado({})], total: 1, limit: 100, offset: 0 } });
+
+    const [alumno] = await listarAlumnosRecientesPrimero(FILTROS);
+
+    expect(alumno.inscripciones).toEqual([expect.objectContaining({ id_inscripcion: 3, plan: "Plan Intermedio", profesora: "Lucía Gómez" })]);
   });
 });

@@ -30,6 +30,8 @@ export interface IInfoInscripciones {
   listarParaAsistencia(idHorario: number, fecha: Date): Promise<InscriptoDeHorario[]>;
   buscarParaAsistencia(idHorario: number, idAlumno: number, fecha: Date): Promise<InscriptoDeHorario | null>;
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]>;
+  // Todas las vigentes de cada alumno (puede tener un plan por actividad), de la más reciente a la más
+  // vieja: el listado muestra la primera como la del alumno y las demás por plan (US-10).
   resumirInscripcionesVigentes(idsAlumnos: number[]): Promise<ResumenInscripcionAlumno[]>;
   // Inscriptos vigentes por horario, de una sola consulta; un horario sin inscriptos no figura. Cuenta
   // también las pre-inscripciones con la reserva vencida: siguen en el horario y no dejan darlo de baja.

@@ -9,7 +9,6 @@ const decimal = (valor: number) => new Prisma.Decimal(valor);
 
 const fila = {
   id_promocion: 4,
-  codigo: "VERANO26",
   nombre: "Verano",
   tipo_descuento: "PORCENTAJE",
   valor: decimal(20),
@@ -20,7 +19,6 @@ const fila = {
 };
 const promocion = { ...fila, valor: 20, planes: [{ id_plan: 1, nombre: "Básico" }] };
 const datos = {
-  codigo: "VERANO26",
   nombre: "Verano",
   tipo_descuento: "PORCENTAJE" as const,
   valor: 20,
@@ -141,13 +139,6 @@ describe("PromocionRepository", () => {
       transaccion.promocion_planes.findFirst.mockResolvedValue({ id_plan: 2 });
 
       await expect(repositorio.guardar(datos)).resolves.toEqual({ resultado: "superpuesta", id_plan: 2 });
-      expect(transaccion.promociones.create).not.toHaveBeenCalled();
-    });
-
-    it("no guarda si el código ya es de otra promoción", async () => {
-      transaccion.promociones.findFirst.mockResolvedValue({ id_promocion: 9 });
-
-      await expect(repositorio.guardar(datos)).resolves.toEqual({ resultado: "codigo-repetido" });
       expect(transaccion.promociones.create).not.toHaveBeenCalled();
     });
   });

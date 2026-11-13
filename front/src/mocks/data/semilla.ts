@@ -68,6 +68,14 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
   { id_usuario: 4, email: "camila.perez@example.com", nombre: "Camila", apellido: "Pérez", roles: ["ALUMNO"] },
   { id_usuario: 5, email: "valentina.lopez@example.com", nombre: "Valentina", apellido: "López", roles: ["ALUMNO"] },
   { id_usuario: 6, email: "julian.fernandez@example.com", nombre: "Julián", apellido: "Fernández", roles: ["ALUMNO"] },
+  {
+    id_usuario: 104,
+    email: "valentina.herrera@example.com",
+    nombre: "Valentina",
+    apellido: "Herrera",
+    roles: ["ALUMNO"],
+    etiquetaDePrueba: "Alumno con 2 planes",
+  },
   { id_usuario: 7, email: "micaela.garcia@example.com", nombre: "Micaela", apellido: "García", roles: ["ALUMNO"] },
   // Tutora de Lucía Benítez y Benjamín López: para probar el selector de menores (US-28).
   {
@@ -97,7 +105,7 @@ export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
     nombre: "Paula",
     apellido: "Romero",
     roles: ["ALUMNO", "TUTOR"],
-    etiquetaDePrueba: "Alumno + Tutor con 2 a cargo",
+    etiquetaDePrueba: "Alumno (2 planes) + Tutor con 2 a cargo",
   },
   {
     id_usuario: 11,

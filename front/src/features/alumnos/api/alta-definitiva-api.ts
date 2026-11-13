@@ -10,6 +10,7 @@ import {
   type RegistrarTransferenciaRecibidaBody,
 } from "@/features/alumnos/schemas/alta-definitiva";
 import { diaDesdeNumero, horaDesdeApi } from "@/features/horarios/utils/cronograma";
+import { fichaAlumnoApiSchema } from "@/features/alumnos/schemas/alumno";
 import type { PreInscripcionPendiente } from "@/types/alta-definitiva";
 
 // El máximo que acepta el back por página. Un centro chico no llega a 100 pre-inscripciones
@@ -49,9 +50,28 @@ function aPendiente(inscripcion: InscripcionPendienteApi, alumno: AlumnoEnListad
   };
 }
 
+// Un alumno activo que suma un plan nuevo también espera ese primer pago, pero no figura entre los
+// INACTIVO: se lo busca por su ficha, que además confirma que la inscripción sigue pre-inscripta.
+// Son pocos a la vez (una consulta por alumno, no por inscripción).
+async function alumnosActivosConPlanNuevo(idsAlumnos: number[]) {
+  const fichas = await Promise.all(
+    idsAlumnos.map(async (id) => fichaAlumnoApiSchema.parse((await apiClient.get(`/alumnos/${id}`)).data)),
+  );
+  return new Map(
+    fichas.map((ficha) => [
+      ficha.id_alumno,
+      {
+        alumno: ficha,
+        preInscriptas: new Set(ficha.inscripciones.filter((i) => i.estado === "PREINSCRIPTA").map((i) => i.id_inscripcion)),
+      },
+    ]),
+  );
+}
+
 /**
- * Pre-inscripciones que esperan su primer pago. Dos consultas en paralelo, sin una por alumno:
- * las inscripciones traen plan, precio, profesora y horarios; los alumnos, DNI, contacto y tutor.
+ * Pre-inscripciones que esperan su primer pago. Las inscripciones traen plan, precio, profesora y
+ * horarios; los alumnos INACTIVO, DNI, contacto y tutor. Solo el alumno ya activo que suma un plan
+ * se pide aparte.
  */
 export async function listarPreInscripcionesPendientes(): Promise<PreInscripcionPendiente[]> {
   const [respuestaInscripciones, respuestaAlumnos] = await Promise.all([
@@ -59,13 +79,18 @@ export async function listarPreInscripcionesPendientes(): Promise<PreInscripcion
     apiClient.get("/alumnos", { params: { estado: "INACTIVO", limit: LIMITE } }),
   ]);
   const inscripciones = z.array(inscripcionPendienteApiSchema).parse(respuestaInscripciones.data);
-  const alumnos = new Map(
+  const inactivos = new Map(
     paginaAlumnosApiSchema.parse(respuestaAlumnos.data).datos.map((alumno) => [alumno.id_alumno, alumno]),
   );
+  const sinAlumnoInactivo = [...new Set(inscripciones.map((i) => i.id_alumno).filter((id) => !inactivos.has(id)))];
+  const activos = await alumnosActivosConPlanNuevo(sinAlumnoInactivo);
   return inscripciones.flatMap((inscripcion) => {
-    const alumno = alumnos.get(inscripcion.id_alumno);
-    // Sin el alumno no hay a quién mostrar: pasa si se activó entre una consulta y la otra.
-    return alumno ? [aPendiente(inscripcion, alumno)] : [];
+    const inactivo = inactivos.get(inscripcion.id_alumno);
+    if (inactivo) return [aPendiente(inscripcion, inactivo)];
+    const activo = activos.get(inscripcion.id_alumno);
+    // Sin el alumno, o con la inscripción ya activa, no hay nada que cobrar: pasa si se activó
+    // entre una consulta y la otra.
+    return activo?.preInscriptas.has(inscripcion.id_inscripcion) ? [aPendiente(inscripcion, activo.alumno)] : [];
   });
 }
 

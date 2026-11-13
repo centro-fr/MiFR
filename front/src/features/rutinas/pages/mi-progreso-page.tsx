@@ -8,6 +8,7 @@ import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejer
 import { ErrorDeCarga } from "@/features/rutinas/components/tarjeta";
 import { resolverGifUrl } from "@/features/rutinas/data/catalogo-ejercicios";
 import { useAlumnoElegido } from "@/features/portal-alumno/hooks/use-alumno-elegido";
+import { usePlanElegido } from "@/features/portal-alumno/hooks/use-plan-elegido";
 import { useMedicionesDeAlumno, useNombresDeProfesoras, useRutinasDeAlumno } from "@/features/rutinas/hooks/use-rutinas";
 import { MEDIDAS } from "@/features/rutinas/schemas/medidas";
 import {
@@ -112,16 +113,16 @@ function EncabezadoRutina({ alumno }: { alumno: AlumnoConsultable }) {
   const autora = vigente && nombres.get(vigente.idProfesora);
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
+      <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
         {alumno.propio ? "Tu rutina" : `Rutina de ${alumno.nombre}`}
       </h1>
-      {autora && <p className="mt-0.5 text-sm text-muted-foreground">La armó {autora}</p>}
+      {autora && <p className="mt-1.5 text-sm text-muted-foreground">La armó {autora}</p>}
     </div>
   );
 }
 
-function MisRutinas({ alumno }: { alumno: AlumnoConsultable }) {
-  const consulta = useRutinasDeAlumno(alumno.id, true);
+function MisRutinas({ alumno, idInscripcion }: { alumno: AlumnoConsultable; idInscripcion?: number | null }) {
+  const consulta = useRutinasDeAlumno(alumno.id, true, idInscripcion);
   const rutinas = useMemo(() => enOrden(consulta.data ?? []), [consulta.data]);
   const [abierta, setAbierta] = useState<number | null | undefined>(undefined);
   // Al entrar se ve abierta la primera (la vigente, si hay).
@@ -221,6 +222,8 @@ function Aviso({ children }: { children: string }) {
 
 function Contenido() {
   const { consulta, elegido } = useAlumnoElegido();
+  const { elegido: planElegido } = usePlanElegido();
+  const idInscripcion = planElegido?.id_inscripcion ?? null;
 
   if (consulta.isPending) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (consulta.isError) {
@@ -247,10 +250,10 @@ function Contenido() {
       ) : (
         // La key reinicia las consultas y el estado de las rutinas al cambiar de menor. Con lugar, la
         // rutina a la izquierda y el progreso al costado.
-        <div key={elegido.id} className="flex flex-col gap-4">
+        <div key={`${elegido.id}-${idInscripcion ?? "sin-plan"}`} className="flex flex-col gap-4">
           <EncabezadoRutina alumno={elegido} />
           <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <MisRutinas alumno={elegido} />
+            <MisRutinas alumno={elegido} idInscripcion={idInscripcion} />
             <MiProgreso alumno={elegido} />
           </div>
         </div>

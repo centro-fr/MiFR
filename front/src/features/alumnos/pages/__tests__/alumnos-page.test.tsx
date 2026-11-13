@@ -15,6 +15,13 @@ vi.mock("@/components/layout/owner-layout", () => ({
 
 vi.mock("../../hooks/use-alumnos", () => ({
   useAlumnos: vi.fn(),
+  useDarDeBajaAlumno: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+    reset: vi.fn(),
+  })),
   useListaCompletaAlumnos: vi.fn(() => ({ data: [] })),
 }));
 
@@ -149,9 +156,7 @@ describe("AlumnosPage", () => {
     expect(screen.getByRole("heading", { name: "Listado" })).toBeInTheDocument();
     expect(screen.getAllByText("Camila Pérez")).toHaveLength(2);
     expect(screen.getAllByText("Activo").length).toBeGreaterThanOrEqual(2);
-    expect(
-      screen.getAllByText("Camila Pérez").find((element) => element.tagName === "H2")?.closest(".shadow-sm"),
-    ).toHaveClass("dark:bg-slate-800");
+    expect(screen.getByRole("list", { name: "Alumnos" })).toHaveClass("dark:bg-slate-900");
     expect(
       screen.getAllByText("Activo").find((element) => element.className.includes("dark:bg-emerald-950/70")),
     ).toBeInTheDocument();
@@ -160,14 +165,10 @@ describe("AlumnosPage", () => {
     ).toBe(true);
 
     fireEvent.click(screen.getAllByLabelText(/Incluir dados de baja/)[0]);
-    expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ incluir_bajas: true, offset: 0, limit: 10 }),
-    );
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ incluir_bajas: true, offset: 0, limit: 10 }), { unaFilaPorPlan: true });
 
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    expect(consultaMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({ incluir_bajas: true, offset: 10 }),
-    );
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ incluir_bajas: true, offset: 10 }), { unaFilaPorPlan: true });
   });
 
   it("debouncea la búsqueda y permite limpiar filtros cuando no hay resultados", async () => {
@@ -177,12 +178,12 @@ describe("AlumnosPage", () => {
 
     const busqueda = screen.getByLabelText("Buscar por nombre, apellido o DNI del alumno o de su tutor");
     fireEvent.change(busqueda, { target: { value: "  Pérez  " } });
-    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "" }));
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "" }), { unaFilaPorPlan: true });
 
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
-    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "Pérez" }));
+    expect(consultaMock).toHaveBeenLastCalledWith(expect.objectContaining({ busqueda: "Pérez" }), { unaFilaPorPlan: true });
     expect(screen.getByRole("heading", { name: "No encontramos alumnos" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Limpiar búsqueda y filtros" }));

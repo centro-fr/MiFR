@@ -36,26 +36,30 @@ function alumnoDe(alumno: AlumnoMock): AlumnoApi {
   };
 }
 
+function resumenDeInscripcion(inscripcion: InscripcionMock) {
+  const resumen = inscripcionConDatos(inscripcion);
+  return {
+    id_alumno: inscripcion.id_alumno,
+    id_inscripcion: resumen.id_inscripcion,
+    estado: resumen.estado,
+    id_plan: resumen.id_plan,
+    nombre_plan: resumen.plan.nombre,
+    id_profesora: resumen.id_profesora,
+    nombre_profesora: `${resumen.profesora.usuario.nombre} ${resumen.profesora.usuario.apellido}`,
+    ids_horarios: resumen.horarios.map((h) => h.id_horario),
+  };
+}
+
 // AlumnoEnListado del back: el resumen de su inscripción vigente más reciente y su situación de
-// cuota, o null.
+// cuota, o null, y todas sus inscripciones vigentes, cada una con su situación.
 function alumnoEnListado(alumno: AlumnoMock) {
-  const [vigente] = vigentesDe(alumno.id_alumno);
-  const resumen = vigente && inscripcionConDatos(vigente);
+  const vigentes = vigentesDe(alumno.id_alumno);
+  const [vigente] = vigentes;
   return {
     ...alumnoDe(alumno),
-    inscripcion: resumen
-      ? {
-          id_alumno: alumno.id_alumno,
-          id_inscripcion: resumen.id_inscripcion,
-          estado: resumen.estado,
-          id_plan: resumen.id_plan,
-          nombre_plan: resumen.plan.nombre,
-          id_profesora: resumen.id_profesora,
-          nombre_profesora: `${resumen.profesora.usuario.nombre} ${resumen.profesora.usuario.apellido}`,
-          ids_horarios: resumen.horarios.map((h) => h.id_horario),
-        }
-      : null,
+    inscripcion: vigente ? resumenDeInscripcion(vigente) : null,
     situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
+    inscripciones: vigentes.map((inscripcion) => ({ ...resumenDeInscripcion(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) })),
   };
 }
 
@@ -354,20 +358,45 @@ function nombreProfesora(idProfesora: number): string {
   return usuario ? `${usuario.nombre} ${usuario.apellido}` : "Profesora sin asignar";
 }
 
-function panelAlumnoDe(alumno: AlumnoMock) {
-  const persona = datosPersonales(alumno.id_usuario);
-  const [inscripcion] = vigentesDe(alumno.id_alumno);
-  const plan = inscripcion ? db.planes.find((item) => item.id_plan === inscripcion.id_plan) : undefined;
-  const situacion = inscripcion ? situacionCuotaDe(inscripcion) : null;
-  const horarios = inscripcion
-    ? inscripcion.ids_horarios
-        .map((id) => db.horarios.find((horario) => horario.id_horario === id))
-        .filter((horario): horario is HorarioMock => horario !== undefined && horario.fecha_baja === null)
-    : [];
-  const hoy = new Date();
-  const proximasClases = [];
+function actividadesDeInscripcion(inscripcion: InscripcionMock, plan: { id_actividad_exclusiva: number | null }): string[] {
+  if (plan.id_actividad_exclusiva) {
+    const exclusiva = db.actividades.find((a) => a.id_actividad === plan.id_actividad_exclusiva);
+    if (exclusiva) return [exclusiva.nombre];
+  }
+  const nombres = new Set<string>();
+  for (const idHorario of inscripcion.ids_horarios) {
+    const horario = db.horarios.find((h) => h.id_horario === idHorario);
+    const actividad = horario && db.actividades.find((a) => a.id_actividad === horario.id_actividad);
+    if (actividad) nombres.add(actividad.nombre);
+  }
+  return [...nombres];
+}
 
-  for (let offset = 0; offset < 14 && proximasClases.length < 5; offset += 1) {
+function planDelPanel(inscripcion: InscripcionMock) {
+  const plan = db.planes.find((item) => item.id_plan === inscripcion.id_plan);
+  const situacion = situacionCuotaDe(inscripcion);
+  if (!plan || !situacion) return null;
+  return {
+    id_inscripcion: inscripcion.id_inscripcion,
+    nombre: plan.nombre,
+    tipo: plan.tipo,
+    clases_por_semana: plan.clases_por_semana,
+    profesora: nombreProfesora(inscripcion.id_profesora),
+    actividades: actividadesDeInscripcion(inscripcion, plan),
+    estado_cuota: situacion.estado,
+    fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? null,
+    dias_restantes: situacion.dias_restantes,
+  };
+}
+
+function proximasClasesDe(inscripcion: InscripcionMock) {
+  const horarios = inscripcion.ids_horarios
+    .map((id) => db.horarios.find((horario) => horario.id_horario === id))
+    .filter((horario): horario is HorarioMock => horario !== undefined && horario.fecha_baja === null);
+  const hoy = new Date();
+  const clases = [];
+
+  for (let offset = 0; offset < 14 && clases.length < 5; offset += 1) {
     const fecha = new Date(hoy);
     fecha.setHours(12, 0, 0, 0);
     fecha.setDate(hoy.getDate() + offset);
@@ -376,8 +405,9 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       if (horario.dia_semana !== diaDeSemana(fecha)) continue;
       const actividad = db.actividades.find((item) => item.id_actividad === horario.id_actividad);
       if (!actividad) continue;
-      proximasClases.push({
+      clases.push({
         id_horario: horario.id_horario,
+        id_inscripcion: inscripcion.id_inscripcion,
         fecha: fechaTexto,
         hora_inicio: horario.hora_inicio,
         hora_fin: horario.hora_fin,
@@ -387,6 +417,16 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       });
     }
   }
+  return clases;
+}
+
+function panelAlumnoDe(alumno: AlumnoMock) {
+  const persona = datosPersonales(alumno.id_usuario);
+  const vigentes = vigentesDe(alumno.id_alumno);
+  const planes = vigentes.map(planDelPanel).filter((p): p is NonNullable<typeof p> => p !== null);
+  const proximasClases = vigentes
+    .flatMap(proximasClasesDe)
+    .sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`));
 
   const historialAsistencias = db.asistencias
     .filter((registro) => registro.id_alumno === alumno.id_alumno)
@@ -397,6 +437,7 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       if (!clase || !horario || !actividad) return null;
       return {
         id_clase: registro.id_clase,
+        id_inscripcion: registro.id_inscripcion,
         fecha: clase.fecha_clase.slice(0, 10),
         actividad: actividad.nombre,
         profesora: nombreProfesora(horario.id_profesora),
@@ -410,20 +451,8 @@ function panelAlumnoDe(alumno: AlumnoMock) {
   return {
     id_alumno: alumno.id_alumno,
     alumno: { nombre: persona.nombre, apellido: persona.apellido },
-    plan: plan && situacion
-      ? {
-          nombre: plan.nombre,
-          tipo: plan.tipo,
-          clases_por_semana: plan.clases_por_semana,
-          profesora: nombreProfesora(inscripcion.id_profesora),
-          estado_cuota: situacion.estado,
-          fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? null,
-          dias_restantes: situacion.dias_restantes,
-        }
-      : null,
-    proximas_clases: proximasClases
-      .sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`))
-      .slice(0, 5),
+    planes,
+    proximas_clases: proximasClases.slice(0, 5),
     historial_asistencias: historialAsistencias,
   };
 }
@@ -713,7 +742,17 @@ export const alumnosHandlers = [
     if (alumno.estado === "BAJA") return errorApi(409, "CONFLICT", "El alumno ya está dado de baja");
 
     const ahora = new Date().toISOString();
-    const { motivo_baja, detalle_baja = null } = cuerpo.data;
+    const { motivo_baja, detalle_baja = null, id_inscripcion } = cuerpo.data;
+    if (id_inscripcion) {
+      const inscripcion = vigentesDe(id).find((i) => i.id_inscripcion === id_inscripcion);
+      if (!inscripcion) return errorApi(404, "NOT_FOUND", "Inscripción no encontrada");
+      Object.assign(inscripcion, { estado: "BAJA", motivo_baja, detalle_baja, fecha_baja: ahora });
+      if (vigentesDe(id).length === 0) {
+        Object.assign(alumno, { estado: "BAJA", fecha_baja: ahora });
+        datosPersonales(alumno.id_usuario).estado = "INACTIVO";
+      }
+      return HttpResponse.json({ mensaje: "Plan dado de baja" });
+    }
     for (const inscripcion of vigentesDe(id)) {
       Object.assign(inscripcion, { estado: "BAJA", motivo_baja, detalle_baja, fecha_baja: ahora });
     }

@@ -89,7 +89,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
   {
-    etiqueta: "Historial Cobros",
+    etiqueta: "Historial",
     icono: Receipt,
     seccion: SECCION_COBROS,
     to: "/app/cobros/listado",

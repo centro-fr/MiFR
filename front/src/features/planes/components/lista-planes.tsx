@@ -4,6 +4,8 @@ import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton } from "@/components/ui/estados-pantalla";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BOTON_FILA, BOTON_FILA_PELIGRO, BOTON_FILA_REINCORPORAR, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
 import { BadgeEstadoPlan } from "@/features/planes/components/badges-plan";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
@@ -31,8 +33,79 @@ interface AccionesDeLaTarjeta {
   onActualizarPrecio: (plan: Plan) => void;
   onEditarPlan?: (plan: Plan) => void;
   onVerHistorial?: (plan: Plan) => void;
+  onDarDeBajaPlan?: (plan: Plan) => void;
   onReactivarPlan?: (plan: Plan) => void;
   reactivandoPlan?: boolean;
+}
+
+type AccionesDelPlan = Pick<AccionesDeLaTarjeta, "onEditarPlan" | "onVerHistorial" | "onDarDeBajaPlan" | "onReactivarPlan" | "reactivandoPlan">;
+
+/** Las acciones de un plan: las mismas en la tabla y en la lista del celular. */
+function AccionesPlan({ plan, onEditarPlan, onVerHistorial, onDarDeBajaPlan, onReactivarPlan, reactivandoPlan }: AccionesDelPlan & { plan: Plan }) {
+  const vigente = estaVigente(plan);
+  return (
+    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+      {onVerHistorial && (
+        <Button type="button" variant="outline" onClick={() => onVerHistorial(plan)} className={BOTON_FILA}>
+          Historial
+        </Button>
+      )}
+      {!vigente && onReactivarPlan && (
+        <Can permission="PLANES_EDITAR">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={reactivandoPlan}
+            onClick={() => onReactivarPlan(plan)}
+            className={BOTON_FILA_REINCORPORAR}
+          >
+            Reincorporar
+            <span className="sr-only"> {plan.nombre}</span>
+          </Button>
+        </Can>
+      )}
+      {vigente && (
+        <Can permission="PLANES_EDITAR">
+          {onEditarPlan ? (
+            <Button type="button" variant="outline" onClick={() => onEditarPlan(plan)} className={BOTON_FILA}>
+              Editar
+              <span className="sr-only"> {plan.nombre}</span>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" className={BOTON_FILA}>
+              <Link to={`/app/planes/${plan.id}/editar`}>
+                Editar
+                <span className="sr-only"> {plan.nombre}</span>
+              </Link>
+            </Button>
+          )}
+          {onDarDeBajaPlan && (
+            <Button type="button" variant="outline" onClick={() => onDarDeBajaPlan(plan)} className={BOTON_FILA_PELIGRO}>
+              Dar de baja
+              <span className="sr-only"> {plan.nombre}</span>
+            </Button>
+          )}
+        </Can>
+      )}
+    </div>
+  );
+}
+
+/** El aviso de un aumento programado o, si el plan está de baja, su estado. */
+function InsigniaPlan({ plan }: { plan: Plan }) {
+  if (plan.precioProgramado) {
+    return (
+      <span className="rounded-md bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2 py-0.5 shrink-0">
+        Sube el {fechaDiaMes(plan.precioProgramado.desde)}
+      </span>
+    );
+  }
+  return estaVigente(plan) ? null : <BadgeEstadoPlan vigente={false} />;
+}
+
+function textoPrecio(plan: Plan): string {
+  const precio = plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente);
+  return `${precio} ${plan.tipo === "MENSUAL" ? "por mes" : "por clase"}`;
 }
 
 export function ListaPlanes({
@@ -41,6 +114,7 @@ export function ListaPlanes({
   cabecera,
   onEditarPlan,
   onVerHistorial,
+  onDarDeBajaPlan,
   onReactivarPlan,
   reactivandoPlan,
 }: {
@@ -108,13 +182,7 @@ export function ListaPlanes({
                         <h2 className="font-bold text-sm text-slate-900 dark:text-white">
                           {plan.nombre}
                         </h2>
-                        {plan.precioProgramado ? (
-                          <span className="rounded-md bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2 py-0.5 shrink-0">
-                            Sube el {fechaDiaMes(plan.precioProgramado.desde)}
-                          </span>
-                        ) : !vigente ? (
-                          <BadgeEstadoPlan vigente={false} />
-                        ) : null}
+                        <InsigniaPlan plan={plan} />
                       </div>
                     </td>
 
@@ -136,68 +204,14 @@ export function ListaPlanes({
                     </td>
 
                     <td className="px-6 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {onVerHistorial && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onVerHistorial(plan);
-                            }}
-                            className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                          >
-                            Historial
-                          </Button>
-                        )}
-                        {!vigente && onReactivarPlan && (
-                          <Can permission="PLANES_EDITAR">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              disabled={reactivandoPlan}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onReactivarPlan(plan);
-                              }}
-                              className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                            >
-                              Reincorporar
-                              <span className="sr-only"> {plan.nombre}</span>
-                            </Button>
-                          </Can>
-                        )}
-                        {vigente && (
-                          <Can permission="PLANES_EDITAR">
-                            {onEditarPlan ? (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEditarPlan(plan);
-                                }}
-                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                Editar
-                                <span className="sr-only"> {plan.nombre}</span>
-                              </Button>
-                            ) : (
-                              <Button
-                                asChild
-                                variant="outline"
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                              >
-                                <Link to={`/app/planes/${plan.id}/editar`}>
-                                  Editar
-                                  <span className="sr-only"> {plan.nombre}</span>
-                                </Link>
-                              </Button>
-                            )}
-                          </Can>
-                        )}
-                      </div>
+                      <AccionesPlan
+                        plan={plan}
+                        onEditarPlan={onEditarPlan}
+                        onVerHistorial={onVerHistorial}
+                        onDarDeBajaPlan={onDarDeBajaPlan}
+                        onReactivarPlan={onReactivarPlan}
+                        reactivandoPlan={reactivandoPlan}
+                      />
                     </td>
                   </tr>
                 );
@@ -207,102 +221,31 @@ export function ListaPlanes({
         </div>
 
         {/* Vista Mobile: Filas agrupadas como en Alumnos - Listado */}
-        <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+        <ul aria-label="Planes" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
           {planesPaginados.map((plan) => {
             const vigente = estaVigente(plan);
-            const resumenPrecio =
-              plan.precioVigente === null ? "Sin precio" : formatearPrecio(plan.precioVigente);
             return (
-              <div
+              <FilaMovil
                 key={plan.id}
-                onClick={() => {
-                  if (vigente) {
-                    onEditarPlan?.(plan);
-                  }
-                }}
-                className={cn(
-                  "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/60",
-                  vigente ? "cursor-pointer" : "opacity-60 bg-slate-50/40 dark:bg-slate-900/40",
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                      {plan.nombre}
-                    </span>
-                    {!vigente && <BadgeEstadoPlan vigente={false} />}
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    {plan.tipo === "MENSUAL" ? "Mensual" : "Clase suelta"} · {resumenPrecio}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {onVerHistorial && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onVerHistorial(plan);
-                      }}
-                      className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                    >
-                      Historial
-                    </Button>
-                  )}
-                  {!vigente && onReactivarPlan && (
-                    <Can permission="PLANES_EDITAR">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={reactivandoPlan}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onReactivarPlan(plan);
-                        }}
-                        className="h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                      >
-                        Reincorporar
-                        <span className="sr-only"> {plan.nombre}</span>
-                      </Button>
-                    </Can>
-                  )}
-                  {vigente && (
-                    <Can permission="PLANES_EDITAR">
-                      {onEditarPlan ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditarPlan(plan);
-                          }}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Editar
-                          <span className="sr-only"> {plan.nombre}</span>
-                        </Button>
-                      ) : (
-                        <Button
-                          asChild
-                          variant="outline"
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          <Link to={`/app/planes/${plan.id}/editar`}>
-                            Editar
-                            <span className="sr-only"> {plan.nombre}</span>
-                          </Link>
-                        </Button>
-                      )}
-                    </Can>
-                  )}
-                </div>
-              </div>
+                titulo={plan.nombre}
+                insignia={<InsigniaPlan plan={plan} />}
+                detalle={[textoFrecuenciaCard(plan), textoActividadCard(plan), textoPrecio(plan)]}
+                atenuada={!vigente}
+                onAbrir={vigente && onEditarPlan ? () => onEditarPlan(plan) : undefined}
+                acciones={
+                  <AccionesPlan
+                    plan={plan}
+                    onEditarPlan={onEditarPlan}
+                    onVerHistorial={onVerHistorial}
+                    onDarDeBajaPlan={onDarDeBajaPlan}
+                    onReactivarPlan={onReactivarPlan}
+                    reactivandoPlan={reactivandoPlan}
+                  />
+                }
+              />
             );
           })}
-        </div>
+        </ul>
 
         {planes.length > TAMANO_PAGINA && (
           <div className="border-t border-slate-100 p-3 dark:border-slate-800">

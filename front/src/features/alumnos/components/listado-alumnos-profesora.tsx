@@ -1,3 +1,4 @@
+import { BOTON_FILA } from "@/components/ui/estilos-lista";
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Plus, Search } from "lucide-react";
@@ -49,28 +50,26 @@ function coincide(alumno: AlumnoResumen, termino: string): boolean {
 function FilaAlumno({ alumno, puedeCobrar, onCobrar }: { alumno: AlumnoResumen; puedeCobrar: boolean; onCobrar: () => void }) {
   const conBoton = puedeCobrar && alumno.estado === "ACTIVO" && debeLaCuota(alumno);
   return (
-    <li className={cn(FILA, "flex items-center gap-2 pr-3")}>
+    <li className={cn(FILA, "flex flex-col gap-2 pb-2.5")}>
       <Link
         to={`/app/alumnos/${alumno.id_alumno}`}
         aria-label={`Ver ficha de ${alumno.nombre_completo}`}
-        className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pr-0.5 pl-3.5"
+        className="flex min-w-0 items-center gap-3 pt-2.5 pr-3 pl-3.5"
       >
         <AvatarIniciales nombre={alumno.nombre_completo} />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold">{alumno.nombre_completo}</span>
           <span className="block text-xs text-muted-foreground">{detalleDeLaFila(alumno)}</span>
         </span>
-        {!conBoton && <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />}
+        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
       </Link>
       {conBoton && (
-        <button
-          type="button"
-          aria-label={`Cobrar a ${alumno.nombre_completo}`}
-          onClick={onCobrar}
-          className="h-9 shrink-0 rounded-lg border border-slate-400 bg-card px-3 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-white/5"
-        >
-          Cobrar
-        </button>
+        // Abajo, alineado con el texto, como las acciones de las demás listas del celular.
+        <div className="pl-15.5">
+          <button type="button" aria-label={`Cobrar a ${alumno.nombre_completo}`} onClick={onCobrar} className={cn("border", BOTON_FILA)}>
+            Cobrar
+          </button>
+        </div>
       )}
     </li>
   );
@@ -133,17 +132,20 @@ export function ListadoAlumnosProfesora({ idProfesora = "" }: Props) {
         }
       />
 
-      <label className="flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-muted-foreground">
-        <Search aria-hidden="true" className="size-4.5" />
-        <span className="sr-only">Buscar alumno</span>
+      <div className="relative">
+        <Search aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <label htmlFor="buscar-alumno-profesora" className="sr-only">
+          Buscar alumno
+        </label>
         <input
+          id="buscar-alumno-profesora"
           type="search"
           value={busqueda}
           onChange={(evento) => setBusqueda(evento.target.value)}
           placeholder="Buscar por nombre o DNI"
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
+          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
         />
-      </label>
+      </div>
 
       <ControlSegmentado
         etiqueta="Filtrar alumnos"

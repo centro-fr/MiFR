@@ -94,6 +94,13 @@ const alumnoEnListadoSchema = alumnoSchema
     situacion_cuota: situacionCuotaSchema.nullable().openapi({
       description: "La de la inscripción de `inscripcion`; null si no tiene una vigente",
     }),
+    inscripciones: z
+      .array(resumenInscripcionSchema.extend({ situacion_cuota: situacionCuotaSchema.nullable() }))
+      .openapi({
+        description:
+          "Todas las inscripciones vigentes, de la más reciente a la más vieja, cada una con su situación de " +
+          "cuota: un alumno puede tener varios planes y se cobra cada uno por separado. Vacía si no tiene",
+      }),
   })
   .openapi("AlumnoEnListado");
 
@@ -194,25 +201,33 @@ const historialAsistenciaSchema = z
   })
   .openapi("HistorialAsistenciaAlumno");
 
+const planDelPanelSchema = z.object({
+  id_inscripcion: z.number().int(),
+  nombre: z.string(),
+  tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]),
+  clases_por_semana: z.number().int().nullable(),
+  profesora: z.string(),
+  actividades: z.array(z.string()).openapi({ description: "Las actividades de sus horarios" }),
+  estado_cuota: z.enum(ESTADOS_HABILITACION),
+  fecha_vencimiento: z.string().nullable().openapi({ description: "AAAA-MM-DD; null sin cuota paga" }),
+  dias_restantes: z.number().int().nullable().openapi({ description: "Negativo si ya venció" }),
+});
+
 const panelAlumnoRespuestaSchema = z
   .object({
     id_alumno: z.number().int(),
     alumno: z.object({ nombre: z.string(), apellido: z.string() }),
-    plan: z
-      .object({
-        nombre: z.string(),
-        tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]),
-        clases_por_semana: z.number().int().nullable(),
-        profesora: z.string(),
-        estado_cuota: z.enum(ESTADOS_HABILITACION),
-        fecha_vencimiento: z.string().nullable().openapi({ description: "AAAA-MM-DD; null sin cuota paga" }),
-        dias_restantes: z.number().int().nullable().openapi({ description: "Negativo si ya venció" }),
-      })
+    plan: planDelPanelSchema
       .nullable()
-      .openapi({ description: "null sin una inscripción vigente" }),
+      .openapi({ description: "La inscripción principal (la activa más nueva); null sin una vigente" }),
+    planes: z.array(planDelPanelSchema).openapi({
+      description:
+        "Todas las inscripciones vigentes con su cuota: un alumno puede tener un plan por actividad",
+    }),
     proximas_clases: z.array(
       z.object({
         id_horario: z.number().int(),
+        id_inscripcion: z.number().int().openapi({ description: "El plan al que pertenece la clase" }),
         fecha: z.string().openapi({ example: "2026-10-12" }),
         hora_inicio: z.string().openapi({ example: "18:00" }),
         hora_fin: z.string().openapi({ example: "19:00" }),
@@ -224,6 +239,7 @@ const panelAlumnoRespuestaSchema = z
     historial_asistencias: z.array(
       z.object({
         id_clase: z.number().int(),
+        id_inscripcion: z.number().int().openapi({ description: "El plan con el que asistió" }),
         fecha: z.string(),
         actividad: z.string(),
         profesora: z.string().openapi({ description: "Quien dictó la clase" }),

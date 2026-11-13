@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -184,8 +184,8 @@ describe("ProfesoraDetallePage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Dar de baja" }));
 
-    expect(screen.getByText("¿Dar de baja a este/a profesor/a?")).toBeInTheDocument();
-    expect(screen.getByText(/Tiene 1 clase semanal asignada/i)).toBeInTheDocument();
+    expect(screen.getByText(/tiene clases a cargo$/)).toBeInTheDocument();
+    expect(screen.getByText(/Reasigná o dá de baja su clase en Horarios/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ir a Horarios" })).toBeInTheDocument();
   });
 
@@ -194,9 +194,10 @@ describe("ProfesoraDetallePage", () => {
     renderizar("1");
 
     fireEvent.click(screen.getByRole("button", { name: "Dar de baja" }));
-    expect(screen.getByText("¿Dar de baja a este/a profesor/a?")).toBeInTheDocument();
+    const dialogo = screen.getByRole("alertdialog");
+    expect(within(dialogo).getByText("¿Seguro que desea realizar la baja?")).toBeInTheDocument();
 
-    const btnConfirmar = screen.getByRole("button", { name: "Confirmar baja" });
+    const btnConfirmar = within(dialogo).getByRole("button", { name: "Dar de baja" });
     fireEvent.click(btnConfirmar);
 
     expect(mockMutateDarDeBaja).toHaveBeenCalledWith(1, expect.any(Object));

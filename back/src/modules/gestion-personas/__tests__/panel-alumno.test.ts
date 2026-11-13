@@ -156,6 +156,7 @@ describe("historialDelPanel", () => {
       historialDelPanel([
         {
           id_clase: 3,
+          id_inscripcion: 7,
           fecha_clase: new Date("2026-10-05T00:00:00Z"),
           hora_inicio: new Date("1970-01-01T18:00:00Z"),
           hora_fin: new Date("1970-01-01T19:00:00Z"),

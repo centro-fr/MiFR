@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { Button } from "@/components/ui/button";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
@@ -61,7 +62,7 @@ export function SeccionReporte({ id, titulo, descripcion, children }: { id: stri
       <h2 id={id} className="text-base font-extrabold text-slate-900 dark:text-white">
         {titulo}
       </h2>
-      {descripcion && <p className="mt-0.5 text-sm text-muted-foreground">{descripcion}</p>}
+      {descripcion && <p className="mt-1.5 text-sm text-muted-foreground">{descripcion}</p>}
       <div className="mt-3">{children}</div>
     </Card>
   );
@@ -71,7 +72,7 @@ export function TituloDelReporte({ titulo, detalle }: { titulo: string; detalle:
   return (
     <div>
       <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl dark:text-white">{titulo}</h2>
-      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{detalle}</p>
+      <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">{detalle}</p>
     </div>
   );
 }
@@ -186,6 +187,7 @@ export function SelectFiltro({ id, etiqueta, valor, todos, opciones, onChange }:
 }
 
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
+import { useAccionesReportes } from "@/features/reportes/components/pagina-reportes";
 export { BotonLimpiarFiltros };
 
 interface PropsGrupoDeFiltros {
@@ -196,14 +198,21 @@ interface PropsGrupoDeFiltros {
 }
 
 // Los filtros van sobre el fondo de la página: una tarjeta alrededor de inputs con borde se ve como
-// un doble borde.
+// un doble borde. En el celular y la tablet quedan detrás del botón "Filtros", como en los listados.
 export function GrupoDeFiltros({ children, onLimpiar, hayFiltros = false }: PropsGrupoDeFiltros) {
-  const grilla = <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>;
-  if (!onLimpiar) return grilla;
+  const [abierto, setAbierto] = useState(false);
+  const idPanel = useId();
+  const acciones = useAccionesReportes();
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-      {grilla}
-      <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={onLimpiar} />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 xl:hidden">
+        <BotonFiltrosMovil abierto={abierto} activos={hayFiltros} onAlternar={() => setAbierto((v) => !v)} idPanel={idPanel} conTexto />
+        {acciones && <div className="flex shrink-0 items-center gap-2 [&_button]:h-10 [&_button]:min-h-0 [&_button]:grow-0">{acciones}</div>}
+      </div>
+      <div id={idPanel} className={cn("flex-col gap-3 lg:flex-row lg:items-end", abierto ? "flex" : "hidden xl:flex")}>
+        <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+        {onLimpiar && <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={onLimpiar} />}
+      </div>
     </div>
   );
 }

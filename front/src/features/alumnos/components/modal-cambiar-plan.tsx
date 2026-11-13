@@ -24,6 +24,7 @@ import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_M
 interface Props {
   nombre: string;
   inscripcion: InscripcionDeAlumno;
+  inscripciones?: InscripcionDeAlumno[];
   tienePlanVigente?: boolean;
   onClose: () => void;
 }
@@ -33,9 +34,16 @@ const CINCO_MINUTOS = 5 * 60_000;
 export function ModalCambiarPlan({
   nombre,
   inscripcion,
+  inscripciones,
   tienePlanVigente = false,
   onClose,
 }: Props) {
+  const inscripcionesLista = inscripciones && inscripciones.length > 0 ? inscripciones : [inscripcion];
+  const [inscripcionElegida, setInscripcionElegida] = useState<InscripcionDeAlumno | null>(
+    inscripcionesLista.length >= 2 ? null : inscripcionesLista[0],
+  );
+  const inscripcionActiva = inscripcionElegida ?? inscripcion;
+
   const { data: planes = [], isLoading: cargandoPlanes } = usePlanes();
   const { data: profesoras = [], isLoading: cargandoProfesoras } = useQuery({
     queryKey: ["profesoras"],
@@ -49,17 +57,24 @@ export function ModalCambiarPlan({
   });
 
   const cambiar = useCambiarPlanYHorarios({
-    idInscripcion: inscripcion.id_inscripcion,
-    idPlan: inscripcion.plan.id_plan,
+    idInscripcion: inscripcionActiva.id_inscripcion,
+    idPlan: inscripcionActiva.plan.id_plan,
   });
 
-  const [idPlan, setIdPlan] = useState<number | null>(inscripcion.plan.id_plan);
+  const [idPlan, setIdPlan] = useState<number | null>(inscripcionActiva.plan.id_plan);
   const [idProfesora, setIdProfesora] = useState<number | null>(
-    inscripcion.id_profesora,
+    inscripcionActiva.id_profesora,
   );
   const [idsHorarios, setIdsHorarios] = useState<number[]>(
-    inscripcion.horarios.map((h) => h.id_horario),
+    () => inscripcionActiva.horarios.map((h) => h.id_horario),
   );
+
+  const seleccionarInscripcion = (item: InscripcionDeAlumno) => {
+    setInscripcionElegida(item);
+    setIdPlan(item.plan.id_plan);
+    setIdProfesora(item.id_profesora);
+    setIdsHorarios(item.horarios.map((h) => h.id_horario));
+  };
   const [fechaInicio, setFechaInicio] = useState<string>(
     inscripcion.fecha_inicio || "",
   );
@@ -158,6 +173,34 @@ export function ModalCambiarPlan({
   };
 
   const cargando = cargandoPlanes || cargandoProfesoras || cargandoHorarios;
+
+  if (!inscripcionElegida) {
+    return (
+      <Dialog open onOpenChange={(abierto) => !abierto && onClose()}>
+        <DialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
+          <DialogHeader className={CABECERA_MODAL}>
+            <DialogTitle className={TITULO_MODAL}>Cambiar plan y horarios</DialogTitle>
+            <DialogDescription className={DESCRIPCION_MODAL}>
+              {nombre} tiene {inscripcionesLista.length} planes activos. Elegí cuál querés modificar:
+            </DialogDescription>
+          </DialogHeader>
+          <div className={cn(CUERPO_MODAL, "space-y-2")}>
+            {inscripcionesLista.map((item) => (
+              <button
+                key={item.id_inscripcion}
+                type="button"
+                onClick={() => seleccionarInscripcion(item)}
+                className="flex w-full cursor-pointer flex-col items-start gap-0.5 rounded-xl border border-slate-200 px-4 py-3 text-left transition-colors hover:border-primary hover:bg-primary/5 dark:border-white/15 dark:hover:border-primary dark:hover:bg-primary/10"
+              >
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{item.plan.nombre}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{item.profesora}</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog

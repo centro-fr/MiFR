@@ -1,10 +1,11 @@
 import React from 'react';
 import type { DiaSemana, Horario } from '../../../types/horarios';
-import { Plus, Clock, Users, Pencil, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { textoCupo } from '../utils/cupo';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { FilaMovil } from '@/components/ui/fila-movil';
+import { BOTON_FILA, BOTON_FILA_PELIGRO, LISTA_MOVIL } from '@/components/ui/estilos-lista';
 import { cn } from '@/utils/cn';
 
 interface CronogramaListMobileProps {
@@ -129,79 +130,31 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
             </CardContent>
           </Card>
         ) : (
-          horariosDelDia.map((horario) => (
-            <div
-              key={horario.id}
-              onClick={() => onEdit(horario)}
-              className="w-full text-left rounded-lg border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 sm:p-5 shadow-xs hover:border-primary/50 active:scale-[0.99] transition-all flex flex-col gap-3 cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1 text-xs font-black text-primary">
-                      <Clock className="size-3.5" />
-                      {horario.horaInicio} - {horario.horaFin} hs
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'text-[10px] px-1.5 py-0 font-bold',
-                        horario.actividadTipo === 'PERSONALIZADA'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800'
-                          : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
-                      )}
-                    >
-                      {horario.actividadTipo === 'PERSONALIZADA' ? 'Personalizada' : 'Grupal'}
-                    </Badge>
-                  </div>
-
-                  <h4 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
-                    {horario.actividadNombre}
-                  </h4>
-
-                  <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {horario.profesoraNombre}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Users className="size-3.5" />
-                      Cupo: <strong className="text-slate-700 dark:text-slate-200">{textoCupo(horario.cupoMaximo)}</strong>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Acciones */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(horario);
-                  }}
-                  className="inline-flex h-8 gap-1.5 rounded-lg border-slate-200 dark:border-slate-700 bg-transparent px-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 [&_svg]:size-3.5"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>Editar</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(horario);
-                  }}
-                  className="inline-flex h-8 gap-1.5 rounded-lg border-rose-200 dark:border-rose-900/50 bg-transparent px-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 [&_svg]:size-3.5"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Eliminar</span>
-                </Button>
-              </div>
-            </div>
-          ))
+          <ul aria-label={`Horarios del ${DIAS_TAB.find((d) => d.id === selectedDay)?.label ?? 'día'}`} className={LISTA_MOVIL}>
+            {horariosDelDia.map((horario) => (
+              <FilaMovil
+                key={horario.id}
+                titulo={horario.actividadNombre}
+                detalle={[
+                  `${horario.horaInicio} - ${horario.horaFin} hs`,
+                  horario.profesoraNombre,
+                  horario.actividadTipo === 'PERSONALIZADA' ? 'Personalizada' : 'Grupal',
+                  `Cupo ${textoCupo(horario.cupoMaximo)}`,
+                ]}
+                onAbrir={() => onEdit(horario)}
+                acciones={
+                  <>
+                    <Button type="button" variant="outline" onClick={() => onEdit(horario)} className={BOTON_FILA}>
+                      Editar
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => onDelete(horario)} className={BOTON_FILA_PELIGRO}>
+                      Eliminar
+                    </Button>
+                  </>
+                }
+              />
+            ))}
+          </ul>
         )}
       </div>
     </div>

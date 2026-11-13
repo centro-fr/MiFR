@@ -23,7 +23,6 @@ vi.mock("@/features/promociones/hooks/use-promociones", () => ({
     data: [
       {
         id: "1",
-        codigo: "VERANO",
         nombre: "Promo Verano",
         tipoDescuento: "PORCENTAJE",
         valor: 20,

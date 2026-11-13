@@ -79,12 +79,17 @@ describe("BandejaPorVerificar", () => {
   it("muestra cada pendiente con su detalle, el monto y la acción que le corresponde", () => {
     renderizar(bandejaCon(armarBandeja([transferencia], [alta])));
 
-    const [primera, segunda] = within(screen.getByRole("list", { name: "Pagos por verificar" })).getAllByRole("listitem");
+    // Cada fila es un hijo directo de la lista; sus datos van en una lista propia, uno debajo del otro.
+    const [primera, segunda] = [...screen.getByRole("list", { name: "Pagos por verificar" }).children] as HTMLElement[];
     expect(primera).toHaveTextContent("Valentina Herrera");
-    expect(primera).toHaveTextContent("Transferencia · Renovación · 18/10 09:40");
+    expect(primera).toHaveTextContent("Transferencia");
+    expect(primera).toHaveTextContent("Intermedio · Renovación");
+    expect(primera).toHaveTextContent("18/10 09:40");
     expect(primera).toHaveTextContent("42.000");
     expect(within(primera).getByRole("button", { name: "Verificar: Valentina Herrera" })).toBeInTheDocument();
-    expect(segunda).toHaveTextContent("Alta nueva · Básico · reserva hasta el 20/10");
+    expect(segunda).toHaveTextContent("Alta nueva");
+    expect(segunda).toHaveTextContent("Básico · Primera cuota");
+    expect(segunda).toHaveTextContent("reserva hasta el 20/10");
     expect(within(segunda).getByRole("button", { name: "Cobrar: Lautaro Díaz" })).toBeInTheDocument();
   });
 
@@ -101,24 +106,26 @@ describe("BandejaPorVerificar", () => {
   it("en el dashboard muestra solo las primeras", () => {
     renderizar(bandejaCon(armarBandeja([transferencia], [alta])), 1);
 
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByRole("list", { name: "Pagos por verificar" }).children).toHaveLength(1);
   });
 
-  it("en la pantalla Por verificar arma una tabla con la cuota o el plan y la fecha en columnas", () => {
+  it("en la pantalla Por verificar arma una tabla con el plan, la cuota y la fecha en columnas", () => {
     renderizar(bandejaCon(armarBandeja([transferencia], [alta])), undefined, "tabla");
 
     const tabla = screen.getByRole("table");
     const encabezados = within(tabla).getAllByRole("columnheader").map((celda) => celda.textContent);
-    expect(encabezados).toEqual(["Alumno", "A verificar", "Cuota / Plan", "Fecha", "Monto", "Acciones"]);
+    expect(encabezados).toEqual(["Alumno", "A verificar", "Plan", "Cuota", "Fecha", "Monto", "Acciones"]);
     const [, transferenciaFila, altaFila] = within(tabla).getAllByRole("row");
-    expect(within(transferenciaFila).getAllByRole("cell").map((celda) => celda.textContent).slice(1, 4)).toEqual([
+    expect(within(transferenciaFila).getAllByRole("cell").map((celda) => celda.textContent).slice(1, 5)).toEqual([
       "Transferencia",
+      "Intermedio",
       "Renovación",
       "18/10 09:40",
     ]);
-    expect(within(altaFila).getAllByRole("cell").map((celda) => celda.textContent).slice(1, 4)).toEqual([
+    expect(within(altaFila).getAllByRole("cell").map((celda) => celda.textContent).slice(1, 5)).toEqual([
       "Alta nueva",
       "Básico",
+      "Primera cuota",
       "reserva hasta el 20/10",
     ]);
   });

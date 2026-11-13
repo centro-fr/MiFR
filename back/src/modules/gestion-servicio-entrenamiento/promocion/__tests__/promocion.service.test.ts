@@ -10,7 +10,6 @@ const dia = (texto: string) => new Date(`${texto}T00:00:00Z`);
 
 const guardada = {
   id_promocion: 4,
-  codigo: "VERANO26",
   nombre: "Verano",
   tipo_descuento: "PORCENTAJE" as const,
   valor: 20,
@@ -21,7 +20,6 @@ const guardada = {
 };
 
 const alta = {
-  codigo: "VERANO26",
   nombre: "Verano",
   tipo_descuento: "PORCENTAJE" as const,
   valor: 20,
@@ -91,7 +89,7 @@ describe("PromocionService", () => {
       await expect(servicio.crear({ ...alta, fecha_hasta: HOY })).resolves.toBeDefined();
     });
 
-    it.each([[{ resultado: "superpuesta", id_plan: 1 }], [{ resultado: "codigo-repetido" }]])(
+    it.each([[{ resultado: "superpuesta", id_plan: 1 }]])(
       "responde 409 si el repositorio informa %j",
       async (resultado) => {
         repositorio.guardar.mockResolvedValue(resultado);
@@ -107,7 +105,6 @@ describe("PromocionService", () => {
 
       expect(repositorio.guardar).toHaveBeenCalledWith(
         {
-          codigo: "VERANO26",
           nombre: "Verano",
           tipo_descuento: "PORCENTAJE",
           valor: 15,
@@ -121,7 +118,6 @@ describe("PromocionService", () => {
 
     it("reemplaza los planes y el resto de los campos que vienen", async () => {
       await servicio.actualizar(4, {
-        codigo: "OTRO",
         nombre: "Otro",
         tipo_descuento: "MONTO_FIJO",
         valor: 500,
@@ -130,7 +126,7 @@ describe("PromocionService", () => {
         ids_planes: [2, 3],
       });
 
-      expect(repositorio.guardar.mock.calls[0][0]).toMatchObject({ codigo: "OTRO", ids_planes: [2, 3] });
+      expect(repositorio.guardar.mock.calls[0][0]).toMatchObject({ nombre: "Otro", ids_planes: [2, 3] });
     });
 
     it.each([
@@ -171,7 +167,7 @@ describe("PromocionService", () => {
   });
 
   describe("descuentoAplicable", () => {
-    const aplicable = { id_promocion: 4, codigo: "VERANO26", nombre: "Verano" };
+    const aplicable = { id_promocion: 4, nombre: "Verano" };
 
     it.each([
       ["un porcentaje, redondeado a centavos", "PORCENTAJE", 15, 25000.55, 3750.08],

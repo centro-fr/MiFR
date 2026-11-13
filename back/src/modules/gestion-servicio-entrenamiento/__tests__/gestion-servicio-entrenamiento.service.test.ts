@@ -227,7 +227,6 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
 describe("GestionServicioEntrenamientoService: los planes de una promoción (US-13)", () => {
   const DESDE = new Date("2026-12-01T00:00:00Z");
   const alta = {
-    codigo: "VERANO26",
     nombre: "Verano",
     tipo_descuento: "MONTO_FIJO" as const,
     valor: 5000,

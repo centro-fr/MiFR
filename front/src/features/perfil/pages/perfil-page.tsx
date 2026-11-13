@@ -64,20 +64,24 @@ function useDatosDeLaProfesora(user: AuthUser): { datos: DatosDelPerfil; consult
 function useDatosDelAlumno(user: AuthUser): { datos: DatosDelPerfil; consulta: Consulta } {
   const consulta = usePanelAlumno();
   const { elegido } = useAlumnoElegido();
-  const plan = consulta.data?.plan;
-  // El tutor ve el plan del menor que eligió en la barra superior.
+  const planes = consulta.data?.planes ?? [];
+  // El tutor ve los planes del menor que eligió en la barra superior.
   const deQuien = elegido && !elegido.propio ? ` de ${elegido.nombre}` : "";
   return {
     consulta,
     datos: {
       rol: deQuien ? "Tutor/a" : "Alumno/a",
       email: user.email,
-      resumen: plan
-        ? [
-            { etiqueta: `Plan${deQuien}`, valor: plan.nombre },
-            { etiqueta: "Profesor/a", valor: plan.profesora },
-          ]
-        : [{ etiqueta: `Plan${deQuien}`, valor: "Sin plan vigente" }],
+      resumen:
+        planes.length > 0
+          ? planes.flatMap((plan, indice) => {
+              const sufijo = planes.length > 1 ? ` (${indice + 1})` : "";
+              return [
+                { etiqueta: `Plan${deQuien}${sufijo}`, valor: plan.nombre },
+                { etiqueta: `Profesor/a${sufijo}`, valor: plan.profesora },
+              ];
+            })
+          : [{ etiqueta: `Plan${deQuien}`, valor: "Sin plan vigente" }],
     },
   };
 }
@@ -126,7 +130,7 @@ function PerfilMovil({ nombre, datos, contenido, extra }: PropsVista) {
     <div className="flex w-full min-w-0 flex-col gap-4">
       <div className="flex items-center gap-3.5">
         <AvatarIniciales nombre={nombre} tamano="grande" />
-        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">{nombre}</h1>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{nombre}</h1>
       </div>
       {contenido ?? (
         <DatosEnFilas
@@ -165,8 +169,8 @@ function PerfilEscritorio({ nombre, datos, contenido, extra }: PropsVista) {
       <header className="flex min-w-0 items-center gap-4">
         <AvatarFicha iniciales={inicialesDeNombre(nombre)} activo />
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 @xl:text-3xl dark:text-white">{nombre}</h1>
-          <p className="text-sm text-muted-foreground">{datos.rol}</p>
+          <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{nombre}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{datos.rol}</p>
         </div>
       </header>
       {contenido ?? (

@@ -36,7 +36,6 @@ function valoresIniciales(promocion: Promocion | null): PromocionFormValues {
   );
   return promocion
     ? {
-        codigo: promocion.codigo,
         nombre: promocion.nombre,
         tipoDescuento: promocion.tipoDescuento,
         valor: String(promocion.valor),
@@ -46,7 +45,6 @@ function valoresIniciales(promocion: Promocion | null): PromocionFormValues {
         idsPlanes: promocion.planes.map((plan) => plan.id),
       }
     : {
-        codigo: "",
         nombre: "",
         tipoDescuento: "PORCENTAJE",
         valor: "",
@@ -90,11 +88,8 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
 
         <form onSubmit={formulario.handleSubmit(onSubmit)} noValidate className="flex flex-col flex-1 overflow-hidden">
           <div className={CUERPO_MODAL}>
-            <Campo id="promocion-codigo" label="Código" error={formulario.formState.errors.codigo?.message}>
-              <Input id="promocion-codigo" {...formulario.register("codigo")} className="h-11 rounded-xl" placeholder="VERANO26" />
-            </Campo>
             <Campo id="promocion-nombre" label="Nombre" error={formulario.formState.errors.nombre?.message}>
-              <Input id="promocion-nombre" {...formulario.register("nombre")} className="h-11 rounded-xl" placeholder="Promoción de verano" />
+              <Input id="promocion-nombre" {...formulario.register("nombre")} className="h-10 rounded-xl" placeholder="Promoción de verano" />
             </Campo>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -122,7 +117,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                   id="promocion-valor"
                   {...formulario.register("valor")}
                   inputMode="decimal"
-                  className="h-11 rounded-xl"
+                  className="h-10 rounded-xl"
                   placeholder={tipo === "PORCENTAJE" ? "20" : "5000"}
                 />
               </Campo>
@@ -135,7 +130,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                   id="promocion-desde"
                   value={formulario.watch("fechaDesde") ?? ""}
                   onChange={(v) => formulario.setValue("fechaDesde", v, { shouldValidate: true })}
-                  className="h-11 rounded-xl"
+                  className="h-10 rounded-xl"
                 />
               </Campo>
 
@@ -154,7 +149,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
                       formulario.setValue("fechaHasta", v, { shouldValidate: true });
                     }}
                     className={cn(
-                      "h-11 rounded-xl",
+                      "h-10 rounded-xl",
                       permanente && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/50",
                     )}
                   />

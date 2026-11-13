@@ -75,6 +75,8 @@ export interface AsistenciaDeProfesora {
 // de qué actividad, quién la dictó y si fue.
 export interface MarcaDelAlumno {
   id_clase: number;
+  // La inscripción con la que asistió: con varios planes, dice de cuál es la clase.
+  id_inscripcion: number;
   fecha_clase: Date;
   hora_inicio: Date;
   hora_fin: Date;

@@ -31,8 +31,8 @@ function ContadorSinLeer({ cantidad, sobreFondoOscuro }: { cantidad: number; sob
     <span
       aria-hidden="true"
       className={cn(
-        "absolute top-1.5 right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-black text-white ring-2 tabular-nums",
-        sobreFondoOscuro ? "ring-sidebar" : "ring-bg-light dark:ring-canvas",
+        "absolute top-1.5 right-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-[9px] leading-none font-extrabold text-white ring-[1.5px] tabular-nums",
+        sobreFondoOscuro ? "ring-sidebar dark:ring-canvas" : "ring-bg-light dark:ring-canvas",
       )}
     >
       {cantidad > MAXIMO_EN_EL_CONTADOR ? `${MAXIMO_EN_EL_CONTADOR}+` : cantidad}
@@ -111,7 +111,7 @@ export function CampanaNotificaciones({ sobreFondoOscuro = false }: { sobreFondo
               size="icon"
               aria-label={noLeidas > 0 ? `Notificaciones: ${etiquetaSinLeer(noLeidas)}` : "Notificaciones"}
               className={cn(
-                "relative h-11 w-11 cursor-pointer justify-center rounded-xl p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                "relative h-11 w-11 cursor-pointer justify-center rounded-xl p-0 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&_svg]:size-5",
                 sobreFondoOscuro
                   ? "text-slate-300 hover:bg-white/10 hover:text-white"
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10",

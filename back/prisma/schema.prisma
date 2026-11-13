@@ -201,7 +201,6 @@ enum tipo_descuento {
 // US-13: el estado (activa, programada, vencida, desactivada) no se guarda: sale de las fechas y de activo.
 model promociones {
   id_promocion   Int            @id(map: "PK_promociones") @default(autoincrement())
-  codigo         String         @unique(map: "UK_promociones_codigo") @db.VarChar(20)
   nombre         String         @db.VarChar(60)
   tipo_descuento tipo_descuento
   // > 0; <= 100 si PORCENTAJE

@@ -147,7 +147,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
               onChange={(e) => cambiar({ nombre: e.target.value })}
               placeholder="Ej: Básico, Intermedio, Particular, Premium"
               className={cn(
-                "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                 errores.nombre && "border-rose-500 focus-visible:ring-rose-500"
               )}
             />
@@ -249,7 +249,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                   value={valores.diasGracia}
                   onChange={(e) => cambiar({ diasGracia: e.target.value })}
                   className={cn(
-                    "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                    "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
                     errores.diasGracia && "border-rose-500 focus-visible:ring-rose-500"
                   )}
                 />
@@ -298,7 +298,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                   onChange={(e) => cambiar({ precio: e.target.value })}
                   placeholder="35000"
                   className={cn(
-                    "h-11 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                    "h-10 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                     errores.precio && "border-rose-500 focus-visible:ring-rose-500"
                   )}
                 />

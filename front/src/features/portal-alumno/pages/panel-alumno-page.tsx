@@ -9,13 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { etiquetaCuota, tonoCuota, type TonoCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { nombreDelMes } from "@/features/asistencia/utils/semana";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { saludoSegunHorario } from "@/utils/saludo";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { cn } from "@/utils/cn";
 import { useInsignias } from "../hooks/use-insignias";
-import { usePanelAlumno } from "../hooks/use-panel-alumno";
+import { usePlanElegido } from "../hooks/use-plan-elegido";
 import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
 import { useAlumnoElegido } from "../hooks/use-alumno-elegido";
-import type { PanelAlumno } from "../schemas/panel-alumno";
+import type { PanelAlumno, PlanDelAlumno } from "../schemas/panel-alumno";
 import { puestoDe } from "../utils/puesto-propio";
 import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-panel";
 
@@ -33,10 +34,10 @@ const COLOR_DEL_TONO: Record<TonoCuota, string> = {
 
 function diaYMesCorto(fecha: string): string {
   const [, mes, dia] = fecha.slice(0, 10).split("-");
-  return `${dia}/${mes}`;
+  return dia && mes ? `${dia}/${mes}` : "—";
 }
 
-function TarjetaCuota({ plan }: { plan: PanelAlumno["plan"] }) {
+function TarjetaCuota({ plan }: { plan: PlanDelAlumno | undefined }) {
   if (!plan) return <AvisoVacio>No tenés un plan vigente. Consultá en el centro.</AvisoVacio>;
   const tono = tonoCuota(plan.estado_cuota);
   const frecuencia =
@@ -159,8 +160,8 @@ function Saludo({ panel }: { panel: PanelAlumno }) {
   const ganadas = insignias.data?.insignias.filter((insignia) => insignia.obtenida) ?? [];
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
-        Hola, {user?.nombre ?? panel.alumno.nombre}
+      <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
+        {saludoSegunHorario(user?.nombre ?? panel.alumno.nombre)}
       </h1>
       {propio && ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}
     </div>
@@ -168,7 +169,7 @@ function Saludo({ panel }: { panel: PanelAlumno }) {
 }
 
 function Contenido() {
-  const consulta = usePanelAlumno();
+  const { consulta, elegido, vista } = usePlanElegido();
   if (consulta.isPending) {
     return (
       <div aria-busy="true" aria-label="Cargando tu inicio" className="flex flex-col gap-4">
@@ -187,13 +188,14 @@ function Contenido() {
     );
   }
   const panel = consulta.data;
+  const proximaClase = vista?.proximas_clases[0] ?? panel.proximas_clases[0];
   // En el celular, una columna; con lugar, la cuota y la próxima clase lado a lado, y abajo los números.
   return (
     <>
       <Saludo panel={panel} />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-        <TarjetaCuota plan={panel.plan} />
-        <ProximaClase clase={panel.proximas_clases[0]} />
+        <TarjetaCuota plan={elegido} />
+        <ProximaClase clase={proximaClase} />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Indicadores panel={panel} />

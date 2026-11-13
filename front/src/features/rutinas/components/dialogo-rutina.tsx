@@ -329,7 +329,7 @@ export function DialogoRutina({
         <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
           <AlertDialogHeader className={CABECERA_MODAL}>
             <AlertDialogTitle className={TITULO_MODAL}>
-              ¿Eliminar rutina?
+              ¿Seguro que desea eliminar?
             </AlertDialogTitle>
             <AlertDialogDescription className={DESCRIPCION_MODAL}>
               Se eliminará la rutina <strong className="text-slate-900 dark:text-white">&quot;{rutinaTarget.nombre}&quot;</strong> del alumno {nombreAlumno}. Esta acción no se puede deshacer.

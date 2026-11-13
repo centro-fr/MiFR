@@ -168,7 +168,7 @@ export function InicioProfesora({ idProfesora }: { idProfesora: string }) {
         <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
           Hola{user ? `, ${user.nombre}` : ""}
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Resumen al {diaDeHoy(fechaActualArgentina())}</p>
+        <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Resumen al {diaDeHoy(fechaActualArgentina())}</p>
       </header>
       <Indicadores idProfesora={idProfesora} />
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">

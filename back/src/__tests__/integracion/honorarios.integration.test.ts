@@ -756,7 +756,6 @@ describe("PI-91: los descuentos de las promociones no reducen los honorarios", (
     const sosa = await inscribir("Sosa", rita, id_horario, plan);
     const { id_promocion } = await prisma.promociones.create({
       data: {
-        codigo: "VERANO20",
         nombre: "Verano",
         tipo_descuento: "PORCENTAJE",
         valor: 20,

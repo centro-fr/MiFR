@@ -14,7 +14,7 @@ import { usePanelAlumno } from "../hooks/use-panel-alumno";
 import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
 import type { FichaInsignias } from "../schemas/insignias";
 import type { RankingAsistencia } from "../schemas/ranking-asistencia";
-import { etiquetaDelMes, periodoDelMes, sumarMeses } from "../utils/mes-del-ranking";
+import { etiquetaDelMes, periodoDelAnio, periodoDelMes, sumarMeses } from "../utils/mes-del-ranking";
 import { tituloDelRanking } from "../utils/titulo-del-ranking";
 import { DialogoCompartirRanking, type DatosParaCompartir } from "./compartir-ranking";
 
@@ -72,8 +72,8 @@ function ListaRanking({ ranking, esProfesora, etiquetaPropia }: { ranking: Ranki
   );
 }
 
-/** La profesora recorre los meses; no puede pasar del mes en curso. */
-function SelectorDeMes({ mes, mesActual, onCambiar }: { mes: string; mesActual: string; onCambiar: (mes: string) => void }) {
+/** Recorre los meses; no puede pasar del mes en curso. */
+export function SelectorDeMes({ mes, mesActual, onCambiar }: { mes: string; mesActual: string; onCambiar: (mes: string) => void }) {
   const boton =
     "flex size-11 items-center justify-center text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 md:size-9 dark:text-slate-200 dark:hover:bg-white/5";
   return (
@@ -89,6 +89,31 @@ function SelectorDeMes({ mes, mesActual, onCambiar }: { mes: string; mesActual: 
         aria-label="Mes siguiente"
         disabled={mes >= mesActual}
         onClick={() => onCambiar(sumarMeses(mes, 1))}
+        className={cn(boton, "rounded-r-lg")}
+      >
+        <ChevronRight aria-hidden="true" className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+/** Recorre los años; no puede pasar del año en curso. */
+export function SelectorDeAnio({ anio, anioActual, onCambiar }: { anio: number; anioActual: number; onCambiar: (anio: number) => void }) {
+  const boton =
+    "flex size-11 items-center justify-center text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 md:size-9 dark:text-slate-200 dark:hover:bg-white/5";
+  return (
+    <div role="group" aria-label="Año del ranking" className="flex w-fit items-center rounded-lg border border-slate-300 bg-card dark:border-slate-700">
+      <button type="button" aria-label="Año anterior" onClick={() => onCambiar(anio - 1)} className={cn(boton, "rounded-l-lg")}>
+        <ChevronLeft aria-hidden="true" className="size-4" />
+      </button>
+      <span aria-live="polite" className="min-w-36 border-x border-slate-200 px-3 text-center text-sm font-semibold leading-11 md:leading-9 dark:border-slate-700">
+        {anio}
+      </span>
+      <button
+        type="button"
+        aria-label="Año siguiente"
+        disabled={anio >= anioActual}
+        onClick={() => onCambiar(anio + 1)}
         className={cn(boton, "rounded-r-lg")}
       >
         <ChevronRight aria-hidden="true" className="size-4" />
@@ -207,9 +232,13 @@ export function RankingSeccion({ alumno }: { alumno?: AlumnoVisto }) {
   const esProfesora = alumno === undefined;
   const vistaAmplia = useVistaAmplia();
   const hoy = fechaActualArgentina();
+  const anioActual = Number(hoy.slice(0, 4));
+  const [tipoRanking, setTipoRanking] = useState<"mensual" | "anual">("mensual");
   const [mes, setMes] = useState(() => hoy.slice(0, 7));
+  const [anio, setAnio] = useState(() => anioActual);
   const [compartiendo, setCompartiendo] = useState(false);
-  const consulta = useRankingAsistencia(periodoDelMes(mes, hoy));
+  const filtroPeriodo = tipoRanking === "mensual" ? periodoDelMes(mes, hoy) : periodoDelAnio(String(anio), hoy);
+  const consulta = useRankingAsistencia(filtroPeriodo);
   const ranking = consulta.data && alumno ? soloDelAlumno(consulta.data, alumno) : consulta.data;
   const propia = esProfesora ? undefined : ranking?.propias[0];
   const etiquetaPropia = alumno?.propio ? "vos" : null;
@@ -221,7 +250,48 @@ export function RankingSeccion({ alumno }: { alumno?: AlumnoVisto }) {
         detalle={subtitulo(ranking, alumno)}
         accion={propia && <BotonCompartir onClick={() => setCompartiendo(true)} />}
       />
-      {esProfesora && <SelectorDeMes mes={mes} mesActual={hoy.slice(0, 7)} onCambiar={setMes} />}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          role="group"
+          aria-label="Tipo de ranking"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-card p-1 dark:border-slate-700"
+        >
+          <button
+            type="button"
+            aria-pressed={tipoRanking === "mensual"}
+            onClick={() => setTipoRanking("mensual")}
+            className={cn(
+              "h-9 rounded-md px-3 text-sm font-semibold transition-colors md:h-7",
+              tipoRanking === "mensual"
+                ? "bg-slate-100 text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white",
+            )}
+          >
+            Mensual
+          </button>
+          <button
+            type="button"
+            aria-pressed={tipoRanking === "anual"}
+            onClick={() => setTipoRanking("anual")}
+            className={cn(
+              "h-9 rounded-md px-3 text-sm font-semibold transition-colors md:h-7",
+              tipoRanking === "anual"
+                ? "bg-slate-100 text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white",
+            )}
+          >
+            Anual
+          </button>
+        </div>
+
+        {tipoRanking === "mensual" && (
+          <SelectorDeMes mes={mes} mesActual={hoy.slice(0, 7)} onCambiar={setMes} />
+        )}
+        {tipoRanking === "anual" && (
+          <SelectorDeAnio anio={anio} anioActual={anioActual} onCambiar={setAnio} />
+        )}
+      </div>
 
       {consulta.isPending ? (
         <TablaSkeleton ariaLabel="Cargando el ranking" filas={6} />

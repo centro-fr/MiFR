@@ -120,8 +120,8 @@ export function TableroMisClases({ idProfesora }: { idProfesora: string }) {
     <div className="flex w-full min-w-0 flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-[26px] leading-8 font-extrabold tracking-tight">Mis clases</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{rangoDeLosDias(tablero.dias)}</p>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">Mis clases</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{rangoDeLosDias(tablero.dias)}</p>
         </div>
         <div className="flex items-center gap-2">
           <NavegacionSemana onMover={(semanas) => setLunes((fecha) => sumarDias(fecha, semanas * 7))} onHoy={() => setLunes(lunesDeLaSemana(hoy))} />

@@ -69,7 +69,6 @@ export class PromocionService implements IInfoPromociones {
   async actualizar(id: number, input: ActualizarPromocionInput): Promise<Promocion> {
     const actual = await this.obtenerEditable(id);
     const resultante: DatosPromocion = {
-      codigo: input.codigo ?? actual.codigo,
       nombre: input.nombre ?? actual.nombre,
       tipo_descuento: input.tipo_descuento ?? actual.tipo_descuento,
       valor: input.valor ?? actual.valor,
@@ -123,9 +122,6 @@ export class PromocionService implements IInfoPromociones {
       throw new ConflictError(
         `El plan ${resultado.id_plan} ya tiene otra promoción activa en esas fechas: no se superponen`,
       );
-    }
-    if (resultado.resultado === "codigo-repetido") {
-      throw new ConflictError("Ya existe una promoción con ese código");
     }
     return resultado.promocion;
   }

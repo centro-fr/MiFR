@@ -284,7 +284,6 @@ describe("PlanService", () => {
     const HOY = new Date("2026-10-08T00:00:00Z");
     const promocion = {
       id_promocion: 4,
-      codigo: "VERANO26",
       nombre: "Verano",
       tipo_descuento: "PORCENTAJE",
       valor: 10,
@@ -306,7 +305,7 @@ describe("PlanService", () => {
         precio_lista: 25000.5,
         descuento: 2500.05,
         monto: 22500.45,
-        promocion: { id_promocion: 4, codigo: "VERANO26", nombre: "Verano" },
+        promocion: { id_promocion: 4, nombre: "Verano" },
       });
       expect(promociones.descuentoAplicable).toHaveBeenCalledWith(4, 1, HOY, 25000.5);
     });

@@ -239,7 +239,7 @@ async function inspectAttendance(page) {
 async function inspectStudentMetrics(page) {
   console.log("=== Validación interactiva de ranking, racha e insignias ===");
   await visit(page, "/app/comunidad", "ranking-inicial");
-  await assertText(page, /Ranking de asistencia/, "Título del ranking");
+  await assertText(page, /Ranking/, "Título del ranking");
   const dates = page.locator('input[type="date"]');
   if (await dates.count() >= 2) {
     console.log("[CLICK] Cambiar período del ranking");
