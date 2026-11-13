@@ -176,7 +176,7 @@ package "SERVICIO ENTRENAMIENTO" {
     --
   }
   entity "parametros_sistema" as parametros_sistema <<Servicio>> {
-    * <color:#DAA520><&key></color> clave : VARCHAR(50) <color:#DAA520>PK</color> <color:#6B7280><size:11>ej. DIAS_AVISO_VENCIMIENTO</size></color>
+    * <color:#DAA520><&key></color> clave : VARCHAR(50) <color:#DAA520>PK</color> <color:#6B7280><size:11>ej. MINUTOS_CIERRE_ASISTENCIA</size></color>
     --
     * valor : VARCHAR(100)
     * tipo_dato : ENUM <color:#000000><<ENTERO|DECIMAL|TEXTO|BOOLEANO>></color>

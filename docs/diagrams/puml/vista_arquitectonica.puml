@@ -297,7 +297,6 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     component "SuscripcionPush"            as SuscripcionPush
     interface "IInfoUsuarios"   as R_GN_InfoUsuarios
     interface "IInfoClases"     as R_GN_InfoClases
-    interface "IInfoParametros" as R_GN_InfoParametros
     interface "IInfoCuotas"     as R_GN_InfoCuotas
     interface "IRegistroNotificaciones" as I_RegistroNotificaciones
     interface "IEnvioPush"              as I_EnvioPush
@@ -306,7 +305,6 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Notificacion               -down- I_RegistroNotificaciones
     Notificacion               -right-( R_GN_InfoUsuarios
     PlanificadorNotificaciones -right-( R_GN_InfoClases
-    PlanificadorNotificaciones -up-( R_GN_InfoParametros
     PlanificadorNotificaciones -up-( R_GN_InfoCuotas
     SuscripcionPush            -up- I_EnvioPush
     Notificacion               -right-( I_EnvioPush
