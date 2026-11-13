@@ -8,7 +8,6 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, MontoDistintoError } from "../../../../shared/errors/app-error.js";
 import { createApp } from "../../../../app.js";
-import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaInscripcionesNoConfigurada } from "../../../../__tests__/fakes/logica-inscripciones-no-configurada.js";
 import type { ILogicaServicioEntrenamiento } from "../../../gestion-servicio-entrenamiento/interface/i-logica-servicio-entrenamiento.js";
 import type { ILogicaPersonas } from "../../../gestion-personas/interface/i-logica-personas.js";
@@ -55,7 +54,6 @@ function crearApp(logica: ReturnType<typeof crearLogicaMock>, autorizacion: IAut
     gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
     gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
     gestionCuotasYPagos: logica as unknown as ILogicaCuotasPagos,
-    difusionPublica: logicaDifusionPublicaNoConfigurada,
     gestionNotificaciones: logicaNotificacionesNoConfigurada,
     gestionInsignias: logicaInsigniasNoConfigurada,
     reportes: logicaInformesNoConfigurada,

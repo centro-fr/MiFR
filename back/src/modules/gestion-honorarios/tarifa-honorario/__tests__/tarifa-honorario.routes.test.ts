@@ -2,7 +2,6 @@ import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../../../app.js";
 import { logicaCuotasPagosNoConfigurada } from "../../../../__tests__/fakes/logica-cuotas-pagos-no-configurada.js";
-import { logicaDifusionPublicaNoConfigurada } from "../../../../__tests__/fakes/logica-difusion-publica-no-configurada.js";
 import { logicaHonorariosNoConfigurada } from "../../../../__tests__/fakes/logica-honorarios-no-configurada.js";
 import { logicaRutinasNoConfigurada } from "../../../../__tests__/fakes/logica-rutinas-no-configurada.js";
 import { logicaInsigniasNoConfigurada } from "../../../../__tests__/fakes/logica-insignias-no-configurada.js";
@@ -66,7 +65,6 @@ describe("rutas de tarifas de honorarios", () => {
       gestionServicioEntrenamiento: {} as unknown as ILogicaServicioEntrenamiento,
       gestionInscripcionesYClases: logicaInscripcionesNoConfigurada,
       gestionCuotasYPagos: logicaCuotasPagosNoConfigurada,
-      difusionPublica: logicaDifusionPublicaNoConfigurada,
       gestionNotificaciones: logicaNotificacionesNoConfigurada,
       gestionInsignias: logicaInsigniasNoConfigurada,
       reportes: logicaInformesNoConfigurada,

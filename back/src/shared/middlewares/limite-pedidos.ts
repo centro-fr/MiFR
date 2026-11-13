@@ -8,7 +8,6 @@ export interface LimiteDePedidos {
 
 export interface LimitesDePedidos {
   api: LimiteDePedidos;
-  publico: LimiteDePedidos;
   inicioSesion: LimiteDePedidos;
 }
 
@@ -18,8 +17,6 @@ const UN_MINUTO_MS = 60_000;
 // grupo entero usando el sistema a la vez; lo que cortan es un script que manda pedidos sin parar.
 export const LIMITES_DE_PEDIDOS: LimitesDePedidos = {
   api: { ventanaMs: UN_MINUTO_MS, maximo: 600 },
-  // Una visita a la página pública hace un solo pedido.
-  publico: { ventanaMs: UN_MINUTO_MS, maximo: 60 },
   // Cada intento verifica el token con Google y busca al usuario en la base, y una sesión dura horas.
   inicioSesion: { ventanaMs: 15 * UN_MINUTO_MS, maximo: 50 },
 };

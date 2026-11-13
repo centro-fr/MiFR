@@ -1,8 +1,6 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
 import helmet from "helmet";
-import type { ILogicaDifusionPublica } from "./modules/difusion-publica/interface/i-logica-difusion-publica.js";
-import { createDifusionPublicaRoutes } from "./modules/difusion-publica/difusion-publica.routes.js";
 import type { ILogicaCuotasPagos } from "./modules/gestion-cuotas-y-pagos/interface/i-logica-cuotas-pagos.js";
 import { createGestionCuotasYPagosRoutes } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
@@ -44,7 +42,6 @@ export interface AppDependencies {
   gestionRutinasYProgreso: ILogicaRutinasYProgreso;
   reportes: ILogicaInformes;
   gestionHonorarios: ILogicaHonorarios;
-  difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -65,11 +62,10 @@ export interface AppOpciones {
 }
 
 // Van antes que cualquier ruta, así un pedido que excede el tope no llega a la base. /health queda
-// afuera porque la consulta el monitor que mantiene despierta la API. Un pedido a /publico o al login
-// cuenta también para el tope general.
+// afuera porque la consulta el monitor que mantiene despierta la API. Un inicio de sesión cuenta
+// también para el tope general.
 function montarLimitesDePedidos(api: Router, limites: LimitesDePedidos): void {
   api.use(crearLimiteDePedidos(limites.api));
-  api.use("/publico", crearLimiteDePedidos(limites.publico));
   api.use(["/auth/google", "/auth/desarrollo"], crearLimiteDePedidos(limites.inicioSesion));
 }
 
@@ -94,8 +90,6 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
-  // Va primero: es lo único sin sesión, y así ningún guardia de otro subsistema lo alcanza.
-  api.use(createDifusionPublicaRoutes(deps.difusionPublica));
   const acceso = crearControlDeAcceso(deps.autenticacion, deps.autorizacion);
   api.use(
     createGestionUsuariosRoutes(deps.gestionUsuarios, acceso, { loginDesarrollo: opciones.loginDesarrollo }),

@@ -45,11 +45,10 @@ describe("crearLimiteDePedidos", () => {
     expect(respuesta.headers["x-ratelimit-limit"]).toBeUndefined();
   });
 
-  it("LIMITES_DE_PEDIDOS es más estricto con el inicio de sesión y la página pública que con la API", () => {
+  it("LIMITES_DE_PEDIDOS es más estricto con el inicio de sesión que con el resto de la API", () => {
     const porMinuto = ({ ventanaMs, maximo }: { ventanaMs: number; maximo: number }) =>
       (maximo * 60_000) / ventanaMs;
 
-    expect(porMinuto(LIMITES_DE_PEDIDOS.inicioSesion)).toBeLessThan(porMinuto(LIMITES_DE_PEDIDOS.publico));
-    expect(porMinuto(LIMITES_DE_PEDIDOS.publico)).toBeLessThan(porMinuto(LIMITES_DE_PEDIDOS.api));
+    expect(porMinuto(LIMITES_DE_PEDIDOS.inicioSesion)).toBeLessThan(porMinuto(LIMITES_DE_PEDIDOS.api));
   });
 });
