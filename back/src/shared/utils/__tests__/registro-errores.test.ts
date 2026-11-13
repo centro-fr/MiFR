@@ -8,12 +8,12 @@ describe("registrarError", () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("se cayó la base");
 
-    registrarError("RESUMEN_DIARIO_EFECTIVO", error);
+    registrarError("AVISOS_DE_CUOTA", error);
 
     expect(log).toHaveBeenCalledTimes(1);
     const [linea, detalle] = log.mock.calls[0];
     expect(JSON.parse(linea as string)).toEqual({
-      error: "RESUMEN_DIARIO_EFECTIVO",
+      error: "AVISOS_DE_CUOTA",
       fecha: expect.any(String),
     });
     expect(detalle).toBe(error);

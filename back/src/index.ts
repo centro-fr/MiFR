@@ -26,7 +26,6 @@ const {
   dependencias,
   cierreAsistencia,
   planificadorNotificaciones,
-  resumenDiario,
   cierreMensualInsignias,
   cierreMensualHonorarios,
 } = construirSistema({
@@ -54,14 +53,6 @@ const MILISEGUNDOS_ENTRE_AVISOS = 60 * 60_000;
 setInterval(() => {
   planificadorNotificaciones.generarAvisosDelDia().catch((error: unknown) => {
     console.error("No se pudieron generar los avisos de cuota", error);
-  });
-}, MILISEGUNDOS_ENTRE_AVISOS).unref();
-
-// US-26: con el mismo enfoque, el resumen diario de la propietaria se genera a partir de HORA_RESUMEN_DIARIO
-// y también al consultar /resumen-diario. El intervalo corre cada hora para verificar si llegó el horario.
-setInterval(() => {
-  resumenDiario.generarResumenDiario().catch((error: unknown) => {
-    console.error("No se pudo generar el resumen diario de la propietaria", error);
   });
 }, MILISEGUNDOS_ENTRE_AVISOS).unref();
 

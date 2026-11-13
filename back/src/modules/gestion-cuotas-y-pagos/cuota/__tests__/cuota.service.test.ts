@@ -426,12 +426,11 @@ describe("CuotaService: los contratos del Sprint 4", () => {
   });
 });
 
-describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
-  const HOY_RESUMEN = new Date("2026-10-16T00:00:00Z");
+describe("CuotaService: el informe de cuotas vencidas (US-34)", () => {
+  const HOY_INFORME = new Date("2026-10-16T00:00:00Z");
   const LUCIA = { id_profesora: 3, nombre: "Lucía", apellido: "Gómez" };
   const CARLA = { id_profesora: 7, nombre: "Carla", apellido: "Ruiz" };
   let repositorio: {
-    situacionParaResumen: ReturnType<typeof vi.fn>;
     situacionParaInforme: ReturnType<typeof vi.fn>;
   };
   let planes: { precioACobrar: ReturnType<typeof vi.fn> };
@@ -481,7 +480,7 @@ describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
   }
 
   beforeEach(() => {
-    repositorio = { situacionParaResumen: vi.fn(), situacionParaInforme: vi.fn() };
+    repositorio = { situacionParaInforme: vi.fn() };
     planes = {
       precioACobrar: vi.fn(async (idPlan: number, _fecha: Date, idPromocion: number | null) => {
         if (idPlan === 1) return null;
@@ -496,82 +495,6 @@ describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
       new CalculadorHabilitacion(),
       {} as IInfoParametros,
     );
-  });
-
-  it("suma las vencidas por profesora y por plan, con el precio de hoy pedido una vez por plan y promoción", async () => {
-    repositorio.situacionParaResumen.mockResolvedValue([
-      vencida(1, 4, "2026-10-01"),
-      vencida(2, 5, "2026-10-10", { id_promocion: 9, profesora: CARLA }),
-      vencida(3, 4, "2026-10-05", { id_plan: 1, nombre_plan: "Básico" }),
-      // En los días de gracia: todavía no está vencida.
-      vencida(4, 8, "2026-10-14"),
-      vencida(5, 6, "2026-10-01"),
-    ]);
-
-    const resumen = await servicio.resumenCuotasVencidas(HOY_RESUMEN);
-
-    expect(repositorio.situacionParaResumen).toHaveBeenCalledWith(HOY_RESUMEN);
-    expect(planes.precioACobrar).toHaveBeenCalledTimes(3);
-    expect(planes.precioACobrar).toHaveBeenCalledWith(2, HOY_RESUMEN, null);
-    expect(planes.precioACobrar).toHaveBeenCalledWith(2, HOY_RESUMEN, 9);
-    expect(planes.precioACobrar).toHaveBeenCalledWith(1, HOY_RESUMEN, null);
-    expect(resumen).toMatchObject({
-      cantidad: 4,
-      cantidad_alumnos: 3,
-      monto_estimado: 87000,
-      sin_precio: 1,
-      por_profesora: [
-        { ...LUCIA, cantidad: 3, monto_estimado: 60000 },
-        { ...CARLA, cantidad: 1, monto_estimado: 27000 },
-      ],
-      por_plan: [
-        { id_plan: 2, nombre: "Intermedio", cantidad: 3, monto_estimado: 87000 },
-        { id_plan: 1, nombre: "Básico", cantidad: 1, monto_estimado: 0 },
-      ],
-    });
-    expect(
-      resumen.mas_atrasadas.map(({ id_inscripcion, dias_vencida }) => [id_inscripcion, dias_vencida]),
-    ).toEqual([
-      [1, 15],
-      [5, 15],
-      [3, 11],
-      [2, 6],
-    ]);
-    expect(resumen.mas_atrasadas[2]).toEqual({
-      id_inscripcion: 3,
-      alumno: { id_alumno: 4, nombre: "Alumno 4", apellido: "Pérez" },
-      plan: { id_plan: 1, nombre: "Básico" },
-      profesora: LUCIA,
-      fecha_vencimiento: new Date("2026-10-05T00:00:00Z"),
-      dias_vencida: 11,
-      monto_estimado: null,
-    });
-  });
-
-  it("el detalle trae solo las 5 más atrasadas; los totales, todas", async () => {
-    repositorio.situacionParaResumen.mockResolvedValue(
-      [1, 2, 3, 4, 5, 6].map((id) => vencida(id, id, `2026-10-0${id}`)),
-    );
-
-    const resumen = await servicio.resumenCuotasVencidas(HOY_RESUMEN);
-
-    expect(resumen.cantidad).toBe(6);
-    expect(resumen.mas_atrasadas.map(({ id_inscripcion }) => id_inscripcion)).toEqual([1, 2, 3, 4, 5]);
-  });
-
-  it("sin vencidas devuelve todo en cero y no consulta precios", async () => {
-    repositorio.situacionParaResumen.mockResolvedValue([vencida(4, 8, "2026-10-14")]);
-
-    await expect(servicio.resumenCuotasVencidas(HOY_RESUMEN)).resolves.toEqual({
-      cantidad: 0,
-      cantidad_alumnos: 0,
-      monto_estimado: 0,
-      sin_precio: 0,
-      por_profesora: [],
-      por_plan: [],
-      mas_atrasadas: [],
-    });
-    expect(planes.precioACobrar).not.toHaveBeenCalled();
   });
 
   it("cuotasVencidasDetalladas devuelve el listado completo con contacto y monto adeudado (o cero si no tiene precio)", async () => {
@@ -590,7 +513,7 @@ describe("CuotaService: las cuotas vencidas del resumen diario (US-26)", () => {
       vencidaParaInforme(2, 5, "2026-10-15"), // no vencida (en gracia)
     ]);
 
-    const resultado = await servicio.cuotasVencidasDetalladas(HOY_RESUMEN);
+    const resultado = await servicio.cuotasVencidasDetalladas(HOY_INFORME);
     expect(resultado).toHaveLength(2);
     expect(resultado[0]).toEqual({
       id_inscripcion: 1,

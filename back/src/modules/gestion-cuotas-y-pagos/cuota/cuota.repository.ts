@@ -5,7 +5,6 @@ import type {
   SituacionDeCuotas,
   SituacionParaAviso,
   SituacionParaInforme,
-  SituacionParaResumen,
 } from "./cuota.types.js";
 
 const CUOTAS_CON_PAGOS = {
@@ -97,44 +96,8 @@ export class CuotaRepository {
     }));
   }
 
-  // US-26: las inscripciones activas de plan mensual, no bonificadas, con alguna cuota paga que ya
-  // venció: entre ellas están todas las vencidas, y el service decide cuáles lo están. Sin tope por
-  // lo mismo que los avisos: crece solo con los alumnos activos.
-  async situacionParaResumen(hoy: Date): Promise<SituacionParaResumen[]> {
-    const nombre = { select: { nombre: true, apellido: true } } as const;
-    const filas = await this.prisma.inscripciones.findMany({
-      where: {
-        estado: "ACTIVA",
-        sin_cargo: false,
-        alumno: { estado: { not: "BAJA" } },
-        plan: { tipo: "MENSUAL" },
-        cuotas: { some: { fecha_vencimiento: { lt: hoy }, pagos: { some: { estado: "CONFIRMADO" } } } },
-      },
-      select: {
-        id_inscripcion: true,
-        id_plan: true,
-        id_promocion: true,
-        fecha_baja: true,
-        plan: { select: { tipo: true, dias_gracia: true, nombre: true } },
-        profesora: { select: { id_profesora: true, usuario: nombre } },
-        alumno: { select: { id_alumno: true, usuario: nombre } },
-        cuotas: CUOTAS_CON_PAGOS,
-      },
-      orderBy: { id_inscripcion: "asc" },
-    });
-    return filas.map(({ plan, profesora, alumno, cuotas, ...fila }) => ({
-      ...fila,
-      tipo_plan: plan.tipo,
-      dias_gracia: plan.dias_gracia,
-      nombre_plan: plan.nombre,
-      profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
-      alumno: { id_alumno: alumno.id_alumno, ...alumno.usuario },
-      cuotas: conEstadosDePagos(cuotas),
-    }));
-  }
-
-  // US-34: igual que situacionParaResumen, pero incluye teléfono y email del alumno (o tutor responsable)
-  // para la gestión de cobranza y contacto directo.
+  // US-34: las inscripciones activas de plan mensual, no bonificadas, con alguna cuota paga que ya venció,
+  // con teléfono y email del alumno (o tutor responsable) para la gestión de cobranza y contacto directo.
   async situacionParaInforme(hoy: Date): Promise<SituacionParaInforme[]> {
     const nombre = { select: { nombre: true, apellido: true } } as const;
     const contacto = { select: { nombre: true, apellido: true, telefono: true, email: true } } as const;

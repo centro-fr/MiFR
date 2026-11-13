@@ -66,7 +66,6 @@ const OPERACIONES_ESPERADAS = [
   "get /pagos/mis-transferencias",
   "get /pagos/transferencias",
   "post /preinscripciones",
-  "get /resumen-diario",
   "get /notificaciones/mias",
   "post /notificaciones/{id}/leida",
   "post /notificaciones/leidas",

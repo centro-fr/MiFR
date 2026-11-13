@@ -39,8 +39,6 @@ import type {
   PagoParaComprobante,
   ResultadoCobranza,
   ResultadoRendicion,
-  ResumenEfectivoPendiente,
-  ResumenTransferenciasPendientes,
   TransferenciaConAlumno,
   TipoTransferencia,
   TransferenciaEnRevision,
@@ -51,9 +49,6 @@ import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
 const MS_POR_HORA = 3_600_000;
 const MS_POR_DIA = 24 * MS_POR_HORA;
 const HORAS_PARA_REVISAR = 24;
-// US-26: desde cuándo una pendiente se avisa como próxima a pasar las 24 horas.
-const HORAS_PARA_ALERTAR = 12;
-const TRANSFERENCIAS_EN_DETALLE = 5;
 
 function enInstantes({ id_profesora, desde, hasta }: FiltroEfectivo): FiltroEfectivoEnInstantes {
   return { id_profesora, ...rangoDeDiasArgentinos(desde, hasta) };
@@ -246,41 +241,6 @@ export class PagoService implements IInfoPagos {
       profesoras: totales,
       cobros: cobros.map((cobro) => conDiasSinRendir(cobro, hoy)),
       ...pagina,
-    };
-  }
-
-  // US-26: las pendientes de revisión, con las más viejas primero, que son las que corren el plazo.
-  async resumenTransferenciasPendientes(): Promise<ResumenTransferenciasPendientes> {
-    const ahora = Date.now();
-    const [totales, masAntiguas] = await Promise.all([
-      this.repositorio.totalesPendientes(
-        new Date(ahora - HORAS_PARA_REVISAR * MS_POR_HORA),
-        new Date(ahora - HORAS_PARA_ALERTAR * MS_POR_HORA),
-      ),
-      this.repositorio.listarParaRevisar({ estado: "PENDIENTE" }, "asc", {
-        limit: TRANSFERENCIAS_EN_DETALLE,
-        offset: 0,
-      }),
-    ]);
-    return {
-      cantidad: totales.cantidad,
-      total: totales.total,
-      supera_24_horas: totales.antesDe24,
-      por_superar_24_horas: totales.antesDe12 - totales.antesDe24,
-      mas_antiguas: masAntiguas.map((transferencia) => enRevision(transferencia, ahora)),
-    };
-  }
-
-  // US-26: el resumen del día, sin el detalle de cada cobro.
-  async resumenEfectivoPendiente(): Promise<ResumenEfectivoPendiente> {
-    const [totales, [masAntiguo]] = await Promise.all([
-      this.repositorio.totalesSinRendir({}),
-      this.repositorio.listarSinRendir({}, { limit: 1, offset: 0 }),
-    ]);
-    return {
-      ...sumar(totales),
-      profesoras: totales,
-      mas_antiguo: masAntiguo ? conDiasSinRendir(masAntiguo, fechaActualArgentina()) : null,
     };
   }
 

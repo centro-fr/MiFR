@@ -3,7 +3,6 @@ import type {
   CuotaParaAviso,
   CuotaVencidaDetallada,
   HabilitacionDeInscripcion,
-  ResumenCuotasVencidas,
 } from "../cuota.types.js";
 
 // Interfaz provista por Cuota (GestionCuotasYPagos) para que otros subsistemas sepan si un alumno
@@ -26,10 +25,6 @@ export interface IInfoCuotas {
   cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>>;
 
   paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]>;
-
-  // US-26: las inscripciones mensuales activas con la cuota vencida hoy, con lo que se estima que
-  // deben al precio vigente. Para el resumen diario de la propietaria.
-  resumenCuotasVencidas(hoy: Date): Promise<ResumenCuotasVencidas>;
 
   // US-34: listado completo de cuotas vencidas hoy con datos de contacto del alumno y monto exigible.
   cuotasVencidasDetalladas(hoy: Date): Promise<CuotaVencidaDetallada[]>;

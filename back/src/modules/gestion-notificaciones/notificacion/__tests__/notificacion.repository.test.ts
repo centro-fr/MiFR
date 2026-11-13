@@ -50,36 +50,6 @@ describe("NotificacionRepository", () => {
     });
   });
 
-  it("registrarResumenDiario guarda si no existe y devuelve true", async () => {
-    prisma.notificaciones.count.mockReset().mockResolvedValue(0);
-    const hoy = new Date("2026-10-18T00:00:00Z");
-
-    await expect(repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy)).resolves.toBe(true);
-
-    expect(prisma.$executeRaw).toHaveBeenCalled();
-    expect(prisma.notificaciones.create).toHaveBeenCalledWith({
-      data: {
-        id_usuario: 7,
-        tipo: "RESUMEN_DIARIO",
-        id_cuota: null,
-        mensaje: "Resumen del día",
-        fecha_generacion: AHORA,
-        fecha_envio: AHORA,
-        estado_envio: "ENVIADA",
-        leida: false,
-      },
-    });
-  });
-
-  it("registrarResumenDiario no guarda si ya existe y devuelve false", async () => {
-    prisma.notificaciones.count.mockReset().mockResolvedValue(1);
-    const hoy = new Date("2026-10-18T00:00:00Z");
-
-    await expect(repositorio.registrarResumenDiario(7, "Resumen del día", AHORA, hoy)).resolves.toBe(false);
-
-    expect(prisma.notificaciones.create).not.toHaveBeenCalled();
-  });
-
   it("registrar sin notificaciones no consulta la base", async () => {
     await expect(repositorio.registrar([], AHORA)).resolves.toBe(0);
     expect(prisma.notificaciones.createMany).not.toHaveBeenCalled();

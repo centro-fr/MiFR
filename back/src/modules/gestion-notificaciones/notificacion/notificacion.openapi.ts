@@ -11,7 +11,7 @@ import { listarNotificacionesQuerySchema, notificacionParamSchema } from "./noti
 const notificacionSchema = z
   .object({
     id_notificacion: z.number().int(),
-    tipo: z.enum(["CUOTA_POR_VENCER", "CUOTA_VENCIDA", "RESUMEN_DIARIO", "BIENVENIDA", "CLASE_CANCELADA"]),
+    tipo: z.enum(["CUOTA_POR_VENCER", "CUOTA_VENCIDA", "BIENVENIDA"]),
     id_cuota: z.number().int().nullable().openapi({ description: "Solo en los avisos de cuota" }),
     mensaje: z.string(),
     fecha_generacion: fechaSchema,

@@ -26,10 +26,6 @@ const VALOR_POR_CLAVE: Record<ClaveParametro, z.ZodType<string | number | boolea
     (valor) => valor > 0,
     "Tiene que ser mayor a 0",
   ),
-  HORA_RESUMEN_DIARIO: z
-    .string()
-    .trim()
-    .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Debe tener formato HH:MM (entre 00:00 y 23:59)"),
   // Con 0 entra al ranking cualquiera que haya tenido una clase en el período.
   RANKING_MINIMO_CLASES: enteroNoNegativoSchema(100),
   // Hasta 28 para que el día exista en todos los meses; con 0 no habría día de cierre.

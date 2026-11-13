@@ -235,25 +235,6 @@ export class PagoRepository {
     }));
   }
 
-  // US-26: cuántas esperan revisión, por cuánto, y cuántas se cargaron antes de cada instante.
-  async totalesPendientes(
-    hace24Horas: Date,
-    hace12Horas: Date,
-  ): Promise<{ cantidad: number; total: number; antesDe24: number; antesDe12: number }> {
-    const pendientes = transferenciasDelFiltro({ estado: "PENDIENTE" });
-    const [totales, antesDe24, antesDe12] = await Promise.all([
-      this.prisma.pagos.aggregate({ where: pendientes, _count: true, _sum: { monto: true } }),
-      this.prisma.pagos.count({ where: { ...pendientes, fecha_pago: { lte: hace24Horas } } }),
-      this.prisma.pagos.count({ where: { ...pendientes, fecha_pago: { lte: hace12Horas } } }),
-    ]);
-    return {
-      cantidad: totales._count,
-      total: totales._sum.monto?.toNumber() ?? 0,
-      antesDe24,
-      antesDe12,
-    };
-  }
-
   contarTransferencias(filtro: FiltroTransferenciasEnInstantes): Promise<number> {
     return this.prisma.pagos.count({ where: transferenciasDelFiltro(filtro) });
   }

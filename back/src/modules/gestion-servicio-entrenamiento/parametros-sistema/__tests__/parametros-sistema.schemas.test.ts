@@ -115,18 +115,4 @@ describe("valorDelParametro", () => {
   it("DIA_CIERRE_HONORARIOS rechaza 0: no habría día de cierre", () => {
     expect(() => valorDelParametro("DIA_CIERRE_HONORARIOS", 0)).toThrow();
   });
-
-  it.each(["20:00", "00:00", "23:59", " 08:30 "])(
-    "HORA_RESUMEN_DIARIO acepta formato HH:MM válido: %j",
-    (valor) => {
-      expect(valorDelParametro("HORA_RESUMEN_DIARIO", valor)).toBe(valor.trim());
-    },
-  );
-
-  it.each(["24:00", "20:60", "9:00", "20:0", "-1", "hola", 123, null])(
-    "HORA_RESUMEN_DIARIO rechaza formato inválido: %j",
-    (valor) => {
-      expect(() => valorDelParametro("HORA_RESUMEN_DIARIO", valor)).toThrow();
-    },
-  );
 });

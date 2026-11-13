@@ -9,7 +9,6 @@ function crearRepositorioMock() {
     listarDeUsuario: vi.fn().mockResolvedValue({ datos: [], total: 0, no_leidas: 0 }),
     marcarLeida: vi.fn(),
     marcarTodasLeidas: vi.fn().mockResolvedValue(3),
-    registrarResumenDiario: vi.fn().mockResolvedValue(true),
   };
 }
 
@@ -56,12 +55,5 @@ describe("NotificacionService", () => {
   it("marcarTodasLeidas devuelve cuántas marcó", async () => {
     await expect(servicio.marcarTodasLeidas(7)).resolves.toEqual({ marcadas: 3 });
     expect(repositorio.marcarTodasLeidas).toHaveBeenCalledWith(7);
-  });
-
-  it("registrarResumenDiario delega al repositorio", async () => {
-    const ahora = new Date();
-    const hoy = new Date();
-    await expect(servicio.registrarResumenDiario(7, "mensaje", ahora, hoy)).resolves.toBe(true);
-    expect(repositorio.registrarResumenDiario).toHaveBeenCalledWith(7, "mensaje", ahora, hoy);
   });
 });

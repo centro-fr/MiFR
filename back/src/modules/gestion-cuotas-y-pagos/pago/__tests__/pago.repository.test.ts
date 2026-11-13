@@ -237,40 +237,6 @@ describe("PagoRepository", () => {
       expect(prisma.pagos.findMany.mock.calls[3][0].where).toEqual({ forma_pago: "TRANSFERENCIA" });
     });
 
-    it("totalesPendientes suma las pendientes y cuenta las cargadas antes de cada instante", async () => {
-      const hace24 = new Date("2026-10-08T15:00:00Z");
-      const hace12 = new Date("2026-10-09T03:00:00Z");
-      prisma.pagos.aggregate.mockResolvedValue({ _count: 4, _sum: { monto: decimal(110000) } });
-      prisma.pagos.count.mockResolvedValueOnce(1).mockResolvedValueOnce(3);
-
-      await expect(repositorio.totalesPendientes(hace24, hace12)).resolves.toEqual({
-        cantidad: 4,
-        total: 110000,
-        antesDe24: 1,
-        antesDe12: 3,
-      });
-      const pendientes = { forma_pago: "TRANSFERENCIA", estado: "PENDIENTE" };
-      expect(prisma.pagos.aggregate).toHaveBeenCalledWith({
-        where: pendientes,
-        _count: true,
-        _sum: { monto: true },
-      });
-      expect(prisma.pagos.count.mock.calls.map(([consulta]) => consulta)).toEqual([
-        { where: { ...pendientes, fecha_pago: { lte: hace24 } } },
-        { where: { ...pendientes, fecha_pago: { lte: hace12 } } },
-      ]);
-    });
-
-    it("totalesPendientes sin pendientes da total 0", async () => {
-      prisma.pagos.aggregate.mockResolvedValue({ _count: 0, _sum: { monto: null } });
-      prisma.pagos.count.mockResolvedValue(0);
-
-      await expect(repositorio.totalesPendientes(new Date(), new Date())).resolves.toMatchObject({
-        cantidad: 0,
-        total: 0,
-      });
-    });
-
     it("contarTransferencias cuenta con el mismo filtro", async () => {
       prisma.pagos.count.mockResolvedValue(37);
 

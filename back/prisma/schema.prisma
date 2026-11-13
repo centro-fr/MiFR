@@ -577,9 +577,7 @@ model medidas_corporales {
 enum tipo_notificacion {
   CUOTA_POR_VENCER
   CUOTA_VENCIDA
-  RESUMEN_DIARIO
   BIENVENIDA
-  CLASE_CANCELADA
 }
 
 enum estado_envio_notificacion {
