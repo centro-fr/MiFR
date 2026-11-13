@@ -4,7 +4,6 @@ import { LogoFr } from "@/components/marca/logo-fr";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { animarEntradaDelEncabezado } from "@/features/publico/animaciones/animaciones-publicas";
 import { useAnimacion } from "@/features/publico/animaciones/use-animacion";
-import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
 import { enlacesDeContacto } from "@/features/publico/utils/contacto";
 import { homePathForRoles } from "@/types/auth";
 import { cn } from "@/utils/cn";
@@ -28,15 +27,13 @@ function AccesoAlSistema() {
   );
 }
 
-// Las secciones de actividades y de contacto no aparecen si no hay datos: el menú no lleva a un ancla vacía.
+// La sección de contacto no aparece sin datos de contacto: el menú no lleva a un ancla vacía.
 function useEnlacesDeSecciones() {
-  const { data } = useActividadesPublicas();
   const { whatsapp, instagram } = enlacesDeContacto();
-  const hayActividades = (data?.actividades.length ?? 0) > 0;
   const hayContacto = Boolean(whatsapp || instagram);
 
   return [
-    hayActividades && { href: "#actividades", texto: "Actividades" },
+    { href: "#actividades", texto: "Actividades" },
     { href: "#ubicacion", texto: "Ubicación" },
     hayContacto && { href: "#contacto", texto: "Contacto" },
   ].filter((enlace) => enlace !== false);

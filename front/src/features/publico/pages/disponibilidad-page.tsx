@@ -1,9 +1,8 @@
 import { createElement } from "react";
-import { CalendarDays, Loader2, MessageCircle, RefreshCw } from "lucide-react";
+import { CalendarDays, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
-import type { ActividadPublica } from "@/features/publico/schemas/actividades";
+import { ACTIVIDADES_DEL_CENTRO, type ActividadDelCentro } from "@/features/publico/utils/actividades-del-centro";
 import { diasAbreviados, iconoDeActividad } from "@/features/publico/utils/actividades";
 import { enlacesDeContacto } from "@/features/publico/utils/contacto";
 import { LogoFr } from "@/components/marca/logo-fr";
@@ -11,7 +10,7 @@ import { NOMBRE_DEL_CENTRO } from "@/features/publico/components/marca-centro";
 import { urlDelSitio } from "@/features/publico/utils/sitio";
 import { useTituloDelDocumento } from "@/hooks/use-titulo-del-documento";
 
-function TarjetaDisponibilidad({ actividad }: { actividad: ActividadPublica }) {
+function TarjetaDisponibilidad({ actividad }: { actividad: ActividadDelCentro }) {
   return (
     <li className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg sm:p-6">
       <div className="flex items-start justify-between gap-4">
@@ -39,8 +38,8 @@ function TarjetaDisponibilidad({ actividad }: { actividad: ActividadPublica }) {
           <span>{diasAbreviados(actividad.dias)}</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          {actividad.clases_por_semana}{" "}
-          {actividad.clases_por_semana === 1 ? "horario disponible por semana" : "horarios disponibles por semana"}
+          {actividad.horariosPorSemana}{" "}
+          {actividad.horariosPorSemana === 1 ? "horario disponible por semana" : "horarios disponibles por semana"}
         </p>
       </div>
     </li>
@@ -48,9 +47,7 @@ function TarjetaDisponibilidad({ actividad }: { actividad: ActividadPublica }) {
 }
 
 export function DisponibilidadPage() {
-  const { data, isPending, isError, refetch, isFetching } = useActividadesPublicas();
   const { whatsapp } = enlacesDeContacto();
-  const actividades = data?.actividades ?? [];
   const sitio = urlDelSitio();
   useTituloDelDocumento(`Disponibilidad y horarios · ${NOMBRE_DEL_CENTRO}`);
 
@@ -81,39 +78,11 @@ export function DisponibilidadPage() {
           </p>
         </section>
 
-        {isPending ? (
-          <div role="status" aria-label="Cargando disponibilidad" className="flex min-h-56 items-center justify-center gap-2">
-            <Loader2 aria-hidden="true" className="size-5 animate-spin text-primary" />
-            <span className="text-sm font-semibold text-muted-foreground">Cargando disponibilidad...</span>
-          </div>
-        ) : isError ? (
-          <section className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-card px-5 py-12 text-center">
-            <div>
-              <h2 className="text-lg font-extrabold">No pudimos cargar la disponibilidad</h2>
-              <p role="alert" className="mt-1 text-sm text-muted-foreground">
-                Revisá tu conexión e intentá nuevamente.
-              </p>
-            </div>
-            <Button type="button" onClick={() => refetch()} disabled={isFetching} className="rounded-xl font-bold">
-              <RefreshCw aria-hidden="true" className={isFetching ? "animate-spin" : undefined} />
-              Reintentar
-            </Button>
-          </section>
-        ) : actividades.length === 0 ? (
-          <section className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-3xl border border-border bg-card px-5 py-12 text-center">
-            <h2 className="text-lg font-extrabold">No hay actividades disponibles</h2>
-            <p className="max-w-md text-sm text-muted-foreground">
-              En este momento no hay horarios publicados. Volvé a consultar más tarde o escribinos para recibir
-              novedades.
-            </p>
-          </section>
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {actividades.map((actividad) => (
-              <TarjetaDisponibilidad key={actividad.id_actividad} actividad={actividad} />
-            ))}
-          </ul>
-        )}
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ACTIVIDADES_DEL_CENTRO.map((actividad) => (
+            <TarjetaDisponibilidad key={actividad.nombre} actividad={actividad} />
+          ))}
+        </ul>
 
         {whatsapp && (
           <section className="mt-10 flex flex-col gap-5 rounded-3xl bg-gradient-to-br from-primary via-primary-dark to-[#3b0a24] p-6 text-white shadow-brand-glow sm:flex-row sm:items-center sm:justify-between sm:p-8">

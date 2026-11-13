@@ -14,7 +14,6 @@ import { notificacionesHandlers } from "@/mocks/handlers/notificaciones";
 import { pagosHandlers } from "@/mocks/handlers/pagos";
 import { personasHandlers } from "@/mocks/handlers/personas";
 import { planesHandlers } from "@/mocks/handlers/planes";
-import { publicoHandlers } from "@/mocks/handlers/publico";
 import { rankingAsistenciaHandlers } from "@/mocks/handlers/ranking-asistencia";
 import { reportesHandlers } from "@/mocks/handlers/reportes";
 import { reportesCentroHandlers } from "@/mocks/handlers/reportes-centro";
@@ -34,7 +33,6 @@ export const worker = setupWorker(
   ...inscripcionesHandlers,
   ...planesHandlers,
   ...pagosHandlers,
-  ...publicoHandlers,
   ...rankingAsistenciaHandlers,
   ...honorariosHandlers,
   ...promocionesHandlers,

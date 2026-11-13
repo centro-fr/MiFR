@@ -1,15 +1,14 @@
 import { useRef } from "react";
 import { animarSeccion } from "@/features/publico/animaciones/animaciones-publicas";
 import { useAnimacion } from "@/features/publico/animaciones/use-animacion";
-import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
-import type { ActividadPublica } from "@/features/publico/schemas/actividades";
+import { ACTIVIDADES_DEL_CENTRO, type ActividadDelCentro } from "@/features/publico/utils/actividades-del-centro";
 import { diasEnPalabras, diasResumidos } from "@/features/publico/utils/actividades";
 import { CONTENEDOR_PUBLICO, ESPACIO_DE_SECCION, TEXTO_HUECO, TITULO_DE_SECCION } from "./estilos-publicos";
 import { LineaDeTitulo } from "./linea-de-titulo";
 
 const GRILLA = "m-0 grid list-none grid-cols-2 gap-x-6 p-0 md:grid-cols-5";
 
-function ItemActividad({ actividad }: { actividad: ActividadPublica }) {
+function ItemActividad({ actividad }: { actividad: ActividadDelCentro }) {
   return (
     <li data-aparece="" className="group pb-5">
       <span
@@ -28,28 +27,10 @@ function ItemActividad({ actividad }: { actividad: ActividadPublica }) {
   );
 }
 
-function ItemsCargando() {
-  return (
-    <ul role="status" aria-label="Cargando las actividades" className={GRILLA}>
-      {[1, 2, 3, 4, 5].map((indice) => (
-        <li key={indice} className="pb-5">
-          <span aria-hidden="true" className="mb-5 block h-px bg-publico-borde" />
-          <span aria-hidden="true" className="block h-5 w-2/3 animate-pulse rounded-[3px] bg-publico-superficie" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-// Las actividades con clases y los días en que se dan. Si la consulta falla o no hay actividades,
-// la sección no aparece: la página sigue teniendo el resto.
+// Las actividades del centro y los días en que se dan.
 export function Actividades() {
   const raiz = useRef<HTMLElement>(null);
-  const { data, isPending, isError } = useActividadesPublicas();
-  const actividades = data?.actividades ?? [];
-  useAnimacion(raiz, animarSeccion, actividades.length > 0);
-
-  if (isError || (!isPending && actividades.length === 0)) return null;
+  useAnimacion(raiz, animarSeccion);
 
   return (
     <section ref={raiz} id="actividades" aria-labelledby="titulo-actividades">
@@ -60,15 +41,11 @@ export function Actividades() {
           </LineaDeTitulo>
           <LineaDeTitulo>forma de entrenar</LineaDeTitulo>
         </h2>
-        {isPending ? (
-          <ItemsCargando />
-        ) : (
-          <ul className={GRILLA}>
-            {actividades.map((actividad) => (
-              <ItemActividad key={actividad.id_actividad} actividad={actividad} />
-            ))}
-          </ul>
-        )}
+        <ul className={GRILLA}>
+          {ACTIVIDADES_DEL_CENTRO.map((actividad) => (
+            <ItemActividad key={actividad.nombre} actividad={actividad} />
+          ))}
+        </ul>
       </div>
     </section>
   );
