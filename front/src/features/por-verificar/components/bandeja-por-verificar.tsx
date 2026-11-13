@@ -105,7 +105,8 @@ function Tabla({ items, onAccion }: { items: PendientePorVerificar[]; onAccion: 
   );
 }
 
-function Fila({ item, onAccion }: { item: PendientePorVerificar; onAccion: () => void }) {
+/** En el celular de la pantalla Por verificar: los datos uno debajo del otro y la acción abajo. */
+function FilaApilada({ item, onAccion }: { item: PendientePorVerificar; onAccion: () => void }) {
   return (
     <FilaMovil
       avatar={item.alumno}
@@ -120,6 +121,21 @@ function Fila({ item, onAccion }: { item: PendientePorVerificar; onAccion: () =>
       ]}
       acciones={<BotonAccion item={item} onAccion={onAccion} />}
     />
+  );
+}
+
+/** En el dashboard: una fila por pendiente, como una tabla compacta, con el monto y la acción a la derecha. */
+function FilaCompacta({ item, onAccion }: { item: PendientePorVerificar; onAccion: () => void }) {
+  return (
+    <li className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0 dark:border-slate-800">
+      <Iniciales nombre={item.alumno} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{item.alumno}</p>
+        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.detalle}</p>
+      </div>
+      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{formatearPrecio(item.monto)}</span>
+      <BotonAccion item={item} onAccion={onAccion} />
+    </li>
   );
 }
 
@@ -159,13 +175,20 @@ export function BandejaPorVerificar({ bandeja, limite, variante = "lista" }: Pro
   const visibles = limite ? bandeja.items.slice(0, limite) : bandeja.items;
   const abrir = (item: PendientePorVerificar) =>
     item.tipo === "TRANSFERENCIA" ? verificar.abrir(item.transferencia) : cobrar.abrir(item.alta);
-  const lista = (
-    <ul aria-label="Pagos por verificar" className={cn(LISTA_MOVIL_EN_TARJETA, variante === "tabla" && "lg:hidden")}>
-      {visibles.map((item) => (
-        <Fila key={item.clave} item={item} onAccion={() => abrir(item)} />
-      ))}
-    </ul>
-  );
+  const lista =
+    variante === "tabla" ? (
+      <ul aria-label="Pagos por verificar" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
+        {visibles.map((item) => (
+          <FilaApilada key={item.clave} item={item} onAccion={() => abrir(item)} />
+        ))}
+      </ul>
+    ) : (
+      <ul aria-label="Pagos por verificar">
+        {visibles.map((item) => (
+          <FilaCompacta key={item.clave} item={item} onAccion={() => abrir(item)} />
+        ))}
+      </ul>
+    );
 
   return (
     <>
