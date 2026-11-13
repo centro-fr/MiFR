@@ -61,6 +61,27 @@ const VALOR_POR_CLAVE: Record<string, z.ZodTypeAny> = {
 const EDITAR_PARAMETROS = { rol: "PROPIETARIA", permiso: "PARAMETROS_EDITAR" } as const;
 
 export const notificacionesHandlers = [
+  // Push (suscripcion-push.routes.ts). Sin claves VAPID, como el back en desarrollo: en el modo con mocks
+  // tampoco hay service worker propio (lo ocupa MSW), así que la tarjeta del perfil dice que no está disponible.
+  http.get("*/api/v1/notificaciones/push/clave-publica", async ({ request }) => {
+    await delay(150);
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Token no provisto");
+    return HttpResponse.json({ clave_publica: null });
+  }),
+
+  http.post("*/api/v1/notificaciones/push/suscripciones", async ({ request }) => {
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Token no provisto");
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post("*/api/v1/notificaciones/push/suscripciones/baja", async ({ request }) => {
+    const usuario = usuarioDeLaSesion(request);
+    if (!usuario) return errorApi(401, "UNAUTHORIZED", "Token no provisto");
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.get("*/api/v1/notificaciones/mias", async ({ request }) => {
     await delay(300);
     const usuario = usuarioDeLaSesion(request);

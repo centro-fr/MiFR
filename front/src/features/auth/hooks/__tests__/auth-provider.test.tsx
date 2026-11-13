@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../auth-provider";
 import { useAuth } from "../use-auth";
 import * as authApi from "@/features/auth/api/auth-api";
+import { darDeBajaEsteDispositivo } from "@/features/notificaciones/utils/push";
 import { clearSessionToken, getStoredAvatarUrl, setSessionToken } from "@/features/auth/api/session-token";
+
+vi.mock("@/features/notificaciones/utils/push", () => ({ darDeBajaEsteDispositivo: vi.fn() }));
 
 vi.mock("@/features/auth/api/auth-api", () => ({
   getMe: vi.fn(),
@@ -178,5 +181,67 @@ describe("AuthProvider con perfil de Google", () => {
     expect(screen.getByTestId("user-name")).toHaveTextContent("Sin usuario");
     expect(window.sessionStorage.getItem("mifr:session-user:v1")).toBeNull();
     expect(authApi.getMe).not.toHaveBeenCalled();
+  });
+
+  it("al hacer logout primero da de baja este celular de los avisos push, con la sesión todavía abierta", async () => {
+    setSessionToken("jwt-guardado");
+    vi.mocked(authApi.getMe).mockResolvedValue({
+      id_usuario: 1,
+      email: "valen@example.com",
+      nombre: "Valentina",
+      apellido: "López",
+      roles: ["ALUMNO"],
+      permisos: [],
+    });
+    vi.mocked(authApi.postLogout).mockResolvedValue();
+    vi.mocked(darDeBajaEsteDispositivo).mockResolvedValue();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ConsumidorAuth />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Valentina López")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByText("Logout").click();
+    });
+
+    expect(darDeBajaEsteDispositivo).toHaveBeenCalled();
+    expect(vi.mocked(darDeBajaEsteDispositivo).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(authApi.postLogout).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("si la baja del celular falla, la sesión se cierra igual", async () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    setSessionToken("jwt-guardado");
+    vi.mocked(authApi.getMe).mockResolvedValue({
+      id_usuario: 1,
+      email: "valen@example.com",
+      nombre: "Valentina",
+      apellido: "López",
+      roles: ["ALUMNO"],
+      permisos: [],
+    });
+    vi.mocked(authApi.postLogout).mockResolvedValue();
+    vi.mocked(darDeBajaEsteDispositivo).mockRejectedValue(new Error("sin red"));
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ConsumidorAuth />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Valentina López")).toBeInTheDocument();
+
+    await act(async () => {
+      screen.getByText("Logout").click();
+    });
+
+    expect(screen.getByTestId("user-name")).toHaveTextContent("Sin usuario");
+    expect(aviso).toHaveBeenCalledWith(expect.stringContaining("push"), expect.any(Error));
+    aviso.mockRestore();
   });
 });

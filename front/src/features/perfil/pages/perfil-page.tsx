@@ -11,6 +11,7 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { AvisosEnEsteCelular } from "@/features/notificaciones/components/avisos-en-este-celular";
 import { MisInsignias } from "@/features/portal-alumno/components/mis-insignias";
 import { useAlumnoElegido } from "@/features/portal-alumno/hooks/use-alumno-elegido";
 import { usePanelAlumno } from "@/features/portal-alumno/hooks/use-panel-alumno";
@@ -213,9 +214,23 @@ function PerfilDeLaProfesora({ user }: { user: AuthUser }) {
   return <Perfil user={user} datos={datos} consulta={consulta} />;
 }
 
+// Los avisos de cuota le llegan al alumno o a su tutor: son los únicos que activan el push.
 function PerfilDelAlumno({ user }: { user: AuthUser }) {
   const { datos, consulta } = useDatosDelAlumno(user);
-  return <Perfil user={user} datos={datos} consulta={consulta} extra={<MisInsignias />} />;
+  const recibeAvisosDeCuota = user.roles.some((rol) => rol === "ALUMNO" || rol === "TUTOR");
+  return (
+    <Perfil
+      user={user}
+      datos={datos}
+      consulta={consulta}
+      extra={
+        <>
+          {recibeAvisosDeCuota && <AvisosEnEsteCelular />}
+          <MisInsignias />
+        </>
+      }
+    />
+  );
 }
 
 export function PerfilPage() {

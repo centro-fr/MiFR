@@ -221,6 +221,8 @@ Con `SITIO=https://mifr.netlify.app` y `API=https://mifr-api.onrender.com`:
 | Login con Google | Entrar con la cuenta de la propietaria | Llega al dashboard; al recargar sigue con la sesión |
 | Sin errores en el navegador | Consola abierta en la página pública, el login y varias pantallas | Sin errores ni avisos de `Content Security Policy` |
 | Vista previa del enlace | Pegar `$SITIO` en un chat de WhatsApp | Muestra la imagen y el título (Open Graph, sale de `VITE_SITIO_URL`) |
+| La app se instala | En Chrome de Android, menú → **Instalar app**; en iPhone, Safari → Compartir → **Agregar a inicio** | Queda el ícono de MiFR y abre a pantalla completa |
+| Avisos en el celular | Con un alumno de prueba: Perfil → **Activar avisos**, aceptar el permiso, y generar un aviso de cuota | Llega la notificación con el texto completo; al tocarla abre su inicio. En iPhone, solo con la app agregada a inicio |
 
 ## 10. Calibrar PROXIES_DE_CONFIANZA
 
@@ -273,6 +275,13 @@ pg_dump "<cadena directa de Neon>" --format=custom --file=mifr-$(date +%F).dump
 ```
 
 Guardarlo fuera del repositorio: tiene datos personales de alumnos.
+
+### La app instalada (PWA)
+
+- **Instalable, sin modo offline.** El service worker (`front/public/sw.js`) solo recibe los avisos push y abre el sistema al tocarlos: no guarda pantallas ni datos, así que la app instalada necesita conexión, como la web.
+- **La sesión vive mientras la app está abierta.** El token se guarda en `sessionStorage`: al cerrar la app hay que volver a entrar con Google. Es a propósito (`front/src/features/auth/api/session-token.ts`); la cookie `httpOnly` lo resolvería.
+- **Los avisos por dispositivo.** Cada persona los activa desde su perfil en cada celular, y al cerrar sesión ese celular deja de recibirlos.
+- **Íconos.** Salen de `logo-fr.webp` (`front/public/iconos/`); el maskable tiene el logo al 80 % sobre fondo rosa para que Android lo pueda recortar.
 
 ### Cambiar las actividades de la página pública
 

@@ -13,6 +13,7 @@ import {
   setStoredUser,
 } from "@/features/auth/api/session-token";
 import { extraerFotoDeGoogleToken } from "@/features/auth/utils/google-token";
+import { darDeBajaEsteDispositivo } from "@/features/notificaciones/utils/push";
 import { AuthContext } from "@/features/auth/hooks/auth-context";
 import type { AuthContextValue } from "@/features/auth/hooks/auth-context";
 import type { AuthUser } from "@/types/auth";
@@ -101,6 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     authGenerationRef.current += 1;
+    // Antes del logout, con el token todavía: el celular deja de recibir los avisos de esta cuenta, así
+    // no le llegan a la próxima persona que lo use. Si falla, la sesión se cierra igual.
+    try {
+      await darDeBajaEsteDispositivo();
+    } catch (error) {
+      console.warn("No se pudo dar de baja este dispositivo de los avisos push", error);
+    }
     try {
       await postLogout();
     } finally {
