@@ -26,7 +26,9 @@ import type {
 import type { InscripcionRepository } from "./inscripcion.repository.js";
 import type { IInfoInscripciones } from "./interface/i-info-inscripciones.js";
 import type {
+  CambioPlanProgramado,
   ConteoBajasPorMotivo,
+  DatosDelCambioPlan,
   EstadoInscripcion,
   FechasDeBaja,
   FiltroAlumnosPorInscripcion,
@@ -36,6 +38,7 @@ import type {
   InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscripcionEnHorario,
   InscripcionGuardada,
   InscripcionParaInactividad,
   InscriptoDeHorario,
@@ -333,9 +336,31 @@ export class InscripcionService implements IInfoInscripciones {
     return conReserva(this.resolverResultado(resultado), plazo);
   }
 
+  // Los horarios se cambian con la inscripción activa y dentro de lo contratado: la misma profesora y
+  // la misma actividad. Cambiar de profesora o de actividad es un cambio de plan.
   async actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos> {
     const actual = await this.obtenerInscripcionVigente(id);
-    await this.validarHorarios(actual.plan, actual.id_profesora, input.ids_horarios);
+    if (actual.estado !== "ACTIVA") {
+      throw new ConflictError("Los horarios se cambian con la inscripción activa");
+    }
+    const abiertos = actual.horarios.filter(({ fecha_hasta }) => fecha_hasta === null);
+    const horarios = await this.validarHorarios(
+      actual.plan,
+      actual.id_profesora,
+      input.ids_horarios,
+      abiertos.map(({ id_horario }) => id_horario),
+    );
+    if (horarios.some(({ id_profesora }) => id_profesora !== actual.id_profesora)) {
+      throw new ValidationError(
+        "Los horarios tienen que ser de la misma profesora: para cambiarla, cambiá el plan",
+      );
+    }
+    const actividad = abiertos[0]?.horario.id_actividad;
+    if (actividad !== undefined && horarios.some(({ id_actividad }) => id_actividad !== actividad)) {
+      throw new ValidationError(
+        "Los horarios tienen que ser de la misma actividad: para cambiarla, cambiá el plan",
+      );
+    }
     const plazo = await this.plazoDeReserva();
     const resultado = await this.repositorio.actualizarHorarios(
       actual,
@@ -344,6 +369,70 @@ export class InscripcionService implements IInfoInscripciones {
       inicioDeReservasVigentes(plazo),
     );
     return conReserva(this.resolverResultado(resultado), plazo);
+  }
+
+  // El cambio de plan con el plan vigente queda programado (lo decide la fachada, que ve la cuota). Se
+  // valida ahora con las mismas reglas que el cambio inmediato; el cupo se vuelve a revisar al aplicarlo.
+  async programarCambioPlan(
+    id: number,
+    input: CambiarPlanInput,
+    fechaAplicacion: Date,
+  ): Promise<CambioPlanProgramado> {
+    const actual = await this.obtenerInscripcionVigente(id);
+    if (actual.id_plan === input.id_plan) {
+      throw new ConflictError("La inscripción ya tiene el plan seleccionado");
+    }
+    await this.prepararInscripcion({ ...input, id_alumno: actual.id_alumno, estado: "ACTIVA" });
+    return this.repositorio.guardarCambioProgramado(id, input, fechaAplicacion);
+  }
+
+  async cancelarCambioProgramado(id: number): Promise<void> {
+    if (!(await this.repositorio.borrarCambioProgramado(id))) {
+      throw new NotFoundError("La inscripción no tiene un cambio de plan programado");
+    }
+  }
+
+  buscarCambiosProgramados(idsInscripciones: number[]): Promise<CambioPlanProgramado[]> {
+    return this.repositorio.buscarCambiosProgramados(idsInscripciones);
+  }
+
+  listarCambiosParaAplicar(hoy: Date): Promise<CambioPlanProgramado[]> {
+    return this.repositorio.listarCambiosParaAplicar(hoy);
+  }
+
+  // Aplica el cambio como uno inmediato. Si la inscripción ya no está vigente, el cambio no tiene a qué
+  // aplicarse y se descarta; cualquier otro rechazo (por ejemplo, sin cupo) lo deja para el día siguiente.
+  async aplicarCambioProgramado(cambio: CambioPlanProgramado): Promise<void> {
+    const actual = await this.repositorio.buscarPorId(cambio.id_inscripcion);
+    if (!actual || !ESTADOS_VIGENTES.includes(actual.estado)) {
+      await this.repositorio.borrarCambioProgramado(cambio.id_inscripcion);
+      return;
+    }
+    const datos: DatosDelCambioPlan = cambio;
+    await this.cambiarPlan(cambio.id_inscripcion, {
+      id_plan: datos.id_plan,
+      id_profesora: datos.id_profesora,
+      ids_horarios: datos.ids_horarios,
+      sin_cargo: actual.sin_cargo,
+    });
+    await this.repositorio.borrarCambioProgramado(cambio.id_inscripcion);
+  }
+
+  listarEnHorario(idHorario: number): Promise<InscripcionEnHorario[]> {
+    return this.repositorio.listarEnHorario(idHorario);
+  }
+
+  // Saca la inscripción de un horario con la baja programada. Si no le queda ningún horario, la
+  // inscripción pasa a baja; si además el alumno no tiene otra vigente, también él.
+  async sacarDelHorario(inscripcion: InscripcionEnHorario, idHorario: number): Promise<void> {
+    const quedoDeBaja = await this.repositorio.sacarDelHorario(
+      inscripcion.id_inscripcion,
+      idHorario,
+      this.fechasDeBaja(),
+    );
+    if (!quedoDeBaja) return;
+    const vigentes = await this.repositorio.listarVigentesPorAlumno(inscripcion.id_alumno);
+    if (vigentes.length === 0) await this.alumnos.darDeBaja(inscripcion.id_alumno);
   }
 
   obtenerIdsDeAlumnos(filtro: FiltroAlumnosPorInscripcion): Promise<number[]> {
@@ -461,10 +550,13 @@ export class InscripcionService implements IInfoInscripciones {
     return { instante: new Date(), dia: fechaActualArgentina() };
   }
 
+  // yaAsignados: los que la inscripción ya tiene; uno con la baja programada puede quedarse, pero no
+  // recibe alumnos nuevos.
   private async validarHorarios(
     plan: ReglasDelPlan,
     idProfesora: number,
     idsHorarios: number[],
+    yaAsignados: number[] = [],
   ): Promise<HorarioRespuesta[]> {
     const [profesora, horarios] = await Promise.all([
       this.profesoras.buscarPorId(idProfesora),
@@ -473,6 +565,11 @@ export class InscripcionService implements IInfoInscripciones {
     if (!profesora) throw new NotFoundError("Profesora no encontrada, inactiva o sin el rol PROFESORA");
     if (horarios.length !== idsHorarios.length || horarios.some(({ fecha_baja }) => fecha_baja !== null)) {
       throw new ConflictError("Uno o más horarios no existen o están dados de baja");
+    }
+    if (
+      horarios.some((horario) => horario.fecha_baja_programada && !yaAsignados.includes(horario.id_horario))
+    ) {
+      throw new ConflictError("Uno o más horarios tienen la baja programada: no admiten alumnos nuevos");
     }
     if (new Set(horarios.map(({ id_profesora }) => id_profesora)).size > 1) {
       throw new ValidationError("Todos los horarios deben pertenecer a una misma profesora");

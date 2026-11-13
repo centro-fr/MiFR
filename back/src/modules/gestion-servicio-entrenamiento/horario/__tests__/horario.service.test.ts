@@ -17,6 +17,9 @@ function crearRepositorioMock() {
     darDeBaja: vi.fn(),
     darDeBajaDeActividad: vi.fn(),
     tieneActivosDeProfesora: vi.fn(),
+    programarBaja: vi.fn(),
+    cancelarBajaProgramada: vi.fn(),
+    listarConBajaProgramada: vi.fn(),
   };
 }
 
@@ -54,6 +57,7 @@ describe("HorarioService", () => {
     cupo_maximo: null,
     fecha_alta: new Date("2026-09-30T00:00:00.000Z"),
     fecha_baja: null,
+    fecha_baja_programada: null,
     actividad,
     profesora,
   };
@@ -347,6 +351,46 @@ describe("HorarioService", () => {
 
     await expect(servicio.actualizar(1, { cupo_maximo: 6 })).resolves.toMatchObject({
       cupo_maximo_efectivo: 6,
+    });
+  });
+
+  describe("baja programada (US-04)", () => {
+    const DIA = new Date("2026-10-09T00:00:00Z");
+
+    it("programarBaja la marca; si ya estaba programada, no la vuelve a escribir", async () => {
+      repositorio.buscarPorId.mockResolvedValue(horarioBase);
+      repositorio.programarBaja.mockResolvedValue({ ...horarioBase, fecha_baja_programada: DIA });
+      await expect(servicio.programarBaja(1, DIA)).resolves.toMatchObject({ fecha_baja_programada: DIA });
+      expect(repositorio.programarBaja).toHaveBeenCalledWith(1, DIA);
+
+      repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, fecha_baja_programada: DIA });
+      await servicio.programarBaja(1, DIA);
+      expect(repositorio.programarBaja).toHaveBeenCalledTimes(1);
+    });
+
+    it("cancelarBajaProgramada la quita; sin baja programada responde 409", async () => {
+      repositorio.buscarPorId.mockResolvedValue({ ...horarioBase, fecha_baja_programada: DIA });
+      repositorio.cancelarBajaProgramada.mockResolvedValue(horarioBase);
+      await servicio.cancelarBajaProgramada(1);
+      expect(repositorio.cancelarBajaProgramada).toHaveBeenCalledWith(1);
+
+      repositorio.buscarPorId.mockResolvedValue(horarioBase);
+      await expect(servicio.cancelarBajaProgramada(1)).rejects.toBeInstanceOf(ConflictError);
+    });
+
+    it("listarConBajaProgramada les suma el cupo efectivo", async () => {
+      repositorio.listarConBajaProgramada.mockResolvedValue([horarioBase]);
+
+      await expect(servicio.listarConBajaProgramada()).resolves.toEqual([
+        expect.objectContaining({ id_horario: 1, cupo_maximo_efectivo: 20 }),
+      ]);
+    });
+
+    it("completarBajaProgramada dice si pudo darlo de baja (no, si todavía tiene inscriptos)", async () => {
+      repositorio.darDeBaja.mockResolvedValueOnce(horarioBase).mockResolvedValueOnce(null);
+
+      await expect(servicio.completarBajaProgramada(1)).resolves.toBe(true);
+      await expect(servicio.completarBajaProgramada(1)).resolves.toBe(false);
     });
   });
 });

@@ -1,4 +1,5 @@
 import type {
+  CambioPlanProgramado,
   ConteoBajasPorMotivo,
   FiltroAlumnosPorInscripcion,
   FiltroBajasPorMotivo,
@@ -6,6 +7,7 @@ import type {
   InscripcionACargo,
   InscripcionACobrar,
   InscripcionConDatos,
+  InscripcionEnHorario,
   InscripcionParaInactividad,
   InscriptoDeHorario,
   ResumenInscripcionAlumno,
@@ -56,4 +58,12 @@ export interface IInfoInscripciones {
   }): Promise<Map<number, number>>;
   // US-35: las inscripciones dadas de baja en el período, agrupadas por motivo, de más a menos.
   contarBajasPorMotivo(filtro: FiltroBajasPorMotivo): Promise<ConteoBajasPorMotivo[]>;
+  // El cambio de plan programado de cada inscripción, si tiene: lo muestra la ficha del alumno.
+  buscarCambiosProgramados(idsInscripciones: number[]): Promise<CambioPlanProgramado[]>;
+  // Lo que usa el proceso AplicadorProgramados: los cambios de plan que vencen hasta hoy y su
+  // aplicación, y las inscripciones que siguen en un horario con la baja programada y su salida.
+  listarCambiosParaAplicar(hoy: Date): Promise<CambioPlanProgramado[]>;
+  aplicarCambioProgramado(cambio: CambioPlanProgramado): Promise<void>;
+  listarEnHorario(idHorario: number): Promise<InscripcionEnHorario[]>;
+  sacarDelHorario(inscripcion: InscripcionEnHorario, idHorario: number): Promise<void>;
 }

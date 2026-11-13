@@ -57,6 +57,7 @@ import { ClaseService } from "./modules/gestion-inscripciones-y-clases/clase/cla
 import { AsistenciaRepository } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.repository.js";
 import { AsistenciaService } from "./modules/gestion-inscripciones-y-clases/asistencia/asistencia.service.js";
 import { CierreAsistenciaService } from "./modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
+import { AplicadorProgramadosService } from "./modules/gestion-inscripciones-y-clases/aplicador-programados/aplicador-programados.service.js";
 import { SuplenciaRepository } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.repository.js";
 import { SuplenciaService } from "./modules/gestion-inscripciones-y-clases/suplencia/suplencia.service.js";
 import { CalculadorRachaRanking } from "./modules/calculos-del-negocio/calculador-racha-ranking/calculador-racha-ranking.js";
@@ -85,12 +86,14 @@ export interface PiezasDeInfraestructura {
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
 // tests de integración dan el alta definitiva sin pasar por un cobro; y los procesos que index.ts
 // corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
-// (US-21), los avisos de cuota (US-25), el cierre mensual de insignias (US-31) y el de honorarios (US-23).
+// (US-21), los avisos de cuota (US-25), el cierre mensual de insignias (US-31), el de honorarios (US-23) y
+// lo programado para el fin de la gracia: el cambio de plan y la baja de un horario (US-14, US-04).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
   infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
+  aplicadorProgramados: AplicadorProgramadosService;
   planificadorNotificaciones: PlanificadorNotificacionesService;
   cierreMensualInsignias: CierreMensualInsigniasService;
   cierreMensualHonorarios: CierreMensualHonorariosService;
@@ -157,6 +160,11 @@ export function construirSistema({ prisma, googleAuth, jwtService, push }: Pieza
     asistenciaService,
     parametrosService,
     unidadDeTrabajo,
+  );
+  const aplicadorProgramados = new AplicadorProgramadosService(
+    inscripcionService,
+    cuotaService,
+    horarioService,
   );
   const gestionInscripcionesYClases = new GestionInscripcionesYClasesService(
     inscripcionService,
@@ -258,6 +266,7 @@ export function construirSistema({ prisma, googleAuth, jwtService, push }: Pieza
     infoInscripciones: inscripcionService,
     infoClases: claseService,
     cierreAsistencia,
+    aplicadorProgramados,
     planificadorNotificaciones,
     cierreMensualInsignias,
     cierreMensualHonorarios,

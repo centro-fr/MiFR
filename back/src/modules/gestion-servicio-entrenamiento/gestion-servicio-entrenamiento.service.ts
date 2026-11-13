@@ -1,4 +1,5 @@
 import { ConflictError, ValidationError } from "../../shared/errors/app-error.js";
+import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import type {
   HorarioConOcupacion,
   ILogicaServicioEntrenamiento,
@@ -125,24 +126,45 @@ export class GestionServicioEntrenamientoService implements ILogicaServicioEntre
     return horario;
   }
 
-  actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
+  // US-04: con alumnos inscriptos no se cambia el día, la hora, la profesora ni la actividad: los
+  // alumnos pagaron ese horario. Se programa su baja y se crea otro. El cupo sí se puede cambiar.
+  async actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta> {
+    const cambiaLaClase = (
+      ["dia_semana", "hora_inicio", "hora_fin", "id_profesora", "id_actividad"] as const
+    ).some((campo) => input[campo] !== undefined);
+    if (cambiaLaClase && (await this.inscriptosDe(id)) > 0) {
+      throw new ConflictError(
+        "El horario tiene alumnos inscriptos: no se cambia el día, la hora, la profesora ni la actividad. Programá su baja y creá otro",
+      );
+    }
     return this.horarios.actualizar(id, input);
   }
 
-  // US-04: un horario con alumnos inscriptos no se da de baja; primero hay que reubicarlos.
-  // Horario no conoce a Inscripcion, así que el cruce lo hace el subsistema. La advertencia queda
-  // en la respuesta porque el front ya la muestra.
+  // US-04: un horario con alumnos inscriptos no se da de baja en el momento: queda programada, no
+  // admite alumnos nuevos y cada inscripto sale al terminar su gracia (proceso AplicadorProgramados).
+  // Horario no conoce a Inscripcion, así que el cruce lo hace el subsistema.
   async darDeBajaHorario(id: number): Promise<HorarioConAdvertencia> {
-    const inscriptos = (await this.inscripciones.contarInscriptosVigentes([id])).get(id) ?? 0;
+    const inscriptos = await this.inscriptosDe(id);
     if (inscriptos > 0) {
-      throw new ConflictError(
-        `El horario tiene ${inscriptos} alumno(s) inscripto(s): hay que reubicarlos antes de darlo de baja`,
-      );
+      return {
+        horario: await this.horarios.programarBaja(id, fechaActualArgentina()),
+        advertencia:
+          `Tiene ${inscriptos} ${inscriptos === 1 ? "alumno inscripto" : "alumnos inscriptos"}: no admite alumnos nuevos ` +
+          "y cada uno sale al terminar su período de gracia. Se da de baja cuando sale el último.",
+      };
     }
     return {
       horario: await this.horarios.darDeBaja(id),
       advertencia: "El horario no tenía alumnos inscriptos.",
     };
+  }
+
+  cancelarBajaProgramadaHorario(id: number): Promise<HorarioRespuesta> {
+    return this.horarios.cancelarBajaProgramada(id);
+  }
+
+  private async inscriptosDe(idHorario: number): Promise<number> {
+    return (await this.inscripciones.contarInscriptosVigentes([idHorario])).get(idHorario) ?? 0;
   }
 
   // Horario no conoce a Inscripcion: los lugares ocupados los cuenta el subsistema, en una consulta, con

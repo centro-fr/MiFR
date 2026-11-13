@@ -65,6 +65,7 @@ function crearMocks() {
         .mockResolvedValue([{ id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" }]),
       listarVigentesDeAlumno: vi.fn().mockResolvedValue([{ id_inscripcion: 9, id_profesora: ID_PROFESORA }]),
       listarDeLaUltimaBaja: vi.fn().mockResolvedValue([{ id_inscripcion: 8, id_profesora: ID_PROFESORA }]),
+      buscarCambiosProgramados: vi.fn().mockResolvedValue([]),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
     },
     asistencias: {
@@ -372,11 +373,19 @@ describe("GestionPersonasService", () => {
     it("devuelve la ficha con las inscripciones vigentes, su situación de cuota y el historial", async () => {
       await expect(servicio.obtenerAlumnoPorId(4, PROPIETARIA)).resolves.toEqual({
         id_alumno: 4,
-        inscripciones: [{ id_inscripcion: 9, id_profesora: ID_PROFESORA, situacion_cuota: SITUACION }],
+        inscripciones: [
+          {
+            id_inscripcion: 9,
+            id_profesora: ID_PROFESORA,
+            situacion_cuota: SITUACION,
+            cambio_programado: null,
+          },
+        ],
         inscripciones_de_la_baja: [],
         historial_cuotas: HISTORIAL,
       });
       expect(mocks.cuotas.historialDeAlumno).toHaveBeenCalledWith(4);
+      expect(mocks.inscripciones.buscarCambiosProgramados).toHaveBeenCalledWith([9]);
       expect(mocks.inscripciones.listarVigentesDeAlumno).toHaveBeenCalledWith(4);
       expect(mocks.inscripciones.listarDeLaUltimaBaja).not.toHaveBeenCalled();
       expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
@@ -391,12 +400,26 @@ describe("GestionPersonasService", () => {
         estado: "BAJA",
         inscripciones: [],
         inscripciones_de_la_baja: [
-          { id_inscripcion: 8, id_profesora: ID_PROFESORA, situacion_cuota: SITUACION },
+          {
+            id_inscripcion: 8,
+            id_profesora: ID_PROFESORA,
+            situacion_cuota: SITUACION,
+            cambio_programado: null,
+          },
         ],
         historial_cuotas: HISTORIAL,
       });
       expect(mocks.inscripciones.listarDeLaUltimaBaja).toHaveBeenCalledWith(4);
       expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([8]);
+    });
+
+    it("cada inscripción trae su cambio de plan programado (US-14)", async () => {
+      const cambio = { id_inscripcion: 9, id_plan: 2, nombre_plan: "Intermedio" };
+      mocks.inscripciones.buscarCambiosProgramados.mockResolvedValue([cambio]);
+
+      const ficha = await servicio.obtenerAlumnoPorId(4, PROPIETARIA);
+
+      expect(ficha.inscripciones[0].cambio_programado).toEqual(cambio);
     });
 
     it("la profesora ve la ficha de un alumno a su cargo, sin el historial de pagos", async () => {

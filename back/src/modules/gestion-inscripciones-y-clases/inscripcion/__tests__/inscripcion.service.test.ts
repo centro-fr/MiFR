@@ -59,7 +59,9 @@ const inscripcion = {
   id_profesora: 3,
   estado: "ACTIVA",
   fecha_inicio: HOY,
+  sin_cargo: false,
   plan,
+  horarios: [{ id_horario: 8, fecha_hasta: null, horario: { id_actividad: 4 } }],
 } as unknown as InscripcionGuardada;
 const preinscripta = { ...inscripcion, estado: "PREINSCRIPTA" } as InscripcionGuardada;
 const ok = { resultado: "ok", inscripcion };
@@ -85,6 +87,12 @@ function crearMocks() {
       crear: vi.fn().mockResolvedValue(ok),
       listar: vi.fn().mockResolvedValue([]),
       listarVigentesPorAlumno: vi.fn(),
+      guardarCambioProgramado: vi.fn().mockResolvedValue({ id_inscripcion: 12 }),
+      borrarCambioProgramado: vi.fn().mockResolvedValue(true),
+      buscarCambiosProgramados: vi.fn().mockResolvedValue([]),
+      listarCambiosParaAplicar: vi.fn().mockResolvedValue([]),
+      listarEnHorario: vi.fn().mockResolvedValue([]),
+      sacarDelHorario: vi.fn().mockResolvedValue(false),
       listarDeLaUltimaBaja: vi.fn(),
       buscarPorId: vi.fn().mockResolvedValue(inscripcion),
       buscarParaCobro: vi.fn(),
@@ -634,6 +642,135 @@ describe("InscripcionService", () => {
       "misma actividad",
     );
     expect(mocks.repositorio.actualizarHorarios).not.toHaveBeenCalled();
+  });
+
+  describe("reglas del cambio de horarios", () => {
+    it("actualizarHorarios no cambia los horarios de una pre-inscripción", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue(preinscripta);
+
+      await expect(servicio.actualizarHorarios(12, { ids_horarios: [8] })).rejects.toThrow(
+        "inscripción activa",
+      );
+      expect(mocks.repositorio.actualizarHorarios).not.toHaveBeenCalled();
+    });
+
+    it("actualizarHorarios no pasa a otra profesora ni a otra actividad: eso es un cambio de plan", async () => {
+      mocks.horarios.buscarPorIds.mockResolvedValue([{ ...horario, id_horario: 9, id_profesora: 7 }]);
+      await expect(servicio.actualizarHorarios(12, { ids_horarios: [9] })).rejects.toThrow("misma profesora");
+
+      mocks.horarios.buscarPorIds.mockResolvedValue([{ ...horario, id_horario: 9, id_actividad: 6 }]);
+      await expect(servicio.actualizarHorarios(12, { ids_horarios: [9] })).rejects.toThrow("misma actividad");
+      expect(mocks.repositorio.actualizarHorarios).not.toHaveBeenCalled();
+    });
+
+    it("un horario con la baja programada no recibe alumnos nuevos, pero quien ya está puede seguir", async () => {
+      const conBaja = { ...horario, fecha_baja_programada: HOY };
+      mocks.horarios.buscarPorIds.mockResolvedValue([{ ...conBaja, id_horario: 9 }]);
+      await expect(servicio.actualizarHorarios(12, { ids_horarios: [9] })).rejects.toThrow("baja programada");
+
+      mocks.horarios.buscarPorIds.mockResolvedValue([conBaja]);
+      await servicio.actualizarHorarios(12, { ids_horarios: [8] });
+      expect(mocks.repositorio.actualizarHorarios).toHaveBeenCalled();
+    });
+  });
+
+  describe("cambio de plan programado (US-14)", () => {
+    const cambios = { id_plan: 2, id_profesora: 3, ids_horarios: [8], sin_cargo: false };
+    const APLICACION = new Date("2026-11-20T00:00:00Z");
+    const cambio = {
+      id_inscripcion: 12,
+      id_plan: 2,
+      nombre_plan: "Intermedio",
+      id_profesora: 3,
+      nombre_profesora: "Lucía Gómez",
+      ids_horarios: [8],
+      fecha_aplicacion: APLICACION,
+    };
+
+    it("programarCambioPlan lo valida como un cambio inmediato y lo guarda con la fecha", async () => {
+      await servicio.programarCambioPlan(12, cambios, APLICACION);
+
+      expect(mocks.planes.buscarPorId).toHaveBeenCalledWith(2);
+      expect(mocks.repositorio.guardarCambioProgramado).toHaveBeenCalledWith(12, cambios, APLICACION);
+    });
+
+    it("programarCambioPlan rechaza el mismo plan sin guardar nada", async () => {
+      await expect(servicio.programarCambioPlan(12, { ...cambios, id_plan: 1 }, APLICACION)).rejects.toThrow(
+        "ya tiene el plan",
+      );
+      expect(mocks.repositorio.guardarCambioProgramado).not.toHaveBeenCalled();
+    });
+
+    it("cancelarCambioProgramado lo borra; si no había, responde 404", async () => {
+      await servicio.cancelarCambioProgramado(12);
+      mocks.repositorio.borrarCambioProgramado.mockResolvedValue(false);
+
+      await expect(servicio.cancelarCambioProgramado(12)).rejects.toThrow("no tiene un cambio");
+    });
+
+    it("pasa las consultas de los cambios al repositorio", async () => {
+      await servicio.buscarCambiosProgramados([12]);
+      await servicio.listarCambiosParaAplicar(HOY);
+
+      expect(mocks.repositorio.buscarCambiosProgramados).toHaveBeenCalledWith([12]);
+      expect(mocks.repositorio.listarCambiosParaAplicar).toHaveBeenCalledWith(HOY);
+    });
+
+    it("aplicarCambioProgramado lo aplica como un cambio inmediato y después lo borra", async () => {
+      await servicio.aplicarCambioProgramado(cambio);
+
+      expect(mocks.repositorio.cambiarPlan).toHaveBeenCalled();
+      expect(mocks.repositorio.borrarCambioProgramado).toHaveBeenCalledWith(12);
+    });
+
+    it("aplicarCambioProgramado descarta el cambio si la inscripción ya no está vigente", async () => {
+      mocks.repositorio.buscarPorId.mockResolvedValue({ ...inscripcion, estado: "BAJA" });
+      await servicio.aplicarCambioProgramado(cambio);
+      mocks.repositorio.buscarPorId.mockResolvedValue(null);
+      await servicio.aplicarCambioProgramado(cambio);
+
+      expect(mocks.repositorio.cambiarPlan).not.toHaveBeenCalled();
+      expect(mocks.repositorio.borrarCambioProgramado).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("salida de un horario con la baja programada (US-04)", () => {
+    const enHorario = { id_inscripcion: 12, id_alumno: 5, estado: "ACTIVA" } as const;
+
+    it("listarEnHorario pasa la consulta al repositorio", async () => {
+      await servicio.listarEnHorario(8);
+
+      expect(mocks.repositorio.listarEnHorario).toHaveBeenCalledWith(8);
+    });
+
+    it("si a la inscripción le quedan horarios, el alumno sigue", async () => {
+      await servicio.sacarDelHorario(enHorario, 8);
+
+      expect(mocks.repositorio.sacarDelHorario).toHaveBeenCalledWith(
+        12,
+        8,
+        expect.objectContaining({ dia: HOY }),
+      );
+      expect(mocks.alumnos.darDeBaja).not.toHaveBeenCalled();
+    });
+
+    it("si la inscripción quedó de baja y el alumno no tiene otra vigente, el alumno también", async () => {
+      mocks.repositorio.sacarDelHorario.mockResolvedValue(true);
+      mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([]);
+
+      await servicio.sacarDelHorario(enHorario, 8);
+
+      expect(mocks.alumnos.darDeBaja).toHaveBeenCalledWith(5);
+    });
+
+    it("si la inscripción quedó de baja pero el alumno tiene otro plan vigente, el alumno sigue", async () => {
+      mocks.repositorio.sacarDelHorario.mockResolvedValue(true);
+      mocks.repositorio.listarVigentesPorAlumno.mockResolvedValue([inscripcion]);
+
+      await servicio.sacarDelHorario(enHorario, 8);
+
+      expect(mocks.alumnos.darDeBaja).not.toHaveBeenCalled();
+    });
   });
 
   describe("IInfoInscripciones", () => {

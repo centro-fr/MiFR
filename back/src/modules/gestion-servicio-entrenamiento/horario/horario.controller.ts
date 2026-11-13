@@ -23,5 +23,9 @@ export function createHorarioController(logica: ILogicaHorarios) {
     async darDeBaja(req: Request, res: Response) {
       res.json(await logica.darDeBajaHorario(Number(req.params.id)));
     },
+
+    async cancelarBajaProgramada(req: Request, res: Response) {
+      res.json(await logica.cancelarBajaProgramadaHorario(Number(req.params.id)));
+    },
   };
 }

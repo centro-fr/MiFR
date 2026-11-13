@@ -27,12 +27,35 @@ const transaccion = {
     findUnique: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
+    count: vi.fn(),
   },
+  cambios_plan_programados: { deleteMany: vi.fn(), create: vi.fn() },
 };
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
   inscripciones: { findUnique: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), groupBy: vi.fn() },
   inscripcion_horarios: { groupBy: vi.fn() },
+  cambios_plan_programados: { deleteMany: vi.fn(), findMany: vi.fn() },
+};
+
+// Una fila de cambios_plan_programados con lo que trae DATOS_CAMBIO_PROGRAMADO.
+const FILA_CAMBIO = {
+  id_inscripcion: 12,
+  id_plan: 2,
+  id_profesora: 3,
+  fecha_aplicacion: new Date("2026-11-20T00:00:00Z"),
+  plan: { nombre: "Intermedio" },
+  profesora: { usuario: { nombre: "Lucía", apellido: "Gómez" } },
+  horarios: [{ id_horario: 8 }, { id_horario: 9 }],
+};
+const CAMBIO = {
+  id_inscripcion: 12,
+  id_plan: 2,
+  nombre_plan: "Intermedio",
+  id_profesora: 3,
+  nombre_profesora: "Lucía Gómez",
+  ids_horarios: [8, 9],
+  fecha_aplicacion: new Date("2026-11-20T00:00:00Z"),
 };
 
 const DIA = new Date("2026-10-09T00:00:00Z");
@@ -797,6 +820,105 @@ describe("InscripcionRepository", () => {
         by: ["motivo_baja"],
         where: { estado: "BAJA", fecha_baja: { gte: inicio, lt: fin } },
         _count: { id_inscripcion: true },
+      });
+    });
+  });
+
+  describe("cambio de plan programado (US-14)", () => {
+    it("guardarCambioProgramado reemplaza el anterior de la inscripción en la misma transacción", async () => {
+      transaccion.cambios_plan_programados.create.mockResolvedValue(FILA_CAMBIO);
+
+      await expect(
+        repositorio.guardarCambioProgramado(
+          12,
+          { id_plan: 2, id_profesora: 3, ids_horarios: [8, 9] },
+          CAMBIO.fecha_aplicacion,
+        ),
+      ).resolves.toEqual(CAMBIO);
+      expect(transaccion.cambios_plan_programados.deleteMany).toHaveBeenCalledWith({
+        where: { id_inscripcion: 12 },
+      });
+      expect(transaccion.cambios_plan_programados.create.mock.calls[0][0].data).toEqual({
+        id_inscripcion: 12,
+        id_plan: 2,
+        id_profesora: 3,
+        fecha_aplicacion: CAMBIO.fecha_aplicacion,
+        horarios: { create: [{ id_horario: 8 }, { id_horario: 9 }] },
+      });
+    });
+
+    it("borrarCambioProgramado dice si había uno", async () => {
+      prisma.cambios_plan_programados.deleteMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+
+      await expect(repositorio.borrarCambioProgramado(12)).resolves.toBe(true);
+      await expect(repositorio.borrarCambioProgramado(12)).resolves.toBe(false);
+    });
+
+    it("buscarCambiosProgramados trae los de las inscripciones pedidas, sin consultar si no hay ids", async () => {
+      await expect(repositorio.buscarCambiosProgramados([])).resolves.toEqual([]);
+      expect(prisma.cambios_plan_programados.findMany).not.toHaveBeenCalled();
+
+      prisma.cambios_plan_programados.findMany.mockResolvedValue([FILA_CAMBIO]);
+      await expect(repositorio.buscarCambiosProgramados([12])).resolves.toEqual([CAMBIO]);
+      expect(prisma.cambios_plan_programados.findMany.mock.calls[0][0].where).toEqual({
+        id_inscripcion: { in: [12] },
+      });
+    });
+
+    it("listarCambiosParaAplicar trae los que vencen hasta hoy, los más viejos primero y con tope", async () => {
+      prisma.cambios_plan_programados.findMany.mockResolvedValue([FILA_CAMBIO]);
+
+      await expect(repositorio.listarCambiosParaAplicar(DIA)).resolves.toEqual([CAMBIO]);
+      expect(prisma.cambios_plan_programados.findMany.mock.calls[0][0]).toMatchObject({
+        where: { fecha_aplicacion: { lte: DIA } },
+        orderBy: { fecha_aplicacion: "asc" },
+        take: 100,
+      });
+    });
+  });
+
+  describe("salida de un horario con la baja programada (US-04)", () => {
+    it("listarEnHorario trae las inscripciones vigentes que siguen en el horario", async () => {
+      prisma.inscripciones.findMany.mockResolvedValue([
+        { id_inscripcion: 12, id_alumno: 5, estado: "ACTIVA" },
+        { id_inscripcion: 13, id_alumno: 6, estado: "PREINSCRIPTA" },
+      ]);
+
+      await expect(repositorio.listarEnHorario(8)).resolves.toEqual([
+        { id_inscripcion: 12, id_alumno: 5, estado: "ACTIVA" },
+        { id_inscripcion: 13, id_alumno: 6, estado: "PREINSCRIPTA" },
+      ]);
+      expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
+        estado: { in: ["PREINSCRIPTA", "ACTIVA"] },
+        horarios: { some: { id_horario: 8, fecha_hasta: null } },
+      });
+    });
+
+    it("sacarDelHorario cierra el horario y, si le quedan otros, no da de baja la inscripción", async () => {
+      transaccion.inscripcion_horarios.count.mockResolvedValue(1);
+
+      await expect(repositorio.sacarDelHorario(12, 8, { dia: DIA, instante: INSTANTE })).resolves.toBe(false);
+      expect(transaccion.inscripcion_horarios.updateMany).toHaveBeenCalledWith({
+        where: { id_inscripcion: 12, id_horario: 8, fecha_hasta: null },
+        data: { fecha_hasta: DIA },
+      });
+      expect(transaccion.inscripciones.update).not.toHaveBeenCalled();
+    });
+
+    it("sacarDelHorario da de baja la inscripción que se quedó sin horarios, con el motivo OTRO", async () => {
+      transaccion.inscripcion_horarios.count.mockResolvedValue(0);
+
+      await expect(repositorio.sacarDelHorario(12, 8, { dia: DIA, instante: INSTANTE })).resolves.toBe(true);
+      expect(transaccion.inscripciones.update).toHaveBeenCalledWith({
+        where: { id_inscripcion: 12 },
+        data: {
+          estado: "BAJA",
+          motivo_baja: "OTRO",
+          detalle_baja: "Se dio de baja su horario y no le quedó ninguno",
+          fecha_baja: INSTANTE,
+        },
       });
     });
   });

@@ -8,6 +8,7 @@ import type {
 } from "../inscripcion/inscripcion.schemas.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type {
+  CambioPlanProgramado,
   FiltroInscripciones,
   InscripcionConDatos,
   Preinscripcion,
@@ -32,7 +33,10 @@ export interface ILogicaInscripciones {
   obtenerInscripcion(id: number, solicitante: Solicitante): Promise<InscripcionConDatos>;
   darDeBajaAlumno(idAlumno: number, input: DarDeBajaAlumnoInput): Promise<void>;
   reactivarAlumno(idAlumno: number, input: ReactivarAlumnoInput): Promise<InscripcionConDatos>;
-  cambiarPlan(id: number, input: CambiarPlanInput): Promise<InscripcionConDatos>;
+  // Con el plan vigente (inscripción activa con la gracia corriendo) el cambio queda programado y
+  // devuelve el cambio; si no, se aplica en el momento y devuelve la inscripción nueva.
+  cambiarPlan(id: number, input: CambiarPlanInput): Promise<InscripcionConDatos | CambioPlanProgramado>;
+  cancelarCambioPlan(id: number): Promise<void>;
   actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos>;
 }
 

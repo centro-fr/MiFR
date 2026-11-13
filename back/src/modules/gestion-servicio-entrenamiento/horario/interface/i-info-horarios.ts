@@ -6,4 +6,8 @@ export interface IInfoHorarios {
   listarVigentes(): Promise<HorarioRespuesta[]>;
   listarActivosDelDia(fecha: Date): Promise<HorarioRespuesta[]>;
   tieneActivosDeProfesora(idProfesora: number): Promise<boolean>;
+  // US-04: lo usa el proceso AplicadorProgramados. Los horarios con la baja programada y la baja
+  // definitiva cuando ya no les queda ningún inscripto (false si todavía queda alguno).
+  listarConBajaProgramada(): Promise<HorarioRespuesta[]>;
+  completarBajaProgramada(id: number): Promise<boolean>;
 }

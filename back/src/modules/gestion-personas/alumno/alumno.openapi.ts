@@ -84,6 +84,18 @@ const situacionCuotaSchema = z
 
 const inscripcionConSituacionSchema = inscripcionSchema.extend({
   situacion_cuota: situacionCuotaSchema.nullable(),
+  cambio_programado: z
+    .object({
+      id_inscripcion: z.number().int(),
+      id_plan: z.number().int(),
+      nombre_plan: z.string(),
+      id_profesora: z.number().int(),
+      nombre_profesora: z.string(),
+      ids_horarios: z.array(z.number().int()),
+      fecha_aplicacion: fechaSchema,
+    })
+    .nullable()
+    .openapi({ description: "El cambio de plan que espera al fin de la gracia (US-14); null si no hay" }),
 });
 
 const alumnoEnListadoSchema = alumnoSchema

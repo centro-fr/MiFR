@@ -27,6 +27,7 @@ const prisma = new PrismaClient(opcionesDelClientePrisma(process.env.NODE_ENV));
 const {
   dependencias,
   cierreAsistencia,
+  aplicadorProgramados,
   planificadorNotificaciones,
   cierreMensualInsignias,
   cierreMensualHonorarios,
@@ -63,6 +64,20 @@ setInterval(() => {
   planificadorNotificaciones.generarAvisosDelDia().catch((error: unknown) => {
     console.error("No se pudieron generar los avisos de cuota", error);
   });
+}, MILISEGUNDOS_ENTRE_AVISOS).unref();
+
+// US-14 y US-04: el cambio de plan y la salida de un horario con la baja programada se aplican al
+// terminar la gracia. Corre a lo sumo una vez por día; el intervalo solo hace falta para cambiar de día.
+setInterval(() => {
+  aplicadorProgramados
+    .aplicarDelDia()
+    .then((resultado) => {
+      for (const error of resultado?.errores ?? [])
+        console.error("No se pudo aplicar algo programado", error);
+    })
+    .catch((error: unknown) => {
+      console.error("No se pudo aplicar lo programado del día", error);
+    });
 }, MILISEGUNDOS_ENTRE_AVISOS).unref();
 
 // US-31: con el mismo enfoque, el mes anterior se cierra también al consultar la ficha de insignias o el

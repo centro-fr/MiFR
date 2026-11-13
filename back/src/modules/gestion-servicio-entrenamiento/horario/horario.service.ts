@@ -95,6 +95,31 @@ export class HorarioService implements IInfoHorarios {
     return this.conCupoEfectivo(horario);
   }
 
+  // US-04: con alumnos inscriptos la baja se programa (la decide la fachada, que los cuenta).
+  async programarBaja(id: number, dia: Date): Promise<HorarioRespuesta> {
+    const actual = await this.obtenerHorarioActivo(id);
+    if (actual.fecha_baja_programada !== null) return this.conCupoEfectivo(actual);
+    return this.conCupoEfectivo(await this.repositorio.programarBaja(id, dia));
+  }
+
+  async cancelarBajaProgramada(id: number): Promise<HorarioRespuesta> {
+    const actual = await this.obtenerHorarioActivo(id);
+    if (actual.fecha_baja_programada === null) {
+      throw new ConflictError("El horario no tiene la baja programada");
+    }
+    return this.conCupoEfectivo(await this.repositorio.cancelarBajaProgramada(id));
+  }
+
+  async listarConBajaProgramada(): Promise<HorarioRespuesta[]> {
+    const horarios = await this.repositorio.listarConBajaProgramada();
+    return horarios.map((horario) => this.conCupoEfectivo(horario));
+  }
+
+  // Cuando salió el último inscripto. Si todavía queda alguno, no hace nada y devuelve false.
+  async completarBajaProgramada(id: number): Promise<boolean> {
+    return (await this.repositorio.darDeBaja(id)) !== null;
+  }
+
   async darDeBajaDeActividad(idActividad: number): Promise<number> {
     const cantidad = await this.repositorio.darDeBajaDeActividad(idActividad);
     if (cantidad === null) throw new ConflictError(HORARIO_CON_INSCRIPTOS);

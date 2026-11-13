@@ -27,6 +27,7 @@ function crearLogicaMock() {
     darDeBajaAlumno: vi.fn().mockResolvedValue(undefined),
     reactivarAlumno: vi.fn().mockResolvedValue(inscripcion),
     cambiarPlan: vi.fn().mockResolvedValue(inscripcion),
+    cancelarCambioPlan: vi.fn().mockResolvedValue(undefined),
     actualizarHorarios: vi.fn().mockResolvedValue(inscripcion),
   };
 }
@@ -62,7 +63,7 @@ describe("rutas de inscripciones", () => {
     });
   });
 
-  function como(token: string, metodo: "get" | "post" | "patch", ruta: string) {
+  function como(token: string, metodo: "get" | "post" | "patch" | "delete", ruta: string) {
     return request(app)[metodo](`/api/v1${ruta}`).set("Authorization", `Bearer ${token}`);
   }
 
@@ -183,6 +184,28 @@ describe("rutas de inscripciones", () => {
     expect([cambioPlan.status, horarios.status]).toEqual([200, 200]);
     expect(logica.cambiarPlan).toHaveBeenCalledWith(12, { ...planYHorarios, sin_cargo: false });
     expect(logica.actualizarHorarios).toHaveBeenCalledWith(12, { ids_horarios: [9] });
+  });
+
+  it("con el plan vigente el cambio queda programado y responde 202 con el cambio (US-14)", async () => {
+    const cambio = { id_inscripcion: 12, id_plan: 2, fecha_aplicacion: new Date("2026-11-20T00:00:00Z") };
+    logica.cambiarPlan.mockResolvedValueOnce(cambio);
+
+    const respuesta = await como("propietaria", "post", "/inscripciones/12/cambio-plan").send(planYHorarios);
+
+    expect(respuesta.status).toBe(202);
+    expect(respuesta.body).toMatchObject({
+      id_inscripcion: 12,
+      fecha_aplicacion: "2026-11-20T00:00:00.000Z",
+    });
+  });
+
+  it("cancela el cambio de plan programado solo la propietaria", async () => {
+    const propietaria = await como("propietaria", "delete", "/inscripciones/12/cambio-plan");
+    const profesora = await como("profesora", "delete", "/inscripciones/12/cambio-plan");
+
+    expect([propietaria.status, profesora.status]).toEqual([204, 403]);
+    expect(logica.cancelarCambioPlan).toHaveBeenCalledTimes(1);
+    expect(logica.cancelarCambioPlan).toHaveBeenCalledWith(12);
   });
 
   it.each([

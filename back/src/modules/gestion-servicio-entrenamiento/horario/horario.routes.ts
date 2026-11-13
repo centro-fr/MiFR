@@ -48,6 +48,13 @@ export function createHorarioRoutes(logica: ILogicaHorarios, acceso: ControlDeAc
     validate({ params: horarioIdParamSchema }),
     controller.darDeBaja,
   );
+  router.delete(
+    "/:id/baja-programada",
+    acceso.rol("PROPIETARIA"),
+    acceso.permiso("HORARIOS_EDITAR"),
+    validate({ params: horarioIdParamSchema }),
+    controller.cancelarBajaProgramada,
+  );
 
   return router;
 }

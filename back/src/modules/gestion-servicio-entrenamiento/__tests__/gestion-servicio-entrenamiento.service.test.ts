@@ -22,7 +22,16 @@ const actividadDadaDeBaja: Actividad = {
 
 describe("GestionServicioEntrenamientoService", () => {
   let actividades: Pick<ActividadService, "darDeBaja" | "obtenerPorId">;
-  let horarios: Pick<HorarioService, "darDeBajaDeActividad" | "darDeBaja" | "listar" | "obtenerPorId">;
+  let horarios: Pick<
+    HorarioService,
+    | "darDeBajaDeActividad"
+    | "darDeBaja"
+    | "listar"
+    | "obtenerPorId"
+    | "programarBaja"
+    | "cancelarBajaProgramada"
+    | "actualizar"
+  >;
   let inscripciones: Pick<IInfoInscripciones, "contarInscriptosVigentes" | "contarLugaresOcupados">;
   let planes: Pick<PlanService, "listar">;
   let servicio: GestionServicioEntrenamientoService;
@@ -38,6 +47,9 @@ describe("GestionServicioEntrenamientoService", () => {
         { id_horario: 5, cupo_maximo_efectivo: null },
       ]),
       obtenerPorId: vi.fn().mockResolvedValue({ id_horario: 3, cupo_maximo_efectivo: 4 }),
+      programarBaja: vi.fn().mockResolvedValue({ id_horario: 3, fecha_baja_programada: new Date() }),
+      cancelarBajaProgramada: vi.fn().mockResolvedValue({ id_horario: 3 }),
+      actualizar: vi.fn().mockResolvedValue({ id_horario: 3 }),
     };
     inscripciones = {
       contarInscriptosVigentes: vi.fn().mockResolvedValue(new Map()),
@@ -98,11 +110,44 @@ describe("GestionServicioEntrenamientoService", () => {
     expect(horarios.darDeBajaDeActividad).not.toHaveBeenCalled();
   });
 
-  it("darDeBajaHorario lanza ConflictError si el horario tiene alumnos inscriptos", async () => {
+  it("darDeBajaHorario con alumnos inscriptos programa la baja en lugar de darlo de baja", async () => {
     vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[3, 2]]));
 
-    await expect(servicio.darDeBajaHorario(3)).rejects.toThrow(ConflictError);
+    const resultado = await servicio.darDeBajaHorario(3);
+
+    expect(horarios.programarBaja).toHaveBeenCalledWith(3, expect.any(Date));
     expect(horarios.darDeBaja).not.toHaveBeenCalled();
+    expect(resultado.advertencia).toMatch(/^Tiene 2 alumnos inscriptos: no admite alumnos nuevos/);
+  });
+
+  it("darDeBajaHorario con un solo alumno lo dice en singular", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[3, 1]]));
+
+    expect((await servicio.darDeBajaHorario(3)).advertencia).toMatch(/^Tiene 1 alumno inscripto:/);
+  });
+
+  it("cancelarBajaProgramadaHorario la quita en Horario", async () => {
+    await servicio.cancelarBajaProgramadaHorario(3);
+
+    expect(horarios.cancelarBajaProgramada).toHaveBeenCalledWith(3);
+  });
+
+  it("actualizarHorario con alumnos inscriptos no cambia el día, la hora, la profesora ni la actividad", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[3, 2]]));
+
+    await expect(servicio.actualizarHorario(3, { dia_semana: 2 })).rejects.toThrow(ConflictError);
+    expect(horarios.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("actualizarHorario con alumnos inscriptos sí cambia el cupo, y sin alumnos cualquier campo", async () => {
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map([[3, 2]]));
+    await servicio.actualizarHorario(3, { cupo_maximo: 10 });
+
+    vi.mocked(inscripciones.contarInscriptosVigentes).mockResolvedValue(new Map());
+    await servicio.actualizarHorario(3, { dia_semana: 2 });
+
+    expect(horarios.actualizar).toHaveBeenNthCalledWith(1, 3, { cupo_maximo: 10 });
+    expect(horarios.actualizar).toHaveBeenNthCalledWith(2, 3, { dia_semana: 2 });
   });
 
   it("listarHorarios suma a cada horario sus lugares ocupados y los que le quedan, en una consulta", async () => {

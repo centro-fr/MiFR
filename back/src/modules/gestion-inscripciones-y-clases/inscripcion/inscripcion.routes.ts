@@ -45,6 +45,12 @@ export function createInscripcionRoutes(logica: ILogicaInscripciones, acceso: Co
     validate({ params: inscripcionIdParamSchema, body: cambiarPlanSchema }),
     controller.cambiarPlan,
   );
+  router.delete(
+    "/:id/cambio-plan",
+    ...soloPropietaria,
+    validate({ params: inscripcionIdParamSchema }),
+    controller.cancelarCambioPlan,
+  );
   router.patch(
     "/:id/horarios",
     ...soloPropietaria,

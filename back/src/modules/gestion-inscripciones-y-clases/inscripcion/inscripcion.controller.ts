@@ -47,8 +47,15 @@ export function createInscripcionController(logica: ILogicaInscripciones) {
         .json(await logica.reactivarAlumno(Number(req.params.id), req.body as ReactivarAlumnoInput));
     },
 
+    // 202 si el cambio quedó programado para cuando termine la gracia; 200 si se aplicó.
     async cambiarPlan(req: Request, res: Response) {
-      res.json(await logica.cambiarPlan(Number(req.params.id), req.body as CambiarPlanInput));
+      const resultado = await logica.cambiarPlan(Number(req.params.id), req.body as CambiarPlanInput);
+      res.status("fecha_aplicacion" in resultado ? 202 : 200).json(resultado);
+    },
+
+    async cancelarCambioPlan(req: Request, res: Response) {
+      await logica.cancelarCambioPlan(Number(req.params.id));
+      res.status(204).end();
     },
 
     async actualizarHorarios(req: Request, res: Response) {

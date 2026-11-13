@@ -32,6 +32,10 @@ const horarioSchema = z
     cupo_maximo: z.number().int().nullable(),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
+    fecha_baja_programada: fechaSchema.nullable().openapi({
+      description:
+        "Con alumnos inscriptos: desde ese día no admite nuevos y se da de baja cuando sale el último",
+    }),
     actividad: actividadSchema,
     profesora: profesoraSchema,
     cupo_maximo_efectivo: z
@@ -129,7 +133,9 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     tags,
     security,
     summary: "Modificar un horario activo",
-    description: `Requiere el rol PROPIETARIA y el permiso \`HORARIOS_EDITAR\`. ${reglas}`,
+    description:
+      `Requiere el rol PROPIETARIA y el permiso \`HORARIOS_EDITAR\`. ${reglas} Con alumnos inscriptos solo se ` +
+      "cambia el cupo: el día, la hora, la profesora o la actividad responden 409.",
     request: {
       params: horarioIdParamSchema,
       body: cuerpoJson(
@@ -148,11 +154,25 @@ export function registrarDocumentacionHorarios(registro: OpenAPIRegistry): void 
     security,
     summary: "Dar de baja un horario",
     description:
-      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica. Con alumnos inscriptos responde 409: primero hay que reubicarlos.",
+      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. Baja lógica. Sin alumnos, en el momento. Con " +
+      "alumnos inscriptos se programa (`fecha_baja_programada`): no admite alumnos nuevos, cada uno sale al terminar " +
+      "su período de gracia y, si se queda sin horarios, pasa a baja; el horario se da de baja cuando sale el último.",
     request: { params: horarioIdParamSchema },
     responses: {
-      200: respuestaJson("Horario dado de baja", horarioConAdvertenciaSchema),
+      200: respuestaJson("Horario dado de baja o con la baja programada", horarioConAdvertenciaSchema),
       ...respuestasDeError(400, 401, 403, 404, 409),
     },
+  });
+
+  registro.registerPath({
+    method: "delete",
+    path: "/horarios/{id}/baja-programada",
+    tags,
+    security,
+    summary: "Cancelar la baja programada de un horario",
+    description:
+      "Requiere el rol PROPIETARIA y el permiso `HORARIOS_EDITAR`. El horario vuelve a admitir alumnos. 409 si no tenía la baja programada.",
+    request: { params: horarioIdParamSchema },
+    responses: { 200: horario, ...respuestasDeError(400, 401, 403, 404, 409) },
   });
 }

@@ -135,6 +135,20 @@ const reglasDeAlta =
   "respetar la actividad exclusiva y no superar el cupo disponible. Las pre-inscripciones con la reserva vencida " +
   "no ocupan cupo.";
 
+const cambioPlanProgramadoSchema = z
+  .object({
+    id_inscripcion: z.number().int(),
+    id_plan: z.number().int(),
+    nombre_plan: z.string(),
+    id_profesora: z.number().int(),
+    nombre_profesora: z.string(),
+    ids_horarios: z.array(z.number().int()),
+    fecha_aplicacion: fechaSchema.openapi({
+      description: "El día siguiente al último de gracia de la cuota que corre",
+    }),
+  })
+  .openapi("CambioPlanProgramado");
+
 export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): void {
   const tags = ["Inscripciones"];
   const security = SEGURIDAD_BEARER;
@@ -276,12 +290,31 @@ export function registrarDocumentacionInscripciones(registro: OpenAPIRegistry): 
     tags,
     security,
     summary: "Cambiar el plan de una inscripción",
-    description: `${propietariaEditar} La operación es transaccional; conserva los cobros que apuntan a la inscripción anterior. ${reglasDeAlta}`,
+    description:
+      `${propietariaEditar} Con el plan vigente (inscripción activa con la cuota paga y la gracia corriendo) el ` +
+      "cambio queda programado para el día siguiente al último de gracia y responde 202 con el cambio; pedir otro " +
+      "lo reemplaza. Si no, se aplica en el momento y responde 200 con la inscripción nueva: es transaccional y " +
+      `conserva los cobros que apuntan a la inscripción anterior. ${reglasDeAlta}`,
     request: {
       params: inscripcionIdParamSchema,
       body: cuerpoJson(cambiarPlanSchema),
     },
-    responses: { 200: respuestas, ...respuestasDeError(400, 401, 403, 404, 409) },
+    responses: {
+      200: respuestas,
+      202: respuestaJson("Cambio de plan programado", cambioPlanProgramadoSchema),
+      ...respuestasDeError(400, 401, 403, 404, 409),
+    },
+  });
+
+  registro.registerPath({
+    method: "delete",
+    path: "/inscripciones/{id}/cambio-plan",
+    tags,
+    security,
+    summary: "Cancelar el cambio de plan programado",
+    description: `${propietariaEditar} 404 si la inscripción no tiene un cambio programado.`,
+    request: { params: inscripcionIdParamSchema },
+    responses: { 204: { description: "Cambio cancelado" }, ...respuestasDeError(400, 401, 403, 404) },
   });
 
   registro.registerPath({

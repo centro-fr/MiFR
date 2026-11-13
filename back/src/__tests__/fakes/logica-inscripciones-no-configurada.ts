@@ -12,6 +12,7 @@ export const logicaInscripcionesNoConfigurada = {
   darDeBajaAlumno: operacionNoConfigurada,
   reactivarAlumno: operacionNoConfigurada,
   cambiarPlan: operacionNoConfigurada,
+  cancelarCambioPlan: operacionNoConfigurada,
   actualizarHorarios: operacionNoConfigurada,
   listarClasesDeHoy: operacionNoConfigurada,
   obtenerAsistenciaDeClase: operacionNoConfigurada,

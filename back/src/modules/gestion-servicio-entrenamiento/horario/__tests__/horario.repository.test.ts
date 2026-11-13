@@ -232,4 +232,32 @@ describe("HorarioRepository", () => {
 
     expect(prisma.horarios.findUnique).toHaveBeenCalledWith({ where: { id_horario: 7 }, include: CON_DATOS });
   });
+
+  describe("baja programada (US-04)", () => {
+    it("programarBaja y cancelarBajaProgramada cambian solo la fecha programada", async () => {
+      await repositorio.programarBaja(7, HOY_EN_ARGENTINA);
+      await repositorio.cancelarBajaProgramada(7);
+
+      expect(prisma.horarios.update).toHaveBeenNthCalledWith(1, {
+        where: { id_horario: 7 },
+        data: { fecha_baja_programada: HOY_EN_ARGENTINA },
+        include: CON_DATOS,
+      });
+      expect(prisma.horarios.update).toHaveBeenNthCalledWith(2, {
+        where: { id_horario: 7 },
+        data: { fecha_baja_programada: null },
+        include: CON_DATOS,
+      });
+    });
+
+    it("listarConBajaProgramada trae los activos con la baja programada", async () => {
+      await repositorio.listarConBajaProgramada();
+
+      expect(prisma.horarios.findMany).toHaveBeenCalledWith({
+        where: { fecha_baja: null, fecha_baja_programada: { not: null } },
+        include: CON_DATOS,
+        orderBy: { id_horario: "asc" },
+      });
+    });
+  });
 });

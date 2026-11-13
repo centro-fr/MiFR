@@ -25,6 +25,7 @@ import type {
   SituacionCuotaEnClase,
 } from "./interface/i-logica-inscripciones-y-clases.js";
 import type {
+  CambioPlanProgramado,
   FiltroInscripciones,
   InscripcionConDatos,
   Preinscripcion,
@@ -36,6 +37,8 @@ import type {
 } from "./suplencia/suplencia.schemas.js";
 import type { SuplenciaService } from "./suplencia/suplencia.service.js";
 import type { SuplenciaConDatos, SuplenciaRegistrada } from "./suplencia/suplencia.types.js";
+
+const UN_DIA_MS = 24 * 60 * 60 * 1000;
 
 function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): SituacionCuotaEnClase | null {
   if (!habilitacion) return null;
@@ -89,8 +92,31 @@ export class GestionInscripcionesYClasesService implements ILogicaInscripcionesY
     return this.inscripciones.reactivarAlumno(idAlumno, input, yaPago ? "ACTIVA" : "PREINSCRIPTA");
   }
 
-  cambiarPlan(id: number, input: CambiarPlanInput): Promise<InscripcionConDatos> {
-    return this.inscripciones.cambiarPlan(id, input);
+  // US-14: con el plan vigente el cambio se aplica al terminar los días de gracia de la cuota que corre.
+  // Inscripcion no conoce las cuotas: la fecha la decide la fachada, que ve a los dos.
+  async cambiarPlan(
+    id: number,
+    input: CambiarPlanInput,
+  ): Promise<InscripcionConDatos | CambioPlanProgramado> {
+    const aplicacion = await this.fechaDelCambioProgramado(id);
+    return aplicacion
+      ? this.inscripciones.programarCambioPlan(id, input, aplicacion)
+      : this.inscripciones.cambiarPlan(id, input);
+  }
+
+  cancelarCambioPlan(id: number): Promise<void> {
+    return this.inscripciones.cancelarCambioProgramado(id);
+  }
+
+  // El día siguiente al último de gracia; null si no hay plan vigente que esperar (pre-inscripción,
+  // sin cuota paga o con la gracia ya terminada) y el cambio va en el momento.
+  private async fechaDelCambioProgramado(id: number): Promise<Date | null> {
+    const actual = await this.inscripciones.obtenerPorId(id);
+    if (actual.estado !== "ACTIVA") return null;
+    const vencimiento = (await this.cuotas.habilitacionDeInscripciones([id])).get(id)?.fechaVencimiento;
+    if (!vencimiento) return null;
+    const aplicacion = new Date(vencimiento.getTime() + (actual.plan.dias_gracia + 1) * UN_DIA_MS);
+    return aplicacion.getTime() > fechaActualArgentina().getTime() ? aplicacion : null;
   }
 
   actualizarHorarios(id: number, input: ActualizarHorariosInput): Promise<InscripcionConDatos> {

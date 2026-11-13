@@ -7,7 +7,9 @@ import type {
   DarDeBajaAlumnoInput,
 } from "./inscripcion.schemas.js";
 import {
+  type CambioPlanProgramado,
   type ConteoBajasPorMotivo,
+  type DatosDelCambioPlan,
   type FechasDeBaja,
   type FiltroAlumnosPorInscripcion,
   type FiltroBajasPorMotivo,
@@ -19,6 +21,7 @@ import {
   type InscripcionACobrar,
   type InscripcionGuardada,
   type InscripcionParaInactividad,
+  type InscripcionEnHorario,
   type InscriptoDeHorario,
   type ResumenInscripcionAlumno,
 } from "./inscripcion.types.js";
@@ -26,6 +29,29 @@ import { LIMITE_MAXIMO } from "../../../shared/utils/esquemas-paginacion.js";
 import { rangoDeDiasArgentinos } from "../../../shared/utils/fecha-argentina.js";
 
 const ESTADOS_VIGENTES = ["PREINSCRIPTA", "ACTIVA"] as const;
+
+const DATOS_CAMBIO_PROGRAMADO = {
+  plan: { select: { nombre: true } },
+  profesora: { select: { usuario: { select: { nombre: true, apellido: true } } } },
+  horarios: { select: { id_horario: true }, orderBy: { id_horario: "asc" } },
+} satisfies Prisma.cambios_plan_programadosInclude;
+
+function aCambioProgramado(
+  fila: Prisma.cambios_plan_programadosGetPayload<{ include: typeof DATOS_CAMBIO_PROGRAMADO }>,
+): CambioPlanProgramado {
+  return {
+    id_inscripcion: fila.id_inscripcion,
+    id_plan: fila.id_plan,
+    nombre_plan: fila.plan.nombre,
+    id_profesora: fila.id_profesora,
+    nombre_profesora: `${fila.profesora.usuario.nombre} ${fila.profesora.usuario.apellido}`,
+    ids_horarios: fila.horarios.map(({ id_horario }) => id_horario),
+    fecha_aplicacion: fila.fecha_aplicacion,
+  };
+}
+
+// La baja que deja un horario dado de baja: el motivo OTRO con su detalle (inscripciones.detalle_baja).
+const DETALLE_BAJA_POR_HORARIO = "Se dio de baja su horario y no le quedó ninguno";
 
 type Transaccion = Prisma.TransactionClient;
 type DatosNuevaInscripcion = Pick<
@@ -721,5 +747,93 @@ export class InscripcionRepository {
     return agrupados
       .map((g) => ({ motivo: g.motivo_baja, cantidad: g._count.id_inscripcion }))
       .sort((a, b) => b.cantidad - a.cantidad);
+  }
+
+  // Pedir otro cambio para la misma inscripción reemplaza el anterior (UK de id_inscripcion).
+  async guardarCambioProgramado(
+    idInscripcion: number,
+    { id_plan, id_profesora, ids_horarios }: DatosDelCambioPlan,
+    fechaAplicacion: Date,
+  ): Promise<CambioPlanProgramado> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      await transaccion.cambios_plan_programados.deleteMany({ where: { id_inscripcion: idInscripcion } });
+      const fila = await transaccion.cambios_plan_programados.create({
+        data: {
+          id_inscripcion: idInscripcion,
+          id_plan,
+          id_profesora,
+          fecha_aplicacion: fechaAplicacion,
+          horarios: { create: ids_horarios.map((id_horario) => ({ id_horario })) },
+        },
+        include: DATOS_CAMBIO_PROGRAMADO,
+      });
+      return aCambioProgramado(fila);
+    });
+  }
+
+  async borrarCambioProgramado(idInscripcion: number): Promise<boolean> {
+    const { count } = await this.prisma.cambios_plan_programados.deleteMany({
+      where: { id_inscripcion: idInscripcion },
+    });
+    return count > 0;
+  }
+
+  async buscarCambiosProgramados(idsInscripciones: number[]): Promise<CambioPlanProgramado[]> {
+    if (idsInscripciones.length === 0) return [];
+    const filas = await this.prisma.cambios_plan_programados.findMany({
+      where: { id_inscripcion: { in: idsInscripciones } },
+      include: DATOS_CAMBIO_PROGRAMADO,
+    });
+    return filas.map(aCambioProgramado);
+  }
+
+  async listarCambiosParaAplicar(hoy: Date): Promise<CambioPlanProgramado[]> {
+    const filas = await this.prisma.cambios_plan_programados.findMany({
+      where: { fecha_aplicacion: { lte: hoy } },
+      include: DATOS_CAMBIO_PROGRAMADO,
+      orderBy: { fecha_aplicacion: "asc" },
+      take: LIMITE_MAXIMO,
+    });
+    return filas.map(aCambioProgramado);
+  }
+
+  async listarEnHorario(idHorario: number): Promise<InscripcionEnHorario[]> {
+    const filas = await this.prisma.inscripciones.findMany({
+      where: {
+        estado: { in: [...ESTADOS_VIGENTES] },
+        horarios: { some: { id_horario: idHorario, fecha_hasta: null } },
+      },
+      select: { id_inscripcion: true, id_alumno: true, estado: true },
+    });
+    return filas.map(({ id_inscripcion, id_alumno, estado }) => ({
+      id_inscripcion,
+      id_alumno,
+      estado: estado === "ACTIVA" ? "ACTIVA" : "PREINSCRIPTA",
+    }));
+  }
+
+  // Cierra el horario de la inscripción; si no le queda ninguno abierto, la da de baja. Devuelve si
+  // quedó de baja.
+  async sacarDelHorario(idInscripcion: number, idHorario: number, fechas: FechasDeBaja): Promise<boolean> {
+    return enTransaccion(this.prisma, async (transaccion) => {
+      await transaccion.inscripcion_horarios.updateMany({
+        where: { id_inscripcion: idInscripcion, id_horario: idHorario, fecha_hasta: null },
+        data: { fecha_hasta: fechas.dia },
+      });
+      const abiertos = await transaccion.inscripcion_horarios.count({
+        where: { id_inscripcion: idInscripcion, fecha_hasta: null },
+      });
+      if (abiertos > 0) return false;
+      await transaccion.inscripciones.update({
+        where: { id_inscripcion: idInscripcion },
+        data: {
+          estado: "BAJA",
+          motivo_baja: "OTRO",
+          detalle_baja: DETALLE_BAJA_POR_HORARIO,
+          fecha_baja: fechas.instante,
+        },
+      });
+      return true;
+    });
   }
 }

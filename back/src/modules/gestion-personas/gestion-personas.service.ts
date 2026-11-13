@@ -11,7 +11,10 @@ import type { HabilitacionDeInscripcion } from "../gestion-cuotas-y-pagos/cuota/
 import type { IInfoCuotas } from "../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
 import type { IInfoAsistencia } from "../gestion-inscripciones-y-clases/asistencia/interface/i-info-asistencia.js";
 import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
-import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
+import type {
+  CambioPlanProgramado,
+  InscripcionConDatos,
+} from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "./alumno/alumno.service.js";
 import type {
@@ -77,10 +80,13 @@ function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): S
 function inscripcionesConSituacion(
   inscripciones: InscripcionConDatos[],
   habilitaciones: Map<number, HabilitacionDeInscripcion>,
+  cambios: CambioPlanProgramado[] = [],
 ): InscripcionConSituacion[] {
   return inscripciones.map((inscripcion) => ({
     ...inscripcion,
     situacion_cuota: aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion)),
+    cambio_programado:
+      cambios.find(({ id_inscripcion }) => id_inscripcion === inscripcion.id_inscripcion) ?? null,
   }));
 }
 
@@ -158,15 +164,16 @@ export class GestionPersonasService implements ILogicaPersonas {
     await this.verificarQueLoTieneACargo(inscripciones, solicitante);
     const alumno = await this.alumnos.obtenerPorId(id);
     const deLaBaja = alumno.estado === "BAJA" ? await this.inscripciones.listarDeLaUltimaBaja(id) : [];
-    const [habilitaciones, historial] = await Promise.all([
+    const [habilitaciones, historial, cambios] = await Promise.all([
       this.cuotas.habilitacionDeInscripciones(
         [...inscripciones, ...deLaBaja].map(({ id_inscripcion }) => id_inscripcion),
       ),
       solicitante.esPropietaria ? this.cuotas.historialDeAlumno(id) : null,
+      this.inscripciones.buscarCambiosProgramados(inscripciones.map(({ id_inscripcion }) => id_inscripcion)),
     ]);
     return {
       ...alumno,
-      inscripciones: inscripcionesConSituacion(inscripciones, habilitaciones),
+      inscripciones: inscripcionesConSituacion(inscripciones, habilitaciones, cambios),
       inscripciones_de_la_baja: inscripcionesConSituacion(deLaBaja, habilitaciones),
       historial_cuotas: historial,
     };

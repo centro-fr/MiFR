@@ -134,9 +134,10 @@ model profesoras {
   fecha_alta   DateTime  @default(now()) @db.Date
   fecha_baja   DateTime? @db.Date
 
-  usuario            usuarios             @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  usuario            usuarios                   @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
   horarios           horarios[]
   inscripciones      inscripciones[]
+  cambios_plan       cambios_plan_programados[]
   pagos_cobrados     pagos[]
   clases_dictadas    clases[]
   registros_progreso registros_progreso[]
@@ -147,20 +148,24 @@ model profesoras {
 }
 
 model horarios {
-  id_horario   Int       @id(map: "PK_horarios") @default(autoincrement())
-  id_actividad Int
-  id_profesora Int
-  dia_semana   Int       @db.SmallInt
-  hora_inicio  DateTime  @db.Time(6)
-  hora_fin     DateTime  @db.Time(6)
-  cupo_maximo  Int?      @db.SmallInt
-  fecha_alta   DateTime  @default(now()) @db.Date
-  fecha_baja   DateTime? @db.Date
+  id_horario            Int       @id(map: "PK_horarios") @default(autoincrement())
+  id_actividad          Int
+  id_profesora          Int
+  dia_semana            Int       @db.SmallInt
+  hora_inicio           DateTime  @db.Time(6)
+  hora_fin              DateTime  @db.Time(6)
+  cupo_maximo           Int?      @db.SmallInt
+  fecha_alta            DateTime  @default(now()) @db.Date
+  fecha_baja            DateTime? @db.Date
+  // Con alumnos inscriptos la baja se programa: no admite alumnos nuevos y cada inscripto sale cuando
+  // termina su gracia; el horario se da de baja cuando sale el último.
+  fecha_baja_programada DateTime? @db.Date
 
   actividad     actividades            @relation(fields: [id_actividad], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_actividades")
   profesora     profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_profesoras")
   inscripciones inscripcion_horarios[]
   clases        clases[]
+  cambios_plan  cambio_plan_horarios[]
 
   @@index([id_actividad], map: "IXFK_horarios_actividades")
   @@index([id_profesora], map: "IXFK_horarios_profesoras")
@@ -186,10 +191,11 @@ model planes {
   fecha_alta             DateTime  @default(now()) @db.Date
   fecha_baja             DateTime? @db.Date
 
-  actividad_exclusiva actividades?        @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  actividad_exclusiva actividades?               @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
   precios             plan_precios[]
   inscripciones       inscripciones[]
   promociones         promocion_planes[]
+  cambios_programados cambios_plan_programados[]
   tarifas_honorario   tarifas_honorario[]
 }
 
@@ -332,6 +338,7 @@ model inscripciones {
   asistencias asistencias[]
   seguimiento seguimientos_inactividad?
   honorarios  liquidacion_detalles[]
+  cambio_plan cambios_plan_programados?
 
   @@index([id_alumno], map: "IXFK_inscripciones_alumnos")
   @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
@@ -352,6 +359,36 @@ model inscripcion_horarios {
   @@id([id_inscripcion, id_horario], map: "PK_inscripcion_horarios")
   @@index([id_horario], map: "IXFK_inscripcion_horarios_horarios")
   @@index([id_inscripcion], map: "IXFK_inscripcion_horarios_inscripciones")
+}
+
+// Un cambio de plan pedido con el plan vigente: se aplica al terminar la gracia de la cuota que corre
+// (fecha_aplicacion). Hay a lo sumo uno por inscripción: pedir otro lo reemplaza.
+model cambios_plan_programados {
+  id_cambio_plan   Int      @id(map: "PK_cambios_plan_programados") @default(autoincrement())
+  id_inscripcion   Int      @unique(map: "UK_cambios_plan_programados_inscripcion")
+  id_plan          Int
+  id_profesora     Int
+  fecha_aplicacion DateTime @db.Date
+  fecha_alta       DateTime @default(now()) @db.Timestamp(6)
+
+  inscripcion inscripciones          @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_cambios_plan_programados_inscripciones")
+  plan        planes                 @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_cambios_plan_programados_planes")
+  profesora   profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_cambios_plan_programados_profesoras")
+  horarios    cambio_plan_horarios[]
+
+  @@index([id_plan], map: "IXFK_cambios_plan_programados_planes")
+  @@index([id_profesora], map: "IXFK_cambios_plan_programados_profesoras")
+}
+
+model cambio_plan_horarios {
+  id_cambio_plan Int
+  id_horario     Int
+
+  cambio  cambios_plan_programados @relation(fields: [id_cambio_plan], references: [id_cambio_plan], onDelete: Cascade, onUpdate: NoAction, map: "FK_cambio_plan_horarios_cambios")
+  horario horarios                 @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_cambio_plan_horarios_horarios")
+
+  @@id([id_cambio_plan, id_horario], map: "PK_cambio_plan_horarios")
+  @@index([id_horario], map: "IXFK_cambio_plan_horarios_horarios")
 }
 
 enum estado_clase {

@@ -189,4 +189,29 @@ export class HorarioRepository {
       });
     });
   }
+
+  // Marca la baja para cuando salgan sus inscriptos; desde ese día no admite alumnos nuevos.
+  programarBaja(id: number, dia: Date): Promise<HorarioConDatos> {
+    return this.prisma.horarios.update({
+      where: { id_horario: id },
+      data: { fecha_baja_programada: dia },
+      include: CON_DATOS,
+    });
+  }
+
+  cancelarBajaProgramada(id: number): Promise<HorarioConDatos> {
+    return this.prisma.horarios.update({
+      where: { id_horario: id },
+      data: { fecha_baja_programada: null },
+      include: CON_DATOS,
+    });
+  }
+
+  listarConBajaProgramada(): Promise<HorarioConDatos[]> {
+    return this.prisma.horarios.findMany({
+      where: { fecha_baja: null, fecha_baja_programada: { not: null } },
+      include: CON_DATOS,
+      orderBy: { id_horario: "asc" },
+    });
+  }
 }

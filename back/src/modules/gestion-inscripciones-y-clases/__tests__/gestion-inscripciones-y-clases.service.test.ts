@@ -39,6 +39,9 @@ describe("GestionInscripcionesYClasesService", () => {
     darDeBajaAlumno: vi.fn().mockResolvedValue("inscripciones.darDeBajaAlumno"),
     reactivarAlumno: vi.fn().mockResolvedValue("inscripciones.reactivarAlumno"),
     cambiarPlan: vi.fn().mockResolvedValue("inscripciones.cambiarPlan"),
+    obtenerPorId: vi.fn(),
+    programarCambioPlan: vi.fn().mockResolvedValue("inscripciones.programarCambioPlan"),
+    cancelarCambioProgramado: vi.fn().mockResolvedValue(undefined),
     actualizarHorarios: vi.fn().mockResolvedValue("inscripciones.actualizarHorarios"),
     contarInscriptosParaAsistencia: vi.fn(),
     contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
@@ -83,13 +86,52 @@ describe("GestionInscripcionesYClasesService", () => {
     ["listarInscripciones", [{ id_plan: 1 }, solicitante], "listar"],
     ["obtenerInscripcion", [12, solicitante], "obtenerPara"],
     ["darDeBajaAlumno", [5, { motivo_baja: "ABANDONO" }], "darDeBajaAlumno"],
-    ["cambiarPlan", [12, cambios], "cambiarPlan"],
     ["actualizarHorarios", [12, { ids_horarios: [8] }], "actualizarHorarios"],
   ] as const)("%s se delega en Inscripcion", async (metodo, argumentos, destino) => {
     const llamar = gestion[metodo] as (...args: unknown[]) => Promise<unknown>;
 
     await expect(llamar.apply(gestion, [...argumentos])).resolves.toBe(`inscripciones.${destino}`);
     expect(inscripciones[destino]).toHaveBeenCalledWith(...argumentos);
+  });
+
+  describe("cambiarPlan (US-14)", () => {
+    const VENCE_LEJOS = new Date("2099-01-10T00:00:00Z");
+    const VENCIO = new Date("2000-01-10T00:00:00Z");
+
+    function conInscripcion(estado: "ACTIVA" | "PREINSCRIPTA", fechaVencimiento: Date | null) {
+      inscripciones.obtenerPorId.mockResolvedValue({ id_inscripcion: 12, estado, plan: { dias_gracia: 5 } });
+      cuotas.habilitacionDeInscripciones.mockResolvedValue(new Map([[12, { fechaVencimiento }]]));
+    }
+
+    it("con el plan vigente lo programa para el día siguiente al último de gracia", async () => {
+      conInscripcion("ACTIVA", VENCE_LEJOS);
+
+      await expect(gestion.cambiarPlan(12, cambios)).resolves.toBe("inscripciones.programarCambioPlan");
+      expect(inscripciones.programarCambioPlan).toHaveBeenCalledWith(
+        12,
+        cambios,
+        new Date("2099-01-16T00:00:00Z"),
+      );
+      expect(inscripciones.cambiarPlan).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["una pre-inscripción", "PREINSCRIPTA", VENCE_LEJOS],
+      ["una activa sin cuota paga", "ACTIVA", null],
+      ["una activa con la gracia terminada", "ACTIVA", VENCIO],
+    ] as const)("con %s lo aplica en el momento", async (_caso, estado, vencimiento) => {
+      conInscripcion(estado, vencimiento);
+
+      await expect(gestion.cambiarPlan(12, cambios)).resolves.toBe("inscripciones.cambiarPlan");
+      expect(inscripciones.cambiarPlan).toHaveBeenCalledWith(12, cambios);
+      expect(inscripciones.programarCambioPlan).not.toHaveBeenCalled();
+    });
+
+    it("cancelarCambioPlan lo borra en Inscripcion", async () => {
+      await gestion.cancelarCambioPlan(12);
+
+      expect(inscripciones.cancelarCambioProgramado).toHaveBeenCalledWith(12);
+    });
   });
 
   it.each([

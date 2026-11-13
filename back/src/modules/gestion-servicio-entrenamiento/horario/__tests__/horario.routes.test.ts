@@ -22,6 +22,7 @@ function crearLogicaMock() {
     obtenerHorarioPorId: vi.fn(),
     actualizarHorario: vi.fn(),
     darDeBajaHorario: vi.fn(),
+    cancelarBajaProgramadaHorario: vi.fn(),
   };
 }
 
@@ -223,6 +224,26 @@ describe("rutas de horarios", () => {
 
     expect(respuesta.status).toBe(200);
     expect(logica.darDeBajaHorario).toHaveBeenCalledWith(4);
+  });
+
+  it("cancela la baja programada de un horario (US-04)", async () => {
+    logica.cancelarBajaProgramadaHorario.mockResolvedValue({ id_horario: 4 });
+
+    const respuesta = await request(app)
+      .delete("/api/v1/horarios/4/baja-programada")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(respuesta.status).toBe(200);
+    expect(logica.cancelarBajaProgramadaHorario).toHaveBeenCalledWith(4);
+  });
+
+  it("una profesora no cancela la baja programada", async () => {
+    const respuesta = await request(app)
+      .delete("/api/v1/horarios/4/baja-programada")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.cancelarBajaProgramadaHorario).not.toHaveBeenCalled();
   });
 
   it.each([

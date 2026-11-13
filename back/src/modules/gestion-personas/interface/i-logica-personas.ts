@@ -2,6 +2,7 @@ import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { EstadoHabilitacion } from "../../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { CuotaDelHistorial } from "../../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type {
+  CambioPlanProgramado,
   InscripcionConDatos,
   ResumenInscripcionAlumno,
 } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
@@ -36,7 +37,11 @@ export interface SituacionCuota {
   puede_asistir: boolean;
   tiene_pago_pendiente: boolean;
 }
-export type InscripcionConSituacion = InscripcionConDatos & { situacion_cuota: SituacionCuota | null };
+export type InscripcionConSituacion = InscripcionConDatos & {
+  situacion_cuota: SituacionCuota | null;
+  // US-14: el cambio de plan que espera al fin de la gracia; null si no hay.
+  cambio_programado: CambioPlanProgramado | null;
+};
 
 // US-10: cada fila del listado trae su plan y profesora vigentes (los de la inscripción más reciente)
 // y, como un alumno puede tener un plan por actividad, todas sus vigentes con su situación de cuota,

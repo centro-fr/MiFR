@@ -147,3 +147,29 @@ export interface ConteoBajasPorMotivo {
   motivo: MotivoBaja | null;
   cantidad: number;
 }
+
+// Un cambio de plan pedido con el plan vigente: se aplica el día siguiente al último de gracia de la
+// cuota que corre (fecha_aplicacion). Lo aplica el proceso AplicadorProgramados.
+export interface CambioPlanProgramado {
+  id_inscripcion: number;
+  id_plan: number;
+  nombre_plan: string;
+  id_profesora: number;
+  nombre_profesora: string;
+  ids_horarios: number[];
+  fecha_aplicacion: Date;
+}
+
+export interface DatosDelCambioPlan {
+  id_plan: number;
+  id_profesora: number;
+  ids_horarios: number[];
+}
+
+// Una inscripción vigente que sigue en un horario: la que tiene que salir de un horario con la baja
+// programada cuando termina su gracia.
+export interface InscripcionEnHorario {
+  id_inscripcion: number;
+  id_alumno: number;
+  estado: "PREINSCRIPTA" | "ACTIVA";
+}

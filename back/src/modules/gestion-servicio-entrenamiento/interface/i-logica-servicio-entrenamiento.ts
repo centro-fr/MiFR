@@ -34,6 +34,7 @@ export interface ILogicaHorarios {
   obtenerHorarioPorId(id: number): Promise<HorarioConOcupacion>;
   actualizarHorario(id: number, input: ActualizarHorarioInput): Promise<HorarioRespuesta>;
   darDeBajaHorario(id: number): Promise<HorarioConAdvertencia>;
+  cancelarBajaProgramadaHorario(id: number): Promise<HorarioRespuesta>;
 }
 
 export interface ILogicaPlanes {
