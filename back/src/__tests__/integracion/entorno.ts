@@ -5,6 +5,7 @@ import { createApp } from "../../app.js";
 import { construirSistema, type PiezasDeInfraestructura } from "../../composicion.js";
 import type { CierreMensualHonorariosService } from "../../modules/gestion-honorarios/cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import type { CierreMensualInsigniasService } from "../../modules/gestion-insignias/cierre-mensual-insignias/cierre-mensual-insignias.service.js";
+import type { AplicadorProgramadosService } from "../../modules/gestion-inscripciones-y-clases/aplicador-programados/aplicador-programados.service.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
 import type { IInfoInscripciones } from "../../modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoClases } from "../../modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
@@ -39,6 +40,8 @@ export interface EntornoDeIntegracion {
   cierreMensualInsignias: CierreMensualInsigniasService;
   // El cierre mensual de honorarios (US-23), para correrlo con el día que pide cada caso.
   cierreMensualHonorarios: CierreMensualHonorariosService;
+  // Los cambios de plan y las salidas de horario programados (US-14, US-04), con el día que pide cada caso.
+  aplicadorProgramados: AplicadorProgramadosService;
   iniciarSesion(email: string): Promise<string>;
   cerrar(): Promise<void>;
 }
@@ -54,6 +57,7 @@ export function crearEntornoDeIntegracion(push?: PiezasDeInfraestructura["push"]
     planificadorNotificaciones,
     cierreMensualInsignias,
     cierreMensualHonorarios,
+    aplicadorProgramados,
   } = construirSistema({
     prisma,
     googleAuth: googleSimulado,
@@ -82,6 +86,7 @@ export function crearEntornoDeIntegracion(push?: PiezasDeInfraestructura["push"]
     planificadorNotificaciones,
     cierreMensualInsignias,
     cierreMensualHonorarios,
+    aplicadorProgramados,
     iniciarSesion,
     cerrar: () => prisma.$disconnect(),
   };

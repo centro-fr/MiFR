@@ -1,5 +1,5 @@
 import request from "supertest";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cargarDatosDemo, EMAIL_MULTIROL_DEMO } from "../../shared/db/datos-demo.js";
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
@@ -9,7 +9,8 @@ import { crearAlumno, crearHorarioDePrueba, crearInscripcionDePrueba, crearPlan 
 // Casos PI-20 a PI-27, PI-30, PI-32, PI-37, PI-38, PI-41 y PI-44: preinscripción (con peso y talla si la
 // actividad los pide, y con la reserva de cupo que vence), activación, baja (con el detalle del motivo OTRO),
 // reactivación (como pre-inscripto si nunca pagó) y cambios de plan/horarios. PI-66: las inscripciones a
-// cargo de cada profesora en un período, para la liquidación de honorarios.
+// cargo de cada profesora en un período, para la liquidación de honorarios. PI-97 a PI-99: las reglas del
+// cambio de horarios, el cambio de plan programado y la baja programada de un horario con alumnos.
 const entorno = crearEntornoDeIntegracion();
 const { app, prisma, infoInscripciones } = entorno;
 const LUCIA = "lucia.gomez@example.com";
@@ -30,6 +31,18 @@ function horariosFuncionales(): Promise<{ id_horario: number }[]> {
   return prisma.horarios.findMany({
     where: {
       id_actividad: datosDemo.idActividad.get("FUNCIONAL"),
+      fecha_baja: null,
+    },
+    select: { id_horario: true },
+    orderBy: { dia_semana: "asc" },
+  });
+}
+
+function horariosFuncionalesDe(email: string): Promise<{ id_horario: number }[]> {
+  return prisma.horarios.findMany({
+    where: {
+      id_actividad: datosDemo.idActividad.get("FUNCIONAL"),
+      id_profesora: datosDemo.idProfesora.get(email),
       fecha_baja: null,
     },
     select: { id_horario: true },
@@ -365,8 +378,10 @@ describe("PI-23: cambios de plan y horarios", () => {
     const idHorarioLleno = await crearHorarioConCupo(1);
     const alumno = await crearAlumno(prisma);
     const otroAlumno = await crearAlumno(prisma);
-    const horarios = await horariosFuncionales();
+    // Los horarios se cambian con la inscripción activa y dentro de la misma profesora (PI-97).
+    const horarios = await horariosFuncionalesDe(LUCIA);
     const inscripcion = await inscribir(alumno.id_alumno, [horarios[0].id_horario]);
+    await infoInscripciones.activar(inscripcion.body.id_inscripcion);
     await inscribir(otroAlumno.id_alumno, [idHorarioLleno]);
 
     const tokenLucia = await entorno.iniciarSesion(LUCIA);
@@ -404,13 +419,17 @@ describe("PI-23: cambios de plan y horarios", () => {
 });
 
 describe("PI-24: baja de un horario con alumnos inscriptos", () => {
-  it("no da de baja un horario con inscriptos vigentes y sí cuando el alumno se fue", async () => {
+  it("con inscriptos vigentes no lo da de baja en el momento, sino que la programa; sí cuando el alumno se fue", async () => {
     const idHorario = await crearHorarioConCupo(3);
     const alumno = await crearAlumno(prisma);
     await inscribir(alumno.id_alumno, [idHorario]);
 
     const conInscriptos = await comoMarina("delete", `/horarios/${idHorario}`);
-    expect(conInscriptos.status).toBe(409);
+    expect(conInscriptos.status).toBe(200);
+    expect(conInscriptos.body.horario).toMatchObject({
+      fecha_baja: null,
+      fecha_baja_programada: expect.any(String),
+    });
     expect(await prisma.horarios.findUnique({ where: { id_horario: idHorario } })).toMatchObject({
       fecha_baja: null,
     });
@@ -753,15 +772,16 @@ describe("PI-38: la reserva de cupo de una pre-inscripción sin pagar vence", ()
     expect(horario.body).toMatchObject({ inscriptos: 0, cupo_disponible: 2 });
   });
 
-  it("una pre-inscripción con la reserva vencida sigue en el horario y no deja darlo de baja", async () => {
+  it("una pre-inscripción con la reserva vencida sigue en el horario: su baja queda programada", async () => {
     const idHorario = await crearHorarioConCupo(1);
     await preinscribirQueEmpezoHace(4, idHorario);
 
     const baja = await comoMarina("delete", `/horarios/${idHorario}`);
 
-    expect(baja.status).toBe(409);
+    expect(baja.status).toBe(200);
     expect(await prisma.horarios.findUnique({ where: { id_horario: idHorario } })).toMatchObject({
       fecha_baja: null,
+      fecha_baja_programada: expect.any(Date),
     });
   });
 });
@@ -1129,5 +1149,248 @@ describe("PI-66: inscripciones a cargo en un período", () => {
         id_profesora: idProfesora,
       }),
     ]);
+  });
+});
+
+// Lo que depende del vencimiento de la cuota corre con el reloj fijo. La sesión se vuelve a abrir en cada
+// salto: el token se firma con la hora del reloj y vence en una hora.
+async function irAl(instante: string) {
+  vi.setSystemTime(new Date(instante));
+  tokenMarina = await entorno.iniciarSesion(EMAIL_MULTIROL_DEMO);
+}
+
+const UN_DIA_MS = 24 * 60 * 60 * 1000;
+
+// "AAAA-MM-DD" del día que está `dias` después del vencimiento de la cuota de la inscripción, a las 12 de
+// Argentina, para que el reloj caiga en ese día en los dos husos.
+async function diasDespuesDelVencimiento(idAlumno: number, idInscripcion: number, dias: number) {
+  const ficha = await comoMarina("get", `/alumnos/${idAlumno}`);
+  const vencimiento = ficha.body.inscripciones.find(
+    (inscripcion: { id_inscripcion: number }) => inscripcion.id_inscripcion === idInscripcion,
+  ).situacion_cuota.fecha_vencimiento as string;
+  return new Date(Date.parse(vencimiento.slice(0, 10)) + dias * UN_DIA_MS).toISOString().slice(0, 10);
+}
+
+async function inscribirYCobrar(idsHorarios: number[]) {
+  const alumno = await crearAlumno(prisma);
+  const inscripcion = await inscribir(alumno.id_alumno, idsHorarios);
+  expect((await cobrarEnEfectivo(inscripcion.body.id_inscripcion, 25000)).status).toBe(201);
+  return { idAlumno: alumno.id_alumno, idInscripcion: inscripcion.body.id_inscripcion as number };
+}
+
+function horariosAbiertos(idInscripcion: number) {
+  return prisma.inscripcion_horarios.findMany({
+    where: { id_inscripcion: idInscripcion, fecha_hasta: null },
+    select: { id_horario: true },
+  });
+}
+
+describe("PI-97: el cambio de horarios es con la inscripción activa, la misma profesora y la misma actividad", () => {
+  it("rechaza una pre-inscripción, otra profesora y otra actividad sin tocar la inscripción, y acepta el cambio válido", async () => {
+    const [lunes, miercoles] = await horariosFuncionalesDe(LUCIA);
+    const deCarla = await crearHorarioDePrueba(prisma, {
+      id_actividad: datosDemo.idActividad.get("FUNCIONAL")!,
+      id_profesora: datosDemo.idProfesora.get(CARLA)!,
+      dia_semana: 6,
+      hora_inicio: "13:00",
+      hora_fin: "14:00",
+    });
+    const personalizadoDeLucia = await crearHorarioDePrueba(prisma, {
+      id_actividad: datosDemo.idActividad.get("ENTRENAMIENTO_PERS")!,
+      id_profesora: datosDemo.idProfesora.get(LUCIA)!,
+      dia_semana: 6,
+      hora_inicio: "09:00",
+      hora_fin: "10:00",
+      cupo_maximo: 4,
+    });
+    const alumno = await crearAlumno(prisma);
+    const { body } = await inscribir(alumno.id_alumno, [lunes.id_horario]);
+    const cambiar = (ids: number[]) =>
+      comoMarina("patch", `/inscripciones/${body.id_inscripcion}/horarios`).send({ ids_horarios: ids });
+
+    const preinscripta = await cambiar([miercoles.id_horario]);
+    await infoInscripciones.activar(body.id_inscripcion);
+    const otraProfesora = await cambiar([deCarla.id_horario]);
+    const otraActividad = await cambiar([personalizadoDeLucia.id_horario]);
+    const sinCambios = await horariosAbiertos(body.id_inscripcion);
+    const valido = await cambiar([miercoles.id_horario]);
+
+    expect(preinscripta.status).toBe(409);
+    expect(otraProfesora.status).toBe(400);
+    expect(otraActividad.status).toBe(400);
+    expect(sinCambios).toEqual([{ id_horario: lunes.id_horario }]);
+    expect(valido.status).toBe(200);
+    expect(await horariosAbiertos(body.id_inscripcion)).toEqual([{ id_horario: miercoles.id_horario }]);
+  });
+});
+
+describe("PI-98: con el plan vigente, el cambio de plan se aplica al terminar la gracia (US-14)", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    await irAl("2026-10-05T15:00:00Z");
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("queda programado, la ficha lo muestra, se cancela y se vuelve a pedir; el proceso lo aplica el día que corresponde", async () => {
+    const [lunes, miercoles] = await horariosFuncionalesDe(LUCIA);
+    const { idAlumno, idInscripcion } = await inscribirYCobrar([lunes.id_horario]);
+    const idIntermedio = datosDemo.idPlan.get("Intermedio")!;
+    const pedido = {
+      id_plan: idIntermedio,
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [lunes.id_horario, miercoles.id_horario],
+    };
+    // Básico tiene 5 días de gracia: el cambio va el sexto día después del vencimiento.
+    const aplicacion = await diasDespuesDelVencimiento(idAlumno, idInscripcion, 6);
+
+    const programado = await comoMarina("post", `/inscripciones/${idInscripcion}/cambio-plan`).send(pedido);
+    const ficha = await comoMarina("get", `/alumnos/${idAlumno}`);
+    const cancelado = await comoMarina("delete", `/inscripciones/${idInscripcion}/cambio-plan`);
+    const sinCambio = await comoMarina("delete", `/inscripciones/${idInscripcion}/cambio-plan`);
+    const deNuevo = await comoMarina("post", `/inscripciones/${idInscripcion}/cambio-plan`).send(pedido);
+
+    expect(programado.status).toBe(202);
+    expect(programado.body).toMatchObject({
+      id_inscripcion: idInscripcion,
+      id_plan: idIntermedio,
+      nombre_plan: "Intermedio",
+      ids_horarios: [lunes.id_horario, miercoles.id_horario],
+      fecha_aplicacion: `${aplicacion}T00:00:00.000Z`,
+    });
+    expect(ficha.body.inscripciones[0].cambio_programado).toMatchObject({ id_plan: idIntermedio });
+    expect([cancelado.status, sinCambio.status, deNuevo.status]).toEqual([204, 404, 202]);
+    expect(await prisma.inscripciones.findMany({ where: { id_alumno: idAlumno } })).toEqual([
+      expect.objectContaining({
+        id_inscripcion: idInscripcion,
+        id_plan: datosDemo.idPlan.get("Básico"),
+        estado: "ACTIVA",
+      }),
+    ]);
+
+    vi.setSystemTime(new Date(Date.parse(`${aplicacion}T15:00:00Z`) - UN_DIA_MS));
+    const elDiaAnterior = await entorno.aplicadorProgramados.aplicarDelDia();
+    vi.setSystemTime(new Date(`${aplicacion}T15:00:00Z`));
+    const elDia = await entorno.aplicadorProgramados.aplicarDelDia();
+
+    expect(elDiaAnterior).toMatchObject({ cambiosDePlan: 0, errores: [] });
+    expect(elDia).toMatchObject({ cambiosDePlan: 1, errores: [] });
+    expect(await obtenerInscripcion(idInscripcion)).toMatchObject({
+      estado: "BAJA",
+      motivo_baja: "CAMBIO_PLAN",
+    });
+    const nueva = await prisma.inscripciones.findFirstOrThrow({
+      where: { id_alumno: idAlumno, estado: "ACTIVA" },
+      include: { horarios: true },
+    });
+    expect(nueva.id_plan).toBe(idIntermedio);
+    expect(nueva.horarios.map(({ id_horario }) => id_horario).sort()).toEqual(
+      [lunes.id_horario, miercoles.id_horario].sort(),
+    );
+    expect(await prisma.cambios_plan_programados.count()).toBe(0);
+  });
+
+  it("con la gracia terminada el cambio se aplica en el momento", async () => {
+    const [lunes] = await horariosFuncionalesDe(LUCIA);
+    const { idAlumno, idInscripcion } = await inscribirYCobrar([lunes.id_horario]);
+    await irAl(`${await diasDespuesDelVencimiento(idAlumno, idInscripcion, 6)}T15:00:00Z`);
+
+    const cambio = await comoMarina("post", `/inscripciones/${idInscripcion}/cambio-plan`).send({
+      id_plan: datosDemo.idPlan.get("Intermedio"),
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [lunes.id_horario],
+    });
+
+    expect(cambio.status).toBe(200);
+    expect(await obtenerInscripcion(idInscripcion)).toMatchObject({
+      estado: "BAJA",
+      motivo_baja: "CAMBIO_PLAN",
+    });
+    expect(await prisma.cambios_plan_programados.count()).toBe(0);
+  });
+});
+
+describe("PI-99: la baja programada de un horario con alumnos (US-04, US-08)", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    await irAl("2026-10-05T15:00:00Z");
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("no admite alumnos nuevos ni cambia su clase; se cancela y se vuelve a programar", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    await inscribirYCobrar([idHorario]);
+    const otro = await crearAlumno(prisma);
+
+    const baja = await comoMarina("delete", `/horarios/${idHorario}`);
+    const nuevo = await inscribir(otro.id_alumno, [idHorario]);
+    const otroDia = await comoMarina("patch", `/horarios/${idHorario}`).send({ dia_semana: 5 });
+    const otroCupo = await comoMarina("patch", `/horarios/${idHorario}`).send({ cupo_maximo: 5 });
+    const cancelada = await comoMarina("delete", `/horarios/${idHorario}/baja-programada`);
+    const sinBaja = await comoMarina("delete", `/horarios/${idHorario}/baja-programada`);
+
+    expect(baja.status).toBe(200);
+    expect(baja.body.advertencia).toMatch(/^Tiene 1 alumno inscripto: no admite alumnos nuevos/);
+    expect(nuevo.status).toBe(409);
+    expect(await prisma.inscripciones.count({ where: { id_alumno: otro.id_alumno } })).toBe(0);
+    expect(otroDia.status).toBe(409);
+    expect(otroCupo.status).toBe(200);
+    expect(cancelada.status).toBe(200);
+    expect(cancelada.body.fecha_baja_programada).toBeNull();
+    expect(sinBaja.status).toBe(409);
+    expect(await prisma.horarios.findUniqueOrThrow({ where: { id_horario: idHorario } })).toMatchObject({
+      dia_semana: 6,
+      cupo_maximo: 5,
+      fecha_baja: null,
+      fecha_baja_programada: null,
+    });
+  });
+
+  it("cada alumno sale al terminar su gracia; quien se queda sin horarios pasa a baja y el horario cae con el último", async () => {
+    const idHorario = await crearHorarioConCupo(3);
+    const [lunes] = await horariosFuncionalesDe(LUCIA);
+    const preinscripto = await crearAlumno(prisma);
+    const { body: preinscripcion } = await inscribir(preinscripto.id_alumno, [idHorario]);
+    const soloEnEste = await inscribirYCobrar([idHorario]);
+    const conOtroHorario = await inscribirYCobrar([idHorario, lunes.id_horario]);
+    expect((await comoMarina("delete", `/horarios/${idHorario}`)).status).toBe(200);
+    const enLaGracia = await diasDespuesDelVencimiento(soloEnEste.idAlumno, soloEnEste.idInscripcion, 3);
+    const salidaFinal = await diasDespuesDelVencimiento(soloEnEste.idAlumno, soloEnEste.idInscripcion, 7);
+
+    vi.setSystemTime(new Date("2026-10-06T15:00:00Z"));
+    const alOtroDia = await entorno.aplicadorProgramados.aplicarDelDia();
+
+    expect(alOtroDia).toMatchObject({ salidasDeHorario: 1, horariosDadosDeBaja: 0, errores: [] });
+    expect(await obtenerInscripcion(preinscripcion.id_inscripcion)).toMatchObject({
+      estado: "BAJA",
+      motivo_baja: "OTRO",
+      detalle_baja: "Se dio de baja su horario y no le quedó ninguno",
+    });
+    expect(await prisma.alumnos.findUnique({ where: { id_alumno: preinscripto.id_alumno } })).toMatchObject({
+      estado: "BAJA",
+    });
+    expect(await obtenerInscripcion(soloEnEste.idInscripcion)).toMatchObject({ estado: "ACTIVA" });
+
+    // En los días de gracia la cuota sigue corriendo: nadie sale.
+    vi.setSystemTime(new Date(`${enLaGracia}T15:00:00Z`));
+    expect(await entorno.aplicadorProgramados.aplicarDelDia()).toMatchObject({ salidasDeHorario: 0 });
+
+    vi.setSystemTime(new Date(`${salidaFinal}T15:00:00Z`));
+    const alTerminarLaGracia = await entorno.aplicadorProgramados.aplicarDelDia();
+
+    expect(alTerminarLaGracia).toMatchObject({ salidasDeHorario: 2, horariosDadosDeBaja: 1, errores: [] });
+    expect(await obtenerInscripcion(soloEnEste.idInscripcion)).toMatchObject({
+      estado: "BAJA",
+      motivo_baja: "OTRO",
+    });
+    expect(await prisma.alumnos.findUnique({ where: { id_alumno: soloEnEste.idAlumno } })).toMatchObject({
+      estado: "BAJA",
+    });
+    expect(await obtenerInscripcion(conOtroHorario.idInscripcion)).toMatchObject({ estado: "ACTIVA" });
+    expect(await horariosAbiertos(conOtroHorario.idInscripcion)).toEqual([{ id_horario: lunes.id_horario }]);
+    expect(await prisma.horarios.findUniqueOrThrow({ where: { id_horario: idHorario } })).toMatchObject({
+      fecha_baja: expect.any(Date),
+    });
   });
 });
