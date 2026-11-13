@@ -24,8 +24,10 @@
 
 # Antes de desplegar
 
-- [ ] `GET /alumnos/:id/asistencias`: la ficha del alumno lo pide, pero el back no tiene la ruta (solo existe en los mocks); `asistencias-api.ts` se traga el error y muestra el historial vacío.
-- [ ] Regenerar las bases locales ya cargadas (`prisma migrate reset` y los seeds): no tienen `REPORTES_RANKING_VER` para el alumno y el tutor, y el ranking del portal les responde 403.
+- [ ] Historial de asistencia de la ficha en el front: el back ya responde `GET /alumnos/:id/asistencias` paginado (`datos`, `total`, `presentes`, `ausentes`, `limit`, `offset`; sin `dia`), pero el front espera una lista y `asistencias-api.ts` se traga el error, así que la ficha sigue mostrando el historial vacío. Falta: el schema de la página, sacar el `catch { return [] }`, que las pestañas manden `asistio` y cuenten con `presentes` y `ausentes`, `PaginacionTabla` de a 10, un estado de error con reintentar, el mock de MSW y sus tests (`alumnos-handlers.test.ts`, `alumno-detalle-page.test.tsx`) y probarlo en Chromium contra el compose.
+- [ ] `PRUEBAS-INTEGRACION.md`: el caso PI-94 (historial de la ficha) con E-28 y E-29, el archivo E en 29 tests, US-10 en la trazabilidad, el registro de ejecución y la versión 2.43. Corregir PI-93: la profesora de Valentina es Carla, no Lucía.
+- [ ] Correr `pnpm test:integration` completo y la skill `auditar-cambios` sobre el panel del alumno y el historial: se integraron con los unitarios y la suite de alumnos (PI-93 y PI-94).
+- [ ] Avisar al equipo que regenere su base local (`prisma migrate reset` y los seeds): las cargadas antes del 20/10 no tienen `REPORTES_RANKING_VER` para el alumno y el tutor (ni `PLANES_VER` y `ALUMNOS_EDITAR` para la profesora), y el ranking del portal les responde 403.
 - [ ] Cargar las actividades reales del centro en `front/src/features/publico/utils/actividades-del-centro.ts`.
 - [ ] Actualizar `docs/diagrams/enterprise_architect/MiFR.eap` a mano: sin DifusionPublica ni ResumenDiarioPropietaria, con SuscripcionPush.
 - [ ] Probar los avisos push en un celular real (Android y iPhone con la app agregada a inicio) después del deploy: ver `docs/DESPLIEGUE.md`, paso 9.
