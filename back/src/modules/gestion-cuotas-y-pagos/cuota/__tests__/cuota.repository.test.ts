@@ -166,48 +166,6 @@ describe("CuotaRepository", () => {
     });
   });
 
-  it("situacionParaResumen trae las inscripciones mensuales activas y no bonificadas con una cuota paga ya vencida", async () => {
-    const hoy = new Date("2026-10-16T00:00:00Z");
-    prisma.inscripciones.findMany.mockResolvedValue([
-      {
-        id_inscripcion: 12,
-        id_plan: 2,
-        id_promocion: 9,
-        fecha_baja: null,
-        plan: { tipo: "MENSUAL", dias_gracia: 5, nombre: "Intermedio" },
-        profesora: { id_profesora: 3, usuario: { nombre: "Lucía", apellido: "Gómez" } },
-        alumno: { id_alumno: 4, usuario: { nombre: "Ana", apellido: "López" } },
-        cuotas: [
-          { id_cuota: 3, numero_cuota: 1, fecha_vencimiento: VENCIMIENTO, pagos: [{ estado: "CONFIRMADO" }] },
-        ],
-      },
-    ]);
-
-    await expect(repositorio.situacionParaResumen(hoy)).resolves.toEqual([
-      {
-        id_inscripcion: 12,
-        id_plan: 2,
-        id_promocion: 9,
-        tipo_plan: "MENSUAL",
-        dias_gracia: 5,
-        fecha_baja: null,
-        nombre_plan: "Intermedio",
-        profesora: { id_profesora: 3, nombre: "Lucía", apellido: "Gómez" },
-        alumno: { id_alumno: 4, nombre: "Ana", apellido: "López" },
-        cuotas: [
-          { id_cuota: 3, numero_cuota: 1, fecha_vencimiento: VENCIMIENTO, estados_pagos: ["CONFIRMADO"] },
-        ],
-      },
-    ]);
-    expect(prisma.inscripciones.findMany.mock.calls[0][0].where).toEqual({
-      estado: "ACTIVA",
-      sin_cargo: false,
-      alumno: { estado: { not: "BAJA" } },
-      plan: { tipo: "MENSUAL" },
-      cuotas: { some: { fecha_vencimiento: { lt: hoy }, pagos: { some: { estado: "CONFIRMADO" } } } },
-    });
-  });
-
   it("situacionParaInforme trae las inscripciones con datos de contacto del alumno o responsable", async () => {
     const hoy = new Date("2026-10-16T00:00:00Z");
     prisma.inscripciones.findMany.mockResolvedValue([
@@ -362,6 +320,24 @@ describe("CuotaRepository", () => {
     expect(consulta.join("?")).toContain("p.fecha_pago >= ?");
     expect(consulta.join("?")).toContain("p.fecha_pago < ?");
     expect(valores).toEqual([[12, 13], desde, hasta]);
+  });
+
+  it("cobradoEnPeriodo lleva a precio de lista solo los pagos de inscripciones con promoción, con la lista del día de la cuota", async () => {
+    prisma.$queryRaw.mockResolvedValue([]);
+
+    await repositorio.cobradoEnPeriodo(
+      [12],
+      new Date("2026-10-01T03:00:00Z"),
+      new Date("2026-11-01T03:00:00Z"),
+    );
+
+    const consulta = prisma.$queryRaw.mock.calls[0][0].join("?");
+    expect(consulta).toContain("WHEN i.id_promocion IS NOT NULL AND c.monto > 0 AND lista.precio > c.monto");
+    expect(consulta).toContain("THEN p.monto * lista.precio / c.monto");
+    expect(consulta).toContain("ELSE p.monto");
+    expect(consulta).toContain(
+      "c.fecha_generacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'",
+    );
   });
 
   it("situacionParaAvisos trae las inscripciones activas de plan mensual con una cuota paga que vence hasta la fecha", async () => {

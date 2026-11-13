@@ -13,65 +13,15 @@ import type {
   CuotaDelHistorial,
   CuotaParaAviso,
   CuotaVencidaDetallada,
-  CuotaVencidaEnResumen,
   HabilitacionDeInscripcion,
-  ResumenCuotasVencidas,
   SituacionDeCuotas,
   SituacionParaAviso,
   SituacionParaInforme,
-  SituacionParaResumen,
   TipoAvisoCuota,
 } from "./cuota.types.js";
 import type { IInfoCuotas } from "./interface/i-info-cuotas.js";
 
 type CuotaDeLaSituacion = SituacionDeCuotas["cuotas"][number];
-
-// US-26: el resumen diario muestra las más atrasadas; los totales cuentan todas.
-const VENCIDAS_EN_DETALLE = 5;
-
-function sumarAl<T extends { cantidad: number; monto_estimado: number }>(
-  totales: Map<number, T>,
-  clave: number,
-  inicial: () => T,
-  monto: number,
-): void {
-  const total = totales.get(clave) ?? inicial();
-  total.cantidad += 1;
-  total.monto_estimado += monto;
-  totales.set(clave, total);
-}
-
-function porMonto<T extends { monto_estimado: number }>(a: T, b: T): number {
-  return b.monto_estimado - a.monto_estimado;
-}
-
-function resumirVencidas(vencidas: CuotaVencidaEnResumen[]): ResumenCuotasVencidas {
-  const porProfesora = new Map<number, ResumenCuotasVencidas["por_profesora"][number]>();
-  const porPlan = new Map<number, ResumenCuotasVencidas["por_plan"][number]>();
-  let monto = 0;
-  for (const { profesora, plan, monto_estimado } of vencidas) {
-    const estimado = monto_estimado ?? 0;
-    monto += estimado;
-    sumarAl(
-      porProfesora,
-      profesora.id_profesora,
-      () => ({ ...profesora, cantidad: 0, monto_estimado: 0 }),
-      estimado,
-    );
-    sumarAl(porPlan, plan.id_plan, () => ({ ...plan, cantidad: 0, monto_estimado: 0 }), estimado);
-  }
-  return {
-    cantidad: vencidas.length,
-    cantidad_alumnos: new Set(vencidas.map(({ alumno }) => alumno.id_alumno)).size,
-    monto_estimado: monto,
-    sin_precio: vencidas.filter(({ monto_estimado }) => monto_estimado === null).length,
-    por_profesora: [...porProfesora.values()].sort(porMonto),
-    por_plan: [...porPlan.values()].sort(porMonto),
-    mas_atrasadas: [...vencidas]
-      .sort((a, b) => b.dias_vencida - a.dias_vencida || a.id_inscripcion - b.id_inscripcion)
-      .slice(0, VENCIDAS_EN_DETALLE),
-  };
-}
 
 const UN_DIA_EN_MS = 24 * 60 * 60 * 1000;
 
@@ -114,6 +64,12 @@ function cuotaSinPagar(situacion: SituacionDeCuotas): CuotaDeLaSituacion | null 
 // cobrarla (decisión de SPRINT-3.md): cubre desde el pago, o desde el vencimiento vigente si el
 // alumno paga por adelantado, hasta el vencimiento que calcula ICalculoVencimiento. No guarda si
 // está paga o vencida: eso lo calcula ICalculoHabilitacion al consultarla.
+// Los estados que generan aviso (US-25). Al día no se avisa; las de clase suelta no llegan acá.
+const TIPO_DE_AVISO_POR_ESTADO: Partial<Record<EstadoHabilitacion, TipoAvisoCuota>> = {
+  POR_VENCER: "CUOTA_POR_VENCER",
+  VENCIDA: "CUOTA_VENCIDA",
+};
+
 export class CuotaService implements IInfoCuotas {
   constructor(
     private readonly repositorio: CuotaRepository,
@@ -219,58 +175,14 @@ export class CuotaService implements IInfoCuotas {
     return new Map(idsInscripciones.map((id) => [id, cobrado.get(id) ?? 0]));
   }
 
-  async paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]> {
-    const situaciones = await this.repositorio.situacionParaAvisos(sumarDias(fecha, diasPrevios));
+  // Las cuotas que hoy están por vencer o vencidas: el aviso sale cuando la cuota cambia a ese estado
+  // (US-25). Una que vence hoy todavía está al día, así que alcanza con las que vencen hasta hoy.
+  async paraAvisoDeVencimiento(fecha: Date): Promise<CuotaParaAviso[]> {
+    const situaciones = await this.repositorio.situacionParaAvisos(fecha);
     return situaciones.flatMap((situacion) => {
-      const aviso = this.avisoPara(situacion, fecha, diasPrevios);
+      const aviso = this.avisoPara(situacion, fecha);
       return aviso ? [aviso] : [];
     });
-  }
-
-  // US-26: lo que se debe hoy por cuotas vencidas. El precio se consulta una vez por plan y
-  // promoción, no por alumno.
-  async resumenCuotasVencidas(hoy: Date): Promise<ResumenCuotasVencidas> {
-    const situaciones = await this.repositorio.situacionParaResumen(hoy);
-    const vencidas = situaciones.flatMap((situacion) => {
-      // El repositorio solo trae inscripciones con alguna cuota paga: siempre hay vencimiento, y
-      // con vencimiento siempre hay días restantes.
-      const vencimiento = vencimientoConfirmado(situacion) as Date;
-      const { estado, diasRestantes } = this.habilitaciones.calcular({
-        tipoPlan: situacion.tipo_plan,
-        vencimiento,
-        diasGracia: situacion.dias_gracia,
-        tienePagoPendiente: tienePagoPendiente(situacion),
-        vencidosPuedenAsistir: true,
-        hoy,
-      });
-      return estado === "VENCIDA"
-        ? [{ situacion, vencimiento, diasVencida: -(diasRestantes as number) }]
-        : [];
-    });
-
-    const claveDePrecio = ({ id_plan, id_promocion }: SituacionParaResumen) => `${id_plan}:${id_promocion}`;
-    const combinaciones = new Map(vencidas.map(({ situacion }) => [claveDePrecio(situacion), situacion]));
-    const precios = new Map(
-      await Promise.all(
-        [...combinaciones].map(
-          async ([clave, { id_plan, id_promocion }]) =>
-            [clave, (await this.planes.precioACobrar(id_plan, hoy, id_promocion))?.monto ?? null] as const,
-        ),
-      ),
-    );
-
-    return resumirVencidas(
-      vencidas.map(({ situacion, vencimiento, diasVencida }) => ({
-        id_inscripcion: situacion.id_inscripcion,
-        alumno: situacion.alumno,
-        plan: { id_plan: situacion.id_plan, nombre: situacion.nombre_plan },
-        profesora: situacion.profesora,
-        fecha_vencimiento: vencimiento,
-        dias_vencida: diasVencida,
-        // Cada combinación de plan y promoción ya tiene su precio, o null si el plan no tiene precio hoy.
-        monto_estimado: precios.get(claveDePrecio(situacion)) as number | null,
-      })),
-    );
   }
 
   // US-34: listado completo de cuotas vencidas hoy con datos de contacto del alumno y monto exigible.
@@ -313,11 +225,11 @@ export class CuotaService implements IInfoCuotas {
     }));
   }
 
-  private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {
+  private avisoPara(situacion: SituacionParaAviso, fecha: Date): CuotaParaAviso | null {
     const cuota = cuotaVigente(situacion);
     if (cuota === null || tienePagoPendiente(situacion)) return null;
     const vencimiento = cuota.fecha_vencimiento;
-    const { estado, diasRestantes } = this.habilitaciones.calcular({
+    const { estado } = this.habilitaciones.calcular({
       tipoPlan: situacion.tipo_plan,
       vencimiento,
       diasGracia: situacion.dias_gracia,
@@ -325,29 +237,16 @@ export class CuotaService implements IInfoCuotas {
       vencidosPuedenAsistir: true,
       hoy: fecha,
     });
-    // Con una cuota paga siempre hay vencimiento, y con vencimiento siempre hay días restantes.
-    const tipo = tipoDeAviso(estado, diasRestantes as number, diasPrevios, situacion.dias_gracia);
-    if (tipo === null) return null;
+    const tipo = TIPO_DE_AVISO_POR_ESTADO[estado];
+    if (tipo === undefined) return null;
     return {
       tipo,
       id_cuota: cuota.id_cuota,
       id_inscripcion: situacion.id_inscripcion,
       fecha_vencimiento: vencimiento,
+      fin_de_gracia: sumarDias(vencimiento, situacion.dias_gracia),
       nombre_plan: situacion.nombre_plan,
       alumno: situacion.alumno,
     };
   }
-}
-
-// Sin días de gracia el aviso de vencida sale el mismo día del vencimiento (US-25), aunque la
-// habilitación lo dé AL_DIA hasta terminar ese día: al siguiente ya no puede asistir sin renovar.
-function tipoDeAviso(
-  estado: EstadoHabilitacion,
-  diasRestantes: number,
-  diasPrevios: number,
-  diasGracia: number,
-): TipoAvisoCuota | null {
-  if (estado === "VENCIDA" || (diasGracia === 0 && diasRestantes === 0)) return "CUOTA_VENCIDA";
-  if (estado === "AL_DIA" && diasRestantes <= diasPrevios) return "CUOTA_POR_VENCER";
-  return null;
 }

@@ -11,7 +11,7 @@ import { listarNotificacionesQuerySchema, notificacionParamSchema } from "./noti
 const notificacionSchema = z
   .object({
     id_notificacion: z.number().int(),
-    tipo: z.enum(["CUOTA_POR_VENCER", "CUOTA_VENCIDA", "RESUMEN_DIARIO", "BIENVENIDA", "CLASE_CANCELADA"]),
+    tipo: z.enum(["CUOTA_POR_VENCER", "CUOTA_VENCIDA", "BIENVENIDA"]),
     id_cuota: z.number().int().nullable().openapi({ description: "Solo en los avisos de cuota" }),
     mensaje: z.string(),
     fecha_generacion: fechaSchema,
@@ -43,8 +43,8 @@ export function registrarDocumentacionNotificaciones(registro: OpenAPIRegistry):
     description:
       `${soloSesion} Primero las no leídas y, dentro de cada grupo, de la más nueva a la más vieja. ` +
       "Antes de responder se generan los avisos de cuota del día, si todavía no se generaron: el alumno, o su " +
-      "tutor si tiene, recibe `CUOTA_POR_VENCER` al entrar en los `DIAS_AVISO_VENCIMIENTO` previos y " +
-      "`CUOTA_VENCIDA` al vencer, una sola vez por cuota.",
+      "tutor si tiene, recibe `CUOTA_POR_VENCER` cuando la cuota entra en los días de gracia y " +
+      "`CUOTA_VENCIDA` cuando se terminan, una sola vez por cuota y tipo.",
     request: { query: listarNotificacionesQuerySchema },
     responses: {
       200: respuestaJson("Las notificaciones de quien pide", paginaNotificacionesSchema),

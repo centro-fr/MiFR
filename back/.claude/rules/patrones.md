@@ -10,7 +10,7 @@ Esta lista salió de analizar `der.puml`, `vista_arquitectonica.puml` y los docu
 
 `sesion/google-autenticacion.ts`. `GoogleAutenticacion` envuelve `OAuth2Client` de `google-auth-library` y traduce su payload (`sub`, `given_name`, `family_name`) al tipo de dominio `DatosGoogle`. `SesionService` depende de `IAutenticacionGoogleAuth`, no de la librería.
 
-Es el modelo a seguir para cualquier integración externa futura (pasarela de pagos, envío de notificaciones): la librería se envuelve, el dominio no se entera.
+Es el modelo a seguir para cualquier integración externa (pasarela de pagos, envío de notificaciones): la librería se envuelve, el dominio no se entera. El envío de avisos push lo sigue: `suscripcion-push/web-push-servicio.ts` envuelve la librería `web-push` y realiza `IServicioWebPush`; `SuscripcionPushService` no conoce la librería.
 
 ### Facade — la interfaz `ILogica*` de cada subsistema
 
@@ -78,11 +78,11 @@ No hay caso identificado para Template Method, Decorator, Composite, Builder, Co
 
 Sobre Observer en particular, que es el que más se tienta al ver "notificaciones": **no aplica**, y conviene entender por qué antes de proponerlo.
 
-Observer necesita un sujeto que avise en el momento en que su estado cambia. Dos de los cuatro tipos de notificación no tienen ese momento: `CUOTA_POR_VENCER` y `CUOTA_VENCIDA` no ocurren porque alguien haga algo, ocurren porque pasa el tiempo. No existe la línea de código donde emitir el evento. Se refuerza con lo que ya dice la sección anterior: la cuota no tiene estado persistido, se deriva por cálculo, así que tampoco hay transición que observar. La única implementación posible para esos dos casos es una consulta periódica, que es lo que el diagrama modela: `PlanificadorNotificaciones` (`GestionNotificaciones`) requiere `IInfoCuotas`, provista por `Cuota`.
+Observer necesita un sujeto que avise en el momento en que su estado cambia. Dos de los tres tipos de notificación no tienen ese momento: `CUOTA_POR_VENCER` y `CUOTA_VENCIDA` no ocurren porque alguien haga algo, ocurren porque pasa el tiempo. No existe la línea de código donde emitir el evento. Se refuerza con lo que ya dice la sección anterior: la cuota no tiene estado persistido, se deriva por cálculo, así que tampoco hay transición que observar. La única implementación posible para esos dos casos es una consulta periódica, que es lo que el diagrama modela: `PlanificadorNotificaciones` (`GestionNotificaciones`) requiere `IInfoCuotas`, provista por `Cuota`.
 
 Hay un segundo motivo, más importante todavía. El Observer del catálogo GoF es en memoria, síncrono y dentro del mismo proceso: el aviso llega a quien esté escuchando en ese instante y después no queda nada. Las `notificaciones` del DER son entidades persistidas, con `leida`, que la persona ve cuando entra a la aplicación, no cuando el hecho ocurre. Implementar eso como Observer da un sistema donde el aviso se pierde si nadie estaba escuchando, y desaparece con cada reinicio del servidor.
 
-`BIENVENIDA` y `CLASE_CANCELADA` sí son eventos genuinos. Pero para dos casos alcanza con que el service correspondiente llame al de notificaciones después de completar su operación. No hace falta un patrón ni una infraestructura de eventos para eso.
+`BIENVENIDA` sí es un evento genuino. Pero para un caso alcanza con que el service correspondiente llame al de notificaciones después de completar su operación. No hace falta un patrón ni una infraestructura de eventos para eso.
 
 El esquema del diagrama tiene además la ventaja de dejar la dependencia en la dirección correcta: `GestionCuotasYPagos` no necesita enterarse de que las notificaciones existen. El módulo accesorio depende del central, no al revés.
 

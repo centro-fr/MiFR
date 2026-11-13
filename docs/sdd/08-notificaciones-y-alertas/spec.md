@@ -1,5 +1,7 @@
 # Especificación Funcional: Notificaciones y Alertas
 
+> **Cambios del 13/11/2026.** US-26 (resumen diario de la propietaria) se retiró del sistema, y el aviso de clase cancelada también. Los avisos de cuota de US-25 llegan además como push al celular (ver la spec de US-25). Lo que sigue sobre US-26 queda como registro.
+
 ## 1. Origen
 
 Esta especificación consolida las User Stories de la épica **Notificaciones y Alertas**:

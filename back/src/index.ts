@@ -8,6 +8,7 @@ import { GoogleAutenticacion } from "./modules/gestion-usuarios/sesion/google-au
 import { JwtService } from "./modules/gestion-usuarios/sesion/jwt.service.js";
 import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "./openapi.js";
 import { opcionesDelClientePrisma } from "./shared/db/client.js";
+import { LIMITES_DE_PEDIDOS } from "./shared/middlewares/limite-pedidos.js";
 import { leerConfiguracion } from "./shared/utils/configuracion.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 
@@ -25,7 +26,6 @@ const {
   dependencias,
   cierreAsistencia,
   planificadorNotificaciones,
-  resumenDiario,
   cierreMensualInsignias,
   cierreMensualHonorarios,
 } = construirSistema({
@@ -56,14 +56,6 @@ setInterval(() => {
   });
 }, MILISEGUNDOS_ENTRE_AVISOS).unref();
 
-// US-26: con el mismo enfoque, el resumen diario de la propietaria se genera a partir de HORA_RESUMEN_DIARIO
-// y también al consultar /resumen-diario. El intervalo corre cada hora para verificar si llegó el horario.
-setInterval(() => {
-  resumenDiario.generarResumenDiario().catch((error: unknown) => {
-    console.error("No se pudo generar el resumen diario de la propietaria", error);
-  });
-}, MILISEGUNDOS_ENTRE_AVISOS).unref();
-
 // US-31: con el mismo enfoque, el mes anterior se cierra también al consultar la ficha de insignias o el
 // ranking. Corre a lo sumo una vez por mes; el intervalo solo hace falta para cambiar de mes.
 setInterval(() => {
@@ -86,7 +78,15 @@ function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   return new OpenApiGeneratorV3(registro.definitions).generateDocument(CONFIGURACION_DOCUMENTO_API);
 }
 
-const { esProduccion, loginDesarrollo, origenesPermitidos, host, port } = configuracion;
+const {
+  esProduccion,
+  loginDesarrollo,
+  origenesPermitidos,
+  proxiesDeConfianza,
+  firmaProxyNetlify,
+  host,
+  port,
+} = configuracion;
 if (loginDesarrollo) {
   console.warn("LOGIN_DESARROLLO activo: POST /api/v1/auth/desarrollo permite entrar sin Google");
 }
@@ -98,6 +98,9 @@ const app = createApp(dependencias, {
   documentacionApi: esProduccion ? undefined : generarDocumentacionApi(loginDesarrollo),
   origenesPermitidos,
   loginDesarrollo,
+  limitesDePedidos: LIMITES_DE_PEDIDOS,
+  proxiesDeConfianza,
+  firmaProxyNetlify,
 });
 
 app.listen(port, host, () => {

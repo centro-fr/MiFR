@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, Dumbbell, Info, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejercicio";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -268,15 +269,7 @@ export function RutinaYProgreso({ idAlumno, nombreAlumno, admiteCargas }: PropsR
                                 >
                                   <div className="flex items-center gap-3 min-w-0">
                                     {gifUrl ? (
-                                      <img
-                                        src={`https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/${gifUrl}`}
-                                        alt={ej.nombre}
-                                        loading="lazy"
-                                        className="size-10 rounded-lg object-cover shrink-0 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                                        onError={(e) => {
-                                          (e.currentTarget as HTMLImageElement).src = `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/${gifUrl}`;
-                                        }}
-                                      />
+                                      <MiniaturaEjercicio nombre={ej.nombre} gifUrl={gifUrl} className="size-10" />
                                     ) : (
                                       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                                         <Dumbbell className="size-4" />

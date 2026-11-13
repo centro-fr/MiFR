@@ -70,7 +70,6 @@ describe("valorDelParametro", () => {
   it.each([
     "MINUTOS_CIERRE_ASISTENCIA",
     "DIAS_RESERVA_PREINSCRIPCION",
-    "DIAS_AVISO_VENCIMIENTO",
     "INASISTENCIAS_CONSECUTIVAS_INACTIVO",
     "RANKING_MINIMO_CLASES",
     "DIA_CIERRE_HONORARIOS",
@@ -85,8 +84,6 @@ describe("valorDelParametro", () => {
     ["MINUTOS_CIERRE_ASISTENCIA", 1440, "1440"],
     ["DIAS_RESERVA_PREINSCRIPCION", 0, "0"],
     ["DIAS_RESERVA_PREINSCRIPCION", 365, "365"],
-    ["DIAS_AVISO_VENCIMIENTO", 0, "0"],
-    ["DIAS_AVISO_VENCIMIENTO", 30, "30"],
     ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 1, "1"],
     ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 30, "30"],
     ["RANKING_MINIMO_CLASES", 0, "0"],
@@ -100,7 +97,6 @@ describe("valorDelParametro", () => {
   it.each([
     ["MINUTOS_CIERRE_ASISTENCIA", 1441],
     ["DIAS_RESERVA_PREINSCRIPCION", 366],
-    ["DIAS_AVISO_VENCIMIENTO", 31],
     ["INASISTENCIAS_CONSECUTIVAS_INACTIVO", 31],
     ["RANKING_MINIMO_CLASES", 101],
     ["DIA_CIERRE_HONORARIOS", 29],
@@ -115,18 +111,4 @@ describe("valorDelParametro", () => {
   it("DIA_CIERRE_HONORARIOS rechaza 0: no habría día de cierre", () => {
     expect(() => valorDelParametro("DIA_CIERRE_HONORARIOS", 0)).toThrow();
   });
-
-  it.each(["20:00", "00:00", "23:59", " 08:30 "])(
-    "HORA_RESUMEN_DIARIO acepta formato HH:MM válido: %j",
-    (valor) => {
-      expect(valorDelParametro("HORA_RESUMEN_DIARIO", valor)).toBe(valor.trim());
-    },
-  );
-
-  it.each(["24:00", "20:60", "9:00", "20:0", "-1", "hola", 123, null])(
-    "HORA_RESUMEN_DIARIO rechaza formato inválido: %j",
-    (valor) => {
-      expect(() => valorDelParametro("HORA_RESUMEN_DIARIO", valor)).toThrow();
-    },
-  );
 });

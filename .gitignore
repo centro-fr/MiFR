@@ -18,6 +18,10 @@ build/
 back/prisma/*.db
 back/prisma/migrations/dev.db*
 
+# Resultados de Playwright (capturas y videos de front/e2e): cada corrida los vuelve a generar.
+test-results/
+playwright-report/
+
 # Logs
 *.log
 npm-debug.log*

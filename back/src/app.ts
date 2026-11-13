@@ -1,8 +1,6 @@
 import cors from "cors";
 import express, { Router, type Express } from "express";
 import helmet from "helmet";
-import type { ILogicaDifusionPublica } from "./modules/difusion-publica/interface/i-logica-difusion-publica.js";
-import { createDifusionPublicaRoutes } from "./modules/difusion-publica/difusion-publica.routes.js";
 import type { ILogicaCuotasPagos } from "./modules/gestion-cuotas-y-pagos/interface/i-logica-cuotas-pagos.js";
 import { createGestionCuotasYPagosRoutes } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.routes.js";
 import type { ILogicaInscripcionesYClases } from "./modules/gestion-inscripciones-y-clases/interface/i-logica-inscripciones-y-clases.js";
@@ -25,6 +23,8 @@ import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-a
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { crearControlDeAcceso } from "./shared/middlewares/auth.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
+import { exigirFirmaDeNetlify } from "./shared/middlewares/firma-netlify.js";
+import { crearLimiteDePedidos, type LimitesDePedidos } from "./shared/middlewares/limite-pedidos.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
@@ -42,7 +42,6 @@ export interface AppDependencies {
   gestionRutinasYProgreso: ILogicaRutinasYProgreso;
   reportes: ILogicaInformes;
   gestionHonorarios: ILogicaHonorarios;
-  difusionPublica: ILogicaDifusionPublica;
   autenticacion: IAutenticacion;
   autorizacion: IAutorizacion;
 }
@@ -54,10 +53,26 @@ export interface AppOpciones {
   origenesPermitidos?: string[];
   // Habilita POST /auth/desarrollo (login sin Google). index.ts lo impide en producción.
   loginDesarrollo?: boolean;
+  // Sin límites no se corta ningún pedido: los tests de integración inician muchas sesiones seguidas.
+  limitesDePedidos?: LimitesDePedidos;
+  // Cuántos proxies hay delante de la API: de ahí sale req.ip, que es lo que cuenta el límite de pedidos.
+  proxiesDeConfianza?: number;
+  // Secreto con el que Netlify firma lo que reenvía. Sin él, la API acepta pedidos de cualquier camino.
+  firmaProxyNetlify?: string;
+}
+
+// Van antes que cualquier ruta, así un pedido que excede el tope no llega a la base. /health queda
+// afuera porque la consulta el monitor que mantiene despierta la API. Un inicio de sesión cuenta
+// también para el tope general.
+function montarLimitesDePedidos(api: Router, limites: LimitesDePedidos): void {
+  api.use(crearLimiteDePedidos(limites.api));
+  api.use(["/auth/google", "/auth/desarrollo"], crearLimiteDePedidos(limites.inicioSesion));
 }
 
 export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
   const app = express();
+  // Un número y no true: con true cualquiera elige su IP mandando X-Forwarded-For.
+  app.set("trust proxy", opciones.proxiesDeConfianza ?? 0);
 
   // Cabeceras de seguridad (nosniff, X-Frame-Options, CSP, HSTS) y sin X-Powered-By.
   app.use(helmet());
@@ -69,11 +84,12 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
 
   // Prefijo versionado del SDD: un cambio incompatible de contrato se publica como /api/v2.
   const api = Router();
+  // Antes que los límites: un pedido que no pasó por Netlify no gasta el cupo de nadie.
+  if (opciones.firmaProxyNetlify) api.use(exigirFirmaDeNetlify(opciones.firmaProxyNetlify));
+  if (opciones.limitesDePedidos) montarLimitesDePedidos(api, opciones.limitesDePedidos);
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }
-  // Va primero: es lo único sin sesión, y así ningún guardia de otro subsistema lo alcanza.
-  api.use(createDifusionPublicaRoutes(deps.difusionPublica));
   const acceso = crearControlDeAcceso(deps.autenticacion, deps.autorizacion);
   api.use(
     createGestionUsuariosRoutes(deps.gestionUsuarios, acceso, { loginDesarrollo: opciones.loginDesarrollo }),

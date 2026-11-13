@@ -5,7 +5,6 @@ import type {
   SituacionDeCuotas,
   SituacionParaAviso,
   SituacionParaInforme,
-  SituacionParaResumen,
 } from "./cuota.types.js";
 
 const CUOTAS_CON_PAGOS = {
@@ -97,44 +96,8 @@ export class CuotaRepository {
     }));
   }
 
-  // US-26: las inscripciones activas de plan mensual, no bonificadas, con alguna cuota paga que ya
-  // venció: entre ellas están todas las vencidas, y el service decide cuáles lo están. Sin tope por
-  // lo mismo que los avisos: crece solo con los alumnos activos.
-  async situacionParaResumen(hoy: Date): Promise<SituacionParaResumen[]> {
-    const nombre = { select: { nombre: true, apellido: true } } as const;
-    const filas = await this.prisma.inscripciones.findMany({
-      where: {
-        estado: "ACTIVA",
-        sin_cargo: false,
-        alumno: { estado: { not: "BAJA" } },
-        plan: { tipo: "MENSUAL" },
-        cuotas: { some: { fecha_vencimiento: { lt: hoy }, pagos: { some: { estado: "CONFIRMADO" } } } },
-      },
-      select: {
-        id_inscripcion: true,
-        id_plan: true,
-        id_promocion: true,
-        fecha_baja: true,
-        plan: { select: { tipo: true, dias_gracia: true, nombre: true } },
-        profesora: { select: { id_profesora: true, usuario: nombre } },
-        alumno: { select: { id_alumno: true, usuario: nombre } },
-        cuotas: CUOTAS_CON_PAGOS,
-      },
-      orderBy: { id_inscripcion: "asc" },
-    });
-    return filas.map(({ plan, profesora, alumno, cuotas, ...fila }) => ({
-      ...fila,
-      tipo_plan: plan.tipo,
-      dias_gracia: plan.dias_gracia,
-      nombre_plan: plan.nombre,
-      profesora: { id_profesora: profesora.id_profesora, ...profesora.usuario },
-      alumno: { id_alumno: alumno.id_alumno, ...alumno.usuario },
-      cuotas: conEstadosDePagos(cuotas),
-    }));
-  }
-
-  // US-34: igual que situacionParaResumen, pero incluye teléfono y email del alumno (o tutor responsable)
-  // para la gestión de cobranza y contacto directo.
+  // US-34: las inscripciones activas de plan mensual, no bonificadas, con alguna cuota paga que ya venció,
+  // con teléfono y email del alumno (o tutor responsable) para la gestión de cobranza y contacto directo.
   async situacionParaInforme(hoy: Date): Promise<SituacionParaInforme[]> {
     const nombre = { select: { nombre: true, apellido: true } } as const;
     const contacto = { select: { nombre: true, apellido: true, telefono: true, email: true } } as const;
@@ -182,14 +145,33 @@ export class CuotaRepository {
   }
 
   // Suma en la base, de una consulta: una inscripción sin cobros en el período no figura.
-  // Regla de negocio: los descuentos de promociones no afectan los honorarios docentes; se usa el precio de lista.
+  // Los descuentos de promociones no afectan los honorarios: si la inscripción tiene promoción, cada pago
+  // se lleva a precio de lista en la proporción en que la promoción redujo la cuota. Proporcional y no
+  // por cuota, para que una cuota pagada en partes, aun en meses distintos, no cuente la lista dos veces.
+  // El precio de lista es el del plan el día en que se generó la cuota, como en el comprobante.
   async cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>> {
     const filas = await this.prisma.$queryRaw<{ id_inscripcion: number; total: Prisma.Decimal }[]>`
-      SELECT c.id_inscripcion, SUM(GREATEST(p.monto, pp.precio)) AS total
+      SELECT c.id_inscripcion,
+        ROUND(SUM(
+          CASE WHEN i.id_promocion IS NOT NULL AND c.monto > 0 AND lista.precio > c.monto
+            THEN p.monto * lista.precio / c.monto
+            ELSE p.monto
+          END
+        ), 2) AS total
       FROM pagos p
       JOIN cuotas c ON c.id_cuota = p.id_cuota
       JOIN inscripciones i ON i.id_inscripcion = c.id_inscripcion
-      JOIN plan_precios pp ON pp.id_plan_precio = i.id_plan_precio
+      LEFT JOIN LATERAL (
+        SELECT pp.precio
+        FROM plan_precios pp
+        WHERE pp.id_plan = i.id_plan
+          AND pp.fecha_vigencia_desde
+            <= (c.fecha_generacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
+          AND (pp.fecha_vigencia_hasta IS NULL OR pp.fecha_vigencia_hasta
+            >= (c.fecha_generacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date)
+        ORDER BY pp.fecha_vigencia_desde DESC
+        LIMIT 1
+      ) lista ON true
       WHERE p.estado = 'CONFIRMADO'
         AND c.id_inscripcion = ANY(${idsInscripciones})
         AND p.fecha_pago >= ${desde}

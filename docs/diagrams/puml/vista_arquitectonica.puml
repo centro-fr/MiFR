@@ -67,7 +67,6 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   interface "ILogicaNotificaciones"         as RP_Notificaciones
   interface "ILogicaInsignias"              as RP_Insignias
   interface "ILogicaInformes"               as RP_Informes
-  interface "ILogicaDifusionPublica"        as RP_DifusionPublica
 
   UsuarioPresWeb               -down-( RP_Usuarios
   ServicioEntrenamientoPresWeb -down-( RP_ServicioEntrenamiento
@@ -79,7 +78,6 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   NotificacionesPresWeb        -down-( RP_Notificaciones
   InsigniasPresWeb             -down-( RP_Insignias
   InformesPresWeb              -down-( RP_Informes
-  PanelPublicoPresWeb          -down-( RP_DifusionPublica
 
   UsuarioPresWeb               -[hidden]right-> ServicioEntrenamientoPresWeb
   ServicioEntrenamientoPresWeb -[hidden]right-> PersonasPresWeb
@@ -91,6 +89,12 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   NotificacionesPresWeb        -[hidden]right-> InsigniasPresWeb
   InsigniasPresWeb             -[hidden]right-> InformesPresWeb
   InformesPresWeb              -[hidden]right-> PanelPublicoPresWeb
+
+  note bottom of PanelPublicoPresWeb
+    Página pública con datos fijos del front:
+    no consume la API, así un visitante no
+    despierta la API ni la base.
+  end note
 }
 
 ' ============================================================
@@ -290,27 +294,24 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   package "GestionNotificaciones" as GestionNotificaciones <<subsystem>> {
     component "Notificacion"               as Notificacion
     component "PlanificadorNotificaciones" as PlanificadorNotificaciones <<process>>
-    component "ResumenDiarioPropietaria"   as ResumenDiarioPropietaria <<process>>
+    component "SuscripcionPush"            as SuscripcionPush
     interface "IInfoUsuarios"   as R_GN_InfoUsuarios
     interface "IInfoClases"     as R_GN_InfoClases
-    interface "IInfoParametros" as R_GN_InfoParametros
-    interface "IInfoPagos"      as R_GN_InfoPagos
     interface "IInfoCuotas"     as R_GN_InfoCuotas
     interface "IRegistroNotificaciones" as I_RegistroNotificaciones
+    interface "IEnvioPush"              as I_EnvioPush
+    interface "IServicioWebPush"        as R_GN_WebPush
 
     Notificacion               -down- I_RegistroNotificaciones
     Notificacion               -right-( R_GN_InfoUsuarios
     PlanificadorNotificaciones -right-( R_GN_InfoClases
-    PlanificadorNotificaciones -up-( R_GN_InfoParametros
     PlanificadorNotificaciones -up-( R_GN_InfoCuotas
-    ResumenDiarioPropietaria   -up-( R_GN_InfoPagos
-    ResumenDiarioPropietaria   -up-( R_GN_InfoCuotas
-    ResumenDiarioPropietaria   -up-( R_GN_InfoParametros
-    ResumenDiarioPropietaria   -( R_GN_InfoUsuarios
+    SuscripcionPush            -up- I_EnvioPush
+    Notificacion               -right-( I_EnvioPush
+    SuscripcionPush            -down-( R_GN_WebPush
     PlanificadorNotificaciones ..> Notificacion
-    ResumenDiarioPropietaria   ..> Notificacion
     Notificacion -[hidden]down-> PlanificadorNotificaciones
-    PlanificadorNotificaciones -[hidden]right-> ResumenDiarioPropietaria
+    PlanificadorNotificaciones -[hidden]right-> SuscripcionPush
   }
   interface "IAutenticacion"        as R_GN_Aut
   interface "IAutorizacion"         as R_GN_Autz
@@ -405,20 +406,6 @@ CapaPersistente -down-( R_Materializar
 ' ============================================================
 package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem>> #DDF7EC {
 
-  ' ---------------- DifusionPublica ----------------
-  package "DifusionPublica" as DifusionPublica <<subsystem>> #F3FDF8 {
-    component "PanelDisponibilidad" as PanelDisponibilidad #EEFBF4
-    interface "IInfoHorarios"      as R_DP_InfoHorarios
-    interface "IInfoInscripciones" as R_DP_InfoInscripciones
-    interface "IInfoPlanes"        as R_DP_InfoPlanes
-
-    PanelDisponibilidad -right-( R_DP_InfoHorarios
-    PanelDisponibilidad -right-( R_DP_InfoInscripciones
-    PanelDisponibilidad -right-( R_DP_InfoPlanes
-  }
-  interface "ILogicaDifusionPublica" as I_LogicaDifusionPublica
-  DifusionPublica -down- I_LogicaDifusionPublica
-
   ' ---------------- Calculos del negocio ----------------
   package "Calculos del negocio" as CalculosDelNegocio <<subsystem>> #F3FDF8 {
     component "CalculadorRachaRanking"     as CalcRacha #EEFBF4
@@ -479,8 +466,7 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
   Reportes -down-( R_RE_InfoCuotas
   Reportes -down-( R_RE_InfoPagos
 
-  DifusionPublica -[hidden]right-> CalculosDelNegocio
-  DifusionPublica -[hidden]down-> Reportes
+  CalculosDelNegocio -[hidden]down-> Reportes
 }
 
 ' ============================================================
@@ -503,6 +489,13 @@ package "Capa Administracion de Datos" as CapaDatos <<subsystem>> #F6DADA {
 component "Google Auth" as GoogleAuth <<external>>
 interface "IAutenticacionGoogleAuth" as I_GoogleAuth
 GoogleAuth -up- I_GoogleAuth
+
+' Los servicios de push de cada navegador (FCM en Android y Chrome, APNs en iPhone, Mozilla en Firefox),
+' con el estándar Web Push: reciben el aviso cifrado y lo entregan al celular.
+component "Servicio Web Push" as ServicioWebPush <<external>>
+interface "IServicioWebPush" as I_ServicioWebPush
+ServicioWebPush -up- I_ServicioWebPush
+GoogleAuth -[hidden]right-> ServicioWebPush
 
 ' ============================================================
 ' Ubicacion relativa de las capas

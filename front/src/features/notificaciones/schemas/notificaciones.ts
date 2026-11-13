@@ -6,9 +6,7 @@ import { z } from "zod";
 export const TIPOS_NOTIFICACION = [
   "CUOTA_POR_VENCER",
   "CUOTA_VENCIDA",
-  "RESUMEN_DIARIO",
   "BIENVENIDA",
-  "CLASE_CANCELADA",
 ] as const;
 
 // Un tipo que el back sume más adelante no deja a la persona sin su bandeja: se muestra como aviso genérico.

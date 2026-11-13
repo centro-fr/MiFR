@@ -6,7 +6,6 @@ import { PlanificadorNotificacionesService } from "./modules/gestion-notificacio
 import { DetectorInactividadService } from "./modules/reportes/detector-inactividad/detector-inactividad.service.js";
 import { GeneradorInformesService } from "./modules/reportes/generador-informes/generador-informes.service.js";
 import { ReportesService } from "./modules/reportes/reportes.service.js";
-import { ResumenDiarioPropietariaService } from "./modules/gestion-notificaciones/resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 import type { AppDependencies } from "./app.js";
 import { GestionUsuariosService } from "./modules/gestion-usuarios/gestion-usuarios.service.js";
 import type { IAutenticacionGoogleAuth } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion-google-auth.js";
@@ -48,8 +47,6 @@ import { CuotaService } from "./modules/gestion-cuotas-y-pagos/cuota/cuota.servi
 import { GestionCuotasYPagosService } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.service.js";
 import { PagoRepository } from "./modules/gestion-cuotas-y-pagos/pago/pago.repository.js";
 import { PagoService } from "./modules/gestion-cuotas-y-pagos/pago/pago.service.js";
-import { DifusionPublicaService } from "./modules/difusion-publica/difusion-publica.service.js";
-import { PanelDisponibilidadService } from "./modules/difusion-publica/panel-disponibilidad/panel-disponibilidad.service.js";
 import type { IInfoInscripciones } from "./modules/gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoClases } from "./modules/gestion-inscripciones-y-clases/clase/interface/i-info-clases.js";
 import { ClaseRepository } from "./modules/gestion-inscripciones-y-clases/clase/clase.repository.js";
@@ -83,15 +80,13 @@ export interface PiezasDeInfraestructura {
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
 // tests de integración dan el alta definitiva sin pasar por un cobro; y los procesos que index.ts
 // corre con un intervalo y los tests con la hora que necesitan: el cierre automático de la asistencia
-// (US-21), los avisos de cuota (US-25), el resumen diario (US-26), el cierre mensual de insignias (US-31)
-// y el de honorarios (US-23).
+// (US-21), los avisos de cuota (US-25), el cierre mensual de insignias (US-31) y el de honorarios (US-23).
 export interface Sistema {
   dependencias: AppDependencies;
   infoInscripciones: IInfoInscripciones;
   infoClases: IInfoClases;
   cierreAsistencia: CierreAsistenciaService;
   planificadorNotificaciones: PlanificadorNotificacionesService;
-  resumenDiario: ResumenDiarioPropietariaService;
   cierreMensualInsignias: CierreMensualInsigniasService;
   cierreMensualHonorarios: CierreMensualHonorariosService;
 }
@@ -168,11 +163,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
   const notificacionService = new NotificacionService(new NotificacionRepository(prisma));
-  const planificadorNotificaciones = new PlanificadorNotificacionesService(
-    cuotaService,
-    parametrosService,
-    notificacionService,
-  );
+  const planificadorNotificaciones = new PlanificadorNotificacionesService(cuotaService, notificacionService);
   const gestionPersonas = new GestionPersonasService(
     profesorService,
     horarioService,
@@ -189,14 +180,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new CalculadorRachaRanking(),
   );
   const cierreMensualInsignias = new CierreMensualInsigniasService(insigniaService);
-
-  const resumenDiario = new ResumenDiarioPropietariaService(
-    pagoService,
-    cuotaService,
-    parametrosService,
-    usuarioService,
-    notificacionService,
-  );
 
   const tarifaHonorarioService = new TarifaHonorarioService(
     new TarifaHonorarioRepository(prisma),
@@ -227,7 +210,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionInscripcionesYClases,
       gestionCuotasYPagos,
       gestionNotificaciones: new GestionNotificacionesService(
-        resumenDiario,
         notificacionService,
         planificadorNotificaciones,
       ),
@@ -255,7 +237,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
         new ProgresoService(new ProgresoRepository(prisma), rutinaRepository, alumnoService, profesorService),
       ),
       gestionHonorarios,
-      difusionPublica: new DifusionPublicaService(new PanelDisponibilidadService(horarioService)),
       autenticacion,
       autorizacion: rolService,
     },
@@ -263,7 +244,6 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     infoClases: claseService,
     cierreAsistencia,
     planificadorNotificaciones,
-    resumenDiario,
     cierreMensualInsignias,
     cierreMensualHonorarios,
   };

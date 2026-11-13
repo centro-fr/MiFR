@@ -6,6 +6,7 @@ import {
   clearSessionToken,
   clearStoredAvatarUrl,
   clearStoredUser,
+  getSessionToken,
   getStoredAvatarUrl,
   getStoredUser,
   setStoredAvatarUrl,
@@ -16,36 +17,49 @@ import { AuthContext } from "@/features/auth/hooks/auth-context";
 import type { AuthContextValue } from "@/features/auth/hooks/auth-context";
 import type { AuthUser } from "@/types/auth";
 
+// Sin token no hay sesión que restaurar: /auth/me respondería 401. No pedirlo evita que cada visita a la
+// página pública llegue a la API.
+function haySesionGuardada(): boolean {
+  return getSessionToken() !== null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
-  const [isLoading, setIsLoading] = useState<boolean>(() => getStoredUser() === null);
+  const [user, setUser] = useState<AuthUser | null>(() => (haySesionGuardada() ? getStoredUser() : null));
+  const [isLoading, setIsLoading] = useState<boolean>(() => haySesionGuardada() && getStoredUser() === null);
   const authGenerationRef = useRef(0);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     let active = true;
     const generationAtStart = authGenerationRef.current;
-    getMe()
-      .then((restored) => {
-        if (active && authGenerationRef.current === generationAtStart) {
-          const avatarUrl = getStoredAvatarUrl();
-          const usuarioActualizado: AuthUser = {
-            ...restored,
-            fotoUrl: avatarUrl ?? restored.fotoUrl ?? null,
-          };
-          setStoredUser(usuarioActualizado);
-          setUser(usuarioActualizado);
-        }
-      })
-      .catch(() => {
-        if (active && authGenerationRef.current === generationAtStart) {
-          clearStoredUser();
-          setUser(null);
-        }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+
+    const restaurarSesion = () =>
+      getMe()
+        .then((restored) => {
+          if (active && authGenerationRef.current === generationAtStart) {
+            const avatarUrl = getStoredAvatarUrl();
+            const usuarioActualizado: AuthUser = {
+              ...restored,
+              fotoUrl: avatarUrl ?? restored.fotoUrl ?? null,
+            };
+            setStoredUser(usuarioActualizado);
+            setUser(usuarioActualizado);
+          }
+        })
+        .catch(() => {
+          if (active && authGenerationRef.current === generationAtStart) {
+            clearStoredUser();
+            setUser(null);
+          }
+        })
+        .finally(() => {
+          if (active) setIsLoading(false);
+        });
+
+    // Un usuario guardado sin su token es un resto de otra sesión: no se restaura.
+    if (haySesionGuardada()) void restaurarSesion();
+    else clearStoredUser();
+
     const onUnauthorized = () => {
       authGenerationRef.current += 1;
       clearStoredAvatarUrl();

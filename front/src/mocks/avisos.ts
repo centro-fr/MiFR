@@ -31,18 +31,23 @@ function idCuotaVigente(inscripcion: InscripcionMock): number | null {
   return confirmados.length > 0 ? Math.max(...confirmados.map((p) => p.id_cuota)) : null;
 }
 
-// Sin días de gracia, el aviso de vencida sale el mismo día del vencimiento (tipoDeAviso del back).
-function tipoDeAviso({ estado, dias_restantes }: SituacionCuotaApi, diasPrevios: number, diasGracia: number) {
-  if (dias_restantes === null) return null;
-  if (estado === "VENCIDA" || (diasGracia === 0 && dias_restantes === 0)) return "CUOTA_VENCIDA" as const;
-  if (estado === "AL_DIA" && dias_restantes <= diasPrevios) return "CUOTA_POR_VENCER" as const;
+// El aviso sale cuando la cuota cambia de estado, como en el back (TIPO_DE_AVISO_POR_ESTADO de cuota.service.ts).
+function tipoDeAviso({ estado }: SituacionCuotaApi) {
+  if (estado === "POR_VENCER") return "CUOTA_POR_VENCER" as const;
+  if (estado === "VENCIDA") return "CUOTA_VENCIDA" as const;
   return null;
 }
 
-/** Avisos de cuota: 3 días antes para el alumno/tutor, y para la propietaria y profesora a cargo solo cuotas vencidas con nombre y apellido. */
+// El último día de gracia: hasta entonces la cuota está por vencer.
+function finDeGracia(fechaVencimiento: string, diasGracia: number): string {
+  return new Date(new Date(fechaVencimiento).getTime() + diasGracia * 86_400_000).toISOString();
+}
+
+/**
+ * Avisos de cuota: al alumno o tutor cuando la cuota pasa a por vencer o vencida, y a la propietaria y
+ * a la profesora a cargo solo las vencidas, con el nombre del alumno.
+ */
 export function generarAvisosDeCuota(): void {
-  // Siempre 3 días de aviso previo antes de vencer
-  const diasPrevios = 3;
   for (const inscripcion of db.inscripciones) {
     const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan);
     const alumno = db.alumnos.find((a) => a.id_alumno === inscripcion.id_alumno);
@@ -50,7 +55,7 @@ export function generarAvisosDeCuota(): void {
 
     const situacion = situacionCuotaDe(inscripcion);
     const idCuota = idCuotaVigente(inscripcion);
-    const tipo = tipoDeAviso(situacion, diasPrevios, plan.dias_gracia);
+    const tipo = tipoDeAviso(situacion);
     if (situacion.tiene_pago_pendiente || !situacion.fecha_vencimiento || idCuota === null || !tipo) continue;
 
     const persona = db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario);
@@ -58,8 +63,11 @@ export function generarAvisosDeCuota(): void {
 
     // Aviso para el alumno / tutor:
     const deQuien = alumno.id_usuario_responsable === null ? "Tu cuota" : `La cuota de ${nombreCompleto}`;
-    const fecha = formatoArgentino(situacion.fecha_vencimiento);
-    const cuando = situacion.dias_restantes === 0 ? `vence hoy, ${fecha}` : tipo === "CUOTA_VENCIDA" ? `venció el ${fecha}` : `vence el ${fecha}`;
+    const vencio = `venció el ${formatoArgentino(situacion.fecha_vencimiento)}`;
+    const cuando =
+      tipo === "CUOTA_POR_VENCER"
+        ? `${vencio}: hay tiempo de renovarla hasta el ${formatoArgentino(finDeGracia(situacion.fecha_vencimiento, plan.dias_gracia))}`
+        : `${vencio} y ya pasaron los días de gracia`;
     const destinatarioAlumno = alumno.id_usuario_responsable ?? alumno.id_usuario;
 
     const avisoAlumno: NuevaNotificacion = {
@@ -102,9 +110,4 @@ export function generarAvisosDeCuota(): void {
       }
     }
   }
-}
-
-/** Desactivada: ya no se generan notificaciones de resumen diario en la campanita */
-export function generarResumenDiario(_armarMensaje?: () => string): void {
-  // La notificación de resumen diario fue eliminada; el resumen sigue disponible en el dashboard.
 }

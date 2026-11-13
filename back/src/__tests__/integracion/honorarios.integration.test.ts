@@ -19,7 +19,8 @@ import {
 // mes ya cerrado. Para que listar no cierre septiembre solo, el día de cierre queda en 28 salvo en PI-86.
 //
 // Regla vigente: cada profesora recibe un porcentaje (50 %) de lo cobrado en el mes por sus alumnos; la
-// hora de suplencia es un monto fijo. Escenario de septiembre (tarifas desde el 01/01/2026):
+// hora de suplencia es un monto fijo. Si la inscripción tiene promoción, lo cobrado se lleva a precio de
+// lista (PI-91). Escenario de septiembre (tarifas desde el 01/01/2026), sin promociones:
 //   Lucía: 50 % general y 40 % para el plan Intermedio (la del plan gana). Acosta (Inicial) cobró $20000
 //   en el mes: $10000. Benítez (Intermedio) cobró $20000 el 10/09: $8000 (el pago de agosto y el pendiente
 //   no cuentan). Farías (baja el 20/09) cobró $10000 el 05/09: $5000. La clase del 07/09 la dictó Carla:
@@ -735,5 +736,116 @@ describe("PI-86: el cierre mensual automático de los honorarios", () => {
     expect(listado.body.liquidaciones.every(({ estado }: { estado: string }) => estado === "CERRADA")).toBe(
       true,
     );
+  });
+});
+
+// Plan Inicial a $25000 de lista y una promoción del 20 %: la cuota queda en $20000. Rita cobra el 50 %.
+describe("PI-91: los descuentos de las promociones no reducen los honorarios", () => {
+  const CUOTA_CON_PROMOCION = 20000;
+
+  async function alumnaDeRitaConPromocion(plan: PlanDePrueba = escenario.planInicial): Promise<number> {
+    const { rita } = escenario;
+    const { id_horario } = await crearHorarioDePrueba(prisma, {
+      id_actividad: escenario.idActividad,
+      id_profesora: rita.id_profesora,
+      dia_semana: 3,
+      hora_inicio: "09:00",
+      hora_fin: "10:00",
+      fecha_alta: ALTA_DE_LOS_HORARIOS,
+    });
+    const sosa = await inscribir("Sosa", rita, id_horario, plan);
+    const { id_promocion } = await prisma.promociones.create({
+      data: {
+        nombre: "Verano",
+        tipo_descuento: "PORCENTAJE",
+        valor: 20,
+        fecha_desde: new Date("2026-08-01T00:00:00Z"),
+        fecha_hasta: new Date("2026-12-31T00:00:00Z"),
+        activo: true,
+      },
+    });
+    await prisma.inscripciones.update({ where: { id_inscripcion: sosa }, data: { id_promocion } });
+    await crearTarifa({
+      id_profesora: rita.id_profesora,
+      concepto: "ALUMNO_A_CARGO",
+      tipo_valor: "PORCENTAJE",
+      valor: 50,
+    });
+    return sosa;
+  }
+
+  async function cuotaConPromocion(idInscripcion: number, generada: string): Promise<number> {
+    const { id_cuota } = await prisma.cuotas.create({
+      data: {
+        id_inscripcion: idInscripcion,
+        numero_cuota: 1,
+        fecha_generacion: new Date(generada),
+        fecha_vencimiento: new Date(generada),
+        monto: CUOTA_CON_PROMOCION,
+      },
+    });
+    return id_cuota;
+  }
+
+  async function pagar(idCuota: number, monto: number, fechaPago: string): Promise<void> {
+    await prisma.pagos.create({
+      data: {
+        id_cuota: idCuota,
+        forma_pago: "EFECTIVO",
+        estado: "CONFIRMADO",
+        monto,
+        fecha_pago: new Date(fechaPago),
+        id_usuario_registra: escenario.propietaria.id_usuario,
+        rendido: true,
+      },
+    });
+  }
+
+  it("R-19 el pago de una cuota con promoción se liquida a precio de lista", async () => {
+    const sosa = await alumnaDeRitaConPromocion();
+    await pagar(
+      await cuotaConPromocion(sosa, "2026-09-02T15:00:00Z"),
+      CUOTA_CON_PROMOCION,
+      "2026-09-02T15:00:00Z",
+    );
+
+    const { liquidaciones } = (await generar()).body;
+
+    // El 50 % de los $25000 de lista, no de los $20000 que pagó con la promoción.
+    expect(deLaProfesora(liquidaciones, escenario.rita).monto_total).toBe(12500);
+    // Sin promoción se liquida lo cobrado, aunque sea menos que la lista (Acosta pagó $20000).
+    expect(deLaProfesora(liquidaciones, escenario.lucia).monto_total).toBe(20500);
+  });
+
+  it("R-20 una cuota con promoción pagada en dos meses reparte la lista sin contarla dos veces", async () => {
+    const sosa = await alumnaDeRitaConPromocion();
+    const cuota = await cuotaConPromocion(sosa, "2026-09-02T15:00:00Z");
+    await pagar(cuota, 10000, "2026-09-02T15:00:00Z");
+    await pagar(cuota, 10000, "2026-10-02T15:00:00Z");
+
+    const septiembre = (await generar()).body.liquidaciones;
+    const octubre = (await generar("2026-10")).body.liquidaciones;
+
+    expect(deLaProfesora(septiembre, escenario.rita).monto_total).toBe(6250);
+    expect(deLaProfesora(octubre, escenario.rita).monto_total).toBe(6250);
+  });
+
+  it("R-21 el precio de lista es el del plan el día en Argentina en que se generó la cuota", async () => {
+    const plan = await crearPlan(prisma, { nombre: "Plan con aumento" });
+    await prisma.plan_precios.update({
+      where: { id_plan_precio: plan.id_plan_precio },
+      data: { fecha_vigencia_hasta: new Date("2026-09-14T00:00:00Z") },
+    });
+    await prisma.plan_precios.create({
+      data: { id_plan: plan.id_plan, precio: 30000, fecha_vigencia_desde: new Date("2026-09-15T00:00:00Z") },
+    });
+    const sosa = await alumnaDeRitaConPromocion(plan);
+    // 15/09 a las 02:00 UTC es todavía el 14/09 en Argentina: rige el precio de $25000.
+    const cuota = await cuotaConPromocion(sosa, "2026-09-15T02:00:00Z");
+    await pagar(cuota, CUOTA_CON_PROMOCION, "2026-09-20T15:00:00Z");
+
+    const { liquidaciones } = (await generar()).body;
+
+    expect(deLaProfesora(liquidaciones, escenario.rita).monto_total).toBe(12500);
   });
 });

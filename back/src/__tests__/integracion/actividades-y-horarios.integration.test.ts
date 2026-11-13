@@ -1,11 +1,6 @@
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import {
-  ALUMNOS_DEMO,
-  cargarDatosDemo,
-  EMAIL_MULTIROL_DEMO,
-  type DatosDemoCargados,
-} from "../../shared/db/datos-demo.js";
+import { cargarDatosDemo, EMAIL_MULTIROL_DEMO, type DatosDemoCargados } from "../../shared/db/datos-demo.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion } from "./entorno.js";
 
@@ -434,62 +429,5 @@ describe("PI-06: modificación y baja de actividades con horarios", () => {
       where: { id_actividad: actividad.body.id_actividad },
     });
     expect(yoga?.modalidad).toBe("GRUPAL");
-  });
-});
-
-describe("PI-46: las actividades públicas del centro", () => {
-  const LUNES_A_VIERNES = [1, 2, 3, 4, 5];
-
-  function consultarActividades() {
-    return request(app).get("/api/v1/publico/actividades");
-  }
-
-  function actividad(respuesta: request.Response, nombre: string) {
-    return respuesta.body.actividades.find((a: { nombre: string }) => a.nombre === nombre);
-  }
-
-  it("un visitante sin sesión ve las actividades con sus días, y la grilla de horarios no es pública", async () => {
-    const publicas = await consultarActividades();
-    const disponibilidad = await request(app).get("/api/v1/publico/disponibilidad");
-    const grilla = await request(app).get("/api/v1/horarios");
-
-    expect(publicas.status).toBe(200);
-    expect(publicas.headers["cache-control"]).toBe("public, max-age=60");
-    expect(publicas.body.actividades).toHaveLength(8);
-    expect(actividad(publicas, "Funcional")).toEqual({
-      id_actividad: idActividad("FUNCIONAL"),
-      nombre: "Funcional",
-      descripcion: "Entrenamiento funcional en grupo",
-      modalidad: "GRUPAL",
-      dias: LUNES_A_VIERNES,
-      clases_por_semana: 11,
-    });
-    expect(actividad(publicas, "Combat")).toMatchObject({ dias: [2, 4], clases_por_semana: 2 });
-    // Ni horas, ni profesoras, ni cupos, ni datos de alumnos.
-    const texto = JSON.stringify(publicas.body);
-    for (const campo of ["hora_inicio", "profesora", "cupo", "Lucía", "@"]) {
-      expect(texto).not.toContain(campo);
-    }
-    for (const alumno of ALUMNOS_DEMO) {
-      expect(texto).not.toContain(alumno.dni);
-    }
-    expect(disponibilidad.status).toBe(404);
-    expect(grilla.status).toBe(401);
-  });
-
-  it("una actividad sin horarios vigentes deja de ofrecerse y la baja de un horario se refleja en sus días", async () => {
-    const delCombat = await prisma.horarios.findMany({ where: { id_actividad: idActividad("COMBAT") } });
-    const trainingDelViernes = await prisma.horarios.findFirstOrThrow({
-      where: { id_actividad: idActividad("TRAINING"), dia_semana: VIERNES },
-    });
-    for (const { id_horario } of [...delCombat, trainingDelViernes]) {
-      expect((await comoMarina("delete", `/horarios/${id_horario}`)).status).toBe(200);
-    }
-
-    const publicas = await consultarActividades();
-
-    expect(actividad(publicas, "Combat")).toBeUndefined();
-    expect(actividad(publicas, "Training")).toMatchObject({ dias: [LUNES, 3], clases_por_semana: 2 });
-    expect(publicas.body.actividades).toHaveLength(7);
   });
 });

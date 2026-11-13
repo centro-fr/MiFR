@@ -5,10 +5,8 @@ import {
   listarParametros,
   marcarNotificacionLeida,
   marcarTodasLeidas,
-  obtenerResumenDiario,
 } from "@/features/notificaciones/api/notificaciones-api";
 
-export const RESUMEN_DIARIO_QUERY_KEY = ["resumen-diario"] as const;
 export const PARAMETROS_QUERY_KEY = ["parametros"] as const;
 export const MIS_NOTIFICACIONES_QUERY_KEY = ["notificaciones", "mias"] as const;
 
@@ -16,8 +14,6 @@ export const MIS_NOTIFICACIONES_QUERY_KEY = ["notificaciones", "mias"] as const;
 export const NOTIFICACIONES_EN_LA_CAMPANA = 5;
 export const NOTIFICACIONES_POR_PAGINA = 20;
 
-// Junta transferencias, efectivo y cuotas: cambia a lo largo del día.
-const UN_MINUTO = 60_000;
 // Los avisos nacen solos (el intervalo del back), sin que nadie los cargue: hay que volver a preguntar.
 const DOS_MINUTOS = 2 * 60_000;
 // La configuración cambia muy poco.
@@ -49,14 +45,6 @@ export function useMarcarNotificacionLeida() {
 export function useMarcarTodasLeidas() {
   const refrescar = useRefrescarNotificaciones();
   return useMutation({ mutationFn: marcarTodasLeidas, onSettled: refrescar });
-}
-
-export function useResumenDiario() {
-  return useQuery({
-    queryKey: RESUMEN_DIARIO_QUERY_KEY,
-    queryFn: obtenerResumenDiario,
-    staleTime: UN_MINUTO,
-  });
 }
 
 export function useParametros() {

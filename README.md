@@ -73,6 +73,15 @@ pnpm dev:back                             # terminal 1: API en http://localhost:
 pnpm dev:front                            # terminal 2: front en http://localhost:5173
 ```
 
+**Opción C: sistema completo en contenedores.** Para probar front, API y base juntos, como se publican, antes de desplegar. El front se compila y lo sirve nginx con las mismas cabeceras de seguridad que Netlify, reenviando `/api` a la API; los datos de prueba se cargan solos.
+
+```bash
+docker compose --profile completo up -d --build   # base + API + datos de prueba + front
+pnpm probar:compose                               # prueba de humo: front, /api, login y datos de la base
+```
+
+Abrir <http://localhost:8080> y entrar con el login de desarrollo como `marina.sosa@example.com` (propietaria y profesora). Necesita `NODE_ENV="development"` y `LOGIN_DESARROLLO=true` en `back/.env`. Para apagarlo: `docker compose --profile completo down` (sin el perfil, `down` no apaga el front).
+
 ### 3. Entrar
 
 Abrir <http://localhost:5173> y entrar con `marina.sosa@example.com` (propietaria y profesora).
@@ -102,6 +111,8 @@ Los `.env` están ignorados por Git; cada paquete versiona un `.env.example` con
 | `JWT_EXPIRES_IN`   | Opcional, `8h`                     | Vigencia del token                                                                                                                          |
 | `PORT`             | Opcional, `3000`                   | Puerto de la API                                                                                                                            |
 | `CORS_ORIGENES`    | Opcional                           | Orígenes permitidos, separados por comas                                                                                                    |
+| `PROXIES_DE_CONFIANZA` | Opcional, `0`                  | Proxies delante de la API: de ahí sale la IP del visitante que cuenta el límite de pedidos                                                  |
+| `FIRMA_PROXY_NETLIFY` | Sin definir                     | Con valor, la API exige la firma de Netlify. En local no se define: el proxy de Vite no firma los pedidos                                   |
 
 **`front/.env`**
 
@@ -159,6 +170,7 @@ Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:inte
 | `error during connect ... dockerDesktopLinuxEngine`          | Docker Desktop no está abierto. Abrirlo y esperar a que termine de arrancar                                                         |
 | `db:seed:demo` falla al importar `@prisma/client`            | Falta generar el cliente: `pnpm --filter back prisma:generate`                                                                      |
 | `EADDRINUSE` o `ports are not available` en el puerto `3000` | El contenedor `api` y `pnpm dev:back` usan el mismo puerto. Parar uno: `docker compose stop api` o cortar `pnpm dev:back`           |
+| La API no arranca: `Falta FIRMA_PROXY_NETLIFY`               | `back/.env` no tiene `NODE_ENV` y el contenedor corre en `production`, que exige la firma de Netlify. Agregar `NODE_ENV="development"` |
 | `container name "/mifr-db" is already in use`                | Hay contenedores de otra copia del repositorio. `docker rm mifr-db mifr-api` los saca; los datos de cada copia quedan en su volumen |
 | La pantalla de login pide definir `VITE_GOOGLE_CLIENT_ID`    | No está activo el login de desarrollo ni configurado Google. Ver el paso 1                                                          |
 | El login de desarrollo responde 404                          | Falta `LOGIN_DESARROLLO=true` en `back/.env`, o con la Opción A no se recreó el contenedor                                          |
@@ -173,7 +185,7 @@ Arquitectura, convenciones y reglas del backend: [`back/CLAUDE.md`](back/CLAUDE.
 
 ## Producción
 
-Todavía no está publicado. El plan y el paso a paso completo están en [`back/DESPLIEGUE.md`](back/DESPLIEGUE.md); esto es el resumen.
+Todavía no está publicado. El paso a paso completo, con las verificaciones y los problemas frecuentes, está en [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md); esto es el resumen.
 
 ```text
 Navegador ──► Netlify (front + reenvío de /api) ──► Render (API en Docker) ──► Neon (PostgreSQL)
@@ -193,20 +205,27 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 | `JWT_SECRET`       | Lo genera Render con un valor aleatorio                                             |
 | `JWT_EXPIRES_IN`   | `8h` (lo fija `render.yaml`)                                                        |
 | `CORS_ORIGENES`    | URL del sitio de Netlify, por ejemplo `https://mifr.netlify.app`                    |
+| `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `docs/DESPLIEGUE.md`)|
+| `FIRMA_PROXY_NETLIFY` | Secreto aleatorio de 32 caracteres o más, el mismo que la variable homónima de Netlify |
 
 `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 
 **Front (Netlify)**, cargadas en la configuración del sitio. Vite las incrusta al compilar, así que cambiarlas requiere un nuevo deploy.
 
-| Variable                | Valor                         |
-| :---------------------- | :---------------------------- |
-| `VITE_GOOGLE_CLIENT_ID` | El mismo client ID que la API |
+| Variable                 | Valor                                                                 |
+| :----------------------- | :-------------------------------------------------------------------- |
+| `VITE_GOOGLE_CLIENT_ID`  | El mismo client ID que la API                                         |
+| `VITE_SITIO_URL`         | URL del sitio sin barra final, para Open Graph y la URL canónica      |
+| `VITE_INSTAGRAM_USUARIO` | Usuario de Instagram del centro                                       |
+| `VITE_WHATSAPP_NUMERO`   | WhatsApp del centro en formato internacional                          |
+| `FIRMA_PROXY_NETLIFY`    | El mismo secreto que en Render, con alcance Runtime: firma el `/api/*` |
+| `NODE_VERSION`, `PNPM_VERSION` | `22` y `10.33.2`                                                 |
 
 `VITE_LOGIN_DESARROLLO` y `VITE_USE_MOCKS` no se definen. `API_URL` tampoco: en producción el reenvío de `/api` lo hace `netlify.toml`.
 
 ### Reglas para producción
 
-- La primera propietaria se carga una sola vez con `db:seed`, apuntando a Neon desde una máquina local (ver `DESPLIEGUE.md`, paso 3).
+- La primera propietaria se carga una sola vez con `db:seed`, apuntando a Neon desde una máquina local (ver `docs/DESPLIEGUE.md`, paso 8).
 - Nunca correr contra Neon `db:seed:demo`, `token`, `prisma migrate dev`, `migrate reset` ni `db push`. Las migraciones las aplica solo el contenedor.
 - La URL de Netlify va en `CORS_ORIGENES` y en los orígenes autorizados del client OAuth de Google.
 
@@ -260,6 +279,6 @@ Desde la raíz, `pnpm dev:back` y `pnpm dev:front` (o `pnpm dev`) levantan cada 
 - `docs/diagrams/puml/` — DER, vista arquitectónica y vista de despliegue en PlantUML (extensión PlantUML de VS Code o <https://plantuml.com/>)
 - `docs/diagrams/enterprise_architect/` — el modelo de Enterprise Architect y sus exportaciones
 - `docs/design/` — menús, criterios responsive y prompts de diseño
-- `back/DESPLIEGUE.md` — plan de publicación
+- `docs/DESPLIEGUE.md` — guía de despliegue: pasos, verificaciones y problemas frecuentes
 - `back/CLAUDE.md` y `back/.claude/rules/` — arquitectura, convenciones y reglas del backend
 - `AGENTS.md` — estándares de código y seguridad del proyecto

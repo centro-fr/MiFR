@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GestionNotificacionesService } from "../gestion-notificaciones.service.js";
 import type { NotificacionService } from "../notificacion/notificacion.service.js";
 import type { PlanificadorNotificacionesService } from "../planificador-notificaciones/planificador-notificaciones.service.js";
-import type { ResumenDiarioPropietariaService } from "../resumen-diario-propietaria/resumen-diario-propietaria.service.js";
 
 const PAGINACION = { limit: 20, offset: 0 };
 
 describe("GestionNotificacionesService", () => {
-  let resumenDiario: { obtener: ReturnType<typeof vi.fn>; generarResumenDiario: ReturnType<typeof vi.fn> };
   let notificaciones: Record<
     "listarDeUsuario" | "marcarLeida" | "marcarTodasLeidas",
     ReturnType<typeof vi.fn>
@@ -16,10 +14,6 @@ describe("GestionNotificacionesService", () => {
   let gestion: GestionNotificacionesService;
 
   beforeEach(() => {
-    resumenDiario = {
-      obtener: vi.fn().mockResolvedValue("resumen"),
-      generarResumenDiario: vi.fn().mockResolvedValue(0),
-    };
     notificaciones = {
       listarDeUsuario: vi.fn().mockResolvedValue("pagina"),
       marcarLeida: vi.fn().mockResolvedValue("leida"),
@@ -27,29 +21,9 @@ describe("GestionNotificacionesService", () => {
     };
     planificador = { generarAvisosDelDia: vi.fn().mockResolvedValue(0) };
     gestion = new GestionNotificacionesService(
-      resumenDiario as unknown as ResumenDiarioPropietariaService,
       notificaciones as unknown as NotificacionService,
       planificador as unknown as PlanificadorNotificacionesService,
     );
-  });
-
-  it("obtenerResumenDiario intenta generar el resumen diario antes de obtenerlo", async () => {
-    await expect(gestion.obtenerResumenDiario()).resolves.toBe("resumen");
-    expect(resumenDiario.generarResumenDiario).toHaveBeenCalledWith();
-    expect(resumenDiario.obtener).toHaveBeenCalledWith();
-    expect(resumenDiario.generarResumenDiario.mock.invocationCallOrder[0]).toBeLessThan(
-      resumenDiario.obtener.mock.invocationCallOrder[0],
-    );
-  });
-
-  it("obtenerResumenDiario obtiene igual si generarResumenDiario falla, y deja el error en el log", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    resumenDiario.generarResumenDiario.mockRejectedValue(new Error("error generación"));
-
-    await expect(gestion.obtenerResumenDiario()).resolves.toBe("resumen");
-    expect(resumenDiario.obtener).toHaveBeenCalledWith();
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("RESUMEN_DIARIO_GENERACION"), expect.any(Error));
-    log.mockRestore();
   });
 
   it("listarNotificacionesPropias genera los avisos del día antes de listar las del usuario", async () => {

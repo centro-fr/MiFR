@@ -79,6 +79,8 @@ Se leen con `dotenv` y se documentan en `.env.example` con valores de ejemplo.
 | `NODE_ENV` | Con `production` no se publica la documentación Swagger y `CORS_ORIGENES` pasa a ser obligatoria |
 | `CORS_ORIGENES` | Orígenes que pueden llamar a la API, separados por comas. Sin valor, en desarrollo se acepta cualquiera |
 | `HOST` | Interfaz en la que escucha la API. Por defecto `127.0.0.1` fuera de producción y `0.0.0.0` en producción; el Dockerfile la fija en `0.0.0.0` |
+| `PROXIES_DE_CONFIANZA` | Cuántos proxies hay delante de la API (0 a 5, por defecto 0): de ahí sale `req.ip`, que cuenta el límite de pedidos. Obligatoria con `NODE_ENV=production` |
+| `FIRMA_PROXY_NETLIFY` | Secreto que comparte con Netlify: con valor, la API rechaza con 403 lo que no traiga la firma `x-nf-sign` del reenvío. Obligatoria con `NODE_ENV=production`, de al menos 32 caracteres |
 | `LOGIN_DESARROLLO` | Con `true` habilita `POST /auth/desarrollo` (login por email, sin Google). Prohibida con `NODE_ENV=production`: la API no arranca |
 
 `.env` nunca se commitea. Cuando aparece una variable nueva, se agrega a `.env.example` en el mismo commit.

@@ -1,4 +1,5 @@
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
+import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejercicio";
 import { EJERCICIOS_DATASET_ES } from "@/features/rutinas/data/ejercicios-es";
 import { lineaDeLaRutina, seriesPorRepeticiones } from "@/features/rutinas/utils/formato-rutinas";
 import type { DiaDeRutina, Rutina } from "@/types/rutinas";
@@ -22,15 +23,7 @@ export function ContenidoDeLaRutina({ dias }: { dias: DiaDeRutina[] }) {
                 <li key={`${ejercicio.nombre}-${indice}`} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="flex items-center gap-3 min-w-0">
                     {gifUrl && (
-                      <img
-                        src={`https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/${gifUrl}`}
-                        alt={ejercicio.nombre}
-                        loading="lazy"
-                        className="size-11 rounded-lg object-cover shrink-0 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/${gifUrl}`;
-                        }}
-                      />
+                      <MiniaturaEjercicio nombre={ejercicio.nombre} gifUrl={gifUrl} className="size-11" />
                     )}
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900 dark:text-white">{ejercicio.nombre}</p>

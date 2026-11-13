@@ -439,7 +439,7 @@ describe("PI-50: cierre automático al terminar la clase", () => {
     return { conMarca: conMarca.id_clase, sinMarcas: sinMarcas.id_clase };
   }
 
-  it("cierra al terminar la clase y solo inventa ausentes donde se tomó asistencia", async () => {
+  it("cierra al terminar la clase: completa ausentes donde se tomó asistencia y da presentes a todos donde no se marcó a nadie", async () => {
     const { conMarca, sinMarcas } = await clasesDeHoy();
 
     await expect(
@@ -457,7 +457,10 @@ describe("PI-50: cierre automático al terminar la clase", () => {
     const conAusentes = await asistenciasDe(conMarca);
     expect(conAusentes).toHaveLength(5);
     expect(conAusentes.filter(({ asistio }) => !asistio)).toHaveLength(4);
-    expect(await asistenciasDe(sinMarcas)).toEqual([]);
+    // Regla del 12/11/2026: una clase cerrada sin ninguna marca se da por dictada con todos presentes.
+    expect(await asistenciasDe(sinMarcas)).toEqual([
+      expect.objectContaining({ id_alumno: escenario.vigentes[0]!.id_alumno, asistio: true }),
+    ]);
   });
 
   it("espera además los MINUTOS_CIERRE_ASISTENCIA que configuró la propietaria", async () => {
@@ -492,7 +495,7 @@ describe("PI-50: cierre automático al terminar la clase", () => {
 describe("PI-55: la propietaria corrige las clases de un día anterior", () => {
   const LUNES_PASADO = "2026-10-05";
 
-  it("las clases de ese día se crean con los horarios que regían, salen cerradas sin ausentes y la propietaria las corrige", async () => {
+  it("las clases de ese día se crean con los horarios que regían, salen cerradas con todos presentes y la propietaria las corrige", async () => {
     // El horario se dio de baja después del lunes pasado: ese día todavía regía.
     await prisma.horarios.update({
       where: { id_horario: escenario.idHorario },
@@ -514,13 +517,15 @@ describe("PI-55: la propietaria corrige las clases de un día anterior", () => {
       estado: "DICTADA",
       inscriptos: 5,
     });
-    expect(await asistenciasDe(pasada.id_clase)).toEqual([]);
+    const alCerrar = await asistenciasDe(pasada.id_clase);
+    expect(alCerrar).toHaveLength(5);
+    expect(alCerrar.every(({ asistio }) => asistio)).toBe(true);
 
     const ana = escenario.vigentes[0]!.id_alumno;
-    expect((await marcar(pasada.id_clase, ana, true, EMAIL_MULTIROL_DEMO)).status).toBe(200);
-    expect(await asistenciasDe(pasada.id_clase)).toEqual([
-      expect.objectContaining({ id_alumno: ana, asistio: true }),
-    ]);
+    expect((await marcar(pasada.id_clase, ana, false, EMAIL_MULTIROL_DEMO)).status).toBe(200);
+    const corregidas = await asistenciasDe(pasada.id_clase);
+    expect(corregidas.find(({ id_alumno }) => id_alumno === ana)).toMatchObject({ asistio: false });
+    expect(corregidas.filter(({ asistio }) => asistio)).toHaveLength(4);
   });
 
   it("solo la propietaria pide otro día, y no uno futuro", async () => {

@@ -8,6 +8,8 @@ const produccion = {
   GOOGLE_CLIENT_ID: "123.apps.googleusercontent.com",
   JWT_SECRET: SECRETO_LARGO,
   CORS_ORIGENES: "https://mifr.netlify.app",
+  PROXIES_DE_CONFIANZA: "2",
+  FIRMA_PROXY_NETLIFY: "f".repeat(32),
 };
 
 function errores(env: NodeJS.ProcessEnv): string[] {
@@ -28,6 +30,8 @@ describe("leerConfiguracion", () => {
         jwtExpiresIn: "8h",
         origenesPermitidos: ["https://mifr.netlify.app"],
         loginDesarrollo: false,
+        proxiesDeConfianza: 2,
+        firmaProxyNetlify: "f".repeat(32),
         host: "0.0.0.0",
         port: 3000,
       },
@@ -47,8 +51,34 @@ describe("leerConfiguracion", () => {
         esProduccion: false,
         googleClientId: undefined,
         loginDesarrollo: true,
+        proxiesDeConfianza: 0,
+        firmaProxyNetlify: undefined,
         host: "127.0.0.1",
       },
+    });
+  });
+
+  it.each([
+    ["vacío", ""],
+    ["con espacios", " 1 "],
+    ["en notación científica", "1e0"],
+    ["negativo", "-1"],
+    ["decimal", "1.5"],
+    ["mayor al máximo", "6"],
+  ])("rechaza PROXIES_DE_CONFIANZA %s", (_caso, valor) => {
+    expect(errores({ ...produccion, PROXIES_DE_CONFIANZA: valor })).toEqual([
+      expect.stringContaining("PROXIES_DE_CONFIANZA tiene que ser un número entre 0 y 5"),
+    ]);
+  });
+
+  it("acepta PROXIES_DE_CONFIANZA entre 0 y 5", () => {
+    expect(leerConfiguracion({ ...produccion, PROXIES_DE_CONFIANZA: "0" })).toMatchObject({
+      valida: true,
+      configuracion: { proxiesDeConfianza: 0 },
+    });
+    expect(leerConfiguracion({ ...produccion, PROXIES_DE_CONFIANZA: "5" })).toMatchObject({
+      valida: true,
+      configuracion: { proxiesDeConfianza: 5 },
     });
   });
 
@@ -82,9 +112,36 @@ describe("leerConfiguracion", () => {
       { ...produccion, LOGIN_DESARROLLO: "true" },
       "LOGIN_DESARROLLO=true no está permitido",
     ],
+    [
+      "sin FIRMA_PROXY_NETLIFY",
+      { ...produccion, FIRMA_PROXY_NETLIFY: undefined },
+      "Falta FIRMA_PROXY_NETLIFY",
+    ],
+    [
+      "con FIRMA_PROXY_NETLIFY en blanco",
+      { ...produccion, FIRMA_PROXY_NETLIFY: "   " },
+      "Falta FIRMA_PROXY_NETLIFY",
+    ],
+    [
+      "con una FIRMA_PROXY_NETLIFY corta",
+      { ...produccion, FIRMA_PROXY_NETLIFY: "corta" },
+      "FIRMA_PROXY_NETLIFY tiene que tener al menos 32 caracteres",
+    ],
+    [
+      "sin PROXIES_DE_CONFIANZA",
+      { ...produccion, PROXIES_DE_CONFIANZA: undefined },
+      "Falta PROXIES_DE_CONFIANZA",
+    ],
     ["con un PORT inválido", { ...produccion, PORT: "puerto" }, "PORT tiene que ser un puerto válido"],
   ])("en producción no arranca %s", (_caso, env, mensaje) => {
     expect(errores(env)).toEqual([expect.stringContaining(mensaje)]);
+  });
+
+  it("fuera de producción FIRMA_PROXY_NETLIFY es opcional y, si viene, se usa", () => {
+    expect(leerConfiguracion({ JWT_SECRET: "s", FIRMA_PROXY_NETLIFY: "corta" })).toMatchObject({
+      valida: true,
+      configuracion: { firmaProxyNetlify: "corta" },
+    });
   });
 
   it("fuera de producción también exige JWT_SECRET", () => {
@@ -92,6 +149,6 @@ describe("leerConfiguracion", () => {
   });
 
   it("junta todos los errores en lugar de cortar en el primero", () => {
-    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(4);
+    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(6);
   });
 });

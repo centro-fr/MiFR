@@ -34,21 +34,10 @@ export const CATALOGO_PARAMETROS: CatalogoParametros = {
     descripcion:
       "Días después del inicio en los que una pre-inscripción sin pagar guarda su lugar; después, el cupo se libera",
   },
-  DIAS_AVISO_VENCIMIENTO: {
-    tipo_dato: "ENTERO",
-    valor_inicial: "3",
-    descripcion: "Días antes del vencimiento de la cuota en los que el alumno o su tutor reciben el aviso",
-  },
   INASISTENCIAS_CONSECUTIVAS_INACTIVO: {
     tipo_dato: "ENTERO",
     valor_inicial: "3",
     descripcion: "Inasistencias seguidas desde las que un alumno con la cuota al día figura como inactivo",
-  },
-  HORA_RESUMEN_DIARIO: {
-    tipo_dato: "TEXTO",
-    valor_inicial: "20:00",
-    descripcion:
-      "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
   },
   RANKING_MINIMO_CLASES: {
     tipo_dato: "ENTERO",

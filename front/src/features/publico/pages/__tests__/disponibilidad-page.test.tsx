@@ -1,90 +1,35 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useActividadesPublicas } from "@/features/publico/hooks/use-actividades-publicas";
+import { describe, expect, it } from "vitest";
+import { ACTIVIDADES_DEL_CENTRO } from "@/features/publico/utils/actividades-del-centro";
 import { DisponibilidadPage } from "../disponibilidad-page";
 
-vi.mock("@/features/publico/hooks/use-actividades-publicas", () => ({ useActividadesPublicas: vi.fn() }));
-
-const consultar = vi.mocked(useActividadesPublicas);
-
 function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <DisponibilidadPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <DisponibilidadPage />
+    </MemoryRouter>,
   );
 }
 
 describe("DisponibilidadPage", () => {
-  beforeEach(() => {
-    consultar.mockReset();
-    consultar.mockReturnValue({
-      data: undefined,
-      isPending: true,
-      isError: false,
-      isFetching: true,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useActividadesPublicas>);
-  });
-
-  it("muestra la disponibilidad pública sin requerir sesión", async () => {
-    consultar.mockReturnValue({
-      data: {
-        actividades: [
-          {
-            id_actividad: 1,
-            nombre: "Training",
-            descripcion: "Entrenamiento funcional",
-            modalidad: "GRUPAL",
-            dias: [1, 3, 5],
-            clases_por_semana: 3,
-          },
-        ],
-      },
-      isPending: false,
-      isError: false,
-      isFetching: false,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useActividadesPublicas>);
-
+  it("muestra una tarjeta por actividad del centro, sin sesión ni consulta a la API", () => {
     renderPage();
 
-    expect(await screen.findByRole("heading", { name: "Disponibilidad y horarios" })).toBeInTheDocument();
-    expect(await screen.findByText("Training")).toBeInTheDocument();
-    expect(screen.getByText("Lun · Mié · Vie")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Disponibilidad y horarios" })).toBeInTheDocument();
+    expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(ACTIVIDADES_DEL_CENTRO.length);
   });
 
-  it("muestra estado vacío cuando no hay actividades", async () => {
-    consultar.mockReturnValue({
-      data: { actividades: [] },
-      isPending: false,
-      isError: false,
-      isFetching: false,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useActividadesPublicas>);
-
+  it("muestra la modalidad, la descripción, los días y los horarios por semana de cada actividad", () => {
     renderPage();
 
-    expect(await screen.findByRole("heading", { name: "No hay actividades disponibles" })).toBeInTheDocument();
-  });
+    const training = screen.getByRole("heading", { name: "Training" }).closest("li")!;
+    expect(training).toHaveTextContent("Grupal");
+    expect(training).toHaveTextContent("Circuito de fuerza, acondicionamiento y potencia física");
+    expect(training).toHaveTextContent("Lun · Mié · Vie");
+    expect(training).toHaveTextContent("3 horarios disponibles por semana");
 
-  it("muestra error y permite reintentar", async () => {
-    consultar.mockReturnValue({
-      data: undefined,
-      isPending: false,
-      isError: true,
-      isFetching: false,
-      refetch: vi.fn(),
-    } as unknown as ReturnType<typeof useActividadesPublicas>);
-
-    renderPage();
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Revisá tu conexión");
-    expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+    const personalizado = screen.getByRole("heading", { name: "Personalizado" }).closest("li")!;
+    expect(personalizado).toHaveTextContent("Personalizada");
   });
 });

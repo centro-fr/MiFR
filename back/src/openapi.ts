@@ -1,5 +1,4 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { registrarDocumentacionDifusionPublica } from "./modules/difusion-publica/difusion-publica.openapi.js";
 import { registrarDocumentacionGestionCuotasYPagos } from "./modules/gestion-cuotas-y-pagos/gestion-cuotas-y-pagos.openapi.js";
 import { registrarDocumentacionGestionNotificaciones } from "./modules/gestion-notificaciones/gestion-notificaciones.openapi.js";
 import { registrarDocumentacionGestionInsignias } from "./modules/gestion-insignias/gestion-insignias.openapi.js";
@@ -39,5 +38,4 @@ export function registrarDocumentacionApi(
   registrarDocumentacionReportes(registro);
   registrarDocumentacionGestionHonorarios(registro);
   registrarDocumentacionGestionRutinasYProgreso(registro);
-  registrarDocumentacionDifusionPublica(registro);
 }

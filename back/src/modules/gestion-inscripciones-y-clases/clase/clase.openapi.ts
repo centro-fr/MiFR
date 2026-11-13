@@ -183,8 +183,7 @@ export function registrarDocumentacionClases(registro: OpenAPIRegistry): void {
     description:
       `${permiso} Además, solo la propietaria (403 para los demás). Pasa una clase PROGRAMADA a CANCELADA: no ` +
       "admite marcas ni genera inasistencias. Una clase dictada o con asistencias ya marcadas responde 409; " +
-      "cancelar dos veces devuelve la clase sin cambios. El aviso a los alumnos (CLASE_CANCELADA) llega con las " +
-      "notificaciones (US-25).",
+      "cancelar dos veces devuelve la clase sin cambios.",
     request: { params: claseIdParamSchema },
     responses: {
       200: respuestaJson("Clase cancelada", claseSchema),

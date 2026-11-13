@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CuotaParaAviso } from "../../../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type { IInfoCuotas } from "../../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
-import type { IInfoParametros } from "../../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IRegistroNotificaciones } from "../../notificacion/interface/i-registro-notificaciones.js";
 import { PlanificadorNotificacionesService } from "../planificador-notificaciones.service.js";
 
@@ -31,7 +30,8 @@ function aviso(datos: Partial<CuotaParaAviso>): CuotaParaAviso {
     tipo: "CUOTA_POR_VENCER",
     id_cuota: 101,
     id_inscripcion: 12,
-    fecha_vencimiento: new Date("2026-10-20T00:00:00Z"),
+    fecha_vencimiento: new Date("2026-10-15T00:00:00Z"),
+    fin_de_gracia: new Date("2026-10-20T00:00:00Z"),
     nombre_plan: "Intermedio",
     alumno: ADULTA,
     ...datos,
@@ -40,27 +40,23 @@ function aviso(datos: Partial<CuotaParaAviso>): CuotaParaAviso {
 
 describe("PlanificadorNotificacionesService", () => {
   let cuotas: { paraAvisoDeVencimiento: ReturnType<typeof vi.fn> };
-  let parametros: { obtener: ReturnType<typeof vi.fn> };
   let notificaciones: { registrar: ReturnType<typeof vi.fn> };
   let planificador: PlanificadorNotificacionesService;
 
   beforeEach(() => {
     cuotas = { paraAvisoDeVencimiento: vi.fn().mockResolvedValue([aviso({})]) };
-    parametros = { obtener: vi.fn().mockResolvedValue(3) };
     notificaciones = { registrar: vi.fn().mockImplementation(async (lista: unknown[]) => lista.length) };
     planificador = new PlanificadorNotificacionesService(
       cuotas as unknown as IInfoCuotas,
-      parametros as unknown as IInfoParametros,
       notificaciones as unknown as IRegistroNotificaciones,
     );
   });
 
   describe("generarAvisos", () => {
-    it("pide las cuotas a avisar con los DIAS_AVISO_VENCIMIENTO del parámetro", async () => {
+    it("pide las cuotas que ese día están por vencer o vencidas", async () => {
       await expect(planificador.generarAvisos(HOY)).resolves.toBe(1);
 
-      expect(parametros.obtener).toHaveBeenCalledWith("DIAS_AVISO_VENCIMIENTO");
-      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenCalledWith(HOY, 3);
+      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenCalledWith(HOY);
     });
 
     it("le avisa a la alumna mayor, con su cuota y el tipo de aviso", async () => {
@@ -71,7 +67,8 @@ describe("PlanificadorNotificacionesService", () => {
           id_usuario: 50,
           tipo: "CUOTA_POR_VENCER",
           id_cuota: 101,
-          mensaje: "Tu cuota del plan Intermedio vence el 20/10/2026.",
+          mensaje:
+            "Tu cuota del plan Intermedio venció el 15/10/2026: hay tiempo de renovarla hasta el 20/10/2026.",
         },
       ]);
     });
@@ -88,20 +85,10 @@ describe("PlanificadorNotificacionesService", () => {
           id_usuario: 61,
           tipo: "CUOTA_VENCIDA",
           id_cuota: 101,
-          mensaje: "La cuota de Mateo Romero del plan Intermedio venció el 10/10/2026.",
+          mensaje:
+            "La cuota de Mateo Romero del plan Intermedio venció el 10/10/2026 y ya pasaron los días de gracia.",
         },
       ]);
-    });
-
-    it.each([
-      ["CUOTA_POR_VENCER", "Tu cuota del plan Intermedio vence hoy, 18/10/2026."],
-      ["CUOTA_VENCIDA", "Tu cuota del plan Intermedio vence hoy, 18/10/2026."],
-    ] as const)("el aviso %s del día del vencimiento dice que vence hoy", async (tipo, mensaje) => {
-      cuotas.paraAvisoDeVencimiento.mockResolvedValue([aviso({ tipo, fecha_vencimiento: HOY })]);
-
-      await planificador.generarAvisos(HOY);
-
-      expect(notificaciones.registrar.mock.calls[0][0][0].mensaje).toBe(mensaje);
     });
 
     it("sin cuotas para avisar no registra nada", async () => {
@@ -118,14 +105,14 @@ describe("PlanificadorNotificacionesService", () => {
       await expect(planificador.generarAvisosDelDia(A_LA_NOCHE)).resolves.toBe(0);
 
       expect(cuotas.paraAvisoDeVencimiento).toHaveBeenCalledTimes(1);
-      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenCalledWith(HOY, 3);
+      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenCalledWith(HOY);
     });
 
     it("vuelve a generar al día siguiente", async () => {
       await planificador.generarAvisosDelDia(A_LA_TARDE);
       await planificador.generarAvisosDelDia(AL_DIA_SIGUIENTE);
 
-      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenLastCalledWith(new Date("2026-10-19T00:00:00Z"), 3);
+      expect(cuotas.paraAvisoDeVencimiento).toHaveBeenLastCalledWith(new Date("2026-10-19T00:00:00Z"));
     });
 
     it("si falla, el mismo día lo vuelve a intentar", async () => {

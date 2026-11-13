@@ -39,24 +39,10 @@ export function parametrosSemilla(): ParametroMock[] {
       fecha_actualizacion: CARGA_INICIAL,
     },
     {
-      clave: "DIAS_AVISO_VENCIMIENTO",
-      tipo_dato: "ENTERO",
-      valor: 3,
-      descripcion: "Días antes del vencimiento de la cuota en los que el alumno o su tutor reciben el aviso",
-      fecha_actualizacion: null,
-    },
-    {
       clave: "INASISTENCIAS_CONSECUTIVAS_INACTIVO",
       tipo_dato: "ENTERO",
       valor: 3,
       descripcion: "Inasistencias seguidas desde las que un alumno con la cuota al día figura como inactivo",
-      fecha_actualizacion: null,
-    },
-    {
-      clave: "HORA_RESUMEN_DIARIO",
-      tipo_dato: "TEXTO",
-      valor: "20:00",
-      descripcion: "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
       fecha_actualizacion: null,
     },
     {

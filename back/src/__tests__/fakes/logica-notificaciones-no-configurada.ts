@@ -5,7 +5,6 @@ async function operacionNoConfigurada(): Promise<never> {
 }
 
 export const logicaNotificacionesNoConfigurada = {
-  obtenerResumenDiario: operacionNoConfigurada,
   listarNotificacionesPropias: operacionNoConfigurada,
   marcarNotificacionLeida: operacionNoConfigurada,
   marcarNotificacionesLeidas: operacionNoConfigurada,
