@@ -79,17 +79,13 @@ describe("BandejaPorVerificar", () => {
   it("muestra cada pendiente con su detalle, el monto y la acción que le corresponde", () => {
     renderizar(bandejaCon(armarBandeja([transferencia], [alta])));
 
-    // Cada fila es un hijo directo de la lista; sus datos van en una lista propia, uno debajo del otro.
-    const [primera, segunda] = [...screen.getByRole("list", { name: "Pagos por verificar" }).children] as HTMLElement[];
+    // En el dashboard, una fila compacta por pendiente: el detalle en una línea y el monto y la acción al lado.
+    const [primera, segunda] = within(screen.getByRole("list", { name: "Pagos por verificar" })).getAllByRole("listitem");
     expect(primera).toHaveTextContent("Valentina Herrera");
-    expect(primera).toHaveTextContent("Transferencia");
-    expect(primera).toHaveTextContent("Intermedio · Renovación");
-    expect(primera).toHaveTextContent("18/10 09:40");
+    expect(primera).toHaveTextContent("Transferencia · Intermedio · Renovación · 18/10 09:40");
     expect(primera).toHaveTextContent("42.000");
     expect(within(primera).getByRole("button", { name: "Verificar: Valentina Herrera" })).toBeInTheDocument();
-    expect(segunda).toHaveTextContent("Alta nueva");
-    expect(segunda).toHaveTextContent("Básico · Primera cuota");
-    expect(segunda).toHaveTextContent("reserva hasta el 20/10");
+    expect(segunda).toHaveTextContent("Alta nueva · Básico · reserva hasta el 20/10");
     expect(within(segunda).getByRole("button", { name: "Cobrar: Lautaro Díaz" })).toBeInTheDocument();
   });
 
@@ -106,7 +102,7 @@ describe("BandejaPorVerificar", () => {
   it("en el dashboard muestra solo las primeras", () => {
     renderizar(bandejaCon(armarBandeja([transferencia], [alta])), 1);
 
-    expect(screen.getByRole("list", { name: "Pagos por verificar" }).children).toHaveLength(1);
+    expect(within(screen.getByRole("list", { name: "Pagos por verificar" })).getAllByRole("listitem")).toHaveLength(1);
   });
 
   it("en la pantalla Por verificar arma una tabla con el plan, la cuota y la fecha en columnas", () => {

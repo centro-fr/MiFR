@@ -45,33 +45,42 @@ vi.mock("@/features/portal-alumno/hooks/use-insignias", () => ({
   })),
 }));
 
+// La página del historial como la responde GET /alumnos/:id/asistencias: de a 10, con los conteos.
 vi.mock("../../hooks/use-asistencias-alumno", () => ({
   useAsistenciasAlumno: vi.fn(() => ({
-    data: [
-      {
-        id_clase: 101,
-        fecha: "2026-11-09",
-        dia: "Lunes",
-        hora_inicio: "16:00",
-        hora_fin: "17:00",
-        actividad: "HIIT",
-        profesora: "Lucía Gómez",
-        asistio: true,
-        observaciones: null,
-      },
-      {
-        id_clase: 102,
-        fecha: "2026-11-04",
-        dia: "Miércoles",
-        hora_inicio: "20:00",
-        hora_fin: "21:00",
-        actividad: "HIIT",
-        profesora: "Lucía Gómez",
-        asistio: false,
-        observaciones: "Aviso previo",
-      },
-    ],
-    isLoading: false,
+    data: {
+      datos: [
+        {
+          id_clase: 101,
+          fecha: "2026-11-09",
+          hora_inicio: "16:00",
+          hora_fin: "17:00",
+          actividad: "HIIT",
+          profesora: "Lucía Gómez",
+          asistio: true,
+          observaciones: null,
+        },
+        {
+          id_clase: 102,
+          fecha: "2026-11-04",
+          hora_inicio: "20:00",
+          hora_fin: "21:00",
+          actividad: "HIIT",
+          profesora: "Lucía Gómez",
+          asistio: false,
+          observaciones: "Aviso previo",
+        },
+      ],
+      total: 2,
+      presentes: 1,
+      ausentes: 1,
+      limit: 10,
+      offset: 0,
+    },
+    isPending: false,
+    isError: false,
+    isFetching: false,
+    refetch: vi.fn(),
   })),
 }));
 

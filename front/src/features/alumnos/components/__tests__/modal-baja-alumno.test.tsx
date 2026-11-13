@@ -48,7 +48,8 @@ describe("US-08: ModalBajaAlumno", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Mudanza" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar baja" }));
 
-    expect(onConfirm).toHaveBeenCalledWith("MUDANZA");
+    // Sin detalle (no es OTRO) y sin plan elegido (tiene uno solo): la baja es de todo el alumno.
+    expect(onConfirm).toHaveBeenCalledWith("MUDANZA", undefined, undefined);
   });
 
   // CAMBIO_PLAN lo pone solo el cambio de plan: el back no lo acepta en la baja.
