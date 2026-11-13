@@ -99,6 +99,14 @@ Como propietaria o profesora, quiero buscar y consultar la ficha de cualquier al
 - Error de red al cargar el listado o la ficha
 - Búsqueda muy amplia (ej: "a") que devuelve demasiados resultados
 
+### Historial de asistencia: contrato con el back (13/11/2026)
+
+`GET /api/v1/alumnos/{id}/asistencias`, con el mismo acceso que la ficha: `ALUMNOS_VER`, y a una profesora solo los alumnos que tiene a cargo (uno ajeno o que no existe responde 403). Lo arma la fachada de GestionPersonas con IInfoAsistencia:
+
+- **Qué marcas:** las de clases dictadas (cerradas), de la más nueva a la más vieja, con el horario, la actividad, quién dictó la clase (con una suplencia, la suplente), si asistió y la observación de la marca.
+- **Paginado:** `limit` (por defecto 10, hasta 100) y `offset`, como todo listado: el historial crece con cada clase. `asistio=true|false` filtra presentes o ausentes en el back.
+- **Totales:** `total` es el de lo filtrado; `presentes` y `ausentes`, los de todo el historial, para las pestañas de la ficha.
+
 ## 10. Dependencias
 
 - US-05, US-06, US-07 (los alumnos deben existir)

@@ -3,6 +3,14 @@ import { leerConfiguracion } from "../configuracion.js";
 
 const SECRETO_LARGO = "x".repeat(32);
 
+const CLAVE_PUBLICA = "B".repeat(87);
+const CLAVE_PRIVADA = "p".repeat(43);
+const VAPID = {
+  VAPID_CLAVE_PUBLICA: CLAVE_PUBLICA,
+  VAPID_CLAVE_PRIVADA: CLAVE_PRIVADA,
+  VAPID_CONTACTO: "mailto:centro@example.com",
+};
+
 const produccion = {
   NODE_ENV: "production",
   GOOGLE_CLIENT_ID: "123.apps.googleusercontent.com",
@@ -10,6 +18,7 @@ const produccion = {
   CORS_ORIGENES: "https://mifr.netlify.app",
   PROXIES_DE_CONFIANZA: "2",
   FIRMA_PROXY_NETLIFY: "f".repeat(32),
+  ...VAPID,
 };
 
 function errores(env: NodeJS.ProcessEnv): string[] {
@@ -32,6 +41,11 @@ describe("leerConfiguracion", () => {
         loginDesarrollo: false,
         proxiesDeConfianza: 2,
         firmaProxyNetlify: "f".repeat(32),
+        push: {
+          clavePublica: CLAVE_PUBLICA,
+          clavePrivada: CLAVE_PRIVADA,
+          contacto: "mailto:centro@example.com",
+        },
         host: "0.0.0.0",
         port: 3000,
       },
@@ -53,6 +67,7 @@ describe("leerConfiguracion", () => {
         loginDesarrollo: true,
         proxiesDeConfianza: 0,
         firmaProxyNetlify: undefined,
+        push: undefined,
         host: "127.0.0.1",
       },
     });
@@ -149,6 +164,48 @@ describe("leerConfiguracion", () => {
   });
 
   it("junta todos los errores en lugar de cortar en el primero", () => {
-    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(6);
+    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(7);
+  });
+
+  it("en producción no arranca sin las claves VAPID", () => {
+    const { VAPID_CLAVE_PUBLICA, VAPID_CLAVE_PRIVADA, VAPID_CONTACTO, ...sinVapid } = produccion;
+
+    expect([VAPID_CLAVE_PUBLICA, VAPID_CLAVE_PRIVADA, VAPID_CONTACTO]).toHaveLength(3);
+    expect(errores(sinVapid)).toEqual([expect.stringContaining("Faltan VAPID_CLAVE_PUBLICA")]);
+  });
+
+  it("acepta un contacto VAPID https", () => {
+    expect(leerConfiguracion({ ...produccion, VAPID_CONTACTO: "https://mifr.netlify.app" })).toMatchObject({
+      valida: true,
+      configuracion: { push: { contacto: "https://mifr.netlify.app" } },
+    });
+  });
+
+  it.each([
+    ["una clave pública corta", { VAPID_CLAVE_PUBLICA: "B".repeat(20) }, "VAPID_CLAVE_PUBLICA no es"],
+    [
+      "una clave privada con caracteres raros",
+      { VAPID_CLAVE_PRIVADA: `${"p".repeat(42)}+` },
+      "VAPID_CLAVE_PRIVADA no es",
+    ],
+    [
+      "un contacto que no es mailto ni https",
+      { VAPID_CONTACTO: "centro@example.com" },
+      "VAPID_CONTACTO tiene que ser",
+    ],
+    ["un contacto http", { VAPID_CONTACTO: "http://mifr.netlify.app" }, "VAPID_CONTACTO tiene que ser"],
+  ])("rechaza %s", (_caso, cambio, mensaje) => {
+    expect(errores({ ...produccion, ...cambio })).toEqual([expect.stringContaining(mensaje)]);
+  });
+
+  it("fuera de producción las claves VAPID son opcionales, pero si viene una tienen que venir las tres", () => {
+    expect(leerConfiguracion({ JWT_SECRET: "s" })).toMatchObject({
+      valida: true,
+      configuracion: { push: undefined },
+    });
+    expect(errores({ JWT_SECRET: "s", VAPID_CLAVE_PUBLICA: CLAVE_PUBLICA })).toEqual([
+      expect.stringContaining("VAPID_CLAVE_PRIVADA no es"),
+      expect.stringContaining("VAPID_CONTACTO tiene que ser"),
+    ]);
   });
 });

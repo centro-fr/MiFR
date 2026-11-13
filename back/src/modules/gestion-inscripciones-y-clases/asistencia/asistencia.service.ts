@@ -12,7 +12,9 @@ import type {
   AsistenciaDeProfesora,
   EstadoAsistencia,
   EstadoSeguimientoInactividad,
+  ConsultaHistorialAlumno,
   FiltroAsistenciasDictadas,
+  HistorialDelAlumno,
   InscriptoConAsistencia,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
@@ -145,5 +147,9 @@ export class AsistenciaService implements IInfoAsistencia {
 
   historialDeAlumnos(idsAlumnos: number[]): Promise<Map<number, MarcaDeHistorial[]>> {
     return this.repositorio.historialDeAlumnos(idsAlumnos);
+  }
+
+  historialDelAlumno(idAlumno: number, consulta: ConsultaHistorialAlumno): Promise<HistorialDelAlumno> {
+    return this.repositorio.historialDelAlumno(idAlumno, consulta);
   }
 }

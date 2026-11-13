@@ -85,6 +85,14 @@ Como alumno, quiero consultar desde mi celular el estado de mi plan, mi historia
 - El panel es **mobile-first** (uso principal desde el celular).
 - Si hay una promoción vigente aplicable, mostrarla en el resumen del plan.
 
+### Contrato con el back (13/11/2026)
+
+`GET /api/v1/alumnos/mi-panel`, para el alumno y el tutor (`?id_alumno=` para elegir uno de sus menores; un alumno ajeno responde 404, igual que uno que no existe). Lo arma la fachada de GestionPersonas con el alumno, su inscripción vigente (IInfoInscripciones), la situación de su cuota (IInfoCuotas) y sus últimas asistencias (IInfoAsistencia):
+
+- **Plan:** el de la inscripción vigente más reciente, o `null` si no tiene. El estado de cuota usa los mismos valores que la ficha del alumno (US-18): `AL_DIA`, `POR_VENCER`, `VENCIDA`, `PENDIENTE_DE_PAGO` (sin cuota paga: sin vencimiento ni días restantes), `CLASE_SUELTA_VIGENTE` y `CLASE_SUELTA_VENCIDA`.
+- **Próximas clases:** las de los horarios vigentes de su inscripción en los próximos 14 días, hasta 5, en orden; una clase de hoy que ya empezó no figura. El cupo disponible es el del horario menos sus lugares ocupados.
+- **Historial:** las últimas 20 marcas de clases dictadas, de la más nueva a la más vieja.
+
 ## 8. Criterios de aceptación
 
 - [ ] Consulta del panel con cuota al día y próximas clases cargadas → muestra todo correctamente

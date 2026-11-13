@@ -5,6 +5,12 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- PWA: se puede instalar en el celular y recibir los avisos push de cuota. En iPhone los push
+       llegan solo con la app agregada a la pantalla de inicio. -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MiFR" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- SEO de la página pública: es lo que leen los buscadores y las vistas previas de un enlace
        (WhatsApp, Instagram), que no ejecutan JavaScript. Las páginas del sistema cambian el título

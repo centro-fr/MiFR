@@ -714,7 +714,7 @@ async function sumarleElBasicoAValentina(): Promise<number> {
   return id_inscripcion;
 }
 
-describe("PI-92: el listado de alumnos trae todas las inscripciones vigentes de cada uno", () => {
+describe("PI-95: el listado de alumnos trae todas las inscripciones vigentes de cada uno", () => {
   it("el alumno con dos planes trae los dos, cada uno con su cuota, y lo representa el más reciente", async () => {
     const idBasico = await sumarleElBasicoAValentina();
     const idIntermedio = datos.idInscripcion.get(DNI_VALENTINA)!;
@@ -762,7 +762,7 @@ describe("PI-92: el listado de alumnos trae todas las inscripciones vigentes de 
   });
 });
 
-describe("PI-93: las transferencias de dos planes del mismo alumno", () => {
+describe("PI-96: las transferencias de dos planes del mismo alumno", () => {
   it("cada plan informa la suya, el listado las distingue por inscripción y se revisan de a una", async () => {
     const idBasico = await sumarleElBasicoAValentina();
     const idIntermedio = datos.idInscripcion.get(DNI_VALENTINA)!;

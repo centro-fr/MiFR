@@ -16,10 +16,11 @@ export class NotificacionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   // skipDuplicates es ON CONFLICT DO NOTHING: el único (id_usuario, id_cuota, tipo) descarta el aviso
-  // que ya estaba, también si dos procesos corren a la vez.
-  async registrar(notificaciones: NuevaNotificacion[], ahora: Date): Promise<number> {
-    if (notificaciones.length === 0) return 0;
-    const { count } = await clienteEnCurso(this.prisma).notificaciones.createMany({
+  // que ya estaba, también si dos procesos corren a la vez. Devuelve solo las que insertó: el push sale
+  // de esas, así un aviso repetido no vuelve a llegar al celular.
+  async registrar(notificaciones: NuevaNotificacion[], ahora: Date): Promise<NuevaNotificacion[]> {
+    if (notificaciones.length === 0) return [];
+    return clienteEnCurso(this.prisma).notificaciones.createManyAndReturn({
       data: notificaciones.map((notificacion) => ({
         ...notificacion,
         fecha_generacion: ahora,
@@ -28,8 +29,8 @@ export class NotificacionRepository {
         leida: false,
       })),
       skipDuplicates: true,
+      select: { id_usuario: true, tipo: true, id_cuota: true, mensaje: true },
     });
-    return count;
   }
 
   // Las no leídas primero y, dentro de cada grupo, de la más nueva a la más vieja.

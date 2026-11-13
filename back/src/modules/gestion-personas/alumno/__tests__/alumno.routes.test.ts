@@ -39,6 +39,8 @@ function crearLogicaMock() {
     obtenerAlumnoPorId: vi.fn(),
     actualizarAlumno: vi.fn(),
     listarAlumnosConsultables: vi.fn(),
+    obtenerPanelAlumno: vi.fn(),
+    listarAsistenciasAlumno: vi.fn(),
   };
 }
 
@@ -138,6 +140,89 @@ describe("rutas de alumnos", () => {
 
     expect(respuesta.status).toBe(403);
     expect(logica.listarAlumnosConsultables).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/mi-panel devuelve el panel de quien pide, sin id y sin pedir permisos", async () => {
+    logica.obtenerPanelAlumno.mockResolvedValue({ id_alumno: 4 });
+
+    const respuesta = await request(app)
+      .get("/api/v1/alumnos/mi-panel")
+      .set("Authorization", "Bearer alumno");
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual({ id_alumno: 4 });
+    expect(logica.obtenerPanelAlumno).toHaveBeenCalledWith(
+      { idUsuario: ROLES_POR_TOKEN.alumno!.usuarioId, esPropietaria: false },
+      undefined,
+    );
+    expect(logica.obtenerAlumnoPorId).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/mi-panel pasa el menor que elige el tutor y rechaza un id inválido", async () => {
+    logica.obtenerPanelAlumno.mockResolvedValue({ id_alumno: 6 });
+
+    const elegido = await request(app)
+      .get("/api/v1/alumnos/mi-panel?id_alumno=6")
+      .set("Authorization", "Bearer tutor");
+    const invalido = await request(app)
+      .get("/api/v1/alumnos/mi-panel?id_alumno=-1")
+      .set("Authorization", "Bearer tutor");
+
+    expect(elegido.status).toBe(200);
+    expect(logica.obtenerPanelAlumno).toHaveBeenCalledWith(expect.anything(), 6);
+    expect(invalido.status).toBe(400);
+  });
+
+  it("GET /alumnos/mi-panel responde 403 a quien no es alumno ni tutor", async () => {
+    const respuesta = await request(app)
+      .get("/api/v1/alumnos/mi-panel")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.obtenerPanelAlumno).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/:id/asistencias devuelve el historial con el filtro y la página, y quién pide", async () => {
+    logica.listarAsistenciasAlumno.mockResolvedValue({ datos: [], total: 0 });
+
+    const respuesta = await request(app)
+      .get("/api/v1/alumnos/4/asistencias?asistio=false&limit=10&offset=20")
+      .set("Authorization", "Bearer propietaria");
+    const porDefecto = await request(app)
+      .get("/api/v1/alumnos/4/asistencias")
+      .set("Authorization", "Bearer propietaria");
+
+    expect(respuesta.status).toBe(200);
+    expect(porDefecto.status).toBe(200);
+    expect(logica.listarAsistenciasAlumno).toHaveBeenNthCalledWith(
+      1,
+      4,
+      { asistio: false, limit: 10, offset: 20 },
+      { idUsuario: 1, esPropietaria: true },
+    );
+    expect(logica.listarAsistenciasAlumno).toHaveBeenNthCalledWith(
+      2,
+      4,
+      { limit: 10, offset: 0 },
+      expect.anything(),
+    );
+  });
+
+  it("GET /alumnos/:id/asistencias rechaza un filtro o una página inválidos y a quien no tiene ALUMNOS_VER", async () => {
+    for (const query of ["asistio=si", "limit=101", "offset=-1"]) {
+      const invalido = await request(app)
+        .get(`/api/v1/alumnos/4/asistencias?${query}`)
+        .set("Authorization", "Bearer propietaria");
+      expect(invalido.status).toBe(400);
+    }
+    vi.mocked(autorizacion.tienePermiso).mockResolvedValue(false);
+    const sinPermiso = await request(app)
+      .get("/api/v1/alumnos/4/asistencias")
+      .set("Authorization", "Bearer alumno");
+
+    expect(sinPermiso.status).toBe(403);
+    expect(autorizacion.tienePermiso).toHaveBeenCalledWith(expect.anything(), "ALUMNOS_VER");
+    expect(logica.listarAsistenciasAlumno).not.toHaveBeenCalled();
   });
 
   it("devuelve la ficha de un alumno", async () => {

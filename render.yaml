@@ -28,6 +28,13 @@ services:
       # acá porque Netlify necesita el mismo valor: ver el paso 3 de docs/DESPLIEGUE.md.
       - key: FIRMA_PROXY_NETLIFY
         sync: false
+      # Claves VAPID de los avisos push: se generan juntas fuera de Render (paso 3 de docs/DESPLIEGUE.md).
+      - key: VAPID_CLAVE_PUBLICA
+        sync: false
+      - key: VAPID_CLAVE_PRIVADA
+        sync: false
+      - key: VAPID_CONTACTO
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

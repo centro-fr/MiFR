@@ -16,7 +16,7 @@ const SELECCION = {
 describe("NotificacionRepository", () => {
   let prisma: {
     notificaciones: Record<
-      "createMany" | "findMany" | "count" | "updateMany" | "findUnique" | "create",
+      "createManyAndReturn" | "findMany" | "count" | "updateMany" | "findUnique" | "create",
       ReturnType<typeof vi.fn>
     >;
     $transaction: ReturnType<typeof vi.fn>;
@@ -27,7 +27,7 @@ describe("NotificacionRepository", () => {
   beforeEach(() => {
     prisma = {
       notificaciones: {
-        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        createManyAndReturn: vi.fn().mockResolvedValue([AVISO]),
         findMany: vi.fn().mockResolvedValue([]),
         count: vi.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(2),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -40,19 +40,20 @@ describe("NotificacionRepository", () => {
     repositorio = new NotificacionRepository(prisma as unknown as PrismaClient);
   });
 
-  it("registrar las crea enviadas y sin leer, ignorando las que ya existían", async () => {
-    await expect(repositorio.registrar([AVISO], AHORA)).resolves.toBe(1);
-    expect(prisma.notificaciones.createMany).toHaveBeenCalledWith({
+  it("registrar las crea enviadas y sin leer, ignorando las que ya existían, y devuelve las que insertó", async () => {
+    await expect(repositorio.registrar([AVISO], AHORA)).resolves.toEqual([AVISO]);
+    expect(prisma.notificaciones.createManyAndReturn).toHaveBeenCalledWith({
       data: [
         { ...AVISO, fecha_generacion: AHORA, fecha_envio: AHORA, estado_envio: "ENVIADA", leida: false },
       ],
       skipDuplicates: true,
+      select: { id_usuario: true, tipo: true, id_cuota: true, mensaje: true },
     });
   });
 
   it("registrar sin notificaciones no consulta la base", async () => {
-    await expect(repositorio.registrar([], AHORA)).resolves.toBe(0);
-    expect(prisma.notificaciones.createMany).not.toHaveBeenCalled();
+    await expect(repositorio.registrar([], AHORA)).resolves.toEqual([]);
+    expect(prisma.notificaciones.createManyAndReturn).not.toHaveBeenCalled();
   });
 
   it("listarDeUsuario pagina las del usuario con las no leídas primero y cuenta el total y las no leídas", async () => {

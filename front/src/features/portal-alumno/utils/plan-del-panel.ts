@@ -2,11 +2,14 @@ import type { PanelAlumno, PlanDelAlumno } from "../schemas/panel-alumno";
 
 const PRIORIDAD_CUOTA: Record<PlanDelAlumno["estado_cuota"], number> = {
   VENCIDA: 0,
-  EN_GRACIA: 1,
-  AL_DIA: 2,
+  CLASE_SUELTA_VENCIDA: 0,
+  POR_VENCER: 1,
+  PENDIENTE_DE_PAGO: 2,
+  AL_DIA: 3,
+  CLASE_SUELTA_VIGENTE: 3,
 };
 
-/** Menor número = cuota más urgente (VENCIDA > EN_GRACIA > AL_DIA). */
+/** Menor número = cuota más urgente: vencida, por vencer, sin pagar y al día. */
 export function urgenciaDeCuota(plan: PlanDelAlumno): number {
   return PRIORIDAD_CUOTA[plan.estado_cuota];
 }
@@ -20,7 +23,8 @@ export function planAMostrar(planes: PlanDelAlumno[], idElegido?: number): PlanD
   const encontrado = idElegido ? planes.find((p) => p.id_inscripcion === idElegido) : undefined;
   if (encontrado) return encontrado;
   return [...planes].sort(
-    (a, b) => urgenciaDeCuota(a) - urgenciaDeCuota(b) || a.fecha_vencimiento.localeCompare(b.fecha_vencimiento),
+    (a, b) =>
+      urgenciaDeCuota(a) - urgenciaDeCuota(b) || (a.fecha_vencimiento ?? "").localeCompare(b.fecha_vencimiento ?? ""),
   )[0];
 }
 
@@ -52,14 +56,13 @@ export function etiquetaDelPlan(plan: PlanDelAlumno): string {
   return plan.actividades.length > 0 ? plan.actividades.join(" + ") : plan.nombre;
 }
 
-/** Devuelve el estado de cuota más urgente entre los planes distintos al elegido. */
-export function estadoAlertaOtroPlan(
-  planes: PlanDelAlumno[],
-  idElegido?: number,
-): PlanDelAlumno["estado_cuota"] {
+export type AlertaDeCuota = "VENCIDA" | "POR_VENCER" | "AL_DIA";
+
+/** El aviso más urgente entre los planes distintos al elegido: vencida, por vencer o ninguno. */
+export function estadoAlertaOtroPlan(planes: PlanDelAlumno[], idElegido?: number): AlertaDeCuota {
   const otros = planes.filter((p) => p.id_inscripcion !== idElegido);
-  if (otros.some((p) => p.estado_cuota === "VENCIDA")) return "VENCIDA";
-  if (otros.some((p) => p.estado_cuota === "EN_GRACIA")) return "EN_GRACIA";
+  if (otros.some((p) => p.estado_cuota === "VENCIDA" || p.estado_cuota === "CLASE_SUELTA_VENCIDA")) return "VENCIDA";
+  if (otros.some((p) => p.estado_cuota === "POR_VENCER")) return "POR_VENCER";
   return "AL_DIA";
 }
 

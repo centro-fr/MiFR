@@ -177,6 +177,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "IInfoHorarios"   as R_GP_InfoHorarios
   interface "IInfoInscripciones" as R_GP_InfoInscripciones
   interface "IInfoCuotas"     as R_GP_InfoCuotas
+  interface "IInfoAsistencia" as R_GP_InfoAsistencia
   interface "IAutenticacion"  as R_GP_Aut
   GestionPersonas       -down- I_LogicaPersonas
   GestionPersonas         -down-( R_GP_Autz
@@ -184,6 +185,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   GestionPersonas -down-( R_GP_InfoHorarios
   GestionPersonas -down-( R_GP_InfoInscripciones
   GestionPersonas -down-( R_GP_InfoCuotas
+  GestionPersonas -down-( R_GP_InfoAsistencia
   GestionPersonas          -down-( R_GP_Aut
 
   ' ---------------- GestionRutinasYProgreso ----------------

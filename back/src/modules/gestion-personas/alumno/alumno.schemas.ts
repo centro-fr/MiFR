@@ -123,3 +123,20 @@ export type CrearAlumnoInput = z.infer<typeof crearAlumnoSchema>;
 export type ActualizarAlumnoInput = z.infer<typeof actualizarAlumnoSchema>;
 export type TutorInput = z.infer<typeof tutorSchema>;
 export type ListarAlumnoQuery = z.infer<typeof listarAlumnoQuerySchema>;
+
+// US-29: sin id_alumno, el panel del alumno de quien pide; el tutor elige uno de sus menores.
+export const panelAlumnoQuerySchema = z.object({ id_alumno: idDesdeTextoSchema.optional() });
+
+export type PanelAlumnoQuery = z.infer<typeof panelAlumnoQuerySchema>;
+
+// US-10: el historial de asistencia de la ficha. Presentes o ausentes con asistio; sin él, todas.
+export const historialAsistenciaQuerySchema = z.object({
+  asistio: z
+    .enum(["true", "false"])
+    .transform((valor) => valor === "true")
+    .optional(),
+  // De a 10, como las tablas de la ficha.
+  ...paginacionSchema(10),
+});
+
+export type HistorialAsistenciaQuery = z.infer<typeof historialAsistenciaQuerySchema>;

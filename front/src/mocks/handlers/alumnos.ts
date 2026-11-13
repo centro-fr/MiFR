@@ -376,12 +376,6 @@ function planDelPanel(inscripcion: InscripcionMock) {
   const plan = db.planes.find((item) => item.id_plan === inscripcion.id_plan);
   const situacion = situacionCuotaDe(inscripcion);
   if (!plan || !situacion) return null;
-  const estadoCuota =
-    situacion.estado === "POR_VENCER"
-      ? ("EN_GRACIA" as const)
-      : situacion.estado === "AL_DIA"
-        ? ("AL_DIA" as const)
-        : ("VENCIDA" as const);
   return {
     id_inscripcion: inscripcion.id_inscripcion,
     nombre: plan.nombre,
@@ -389,9 +383,9 @@ function planDelPanel(inscripcion: InscripcionMock) {
     clases_por_semana: plan.clases_por_semana,
     profesora: nombreProfesora(inscripcion.id_profesora),
     actividades: actividadesDeInscripcion(inscripcion, plan),
-    estado_cuota: estadoCuota,
-    fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? "",
-    dias_restantes: situacion.dias_restantes ?? 0,
+    estado_cuota: situacion.estado,
+    fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? null,
+    dias_restantes: situacion.dias_restantes,
   };
 }
 
@@ -402,7 +396,7 @@ function proximasClasesDe(inscripcion: InscripcionMock) {
   const hoy = new Date();
   const clases = [];
 
-  for (let offset = 0; offset < 14 && clases.length < 4; offset += 1) {
+  for (let offset = 0; offset < 14 && clases.length < 5; offset += 1) {
     const fecha = new Date(hoy);
     fecha.setHours(12, 0, 0, 0);
     fecha.setDate(hoy.getDate() + offset);
@@ -412,7 +406,7 @@ function proximasClasesDe(inscripcion: InscripcionMock) {
       const actividad = db.actividades.find((item) => item.id_actividad === horario.id_actividad);
       if (!actividad) continue;
       clases.push({
-        id: Number(fechaTexto.replaceAll("-", "")) * 100 + horario.id_horario,
+        id_horario: horario.id_horario,
         id_inscripcion: inscripcion.id_inscripcion,
         fecha: fechaTexto,
         hora_inicio: horario.hora_inicio,
@@ -442,7 +436,7 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       const actividad = horario && db.actividades.find((item) => item.id_actividad === horario.id_actividad);
       if (!clase || !horario || !actividad) return null;
       return {
-        id: registro.id_clase,
+        id_clase: registro.id_clase,
         id_inscripcion: registro.id_inscripcion,
         fecha: clase.fecha_clase.slice(0, 10),
         actividad: actividad.nombre,
@@ -451,13 +445,14 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       };
     })
     .filter((registro): registro is NonNullable<typeof registro> => registro !== null)
-    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 20);
 
   return {
     id_alumno: alumno.id_alumno,
     alumno: { nombre: persona.nombre, apellido: persona.apellido },
     planes,
-    proximas_clases: proximasClases,
+    proximas_clases: proximasClases.slice(0, 5),
     historial_asistencias: historialAsistencias,
   };
 }
@@ -573,8 +568,7 @@ export const alumnosHandlers = [
     });
   }),
 
-  // US-29: contrato consolidado provisional para el panel del alumno. Se reemplaza por el
-  // endpoint del backend cuando esté disponible.
+  // US-29: el mismo contrato que GET /alumnos/mi-panel del back (alumno.openapi.ts).
   http.get("*/api/v1/alumnos/mi-panel", async ({ request }) => {
     await delay(300);
     // Con ?id_alumno= el tutor pide el de uno de sus menores; solo si es propio o está a su cargo.

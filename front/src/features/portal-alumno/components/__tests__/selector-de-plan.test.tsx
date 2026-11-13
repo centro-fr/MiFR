@@ -48,8 +48,8 @@ describe("SelectorDePlan", () => {
     expect(container.querySelector(".bg-red-500")).toBeInTheDocument();
   });
 
-  it("muestra aviso amarillo si el otro plan está en gracia", () => {
-    const planEnGracia: PlanDelAlumno = { ...PLAN_2, estado_cuota: "EN_GRACIA" };
+  it("muestra aviso amarillo si el otro plan está por vencer", () => {
+    const planEnGracia: PlanDelAlumno = { ...PLAN_2, estado_cuota: "POR_VENCER" };
     mockUsePlanElegido.mockReturnValue({ planes: [PLAN_1, planEnGracia], elegido: PLAN_1, elegirPlan: vi.fn() });
     const { container } = render(<SelectorDePlan />);
     expect(container.querySelector(".bg-amber-400")).toBeInTheDocument();

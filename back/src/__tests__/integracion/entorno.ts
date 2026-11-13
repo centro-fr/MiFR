@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { Express } from "express";
 import request from "supertest";
 import { createApp } from "../../app.js";
-import { construirSistema } from "../../composicion.js";
+import { construirSistema, type PiezasDeInfraestructura } from "../../composicion.js";
 import type { CierreMensualHonorariosService } from "../../modules/gestion-honorarios/cierre-mensual-honorarios/cierre-mensual-honorarios.service.js";
 import type { CierreMensualInsigniasService } from "../../modules/gestion-insignias/cierre-mensual-insignias/cierre-mensual-insignias.service.js";
 import type { CierreAsistenciaService } from "../../modules/gestion-inscripciones-y-clases/cierre-asistencia/cierre-asistencia.service.js";
@@ -43,7 +43,8 @@ export interface EntornoDeIntegracion {
   cerrar(): Promise<void>;
 }
 
-export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
+// push: el servicio de push simulado de los casos que lo prueban; los demás corren sin push, como en desarrollo.
+export function crearEntornoDeIntegracion(push?: PiezasDeInfraestructura["push"]): EntornoDeIntegracion {
   const prisma = crearPrismaDePrueba();
   const {
     dependencias,
@@ -57,6 +58,7 @@ export function crearEntornoDeIntegracion(): EntornoDeIntegracion {
     prisma,
     googleAuth: googleSimulado,
     jwtService: new JwtService(SECRETO_JWT_DE_PRUEBA, "1h"),
+    push,
   });
   const app = createApp(dependencias);
 

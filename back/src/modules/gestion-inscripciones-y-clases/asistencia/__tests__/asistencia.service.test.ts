@@ -32,6 +32,7 @@ function crearMocks() {
       resumirPorAlumno: vi.fn().mockResolvedValue([]),
       resumirPorProfesora: vi.fn().mockResolvedValue([]),
       historialDeAlumnos: vi.fn().mockResolvedValue(new Map()),
+      historialDelAlumno: vi.fn(),
     },
     clases: {
       obtenerPara: vi.fn().mockResolvedValue(clase),
@@ -243,6 +244,15 @@ describe("AsistenciaService", () => {
       await expect(servicio.resumirPorProfesora(filtro)).resolves.toBe(porProfesora);
       expect(mocks.repositorio.resumirPorAlumno).toHaveBeenCalledWith(filtro);
       expect(mocks.repositorio.resumirPorProfesora).toHaveBeenCalledWith(filtro);
+    });
+
+    it("historialDelAlumno pide al repositorio la página del historial del alumno", async () => {
+      const historial = { datos: [], total: 0, presentes: 0, ausentes: 0 };
+      const consulta = { asistio: false, limit: 10, offset: 0 };
+      mocks.repositorio.historialDelAlumno.mockResolvedValue(historial);
+
+      await expect(servicio.historialDelAlumno(5, consulta)).resolves.toBe(historial);
+      expect(mocks.repositorio.historialDelAlumno).toHaveBeenCalledWith(5, consulta);
     });
 
     it("historialDeAlumnos devuelve las marcas del repositorio", async () => {

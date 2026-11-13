@@ -6,6 +6,7 @@ import { OwnerLayout } from "@/components/layout/owner-layout";
 import { AvisoVacio, CAJA } from "@/components/movil/piezas";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
+import { etiquetaCuota, tonoCuota, type TonoCuota } from "@/features/alumnos/utils/situacion-cuota";
 import { nombreDelMes } from "@/features/asistencia/utils/semana";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { saludoSegunHorario } from "@/utils/saludo";
@@ -24,10 +25,11 @@ import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-pan
 
 const SIN_FILTROS = {};
 
-const ESTADO_CUOTA: Record<PlanDelAlumno["estado_cuota"], { texto: string; clases: string }> = {
-  AL_DIA: { texto: "Al día", clases: "text-foreground" },
-  EN_GRACIA: { texto: "Por vencer", clases: "text-amber-800 dark:text-amber-300" },
-  VENCIDA: { texto: "Vencida", clases: "text-red-700 dark:text-red-400" },
+const COLOR_DEL_TONO: Record<TonoCuota, string> = {
+  "al-dia": "text-foreground",
+  "por-vencer": "text-amber-800 dark:text-amber-300",
+  vencida: "text-red-700 dark:text-red-400",
+  "sin-pago": "text-foreground",
 };
 
 function diaYMesCorto(fecha: string): string {
@@ -37,7 +39,7 @@ function diaYMesCorto(fecha: string): string {
 
 function TarjetaCuota({ plan }: { plan: PlanDelAlumno | undefined }) {
   if (!plan) return <AvisoVacio>No tenés un plan vigente. Consultá en el centro.</AvisoVacio>;
-  const estado = ESTADO_CUOTA[plan.estado_cuota];
+  const tono = tonoCuota(plan.estado_cuota);
   const frecuencia =
     plan.tipo === "CLASE_SUELTA"
       ? "Clase suelta"
@@ -51,12 +53,16 @@ function TarjetaCuota({ plan }: { plan: PlanDelAlumno | undefined }) {
           <h2 id="titulo-cuota" className="text-sm font-semibold text-muted-foreground">
             Tu cuota
           </h2>
-          <div className={cn("text-[22px] leading-[30px] font-extrabold", estado.clases)}>{estado.texto}</div>
+          <div className={cn("text-[22px] leading-[30px] font-extrabold", COLOR_DEL_TONO[tono])}>
+            {etiquetaCuota(plan.estado_cuota)}
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground">{plan.estado_cuota === "VENCIDA" ? "Venció el" : "Vence el"}</div>
-          <div className="font-bold tabular-nums">{diaYMesCorto(plan.fecha_vencimiento)}</div>
-        </div>
+        {plan.fecha_vencimiento && (
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">{tono === "vencida" ? "Venció el" : "Vence el"}</div>
+            <div className="font-bold tabular-nums">{diaYMesCorto(plan.fecha_vencimiento)}</div>
+          </div>
+        )}
       </div>
       <div className="border-t border-border pt-3 text-sm text-slate-700 dark:text-slate-300">
         {[plan.nombre, frecuencia].filter(Boolean).join(" · ")}

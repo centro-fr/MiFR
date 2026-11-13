@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { estadoCuotaSchema } from "@/features/alumnos/schemas/alumno";
 
-const estadoCuotaSchema = z.enum(["AL_DIA", "EN_GRACIA", "VENCIDA"]);
+// GET /alumnos/mi-panel (alumno.openapi.ts del back, US-29). La cuota usa los mismos estados que la
+// ficha del alumno; sin cuota paga (PENDIENTE_DE_PAGO) no hay vencimiento.
 const estadoAsistenciaSchema = z.enum(["PRESENTE", "AUSENTE"]);
 
 export const planDelAlumnoSchema = z.object({
@@ -11,8 +13,9 @@ export const planDelAlumnoSchema = z.object({
   profesora: z.string(),
   actividades: z.array(z.string()),
   estado_cuota: estadoCuotaSchema,
-  fecha_vencimiento: z.string(),
-  dias_restantes: z.number().int(),
+  // Sin cuota paga (PENDIENTE_DE_PAGO) no hay vencimiento.
+  fecha_vencimiento: z.string().nullable(),
+  dias_restantes: z.number().int().nullable(),
 });
 
 export type PlanDelAlumno = z.infer<typeof planDelAlumnoSchema>;
@@ -23,10 +26,11 @@ export const panelAlumnoSchema = z.object({
     nombre: z.string(),
     apellido: z.string(),
   }),
+  // Una por inscripción vigente: un alumno puede tener un plan por actividad.
   planes: z.array(planDelAlumnoSchema),
   proximas_clases: z.array(
     z.object({
-      id: z.number().int(),
+      id_horario: z.number().int(),
       id_inscripcion: z.number().int().positive(),
       fecha: z.string(),
       hora_inicio: z.string(),
@@ -38,7 +42,7 @@ export const panelAlumnoSchema = z.object({
   ),
   historial_asistencias: z.array(
     z.object({
-      id: z.number().int(),
+      id_clase: z.number().int(),
       id_inscripcion: z.number().int().positive(),
       fecha: z.string(),
       actividad: z.string(),

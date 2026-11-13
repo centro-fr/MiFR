@@ -8,4 +8,9 @@ export const logicaNotificacionesNoConfigurada = {
   listarNotificacionesPropias: operacionNoConfigurada,
   marcarNotificacionLeida: operacionNoConfigurada,
   marcarNotificacionesLeidas: operacionNoConfigurada,
+  obtenerClavePushPublica: () => {
+    throw new Error("La lógica de notificaciones no está configurada para este test");
+  },
+  suscribirDispositivo: operacionNoConfigurada,
+  desuscribirDispositivo: operacionNoConfigurada,
 } satisfies ILogicaNotificaciones;

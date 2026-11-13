@@ -10,9 +10,10 @@ import {
 import { cn } from "@/utils/cn";
 import type { PlanDelAlumno } from "../schemas/panel-alumno";
 import { usePlanElegido } from "../hooks/use-plan-elegido";
-import { estadoAlertaOtroPlan, etiquetaDelPlan } from "../utils/plan-del-panel";
+import { estadoAlertaOtroPlan, etiquetaDelPlan, type AlertaDeCuota } from "../utils/plan-del-panel";
 
-function diaYMes(fecha: string): string {
+function diaYMes(fecha: string | null): string {
+  if (!fecha) return "";
   const [, mes, dia] = fecha.slice(0, 10).split("-");
   return dia && mes ? `${dia}/${mes}` : "";
 }
@@ -23,7 +24,14 @@ function detalleDelPlan(plan: PlanDelAlumno): string {
   return [plan.nombre, textoVence].filter(Boolean).join(" · ");
 }
 
-export function PuntoAlerta({ estado }: { estado: PlanDelAlumno["estado_cuota"] }) {
+// Rojo si la cuota venció, amarillo si está por vencer; nada si no hay que avisar.
+function alertaDe(estado: AlertaDeCuota | PlanDelAlumno["estado_cuota"]): AlertaDeCuota {
+  if (estado === "VENCIDA" || estado === "CLASE_SUELTA_VENCIDA") return "VENCIDA";
+  return estado === "POR_VENCER" ? "POR_VENCER" : "AL_DIA";
+}
+
+export function PuntoAlerta({ estado: estadoCuota }: { estado: AlertaDeCuota | PlanDelAlumno["estado_cuota"] }) {
+  const estado = alertaDe(estadoCuota);
   if (estado === "AL_DIA") return null;
   return (
     <span

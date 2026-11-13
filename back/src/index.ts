@@ -2,8 +2,10 @@ import "dotenv/config";
 import { OpenApiGeneratorV3, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { PrismaClient } from "@prisma/client";
 import { OAuth2Client } from "google-auth-library";
+import webpush from "web-push";
 import { createApp } from "./app.js";
 import { construirSistema } from "./composicion.js";
+import { WebPushServicio } from "./modules/gestion-notificaciones/suscripcion-push/web-push-servicio.js";
 import { GoogleAutenticacion } from "./modules/gestion-usuarios/sesion/google-autenticacion.js";
 import { JwtService } from "./modules/gestion-usuarios/sesion/jwt.service.js";
 import { CONFIGURACION_DOCUMENTO_API, registrarDocumentacionApi } from "./openapi.js";
@@ -35,6 +37,13 @@ const {
     configuracion.googleClientId ?? "",
   ),
   jwtService: new JwtService(configuracion.jwtSecret, configuracion.jwtExpiresIn),
+  push: configuracion.push && {
+    servicio: new WebPushServicio(
+      (suscripcion, contenido, opciones) => webpush.sendNotification(suscripcion, contenido, opciones),
+      configuracion.push,
+    ),
+    clavePublica: configuracion.push.clavePublica,
+  },
 });
 
 // US-21: Render duerme el proceso sin tráfico, así que esto no es la única vía de cierre; las rutas
@@ -89,6 +98,9 @@ const {
 } = configuracion;
 if (loginDesarrollo) {
   console.warn("LOGIN_DESARROLLO activo: POST /api/v1/auth/desarrollo permite entrar sin Google");
+}
+if (!configuracion.push) {
+  console.warn("Sin claves VAPID: los avisos de cuota no se mandan por push");
 }
 if (!configuracion.googleClientId) {
   console.warn("GOOGLE_CLIENT_ID no está configurado: el login con Google va a rechazar todos los tokens");
