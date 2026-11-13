@@ -14,13 +14,13 @@
 
 # Página pública: pulido visual
 
-- [ ] Instalar las skills de diseño y revisarlas antes de usarlas (bajan y ejecutan código de terceros): `npx skills add emilkowalski/skills` y `npx skills add Leonxlnx/taste-skill`.
+- [ ] Instalar las skills de diseño y revisarlas antes de usarlas (bajan y ejecutan código de terceros): `npx skills add emilkowalski/skills`, `npx skills add Leonxlnx/taste-skill` y `npx impeccable install`.
 - [ ] Entrada de la portada coreografiada: el título línea por línea, la foto con un zoom suave y al final el botón "Quiero empezar", en menos de un segundo y sin movimiento para quien pidió reducirlo.
 - [ ] Pulir las 7 transiciones con la curva genérica `ease`: curvas más naturales, una respuesta chica al tocar los botones y efectos de hover solo en computadoras (en el celular quedan "pegados").
 - [ ] Que se sienta nativa en el celular (se abre mucho desde Instagram y WhatsApp): la portada que salta cuando se esconde la barra del navegador, el destello gris al tocar, el contenido debajo del notch y el color de la barra de estado.
 - [ ] Revisar dónde sumar movimiento y dónde no: por ejemplo, que las tarjetas de actividades aparezcan al hacer scroll.
 - [ ] Probarla con datos extremos: nombres de actividades muy largos, una sola actividad o ninguna.
-- [ ] Pulido general: tipografía, espacios y estados de los botones. Con taste-skill, una revisión "anti-genérica" completa en un navegador real.
+- [ ] Pulido general: tipografía, espacios y estados de los botones. Con taste-skill e impeccable, una revisión "anti-genérica" completa en un navegador real.
 
 # Antes de desplegar
 
