@@ -5,8 +5,8 @@ import { inicialesDeNombre } from "@/utils/texto";
 interface FilaMovilProps {
   titulo: ReactNode;
   /**
-   * Los datos de las columnas de la tabla. Una lista va uno debajo del otro, para que cada dato se lea
-   * entero en el celular; un texto suelto, en una línea.
+   * Los datos de las columnas de la tabla. Una lista va en una grilla de tres columnas, para que cada
+   * dato se lea entero sin dejar la fila vacía a la derecha; un texto suelto, en una línea.
    */
   detalle?: ReactNode | ReactNode[];
   /** Un estado junto al título (vigente, abonada…). */
@@ -68,9 +68,11 @@ function Detalle({ detalle }: { detalle: FilaMovilProps["detalle"] }) {
   }
   const datos = detalle.filter((dato) => dato !== null && dato !== undefined && dato !== false && dato !== "");
   return (
-    <ul className="mt-1 space-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+    <ul className="mt-1 grid grid-cols-3 gap-x-3 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
       {datos.map((dato, indice) => (
-        <li key={indice}>{dato}</li>
+        <li key={indice} className="min-w-0 break-words">
+          {dato}
+        </li>
       ))}
     </ul>
   );
