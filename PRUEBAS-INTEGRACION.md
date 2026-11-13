@@ -941,7 +941,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 2. Con la base reiniciada y `MINUTOS_CIERRE_ASISTENCIA = 15`, se corre a las 21:14 y a las 21:15.
 3. Con la base reiniciada y el reloj a las 21:00, Marina abre la lista de la clase con marcas, sin que haya corrido el cierre.
 
-**Resultado esperado:** en el paso 1 a las 20:59 no cierra ninguna; a las 21:00 cierra las dos, con `fecha_cierre_asist` a las 21:00: la que tenía marcas suma cuatro ausentes y la otra queda `DICTADA` sin ninguna fila en `asistencias`. En el paso 2 no cierra a las 21:14 y cierra las dos a las 21:15. En el paso 3 la lista ya muestra la clase `DICTADA` con los cuatro ausentes.
+**Resultado esperado:** en el paso 1 a las 20:59 no cierra ninguna; a las 21:00 cierra las dos, con `fecha_cierre_asist` a las 21:00: la que tenía marcas suma cuatro ausentes y la otra queda `DICTADA` con su inscripto presente: desde el 12/11/2026, una clase que cierra sin ninguna marca se da por dictada con todos presentes. En el paso 2 no cierra a las 21:14 y cierra las dos a las 21:15. En el paso 3 la lista ya muestra la clase `DICTADA` con los cuatro ausentes.
 
 **Automatizado:** Sí (J-10 a J-12).
 
@@ -1001,10 +1001,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 **US:** US-20 · **Precondición:** la de PI-47. El horario de Lucía de los lunes se dio de baja el 08/10/2026, después del lunes 05/10/2026.
 
 1. Marina pide `GET /clases?fecha=2026-10-05` dos veces.
-2. Marina marca presente a Acosta en la clase de ese día.
+2. Marina marca ausente a Acosta en la clase de ese día.
 3. Lucía pide `GET /clases?fecha=2026-10-05` y Marina pide `GET /clases?fecha=2026-10-13` (mañana).
 
-**Resultado esperado:** en el paso 1 las dos respuestas traen las mismas clases (200): la del horario de Lucía aparece, aunque hoy esté dado de baja, porque ese día regía; está `DICTADA` (ya terminó y nadie la marcó: el cierre automático no le inventa faltas), con 5 inscriptos y sin filas en `asistencias`. En el paso 2, 200 y la corrección queda guardada. En el paso 3 Lucía recibe 403 y la fecha futura 400, sin crear ninguna clase.
+**Resultado esperado:** en el paso 1 las dos respuestas traen las mismas clases (200): la del horario de Lucía aparece, aunque hoy esté dado de baja, porque ese día regía; está `DICTADA` (ya terminó y nadie la marcó: se da por dictada con todos presentes), con 5 inscriptos y 5 presentes en `asistencias`. En el paso 2, 200 y la corrección queda guardada: Acosta ausente y los otros cuatro presentes. En el paso 3 Lucía recibe 403 y la fecha futura 400, sin crear ninguna clase.
 
 **Automatizado:** Sí (J-14 y J-15).
 
@@ -1315,11 +1315,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | J-07        | "Todos presentes" marca a los inscriptos vigentes y pisa una marca anterior                                                                                      | PI-48 |
 | J-08        | Con 5 inscriptos y 3 presentes, el cierre registra 2 ausentes sin usuario, no toca al dado de baja y cerrar otra vez no duplica nada                              | PI-49 |
 | J-09        | Después del cierre la profesora no marca más (409) y la propietaria corrige                                                                                      | PI-49 |
-| J-10        | El cierre automático cierra al terminar la clase, ni un minuto antes, y solo genera ausentes donde se marcó a alguien                                             | PI-50 |
+| J-10        | El cierre automático cierra al terminar la clase, ni un minuto antes; genera ausentes donde se marcó a alguien y da presentes a todos donde no se marcó a nadie    | PI-50 |
 | J-11        | El cierre automático espera además los `MINUTOS_CIERRE_ASISTENCIA`                                                                                               | PI-50 |
 | J-12        | Leer una clase vencida la cierra aunque el intervalo no haya corrido                                                                                            | PI-50 |
 | J-13        | Las observaciones se guardan con la marca y salen en la lista; una marca sin observaciones las conserva y un texto vacío las borra; más de 255 caracteres, 400 | PI-48 |
-| J-14        | La propietaria pide un día anterior: se crean sus clases con los horarios que regían, salen cerradas sin ausentes, no se duplican y las corrige                | PI-55 |
+| J-14        | La propietaria pide un día anterior: se crean sus clases con los horarios que regían, salen cerradas con todos presentes, no se duplican y las corrige          | PI-55 |
 | J-15        | Otro día lo pide solo la propietaria (403 para la profesora) y una fecha futura responde 400, sin crear clases                                                    | PI-55 |
 | J-16        | Una clase cancelada no admite marcas ni cierre, y el cierre automático no la toca ni le genera ausentes; cancelar dos veces no cambia nada                       | PI-56 |
 | J-17        | No se cancela una clase con asistencias marcadas ni una dictada (409), y la profesora no cancela (403)                                                           | PI-56 |
@@ -1753,6 +1753,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-88         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasan T-01 a T-04; sin defectos                                                  |
 | PI-89         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasa T-05; sin defectos                                                          |
 | PI-90         | 10/11/2026 | Francisco Andrade | Aprobado           | Pasan A-49 y A-50; sin defectos                                                  |
+| PI-50         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-10 con la regla de la clase sin marcas (todos presentes)                  |
+| PI-55         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-14 con la regla de la clase sin marcas (todos presentes)                  |
 
 ### 8.3 Defectos
 
@@ -1883,4 +1885,5 @@ Los defectos se numeran D-01, D-02…
 |   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
 |   2.34  | 09/11/2026 | Casos PI-88 (edición y reincorporación de profesoras) y PI-89 (contacto y privacidad del listado), con T-01 a T-05; US-38 pasa a automatizada. Se completa la tabla de tests con los archivos L, R, S y U | Francisco Andrade |
 |   2.35  | 10/11/2026 | Caso PI-90 (la foto de perfil de Google en el login y en `/auth/me`) y tests A-49 y A-50; US-01 la suma. El fake de Google recibe la foto como `email` + barra vertical + `foto` y las migraciones agregan `usuarios.foto_url` con su check | Francisco Andrade |
-|   2.36  | 13/11/2026 | Se retiran PI-46 y los tests B-19 y B-20: la página pública usa datos fijos del front y se borra `GET /publico/actividades` con el subsistema DifusionPublica. US-32 pasa a no aplicar. Se cierra el punto abierto sobre el límite de pedidos | nicolasandr |
+|   2.36  | 13/11/2026 | Se retiran PI-46 y los tests B-19 y B-20: la página pública usa datos fijos del front y se borra `GET /publico/actividades` con el subsistema DifusionPublica. US-32 pasa a no aplicar. Se cierra el punto abierto sobre el límite de pedidos | Nicolas |
+|   2.37  | 13/11/2026 | PI-50 y PI-55 (J-10 y J-14) pasan a la regla del 12/11/2026: una clase que cierra sin ninguna marca se da por dictada con todos presentes. Fallaban desde ese cambio | Nicolas |
