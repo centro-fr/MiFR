@@ -185,7 +185,7 @@ Arquitectura, convenciones y reglas del backend: [`back/CLAUDE.md`](back/CLAUDE.
 
 ## Producción
 
-Todavía no está publicado. El plan y el paso a paso completo están en [`back/DESPLIEGUE.md`](back/DESPLIEGUE.md); esto es el resumen.
+Todavía no está publicado. El paso a paso completo, con las verificaciones y los problemas frecuentes, está en [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md); esto es el resumen.
 
 ```text
 Navegador ──► Netlify (front + reenvío de /api) ──► Render (API en Docker) ──► Neon (PostgreSQL)
@@ -205,22 +205,27 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 | `JWT_SECRET`       | Lo genera Render con un valor aleatorio                                             |
 | `JWT_EXPIRES_IN`   | `8h` (lo fija `render.yaml`)                                                        |
 | `CORS_ORIGENES`    | URL del sitio de Netlify, por ejemplo `https://mifr.netlify.app`                    |
-| `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `DESPLIEGUE.md`)    |
+| `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `docs/DESPLIEGUE.md`)|
 | `FIRMA_PROXY_NETLIFY` | Secreto aleatorio de 32 caracteres o más, el mismo que la variable homónima de Netlify |
 
 `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 
 **Front (Netlify)**, cargadas en la configuración del sitio. Vite las incrusta al compilar, así que cambiarlas requiere un nuevo deploy.
 
-| Variable                | Valor                         |
-| :---------------------- | :---------------------------- |
-| `VITE_GOOGLE_CLIENT_ID` | El mismo client ID que la API |
+| Variable                 | Valor                                                                 |
+| :----------------------- | :-------------------------------------------------------------------- |
+| `VITE_GOOGLE_CLIENT_ID`  | El mismo client ID que la API                                         |
+| `VITE_SITIO_URL`         | URL del sitio sin barra final, para Open Graph y la URL canónica      |
+| `VITE_INSTAGRAM_USUARIO` | Usuario de Instagram del centro                                       |
+| `VITE_WHATSAPP_NUMERO`   | WhatsApp del centro en formato internacional                          |
+| `FIRMA_PROXY_NETLIFY`    | El mismo secreto que en Render, con alcance Runtime: firma el `/api/*` |
+| `NODE_VERSION`, `PNPM_VERSION` | `22` y `10.33.2`                                                 |
 
 `VITE_LOGIN_DESARROLLO` y `VITE_USE_MOCKS` no se definen. `API_URL` tampoco: en producción el reenvío de `/api` lo hace `netlify.toml`.
 
 ### Reglas para producción
 
-- La primera propietaria se carga una sola vez con `db:seed`, apuntando a Neon desde una máquina local (ver `DESPLIEGUE.md`, paso 3).
+- La primera propietaria se carga una sola vez con `db:seed`, apuntando a Neon desde una máquina local (ver `docs/DESPLIEGUE.md`, paso 8).
 - Nunca correr contra Neon `db:seed:demo`, `token`, `prisma migrate dev`, `migrate reset` ni `db push`. Las migraciones las aplica solo el contenedor.
 - La URL de Netlify va en `CORS_ORIGENES` y en los orígenes autorizados del client OAuth de Google.
 
@@ -274,6 +279,6 @@ Desde la raíz, `pnpm dev:back` y `pnpm dev:front` (o `pnpm dev`) levantan cada 
 - `docs/diagrams/puml/` — DER, vista arquitectónica y vista de despliegue en PlantUML (extensión PlantUML de VS Code o <https://plantuml.com/>)
 - `docs/diagrams/enterprise_architect/` — el modelo de Enterprise Architect y sus exportaciones
 - `docs/design/` — menús, criterios responsive y prompts de diseño
-- `back/DESPLIEGUE.md` — plan de publicación
+- `docs/DESPLIEGUE.md` — guía de despliegue: pasos, verificaciones y problemas frecuentes
 - `back/CLAUDE.md` y `back/.claude/rules/` — arquitectura, convenciones y reglas del backend
 - `AGENTS.md` — estándares de código y seguridad del proyecto

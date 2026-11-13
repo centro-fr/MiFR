@@ -56,7 +56,7 @@ Todo listado tiene `take` y acepta `limit` y `offset` con `paginacionSchema` de 
 
 La carga del catálogo aplica `MATRIZ_INICIAL` solo a los permisos nuevos, para no pisar lo que la propietaria cambió en la matriz. Si un cambio le da a un rol un permiso que ya existía (como `PLANES_VER` y `ALUMNOS_EDITAR` a la profesora), las bases ya cargadas no lo reciben y el rol sigue respondiendo 403.
 
-- **Mientras estemos en desarrollo** (ninguna base tiene datos reales): se avisa al equipo y cada uno regenera su base con `prisma migrate reset` y los seeds (ver `DESPLIEGUE.md`). No hace falta migración.
+- **Mientras estemos en desarrollo** (ninguna base tiene datos reales): se avisa al equipo y cada uno regenera su base con `prisma migrate reset` y los seeds (ver `docs/DESPLIEGUE.md`). No hace falta migración.
 - **Cuando Neon tenga datos reales:** el cambio va con una migración de datos que inserte en `rol_permisos` solo las filas que faltan (`ON CONFLICT DO NOTHING`), en el mismo trabajo.
 
 Un permiso nuevo no tiene este problema: al crearlo, la carga le aplica la matriz inicial.

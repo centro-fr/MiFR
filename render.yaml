@@ -1,4 +1,4 @@
-# Blueprint de Render para publicar la API. Todavía no está en uso: ver back/DESPLIEGUE.md.
+# Blueprint de Render para publicar la API. Todavía no está en uso: ver docs/DESPLIEGUE.md.
 # La base de datos no va acá: es de Neon, porque la base gratuita de Render se borra a los 30 días.
 services:
   - name: mifr-api
@@ -21,11 +21,11 @@ services:
       - key: CORS_ORIGENES
         sync: false
       # Proxies delante de la API (Netlify y el balanceador de Render). Se calibra después del primer
-      # deploy: ver "Calibrar PROXIES_DE_CONFIANZA" en back/DESPLIEGUE.md.
+      # deploy: ver el paso 10 de docs/DESPLIEGUE.md.
       - key: PROXIES_DE_CONFIANZA
         sync: false
       # Secreto que comparte con Netlify para verificar que cada pedido pasó por el sitio. No se genera
-      # acá porque Netlify necesita el mismo valor: ver el paso 2 de back/DESPLIEGUE.md.
+      # acá porque Netlify necesita el mismo valor: ver el paso 3 de docs/DESPLIEGUE.md.
       - key: FIRMA_PROXY_NETLIFY
         sync: false
       - key: JWT_SECRET

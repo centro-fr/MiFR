@@ -27,7 +27,7 @@ pnpm token            # JWT de desarrollo para un usuario, para probar en Swagge
 
 Para entrar al front sin Google en desarrollo está `LOGIN_DESARROLLO=true`, que habilita `POST /auth/desarrollo` (ver el README de la raíz). Con `NODE_ENV=production` la API no arranca si está activa.
 
-La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.
+La imagen de Docker está en `Dockerfile` y se construye desde la raíz del monorepo (`docker compose up -d --build`). La etapa `produccion` lleva solo las dependencias de producción, corre como el usuario `node` y al arrancar aplica las migraciones (`prisma migrate deploy`) antes de levantar la API. Por eso `prisma` es dependencia de producción. El plan de publicación (Netlify, Render y Neon) está en `docs/DESPLIEGUE.md`, y la configuración de Render en `render.yaml` de la raíz.
 
 No hay linter todavía: typescript-eslint no soporta TypeScript 7, que es la versión del proyecto. Por ahora la red de seguridad son `tsc` con `strict` y los tests. Ver `.claude/rules/documentacion.md`.
 
