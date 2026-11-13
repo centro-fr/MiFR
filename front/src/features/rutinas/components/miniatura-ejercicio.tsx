@@ -1,7 +1,10 @@
 // Miniatura de un ejercicio: la usan el editor de rutinas (US-27) y la rutina del alumno (US-28).
 
-const CDN_EJERCICIOS = "https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main";
-const RESPALDO_EJERCICIOS = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main";
+// Fijado al mismo commit que el catálogo (public/ejercicios-es.LICENSE.md) y no a main: el repositorio es
+// de un tercero, y con main un cambio o un borrado suyo aparecería en las rutinas sin que nadie lo revise.
+const COMMIT_DEL_DATASET = "7455efae41b330c265e7cd4b78dfa848e7ce5ebd";
+const CDN_EJERCICIOS = `https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@${COMMIT_DEL_DATASET}`;
+const RESPALDO_EJERCICIOS = `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/${COMMIT_DEL_DATASET}`;
 
 function inicialesDe(texto: string): string {
   const partes = texto.trim().split(/\s+/);
