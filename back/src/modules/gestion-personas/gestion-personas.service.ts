@@ -35,7 +35,7 @@ import {
   historialDelPanel,
   MARCAS_EN_EL_HISTORIAL,
   planDelPanel,
-  proximasClases,
+  proximasClasesDeTodas,
   type PanelAlumno,
 } from "./panel-alumno.js";
 import type { ProfesorService } from "./profesor/profesor.service.js";
@@ -224,16 +224,21 @@ export class GestionPersonasService implements ILogicaPersonas {
       alumno: { nombre: alumno.nombre, apellido: alumno.apellido },
       historial_asistencias: historialDelPanel(historial.datos),
     };
-    if (!inscripcion) return { ...panel, plan: null, proximas_clases: [] };
+    if (!inscripcion) return { ...panel, plan: null, planes: [], proximas_clases: [] };
 
     const [habilitaciones, ocupados] = await Promise.all([
-      this.cuotas.habilitacionDeInscripciones([inscripcion.id_inscripcion]),
-      this.inscripciones.contarLugaresOcupados(inscripcion.horarios.map(({ horario }) => horario.id_horario)),
+      this.cuotas.habilitacionDeInscripciones(inscripciones.map(({ id_inscripcion }) => id_inscripcion)),
+      this.inscripciones.contarLugaresOcupados(
+        inscripciones.flatMap(({ horarios }) => horarios.map(({ horario }) => horario.id_horario)),
+      ),
     ]);
+    const planDe = (vigente: InscripcionConDatos) =>
+      planDelPanel(vigente, aSituacionCuota(habilitaciones.get(vigente.id_inscripcion)));
     return {
       ...panel,
-      plan: planDelPanel(inscripcion, aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion))),
-      proximas_clases: proximasClases(inscripcion, fechaActualArgentina(ahora), ahora, ocupados),
+      plan: planDe(inscripcion),
+      planes: inscripciones.map(planDe).filter((plan) => plan !== null),
+      proximas_clases: proximasClasesDeTodas(inscripciones, fechaActualArgentina(ahora), ahora, ocupados),
     };
   }
 

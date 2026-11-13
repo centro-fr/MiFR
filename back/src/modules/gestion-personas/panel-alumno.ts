@@ -15,10 +15,13 @@ export const PROXIMAS_CLASES = 5;
 export const MARCAS_EN_EL_HISTORIAL = 20;
 
 export interface PlanDelPanel {
+  id_inscripcion: number;
   nombre: string;
   tipo: string;
   clases_por_semana: number | null;
   profesora: string;
+  // Las actividades de sus horarios: con varios planes, es lo que los distingue en el selector.
+  actividades: string[];
   estado_cuota: SituacionCuota["estado"];
   // Sin cuota paga (PENDIENTE_DE_PAGO) no hay vencimiento.
   fecha_vencimiento: string | null;
@@ -27,6 +30,7 @@ export interface PlanDelPanel {
 
 export interface ClaseDelPanel {
   id_horario: number;
+  id_inscripcion: number;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
@@ -37,6 +41,7 @@ export interface ClaseDelPanel {
 
 export interface MarcaDelPanel {
   id_clase: number;
+  id_inscripcion: number;
   fecha: string;
   actividad: string;
   profesora: string;
@@ -46,7 +51,10 @@ export interface MarcaDelPanel {
 export interface PanelAlumno {
   id_alumno: number;
   alumno: { nombre: string; apellido: string };
+  // La inscripción principal (la activa más nueva), para quien muestra un solo plan.
   plan: PlanDelPanel | null;
+  // Todas las vigentes con su cuota: un alumno puede tener un plan por actividad.
+  planes: PlanDelPanel[];
   proximas_clases: ClaseDelPanel[];
   historial_asistencias: MarcaDelPanel[];
 }
@@ -67,10 +75,12 @@ export function planDelPanel(
 ): PlanDelPanel | null {
   if (situacion === null) return null;
   return {
+    id_inscripcion: inscripcion.id_inscripcion,
     nombre: inscripcion.plan.nombre,
     tipo: inscripcion.plan.tipo,
     clases_por_semana: inscripcion.plan.clases_por_semana,
     profesora: nombreCompleto(inscripcion.profesora.usuario),
+    actividades: [...new Set(inscripcion.horarios.map(({ horario }) => horario.actividad.nombre))],
     estado_cuota: situacion.estado,
     fecha_vencimiento: situacion.fecha_vencimiento ? diaComoTexto(situacion.fecha_vencimiento) : null,
     dias_restantes: situacion.dias_restantes,
@@ -97,6 +107,7 @@ export function proximasClases(
       clases.push({
         inicio,
         id_horario: horario.id_horario,
+        id_inscripcion: inscripcion.id_inscripcion,
         fecha: diaComoTexto(dia),
         hora_inicio: horaComoTexto(horario.hora_inicio),
         hora_fin: horaComoTexto(horario.hora_fin),
@@ -113,11 +124,25 @@ export function proximasClases(
 }
 
 export function historialDelPanel(marcas: MarcaDelAlumno[]): MarcaDelPanel[] {
-  return marcas.map(({ id_clase, fecha_clase, actividad, profesora, asistio }) => ({
+  return marcas.map(({ id_clase, id_inscripcion, fecha_clase, actividad, profesora, asistio }) => ({
     id_clase,
+    id_inscripcion,
     fecha: diaComoTexto(fecha_clase),
     actividad,
     profesora: nombreCompleto(profesora),
     estado: asistio ? "PRESENTE" : "AUSENTE",
   }));
+}
+
+// Las próximas clases de todos los planes del alumno, en orden, con el mismo tope que las de uno.
+export function proximasClasesDeTodas(
+  inscripciones: InscripcionConDatos[],
+  hoy: Date,
+  ahora: Date,
+  ocupados: Map<number, number>,
+): ClaseDelPanel[] {
+  return inscripciones
+    .flatMap((inscripcion) => proximasClases(inscripcion, hoy, ahora, ocupados))
+    .sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`))
+    .slice(0, PROXIMAS_CLASES);
 }
