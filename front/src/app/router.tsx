@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { createBrowserRouter, Outlet, redirect, type RouteObject } from "react-router-dom";
 import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-route";
 import { PermissionGuard } from "@/components/guards/permission-guard";
+import { CargaPaginaPublica } from "@/features/publico/components/carga-pagina-publica";
 import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
 import { SessionSplash } from "@/components/guards/session-splash";
 import { rolesConAcceso } from "@/components/layout/owner-navigation";
@@ -27,6 +28,8 @@ function redirigirA(ruta: string): NonNullable<RouteObject["loader"]> {
 
 // Mientras baja el chunk de la primera ruta se muestra el splash de sesión, no una pantalla en blanco.
 const carga = { hydrateFallbackElement: <SessionSplash /> };
+// La página pública tiene su propio fondo: con el splash de la aplicación, al recargarla se veía la app.
+const cargaPublica = { hydrateFallbackElement: <CargaPaginaPublica /> };
 
 /**
  * Guardia de una sección de /app: entra solo un rol cuyo menú la ofrece (owner-navigation.ts) y,
@@ -59,7 +62,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     errorElement: <RouteErrorBoundary />,
-    ...carga,
+    ...cargaPublica,
     lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
   },
   {
