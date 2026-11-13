@@ -187,7 +187,7 @@ export const reportesCentroHandlers = [
         alumno: alumnoDe(inscripcion?.id_alumno ?? 0),
         plan: { id_plan: plan?.id_plan ?? 0, nombre: plan?.nombre ?? "" },
         profesora_cobra: p.id_profesora_cobra ? profesoraDe(p.id_profesora_cobra) : null,
-        promocion: promo ? { id_promocion: promo.id_promocion, codigo: promo.codigo, nombre: promo.nombre } : null,
+        promocion: promo ? { id_promocion: promo.id_promocion, nombre: promo.nombre } : null,
       };
     });
     const suma = (lista: typeof datos) => lista.reduce((s, p) => s + p.monto, 0);

@@ -5,7 +5,6 @@ import type { Promocion } from "@/types/promocion";
 
 const promocionTodos: Promocion = {
   id: "1",
-  codigo: "VERANO26",
   nombre: "Verano 2026",
   tipoDescuento: "PORCENTAJE",
   valor: 20,
@@ -22,7 +21,6 @@ const promocionTodos: Promocion = {
 
 const promocionAlgunos: Promocion = {
   id: "2",
-  codigo: "KIDS10",
   nombre: "Solo Kids",
   tipoDescuento: "PORCENTAJE",
   valor: 10,

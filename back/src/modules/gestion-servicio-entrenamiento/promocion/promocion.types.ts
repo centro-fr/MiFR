@@ -20,7 +20,6 @@ export interface FiltroPromociones extends Partial<Paginacion> {
 }
 
 export interface DatosPromocion {
-  codigo: string;
   nombre: string;
   tipo_descuento: TipoDescuento;
   valor: number;
@@ -30,15 +29,12 @@ export interface DatosPromocion {
 }
 
 export type ResultadoGuardado =
-  | { resultado: "ok"; promocion: PromocionGuardada }
-  | { resultado: "superpuesta"; id_plan: number }
-  | { resultado: "codigo-repetido" };
+  { resultado: "ok"; promocion: PromocionGuardada } | { resultado: "superpuesta"; id_plan: number };
 
 // Lo que necesita quien aplica una promoción: Plan, al calcular lo que se cobra, e Inscripcion, al
 // guardar la promoción vigente cuando se pre-inscribe.
 export interface PromocionAplicable {
   id_promocion: number;
-  codigo: string;
   nombre: string;
   tipo_descuento: TipoDescuento;
   valor: number;

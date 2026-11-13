@@ -71,7 +71,6 @@ export const informeCobranzaApiSchema = z.object({
       promocion: z
         .object({
           id_promocion: z.number().int(),
-          codigo: z.string(),
           nombre: z.string(),
         })
         .nullable()

@@ -5,17 +5,6 @@ import { LIMITE_MAXIMO, paginacionSchema } from "../../../shared/utils/esquemas-
 import { textoSchema } from "../../../shared/utils/esquemas-texto.js";
 import { fechaSchema } from "../../../shared/utils/esquemas-fecha.js";
 
-// El código lo carga la propietaria (UK del DER, VARCHAR(20)): letras sin acentos, dígitos, guion y
-// guion bajo, y se guarda en mayúsculas para que "verano26" y "VERANO26" sean el mismo.
-const codigo = z
-  .string()
-  .trim()
-  .regex(
-    /^[A-Za-z0-9_-]{1,20}$/,
-    "El código lleva de 1 a 20 letras sin acentos, dígitos, guiones o guiones bajos",
-  )
-  .transform((valor) => valor.toUpperCase());
-
 const MAXIMO_PLANES = 50;
 const ids_planes = z
   .array(idSchema)
@@ -24,7 +13,6 @@ const ids_planes = z
   .refine((ids) => new Set(ids).size === ids.length, "No se puede repetir un plan");
 
 const datos = {
-  codigo,
   nombre: textoSchema(60),
   tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
   // ck_promociones_x1: mayor a 0, con dos decimales como máximo. El tope del porcentaje lo revisa el refine.

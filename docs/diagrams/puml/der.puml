@@ -162,7 +162,6 @@ package "SERVICIO ENTRENAMIENTO" {
   entity "promociones" as promociones <<Servicio>> {
     * <color:#DAA520><&key></color> id_promocion : SERIAL <color:#DAA520>PK</color>
     --
-    * <color:#9CA3AF><&link-intact></color> codigo : VARCHAR(20) <color:#9CA3AF>UK</color>
     * nombre : VARCHAR(60)
     * tipo_descuento : ENUM <color:#000000><<PORCENTAJE|MONTO_FIJO>></color>
     * valor : NUMERIC(10,2) <color:#6B7280><size:11>> 0; <= 100 si PORCENTAJE</size></color>

@@ -85,7 +85,6 @@ describe("PromocionDialog", () => {
     expect(inputHastaDeshabilitado).toBeDisabled();
 
     // Completar el resto de los campos y guardar
-    fireEvent.change(screen.getByLabelText("Código *"), { target: { value: "PROMO100" } });
     fireEvent.change(screen.getByLabelText("Nombre *"), { target: { value: "Promo Permanente" } });
     fireEvent.change(screen.getByLabelText("Descuento (%) *"), { target: { value: "15" } });
     fireEvent.click(screen.getByLabelText("Todas las actividades"));
@@ -96,7 +95,6 @@ describe("PromocionDialog", () => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
-          codigo: "PROMO100",
           nombre: "Promo Permanente",
           permanente: true,
           fechaHasta: "2099-12-31",

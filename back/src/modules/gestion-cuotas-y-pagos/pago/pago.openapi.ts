@@ -89,7 +89,7 @@ const comprobanteSchema = z
       .nullable()
       .openapi({ description: "El precio del plan el día del cobro (US-12)" }),
     descuento: z.number().openapi({ description: "Lo que descontó la promoción; 0 si no tuvo (US-13)" }),
-    promocion: z.object({ codigo: z.string(), nombre: z.string() }).nullable(),
+    promocion: z.object({ nombre: z.string() }).nullable(),
     registrado_por: nombreSchema,
     profesora_cobra: nombreSchema.nullable(),
   })

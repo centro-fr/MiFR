@@ -27,7 +27,7 @@ export interface PrecioACobrar {
   precio_lista: number;
   descuento: number;
   monto: number;
-  promocion: { id_promocion: number; codigo: string; nombre: string } | null;
+  promocion: { id_promocion: number; nombre: string } | null;
 }
 
 export interface FiltroPlan {

@@ -7,7 +7,6 @@ import {
 } from "../promocion.schemas.js";
 
 const alta = {
-  codigo: "verano-26",
   nombre: "Verano 2026",
   tipo_descuento: "PORCENTAJE",
   valor: 20,
@@ -17,10 +16,9 @@ const alta = {
 };
 
 describe("crearPromocionSchema", () => {
-  it("guarda el código en mayúsculas y convierte las fechas", () => {
-    expect(crearPromocionSchema.parse(alta)).toEqual({
+  it("convierte las fechas y descarta un código: la promoción se identifica por su id", () => {
+    expect(crearPromocionSchema.parse({ ...alta, codigo: "VERANO-26" })).toEqual({
       ...alta,
-      codigo: "VERANO-26",
       fecha_desde: new Date("2026-12-01T00:00:00Z"),
       fecha_hasta: new Date("2027-02-28T00:00:00Z"),
     });
@@ -55,9 +53,6 @@ describe("crearPromocionSchema", () => {
     ["sin planes", { ids_planes: [] }],
     ["con un plan repetido", { ids_planes: [1, 1] }],
     ["con más de 50 planes", { ids_planes: Array.from({ length: 51 }, (_, indice) => indice + 1) }],
-    ["con un código con espacios", { codigo: "VERANO 26" }],
-    ["con un código con acentos", { codigo: "OTOÑO" }],
-    ["con un código de más de 20", { codigo: "A".repeat(21) }],
     ["con un nombre sin letras", { nombre: "123" }],
     ["con un nombre de más de 60", { nombre: "a".repeat(61) }],
   ])("rechaza una promoción %s", (_caso, cambio) => {

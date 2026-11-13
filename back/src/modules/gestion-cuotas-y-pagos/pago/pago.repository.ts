@@ -290,7 +290,7 @@ export class PagoRepository {
               select: {
                 id_plan: true,
                 plan: { select: { nombre: true } },
-                promocion: { select: { codigo: true, nombre: true, tipo_descuento: true, valor: true } },
+                promocion: { select: { nombre: true, tipo_descuento: true, valor: true } },
                 alumno: {
                   select: {
                     id_usuario: true,

@@ -24,7 +24,6 @@ function aPromocion({ planes, valor, ...fila }: FilaConPlanes): PromocionGuardad
 
 const SELECCION_APLICABLE = {
   id_promocion: true,
-  codigo: true,
   nombre: true,
   tipo_descuento: true,
   valor: true,
@@ -101,9 +100,6 @@ export class PromocionRepository {
         select: { id_plan: true },
       });
       if (superpuesta) return { resultado: "superpuesta", id_plan: superpuesta.id_plan };
-      if (await transaccion.promociones.findFirst({ where: { codigo: datos.codigo, id_promocion: otra } })) {
-        return { resultado: "codigo-repetido" };
-      }
 
       const planes = ids_planes.map((id_plan) => ({ id_plan }));
       const fila =

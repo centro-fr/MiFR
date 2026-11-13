@@ -13,7 +13,6 @@ function auditarPromocion(evento: EventoSeguridad, req: Request, promocion: Prom
   auditar(evento, {
     por: req.usuario?.id_usuario,
     id_promocion: promocion.id_promocion,
-    codigo: promocion.codigo,
     tipo_descuento: promocion.tipo_descuento,
     valor: promocion.valor,
     fecha_desde: promocion.fecha_desde,

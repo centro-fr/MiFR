@@ -142,7 +142,6 @@ export class PlanService implements IInfoPlanes {
       monto: Math.round((precio.precio - descuento) * 100) / 100,
       promocion: aplicada && {
         id_promocion: aplicada.id_promocion,
-        codigo: aplicada.codigo,
         nombre: aplicada.nombre,
       },
     };

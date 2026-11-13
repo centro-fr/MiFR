@@ -456,7 +456,6 @@ function armarComprobante(pago: PagoParaComprobante): Comprobante {
     promocion:
       descuento > 0 && promocion
         ? {
-            codigo: promocion.codigo,
             nombre: promocion.nombre,
             tipo_descuento: promocion.tipo_descuento,
             valor: Number(promocion.valor),

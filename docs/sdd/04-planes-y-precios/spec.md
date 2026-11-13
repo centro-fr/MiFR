@@ -45,7 +45,7 @@ Gestionar la oferta comercial del centro MiFR: estructuración de planes de entr
 
 #### RF-03: Descuentos y Promociones (US-13)
 
-- Registrar promociones con código promocional, nombre, tipo de descuento (`PORCENTAJE` o `MONTO_FIJO`), valor numérico, fecha de inicio y fin, y estado activo.
+- Registrar promociones con nombre, tipo de descuento (`PORCENTAJE` o `MONTO_FIJO`), valor numérico, fecha de inicio y fin, y estado activo.
 - Vincular promociones a uno, varios o todos los planes disponibles (`promocion_planes`).
 - Al inscribir a un alumno o generar cuota, si la promoción está vigente, se aplica el descuento deduciendo del precio base del plan.
 

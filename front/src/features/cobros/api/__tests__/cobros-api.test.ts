@@ -4,7 +4,6 @@ import type { Promocion } from "@/types/promocion";
 
 const promocion: Promocion = {
   id: "2",
-  codigo: "NUEVOFR",
   nombre: "Primera cuota",
   tipoDescuento: "MONTO_FIJO",
   valor: 3000,
@@ -27,7 +26,7 @@ describe("calcularCotizacionCobro", () => {
       precio_lista: 25000,
       descuento: 3000,
       monto: 22000,
-      promocion: { id_promocion: 2, codigo: "NUEVOFR", nombre: "Primera cuota" },
+      promocion: { id_promocion: 2, nombre: "Primera cuota" },
     });
   });
 

@@ -4,7 +4,6 @@ import { errorApi, idDeRuta, verificarAcceso } from "@/mocks/handlers/respuestas
 
 interface PromocionMock {
   id_promocion: number;
-  codigo: string;
   nombre: string;
   tipo_descuento: "PORCENTAJE" | "MONTO_FIJO";
   valor: number;
@@ -15,9 +14,9 @@ interface PromocionMock {
 }
 
 export const promociones: PromocionMock[] = [
-  { id_promocion: 1, codigo: "VERANO26", nombre: "Verano 2026", tipo_descuento: "PORCENTAJE", valor: 20, fecha_desde: "2026-10-01", fecha_hasta: "2027-03-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
-  { id_promocion: 2, codigo: "NUEVOFR", nombre: "Primera cuota", tipo_descuento: "MONTO_FIJO", valor: 3000, fecha_desde: "2026-10-01", fecha_hasta: "2027-12-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
-  { id_promocion: 3, codigo: "OCTUBRE", nombre: "Octubre pausado", tipo_descuento: "PORCENTAJE", valor: 15, fecha_desde: "2026-10-01", fecha_hasta: "2026-10-31", activo: false, ids_planes: [3] },
+  { id_promocion: 1, nombre: "Verano 2026", tipo_descuento: "PORCENTAJE", valor: 20, fecha_desde: "2026-10-01", fecha_hasta: "2027-03-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
+  { id_promocion: 2, nombre: "Primera cuota", tipo_descuento: "MONTO_FIJO", valor: 3000, fecha_desde: "2026-10-01", fecha_hasta: "2027-12-31", activo: true, ids_planes: [1, 2, 3, 4, 5] },
+  { id_promocion: 3, nombre: "Octubre pausado", tipo_descuento: "PORCENTAJE", valor: 15, fecha_desde: "2026-10-01", fecha_hasta: "2026-10-31", activo: false, ids_planes: [3] },
 ];
 
 function hoy(): string {
@@ -76,7 +75,6 @@ export const promocionesHandlers = [
     const denegado = verificarAcceso(request, { rol: "PROPIETARIA", permiso: "PLANES_EDITAR" });
     if (denegado) return denegado;
     const cuerpo = (await request.json()) as Omit<PromocionMock, "id_promocion" | "activo">;
-    if (promociones.some((promocion) => promocion.codigo === cuerpo.codigo)) return errorApi(409, "CODIGO_REPETIDO", "Ya existe una promoción con ese código");
     const nueva: PromocionMock = { ...cuerpo, id_promocion: siguienteId(promociones.map((promocion) => promocion.id_promocion)), activo: true };
     promociones.push(nueva);
     return HttpResponse.json(serializar(nueva), { status: 201 });

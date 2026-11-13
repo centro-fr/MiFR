@@ -66,6 +66,8 @@ export const pagoApiSchema = z.object({
   id_pago: z.number().int(),
   id_cuota: z.number().int(),
   id_inscripcion: z.number().int().optional(),
+  // El plan de la inscripción que paga: con varios planes vigentes, dice cuál se cobró.
+  nombre_plan: z.string().nullable().optional(),
   forma_pago: z.enum(["EFECTIVO", "TRANSFERENCIA"]),
   estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]),
   monto: z.number(),
@@ -103,7 +105,6 @@ export const comprobantePagoSchema = z.object({
   descuento: z.number().optional(),
   promocion: z
     .object({
-      codigo: z.string().optional(),
       nombre: z.string(),
       tipo_descuento: z.enum(["PORCENTAJE", "MONTO_FIJO"]).optional(),
       valor: z.number().optional(),
