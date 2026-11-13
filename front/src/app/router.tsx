@@ -1,0 +1,320 @@
+import type { ComponentType } from "react";
+import { createBrowserRouter, Outlet, redirect, type RouteObject } from "react-router-dom";
+import { GuestOnlyRoute, ProtectedRoute } from "@/components/guards/protected-route";
+import { PermissionGuard } from "@/components/guards/permission-guard";
+import { RouteErrorBoundary } from "@/components/guards/route-error-boundary";
+import { SessionSplash } from "@/components/guards/session-splash";
+import { rolesConAcceso } from "@/components/layout/owner-navigation";
+import { NotFoundPage } from "@/pages/placeholders";
+
+/**
+ * Importa la página recién al navegar a su ruta: cada una queda en su propio chunk
+ * y el bundle inicial no carga pantallas que la persona todavía no visitó.
+ */
+function paginaPerezosa<Modulo extends Record<string, unknown>>(
+  importar: () => Promise<Modulo>,
+  nombre: keyof Modulo,
+): NonNullable<RouteObject["lazy"]> {
+  return async () => ({ Component: (await importar())[nombre] as ComponentType });
+}
+
+// Redirige en el loader y no con <Navigate>: así el router cambia de ruta antes de dibujar y la
+// página anterior sigue visible mientras baja el chunk de la nueva. <Navigate> se dibuja primero
+// (vacío) y redirige después, y eso dejaba la pantalla en blanco al entrar, por ejemplo, a Reportes.
+function redirigirA(ruta: string): NonNullable<RouteObject["loader"]> {
+  return () => redirect(ruta);
+}
+
+// Mientras baja el chunk de la primera ruta se muestra el splash de sesión, no una pantalla en blanco.
+const carga = { hydrateFallbackElement: <SessionSplash /> };
+
+/**
+ * Guardia de una sección de /app: entra solo un rol cuyo menú la ofrece (owner-navigation.ts) y,
+ * si se pide, con el permiso puntual de la matriz. Las subrutas (ficha, alta, edición) la heredan.
+ */
+function guardiaDeSeccion(path: string, permission?: string) {
+  const roles = rolesConAcceso(`/app/${path}`);
+  // Con roles vacíos PermissionGuard dejaría pasar a cualquiera: una sección sin menú es un error.
+  if (roles.length === 0) throw new Error(`La sección /app/${path} no está en el menú de ningún rol`);
+  return (
+    <PermissionGuard roles={roles} permission={permission}>
+      <Outlet />
+    </PermissionGuard>
+  );
+}
+
+/**
+ * Pantalla de un grupo del menú (sus sub-opciones como tarjetas). Quien no tiene ese grupo en su
+ * menú va a `alternativa`: la profesora no tiene el grupo Alumnos y entra directo al listado.
+ */
+function paginaDeGrupo(ruta: string, alternativa: string): NonNullable<RouteObject["lazy"]> {
+  return async () => {
+    const { GrupoMenuPage } = await import("@/pages/grupo-menu-page");
+    return { element: <GrupoMenuPage ruta={ruta} alternativa={alternativa} /> };
+  };
+}
+
+export const router = createBrowserRouter([
+  // Página pública: la ve cualquiera, con sesión o sin ella. Desde ahí se llega al login.
+  {
+    path: "/",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(() => import("@/features/publico/pages/home-page"), "HomePage"),
+  },
+  {
+    path: "/disponibilidad",
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    lazy: paginaPerezosa(
+      () => import("@/features/publico/pages/disponibilidad-page"),
+      "DisponibilidadPage",
+    ),
+  },
+  { path: "/seguridad/permisos", loader: redirigirA("/app/dashboard") },
+  {
+    path: "/login",
+    element: (
+      <GuestOnlyRoute>
+        <Outlet />
+      </GuestOnlyRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/auth/pages/login-page"), "LoginPage") }],
+  },
+  {
+    // Layout sin ruta propia: exige sesión a todo lo que cuelga de /app. Cada sección, además,
+    // exige un rol cuyo menú la ofrezca: entrar por URL a la de otro rol muestra "Sin acceso".
+    path: "/app",
+    element: (
+      <ProtectedRoute>
+        <Outlet />
+      </ProtectedRoute>
+    ),
+    errorElement: <RouteErrorBoundary />,
+    ...carga,
+    children: [
+      { index: true, element: <NotFoundPage /> },
+      {
+        path: "dashboard",
+        element: guardiaDeSeccion("dashboard"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/pages/owner-dashboard-page"), "OwnerDashboardPage") },
+        ],
+      },
+      {
+        path: "asistencia",
+        loader: redirigirA("/app/ausentes"),
+      },
+      {
+        // Grupo "Profesora" que suma a su menú la propietaria que también dicta clases.
+        path: "profesora",
+        element: guardiaDeSeccion("profesora"),
+        children: [{ index: true, lazy: paginaDeGrupo("/app/profesora", "/app/hoy") }],
+      },
+      {
+        path: "hoy",
+        element: guardiaDeSeccion("hoy", "ASISTENCIAS_MARCAR"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "ClasesDeHoyPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/asistencia/pages/asistencia-page"), "ClasesDeHoyPage") },
+        ],
+      },
+      {
+        path: "inicio",
+        element: guardiaDeSeccion("inicio"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/pages/inicio-page"), "InicioPage") },
+        ],
+      },
+      {
+        // US-29: las próximas clases del alumno.
+        path: "clases",
+        element: guardiaDeSeccion("clases"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/portal-alumno/pages/clases-alumno-page"), "ClasesAlumnoPage") },
+        ],
+      },
+      // La cuota del alumno se ve en su Inicio. US-16: features/transferencias/pages/mi-plan-page.tsx
+      // (informar una transferencia) vuelve con su ruta cuando el back tenga GET /alumnos/mi-plan.
+      { path: "mi-plan", loader: redirigirA("/app/inicio") },
+      {
+        // Reportes: una pestaña por informe (US-30, US-33 a US-37 y cobranza). El back los reserva a la
+        // propietaria con este permiso.
+        path: "reportes",
+        element: guardiaDeSeccion("reportes", "REPORTES_COBRANZA_VER"),
+        children: [
+          { index: true, loader: redirigirA("/app/reportes/inscripciones") },
+          // US-35: inscriptos por mes.
+          { path: "inscripciones", lazy: paginaPerezosa(() => import("@/features/reportes/pages/inscripciones-page"), "InscripcionesPage") },
+          // US-33: informe de asistencia retirado (redirige al ranking).
+          { path: "asistencia", loader: redirigirA("/app/reportes/ranking") },
+          // US-36: planes más elegidos.
+          { path: "planes", lazy: paginaPerezosa(() => import("@/features/reportes/pages/planes-page"), "PlanesReportePage") },
+          // US-37: ocupación de horarios.
+          { path: "ocupacion", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ocupacion-page"), "OcupacionReportePage") },
+          // US-30: ranking de asistencia, en tabla. Los demás roles lo ven en su sección Ranking.
+          { path: "ranking", lazy: paginaPerezosa(() => import("@/features/reportes/pages/ranking-reporte-page"), "RankingReportePage") },
+          { path: "cobranza", loader: redirigirA("/app/cobros/listado") },
+          { path: "cuotas-vencidas", loader: redirigirA("/app/cobros/cuotas") },
+        ],
+      },
+      {
+        // US-28: el alumno consulta su rutina y su progreso; el tutor, los de sus menores.
+        path: "rutina",
+        element: guardiaDeSeccion("rutina", "RUTINAS_VER_PROPIAS"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/rutinas/pages/mi-progreso-page"), "MiProgresoPage") }],
+      },
+      { path: "progreso", loader: redirigirA("/app/rutina") },
+      {
+        // US-30: ranking de asistencia de la profesora, el alumno y el tutor. La propietaria lo ve en
+        // Reportes > Ranking.
+        path: "ranking",
+        element: guardiaDeSeccion("ranking", "REPORTES_RANKING_VER"),
+        children: [
+          {
+            index: true,
+            lazy: paginaPerezosa(
+              () => import("@/features/portal-alumno/pages/ranking-asistencia-page"),
+              "RankingAsistenciaPage",
+            ),
+          },
+        ],
+      },
+      {
+        path: "profesoras",
+        element: guardiaDeSeccion("profesoras", "HORARIOS_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesoras-page"), "ProfesorasPage") },
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/profesoras/pages/profesora-detalle-page"), "ProfesoraDetallePage") },
+        ],
+      },
+      {
+        path: "actividades",
+        element: guardiaDeSeccion("actividades", "ACTIVIDADES_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/actividades/pages/actividades-page"), "ActividadesPage") },
+        ],
+      },
+      {
+        path: "horarios",
+        element: guardiaDeSeccion("horarios", "HORARIOS_VER"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/horarios/pages/HorariosPage"), "HorariosPage") }],
+      },
+      {
+        // La guardia sale del listado, que lo tienen la propietaria y la profesora: las dos abren la ficha.
+        path: "alumnos",
+        element: guardiaDeSeccion("alumnos/listado", "ALUMNOS_VER"),
+        children: [
+          // Pantalla del grupo Alumnos (solo en el menú de la propietaria).
+          { index: true, lazy: paginaDeGrupo("/app/alumnos", "/app/alumnos/listado") },
+          // US-10: listado de alumnos (búsqueda y filtros) y alta de pre-inscripción (US-05).
+          { path: "listado", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumnos-page"), "AlumnosPage") },
+          // Ficha del alumno: datos y edición (US-09), plan y horarios, baja y reactivación (US-08).
+          { path: ":id", lazy: paginaPerezosa(() => import("@/features/alumnos/pages/alumno-detalle-page"), "AlumnoDetallePage") },
+        ],
+      },
+      {
+        // Issue #49: "Por verificar" une las transferencias por verificar (US-17) y las altas nuevas que
+        // esperan su primer pago (US-07). Las rutas anteriores de cada lista llevan acá.
+        path: "por-verificar",
+        element: guardiaDeSeccion("por-verificar"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/por-verificar/pages/por-verificar-page"), "PorVerificarPage") },
+        ],
+      },
+      { path: "alumnos/pendientes", loader: redirigirA("/app/por-verificar") },
+      {
+        // US-22: detección de alumnos ausentes con cuota al día y seguimiento de reintegro.
+        path: "ausentes",
+        element: guardiaDeSeccion("ausentes", "REPORTES_COBRANZA_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/inactivos/pages/ausentes-page"), "AusentesPage") },
+        ],
+      },
+      {
+        // US-11: planes vigentes. Verlos pide PLANES_VER; crearlos y editarlos, además, PLANES_EDITAR.
+        path: "planes",
+        element: guardiaDeSeccion("planes", "PLANES_VER"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") },
+          { path: "promociones", lazy: paginaPerezosa(() => import("@/features/planes/pages/planes-page"), "PlanesPage") },
+          {
+            element: (
+              <PermissionGuard permission="PLANES_EDITAR">
+                <Outlet />
+              </PermissionGuard>
+            ),
+            children: [
+              { path: "nuevo", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "NuevoPlanPage") },
+              { path: ":idPlan/editar", lazy: paginaPerezosa(() => import("@/features/planes/pages/plan-form-page"), "EditarPlanPage") },
+            ],
+          },
+        ],
+      },
+      {
+        // Redirección de rutas históricas /app/pagos hacia /app/cobros.
+        path: "pagos",
+        element: guardiaDeSeccion("pagos"),
+        children: [
+          { index: true, loader: redirigirA("/app/cobros/listado") },
+          { path: "listado", loader: redirigirA("/app/cobros/listado") },
+          { path: "cuotas", loader: redirigirA("/app/cobros/listado") },
+          { path: "transferencias", loader: redirigirA("/app/cobros/transferencias") },
+          { path: "efectivo", loader: redirigirA("/app/cobros/efectivo") },
+        ],
+      },
+      {
+        // US-23: informe mensual de honorarios. Solo la propietaria: el back exige el mismo permiso.
+        path: "honorarios",
+        element: guardiaDeSeccion("honorarios", "HONORARIOS_VER_TODOS"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/honorarios/pages/honorarios-page"), "HonorariosPage") },
+          // US-24 (otro integrante del front): reemplazar por su pantalla de suplencias.
+          {
+            path: "suplencias",
+            lazy: paginaPerezosa(
+              () => import("@/features/honorarios/pages/suplencias-page"),
+              "SuplenciasPage",
+            ),
+          },
+        ],
+      },
+      {
+        path: "notificaciones",
+        loader: redirigirA("/app/dashboard"),
+      },
+      {
+        path: "notificaciones/*",
+        loader: redirigirA("/app/dashboard"),
+      },
+      {
+        path: "seguridad/permisos",
+        loader: redirigirA("/app/dashboard"),
+      },
+      {
+        // Cobros (US-15 a US-19): Listado, Cuotas y Efectivo a rendir (propietaria),
+        // o cobro de cuotas de alumnos a cargo (profesora).
+        path: "cobros",
+        element: guardiaDeSeccion("cobros"),
+        children: [
+          { index: true, lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "listado", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "cuotas", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+          { path: "transferencias", loader: redirigirA("/app/por-verificar") },
+          { path: "efectivo", lazy: paginaPerezosa(() => import("@/features/cobros/pages/cobros-page"), "CobrosPage") },
+        ],
+      },
+      // US-04: el cronograma semanal de la profesora está en Mis clases (/app/hoy).
+      { path: "mis-clases", loader: redirigirA("/app/hoy") },
+      {
+        // Perfil de la profesora y del alumno. Las insignias del alumno (US-31) están en su Ranking.
+        path: "perfil",
+        element: guardiaDeSeccion("perfil"),
+        children: [{ index: true, lazy: paginaPerezosa(() => import("@/features/perfil/pages/perfil-page"), "PerfilPage") }],
+      },
+    ],
+  },
+  { path: "*", element: <NotFoundPage /> },
+]);

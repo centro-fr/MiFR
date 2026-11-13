@@ -1,0 +1,32 @@
+@startuml
+title Ciclo de vida de una inscripción
+
+[*] --> PREINSCRIPTA : pre-inscribir
+[*] --> ACTIVA : reactivar alumno dado de baja
+PREINSCRIPTA --> ACTIVA : primer pago confirmado (lo dispara el cobro)
+PREINSCRIPTA --> BAJA : dar de baja al alumno
+ACTIVA --> BAJA : dar de baja al alumno
+PREINSCRIPTA --> BAJA : cambiar de plan / CAMBIO_PLAN
+ACTIVA --> BAJA : cambiar de plan / CAMBIO_PLAN
+
+note right of PREINSCRIPTA
+  No habilita al alumno: permanece INACTIVO.
+  Reserva cupo hasta DIAS_RESERVA_PREINSCRIPCION días
+  después de fecha_inicio (parámetro del sistema).
+  Vencido el plazo sigue PREINSCRIPTA, pero deja de
+  ocupar lugar: el primer pago vuelve a pedir cupo.
+  Cambiar de plan conserva fecha_inicio, así que
+  no renueva la reserva.
+end note
+
+note right of ACTIVA
+  El alumno puede asistir y su usuario está activo.
+end note
+
+note right of BAJA
+  Estado terminal de esta inscripción.
+  Reactivar o cambiar de plan crea otra inscripción
+  y conserva esta como historial.
+end note
+
+@enduml

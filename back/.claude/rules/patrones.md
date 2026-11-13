@@ -12,6 +12,23 @@ Esta lista salió de analizar `der.puml`, `vista_arquitectonica.puml` y los docu
 
 Es el modelo a seguir para cualquier integración externa futura (pasarela de pagos, envío de notificaciones): la librería se envuelve, el dominio no se entera.
 
+### Facade — la interfaz `ILogica*` de cada subsistema
+
+`gestion-usuarios/gestion-usuarios.service.ts`. En `vista_arquitectonica.puml` la interfaz `ILogicaUsuarios` la provee el subsistema `GestionUsuarios`, no uno de sus componentes, y es lo único que usa la capa de presentación. `GestionUsuariosService` la implementa pasando cada operación al componente dueño (`Sesion`, `Usuario` o `Rol`), sin reglas propias.
+
+Es el modelo para los otros subsistemas: cada `ILogica*` se realiza con un service en la raíz del subsistema, y cada controller depende de la parte de esa interfaz que le toca a su componente (ver `interfaces.md`).
+
+**Única excepción a "sin reglas propias":** una regla que cruza dos componentes que el diagrama no conecta entre sí. Va en la fachada, porque el subsistema es el único que ve a los dos, y nunca en uno de los componentes, porque eso agregaría una dependencia que el diagrama no tiene. Los casos actuales:
+
+- `GestionServicioEntrenamientoService.darDeBajaActividad` cuenta con `IInfoInscripciones` los alumnos de los horarios de la actividad: si alguno tiene inscriptos responde 409; si no, da de baja los horarios y después la actividad (US-03). `Actividad` no depende de `Horario`, y además `Horario` ya depende de `IInfoActividades`, así que la dependencia inversa armaría un ciclo.
+- `GestionPersonasService.darDeBajaProfesora` consulta `IInfoHorarios`, que en el diagrama requiere el subsistema `GestionPersonas` y no el componente `Profesor`.
+- `GestionServicioEntrenamientoService.darDeBajaHorario` consulta `IInfoInscripciones` y no da de baja un horario con alumnos inscriptos (US-04). `Horario` no conoce a `Inscripcion`, que además depende de `IInfoHorarios`.
+- `GestionPersonasService` resuelve con `IInfoInscripciones` los filtros por plan, profesora y actividad, el plan de cada fila y qué alumnos tiene a cargo una profesora (US-09, US-10), y con `IInfoCuotas` la situación de cuota de cada inscripción (US-10, US-18), el filtro del listado por estado de cuota y el historial de cuotas y pagos de la ficha, que solo ve la propietaria. Como el estado de cuota se calcula y no se guarda, el filtro lo calcula para los alumnos que cumplen los otros filtros (hasta 500) y pagina en memoria. `Alumno` no conoce a `Inscripcion`, que depende de `IInfoAlumnos`, ni a `Cuota`. La fachada recibe quién hace el pedido (`Solicitante`) desde el controller.
+- `GestionInscripcionesYClasesService.reactivarAlumno` consulta `IInfoCuotas.tuvoPagoConfirmado`: quien nunca pagó vuelve con la inscripción `PREINSCRIPTA` (US-07, US-08). `Inscripcion` no conoce los pagos, y `Cuota` ya depende de `IInfoInscripciones`.
+- `GestionInscripcionesYClasesService` suma a la lista de asistencia la situación de cuota de cada inscripto (`IInfoCuotas`, US-20) y a las clases del día sus inscriptos y el cupo disponible (`IInfoInscripciones`). Al cancelar una clase comprueba con `Asistencia` que no tenga marcas, bajo el bloqueo de la clase (`IUnidadDeTrabajo`). `Asistencia` y `Clase` no conocen a `Cuota`, `Clase` no conoce a `Inscripcion` ni a `Asistencia`, que ya depende de `IInfoClases`.
+
+La regla se limita a coordinar: consulta un componente y, según el resultado, llama al otro o lanza el error. Si empieza a acumular lógica propia, es señal de que falta un componente en el diagrama.
+
 ## A aplicar cuando se implemente el módulo
 
 ### Strategy — vencimiento de cuota según tipo de plan
@@ -61,22 +78,22 @@ No hay caso identificado para Template Method, Decorator, Composite, Builder, Co
 
 Sobre Observer en particular, que es el que más se tienta al ver "notificaciones": **no aplica**, y conviene entender por qué antes de proponerlo.
 
-Observer necesita un sujeto que avise en el momento en que su estado cambia. Dos de los cuatro tipos de notificación no tienen ese momento: `CUOTA_POR_VENCER` y `CUOTA_VENCIDA` no ocurren porque alguien haga algo, ocurren porque pasa el tiempo. No existe la línea de código donde emitir el evento. Se refuerza con lo que ya dice la sección anterior: la cuota no tiene estado persistido, se deriva por cálculo, así que tampoco hay transición que observar. La única implementación posible para esos dos casos es una consulta periódica, que es lo que el diagrama modela: `GestionNotificacionesEInsignias` requiere `IInfoCuotas` e `IInfoAsistencia`, provistas por `Cuota` y `Asistencia`.
+Observer necesita un sujeto que avise en el momento en que su estado cambia. Dos de los cuatro tipos de notificación no tienen ese momento: `CUOTA_POR_VENCER` y `CUOTA_VENCIDA` no ocurren porque alguien haga algo, ocurren porque pasa el tiempo. No existe la línea de código donde emitir el evento. Se refuerza con lo que ya dice la sección anterior: la cuota no tiene estado persistido, se deriva por cálculo, así que tampoco hay transición que observar. La única implementación posible para esos dos casos es una consulta periódica, que es lo que el diagrama modela: `PlanificadorNotificaciones` (`GestionNotificaciones`) requiere `IInfoCuotas`, provista por `Cuota`.
 
-Hay un segundo motivo, más importante todavía. El Observer del catálogo GoF es en memoria, síncrono y dentro del mismo proceso: el aviso llega a quien esté escuchando en ese instante y después no queda nada. Las `notificaciones_internas` del DER son entidades persistidas, con `leida` y `fecha_lectura`, que la persona ve cuando entra a la aplicación, no cuando el hecho ocurre. Implementar eso como Observer da un sistema donde el aviso se pierde si nadie estaba escuchando, y desaparece con cada reinicio del servidor.
+Hay un segundo motivo, más importante todavía. El Observer del catálogo GoF es en memoria, síncrono y dentro del mismo proceso: el aviso llega a quien esté escuchando en ese instante y después no queda nada. Las `notificaciones` del DER son entidades persistidas, con `leida`, que la persona ve cuando entra a la aplicación, no cuando el hecho ocurre. Implementar eso como Observer da un sistema donde el aviso se pierde si nadie estaba escuchando, y desaparece con cada reinicio del servidor.
 
 `BIENVENIDA` y `CLASE_CANCELADA` sí son eventos genuinos. Pero para dos casos alcanza con que el service correspondiente llame al de notificaciones después de completar su operación. No hace falta un patrón ni una infraestructura de eventos para eso.
 
 El esquema del diagrama tiene además la ventaja de dejar la dependencia en la dirección correcta: `GestionCuotasYPagos` no necesita enterarse de que las notificaciones existen. El módulo accesorio depende del central, no al revés.
 
-Lo que sí queda por resolver, y es más importante que la discusión del patrón, es **quién ejecuta esa consulta periódica y cada cuánto**. Está anotado como decisión pendiente en `arquitectura.md`.
+Lo que sí queda por resolver, y es más importante que la discusión del patrón, es **quién ejecuta esa consulta periódica y cada cuánto**. Quedó decidido en `arquitectura.md` (sección "Generación de notificaciones"): un intervalo mientras el proceso está despierto y, además, al consultar las notificaciones propias.
 
 ## Cosas que están en el código y no son patrones GoF
 
 Conviene nombrarlas bien, sobre todo al documentar o defender el trabajo:
 
-- **Repository** (`user.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
+- **Repository** (`usuario.repository.ts`) es un patrón de Fowler, del catálogo de arquitectura de aplicaciones empresariales. No está en el catálogo GoF.
 - **La inyección de dependencias por constructor** es la aplicación del principio de inversión de dependencias, no un patrón de diseño.
-- **`createApp`, `createUserRoutes`, `createUserController`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
+- **`createApp`, `createGestionUsuariosRoutes`, `createUsuarioRoutes`, `createUsuarioController`, `crearControlDeAcceso`** son *factory functions* en el sentido idiomático de JavaScript. No son Factory Method: no hay jerarquía de productos ni subclases que decidan qué instanciar.
 - **`AppError` y sus subclases** son herencia simple para tipar errores HTTP.
-- **El singleton de Prisma** en `shared/db/client.ts` sí es Singleton, pero resuelto con un módulo y `globalThis`, no con la implementación clásica de constructor privado.
+- **La instancia única de `PrismaClient`** no es el patrón Singleton: nada impide crear otra. Es una sola porque la crea una sola vez el composition root (`index.ts`) y la reparte por constructor.

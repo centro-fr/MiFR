@@ -4,8 +4,9 @@
 
 Esta especificación consolida las User Stories de la épica **Configuración Base**:
 
-- **US-03**: Alta y administración de actividades y cupos (`docs/specs/02-configuracion-base/US-03-alta-administracion-actividades-cupos.md`)
-- **US-04**: Asignación de profesoras y horarios a actividades (`docs/specs/02-configuracion-base/US-04-asignacion-profesoras-horarios.md`)
+- **US-03**: Alta y administración de actividades y cupos (`docs/specs/02-actividades-cupos/US-03-alta-administracion-actividades-cupos.md`)
+- **US-04**: Asignación de profesoras y horarios a actividades (`docs/specs/02-actividades-cupos/US-04-asignacion-profesoras-horarios.md`)
+- **US-38**: Gestión del plantel de profesoras (ABMC) (`docs/specs/02-actividades-cupos/US-38-gestion-plantel-profesoras.md`)
 
 ---
 

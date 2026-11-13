@@ -5,8 +5,11 @@
 ### 1.1. Backend
 
 - Servicio de Liquidaciones (`LiquidacionService`):
-  - Ejecuta el cálculo reuniendo inscripciones activas vinculadas a los horarios de cada profesora durante el rango de fechas `[periodo_desde, periodo_hasta]`.
-  - Cruza con la tabla `suplencias` para generar ítems de crédito y débito.
+  - Ejecuta el cálculo por profesora sobre el rango de fechas `[periodo_desde, periodo_hasta]`: suma los **pagos confirmados** dentro del período de las inscripciones a su cargo (activas, o dadas de baja que hayan cobrado; se excluyen preinscripciones e inscripciones sin cargo) y aplica el **50 %**. No hay mínimo de alumnos.
+  - Fórmula: `HonorarioBase(P) = PORCENTAJE_HONORARIOS × Σ pagos confirmados en el mes de las inscripciones de P`. Ejemplo: ingresos por $200.000 → honorario base de $100.000.
+  - Cada inscripción genera una línea `ALUMNO_A_CARGO` con el monto cobrado de ese alumno en el mes y su 50 %, de modo que el detalle sea auditable.
+  - El porcentaje se guarda como parámetro del sistema (`PORCENTAJE_HONORARIOS`, 50 por defecto), configurable por la Propietaria.
+  - Cruza con la tabla `suplencias` para generar ítems de crédito y débito, que se aplican sobre el honorario base.
   - Guarda el resultado en `liquidaciones` y `liquidacion_detalles` en estado `BORRADOR` permitiendo ajustes manuales antes de pasar a `CERRADA`.
 - Generación de Reportes:
   - Generación de PDF en backend utilizando librerías como `pdfkit` o exportación estructurada a formato `xlsx`.
@@ -19,7 +22,7 @@
 - Pantalla para la Propietaria (`/admin/honorarios`):
   - Selector de mes/año (date picker mensual).
   - Tarjetas de resumen (Total liquidado, Cantidad de profesoras, Total suplencias).
-  - Tabla expandible (acordeón) por profesora con desglose de alumnos a cargo, clases suplidas y descuentos.
+  - Tabla expandible (acordeón) por profesora con desglose de alumnos a cargo (con el monto cobrado de cada uno), clases suplidas y descuentos.
   - Botón de exportar a PDF y Excel.
 - Formulario de Registro de Suplencias:
   - Selección de clase del calendario, selección de profesora ausente y selección de reemplazante de la nómina de profesoras activas.

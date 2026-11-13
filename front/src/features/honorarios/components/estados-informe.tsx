@@ -1,0 +1,213 @@
+import { isAxiosError } from "axios";
+import { AlertTriangle, Loader2, X } from "lucide-react";
+import { mensajeDeErrorApi } from "@/api/errores";
+import { Can } from "@/components/guards/can";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
+import { etiquetaPeriodo } from "@/features/honorarios/utils/periodo";
+import type { AdvertenciaHonorario, LiquidacionResumen } from "@/types/honorarios";
+
+export function InformeCargando() {
+  return (
+    <div aria-busy="true" aria-label="Cargando el informe" className="space-y-4">
+      {/* Barra superior de estado del mes */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-1">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-48 rounded-md" />
+          <Skeleton className="h-4 w-72 sm:w-96 rounded-md" />
+        </div>
+        <Skeleton className="h-8 w-32 rounded-lg shrink-0" />
+      </div>
+
+      {/* Contenedor responsivo estructurado como TablaHonorarios */}
+      <div className="@container">
+        {/* Mobile / Tablet: tarjetas skeleton */}
+        <div className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm dark:bg-surface-low">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-9 rounded-full shrink-0" />
+                <Skeleton className="h-4 w-36 flex-1" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-7 w-28" />
+              <div className="space-y-2 pt-1">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Skeleton className="h-8 w-24 rounded-lg" />
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Desktop: tabla skeleton con las mismas columnas y alineaciones */}
+        <Card className="hidden overflow-hidden rounded-lg border-slate-200/80 bg-white shadow-2xs @4xl:block dark:border-slate-800 dark:bg-slate-900">
+          <Table className="w-full text-left text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/60">
+                <TableHead className="px-6 py-3.5 font-bold text-slate-600 dark:text-slate-400">Profesor/a</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Alumnos</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Por sus alumnos</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Suplencias</TableHead>
+                <TableHead className="px-4 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Total</TableHead>
+                <TableHead className="px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400">Estado</TableHead>
+                <TableHead className="px-6 py-3.5 text-right font-bold text-slate-600 dark:text-slate-400">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i} className="border-b border-slate-100 dark:border-slate-800">
+                  <TableCell className="px-6 py-3 align-middle">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-9 rounded-full shrink-0" />
+                      <Skeleton className="h-4 w-36" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-12" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 text-right align-middle">
+                    <Skeleton className="ml-auto h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="px-4 py-4 align-middle">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell className="px-6 py-3 text-right align-middle">
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-8 w-24 rounded-lg" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Un 404 de GET /liquidaciones es que el servidor todavía no tiene la ruta (el back de US-23 está en
+// curso): su mensaje ("Ruta GET … no encontrada") es técnico y no le sirve a la propietaria.
+function mensajeDeError(error: unknown): string {
+  if (isAxiosError(error) && error.response?.status === 404) {
+    return "El informe de honorarios todavía no está disponible en el servidor. Probá más tarde.";
+  }
+  return mensajeDeErrorApi(error, "No se pudo cargar el informe de honorarios.");
+}
+
+export function InformeConError({ error, reintentando, onReintentar }: { error: unknown; reintentando: boolean; onReintentar: () => void }) {
+  return (
+    <EstadoErrorCarga
+      mensaje={mensajeDeError(error)}
+      reintentando={reintentando}
+      onReintentar={onReintentar}
+    />
+  );
+}
+
+interface PropsVacio {
+  periodo: string;
+  /** Solo un mes abierto se puede calcular: uno ya cerrado que nunca se calculó es de antes de usar el sistema. */
+  mesAbierto: boolean;
+  procesando: boolean;
+  onCalcular: () => void;
+}
+
+/** El back solo tiene liquidaciones de un mes después de calcularlo (POST /liquidaciones). */
+export function InformeVacio({ periodo, mesAbierto, procesando, onCalcular }: PropsVacio) {
+  const mes = etiquetaPeriodo(periodo);
+  return (
+    <Card className="flex flex-col items-center gap-3 rounded-lg border-slate-200 px-5 py-14 text-center dark:border-slate-800">
+      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+        {mesAbierto ? `Todavía no se calcularon los honorarios de ${mes}` : `No hay honorarios de ${mes}`}
+      </h2>
+      <p className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+        {mesAbierto ? "Se calculan con lo que pagaron los alumnos de cada profesor/a y las suplencias del mes." : "Ese mes no se llegó a calcular."}
+      </p>
+      {mesAbierto && (
+        <Can permission="HONORARIOS_LIQUIDAR" fallback={<p className="text-sm text-muted-foreground">Cuando se calculen, el informe va a aparecer acá.</p>}>
+          <Button
+            type="button"
+            onClick={onCalcular}
+            disabled={procesando}
+            className="mt-2 min-h-11 rounded-xl bg-primary px-5 font-extrabold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark"
+          >
+            {procesando && <Loader2 aria-hidden="true" className="size-4 animate-spin" />}
+            {procesando ? "Calculando…" : "Calcular honorarios"}
+          </Button>
+        </Can>
+      )}
+    </Card>
+  );
+}
+
+// El porcentaje por alumno es general y la hora de suplencia, de cada profesor/a: en las suplencias, la
+// advertencia es de quien cubrió. TARIFA_NO_APLICABLE: la vigente es del tipo que el concepto ya no admite
+// (por alumno, un porcentaje; por hora de suplencia, un monto fijo). Pasa con tarifas cargadas antes de esa regla.
+const MOTIVO_DE_LA_ADVERTENCIA: Record<AdvertenciaHonorario["concepto"], Record<AdvertenciaHonorario["motivo"], string>> = {
+  ALUMNO_A_CARGO: {
+    SIN_TARIFA: "un alumno no sumó porque no hay una tarifa por alumno vigente.",
+    TARIFA_NO_APLICABLE: "un alumno no sumó, porque la tarifa por alumno es un monto fijo y tiene que ser un porcentaje de lo cobrado.",
+  },
+  HORA_SUPLENCIA: {
+    SIN_TARIFA: "una clase que cubrió no sumó ni se descontó, porque no tiene cargado su monto por hora de suplencia.",
+    TARIFA_NO_APLICABLE: "una clase que cubrió no sumó, porque la tarifa por hora de suplencia no es un monto fijo.",
+  },
+};
+
+function textoDeAdvertencia(advertencia: AdvertenciaHonorario, profesoras: Map<number, string>): string {
+  const profesora = profesoras.get(advertencia.idProfesora) ?? "Una profesora";
+  return `${profesora}: ${MOTIVO_DE_LA_ADVERTENCIA[advertencia.concepto][advertencia.motivo]}`;
+}
+
+interface PropsAdvertencias {
+  advertencias: AdvertenciaHonorario[];
+  liquidaciones: LiquidacionResumen[];
+  onCerrar: () => void;
+}
+
+/** Lo que el último cálculo no pudo liquidar: el back no lo guarda, solo lo informa al calcular. */
+export function AvisoAdvertencias({ advertencias, liquidaciones, onCerrar }: PropsAdvertencias) {
+  const profesoras = new Map(liquidaciones.map((fila) => [fila.profesora.id, nombreCompleto(fila.profesora)]));
+  return (
+    <section
+      aria-label="Líneas sin calcular"
+      className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+    >
+      <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-extrabold">Hay líneas que no se pudieron calcular</h2>
+        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm">
+          {advertencias.map((advertencia, indice) => (
+            <li key={`${advertencia.idProfesora}-${advertencia.idInscripcion ?? advertencia.idClase ?? indice}`}>
+              {textoDeAdvertencia(advertencia, profesoras)}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-sm">Cargá lo que falta en Configuración y volvé a tocar Actualizar.</p>
+      </div>
+      <Button type="button" variant="ghost" size="icon" onClick={onCerrar} aria-label="Cerrar el aviso" className="size-11 shrink-0 rounded-lg pointer-fine:size-9">
+        <X aria-hidden="true" className="size-4" />
+      </Button>
+    </section>
+  );
+}

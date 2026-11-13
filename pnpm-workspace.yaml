@@ -7,3 +7,11 @@ allowBuilds:
   bcrypt: true
   esbuild: true
   prisma: true
+# Versiones mínimas de dependencias transitivas con avisos de seguridad (pnpm audit). Se sacan
+# cuando el paquete que las trae (express, prisma) publique una versión que ya las incluya.
+overrides:
+  proxy-addr: ^2.0.8
+  source-map-js: ^1.2.2
+  deepmerge-ts: ^8.0.0
+  body-parser: ^2.4.0
+  qs: ^6.16.1

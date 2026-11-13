@@ -6,12 +6,12 @@ Tareas técnicas, secuenciales y verificables para la épica **Reportes y Fideli
 
 ## Fase 1: Backend – Consultas Analíticas y Exportadores
 
-- [ ] **1.1. Servicio de Reportes de Asistencia y Cobranzas (US-33 y US-34)**
+- [x] **1.1. Servicio de Reportes de Asistencia y Cobranzas (US-33 y US-34)**
   - Implementar consultas SQL parametrizadas para asistencia general filtrable.
   - Implementar consulta de cuotas vencidas computando días de mora reales.
   - *Criterio de verificación*: Test unitario que valide que cuotas dentro de los días de gracia no aparezcan en mora.
 
-- [ ] **1.2. Servicio de Estadísticas y Heatmap de Horarios (US-35, US-36 y US-37)**
+- [x] **1.2. Servicio de Estadísticas y Heatmap de Horarios (US-35, US-36 y US-37)**
   - Implementar agregaciones por mes de nuevas inscripciones.
   - Implementar distribución de planes activos.
   - Implementar cálculo de tasa de ocupación por bloque horario.

@@ -1,0 +1,24 @@
+| Módulo | Alcance | Requerimientos Funcionales | Rol |
+| :--- | :--- | :--- | :--- |
+| **Autenticación y Seguridad** | Administrar usuarios con perfiles y permisos. | - ABMC usuarios (propietaria, profesor/a, alumno/tutor)<br>- ABMC roles<br>- Asignar roles a usuarios | - Propietaria |
+| **Clases** | Administrar actividades, horarios y profesor/a. | - ABMC actividades con cupos.<br>- Asignar actividad con horario y profesor/a.<br>- Modificar asignación de actividad con horario y profesor/a.<br>- Eliminar asignación de actividad con horario y profesor/a. | - Propietaria |
+| **Planes y Precios** | Administrar planes, precios y promociones. | - ABMC planes<br>- Asignar profesora y actividad a plan.<br>- Eliminar asignación de profesora y actividad del plan. | - Propietaria |
+| **Alumnos e Inscripciones** | Administrar alumnos. | - Registrar preinscripción (nombre, apellido, fecha nacimiento, teléfono, contacto emergencia)<br>- Registrar tutor para menores de edad.<br>- Registrar baja de alumno conservando el historial de asistencia y pagos.<br>- Consultar ficha detallada de alumno (datos, plan, rutina y progreso, historial de asistencia, horarios) | - Propietaria, Profesor/a |
+| | | - Registrar alta de alumno al pagar la primera cuota. | - Sistema (automático tras confirmar el pago) |
+| **Pagos y Cuotas** | - Registrar y confirmar pagos.<br>- Controlar vencimientos de cuotas.<br>- Controlar el efectivo pendiente de rendición. | - Registrar cobro en transferencia.<br>- Consultar transferencias pendientes.<br>- Consultar efectivo pendiente de rendición. | - Propietaria |
+| | | - Registrar cobro en efectivo.<br>- Registrar transferencia pendiente de validación. | - Propietaria<br>- Profesora |
+| | | - Calcular automáticamente el vencimiento de cuota (con días de gracia configurables, sin gracia para clases particulares)<br>- Registrar efectivo pendiente de rendición. | - Sistema |
+| | | - Consultar vencimiento de cuota. | - Propietaria<br>- Alumno<br>- Profesor/a<br>- Tutor |
+| **Asistencia** | - Registrar y controlar asistencias. | - Generar listado de alumnos con gran cantidad de inasistencias. | - Propietaria |
+| | | - Registrar asistencia del alumno. | - Propietaria<br>- Profesor/a |
+| | | - Consultar asistencia del alumno.<br>- Generar historial de asistencia (alumno, actividad, horario y fecha) | - Alumno<br>- Profesor<br>- Propietaria<br>- Tutor |
+| | | - Registrar automáticamente la inasistencia si no tiene asistencia cargada. | - Sistema |
+| **Honorarios** | Administrar honorarios de profesores/as. | - Registrar el monto de suplencia correspondiente al profesor/a.<br>- Registrar el porcentaje de monto cobrado por alumno inscripto.<br>- Registrar honorarios totales de cada profesor.<br>- Consultar detalles del cálculo de honorarios de una profesora.<br>- Generar informe de honorarios totales de cada profesor | - Propietaria |
+| | | - Calcular automáticamente honorario de profesor/a<br>- Calcular suplencias de profesores/as. | - Sistema |
+| **Notificaciones y Alertas** | Generar avisos y notificaciones automáticas. | - Notificar cuando la cuota mensual entra en días de gracia.<br>- Notificar cuando la cuota no haya sido abonada y se haya superado el período de días de gracia.<br>- Notificar transferencias bancarias por verificar.<br>- Notificar efectivo pendiente de rendición.<br>- Notificar cuotas vencidas.<br>- Notificar cancelación imprevista de clase.<br>- Notificar bienvenida. | - Sistema |
+| **Rutina y Progreso** | Registro de rutinas y seguimiento del progreso físico por alumno. | - ABMC de rutinas.<br>- Registro de seguimiento de progreso físico (peso y medidas) | - Propietaria |
+| | | - Consultar seguimiento de progreso físico. | - Propietaria<br>- Alumno<br>- Profesor/a<br>- Tutor |
+| **Panel del Alumno** | - Consultar estado de cuota, asistencia y próximas clases.<br>- Asignar insignias, racha y ranking de asistencia entre alumnos. | - Consultar historial de asistencia.<br>- Consultar próximas clases.<br>- Consultar rachas de asistencia.<br>- Consultar ranking general de asistencias | - Propietaria<br>- Alumno<br>- Profesor/a<br>- Tutor |
+| | | - Registrar insignias<br>- Asignar insignia por rachas de asistencia. | - Sistema |
+| **Panel Público** | Visualización pública de actividades. | - Consultar actividades con sus horarios. | - Público |
+| **Reportes** | Generar informes del negocio. | - Generar informe de cuotas vencidas.<br>- Generar informe de asistencia.<br>- Generar informe de inscripciones por mes.<br>- Generar informe de planes más elegidos.<br>- Visualizar de ocupación de horarios. | - Propietaria |

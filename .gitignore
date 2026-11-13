@@ -1,6 +1,10 @@
 # Dependencias (todas las de front y back, en el node_modules compartido)
 node_modules/
 
+# El monorepo usa pnpm (pnpm-lock.yaml): un lockfile de npm o yarn quedaría desincronizado.
+package-lock.json
+yarn.lock
+
 # Builds compilados
 dist/
 build/
@@ -23,6 +27,7 @@ pnpm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+.claude/
 
 # Cobertura de tests
 coverage/
@@ -32,3 +37,13 @@ front/.vite/
 
 # Archivos de bloqueo de Enterprise Architect
 *.ldb
+
+user09y10/
+
+# Capturas de pantalla temporales de chat / diseño
+/*.png
+/*.jpg
+/*.jpeg
+front/*.png
+front/*.jpg
+front/*.jpeg

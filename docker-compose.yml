@@ -7,8 +7,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mifr
+    # Solo en la propia máquina: el usuario y la contraseña están en el repositorio y son de superusuario.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:55432:5432"
     volumes:
       - mifr-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,6 +17,51 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Base de los tests de integración (pnpm --filter back test:integration). Es descartable: vive
+  # en memoria y solo se levanta con el perfil, así un `docker compose up` normal no la arranca.
+  #   docker compose --profile test up -d db-test
+  db-test:
+    image: postgres:16-alpine
+    container_name: mifr-db-test
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mifr_test
+    ports:
+      - "127.0.0.1:55433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mifr_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+      target: produccion
+    container_name: mifr-api
+    restart: unless-stopped
+    # Igual que en Render: al arrancar aplica las migraciones pendientes y después levanta la API.
+    # GOOGLE_CLIENT_ID, JWT_SECRET, JWT_EXPIRES_IN y NODE_ENV salen de back/.env; lo de abajo tiene
+    # prioridad. Sin NODE_ENV en back/.env la imagen corre en production, como en Render.
+    env_file:
+      - back/.env
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
+      PORT: 3000
+      CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:5173,http://localhost:3001}
+    # Con back/.env de desarrollo la API trae el login sin Google: se publica solo en la propia
+    # máquina, no en la red local. Adentro del contenedor escucha en todas las interfaces (HOST del Dockerfile).
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   mifr-db-data:

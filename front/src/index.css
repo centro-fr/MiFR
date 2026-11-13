@@ -1,111 +1,432 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Modo oscuro por clase (.dark en <html>), controlado por el store de tema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Variables shadcn/ui (tema claro) mapeadas al brand MiFR ─────────────
+   Los componentes shadcn (dialog, sheet, table, badge…) consumen estos
+   tokens vía bg-background / text-foreground / bg-primary / border-border.
+   Brand obligatorio: #E91E82 · #BC1266 · #181C26 (AGENTS.md §6). */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --background: #f8fafc;
+  --foreground: #181c26;
+  --card: #ffffff;
+  --card-foreground: #181c26;
+  --popover: #ffffff;
+  --popover-foreground: #181c26;
+  --primary: #e91e82;
+  --primary-dark: #bc1266;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #181c26;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #181c26;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #e91e82;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+.dark {
+  color-scheme: dark;
+  --background: #0b0f19;
+  --foreground: #f1f5f9;
+  --card: #0f172a;
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #e91e82;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #e91e82;
+  --scrollbar-thumb: #334155;
+  --scrollbar-thumb-hover: #475569;
+}
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* El sidebar es oscuro también en tema claro: sus scrollbars usan siempre la variante oscura. */
+[data-sidebar="sidebar"] {
+  --scrollbar-thumb: rgba(255, 255, 255, 0.14);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.26);
+}
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+/* Tokens estáticos del tema (no dependen de la clase .dark). */
+@theme {
+  --color-dark: #181c26;
+  --color-canvas: #0b0f19;
+  --color-surface-low: #0f172a;
+  --color-surface-high: #1e293b;
+  --color-bg-light: #f8fafc;
+  /* Menú lateral: fondo azul de las tablas en modo oscuro (slate-900 #0f172a) para ambos temas. */
+  --color-sidebar: #0f172a;
+  --color-sidebar-foreground: #ffffff;
+  --color-sidebar-primary: #e91e82;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: rgba(255, 255, 255, 0.08);
+  --color-sidebar-accent-foreground: #ffffff;
+  --color-sidebar-border: #1e293b;
+  --color-sidebar-ring: #e91e82;
+  --font-sans: "Plus Jakarta Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Titulares de la página pública. Archivo se carga solo en esa página (home-page.tsx). */
+  --font-display: "Archivo", "Arial Black", sans-serif;
+  /* Página pública: fondo oscuro fijo, no sigue el tema claro/oscuro del sistema. Usa el mismo
+     azul pizarra que el sidebar, así el sitio y el sistema se sienten la misma marca. */
+  --color-publico-tinta: var(--color-sidebar);
+  --color-publico-superficie: #162033;
+  --color-publico-borde: var(--color-sidebar-border);
+  --color-publico-borde-fuerte: #475569;
+  --color-publico-texto-suave: #e2e8f0;
+  --color-publico-texto-claro: #cbd5e1;
+  --color-publico-texto-tenue: #94a3b8;
+  --shadow-google: 0 2px 5px 0 rgba(0, 0, 0, 0.08), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+  --shadow-google-hover: 0 4px 14px 0 rgba(233, 30, 130, 0.18), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-brand-glow: 0 10px 30px -5px rgba(233, 30, 130, 0.35);
+  --animate-pulse-glow: pulse-glow 5s ease-in-out infinite;
+  --animate-hero-enter: hero-enter 0.9s ease-out both;
+  --animate-overlay-in: overlay-in 0.25s ease-out both;
+  --animate-panel-in: panel-in 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* Compatibilidad con la pantalla Horarios (US-04): usa animate-fadeIn y animate-shake */
+  --animate-fadeIn: fade-in 0.3s ease-out both;
+  --animate-shake: shake 0.4s ease-in-out;
+  /* Drawer mobile: entrada/salida coreografiadas + stagger de ítems */
+  --animate-drawer-in: drawer-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-drawer-out: drawer-out 0.22s ease-in both;
+  --animate-overlay-out: overlay-out 0.22s ease-in both;
+  --animate-drawer-item: drawer-item 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Transición de página del layout (solo entrada: fade + leve elevación).
+     Fill "backwards" (no "both"): al terminar no queda transform residual,
+     que rompería los position:fixed de modales/docks/toasts del contenido. */
+  --animate-page-enter: page-enter 0.2s ease-out backwards;
+  /* Nav del sidebar desktop: fade-in al expandir (el fade-out lo maneja el
+     layout con transition-opacity + desmontaje diferido). */
+  --animate-nav-in: fade-in 0.18s ease-out both;
+  /* Modal centrado: entrada con leve escala y elevación */
+  --animate-modal-in: modal-in 0.22s ease-out both;
+}
+
+/* Tokens shadcn: `inline` para que las utilidades (bg-background,
+   text-foreground…) referencien la var y reaccionen a .dark sin
+   regenerar el CSS. primary-dark es constante en ambos temas. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* El menú de la página pública lleva a anclas de la misma página: el salto se hace deslizando. */
+html:has(.pagina-publica) {
+  scroll-behavior: smooth;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+/* Entrada suave del titular del hero (una sola vez, queda estático) */
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    filter: brightness(1.6);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+/* Entrada elegante del modal de actividad: el fondo se difumina y el
+   panel lateral se desliza desde la derecha con una leve desaceleración */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Compatibilidad con la pantalla Horarios (US-04) */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Oculta la barra de scroll manteniendo el scroll (usado en Horarios) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mismo efecto con el nombre que usan las pestañas de varias páginas; Tailwind v4 no lo trae. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Drawer mobile: el panel entra deslizando desde la izquierda con una
+   leve presencia inicial; al salir retrocede y se disuelve. */
+@keyframes drawer-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0.4;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Ítems del menú: cascada sutil al abrir (el delay lo pone el componente) */
+@keyframes drawer-item {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Entrada de página del layout: fade + leve elevación, solo el contenido */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada de modal centrado: fade + escala sutil + leve elevación */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Movimiento reducido: ninguna animación ni transición se ve, venga de donde venga (keyframes
+   propios, tw-animate-css del menú y los modales, transiciones como el ancho del sidebar).
+   0.01ms y no `none`: así igual se disparan animationend/transitionend, de los que dependen
+   componentes como los de Radix para desmontarse al cerrar. Los spinners siguen girando: avisan
+   que algo está cargando y no desplazan nada. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* shadcn: el borde por defecto (`border` sin color) usa el token del tema
+   en vez de currentColor, y el body nace con los tokens background/foreground
+   (las vars se resuelven por cascada desde .dark en <html>). */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Tailwind v4 dejó los botones con la flecha del navegador: se vuelve a la manito para que
+     lo clickeable se distinga. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  /* Scrollbars finos, sin flechas y del color del tema en toda la app. Chrome, Edge y Safari
+     usan ::-webkit-scrollbar; Firefox, las propiedades estándar. Estas van solo donde no existen
+     los pseudo-elementos: si Chrome (121+) las ve, ignora ::-webkit-scrollbar y vuelve a su barra
+     nativa. El borde transparente deja la barra visible en 4px con 8px de zona para agarrarla. */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+  }
+  :focus-visible {
+    outline: 2px solid #e91e82;
+    outline-offset: 2px;
+  }
+  select option,
+  select optgroup {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+  .dark select option,
+  .dark select optgroup {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+}
+
+/* Mientras cambia el tema (theme-store) no corre ninguna transición: los colores pasan de golpe
+   y el círculo de la View Transition es lo único que se anima. */
+.cambiando-tema *,
+.cambiando-tema *::before,
+.cambiando-tema *::after {
+  transition: none !important;
+}
+
+/* Cambio de tema claro/oscuro: theme-store revela la captura nueva con un círculo
+   (clip-path) sobre la vieja. Se anula el fundido por defecto del navegador para que
+   nunca se mezclen las dos capturas. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html {
+  font-family: var(--font-sans);
+  height: 100%;
+  background-color: var(--color-background);
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  min-height: 100dvh;
 }
 
-body {
-  margin: 0;
+/* Informe de honorarios para imprimir o guardar como PDF (US-23). En pantalla no se ve; al imprimir
+   se ve solo él: lo demás de <body> (la app, los toasts) se oculta mientras está montado. */
+.informe-impresion {
+  display: none;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@media print {
+  body:has(> .informe-impresion) > :not(.informe-impresion) {
+    display: none !important;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  body:has(> .informe-impresion) {
+    background: #fff;
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  .informe-impresion {
+    display: block;
+  }
 }

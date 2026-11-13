@@ -137,8 +137,8 @@ El objetivo es evitar decisiones ad-hoc durante el desarrollo y garantizar consi
 
 | # | Pantalla | Prioridad | Notas |
 | --- | --- | --- | --- |
-| 16 | Home de la profesora (clases del día) | **M** | Uso en el celular durante el día |
-| 17 | Toma de asistencia | **Solo M** | Se toma desde el celular en el aula |
+| 16 | Home de la profesora (clases del día) | **M+D** | La profesora prioriza mobile; la propietaria consulta y corrige desde desktop |
+| 17 | Toma de asistencia | **M+D** | Mobile optimizado para el aula y vista de escritorio para consulta y correcciones |
 | 18 | Alumnos inactivos (retención) | **D** | Análisis y contacto, mejor en desktop |
 
 ---

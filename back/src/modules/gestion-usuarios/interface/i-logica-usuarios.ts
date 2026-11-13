@@ -1,0 +1,35 @@
+import type { CambioPermiso } from "../rol/rol.schemas.js";
+import type { MatrizPermisos } from "../rol/rol.types.js";
+import type { PerfilSesion, SesionIniciada } from "../sesion/interface/i-autenticacion.js";
+import type { ActualizarUsuarioInput, CrearUsuarioInput } from "../usuario/usuario.schemas.js";
+import type { CodigoRol, UsuarioConRoles } from "../usuario/usuario.types.js";
+
+// Las partes de ILogicaUsuarios, una por componente (Sesion, Usuario y Rol): cada controller
+// depende solo de la suya. No son interfaces nuevas del diagrama; la que provee el subsistema
+// es la unión.
+
+export interface ILogicaSesion {
+  iniciarSesion(idToken: string): Promise<SesionIniciada>;
+  iniciarSesionDesarrollo(email: string): Promise<SesionIniciada>;
+  obtenerPerfil(idUsuario: number): Promise<PerfilSesion>;
+}
+
+export interface ILogicaCuentasDeUsuario {
+  crearUsuario(input: CrearUsuarioInput): Promise<UsuarioConRoles>;
+  listarUsuarios(): Promise<UsuarioConRoles[]>;
+  obtenerUsuarioPorId(id: number): Promise<UsuarioConRoles>;
+  actualizarUsuario(id: number, input: ActualizarUsuarioInput): Promise<UsuarioConRoles>;
+  eliminarUsuario(id: number): Promise<void>;
+  asignarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles>;
+  quitarRol(id: number, rol: CodigoRol): Promise<UsuarioConRoles>;
+}
+
+export interface ILogicaMatrizPermisos {
+  obtenerMatriz(): Promise<MatrizPermisos>;
+  actualizarMatriz(cambios: CambioPermiso[]): Promise<void>;
+}
+
+// Interfaz del subsistema GestionUsuarios en la vista arquitectónica: es lo único que ve la
+// capa de presentación (UsuarioPresWeb). IAutenticacion e IAutorizacion quedan para los otros
+// subsistemas.
+export interface ILogicaUsuarios extends ILogicaSesion, ILogicaCuentasDeUsuario, ILogicaMatrizPermisos {}

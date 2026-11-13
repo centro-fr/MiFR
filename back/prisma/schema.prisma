@@ -1,0 +1,732 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// IDENTIDAD Y ACCESO (der.puml / DER - Centro de Entrenamiento FR.sql)
+// Nombres de PK, FK e indices iguales a los del SQL de EA.
+// ============================================================
+
+enum estado_usuario {
+  ACTIVO
+  INACTIVO
+}
+
+enum codigo_rol {
+  PROPIETARIA
+  PROFESORA
+  ALUMNO
+  TUTOR
+}
+
+model usuarios {
+  id_usuario          Int            @id(map: "PK_usuarios") @default(autoincrement())
+  // NULL hasta el 1er login; NULL en menores
+  google_id           String?        @unique @db.VarChar(255)
+  // NULL en menores a cargo de tutor
+  email               String?        @unique @db.VarChar(120)
+  nombre              String         @db.VarChar(60)
+  apellido            String         @db.VarChar(60)
+  // solo digitos
+  dni                 String?        @unique @db.VarChar(10)
+  telefono            String?        @db.VarChar(20)
+  fecha_nacimiento    DateTime       @db.Date
+  direccion           String?        @db.VarChar(120)
+  // Foto de perfil de Google; NULL si la cuenta no tiene
+  foto_url            String?        @db.VarChar(500)
+  estado              estado_usuario @default(ACTIVO)
+  fecha_alta          DateTime       @default(now()) @db.Timestamp(6)
+  fecha_actualizacion DateTime       @updatedAt @db.Timestamp(6)
+
+  roles                    usuario_roles[]
+  profesora                profesoras?
+  alumno                   alumnos?                   @relation("alumno_usuario")
+  tutelados                alumnos[]                  @relation("alumno_responsable")
+  pagos_registrados        pagos[]                    @relation("pago_usuario_registra")
+  pagos_confirmados        pagos[]                    @relation("pago_usuario_confirma")
+  asistencias_registradas  asistencias[]
+  suplencias_registradas   suplencias[]
+  notificaciones           notificaciones[]
+  seguimientos_inactividad seguimientos_inactividad[]
+  progreso_corregido     registros_progreso[]       @relation("registro_progreso_modifica")
+  progreso_dado_de_baja  registros_progreso[]       @relation("registro_progreso_baja")
+}
+
+model roles {
+  id_rol      Int        @id(map: "PK_roles") @default(autoincrement())
+  codigo      codigo_rol @unique
+  nombre      String     @db.VarChar(40)
+  descripcion String?    @db.VarChar(150)
+
+  usuarios usuario_roles[]
+  permisos rol_permisos[]
+}
+
+model usuario_roles {
+  id_usuario       Int
+  id_rol           Int
+  fecha_asignacion DateTime @default(now()) @db.Timestamp(6)
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_usuario_roles_usuarios")
+  rol     roles    @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "FK_usuario_roles_roles")
+
+  @@id([id_usuario, id_rol], map: "PK_usuario_roles")
+  @@index([id_rol], map: "IXFK_usuario_roles_roles")
+}
+
+model permisos {
+  id_permiso  Int     @id(map: "PK_permisos") @default(autoincrement())
+  // ej. PAGOS_CONFIRMAR
+  codigo      String  @unique @db.VarChar(50)
+  modulo      String  @db.VarChar(30)
+  descripcion String? @db.VarChar(150)
+
+  roles rol_permisos[]
+}
+
+model rol_permisos {
+  id_rol           Int
+  id_permiso       Int
+  fecha_asignacion DateTime @default(now()) @db.Timestamp(6)
+
+  rol     roles    @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "FK_rol_permisos_roles")
+  permiso permisos @relation(fields: [id_permiso], references: [id_permiso], onDelete: NoAction, onUpdate: NoAction, map: "FK_rol_permisos_permisos")
+
+  @@id([id_rol, id_permiso], map: "PK_rol_permisos")
+  @@index([id_rol], map: "IXFK_rol_permisos_roles")
+  @@index([id_permiso], map: "IXFK_rol_permisos_permisos")
+}
+
+// ============================================================
+// SERVICIO DE ENTRENAMIENTO
+// ============================================================
+
+enum modalidad_actividad {
+  GRUPAL
+  PERSONALIZADA
+}
+
+model actividades {
+  id_actividad     Int                 @id(map: "PK_actividades") @default(autoincrement())
+  codigo           String              @unique @db.VarChar(20)
+  nombre           String              @db.VarChar(60)
+  descripcion      String?             @db.VarChar(255)
+  modalidad        modalidad_actividad
+  cupo_maximo      Int?                @db.SmallInt
+  // US-05: la pre-inscripción en una actividad así exige peso y talla.
+  requiere_medidas Boolean             @default(false)
+  activo           Boolean
+
+  horarios          horarios[]
+  planes_exclusivos planes[]
+}
+
+model profesoras {
+  id_profesora Int       @id(map: "PK_profesoras") @default(autoincrement())
+  id_usuario   Int       @unique(map: "UK_profesoras_id_usuario")
+  especialidad String?   @db.VarChar(80)
+  fecha_alta   DateTime  @default(now()) @db.Date
+  fecha_baja   DateTime? @db.Date
+
+  usuario            usuarios             @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_profesoras_usuarios")
+  horarios           horarios[]
+  inscripciones      inscripciones[]
+  pagos_cobrados     pagos[]
+  clases_dictadas    clases[]
+  registros_progreso registros_progreso[]
+  rutinas            rutinas[]
+  ausencias_suplidas suplencias[]
+  tarifas_honorario  tarifas_honorario[]
+  liquidaciones      liquidaciones[]
+}
+
+model horarios {
+  id_horario   Int       @id(map: "PK_horarios") @default(autoincrement())
+  id_actividad Int
+  id_profesora Int
+  dia_semana   Int       @db.SmallInt
+  hora_inicio  DateTime  @db.Time(6)
+  hora_fin     DateTime  @db.Time(6)
+  cupo_maximo  Int?      @db.SmallInt
+  fecha_alta   DateTime  @default(now()) @db.Date
+  fecha_baja   DateTime? @db.Date
+
+  actividad     actividades            @relation(fields: [id_actividad], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_actividades")
+  profesora     profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_horarios_profesoras")
+  inscripciones inscripcion_horarios[]
+  clases        clases[]
+
+  @@index([id_actividad], map: "IXFK_horarios_actividades")
+  @@index([id_profesora], map: "IXFK_horarios_profesoras")
+}
+
+enum tipo_plan {
+  MENSUAL
+  CLASE_SUELTA
+}
+
+model planes {
+  id_plan                Int       @id(map: "PK_planes") @default(autoincrement())
+  tipo                   tipo_plan
+  nombre                 String    @db.VarChar(40)
+  descripcion            String?   @db.VarChar(255)
+  // 1..7; NULL si CLASE_SUELTA
+  clases_por_semana      Int?      @db.SmallInt
+  // >= 0; 0 si CLASE_SUELTA
+  dias_gracia            Int       @db.SmallInt
+  // ej. Plan Kids
+  id_actividad_exclusiva Int?
+  profesora_unica        Boolean
+  fecha_alta             DateTime  @default(now()) @db.Date
+  fecha_baja             DateTime? @db.Date
+
+  actividad_exclusiva actividades?       @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  precios             plan_precios[]
+  inscripciones       inscripciones[]
+  promociones         promocion_planes[]
+  tarifas_honorario   tarifas_honorario[]
+}
+
+enum tipo_descuento {
+  PORCENTAJE
+  MONTO_FIJO
+}
+
+// US-13: el estado (activa, programada, vencida, desactivada) no se guarda: sale de las fechas y de activo.
+model promociones {
+  id_promocion   Int            @id(map: "PK_promociones") @default(autoincrement())
+  codigo         String         @unique(map: "UK_promociones_codigo") @db.VarChar(20)
+  nombre         String         @db.VarChar(60)
+  tipo_descuento tipo_descuento
+  // > 0; <= 100 si PORCENTAJE
+  valor          Decimal        @db.Decimal(10, 2)
+  fecha_desde    DateTime       @db.Date
+  // >= fecha_desde
+  fecha_hasta    DateTime       @db.Date
+  activo         Boolean
+
+  planes        promocion_planes[]
+  inscripciones inscripciones[]
+}
+
+model promocion_planes {
+  id_promocion Int
+  id_plan      Int
+
+  promocion promociones @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_promocion_planes_promociones")
+  plan      planes      @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_promocion_planes_planes")
+
+  @@id([id_promocion, id_plan], map: "PK_promocion_planes")
+  @@index([id_plan], map: "IXFK_promocion_planes_planes")
+  @@index([id_promocion], map: "IXFK_promocion_planes_promociones")
+}
+
+model plan_precios {
+  id_plan_precio       Int       @id(map: "PK_plan_precios") @default(autoincrement())
+  id_plan              Int
+  precio               Decimal   @db.Decimal(10, 2)
+  fecha_vigencia_desde DateTime  @db.Date
+  // NULL = vigente
+  fecha_vigencia_hasta DateTime? @db.Date
+
+  plan          planes          @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_plan_precios_planes")
+  inscripciones inscripciones[]
+
+  @@index([id_plan], map: "IXFK_plan_precios_planes")
+}
+
+enum tipo_dato_parametro {
+  ENTERO
+  DECIMAL
+  TEXTO
+  BOOLEANO
+}
+
+// Configuración del centro que cambia la propietaria. El valor se guarda como texto y se convierte
+// según tipo_dato al leerlo (IInfoParametros).
+model parametros_sistema {
+  clave               String              @id(map: "PK_parametros_sistema") @db.VarChar(50)
+  valor               String              @db.VarChar(100)
+  tipo_dato           tipo_dato_parametro
+  descripcion         String?             @db.VarChar(150)
+  fecha_actualizacion DateTime            @updatedAt @db.Timestamp(6)
+}
+
+// ============================================================
+// PERSONAS DEL NEGOCIO
+// ============================================================
+
+enum estado_alumno {
+  ACTIVO
+  INACTIVO
+  BAJA
+}
+
+model alumnos {
+  id_alumno              Int           @id(map: "PK_alumnos") @default(autoincrement())
+  id_usuario             Int           @unique(map: "UK_alumnos_id_usuario")
+  // tutor; obligatorio si es menor
+  id_usuario_responsable Int?
+  cont_emerg_nombre      String        @db.VarChar(80)
+  cont_emerg_telefono    String        @db.VarChar(20)
+  apto_medico            Boolean       @default(false)
+  fecha_apto_medico      DateTime?     @db.Date
+  observaciones          String?       @db.VarChar(500)
+  estado                 estado_alumno
+  fecha_alta             DateTime      @default(now()) @db.Timestamp(6)
+  fecha_baja             DateTime?     @db.Timestamp(6)
+
+  usuario            usuarios             @relation("alumno_usuario", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuarios")
+  responsable        usuarios?            @relation("alumno_responsable", fields: [id_usuario_responsable], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumnos_usuario_responsable")
+  inscripciones      inscripciones[]
+  registros_progreso registros_progreso[]
+  rutinas            rutinas[]
+  asistencias        asistencias[]
+  insignias          alumno_insignias[]
+}
+
+enum estado_inscripcion {
+  PREINSCRIPTA
+  ACTIVA
+  BAJA
+}
+
+enum motivo_baja {
+  ABANDONO
+  MUDANZA
+  SALUD
+  ECONOMICO
+  CAMBIO_PLAN
+  OTRO
+}
+
+model inscripciones {
+  id_inscripcion     Int                @id(map: "PK_inscripciones") @default(autoincrement())
+  id_alumno          Int
+  id_plan            Int
+  id_plan_precio     Int
+  id_profesora       Int
+  id_promocion       Int?
+  sin_cargo          Boolean
+  fecha_inicio       DateTime           @db.Date
+  fecha_fin_estimado DateTime?          @db.Date
+  estado             estado_inscripcion
+  motivo_baja        motivo_baja?
+  detalle_baja       String?            @db.VarChar(200)
+  observaciones      String?            @db.VarChar(500)
+  fecha_alta         DateTime           @default(now()) @db.Timestamp(6)
+  fecha_baja         DateTime?          @db.Timestamp(6)
+
+  alumno      alumnos                   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_alumnos")
+  plan        planes                    @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_planes")
+  plan_precio plan_precios              @relation(fields: [id_plan_precio], references: [id_plan_precio], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_plan_precios")
+  profesora   profesoras                @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_profesoras")
+  promocion   promociones?              @relation(fields: [id_promocion], references: [id_promocion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripciones_promociones")
+  horarios    inscripcion_horarios[]
+  cuotas      cuotas[]
+  asistencias asistencias[]
+  seguimiento seguimientos_inactividad?
+  honorarios  liquidacion_detalles[]
+
+  @@index([id_alumno], map: "IXFK_inscripciones_alumnos")
+  @@index([id_plan_precio], map: "IXFK_inscripciones_plan_precios")
+  @@index([id_plan], map: "IXFK_inscripciones_planes")
+  @@index([id_profesora], map: "IXFK_inscripciones_profesoras")
+  @@index([id_promocion], map: "IXFK_inscripciones_promociones")
+}
+
+model inscripcion_horarios {
+  id_inscripcion Int
+  id_horario     Int
+  fecha_desde    DateTime  @db.Date
+  fecha_hasta    DateTime? @db.Date
+
+  inscripcion inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripcion_horarios_inscripciones")
+  horario     horarios      @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_inscripcion_horarios_horarios")
+
+  @@id([id_inscripcion, id_horario], map: "PK_inscripcion_horarios")
+  @@index([id_horario], map: "IXFK_inscripcion_horarios_horarios")
+  @@index([id_inscripcion], map: "IXFK_inscripcion_horarios_inscripciones")
+}
+
+enum estado_clase {
+  PROGRAMADA
+  DICTADA
+  CANCELADA
+}
+
+model clases {
+  id_clase           Int          @id(map: "PK_clases") @default(autoincrement())
+  id_horario         Int
+  fecha_clase        DateTime     @db.Date
+  id_prof_dictante   Int
+  estado             estado_clase @default(PROGRAMADA)
+  fecha_cierre_asist DateTime?    @db.Timestamp(6)
+  observaciones      String?      @db.VarChar(255)
+
+  horario     horarios      @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_horarios")
+  profesora   profesoras    @relation(fields: [id_prof_dictante], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_profesoras")
+  asistencias asistencias[]
+  suplencias  suplencias[]
+  honorarios  liquidacion_detalles[]
+
+  @@unique([id_horario, fecha_clase], map: "UK_clases_horario_fecha")
+  @@index([id_horario], map: "IXFK_clases_horarios")
+  @@index([id_prof_dictante], map: "IXFK_clases_profesoras")
+}
+
+// La suplente es la dictante de la clase; acá queda la titular que faltó (US-24).
+model suplencias {
+  id_clase            Int
+  id_prof_ausente     Int
+  motivo              String?  @db.VarChar(255)
+  fecha_registro      DateTime @default(now()) @db.Timestamp(6)
+  id_usuario_registra Int
+
+  clase             clases     @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_clases")
+  profesora_ausente profesoras @relation(fields: [id_prof_ausente], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_prof_ausente")
+  usuario_registra  usuarios   @relation(fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_suplencias_usuario_registra")
+
+  @@id([id_clase, id_prof_ausente], map: "PK_suplencias")
+}
+
+model asistencias {
+  id_clase            Int
+  id_alumno           Int
+  id_inscripcion      Int
+  asistio             Boolean
+  fecha_registro      DateTime @default(now()) @db.Timestamp(6)
+  id_usuario_registra Int?
+  observaciones       String?  @db.VarChar(255)
+
+  clase       clases        @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_asistencias_clases")
+  alumno      alumnos       @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_asistencias_alumnos")
+  inscripcion inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_asistencias_inscripciones")
+  usuario     usuarios?     @relation(fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_asistencias_usuarios")
+
+  @@id([id_clase, id_alumno], map: "PK_asistencias")
+  @@index([id_alumno], map: "IXFK_asistencias_alumnos")
+  @@index([id_inscripcion], map: "IXFK_asistencias_inscripciones")
+  @@index([id_usuario_registra], map: "IXFK_asistencias_usuarios")
+}
+
+enum estado_seguimiento_inactividad {
+  CONTACTADO
+  GESTIONADO
+  IGNORADO
+}
+
+// US-22: la gestión de la propietaria sobre un alumno inactivo, una marca por inscripción que se pisa al
+// volver a marcar. Deja de valer sola si el alumno asiste después de fecha_registro.
+model seguimientos_inactividad {
+  id_inscripcion      Int                            @id(map: "PK_seguimientos_inactividad")
+  estado              estado_seguimiento_inactividad
+  fecha_registro      DateTime                       @default(now()) @db.Timestamp(6)
+  id_usuario_registra Int
+
+  inscripcion      inscripciones @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_seguimientos_inactividad_inscripciones")
+  usuario_registra usuarios      @relation(fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_seguimientos_inactividad_usuarios")
+
+  @@index([id_usuario_registra], map: "IXFK_seguimientos_inactividad_usuarios")
+}
+
+enum forma_pago {
+  EFECTIVO
+  TRANSFERENCIA
+}
+
+enum estado_pago {
+  PENDIENTE
+  CONFIRMADO
+  RECHAZADO
+}
+
+// La cuota no tiene estado: si está paga, por vencer o vencida se calcula al consultarla
+// (ICalculoHabilitacion), no se guarda.
+model cuotas {
+  id_cuota          Int      @id(map: "PK_cuotas") @default(autoincrement())
+  id_inscripcion    Int
+  // >= 1
+  numero_cuota      Int      @db.SmallInt
+  fecha_generacion  DateTime @default(now()) @db.Timestamp(6)
+  fecha_vencimiento DateTime @db.Date
+  // >= 0
+  monto             Decimal  @db.Decimal(10, 2)
+
+  inscripcion    inscripciones    @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_cuotas_inscripciones")
+  pagos          pagos[]
+  notificaciones notificaciones[]
+
+  @@unique([id_inscripcion, numero_cuota], map: "UK_cuotas_inscripcion_numero")
+  @@index([id_inscripcion], map: "IXFK_cuotas_inscripciones")
+}
+
+model pagos {
+  id_pago                  Int         @id(map: "PK_pagos") @default(autoincrement())
+  id_cuota                 Int
+  forma_pago               forma_pago
+  estado                   estado_pago
+  // > 0
+  monto                    Decimal     @db.Decimal(10, 2)
+  fecha_pago               DateTime    @db.Timestamp(6)
+  // solo TRANSFERENCIA
+  titular_cuenta_origen    String?     @db.VarChar(80)
+  // solo TRANSFERENCIA
+  fecha_hora_transferencia DateTime?   @db.Timestamp(6)
+  id_usuario_registra      Int
+  // solo EFECTIVO
+  id_profesora_cobra       Int?
+  rendido                  Boolean
+  fecha_rendicion          DateTime?   @db.Timestamp(6)
+  id_usuario_confirma      Int?
+  fecha_confirmacion       DateTime?   @db.Timestamp(6)
+  // obligatorio si RECHAZADO
+  motivo_rechazo           String?     @db.VarChar(255)
+  observaciones            String?     @db.VarChar(255)
+
+  cuota            cuotas      @relation(fields: [id_cuota], references: [id_cuota], onDelete: NoAction, onUpdate: NoAction, map: "FK_pagos_cuotas")
+  usuario_registra usuarios    @relation("pago_usuario_registra", fields: [id_usuario_registra], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_pagos_usuario_registra")
+  usuario_confirma usuarios?   @relation("pago_usuario_confirma", fields: [id_usuario_confirma], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_pagos_usuario_confirma")
+  profesora_cobra  profesoras? @relation(fields: [id_profesora_cobra], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_pagos_profesora_cobra")
+
+  @@index([id_cuota], map: "IXFK_pagos_cuotas")
+}
+
+// Rutinas y progreso (US-27). El registro de progreso es una sesión de medición del alumno con sus medidas. Se
+// corrige con PATCH (queda quién y cuándo) y se da de baja de forma lógica: sigue en la base pero ya no se muestra.
+model registros_progreso {
+  id_registro         Int       @id(map: "PK_registros_progreso") @default(autoincrement())
+  id_alumno           Int
+  id_profesora        Int
+  fecha               DateTime  @db.Date
+  observaciones       String?   @db.VarChar(500)
+  // la última corrección; NULL si nunca se corrigió
+  fecha_modificacion  DateTime? @db.Timestamp(6)
+  id_usuario_modifica Int?
+  // baja lógica; NULL mientras el registro está vigente
+  fecha_baja          DateTime? @db.Timestamp(6)
+  id_usuario_baja     Int?
+
+  alumno           alumnos              @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_alumnos")
+  profesora        profesoras           @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_profesoras")
+  usuario_modifica usuarios?            @relation("registro_progreso_modifica", fields: [id_usuario_modifica], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_usuario_modifica")
+  usuario_baja     usuarios?            @relation("registro_progreso_baja", fields: [id_usuario_baja], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_registros_progreso_usuario_baja")
+  medidas          medidas_corporales[]
+
+  @@index([id_alumno], map: "IXFK_registros_progreso_alumnos")
+  @@index([id_profesora], map: "IXFK_registros_progreso_profesoras")
+  @@index([id_usuario_modifica], map: "IXFK_registros_progreso_usuario_modifica")
+  @@index([id_usuario_baja], map: "IXFK_registros_progreso_usuario_baja")
+}
+
+model rutinas {
+  id_rutina     Int       @id(map: "PK_rutinas") @default(autoincrement())
+  id_alumno     Int
+  // la profesora que la cargó
+  id_profesora  Int
+  nombre        String    @db.VarChar(100)
+  fecha_desde   DateTime  @db.Date
+  // >= fecha_desde
+  fecha_hasta   DateTime? @db.Date
+  // días, ejercicios, series y repeticiones
+  contenido     Json
+  observaciones String?   @db.VarChar(500)
+  // solo una vigente por alumno
+  activa        Boolean   @default(true)
+
+  alumno    alumnos    @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_alumnos")
+  profesora profesoras @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_rutinas_profesoras")
+
+  @@index([id_alumno, activa], map: "IX_rutinas_alumno_activa")
+  @@index([id_profesora], map: "IXFK_rutinas_profesoras")
+}
+
+model tipos_medida {
+  id_tipo_medida Int    @id(map: "PK_tipos_medida") @default(autoincrement())
+  // ej. PESO, CINTURA
+  codigo         String @unique(map: "UK_tipos_medida_codigo") @db.VarChar(20)
+  // ej. kg, cm
+  unidad         String @db.VarChar(10)
+
+  medidas medidas_corporales[]
+}
+
+model medidas_corporales {
+  id_registro    Int
+  id_tipo_medida Int
+  // > 0
+  valor          Decimal @db.Decimal(6, 2)
+
+  registro    registros_progreso @relation(fields: [id_registro], references: [id_registro], onDelete: NoAction, onUpdate: NoAction, map: "FK_medidas_corporales_registros_progreso")
+  tipo_medida tipos_medida       @relation(fields: [id_tipo_medida], references: [id_tipo_medida], onDelete: NoAction, onUpdate: NoAction, map: "FK_medidas_corporales_tipos_medida")
+
+  @@id([id_registro, id_tipo_medida], map: "PK_medidas_corporales")
+  @@index([id_registro], map: "IXFK_medidas_corporales_registros_progreso")
+  @@index([id_tipo_medida], map: "IXFK_medidas_corporales_tipos_medida")
+}
+
+// ============================================================
+// NOTIFICACIONES E INSIGNIAS
+// ============================================================
+
+enum tipo_notificacion {
+  CUOTA_POR_VENCER
+  CUOTA_VENCIDA
+  RESUMEN_DIARIO
+  BIENVENIDA
+  CLASE_CANCELADA
+}
+
+enum estado_envio_notificacion {
+  PENDIENTE
+  ENVIADA
+  ERROR
+}
+
+// Los avisos son in-app (arquitectura.md): nacen ENVIADA y solo cambia leida. El único hace que
+// generar dos veces el aviso de una cuota no lo duplique (US-25).
+model notificaciones {
+  id_notificacion  Int                       @id(map: "PK_notificaciones") @default(autoincrement())
+  id_usuario       Int
+  tipo             tipo_notificacion
+  // solo avisos de cuota
+  id_cuota         Int?
+  mensaje          String                    @db.VarChar(1000)
+  fecha_generacion DateTime                  @default(now()) @db.Timestamp(6)
+  fecha_envio      DateTime?                 @db.Timestamp(6)
+  estado_envio     estado_envio_notificacion
+  leida            Boolean                   @default(false)
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_notificaciones_usuarios")
+  cuota   cuotas?  @relation(fields: [id_cuota], references: [id_cuota], onDelete: NoAction, onUpdate: NoAction, map: "FK_notificaciones_cuotas")
+
+  @@unique([id_usuario, id_cuota, tipo], map: "UK_notificaciones_usuario_cuota_tipo")
+  @@index([id_cuota], map: "IXFK_notificaciones_cuotas")
+  @@index([id_usuario], map: "IXFK_notificaciones_usuarios")
+}
+
+enum tipo_insignia {
+  MES_PERFECTO
+  RACHA
+  TOTAL_CLASES
+  PODIO_MES
+}
+
+model insignias {
+  id_insignia  Int           @id(map: "PK_insignias") @default(autoincrement())
+  codigo       String        @unique(map: "UK_insignias_codigo") @db.VarChar(30)
+  nombre       String        @db.VarChar(60)
+  descripcion  String?       @db.VarChar(255)
+  tipo         tipo_insignia
+  valor_umbral Int           @db.SmallInt
+
+  alumnos alumno_insignias[]
+}
+
+model alumno_insignias {
+  id_alumno       Int
+  id_insignia     Int
+  periodo         String    @default("") @db.VarChar(7)
+  fecha_obtencion DateTime  @default(now()) @db.Timestamp(6)
+
+  alumno   alumnos   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_alumnos")
+  insignia insignias @relation(fields: [id_insignia], references: [id_insignia], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_insignias")
+
+  @@id([id_alumno, id_insignia, periodo], map: "PK_alumno_insignias")
+  @@index([id_alumno], map: "IXFK_alumno_insignias_alumnos")
+  @@index([id_insignia], map: "IXFK_alumno_insignias_insignias")
+}
+
+// ============================================================
+// HONORARIOS
+// ============================================================
+
+enum concepto_tarifa_honorario {
+  ALUMNO_A_CARGO
+  HORA_SUPLENCIA
+}
+
+enum tipo_valor_honorario {
+  PORCENTAJE
+  MONTO_FIJO
+}
+
+enum estado_liquidacion {
+  BORRADOR
+  CERRADA
+  PAGADA
+}
+
+enum concepto_liquidacion_detalle {
+  ALUMNO_A_CARGO
+  CLASE_SUPLIDA
+  DESCUENTO_AUSENCIA
+}
+
+// US-23: cuánto cobra una profesora por cada concepto. Una tarifa nueva cierra la vigente del mismo
+// concepto, profesora y plan, como plan_precios.
+model tarifas_honorario {
+  id_tarifa            Int                       @id(map: "PK_tarifas_honorario") @default(autoincrement())
+  id_profesora         Int
+  concepto             concepto_tarifa_honorario
+  // NULL = aplica a todos los planes; siempre NULL en HORA_SUPLENCIA
+  id_plan              Int?
+  tipo_valor           tipo_valor_honorario
+  // > 0; <= 100 si PORCENTAJE
+  valor                Decimal                   @db.Decimal(10, 2)
+  fecha_vigencia_desde DateTime                  @db.Date
+  // NULL = vigente
+  fecha_vigencia_hasta DateTime?                 @db.Date
+
+  profesora profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_tarifas_honorario_profesoras")
+  plan      planes?                @relation(fields: [id_plan], references: [id_plan], onDelete: NoAction, onUpdate: NoAction, map: "FK_tarifas_honorario_planes")
+  detalles  liquidacion_detalles[]
+
+  @@index([id_plan], map: "IXFK_tarifas_honorario_planes")
+  @@index([id_profesora], map: "IXFK_tarifas_honorario_profesoras")
+}
+
+// Una por profesora y período. Una CERRADA o PAGADA es una foto: sus detalles no se recalculan.
+model liquidaciones {
+  id_liquidacion    Int                @id(map: "PK_liquidaciones") @default(autoincrement())
+  id_profesora      Int
+  periodo_desde     DateTime           @db.Date
+  // > periodo_desde
+  periodo_hasta     DateTime           @db.Date
+  fecha_liquidacion DateTime           @default(now()) @db.Timestamp(6)
+  monto_total       Decimal            @db.Decimal(12, 2)
+  estado            estado_liquidacion
+
+  profesora profesoras             @relation(fields: [id_profesora], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidaciones_profesoras")
+  detalles  liquidacion_detalles[]
+
+  @@index([id_profesora], map: "IXFK_liquidaciones_profesoras")
+}
+
+model liquidacion_detalles {
+  id_liq_detalle Int                          @id(map: "PK_liquidacion_detalles") @default(autoincrement())
+  id_liquidacion Int
+  id_tarifa      Int
+  concepto       concepto_liquidacion_detalle
+  // obligatorio si ALUMNO_A_CARGO
+  id_inscripcion Int?
+  // obligatorio si CLASE_SUPLIDA / DESCUENTO_AUSENCIA
+  id_clase       Int?
+  // < 0 si DESCUENTO_AUSENCIA
+  monto          Decimal                      @db.Decimal(10, 2)
+
+  liquidacion liquidaciones      @relation(fields: [id_liquidacion], references: [id_liquidacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_liquidaciones")
+  tarifa      tarifas_honorario  @relation(fields: [id_tarifa], references: [id_tarifa], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_tarifas_honorario")
+  inscripcion inscripciones?     @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_inscripciones")
+  clase       clases?            @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_clases")
+
+  @@index([id_clase], map: "IXFK_liquidacion_detalles_clases")
+  @@index([id_inscripcion], map: "IXFK_liquidacion_detalles_inscripciones")
+  @@index([id_liquidacion], map: "IXFK_liquidacion_detalles_liquidaciones")
+  @@index([id_tarifa], map: "IXFK_liquidacion_detalles_tarifas_honorario")
+}

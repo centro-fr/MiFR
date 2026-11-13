@@ -125,6 +125,7 @@ front/
 11. **Respetá los menús por rol** definidos en `docs/design/MENUS.md`.
 12. **Respetá la terminología** del glosario (no usar "pago" en la UI).
 13. **Respetá las reglas de legibilidad** (texto mínimo 14px, sin scroll horizontal).
+14. **El rendimiento está por encima de lo visual.** Si un efecto o una animación traba la app, se simplifica o se saca. Cada US cumple el checklist de `.agents/rules/performance.md`.
 
 ---
 
@@ -233,7 +234,7 @@ Ver `docs/design/MENUS.md` para los menús exactos por rol.
 
 ## 10. Comunicación con el backend
 
-- **Base URL configurable** por variable de entorno (`VITE_API_URL`).
+- **Todas las llamadas usan rutas relativas `/api/...`.** El navegador solo habla con el Servidor Web (front), que reenvía `/api` al back (vista de despliegue). La URL del back se configura en `API_URL` (sin prefijo `VITE_`, no llega al navegador).
 - **Axios con interceptores**:
   - Agregar token de autenticación automáticamente.
   - Manejo centralizado de errores (401 → logout, 403 → acceso denegado).
@@ -342,6 +343,7 @@ Para cada feature:
 - **Menús por rol**: `docs/design/MENUS.md`
 - **Plan de prompts**: `docs/design/PROMPTS-STITCH.md`
 - **Estrategia responsive**: `docs/RESPONSIVE.md`
+- **Rendimiento (presupuestos y checklist por US)**: `front/.agents/rules/performance.md`
 - **Product Backlog y Story Map**: en el Sprint 0 (raíz del repo)
 - **Referencias visuales**: Trainingym, Virtuagym, Glofox, Harbiz (para inspiración)
 
@@ -404,4 +406,4 @@ Antes de implementar cualquier pantalla, consultá `docs/RESPONSIVE.md` para sab
 
 ---
 
-Última actualización: 19/9/2026
+Última actualización: 11/10/2026

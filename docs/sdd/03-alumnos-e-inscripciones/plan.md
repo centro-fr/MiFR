@@ -50,6 +50,7 @@ CREATE TABLE inscripciones (
     fecha_fin_estimado DATE NULL,
     estado VARCHAR(20) NOT NULL DEFAULT 'PREINSCRIPTA' CHECK (estado IN ('PREINSCRIPTA', 'ACTIVA', 'BAJA')),
     motivo_baja VARCHAR(30) NULL CHECK (motivo_baja IN ('ABANDONO', 'MUDANZA', 'SALUD', 'ECONOMICO', 'CAMBIO_PLAN', 'OTRO')),
+    detalle_baja VARCHAR(200) NULL CHECK (detalle_baja IS NULL OR motivo_baja = 'OTRO'),
     observaciones TEXT NULL,
     fecha_alta TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_baja TIMESTAMP NULL
@@ -90,7 +91,7 @@ CREATE INDEX idx_inscripciones_alumno ON inscripciones(id_alumno, estado);
     ```
 
 - `PUT /api/v1/alumnos/:id`: Actualización de datos del alumno y tutor.
-- `POST /api/v1/alumnos/:id/baja`: Baja lógica (`{ "motivo": "ECONOMICO", "observaciones": "..." }`).
+- `POST /api/v1/alumnos/:id/baja`: Baja lógica (`{ "motivo_baja": "OTRO", "detalle_baja": "..." }`; el detalle es opcional y solo se acepta con el motivo `OTRO`).
 - `POST /api/v1/alumnos/:id/reactivar`: Reactivación con re-asignación de plan/horarios.
 
 ---

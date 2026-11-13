@@ -7,16 +7,21 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "token": "tsx prisma/generar-token.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,25 +31,31 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "google-auth-library": "^9.15.0",
+    "express": "^5.2.1",
+    "google-auth-library": "^11.2.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "zod": "^3.24.1"
+    "prisma": "^6.19.3",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^26.4.1",
     "@types/supertest": "^6.0.2",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@vitest/coverage-v8": "5.0.4",
     "prettier": "^3.9.6",
-    "prisma": "^6.19.3",
     "supertest": "^7.0.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
-    "vitest": "^3.0.5"
+    "vite": "^8.2.2",
+    "vitest": "5.0.4"
   }
 }

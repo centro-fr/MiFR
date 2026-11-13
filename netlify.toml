@@ -1,0 +1,32 @@
+# Configuración de Netlify para el front. Todavía no está en uso: ver back/DESPLIEGUE.md.
+
+[build]
+  base = "front"
+  command = "pnpm build"
+  # Relativo a base: front/dist.
+  publish = "dist"
+
+# Netlify cumple el papel de "Servidor Web" de docs/diagrams/puml/vista_despliegue.puml: sirve el
+# front y reenvía /api a la API en Render. El navegador solo habla con Netlify (mismo origen).
+# Va antes del fallback de la SPA porque Netlify aplica la primera regla que coincide.
+# La URL tiene que coincidir con la que Render le asigne al servicio mifr-api de render.yaml, y ese servicio
+# tiene que ser del proyecto: por esta regla pasan los tokens de sesión y de Google. Ver el checklist de
+# back/DESPLIEGUE.md antes de publicar o al renombrar o borrar el servicio en Render.
+[[redirects]]
+  from = "/api/*"
+  to = "https://mifr-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# La SPA resuelve sus rutas en el navegador: cualquier ruta que no sea un archivo devuelve index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

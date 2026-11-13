@@ -1,0 +1,84 @@
+import { useMemo } from "react";
+import { Check, Loader2 } from "lucide-react";
+import { useActividades } from "@/features/actividades/hooks/use-actividades";
+import { formatearEspecialidades } from "@/features/profesoras/schemas/profesora";
+import { cn } from "@/utils/cn";
+
+interface Props {
+  seleccionadas: string[];
+  onCambiar: (nuevas: string[]) => void;
+  disabled?: boolean;
+}
+
+export function SelectorEspecialidades({ seleccionadas, onCambiar, disabled = false }: Props) {
+  const { data: actividades = [], isPending, isError } = useActividades();
+
+  const actividadesActivas = useMemo(
+    () => actividades.filter((a) => a.activo),
+    [actividades],
+  );
+
+  const toggleActividad = (nombre: string) => {
+    if (disabled) return;
+    if (seleccionadas.includes(nombre)) {
+      onCambiar(seleccionadas.filter((item) => item !== nombre));
+    } else {
+      const nuevaLista = [...seleccionadas, nombre];
+      const nuevoTexto = formatearEspecialidades(nuevaLista);
+      if (nuevoTexto.length <= 80) {
+        onCambiar(nuevaLista);
+      }
+    }
+  };
+
+  if (isPending) {
+    return (
+      <div className="flex items-center gap-2 py-2 text-xs font-semibold text-slate-500">
+        <Loader2 className="size-3.5 animate-spin text-primary" />
+        Cargando actividades del centro...
+      </div>
+    );
+  }
+
+  if (isError || actividadesActivas.length === 0) {
+    return (
+      <p className="text-xs text-slate-500 italic py-1">
+        No se pudieron cargar las actividades o no hay actividades registradas.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        {actividadesActivas.map((actividad) => {
+          const estaSeleccionada = seleccionadas.includes(actividad.nombre);
+          const posibleNuevoTexto = formatearEspecialidades([...seleccionadas, actividad.nombre]);
+          const noEntra = !estaSeleccionada && posibleNuevoTexto.length > 80;
+
+          return (
+            <button
+              key={actividad.id}
+              type="button"
+              disabled={disabled || noEntra}
+              onClick={() => toggleActividad(actividad.nombre)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-2xs select-none",
+                estaSeleccionada
+                  ? "border-slate-900 bg-slate-100 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/50",
+                noEntra && "opacity-40 cursor-not-allowed hover:border-slate-200 hover:bg-white",
+              )}
+            >
+              {estaSeleccionada && (
+                <Check className="size-3.5 stroke-[2.5]" />
+              )}
+              <span>{actividad.nombre}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

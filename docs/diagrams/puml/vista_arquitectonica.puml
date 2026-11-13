@@ -114,6 +114,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Rol     -right- I_Autorizacion
     Sesion  ..> Usuario
     Usuario ..> Rol
+    Sesion  ..> Rol
   }
   interface "ILogicaUsuarios" as I_LogicaUsuarios
   GestionUsuarios -down- I_LogicaUsuarios
@@ -131,13 +132,17 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     component "Horario"           as Horario
     interface "IInfoParametros" as I_InfoParametros
     interface "IInfoPlanes"     as I_InfoPlanes
+    interface "IInfoPromociones" as I_InfoPromociones
+    interface "IInfoActividades" as I_InfoActividades
     interface "IInfoHorarios"   as I_InfoHorarios
     interface "IInfoProfesores" as R_GSE_InfoProfesores
 
     ParametrosSistema -down- I_InfoParametros
     Plan    -right- I_InfoPlanes
+    Actividad -up- I_InfoActividades
     Horario -left- I_InfoHorarios
     Horario -right-( R_GSE_InfoProfesores
+    Promocion -down- I_InfoPromociones
     Plan    ..> Promocion
     Plan    ..> Actividad
     Horario ..> Actividad
@@ -145,9 +150,11 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "ILogicaServicioEntrenamiento" as I_LogicaServicioEntrenamiento
   interface "IAutenticacion" as R_GSE_Aut
   interface "IAutorizacion"  as R_GSE_Autz
+  interface "IInfoInscripciones" as R_GSE_InfoInscripciones
   GestionServicioEntrenamiento -down- I_LogicaServicioEntrenamiento
   GestionServicioEntrenamiento    -down-( R_GSE_Aut
   GestionServicioEntrenamiento   -down-( R_GSE_Autz
+  GestionServicioEntrenamiento -down-( R_GSE_InfoInscripciones
 
   ' ---------------- GestionPersonas ----------------
   package "GestionPersonas" as GestionPersonas <<subsystem>> {
@@ -163,16 +170,24 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "ILogicaPersonas" as I_LogicaPersonas
   interface "IAutorizacion"   as R_GP_Autz
   interface "IInfoUsuarios"   as R_GP_InfoUsuarios
+  interface "IInfoHorarios"   as R_GP_InfoHorarios
+  interface "IInfoInscripciones" as R_GP_InfoInscripciones
+  interface "IInfoCuotas"     as R_GP_InfoCuotas
   interface "IAutenticacion"  as R_GP_Aut
   GestionPersonas       -down- I_LogicaPersonas
   GestionPersonas         -down-( R_GP_Autz
   GestionPersonas -down-( R_GP_InfoUsuarios
+  GestionPersonas -down-( R_GP_InfoHorarios
+  GestionPersonas -down-( R_GP_InfoInscripciones
+  GestionPersonas -down-( R_GP_InfoCuotas
   GestionPersonas          -down-( R_GP_Aut
 
   ' ---------------- GestionRutinasYProgreso ----------------
   package "GestionRutinasYProgreso" as GestionRutinasYProgreso <<subsystem>> {
     component "RegistroProgreso" as RegistroProgreso
     component "Rutina"           as Rutina
+    interface "IInfoProgreso"    as I_InfoProgreso
+    RegistroProgreso -right- I_InfoProgreso
     RegistroProgreso -[hidden]down-> Rutina
   }
   interface "IInfoProfesores" as R_GRP_InfoProfesores
@@ -196,9 +211,13 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoCuotas"          as I_InfoCuotas
     interface "IInfoPagos"           as I_InfoPagos
     interface "IInfoProfesores"      as R_GCP_InfoProfesores
+    interface "IInfoPlanes"          as R_GCP_InfoPlanes
+    interface "IInfoParametros"      as R_GCP_InfoParametros
 
     Cuota -right-( R_GCP_CalculoVencimiento
     Cuota -right-( R_GCP_InfoInscripciones
+    Cuota -right-( R_GCP_InfoPlanes
+    Cuota -down-( R_GCP_InfoParametros
     Cuota -down-( R_GCP_CalculoHabilitacion
     Cuota -down- I_InfoCuotas
     Pago  -up- I_InfoPagos
@@ -223,26 +242,35 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoHorarios"      as R_GIC_InfoHorarios
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresInsc
     interface "IInfoAlumnos"       as R_GIC_InfoAlumnos
-    interface "ICalculoCupo"       as R_GIC_CalculoCupo
+    interface "IInfoPlanes"        as R_GIC_InfoPlanes
     interface "IInfoInscripciones" as I_InfoInscripciones
     interface "IInfoClases"        as I_InfoClases
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresClase
+    interface "IInfoHorarios"      as R_GIC_InfoHorariosClase
     interface "IInfoAsistencia"    as I_InfoAsistencia
     interface "IInfoParametros"    as R_GIC_InfoParametros
+    interface "IInfoProgreso"      as R_GIC_InfoProgreso
+    interface "IInfoParametros"    as R_GIC_InfoParametrosInsc
+    interface "IInfoProfesores"    as R_GIC_InfoProfesoresSupl
 
     Inscripcion -left-( R_GIC_InfoHorarios
     Inscripcion -left-( R_GIC_InfoProfesoresInsc
     Inscripcion -left-( R_GIC_InfoAlumnos
-    Inscripcion -left-( R_GIC_CalculoCupo
+    Inscripcion -left-( R_GIC_InfoPlanes
+    Inscripcion -left-( R_GIC_InfoProgreso
+    Inscripcion -left-( R_GIC_InfoParametrosInsc
     Inscripcion -down- I_InfoInscripciones
     Clase       -right- I_InfoClases
     Clase       -right-( R_GIC_InfoProfesoresClase
+    Clase       -right-( R_GIC_InfoHorariosClase
     Asistencia  -right- I_InfoAsistencia
     CierreAsistencia -down-( R_GIC_InfoParametros
+    Suplencia        -down-( R_GIC_InfoProfesoresSupl
     Suplencia        ..> Clase
     Asistencia       ..> Inscripcion
     Asistencia       ..> Clase
     CierreAsistencia ..> Asistencia
+    CierreAsistencia ..> Clase
     Inscripcion -[hidden]right-> Clase
     Clase       -[hidden]right-> Suplencia
     Clase       -[hidden]down-> Asistencia
@@ -252,9 +280,11 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   interface "ILogicaInscripcionesYClases" as I_LogicaInscripcionesYClases
   interface "IAutorizacion"  as R_GIC_Autz
   interface "IAutenticacion" as R_GIC_Aut
+  interface "IInfoCuotas"    as R_GIC_InfoCuotas
   GestionInscripcionesYClases -down- I_LogicaInscripcionesYClases
   GestionInscripcionesYClases   -down-( R_GIC_Autz
   GestionInscripcionesYClases    -down-( R_GIC_Aut
+  GestionInscripcionesYClases -down-( R_GIC_InfoCuotas
 
   ' ---------------- GestionNotificaciones ----------------
   package "GestionNotificaciones" as GestionNotificaciones <<subsystem>> {
@@ -266,12 +296,17 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     interface "IInfoParametros" as R_GN_InfoParametros
     interface "IInfoPagos"      as R_GN_InfoPagos
     interface "IInfoCuotas"     as R_GN_InfoCuotas
+    interface "IRegistroNotificaciones" as I_RegistroNotificaciones
 
+    Notificacion               -down- I_RegistroNotificaciones
     Notificacion               -right-( R_GN_InfoUsuarios
     PlanificadorNotificaciones -right-( R_GN_InfoClases
     PlanificadorNotificaciones -up-( R_GN_InfoParametros
+    PlanificadorNotificaciones -up-( R_GN_InfoCuotas
     ResumenDiarioPropietaria   -up-( R_GN_InfoPagos
     ResumenDiarioPropietaria   -up-( R_GN_InfoCuotas
+    ResumenDiarioPropietaria   -up-( R_GN_InfoParametros
+    ResumenDiarioPropietaria   -( R_GN_InfoUsuarios
     PlanificadorNotificaciones ..> Notificacion
     ResumenDiarioPropietaria   ..> Notificacion
     Notificacion -[hidden]down-> PlanificadorNotificaciones
@@ -291,11 +326,21 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   ' ---------------- GestionInsignias ----------------
   package "GestionInsignias" as GestionInsignias <<subsystem>> {
     component "Insignia" as Insignia
+    component "CierreMensualInsignias" as CierreMensualInsignias <<process>>
     interface "IInfoAsistencia"      as R_GI_InfoAsistencia
     interface "ICalculoRachaRanking" as R_GI_CalculoRachaRanking
+    interface "IInfoAlumnos"         as R_GI_InfoAlumnos
+    interface "IInfoParametros"      as R_GI_InfoParametros
+    interface "IOtorgamientoInsignias" as I_OtorgamientoInsignias
 
+    Insignia -down- I_OtorgamientoInsignias
+    CierreMensualInsignias -up-( I_OtorgamientoInsignias
     Insignia -right-( R_GI_InfoAsistencia
     Insignia -right-( R_GI_CalculoRachaRanking
+    Insignia -left-( R_GI_InfoAlumnos
+    Insignia -left-( R_GI_InfoParametros
+    CierreMensualInsignias ..> Insignia
+    Insignia -[hidden]down-> CierreMensualInsignias
   }
   interface "ILogicaInsignias" as I_LogicaInsignias
   interface "IAutorizacion"    as R_GI_Autz
@@ -308,20 +353,29 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   package "GestionHonorarios" as GestionHonorarios <<subsystem>> {
     component "Liquidacion"     as Liquidacion
     component "TarifaHonorario" as TarifaHonorario
+    component "CierreMensualHonorarios" as CierreMensualHonorarios <<process>>
     interface "ICalculoHonorarios" as R_GH_CalculoHonorarios
     interface "IInfoClases"        as R_GH_InfoClases
     interface "IInfoInscripciones" as R_GH_InfoInscripciones
     interface "IInfoCuotas"        as R_GH_InfoCuotas
     interface "IInfoPlanes"        as R_GH_InfoPlanes
     interface "IInfoProfesores"    as R_GH_InfoProfesores
+    interface "IInfoParametros"    as R_GH_InfoParametros
+    interface "ICierreLiquidaciones" as I_CierreLiquidaciones
 
     Liquidacion     -left-( R_GH_CalculoHonorarios
     Liquidacion     -left-( R_GH_InfoClases
     Liquidacion     -right-( R_GH_InfoInscripciones
+    Liquidacion     -right-( R_GH_InfoProfesores
     Liquidacion     -right-( R_GH_InfoCuotas
     TarifaHonorario -right-( R_GH_InfoPlanes
     TarifaHonorario -right-( R_GH_InfoProfesores
     Liquidacion ..> TarifaHonorario
+    Liquidacion -down- I_CierreLiquidaciones
+    CierreMensualHonorarios -up-( I_CierreLiquidaciones
+    CierreMensualHonorarios -left-( R_GH_InfoParametros
+    CierreMensualHonorarios ..> Liquidacion
+    Liquidacion -[hidden]down-> CierreMensualHonorarios
   }
   interface "ILogicaHonorarios" as I_LogicaHonorarios
   interface "IAutorizacion"     as R_GH_Autz
@@ -357,12 +411,10 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     interface "IInfoHorarios"      as R_DP_InfoHorarios
     interface "IInfoInscripciones" as R_DP_InfoInscripciones
     interface "IInfoPlanes"        as R_DP_InfoPlanes
-    interface "ICalculoCupo"       as R_DP_CalculoCupo
 
     PanelDisponibilidad -right-( R_DP_InfoHorarios
     PanelDisponibilidad -right-( R_DP_InfoInscripciones
     PanelDisponibilidad -right-( R_DP_InfoPlanes
-    PanelDisponibilidad -right-( R_DP_CalculoCupo
   }
   interface "ILogicaDifusionPublica" as I_LogicaDifusionPublica
   DifusionPublica -down- I_LogicaDifusionPublica
@@ -372,23 +424,19 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     component "CalculadorRachaRanking"     as CalcRacha #EEFBF4
     component "CalculadorVencimientoCuota" as CalcVenc #EEFBF4
     component "CalculadorHabilitacion"     as CalcHab #EEFBF4
-    component "CalculadorCupo"             as CalcCupo #EEFBF4
     component "CalculadorHonorarios"       as CalcHon #EEFBF4
     interface "ICalculoRachaRanking" as I_CalculoRachaRanking
     interface "ICalculoVencimiento"  as I_CalculoVencimiento
     interface "ICalculoHabilitacion" as I_CalculoHabilitacion
-    interface "ICalculoCupo"         as I_CalculoCupo
     interface "ICalculoHonorarios"   as I_CalculoHonorarios
 
     CalcRacha -right- I_CalculoRachaRanking
     CalcVenc  -right- I_CalculoVencimiento
     CalcHab   -right- I_CalculoHabilitacion
-    CalcCupo  -right- I_CalculoCupo
     CalcHon   -right- I_CalculoHonorarios
     CalcRacha -[hidden]down-> CalcVenc
     CalcVenc  -[hidden]down-> CalcHab
-    CalcHab   -[hidden]down-> CalcCupo
-    CalcCupo  -[hidden]down-> CalcHon
+    CalcHab   -[hidden]down-> CalcHon
   }
 
   ' ---------------- Reportes ----------------
@@ -401,13 +449,24 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
     interface "IInfoInscripciones" as R_RE_InfoInscripciones
     interface "IInfoAsistencia"    as R_RE_InfoAsistencia
     interface "IInfoParametros"    as R_RE_InfoParametros
+    interface "IInfoInscripciones" as R_RE_InfoInscripcionesDet
+    interface "IInfoAlumnos"       as R_RE_InfoAlumnosDet
+    interface "IInfoCuotas"        as R_RE_InfoCuotasDet
+    interface "IInfoPagos"         as R_RE_InfoPagos
+    interface "IInfoAsistencia"    as R_RE_InfoAsistenciaInf
 
+    GeneradorInformes   -up-( R_RE_InfoAsistenciaInf
     GeneradorInformes   -right-( R_RE_InfoAlumnos
     GeneradorInformes   -right-( R_RE_InfoHorarios
     GeneradorInformes   -down-( R_RE_InfoPlanes
     GeneradorInformes   -down-( R_RE_InfoInscripciones
+    GeneradorInformes   -down-( R_RE_InfoCuotasDet
+    GeneradorInformes   -down-( R_RE_InfoPagos
     DetectorInactividad -up-( R_RE_InfoAsistencia
     DetectorInactividad -left-( R_RE_InfoParametros
+    DetectorInactividad -down-( R_RE_InfoInscripcionesDet
+    DetectorInactividad -down-( R_RE_InfoAlumnosDet
+    DetectorInactividad -down-( R_RE_InfoCuotasDet
     GeneradorInformes ..> DetectorInactividad
   }
   interface "ILogicaInformes" as I_LogicaInformes
@@ -418,6 +477,7 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
   Reportes        -down-( R_RE_Aut
   Reportes       -down-( R_RE_Autz
   Reportes -down-( R_RE_InfoCuotas
+  Reportes -down-( R_RE_InfoPagos
 
   DifusionPublica -[hidden]right-> CalculosDelNegocio
   DifusionPublica -[hidden]down-> Reportes
