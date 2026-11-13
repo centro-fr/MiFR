@@ -71,9 +71,9 @@ export function EncabezadoPublico() {
       )}
     >
       <div className={`${CONTENEDOR_PUBLICO} flex h-20 items-center justify-between gap-6`}>
-        <a href="#inicio" aria-label={NOMBRE_DEL_CENTRO} className="flex items-center gap-2.5 text-[15px] font-extrabold">
-          <LogoFr className="size-[34px]" />
-          FR
+        <a href="#inicio" aria-label={NOMBRE_DEL_CENTRO} className="flex items-center gap-2.5 text-[15px] leading-tight font-extrabold">
+          <LogoFr className="size-[34px] shrink-0" />
+          <span>Centro de Entrenamiento</span>
         </a>
         <nav aria-label="Secciones" className="hidden gap-8 text-sm font-semibold text-publico-texto-claro md:flex">
           {enlaces.map(({ href, texto }) => (
