@@ -87,7 +87,15 @@ function generarDocumentacionApi(loginDesarrollo: boolean): DocumentoOpenApi {
   return new OpenApiGeneratorV3(registro.definitions).generateDocument(CONFIGURACION_DOCUMENTO_API);
 }
 
-const { esProduccion, loginDesarrollo, origenesPermitidos, proxiesDeConfianza, host, port } = configuracion;
+const {
+  esProduccion,
+  loginDesarrollo,
+  origenesPermitidos,
+  proxiesDeConfianza,
+  firmaProxyNetlify,
+  host,
+  port,
+} = configuracion;
 if (loginDesarrollo) {
   console.warn("LOGIN_DESARROLLO activo: POST /api/v1/auth/desarrollo permite entrar sin Google");
 }
@@ -101,6 +109,7 @@ const app = createApp(dependencias, {
   loginDesarrollo,
   limitesDePedidos: LIMITES_DE_PEDIDOS,
   proxiesDeConfianza,
+  firmaProxyNetlify,
 });
 
 app.listen(port, host, () => {

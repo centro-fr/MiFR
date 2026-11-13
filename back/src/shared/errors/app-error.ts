@@ -88,3 +88,10 @@ export class AlumnoExistenteError extends AppError {
     super(409, `Ya hay un alumno registrado con ese DNI (alumno ${idAlumno})`, "ALUMNO_EXISTENTE");
   }
 }
+
+// El pedido no pasó por Netlify: llegó directo a la URL de Render, sin la firma del reenvío.
+export class OrigenNoPermitidoError extends AppError {
+  constructor() {
+    super(403, "El pedido tiene que llegar a través del sitio", "ORIGEN_NO_PERMITIDO");
+  }
+}

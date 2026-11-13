@@ -103,6 +103,7 @@ Los `.env` están ignorados por Git; cada paquete versiona un `.env.example` con
 | `PORT`             | Opcional, `3000`                   | Puerto de la API                                                                                                                            |
 | `CORS_ORIGENES`    | Opcional                           | Orígenes permitidos, separados por comas                                                                                                    |
 | `PROXIES_DE_CONFIANZA` | Opcional, `0`                  | Proxies delante de la API: de ahí sale la IP del visitante que cuenta el límite de pedidos                                                  |
+| `FIRMA_PROXY_NETLIFY` | Sin definir                     | Con valor, la API exige la firma de Netlify. En local no se define: el proxy de Vite no firma los pedidos                                   |
 
 **`front/.env`**
 
@@ -160,6 +161,7 @@ Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:inte
 | `error during connect ... dockerDesktopLinuxEngine`          | Docker Desktop no está abierto. Abrirlo y esperar a que termine de arrancar                                                         |
 | `db:seed:demo` falla al importar `@prisma/client`            | Falta generar el cliente: `pnpm --filter back prisma:generate`                                                                      |
 | `EADDRINUSE` o `ports are not available` en el puerto `3000` | El contenedor `api` y `pnpm dev:back` usan el mismo puerto. Parar uno: `docker compose stop api` o cortar `pnpm dev:back`           |
+| La API no arranca: `Falta FIRMA_PROXY_NETLIFY`               | `back/.env` no tiene `NODE_ENV` y el contenedor corre en `production`, que exige la firma de Netlify. Agregar `NODE_ENV="development"` |
 | `container name "/mifr-db" is already in use`                | Hay contenedores de otra copia del repositorio. `docker rm mifr-db mifr-api` los saca; los datos de cada copia quedan en su volumen |
 | La pantalla de login pide definir `VITE_GOOGLE_CLIENT_ID`    | No está activo el login de desarrollo ni configurado Google. Ver el paso 1                                                          |
 | El login de desarrollo responde 404                          | Falta `LOGIN_DESARROLLO=true` en `back/.env`, o con la Opción A no se recreó el contenedor                                          |
@@ -195,6 +197,7 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 | `JWT_EXPIRES_IN`   | `8h` (lo fija `render.yaml`)                                                        |
 | `CORS_ORIGENES`    | URL del sitio de Netlify, por ejemplo `https://mifr.netlify.app`                    |
 | `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `DESPLIEGUE.md`)    |
+| `FIRMA_PROXY_NETLIFY` | Secreto aleatorio de 32 caracteres o más, el mismo que la variable homónima de Netlify |
 
 `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 

@@ -24,6 +24,10 @@ services:
       # deploy: ver "Calibrar PROXIES_DE_CONFIANZA" en back/DESPLIEGUE.md.
       - key: PROXIES_DE_CONFIANZA
         sync: false
+      # Secreto que comparte con Netlify para verificar que cada pedido pasó por el sitio. No se genera
+      # acá porque Netlify necesita el mismo valor: ver el paso 2 de back/DESPLIEGUE.md.
+      - key: FIRMA_PROXY_NETLIFY
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

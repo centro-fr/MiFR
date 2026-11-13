@@ -9,6 +9,7 @@ const produccion = {
   JWT_SECRET: SECRETO_LARGO,
   CORS_ORIGENES: "https://mifr.netlify.app",
   PROXIES_DE_CONFIANZA: "2",
+  FIRMA_PROXY_NETLIFY: "f".repeat(32),
 };
 
 function errores(env: NodeJS.ProcessEnv): string[] {
@@ -30,6 +31,7 @@ describe("leerConfiguracion", () => {
         origenesPermitidos: ["https://mifr.netlify.app"],
         loginDesarrollo: false,
         proxiesDeConfianza: 2,
+        firmaProxyNetlify: "f".repeat(32),
         host: "0.0.0.0",
         port: 3000,
       },
@@ -50,6 +52,7 @@ describe("leerConfiguracion", () => {
         googleClientId: undefined,
         loginDesarrollo: true,
         proxiesDeConfianza: 0,
+        firmaProxyNetlify: undefined,
         host: "127.0.0.1",
       },
     });
@@ -110,6 +113,21 @@ describe("leerConfiguracion", () => {
       "LOGIN_DESARROLLO=true no está permitido",
     ],
     [
+      "sin FIRMA_PROXY_NETLIFY",
+      { ...produccion, FIRMA_PROXY_NETLIFY: undefined },
+      "Falta FIRMA_PROXY_NETLIFY",
+    ],
+    [
+      "con FIRMA_PROXY_NETLIFY en blanco",
+      { ...produccion, FIRMA_PROXY_NETLIFY: "   " },
+      "Falta FIRMA_PROXY_NETLIFY",
+    ],
+    [
+      "con una FIRMA_PROXY_NETLIFY corta",
+      { ...produccion, FIRMA_PROXY_NETLIFY: "corta" },
+      "FIRMA_PROXY_NETLIFY tiene que tener al menos 32 caracteres",
+    ],
+    [
       "sin PROXIES_DE_CONFIANZA",
       { ...produccion, PROXIES_DE_CONFIANZA: undefined },
       "Falta PROXIES_DE_CONFIANZA",
@@ -119,11 +137,18 @@ describe("leerConfiguracion", () => {
     expect(errores(env)).toEqual([expect.stringContaining(mensaje)]);
   });
 
+  it("fuera de producción FIRMA_PROXY_NETLIFY es opcional y, si viene, se usa", () => {
+    expect(leerConfiguracion({ JWT_SECRET: "s", FIRMA_PROXY_NETLIFY: "corta" })).toMatchObject({
+      valida: true,
+      configuracion: { firmaProxyNetlify: "corta" },
+    });
+  });
+
   it("fuera de producción también exige JWT_SECRET", () => {
     expect(errores({ NODE_ENV: "development" })).toEqual([expect.stringContaining("Falta JWT_SECRET")]);
   });
 
   it("junta todos los errores en lugar de cortar en el primero", () => {
-    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(5);
+    expect(errores({ NODE_ENV: "production", LOGIN_DESARROLLO: "true" })).toHaveLength(6);
   });
 });

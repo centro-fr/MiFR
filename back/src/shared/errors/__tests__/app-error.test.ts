@@ -6,6 +6,7 @@ import {
   ForbiddenError,
   MontoDistintoError,
   NotFoundError,
+  OrigenNoPermitidoError,
   UnauthorizedError,
   UsuarioNoRegistradoError,
   ValidationError,
@@ -28,6 +29,14 @@ describe("errores de la aplicación", () => {
 
     expect(error).toMatchObject({ statusCode: 403, code: "USUARIO_NO_REGISTRADO" });
     expect(error.message).toContain("Pedile a quien administra el centro");
+  });
+
+  it("OrigenNoPermitidoError responde 403 con un código propio y sin detalles del camino", () => {
+    expect(new OrigenNoPermitidoError()).toMatchObject({
+      statusCode: 403,
+      code: "ORIGEN_NO_PERMITIDO",
+      message: "El pedido tiene que llegar a través del sitio",
+    });
   });
 
   it("AlumnoExistenteError responde 409 con un código propio y el id del alumno que ya existe", () => {

@@ -12,11 +12,15 @@
 # La URL tiene que coincidir con la que Render le asigne al servicio mifr-api de render.yaml, y ese servicio
 # tiene que ser del proyecto: por esta regla pasan los tokens de sesión y de Google. Ver el checklist de
 # back/DESPLIEGUE.md antes de publicar o al renombrar o borrar el servicio en Render.
+# `signed` firma cada pedido reenviado (cabecera x-nf-sign) con el secreto de la variable FIRMA_PROXY_NETLIFY,
+# que se carga en Netlify con alcance Runtime y es la misma que tiene la API: la API rechaza lo que no
+# traiga esa firma, así nadie la llama directo salteando el sitio.
 [[redirects]]
   from = "/api/*"
   to = "https://mifr-api.onrender.com/api/:splat"
   status = 200
   force = true
+  signed = "FIRMA_PROXY_NETLIFY"
 
 # La SPA resuelve sus rutas en el navegador: cualquier ruta que no sea un archivo devuelve index.html.
 [[redirects]]

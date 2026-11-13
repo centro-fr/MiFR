@@ -25,6 +25,7 @@ import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-a
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { crearControlDeAcceso } from "./shared/middlewares/auth.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
+import { exigirFirmaDeNetlify } from "./shared/middlewares/firma-netlify.js";
 import { crearLimiteDePedidos, type LimitesDePedidos } from "./shared/middlewares/limite-pedidos.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
@@ -59,6 +60,8 @@ export interface AppOpciones {
   limitesDePedidos?: LimitesDePedidos;
   // Cuántos proxies hay delante de la API: de ahí sale req.ip, que es lo que cuenta el límite de pedidos.
   proxiesDeConfianza?: number;
+  // Secreto con el que Netlify firma lo que reenvía. Sin él, la API acepta pedidos de cualquier camino.
+  firmaProxyNetlify?: string;
 }
 
 // Van antes que cualquier ruta, así un pedido que excede el tope no llega a la base. /health queda
@@ -85,6 +88,8 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
 
   // Prefijo versionado del SDD: un cambio incompatible de contrato se publica como /api/v2.
   const api = Router();
+  // Antes que los límites: un pedido que no pasó por Netlify no gasta el cupo de nadie.
+  if (opciones.firmaProxyNetlify) api.use(exigirFirmaDeNetlify(opciones.firmaProxyNetlify));
   if (opciones.limitesDePedidos) montarLimitesDePedidos(api, opciones.limitesDePedidos);
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));

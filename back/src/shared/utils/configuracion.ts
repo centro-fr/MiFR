@@ -8,6 +8,7 @@ export interface Configuracion {
   origenesPermitidos: string[] | undefined;
   loginDesarrollo: boolean;
   proxiesDeConfianza: number;
+  firmaProxyNetlify: string | undefined;
   host: string;
   port: number;
 }
@@ -39,6 +40,7 @@ export function leerConfiguracion(env: NodeJS.ProcessEnv): ResultadoConfiguracio
   const loginDesarrollo = env.LOGIN_DESARROLLO === "true";
   const port = Number(env.PORT ?? 3000);
   const proxiesDeConfianza = leerProxiesDeConfianza(env.PROXIES_DE_CONFIANZA);
+  const firmaProxyNetlify = env.FIRMA_PROXY_NETLIFY?.trim() || undefined;
   const errores: string[] = [];
 
   if (!jwtSecret) errores.push("Falta JWT_SECRET: sin él no se pueden firmar las sesiones");
@@ -65,6 +67,12 @@ export function leerConfiguracion(env: NodeJS.ProcessEnv): ResultadoConfiguracio
     if (loginDesarrollo) errores.push("LOGIN_DESARROLLO=true no está permitido con NODE_ENV=production");
     // Sin el valor, la API ve como IP de todos los visitantes la del proxy de Render, y el límite de
     // pedidos los cuenta como una sola persona: un visitante abusivo deja sin servicio a los demás.
+    // Sin la firma, cualquiera puede llamar directo a la URL de Render salteando Netlify y elegir su IP.
+    if (!firmaProxyNetlify) {
+      errores.push("Falta FIRMA_PROXY_NETLIFY: sin ella la API acepta pedidos que no pasaron por Netlify");
+    } else if (firmaProxyNetlify.length < LARGO_MINIMO_JWT_SECRET) {
+      errores.push(`FIRMA_PROXY_NETLIFY tiene que tener al menos ${LARGO_MINIMO_JWT_SECRET} caracteres`);
+    }
     if (env.PROXIES_DE_CONFIANZA === undefined) {
       errores.push(
         "Falta PROXIES_DE_CONFIANZA: con NODE_ENV=production hay que indicar cuántos proxies hay delante de la API",
@@ -84,6 +92,7 @@ export function leerConfiguracion(env: NodeJS.ProcessEnv): ResultadoConfiguracio
       origenesPermitidos,
       loginDesarrollo,
       proxiesDeConfianza,
+      firmaProxyNetlify,
       // Fuera de producción la API trae el login de desarrollo y CORS abierto: por defecto solo atiende a
       // la propia máquina, no a la red local. El contenedor fija HOST=0.0.0.0 porque escucha detrás de Docker.
       host: env.HOST ?? (esProduccion ? "0.0.0.0" : "127.0.0.1"),
