@@ -2,9 +2,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
+import { registrarServiceWorker } from "./pwa/registrar-service-worker.ts";
 import { initTema } from "./stores/theme-store.ts";
 
 initTema();
+registrarServiceWorker();
 
 // Los mocks se activan solo a pedido: sin la variable, el front usa la API real.
 async function enableMocks() {
