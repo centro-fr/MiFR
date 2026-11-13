@@ -1,0 +1,103 @@
+@startuml Secuencia_Avisos_Push
+title Avisos push de cuota (US-25)
+
+autonumber "<b>0."
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor "Alumno o tutor" as Persona
+participant "Front (React)" as Front
+participant "Service worker\n(public/sw.js)" as SW
+participant "Servicio de push\ndel navegador\n(FCM, Apple, Mozilla)" as ServicioPush
+box "Back: GestionNotificaciones" #F8FAFC
+  participant "SuscripcionPush" as Suscripcion
+  participant "PlanificadorNotificaciones\n<<process>>" as Planificador
+  participant "Notificacion" as Notificacion
+  participant "WebPushServicio\n(adaptador de web-push)" as WebPush
+end box
+participant "Cuota\n(IInfoCuotas)" as Cuota
+database "PostgreSQL" as BD
+
+== Suscribir el dispositivo (a pedido de la persona) ==
+
+Persona -> Front : "Recibir avisos en este celular"
+Front -> Suscripcion : GET /notificaciones/push/clave-publica
+Suscripcion --> Front : clave VAPID pública\n(null si el push no está configurado)
+Front -> Persona : Notification.requestPermission()
+Persona --> Front : permiso concedido
+Front -> SW : pushManager.subscribe(clave VAPID)
+SW -> ServicioPush : registrar el dispositivo
+ServicioPush --> SW : endpoint + claves p256dh y auth
+SW --> Front : PushSubscription
+Front -> Suscripcion : POST /notificaciones/push/suscripciones\n(endpoint, p256dh, auth)
+Suscripcion -> BD : guardar en suscripciones_push\n(una por dispositivo, endpoint único)
+note right of BD
+  Si otra cuenta suscribe el mismo
+  dispositivo, la suscripción pasa a esa
+  cuenta: el endpoint es único.
+end note
+Suscripcion --> Front : 204
+
+== Generar los avisos del día (una vez por día y por proceso) ==
+
+alt intervalo de index.ts
+  Planificador -> Planificador : generarAvisosDelDia()
+else al consultar las notificaciones propias
+  Planificador -> Planificador : generarAvisosDelDia()\n(lo llama la fachada GestionNotificaciones antes de listar)
+end
+Planificador -> Cuota : paraAvisoDeVencimiento(hoy)
+Cuota --> Planificador : cuotas que hoy pasan a por vencer\n(entran en la gracia) o a vencida
+Planificador -> Notificacion : registrar(avisos)\nal alumno, o a su tutor si es menor
+Notificacion -> BD : createManyAndReturn(skipDuplicates)\núnico (id_usuario, id_cuota, tipo)
+BD --> Notificacion : solo las filas recién insertadas
+note right of Notificacion
+  El aviso in-app es la fuente: nace ENVIADA
+  y se ve en la campanita aunque el push no llegue.
+  Volver a correr el proceso no inserta nada,
+  así que tampoco repite ningún push.
+end note
+
+loop por cada aviso nuevo de cuota (BIENVENIDA queda solo in-app)
+  Notificacion -> Suscripcion : enviarAUsuario(id_usuario, aviso)\n(IEnvioPush)
+  Suscripcion -> BD : suscripciones del usuario
+  BD --> Suscripcion : un endpoint por dispositivo
+  loop por cada dispositivo (uno que falla no frena a los demás)
+    Suscripcion -> WebPush : enviar(suscripción, aviso)\n(IServicioWebPush)
+    WebPush -> ServicioPush : sendNotification firmado con VAPID\nTTL 3 días, espera máxima 10 s
+    alt entregado
+      ServicioPush --> WebPush : 201
+      WebPush --> Suscripcion : ENTREGADO
+    else el dispositivo ya no existe
+      ServicioPush --> WebPush : 404 o 410
+      WebPush --> Suscripcion : VENCIDA
+      Suscripcion -> BD : borrar la suscripción
+    else otro error
+      ServicioPush --> WebPush : error
+      WebPush --> Suscripcion : Error (solo el código, sin el endpoint)
+      Suscripcion -> Suscripcion : registrarError("AVISO_PUSH")\nsin reintento
+    end
+  end
+end
+
+== Recibir el aviso en el celular ==
+
+ServicioPush -> SW : evento push\n(aunque MiFR esté cerrado; si está apagado, hasta 3 días)
+SW -> Persona : showNotification(título, cuerpo)\ntag por cuota: el nuevo reemplaza al anterior
+Persona -> SW : toca la notificación
+SW -> Front : notificationclick: enfoca la ventana abierta\no abre una nueva, solo con rutas del propio sitio
+
+== Cerrar sesión ==
+
+Persona -> Front : cerrar sesión
+Front -> Suscripcion : POST /notificaciones/push/suscripciones/baja\n(endpoint, todavía con el token)
+Suscripcion -> BD : borrar la del usuario\n(una ajena o inexistente no hace nada ni lo informa)
+Suscripcion --> Front : 204
+Front -> SW : suscripcion.unsubscribe()
+note over Persona, BD
+  Así el próximo que use el celular no recibe los avisos de esta cuenta.
+  En iPhone hace falta iOS 16.4 o posterior y MiFR agregado a la pantalla de inicio;
+  en Android anda desde el navegador. Sin claves VAPID (desarrollo) se guarda la
+  suscripción pero no se manda nada.
+end note
+
+@enduml
