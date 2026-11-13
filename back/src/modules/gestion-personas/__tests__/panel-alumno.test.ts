@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InscripcionConDatos } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
-import { historialDelPanel, planDelPanel, proximasClases } from "../panel-alumno.js";
+import { historialDelPanel, planDelPanel, proximasClases, proximasClasesDeTodas } from "../panel-alumno.js";
 
 const LUNES = new Date("2026-10-12T00:00:00Z");
 
@@ -35,8 +35,9 @@ function horario(
   };
 }
 
-function inscripcion(horarios: ReturnType<typeof horario>[]): InscripcionConDatos {
+function inscripcion(horarios: ReturnType<typeof horario>[], id_inscripcion = 9): InscripcionConDatos {
   return {
+    id_inscripcion,
     plan: { nombre: "Intermedio", tipo: "MENSUAL", clases_por_semana: 2 },
     profesora: { usuario: { nombre: "Lucía", apellido: "Gómez" } },
     horarios,
@@ -112,9 +113,9 @@ describe("proximasClases", () => {
 });
 
 describe("planDelPanel", () => {
-  it("toma el plan, la profesora a cargo y la situación de la cuota", () => {
+  it("toma el plan, la profesora a cargo, las actividades de sus horarios y la situación de la cuota", () => {
     expect(
-      planDelPanel(inscripcion([]), {
+      planDelPanel(inscripcion([horario(1, 1, "09:00"), horario(2, 3, "09:00")]), {
         estado: "POR_VENCER",
         fecha_vencimiento: new Date("2026-10-10T00:00:00Z"),
         dias_restantes: -2,
@@ -122,10 +123,12 @@ describe("planDelPanel", () => {
         tiene_pago_pendiente: false,
       }),
     ).toEqual({
+      id_inscripcion: 9,
       nombre: "Intermedio",
       tipo: "MENSUAL",
       clases_por_semana: 2,
       profesora: "Lucía Gómez",
+      actividades: ["Funcional"],
       estado_cuota: "POR_VENCER",
       fecha_vencimiento: "2026-10-10",
       dias_restantes: -2,
@@ -167,7 +170,37 @@ describe("historialDelPanel", () => {
         },
       ]),
     ).toEqual([
-      { id_clase: 3, fecha: "2026-10-05", actividad: "HIIT", profesora: "Carla Ruiz", estado: "AUSENTE" },
+      {
+        id_clase: 3,
+        id_inscripcion: 7,
+        fecha: "2026-10-05",
+        actividad: "HIIT",
+        profesora: "Carla Ruiz",
+        estado: "AUSENTE",
+      },
     ]);
+  });
+});
+
+describe("proximasClasesDeTodas", () => {
+  it("junta las clases de todos los planes en orden, cada una con su inscripción, con el mismo tope", () => {
+    const clases = proximasClasesDeTodas(
+      [
+        inscripcion([horario(1, 3, "18:00")], 9),
+        inscripcion([horario(2, 2, "09:00"), horario(3, 4, "10:00")], 12),
+      ],
+      LUNES,
+      LUNES,
+      new Map(),
+    );
+
+    expect(
+      clases.slice(0, 3).map(({ id_horario, id_inscripcion }) => ({ id_horario, id_inscripcion })),
+    ).toEqual([
+      { id_horario: 2, id_inscripcion: 12 },
+      { id_horario: 1, id_inscripcion: 9 },
+      { id_horario: 3, id_inscripcion: 12 },
+    ]);
+    expect(clases).toHaveLength(5);
   });
 });

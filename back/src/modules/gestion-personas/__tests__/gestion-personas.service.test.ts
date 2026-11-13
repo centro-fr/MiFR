@@ -652,8 +652,10 @@ describe("GestionPersonasService", () => {
           { id_clase: 7, fecha: "2026-10-05", profesora: "Carla Ruiz", estado: "PRESENTE" },
         ],
       });
+      expect(panel.planes).toEqual([panel.plan]);
       expect(panel.proximas_clases[0]).toEqual({
         id_horario: 31,
+        id_inscripcion: 9,
         fecha: "2026-10-12",
         hora_inicio: "18:00",
         hora_fin: "19:00",
@@ -691,12 +693,13 @@ describe("GestionPersonasService", () => {
 
       await expect(servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA)).resolves.toMatchObject({
         plan: null,
+        planes: [],
         proximas_clases: [],
       });
       expect(mocks.cuotas.habilitacionDeInscripciones).not.toHaveBeenCalled();
     });
 
-    it("usa la inscripción activa más nueva antes que una pre-inscripción", async () => {
+    it("trae todos los planes vigentes y como principal usa la activa más nueva antes que una pre-inscripción", async () => {
       mocks.alumnos.listarConsultables.mockResolvedValue([PROPIA]);
       mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([
         {
@@ -708,9 +711,21 @@ describe("GestionPersonasService", () => {
         INSCRIPCION,
       ]);
 
-      await servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA);
+      mocks.cuotas.habilitacionDeInscripciones.mockResolvedValue(
+        new Map([
+          [12, HABILITACION],
+          [9, HABILITACION],
+        ]),
+      );
 
-      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+      const panel = await servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA);
+
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([12, 9]);
+      expect(panel.plan).toMatchObject({ id_inscripcion: 9, nombre: "Intermedio" });
+      expect(panel.planes.map(({ id_inscripcion, nombre }) => ({ id_inscripcion, nombre }))).toEqual([
+        { id_inscripcion: 12, nombre: "Nuevo" },
+        { id_inscripcion: 9, nombre: "Intermedio" },
+      ]);
     });
 
     it("sin fecha usa el momento actual", async () => {
