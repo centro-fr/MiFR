@@ -65,5 +65,49 @@ services:
       db:
         condition: service_healthy
 
+  # Perfil "completo": el sistema entero en contenedores, como se publica (base, API y front servido
+  # como en Netlify), con los datos de prueba. Para probar todo junto antes de desplegar:
+  #   docker compose --profile completo up -d --build
+  #   pnpm probar:compose
+  # Sin el perfil, `docker compose up` sigue levantando solo la base y la API para desarrollar.
+
+  # Carga los datos de prueba (roles, permisos, actividades, alumnos de demo) y termina. Corre con la
+  # etapa de build de la imagen de la API, que tiene tsx y las dependencias de desarrollo. Volver a
+  # correrlo no duplica nada.
+  datos-demo:
+    profiles: ["completo"]
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+      target: build
+    container_name: mifr-datos-demo
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
+    command: ["pnpm", "--filter", "back", "db:seed:demo"]
+    restart: "no"
+    # Después de la API, que es quien aplica las migraciones al arrancar.
+    depends_on:
+      api:
+        condition: service_healthy
+
+  front:
+    profiles: ["completo"]
+    build:
+      context: .
+      dockerfile: front/Dockerfile
+      # Vite las incrusta al compilar: cambiarlas requiere --build. El login de desarrollo necesita
+      # LOGIN_DESARROLLO=true en back/.env.
+      args:
+        VITE_LOGIN_DESARROLLO: ${VITE_LOGIN_DESARROLLO:-true}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_SITIO_URL: http://localhost:8080
+    container_name: mifr-front
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   mifr-db-data:

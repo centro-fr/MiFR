@@ -73,6 +73,15 @@ pnpm dev:back                             # terminal 1: API en http://localhost:
 pnpm dev:front                            # terminal 2: front en http://localhost:5173
 ```
 
+**Opción C: sistema completo en contenedores.** Para probar front, API y base juntos, como se publican, antes de desplegar. El front se compila y lo sirve nginx con las mismas cabeceras de seguridad que Netlify, reenviando `/api` a la API; los datos de prueba se cargan solos.
+
+```bash
+docker compose --profile completo up -d --build   # base + API + datos de prueba + front
+pnpm probar:compose                               # prueba de humo: front, /api, login y datos de la base
+```
+
+Abrir <http://localhost:8080> y entrar con el login de desarrollo como `marina.sosa@example.com` (propietaria y profesora). Necesita `NODE_ENV="development"` y `LOGIN_DESARROLLO=true` en `back/.env`. Para apagarlo: `docker compose --profile completo down` (sin el perfil, `down` no apaga el front).
+
 ### 3. Entrar
 
 Abrir <http://localhost:5173> y entrar con `marina.sosa@example.com` (propietaria y profesora).

@@ -1,0 +1,19 @@
+# Contexto de la imagen del front (front/Dockerfile). BuildKit lo usa en lugar del .dockerignore de la
+# raíz, que deja afuera todo front/ porque la imagen de la API no lo necesita.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.agents
+.vscode
+.claude
+back
+docs
+presentacion
+test-results
+front/e2e
+front/.agents
+front/test-results
+*.pdf
