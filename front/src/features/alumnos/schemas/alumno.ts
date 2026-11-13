@@ -72,6 +72,16 @@ export type SituacionCuotaApi = z.infer<typeof situacionCuotaApiSchema>;
 const situacionCuotaOpcionalSchema = situacionCuotaApiSchema.nullable().default(null);
 
 // Inscripcion del back, solo con lo que muestra la ficha.
+export const cambioPlanProgramadoApiSchema = z.object({
+  id_inscripcion: z.number().int(),
+  id_plan: z.number().int(),
+  nombre_plan: z.string(),
+  id_profesora: z.number().int(),
+  nombre_profesora: z.string(),
+  ids_horarios: z.array(z.number().int()),
+  fecha_aplicacion: z.string(),
+});
+
 const inscripcionVigenteApiSchema = z.object({
   id_inscripcion: z.number().int(),
   estado: z.enum(["PREINSCRIPTA", "ACTIVA", "BAJA"]),
@@ -101,6 +111,8 @@ const inscripcionVigenteApiSchema = z.object({
   ),
   reserva: z.object({ vence: z.string(), vencida: z.boolean() }).nullable(),
   situacion_cuota: situacionCuotaOpcionalSchema,
+  // US-14: el cambio de plan pedido con el plan vigente, que se aplica al terminar la gracia.
+  cambio_programado: cambioPlanProgramadoApiSchema.nullable().optional(),
 });
 
 export type InscripcionVigenteApi = z.infer<typeof inscripcionVigenteApiSchema>;
@@ -211,6 +223,15 @@ export interface HorarioDeAlumno {
   profesora: string;
 }
 
+/** Cambio de plan que espera a que termine la gracia de la cuota que corre (US-14). */
+export interface CambioPlanProgramado {
+  id_plan: number;
+  nombre_plan: string;
+  nombre_profesora: string;
+  /** Fecha de calendario "AAAA-MM-DD". */
+  fecha_aplicacion: string;
+}
+
 export interface InscripcionDeAlumno {
   id_inscripcion: number;
   estado: "PREINSCRIPTA" | "ACTIVA" | "BAJA";
@@ -231,6 +252,7 @@ export interface InscripcionDeAlumno {
   /** Solo en las pre-inscripciones: hasta qué día guardan el lugar sin el primer pago (US-07). */
   reserva: { vence: string; vencida: boolean } | null;
   situacion_cuota: SituacionCuota | null;
+  cambio_programado?: CambioPlanProgramado | null;
 }
 
 export interface AlumnoDetalle {

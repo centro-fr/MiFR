@@ -10,8 +10,9 @@ import {
   planYHorariosSchema,
   vigentesDe,
 } from "@/mocks/handlers/reglas-inscripcion";
-import { inscripcionConDatos } from "@/mocks/handlers/serializar";
+import { cambioProgramadoConDatos, inscripcionConDatos } from "@/mocks/handlers/serializar";
 import { hoyEnArgentina } from "@/mocks/precios";
+import { situacionCuotaDe } from "@/mocks/situacion-cuota";
 
 // Mock de /inscripciones (inscripcion.routes.ts): listado con filtros y paginado, pre-inscripción
 // (US-05) y cambio de horarios o de plan de una inscripción vigente.
@@ -54,6 +55,37 @@ function inscripcionVigente(params: Record<string, string | readonly string[] | 
   const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === id);
   if (!inscripcion) return errorApi(404, "NOT_FOUND", "Inscripción no encontrada");
   return inscripcion.estado === "BAJA" ? errorApi(409, "CONFLICT", "La inscripción ya está dada de baja") : inscripcion;
+}
+
+const UN_DIA_MS = 86_400_000;
+
+// fechaDelCambioProgramado de la fachada del back: con el plan vigente, el cambio va el día siguiente
+// al último de gracia; null si se aplica en el momento.
+function fechaDelCambioProgramado(inscripcion: InscripcionMock): string | null {
+  if (inscripcion.estado !== "ACTIVA") return null;
+  const vencimiento = situacionCuotaDe(inscripcion).fecha_vencimiento;
+  if (!vencimiento) return null;
+  const plan = db.planes.find((p) => p.id_plan === inscripcion.id_plan)!;
+  const aplicacion = new Date(Date.parse(vencimiento.slice(0, 10)) + (plan.dias_gracia + 1) * UN_DIA_MS);
+  const dia = aplicacion.toISOString().slice(0, 10);
+  return dia > hoyEnArgentina() ? dia : null;
+}
+
+// Mismas reglas que actualizarHorarios del back: con la inscripción activa y sin pasar a otra profesora
+// ni a otra actividad (eso es un cambio de plan).
+function errorDelCambioDeHorarios(inscripcion: InscripcionMock, idsHorarios: number[]) {
+  if (inscripcion.estado !== "ACTIVA") return errorApi(409, "CONFLICT", "Los horarios se cambian con la inscripción activa");
+  const actividades = new Set(
+    db.horarios.filter((h) => inscripcion.ids_horarios.includes(h.id_horario)).map((h) => h.id_actividad),
+  );
+  const nuevos = db.horarios.filter((h) => idsHorarios.includes(h.id_horario));
+  if (nuevos.some((h) => h.id_profesora !== inscripcion.id_profesora)) {
+    return errorApi(400, "VALIDATION_ERROR", "Los horarios tienen que ser de la misma profesora: para cambiarla, cambiá el plan");
+  }
+  if (nuevos.some((h) => !actividades.has(h.id_actividad))) {
+    return errorApi(400, "VALIDATION_ERROR", "Los horarios tienen que ser de la misma actividad: para cambiarla, cambiá el plan");
+  }
+  return null;
 }
 
 export const inscripcionesHandlers = [
@@ -123,7 +155,9 @@ export const inscripcionesHandlers = [
     const inscripcion = inscripcionVigente(params);
     if (inscripcion instanceof Response) return inscripcion;
     const { id_plan, id_profesora } = inscripcion;
-    const error = errorDeHorarios({ id_plan, id_profesora, ids_horarios: cuerpo.data.ids_horarios }, inscripcion.id_inscripcion);
+    const error =
+      errorDelCambioDeHorarios(inscripcion, cuerpo.data.ids_horarios) ??
+      errorDeHorarios({ id_plan, id_profesora, ids_horarios: cuerpo.data.ids_horarios }, inscripcion.id_inscripcion);
     if (error) return error;
 
     inscripcion.ids_horarios = cuerpo.data.ids_horarios;
@@ -145,9 +179,30 @@ export const inscripcionesHandlers = [
     const error = errorDeHorarios(cuerpo.data, actual.id_inscripcion);
     if (error) return error;
 
+    const aplicacion = fechaDelCambioProgramado(actual);
+    if (aplicacion) {
+      const { id_plan, id_profesora, ids_horarios } = cuerpo.data;
+      const cambio = { id_inscripcion: actual.id_inscripcion, id_plan, id_profesora, ids_horarios, fecha_aplicacion: aplicacion };
+      db.cambiosPlan = [...db.cambiosPlan.filter((c) => c.id_inscripcion !== actual.id_inscripcion), cambio];
+      return HttpResponse.json(cambioProgramadoConDatos(cambio), { status: 202 });
+    }
+
     const estadoNuevo = actual.estado === "ACTIVA" ? "ACTIVA" : "PREINSCRIPTA";
     Object.assign(actual, { estado: "BAJA", motivo_baja: "CAMBIO_PLAN", fecha_baja: new Date().toISOString() });
     const nueva = guardarInscripcion(actual.id_alumno, cuerpo.data, estadoNuevo);
     return HttpResponse.json(inscripcionConDatos(nueva), { status: 201 });
+  }),
+
+  http.delete("*/api/v1/inscripciones/:id/cambio-plan", async ({ request, params }) => {
+    await delay(300);
+    const denegado = verificarAcceso(request, PROPIETARIA_EDITA);
+    if (denegado) return denegado;
+    const id = idDeRuta(params.id);
+    if (id === null) return idInvalido();
+    if (!db.cambiosPlan.some((c) => c.id_inscripcion === id)) {
+      return errorApi(404, "NOT_FOUND", "La inscripción no tiene un cambio de plan programado");
+    }
+    db.cambiosPlan = db.cambiosPlan.filter((c) => c.id_inscripcion !== id);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

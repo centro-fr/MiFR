@@ -52,8 +52,18 @@ export async function actualizarHorario(id: string, cambios: Partial<GuardarHora
   return horarioApiSchema.parse(data);
 }
 
-// Baja lógica. Devuelve la advertencia del back (hoy: que no se verificaron inscripciones).
-export async function darDeBajaHorario(id: string): Promise<string> {
+export interface ResultadoBajaHorario {
+  advertencia: string;
+  /** Con alumnos inscriptos la baja no es inmediata: queda programada hasta que sale el último. */
+  programada: boolean;
+}
+
+export async function darDeBajaHorario(id: string): Promise<ResultadoBajaHorario> {
   const { data } = await apiClient.delete(`/horarios/${id}`);
-  return horarioConAdvertenciaApiSchema.parse(data).advertencia;
+  const { horario, advertencia } = horarioConAdvertenciaApiSchema.parse(data);
+  return { advertencia, programada: Boolean(horario.fecha_baja_programada) };
+}
+
+export async function cancelarBajaProgramadaHorario(id: string): Promise<void> {
+  await apiClient.delete(`/horarios/${id}/baja-programada`);
 }

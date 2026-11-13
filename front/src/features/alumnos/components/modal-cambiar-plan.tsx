@@ -19,6 +19,7 @@ import { clasesRequeridasDelPlan } from "@/features/alumnos/utils/plan-y-profeso
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import type { InscripcionDeAlumno } from "@/features/alumnos/schemas/alumno";
 import { cn } from "@/utils/cn";
+import { fechaCalendarioCorta } from "@/utils/fecha";
 import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Props {
@@ -106,8 +107,27 @@ export function ModalCambiarPlan({
     });
   };
 
+  // Con el mismo plan solo se cambian los horarios, dentro de la misma profesora y actividad: otra
+  // profesora u otra actividad es un cambio de plan. Un horario con la baja programada no recibe
+  // alumnos nuevos, pero quien ya está en él lo conserva.
+  const mismoPlan = idPlan === inscripcionActiva.plan.id_plan;
+  const horariosElegibles = useMemo(() => {
+    const actuales = new Set(inscripcionActiva.horarios.map((h) => h.id_horario));
+    const actividades = new Set(inscripcionActiva.horarios.map((h) => h.id_actividad));
+    return horarios.filter(
+      (h) =>
+        (!h.fecha_baja_programada || actuales.has(h.id_horario)) &&
+        (!mismoPlan || (h.id_profesora === inscripcionActiva.id_profesora && actividades.has(h.id_actividad))),
+    );
+  }, [horarios, inscripcionActiva, mismoPlan]);
+
   const seleccionarPlan = (nuevoIdPlan: number) => {
     setIdPlan(nuevoIdPlan);
+    if (nuevoIdPlan === inscripcionActiva.plan.id_plan) {
+      setIdProfesora(inscripcionActiva.id_profesora);
+      setIdsHorarios(inscripcionActiva.horarios.map((h) => h.id_horario));
+      return;
+    }
     const nuevoPlan = planes.find((p) => p.id_plan === nuevoIdPlan);
     const req = nuevoPlan ? clasesRequeridasDelPlan(nuevoPlan) : 0;
     if (idsHorarios.length > req) {
@@ -133,16 +153,16 @@ export function ModalCambiarPlan({
       return;
     }
 
-    const mismoPlan = idPlan === inscripcion.plan.id_plan;
-    const mismaProfesora = idProfesora === inscripcion.id_profesora;
     const mismosHorarios =
-      idsHorarios.length === inscripcion.horarios.length &&
-      idsHorarios.every((id) =>
-        inscripcion.horarios.some((h) => h.id_horario === id),
-      );
+      idsHorarios.length === inscripcionActiva.horarios.length &&
+      idsHorarios.every((id) => inscripcionActiva.horarios.some((h) => h.id_horario === id));
 
-    if (mismoPlan && mismaProfesora && mismosHorarios) {
+    if (mismoPlan && mismosHorarios) {
       toast.info("No hay cambios para guardar.");
+      return;
+    }
+    if (mismoPlan && inscripcionActiva.estado !== "ACTIVA") {
+      toast.error("Los horarios se cambian con la inscripción activa: primero tiene que registrar el primer pago.");
       return;
     }
 
@@ -153,14 +173,12 @@ export function ModalCambiarPlan({
         ids_horarios: idsHorarios,
       },
       {
-        onSuccess: () => {
-          if (!mismoPlan && tienePlanVigente) {
-            toast.success(
-              `Se programó el cambio de plan para ${nombre}. Se aplicará cuando venza el plan actual.`,
-            );
-          } else {
-            toast.success(`Se actualizaron el plan y horarios de ${nombre}`);
-          }
+        onSuccess: ({ programadoPara }) => {
+          toast.success(
+            programadoPara
+              ? `Se programó el cambio de plan de ${nombre}: se aplica el ${fechaCalendarioCorta(programadoPara)}, al terminar la gracia de la cuota actual.`
+              : `Se actualizaron el plan y horarios de ${nombre}`,
+          );
           onClose();
         },
         onError: (err) => {
@@ -220,11 +238,13 @@ export function ModalCambiarPlan({
         </DialogHeader>
 
         <div className={CUERPO_MODAL}>
-          {tienePlanVigente && (
+          {(tienePlanVigente || inscripcionActiva.cambio_programado) && (
             <Alert className="rounded-xl border-blue-200 bg-blue-50/70 p-3 text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
               <AlertDescription className="text-xs font-medium leading-relaxed">
-                El alumno cuenta con un plan vigente. Al cambiar de plan, el cambio
-                se aplicará automáticamente cuando venza el período actual.
+                {inscripcionActiva.cambio_programado
+                  ? `Ya tiene programado el cambio a ${inscripcionActiva.cambio_programado.nombre_plan} para el ${fechaCalendarioCorta(inscripcionActiva.cambio_programado.fecha_aplicacion)}: uno nuevo lo reemplaza.`
+                  : "Con el plan vigente, el cambio de plan se aplica al terminar la gracia de la cuota actual."}{" "}
+                Cambiar solo los horarios, con el mismo plan, es inmediato y dentro de la misma profesora y actividad.
               </AlertDescription>
             </Alert>
           )}
@@ -238,12 +258,12 @@ export function ModalCambiarPlan({
             <Paso2PlanYHorarios
               planes={planes}
               profesoras={profesoras}
-              horarios={horarios}
+              horarios={horariosElegibles}
               idPlanSeleccionado={idPlan}
               onSeleccionarPlan={seleccionarPlan}
               idProfesoraSeleccionada={idProfesora}
               onSeleccionarProfesora={setIdProfesora}
-              esSoloProfesora={false}
+              esSoloProfesora={mismoPlan}
               idsHorarios={idsHorarios}
               onToggleHorario={toggleHorario}
               onLimpiarHorarios={() => setIdsHorarios([])}

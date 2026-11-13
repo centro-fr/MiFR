@@ -56,6 +56,10 @@ export function errorDeHorarios(
   if (horarios.length !== ids_horarios.length) {
     return errorApi(409, "CONFLICT", "Uno o más horarios no existen o están dados de baja");
   }
+  const yaAsignados = db.inscripciones.find((i) => i.id_inscripcion === idInscripcionPropia)?.ids_horarios ?? [];
+  if (horarios.some((h) => h.fecha_baja_programada && !yaAsignados.includes(h.id_horario))) {
+    return errorApi(409, "CONFLICT", "Uno o más horarios tienen la baja programada: no admiten alumnos nuevos");
+  }
   if (new Set(horarios.map((h) => h.id_profesora)).size > 1) {
     return errorApi(400, "VALIDATION_ERROR", "Todos los horarios deben pertenecer a una misma profesora");
   }

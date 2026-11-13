@@ -6,7 +6,7 @@ import type { AlumnoMock, UsuarioPersonaMock } from "@/mocks/data/alumnos";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
-import { inscripcionConDatos } from "@/mocks/handlers/serializar";
+import { cambioProgramadoDe, inscripcionConDatos } from "@/mocks/handlers/serializar";
 import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
 import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
 import { asistenciaHistorica } from "@/mocks/data/asistencia-historica";
@@ -63,7 +63,11 @@ function alumnoEnListado(alumno: AlumnoMock) {
 }
 
 function conSituacion(inscripcion: InscripcionMock) {
-  return { ...inscripcionConDatos(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) };
+  return {
+    ...inscripcionConDatos(inscripcion),
+    situacion_cuota: situacionCuotaDe(inscripcion),
+    cambio_programado: cambioProgramadoDe(inscripcion.id_inscripcion),
+  };
 }
 
 // Las que cerró la última baja: el back da de baja al alumno y a sus inscripciones en el mismo momento.

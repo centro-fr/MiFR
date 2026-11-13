@@ -12,3 +12,9 @@ export function fechaActualArgentina(): string {
   const parte = (tipo: "year" | "month" | "day") => partes.find((item) => item.type === tipo)?.value ?? "";
   return `${parte("year")}-${parte("month")}-${parte("day")}`;
 }
+
+/** "2026-11-20" → "20/11/2026". Sin pasar por Date: es una fecha de calendario, no un instante. */
+export function fechaCalendarioCorta(fecha: string): string {
+  const [anio, mes, dia] = fecha.slice(0, 10).split("-");
+  return `${dia}/${mes}/${anio}`;
+}

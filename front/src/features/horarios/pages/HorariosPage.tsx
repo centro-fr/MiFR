@@ -37,6 +37,7 @@ export const HorariosPage: React.FC = () => {
     crearHorario,
     editarHorario,
     eliminarHorario,
+    cancelarBajaProgramada,
     moverHorario,
     intercambiarHorarios,
     validarSuperposicion,
@@ -116,9 +117,21 @@ export const HorariosPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!horarioAEliminar) return;
+    if (horarioAEliminar.bajaProgramada) {
+      const cancelada = await cancelarBajaProgramada(horarioAEliminar.id);
+      if (cancelada.ok) {
+        toast.success('Se canceló la baja programada: el horario vuelve a admitir alumnos.');
+        setIsModalOpen(false);
+      } else {
+        toast.error(cancelada.error);
+      }
+      setHorarioAEliminar(null);
+      return;
+    }
     const res = await eliminarHorario(horarioAEliminar.id);
     if (res.ok) {
-      toast.success(res.advertencia ? `Horario dado de baja. ${res.advertencia}` : 'Horario dado de baja.');
+      const titulo = res.programada ? 'Baja programada.' : 'Horario dado de baja.';
+      toast.success(res.advertencia && res.programada ? `${titulo} ${res.advertencia}` : titulo);
       setIsModalOpen(false);
     } else {
       toast.error(res.error);

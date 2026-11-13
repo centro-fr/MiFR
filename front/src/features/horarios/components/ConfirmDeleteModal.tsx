@@ -18,18 +18,29 @@ const DIA: Record<Horario['diaSemana'], string> = {
   DOMINGO: 'domingo',
 };
 
-// Con alumnos inscriptos la baja no es inmediata: se aplica cuando vence la cuota de cada uno, para
-// respetar las clases que ya pagaron.
+// Con alumnos inscriptos la baja no es inmediata: cada uno sale al terminar su período de gracia, para
+// respetar las clases que ya pagaron. Sobre un horario con la baja ya programada, la acción la cancela.
 export function ConfirmDeleteModal({ isOpen, horario, onClose, onConfirm }: ConfirmDeleteModalProps) {
   if (!isOpen || !horario) return null;
-  const conteo = horario as unknown as { inscriptos_count?: number; inscriptosCount?: number };
-  const inscriptos = conteo.inscriptos_count ?? conteo.inscriptosCount ?? 0;
+  const inscriptos = horario.inscriptos ?? 0;
   const clase = `${horario.actividadNombre} del ${DIA[horario.diaSemana]} ${horario.horaInicio}`;
+
+  if (horario.bajaProgramada) {
+    return (
+      <ConfirmarAccion
+        titulo="¿Cancelar la baja programada?"
+        descripcion={`${clase} sigue en el cronograma y vuelve a admitir alumnos nuevos.`}
+        textoConfirmar="Cancelar baja"
+        onConfirmar={onConfirm}
+        onCancelar={onClose}
+      />
+    );
+  }
 
   return inscriptos > 0 ? (
     <ConfirmarAccion
       titulo="¿Programar la baja del horario?"
-      descripcion={`${clase} tiene ${inscriptos} ${inscriptos === 1 ? 'alumno' : 'alumnos'}: se da de baja cuando venzan sus cuotas y no admite nuevos.`}
+      descripcion={`${clase} tiene ${inscriptos} ${inscriptos === 1 ? 'alumno' : 'alumnos'}: no admite nuevos y cada uno sale al terminar su período de gracia.`}
       textoConfirmar="Programar baja"
       onConfirmar={onConfirm}
       onCancelar={onClose}

@@ -166,6 +166,12 @@ function aInscripcion(inscripcion: InscripcionVigenteApi): InscripcionDeAlumno {
     fecha_inicio: aFechaCalendario(inscripcion.fecha_inicio),
     reserva: inscripcion.reserva && { vence: aFechaCalendario(inscripcion.reserva.vence), vencida: inscripcion.reserva.vencida },
     situacion_cuota: aSituacionCuota(inscripcion.situacion_cuota),
+    cambio_programado: inscripcion.cambio_programado && {
+      id_plan: inscripcion.cambio_programado.id_plan,
+      nombre_plan: inscripcion.cambio_programado.nombre_plan,
+      nombre_profesora: inscripcion.cambio_programado.nombre_profesora,
+      fecha_aplicacion: aFechaCalendario(inscripcion.cambio_programado.fecha_aplicacion),
+    },
   };
 }
 

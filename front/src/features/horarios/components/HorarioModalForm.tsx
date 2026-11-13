@@ -128,8 +128,9 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
 
   const hayErrorHorario = Boolean(errorMessage);
 
-  const alumnosInscriptos = (horarioEnEdicion as unknown as { inscriptos_count?: number; inscriptosCount?: number })?.inscriptos_count ??
-    (horarioEnEdicion as unknown as { inscriptos_count?: number; inscriptosCount?: number })?.inscriptosCount ?? 0;
+  const alumnosInscriptos = horarioEnEdicion?.inscriptos ?? 0;
+  // Los alumnos pagaron esa clase: con inscriptos solo se cambia el cupo (el back responde 409).
+  const claseFija = alumnosInscriptos > 0;
 
   return (
     <Dialog
@@ -172,10 +173,10 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 <AlertCircle className="size-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-semibold text-blue-950 dark:text-blue-200 leading-snug">
-                    Clase con {alumnosInscriptos} alumno(s) activo(s)
+                    Clase con {alumnosInscriptos} {alumnosInscriptos === 1 ? 'alumno inscripto' : 'alumnos inscriptos'}
                   </p>
                   <p className="text-xs text-blue-800 dark:text-blue-300 mt-0.5 leading-relaxed">
-                    Las modificaciones en este horario comenzarán a regir cuando venzan las cuotas de los alumnos actuales para no alterar sus clases vigentes.
+                    Solo se puede cambiar el cupo. Para otro día, hora, profesor/a o actividad, programá la baja de este horario y creá otro.
                   </p>
                 </div>
               </div>
@@ -197,6 +198,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 }))}
                 onChange={setActividadId}
                 variante="formulario"
+                disabled={claseFija}
               />
               {actividades.length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
@@ -223,6 +225,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 }))}
                 onChange={setProfesoraId}
                 variante="formulario"
+                disabled={claseFija}
               />
               {profesoras.length === 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
@@ -247,9 +250,11 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   <button
                     type="button"
                     key={dia.id}
+                    disabled={claseFija}
+                    aria-pressed={isSelected}
                     onClick={() => setDiaSemana(dia.id)}
                     className={cn(
-                      "h-11 rounded-xl text-sm font-bold transition-all border flex items-center justify-center",
+                      "h-11 rounded-xl text-sm font-bold transition-all border flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60",
                       isSelected
                         ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900 shadow-xs"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
@@ -277,6 +282,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   max="22:00"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
+                  disabled={claseFija}
                   className={cn(
                     "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                     hayErrorHorario && "border-rose-500 focus-visible:ring-rose-500/20",
@@ -297,6 +303,7 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   max="23:00"
                   value={horaFin}
                   onChange={(e) => setHoraFin(e.target.value)}
+                  disabled={claseFija}
                   className={cn(
                     "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                     hayErrorHorario && "border-rose-500 focus-visible:ring-rose-500/20",
@@ -338,9 +345,14 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                   type="button"
                   variant="outline"
                   onClick={onDelete}
-                  className="h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 font-bold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                  className={cn(
+                    "h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 font-bold text-xs",
+                    horarioEnEdicion.bajaProgramada
+                      ? "text-slate-700 dark:text-slate-200"
+                      : "text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30",
+                  )}
                 >
-                  Eliminar horario
+                  {horarioEnEdicion.bajaProgramada ? 'Cancelar baja programada' : 'Eliminar horario'}
                 </Button>
               )}
             </div>

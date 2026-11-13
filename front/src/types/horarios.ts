@@ -36,6 +36,8 @@ export interface Horario {
   cupoMaximo: number | null;
   /** Alumnos inscriptos, si el back lo informó (GET /horarios lo trae). */
   inscriptos?: number;
+  /** Día ("AAAA-MM-DD") en que se programó la baja: no admite alumnos nuevos y sale cuando se va el último. */
+  bajaProgramada?: string | null;
 }
 
 export interface HorarioFormData {

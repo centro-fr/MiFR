@@ -7,6 +7,7 @@ import {
   crearHorario,
   actualizarHorario,
   darDeBajaHorario,
+  cancelarBajaProgramadaHorario,
 } from "../horarios-api";
 import { crearHorario as crearHorarioMock, crearProfesora } from "../../__tests__/horarios-de-prueba";
 
@@ -104,17 +105,37 @@ describe("API de Horarios", () => {
   });
 
   describe("darDeBajaHorario", () => {
-    it("hace el DELETE y devuelve la advertencia de impacto", async () => {
-      const respuestaMock = {
-        horario: crearHorarioMock(),
-        advertencia: "Hay 3 alumnos inscriptos que quedarán sin horario.",
-      };
-      vi.mocked(apiClient.delete).mockResolvedValue({ data: respuestaMock });
+    it("hace el DELETE y devuelve la advertencia; sin alumnos la baja es inmediata", async () => {
+      vi.mocked(apiClient.delete).mockResolvedValue({
+        data: { horario: crearHorarioMock(), advertencia: "El horario no tenía alumnos inscriptos." },
+      });
 
-      const advertencia = await darDeBajaHorario("1");
-      
-      expect(advertencia).toBe("Hay 3 alumnos inscriptos que quedarán sin horario.");
+      await expect(darDeBajaHorario("1")).resolves.toEqual({
+        advertencia: "El horario no tenía alumnos inscriptos.",
+        programada: false,
+      });
       expect(apiClient.delete).toHaveBeenCalledWith("/horarios/1");
+    });
+
+    it("con alumnos inscriptos informa que la baja quedó programada (US-04)", async () => {
+      vi.mocked(apiClient.delete).mockResolvedValue({
+        data: {
+          horario: { ...crearHorarioMock(), fecha_baja_programada: "2026-11-13T00:00:00.000Z" },
+          advertencia: "Tiene 3 alumnos inscriptos: no admite alumnos nuevos.",
+        },
+      });
+
+      await expect(darDeBajaHorario("1")).resolves.toMatchObject({ programada: true });
+    });
+  });
+
+  describe("cancelarBajaProgramadaHorario", () => {
+    it("hace el DELETE de la baja programada", async () => {
+      vi.mocked(apiClient.delete).mockResolvedValue({ data: crearHorarioMock() });
+
+      await cancelarBajaProgramadaHorario("4");
+
+      expect(apiClient.delete).toHaveBeenCalledWith("/horarios/4/baja-programada");
     });
   });
 });

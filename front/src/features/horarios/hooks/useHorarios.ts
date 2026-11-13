@@ -6,6 +6,7 @@ import {
   actualizarHorario,
   crearHorario as crearHorarioApi,
   darDeBajaHorario,
+  cancelarBajaProgramadaHorario,
   listarHorarios,
   listarProfesoras,
 } from "@/features/horarios/api/horarios-api";
@@ -29,6 +30,9 @@ const PREFIJO_BORRADOR = "nuevo-";
 
 type Resultado = { ok: true } | { ok: false; error: string };
 
+const HORARIO_CON_ALUMNOS =
+  "El horario tiene alumnos inscriptos: no se cambia el día ni la hora. Programá su baja y creá otro.";
+
 function nombreCompleto({ nombre, apellido }: { nombre: string; apellido: string }): string {
   return `${nombre} ${apellido}`;
 }
@@ -47,6 +51,8 @@ function aHorario(api: HorarioApi): Horario {
     horaFin: horaDesdeApi(api.hora_fin),
     cupoPropio: api.cupo_maximo,
     cupoMaximo: api.cupo_maximo_efectivo,
+    inscriptos: api.inscriptos,
+    bajaProgramada: api.fecha_baja_programada?.slice(0, 10) ?? null,
   };
 }
 
@@ -188,18 +194,31 @@ export const useHorarios = () => {
   const editarHorario = (id: string, data: HorarioFormData) => aplicarEnBorrador(data, id, id);
 
   // La baja es inmediata (no pasa por el borrador): no se puede deshacer con "Descartar".
-  const eliminarHorario = async (id: string): Promise<{ ok: true; advertencia?: string } | { ok: false; error: string }> => {
+  const eliminarHorario = async (
+    id: string,
+  ): Promise<{ ok: true; advertencia?: string; programada?: boolean } | { ok: false; error: string }> => {
     if (id.startsWith(PREFIJO_BORRADOR)) {
       setBorrador(horariosEditables.filter((h) => h.id !== id));
       return { ok: true };
     }
     try {
-      const advertencia = await darDeBajaHorario(id);
-      if (borrador) setBorrador(borrador.filter((h) => h.id !== id));
+      const { advertencia, programada } = await darDeBajaHorario(id);
+      // Con la baja programada el horario sigue en el cronograma hasta que sale el último alumno.
+      if (borrador && !programada) setBorrador(borrador.filter((h) => h.id !== id));
       await invalidarHorarios();
-      return { ok: true, advertencia };
+      return { ok: true, advertencia, programada };
     } catch (error) {
       return { ok: false, error: mensajeDeErrorApi(error, "No se pudo dar de baja el horario.") };
+    }
+  };
+
+  const cancelarBajaProgramada = async (id: string): Promise<Resultado> => {
+    try {
+      await cancelarBajaProgramadaHorario(id);
+      await invalidarHorarios();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: mensajeDeErrorApi(error, "No se pudo cancelar la baja programada.") };
     }
   };
 
@@ -213,11 +232,19 @@ export const useHorarios = () => {
     return { ok: true };
   };
 
+  // Los alumnos pagaron ese día y esa hora: un horario con inscriptos no se mueve (el back responde 409).
+  const rechazarSiTieneAlumnos = (...ids: string[]): Resultado | null => {
+    if (!ids.some((id) => (horariosEditables.find((h) => h.id === id)?.inscriptos ?? 0) > 0)) return null;
+    setErrorValidacion(HORARIO_CON_ALUMNOS);
+    return { ok: false, error: HORARIO_CON_ALUMNOS };
+  };
+
   const moverHorario = (horarioId: string, nuevoDia: DiaSemana, nuevaHoraInicio: string, slotFin?: string) =>
+    rechazarSiTieneAlumnos(horarioId) ??
     reubicar(moverHorarioEnLista(horariosEditables, horarioId, nuevoDia, nuevaHoraInicio, { slotFin }));
 
   const intercambiarHorarios = (idA: string, idB: string) =>
-    reubicar(intercambiarHorariosEnLista(horariosEditables, idA, idB));
+    rechazarSiTieneAlumnos(idA, idB) ?? reubicar(intercambiarHorariosEnLista(horariosEditables, idA, idB));
 
   // Manda al back cada alta y modificación del borrador. Si una falla, las que ya se
   // guardaron quedan oficiales y el resto sigue en el borrador para corregirlo y reintentar.
@@ -275,6 +302,7 @@ export const useHorarios = () => {
     crearHorario,
     editarHorario,
     eliminarHorario,
+    cancelarBajaProgramada,
     moverHorario,
     intercambiarHorarios,
     validarSuperposicion,

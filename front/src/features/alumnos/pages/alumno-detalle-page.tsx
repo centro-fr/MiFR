@@ -23,6 +23,7 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-form";
 import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
 import { ModalCambiarPlan } from "@/features/alumnos/components/modal-cambiar-plan";
+import { AvisoCambioProgramado } from "@/features/alumnos/components/aviso-cambio-programado";
 import { ModalReactivarAlumno } from "@/features/alumnos/components/modal-reactivar-alumno";
 import { esAlumnoNoEncontrado, useAlumno, useDarDeBajaAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import { useInsignias } from "@/features/portal-alumno/hooks/use-insignias";
@@ -774,6 +775,9 @@ function PlanYHorarios({
         </div>
       )}
       {inscripcion.reserva && <AvisoReserva reserva={inscripcion.reserva} />}
+      {inscripcion.cambio_programado && (
+        <AvisoCambioProgramado idInscripcion={inscripcion.id_inscripcion} cambio={inscripcion.cambio_programado} />
+      )}
 
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @5xl:grid-cols-3 gap-4">
         {/* Tarjeta 1: Plan vigente */}

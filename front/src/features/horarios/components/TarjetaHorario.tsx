@@ -1,6 +1,7 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Undo2 } from 'lucide-react';
 import type { Horario } from '../../../types/horarios';
 import { textoCupo } from '../utils/cupo';
+import { InsigniaBajaProgramada } from './insignia-baja-programada';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils/cn';
 
@@ -45,11 +46,15 @@ function AccionesHorario({ horario, onEdit, onDelete }: AccionesTarjeta & { hora
           e.stopPropagation();
           onDelete(horario);
         }}
-        className={cn(CLASES_BOTON_ACCION, 'hover:text-destructive')}
-        title={`Eliminar horario de ${contexto}`}
-        aria-label={`Eliminar horario de ${contexto}`}
+        className={cn(CLASES_BOTON_ACCION, horario.bajaProgramada ? 'hover:text-primary' : 'hover:text-destructive')}
+        title={`${horario.bajaProgramada ? 'Cancelar la baja programada' : 'Eliminar horario'} de ${contexto}`}
+        aria-label={`${horario.bajaProgramada ? 'Cancelar la baja programada' : 'Eliminar horario'} de ${contexto}`}
       >
-        <Trash2 aria-hidden="true" className="stroke-[2.5]" />
+        {horario.bajaProgramada ? (
+          <Undo2 aria-hidden="true" className="stroke-[2.5]" />
+        ) : (
+          <Trash2 aria-hidden="true" className="stroke-[2.5]" />
+        )}
       </Button>
     </div>
   );
@@ -85,9 +90,13 @@ export function TarjetaHorario({
 
       {/* Pie: Modalidad y Cupo (estilo Mis Clases) */}
       <div className="mt-auto pt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-medium text-slate-500 dark:text-slate-400">
-        <span className="capitalize">
-          {horario.actividadTipo === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'}
-        </span>
+        {horario.bajaProgramada ? (
+          <InsigniaBajaProgramada compacta />
+        ) : (
+          <span className="capitalize">
+            {horario.actividadTipo === 'PERSONALIZADA' ? 'Pers.' : 'Grupal'}
+          </span>
+        )}
         <span>
           Cupo: <strong className="font-bold text-slate-700 dark:text-slate-200">{textoCupo(horario.cupoMaximo)}</strong>
         </span>

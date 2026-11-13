@@ -1,4 +1,4 @@
-import { db, type HorarioMock, type ProfesoraMock } from "@/mocks/db";
+import { db, type CambioPlanMock, type HorarioMock, type ProfesoraMock } from "@/mocks/db";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { ROLES } from "@/mocks/data/catalogo-permisos";
 import type { UsuarioSemilla } from "@/mocks/data/semilla";
@@ -100,4 +100,21 @@ export function inscripcionConDatos(inscripcion: InscripcionMock) {
       horario: horarioConDatos(db.horarios.find((h) => h.id_horario === id_horario)!),
     })),
   };
+}
+
+// CambioPlanProgramado del back (US-14), con los nombres del plan y de la profesora.
+export function cambioProgramadoConDatos(cambio: CambioPlanMock) {
+  const plan = db.planes.find((p) => p.id_plan === cambio.id_plan)!;
+  const profesora = profesoraConNombre(db.profesoras.find((p) => p.id_profesora === cambio.id_profesora)!);
+  return {
+    ...cambio,
+    nombre_plan: plan.nombre,
+    nombre_profesora: `${profesora.usuario.nombre} ${profesora.usuario.apellido}`,
+    fecha_aplicacion: `${cambio.fecha_aplicacion}T00:00:00.000Z`,
+  };
+}
+
+export function cambioProgramadoDe(idInscripcion: number) {
+  const cambio = db.cambiosPlan.find((c) => c.id_inscripcion === idInscripcion);
+  return cambio ? cambioProgramadoConDatos(cambio) : null;
 }

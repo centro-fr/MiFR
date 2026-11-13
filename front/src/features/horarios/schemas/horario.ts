@@ -26,6 +26,7 @@ export const horarioApiSchema = z.object({
   cupo_maximo: z.number().int().nullable(),
   fecha_alta: z.string(),
   fecha_baja: z.string().nullable(),
+  fecha_baja_programada: z.string().nullable().optional(),
   actividad: actividadApiSchema,
   profesora: profesoraApiSchema,
   cupo_maximo_efectivo: z.number().int().nullable(),

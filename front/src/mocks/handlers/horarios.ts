@@ -3,6 +3,7 @@ import type { GuardarHorarioBody } from "@/features/horarios/schemas/horario";
 import { db, siguienteId, type HorarioMock } from "@/mocks/db";
 import { errorApi, idDeRuta, idInvalido, verificarAcceso } from "@/mocks/handlers/respuestas";
 import { horarioConDatos } from "@/mocks/handlers/serializar";
+import { hoyEnArgentina } from "@/mocks/precios";
 
 // Mock de /horarios con las reglas de horario.service.ts y horario.repository.ts del back:
 // actividad y profesora activas, horas entre 07:00 y 20:00, cupo obligatorio en
@@ -111,6 +112,16 @@ export const horariosHandlers = [
     if (actual.fecha_baja !== null) return errorApi(409, "CONFLICT", "El horario ya está dado de baja");
 
     const cambios = (await request.json()) as Partial<GuardarHorarioBody>;
+    const cambiaLaClase = (["dia_semana", "hora_inicio", "hora_fin", "id_profesora", "id_actividad"] as const).some(
+      (campo) => cambios[campo] !== undefined,
+    );
+    if (cambiaLaClase && horarioConDatos(actual).inscriptos > 0) {
+      return errorApi(
+        409,
+        "CONFLICT",
+        "El horario tiene alumnos inscriptos: no se cambia el día, la hora, la profesora ni la actividad. Programá su baja y creá otro",
+      );
+    }
     const datos: DatosHorario = {
       id_actividad: cambios.id_actividad ?? actual.id_actividad,
       id_profesora: cambios.id_profesora ?? actual.id_profesora,
@@ -137,10 +148,31 @@ export const horariosHandlers = [
     if (!horario) return errorApi(404, "NOT_FOUND", "Horario no encontrado");
     if (horario.fecha_baja !== null) return errorApi(409, "CONFLICT", "El horario ya está dado de baja");
 
+    const { inscriptos } = horarioConDatos(horario);
+    if (inscriptos > 0) {
+      horario.fecha_baja_programada ??= `${hoyEnArgentina()}T00:00:00.000Z`;
+      return HttpResponse.json({
+        horario: horarioConDatos(horario),
+        advertencia:
+          `Tiene ${inscriptos} ${inscriptos === 1 ? "alumno inscripto" : "alumnos inscriptos"}: no admite alumnos nuevos ` +
+          "y cada uno sale al terminar su período de gracia. Se da de baja cuando sale el último.",
+      });
+    }
     horario.fecha_baja = new Date().toISOString();
-    return HttpResponse.json({
-      horario: horarioConDatos(horario),
-      advertencia: "No se verificaron inscripciones futuras; el módulo de inscripciones aún no está disponible.",
-    });
+    return HttpResponse.json({ horario: horarioConDatos(horario), advertencia: "El horario no tenía alumnos inscriptos." });
+  }),
+
+  http.delete("*/api/v1/horarios/:id/baja-programada", async ({ request, params }) => {
+    await delay(400);
+    const denegado = verificarAcceso(request, EDITAR);
+    if (denegado) return denegado;
+    const id = idDeRuta(params.id);
+    if (!id) return idInvalido();
+
+    const horario = buscarHorario(id);
+    if (!horario || horario.fecha_baja !== null) return errorApi(404, "NOT_FOUND", "Horario no encontrado");
+    if (!horario.fecha_baja_programada) return errorApi(409, "CONFLICT", "El horario no tiene la baja programada");
+    horario.fecha_baja_programada = null;
+    return HttpResponse.json(horarioConDatos(horario));
   }),
 ];

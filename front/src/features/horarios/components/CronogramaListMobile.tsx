@@ -2,6 +2,7 @@ import React from 'react';
 import type { DiaSemana, Horario } from '../../../types/horarios';
 import { Plus } from 'lucide-react';
 import { textoCupo } from '../utils/cupo';
+import { InsigniaBajaProgramada } from './insignia-baja-programada';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FilaMovil } from '@/components/ui/fila-movil';
@@ -135,6 +136,7 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
               <FilaMovil
                 key={horario.id}
                 titulo={horario.actividadNombre}
+                insignia={horario.bajaProgramada ? <InsigniaBajaProgramada /> : undefined}
                 detalle={[
                   `${horario.horaInicio} - ${horario.horaFin} hs`,
                   horario.profesoraNombre,
@@ -147,8 +149,13 @@ export const CronogramaListMobile: React.FC<CronogramaListMobileProps> = ({
                     <Button type="button" variant="outline" onClick={() => onEdit(horario)} className={BOTON_FILA}>
                       Editar
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => onDelete(horario)} className={BOTON_FILA_PELIGRO}>
-                      Eliminar
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onDelete(horario)}
+                      className={horario.bajaProgramada ? BOTON_FILA : BOTON_FILA_PELIGRO}
+                    >
+                      {horario.bajaProgramada ? 'Cancelar baja' : 'Eliminar'}
                     </Button>
                   </>
                 }

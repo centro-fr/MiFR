@@ -1,5 +1,10 @@
 import { useMutation, useQueries, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import { actualizarHorarios, cambiarPlan } from "@/features/alumnos/api/inscripciones-api";
+import {
+  actualizarHorarios,
+  cambiarPlan,
+  cancelarCambioPlan,
+  type ResultadoCambioPlan,
+} from "@/features/alumnos/api/inscripciones-api";
 import {
   listarHorariosElegibles,
   listarPlanes,
@@ -98,15 +103,24 @@ export function useReactivarAlumno() {
 
 /**
  * Con el mismo plan solo cambian los horarios (la profesora a cargo queda igual); con otro plan,
- * el back cierra la inscripción y abre otra (US-14).
+ * el back lo aplica en el momento o, con el plan vigente, lo programa para cuando termina la gracia (US-14).
  */
 export function useCambiarPlanYHorarios(actual: { idInscripcion: number; idPlan: number }) {
   const invalidar = useInvalidarInscripcion();
   return useMutation({
-    mutationFn: (cuerpo: ReactivarAlumnoBody) =>
-      cuerpo.id_plan === actual.idPlan
-        ? actualizarHorarios(actual.idInscripcion, cuerpo.ids_horarios)
-        : cambiarPlan(actual.idInscripcion, cuerpo),
+    mutationFn: async (cuerpo: ReactivarAlumnoBody): Promise<ResultadoCambioPlan> => {
+      if (cuerpo.id_plan !== actual.idPlan) return cambiarPlan(actual.idInscripcion, cuerpo);
+      await actualizarHorarios(actual.idInscripcion, cuerpo.ids_horarios);
+      return { programadoPara: null };
+    },
+    onSuccess: invalidar,
+  });
+}
+
+export function useCancelarCambioPlan() {
+  const invalidar = useInvalidarInscripcion();
+  return useMutation({
+    mutationFn: (idInscripcion: number) => cancelarCambioPlan(idInscripcion),
     onSuccess: invalidar,
   });
 }

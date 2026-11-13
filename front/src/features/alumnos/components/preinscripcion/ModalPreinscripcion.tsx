@@ -57,7 +57,8 @@ export function ModalPreinscripcion({
 
   const planes = planesProp ?? planesQuery;
   const profesoras = profesorasProp ?? profesorasQuery;
-  const horarios = horariosProp ?? horariosQuery;
+  // Un horario con la baja programada no admite alumnos nuevos (US-04).
+  const horarios = (horariosProp ?? horariosQuery).filter((h) => !h.fecha_baja_programada);
 
   const {
     paso,

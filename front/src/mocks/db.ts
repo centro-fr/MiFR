@@ -44,6 +44,17 @@ export type ProfesoraMock = Omit<ProfesoraApi, "usuario">;
 export interface HorarioMock extends HorarioSemilla {
   fecha_alta: string;
   fecha_baja: string | null;
+  /** US-04: con alumnos inscriptos la baja se programa; no admite alumnos nuevos. */
+  fecha_baja_programada?: string | null;
+}
+
+/** cambios_plan_programados del DER (US-14): uno por inscripción. */
+export interface CambioPlanMock {
+  id_inscripcion: number;
+  id_plan: number;
+  id_profesora: number;
+  ids_horarios: number[];
+  fecha_aplicacion: string;
 }
 
 export interface ClaseAsistenciaMock {
@@ -94,6 +105,7 @@ interface BaseMock {
   // US-27: rutinas y registros_progreso (cada uno con sus medidas_corporales).
   rutinas: RutinaMock[];
   registrosProgreso: RegistroProgresoMock[];
+  cambiosPlan: CambioPlanMock[];
   matriz: Record<RoleCode, string[]>;
   idUsuarioSesion: number | null;
 }
@@ -165,6 +177,7 @@ export const db: BaseMock = {
   ],
   rutinas: rutinasSemilla(),
   registrosProgreso: registrosProgresoSemilla(),
+  cambiosPlan: [],
   matriz: matrizInicial(),
   // Sesión iniciada por defecto: entrar directo a /app/* funciona sin pasar por el login.
   idUsuarioSesion: leerUsuarioGuardado() ?? ID_USUARIO_SESION_INICIAL,
