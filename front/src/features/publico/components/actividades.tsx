@@ -14,9 +14,9 @@ function ItemActividad({ actividad }: { actividad: ActividadDelCentro }) {
       <span
         data-raya=""
         aria-hidden="true"
-        className="mb-5 block h-px bg-publico-borde transition-colors duration-200 group-hover:bg-primary"
+        className="mb-5 block h-px bg-publico-borde transition-colors duration-200 ease-fuerte group-hover:bg-primary"
       />
-      <h3 className="m-0 text-[17px] font-extrabold leading-6 transition-[color,translate] duration-200 group-hover:translate-x-1.5 group-hover:text-primary">
+      <h3 className="m-0 text-[17px] font-extrabold leading-6 [overflow-wrap:anywhere] hyphens-auto transition-[color,translate] duration-200 ease-fuerte group-hover:translate-x-1.5 group-hover:text-primary">
         {actividad.nombre}
       </h3>
       <p className="m-0 mt-1 text-[13px] leading-[18px] text-publico-texto-tenue">
@@ -27,8 +27,9 @@ function ItemActividad({ actividad }: { actividad: ActividadDelCentro }) {
   );
 }
 
-// Las actividades del centro y los días en que se dan.
-export function Actividades() {
+// Las actividades del centro y los días en que se dan. Sin actividades cargadas, la sección invita a
+// consultar en lugar de quedar con el título solo.
+export function Actividades({ actividades = ACTIVIDADES_DEL_CENTRO }: { actividades?: readonly ActividadDelCentro[] }) {
   const raiz = useRef<HTMLElement>(null);
   useAnimacion(raiz, animarSeccion);
 
@@ -41,11 +42,17 @@ export function Actividades() {
           </LineaDeTitulo>
           <LineaDeTitulo>forma de entrenar</LineaDeTitulo>
         </h2>
-        <ul className={GRILLA}>
-          {ACTIVIDADES_DEL_CENTRO.map((actividad) => (
-            <ItemActividad key={actividad.nombre} actividad={actividad} />
-          ))}
-        </ul>
+        {actividades.length > 0 ? (
+          <ul className={GRILLA}>
+            {actividades.map((actividad) => (
+              <ItemActividad key={actividad.nombre} actividad={actividad} />
+            ))}
+          </ul>
+        ) : (
+          <p data-aparece="" className="m-0 text-[15px] leading-[23px] text-publico-texto-suave">
+            Escribinos y te contamos qué actividades hay y en qué horarios.
+          </p>
+        )}
       </div>
     </section>
   );

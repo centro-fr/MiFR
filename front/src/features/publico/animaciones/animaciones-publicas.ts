@@ -7,15 +7,18 @@ import { gsap } from "gsap";
 export type Animacion = (raiz: HTMLElement) => void;
 
 export const animarEntradaDelEncabezado: Animacion = (raiz) => {
-  gsap.from(raiz, { y: -24, autoAlpha: 0, duration: 0.7, delay: 0.2, ease: "power3.out" });
+  gsap.from(raiz, { y: -16, autoAlpha: 0, duration: 0.5, delay: 0.1, ease: "power3.out" });
 };
 
+// El título es lo principal y llega primero, renglón por renglón; el botón y la bajada lo siguen con
+// menos recorrido y quedan quietos antes del segundo, para que se puedan tocar enseguida. La foto es
+// decoración: se aclara con un zoom mínimo, de fondo.
 export const animarPortada: Animacion = (raiz) => {
   gsap
     .timeline({ defaults: { ease: "power3.out" } })
-    .from("[data-foto]", { scale: 1.15, filter: "contrast(1.1) brightness(0.35)", duration: 2.4, ease: "power2.out" }, 0)
-    .from("[data-linea] > span", { yPercent: 110, duration: 1, stagger: 0.14, ease: "power4.out" }, 0.3)
-    .from("[data-bajada] > *", { y: 24, autoAlpha: 0, duration: 0.7, stagger: 0.1 }, 0.85);
+    .from("[data-foto]", { scale: 1.04, filter: "contrast(1.1) brightness(0.35)", duration: 1.4, ease: "power2.out" }, 0)
+    .from("[data-linea] > span", { yPercent: 110, duration: 0.55, stagger: 0.12, ease: "power4.out" }, 0.05)
+    .from("[data-bajada] > *", { y: 12, autoAlpha: 0, duration: 0.4 }, 0.35);
 
   // Parallax: la foto baja más lento que la página y el texto se desvanece al salir.
   const alSalirDeLaPortada = { trigger: raiz, start: "top top", scrub: true };
@@ -41,10 +44,11 @@ export const animarSeccion: Animacion = (raiz) => {
   if (elementos.length === 0) return;
   const aparicion = gsap
     .timeline({ scrollTrigger: { trigger: elementos[0], start: "top 90%" } })
-    .from(elementos, { y: 40, autoAlpha: 0, duration: 0.7, stagger: 0.06, ease: "power3.out" }, 0);
+    // Retrasos que se achican y un total con tope: con muchas actividades, la última no espera de más.
+    .from(elementos, { y: 32, autoAlpha: 0, duration: 0.6, stagger: { amount: 0.3, ease: "power2.out" }, ease: "power3.out" }, 0);
 
   const rayas = raiz.querySelectorAll("[data-raya]");
   if (rayas.length > 0) {
-    aparicion.from(rayas, { scaleX: 0, transformOrigin: "left", duration: 0.9, stagger: 0.06, ease: "power2.inOut" }, 0.1);
+    aparicion.from(rayas, { scaleX: 0, transformOrigin: "left", duration: 0.8, stagger: { amount: 0.3, ease: "power2.out" }, ease: "power2.inOut" }, 0.1);
   }
 };
