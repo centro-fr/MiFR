@@ -20,6 +20,8 @@ afterEach(() => {
   clearSessionToken();
 });
 
+
+const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 describe("alumnosHandlers", () => {
   it("lista alumnos con el contrato vigente y respeta el límite", async () => {
     const respuesta = await listarAlumnos({
@@ -77,9 +79,10 @@ describe("alumnosHandlers", () => {
     expect(alumno.inscripcion?.horarios).toHaveLength(5);
     expect(alumno.inscripcion?.horarios.map((h) => h.dia_semana)).toEqual([1, 2, 3, 4, 5]);
 
-    const asistencias = await listarAsistenciasAlumno(11);
+    const { datos: asistencias, total } = await listarAsistenciasAlumno(11, "TODAS", 0);
+    expect(total).toBeGreaterThanOrEqual(asistencias.length);
     expect(asistencias.length).toBeGreaterThan(0);
-    const dias = new Set(asistencias.map((a) => a.dia));
+    const dias = new Set(asistencias.map((a) => DIAS[new Date(`${a.fecha}T12:00:00`).getDay()]));
     expect(dias.has("Lunes")).toBe(true);
     expect(dias.has("Martes")).toBe(true);
     expect(dias.has("Miércoles")).toBe(true);
@@ -95,7 +98,8 @@ describe("alumnosHandlers", () => {
     expect(alumno.inscripcion?.horarios).toHaveLength(5);
     expect(alumno.inscripcion?.horarios.map((h) => h.dia_semana)).toEqual([1, 2, 3, 4, 5]);
 
-    const asistencias = await listarAsistenciasAlumno(14);
+    const { datos: asistencias, total } = await listarAsistenciasAlumno(14, "TODAS", 0);
+    expect(total).toBeGreaterThanOrEqual(asistencias.length);
     expect(asistencias.length).toBeGreaterThan(0);
     expect(asistencias.every((a) => a.actividad === "Acondicionamiento físico")).toBe(true);
     expect(asistencias.every((a) => a.profesora === "Lucía Gómez")).toBe(true);
@@ -107,9 +111,10 @@ describe("alumnosHandlers", () => {
     expect(alumno.inscripcion?.horarios).toHaveLength(2);
     expect(alumno.inscripcion?.horarios.map((h) => h.dia_semana)).toEqual([2, 4]);
 
-    const asistencias = await listarAsistenciasAlumno(12);
+    const { datos: asistencias, total } = await listarAsistenciasAlumno(12, "TODAS", 0);
+    expect(total).toBeGreaterThanOrEqual(asistencias.length);
     expect(asistencias.length).toBeGreaterThan(0);
-    const dias = new Set(asistencias.map((a) => a.dia));
+    const dias = new Set(asistencias.map((a) => DIAS[new Date(`${a.fecha}T12:00:00`).getDay()]));
     expect(dias.has("Martes")).toBe(true);
     expect(dias.has("Jueves")).toBe(true);
     expect(dias.has("Lunes")).toBe(false);
@@ -123,9 +128,10 @@ describe("alumnosHandlers", () => {
     expect(alumno.inscripcion?.horarios).toHaveLength(3);
     expect(alumno.inscripcion?.horarios.map((h) => h.dia_semana)).toEqual([1, 3, 5]);
 
-    const asistencias = await listarAsistenciasAlumno(13);
+    const { datos: asistencias, total } = await listarAsistenciasAlumno(13, "TODAS", 0);
+    expect(total).toBeGreaterThanOrEqual(asistencias.length);
     expect(asistencias.length).toBeGreaterThan(0);
-    const dias = new Set(asistencias.map((a) => a.dia));
+    const dias = new Set(asistencias.map((a) => DIAS[new Date(`${a.fecha}T12:00:00`).getDay()]));
     expect(dias.has("Lunes")).toBe(true);
     expect(dias.has("Miércoles")).toBe(true);
     expect(dias.has("Viernes")).toBe(true);

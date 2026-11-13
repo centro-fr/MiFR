@@ -10,7 +10,6 @@ import { inscripcionConDatos } from "@/mocks/handlers/serializar";
 import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
 import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
 import { asistenciaHistorica } from "@/mocks/data/asistencia-historica";
-import { diaSemana } from "@/features/alumnos/utils/fecha";
 import { normalizarParaBuscar } from "@/utils/texto";
 
 // Mock de /alumnos (alumno.routes.ts) y de POST /alumnos/:id/baja y /reactivar (inscripcion.routes.ts),
@@ -584,7 +583,7 @@ export const alumnosHandlers = [
     return HttpResponse.json(panelAlumnoDe(alumno));
   }),
 
-  http.get("*/api/v1/alumnos/:id/asistencias", async ({ params }) => {
+  http.get("*/api/v1/alumnos/:id/asistencias", async ({ params, request }) => {
     await delay(200);
     const id = idDeRuta(params.id);
     if (id === null) return idInvalido();
@@ -600,12 +599,10 @@ export const alumnosHandlers = [
       const actividad = db.actividades.find((a) => a.id_actividad === marca.id_actividad);
       const prof = db.profesoras.find((p) => p.id_profesora === marca.id_profesora);
       const usuarioProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
-      const diaNum = horario?.dia_semana ?? 1;
 
       return {
         id_clase: Number(marca.fecha.replaceAll("-", "")) * 100 + marca.id_horario,
         fecha: marca.fecha,
-        dia: diaSemana(diaNum),
         hora_inicio: horario?.hora_inicio ?? "08:00",
         hora_fin: horario?.hora_fin ?? "09:00",
         actividad: actividad?.nombre ?? "Entrenamiento",
@@ -623,12 +620,10 @@ export const alumnosHandlers = [
       const actividad = horario ? db.actividades.find((a) => a.id_actividad === horario.id_actividad) : null;
       const prof = horario ? db.profesoras.find((p) => p.id_profesora === horario.id_profesora) : null;
       const usuarioProf = prof ? db.usuarios.find((u) => u.id_usuario === prof.id_usuario) : null;
-      const diaNum = horario?.dia_semana ?? 1;
 
       const itemEnVivo = {
         id_clase: clase.id_clase,
-        fecha: clase.fecha_clase,
-        dia: diaSemana(diaNum),
+        fecha: clase.fecha_clase.slice(0, 10),
         hora_inicio: horario?.hora_inicio ?? "08:00",
         hora_fin: horario?.hora_fin ?? "09:00",
         actividad: actividad?.nombre ?? "Entrenamiento",
@@ -651,7 +646,21 @@ export const alumnosHandlers = [
       return b.hora_inicio.localeCompare(a.hora_inicio);
     });
 
-    return HttpResponse.json(historial);
+    // Como el back: el filtro por asistio y la página de a 10; los conteos son de todo el historial.
+    const url = new URL(request.url);
+    const asistio = url.searchParams.get("asistio");
+    const limit = Number(url.searchParams.get("limit") ?? 10);
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    const filtradas = asistio === null ? historial : historial.filter((marca) => marca.asistio === (asistio === "true"));
+    const presentes = historial.filter((marca) => marca.asistio).length;
+    return HttpResponse.json({
+      datos: filtradas.slice(offset, offset + limit),
+      total: filtradas.length,
+      presentes,
+      ausentes: historial.length - presentes,
+      limit,
+      offset,
+    });
   }),
 
   http.get("*/api/v1/alumnos/:id", async ({ request, params }) => {
