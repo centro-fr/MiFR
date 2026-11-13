@@ -119,6 +119,14 @@ Generar el secreto y guardarlo en un gestor de contraseñas, nunca en el reposit
 openssl rand -hex 32
 ```
 
+Generar también las claves VAPID de los avisos push (una pública y una privada que van juntas) y guardarlas igual. La pública la pide el navegador para suscribirse; la privada firma cada aviso y no sale de Render:
+
+```bash
+pnpm --filter back exec web-push generate-vapid-keys
+```
+
+No se vuelven a generar: con claves nuevas, todos los celulares suscriptos dejan de recibir avisos hasta que cada persona los vuelva a activar.
+
 Si la URL de Render no va a ser `https://mifr-api.onrender.com`, corregir la regla de `/api/*` en `netlify.toml` en un commit a `main` antes del paso 7. Los subdominios de `onrender.com` son de quien los registra primero: comprobar en el dashboard de Render que el servicio con esa URL es el del proyecto, porque Netlify le reenvía los tokens de sesión y de Google. Lo más firme es un dominio propio (por ejemplo `api.<dominio>` con un CNAME a Render).
 
 ## 4. Client OAuth de Google
@@ -149,6 +157,8 @@ La base queda vacía: las tablas las crea la API en su primer arranque (paso 6) 
    | `CORS_ORIGENES` | La URL de Netlify, por ejemplo `https://mifr.netlify.app` |
    | `PROXIES_DE_CONFIANZA` | `2` para empezar; se calibra en el paso 10 |
    | `FIRMA_PROXY_NETLIFY` | El secreto del paso 3 |
+   | `VAPID_CLAVE_PUBLICA` y `VAPID_CLAVE_PRIVADA` | Las claves VAPID del paso 3 |
+   | `VAPID_CONTACTO` | `mailto:` con el email del centro, por ejemplo `mailto:centro@example.com` |
 
    Las demás las fija `render.yaml`: `NODE_ENV=production`, `JWT_EXPIRES_IN=8h` y `JWT_SECRET`, que Render genera solo con un valor aleatorio. `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 3. En el primer deploy el contenedor aplica todas las migraciones sobre la base vacía. El log tiene que mostrar las migraciones aplicadas y después `API escuchando en http://0.0.0.0:...`. Si falta una variable o tiene un valor inválido, la API no arranca y el log dice cuál.
@@ -286,6 +296,8 @@ No se cargan desde el sistema: se editan en `front/src/features/publico/utils/ac
 | Muchas personas reciben 429 a la vez | `PROXIES_DE_CONFIANZA` demasiado bajo: todos cuentan como la IP del proxy. Calibrar (paso 10) |
 | Algo no carga y la consola dice `violates the following Content Security Policy directive` | Se sumó un servicio externo que la CSP no permite. Agregar su origen en `netlify.toml` y en `front/docker/nginx.conf` (un test exige que sean iguales) |
 | La vista previa del enlace sale sin imagen | Falta `VITE_SITIO_URL` en Netlify o se cargó después del último build. Cargarla y volver a publicar |
+| La API no arranca con `Faltan VAPID_CLAVE_PUBLICA…` | Faltan las claves VAPID en Render (paso 6). Se generan una sola vez (paso 3) |
+| Un celular activó los avisos pero no le llegan | En iPhone, MiFR tiene que estar agregado a la pantalla de inicio y el iOS ser 16.4 o posterior. En Android, revisar que el navegador tenga permitidas las notificaciones del sitio. El aviso igual está en la campana |
 
 ---
 
@@ -304,7 +316,7 @@ No se cargan desde el sistema: se editan en `front/src/features/publico/utils/ac
 
 - [ ] Paso 1: `pnpm probar:compose` en verde y todos los tests pasan.
 - [ ] Actividades reales cargadas en `actividades-del-centro.ts`, y `dev` integrada en `main`.
-- [ ] `FIRMA_PROXY_NETLIFY` generada y guardada en un gestor de contraseñas.
+- [ ] `FIRMA_PROXY_NETLIFY` y las claves VAPID generadas y guardadas en un gestor de contraseñas.
 - [ ] Client OAuth con la URL de Netlify en los orígenes autorizados.
 - [ ] Proyecto de Neon en us-east-1, con la cadena directa y `sslmode=require`.
 - [ ] Blueprint de Render con `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `CORS_ORIGENES`, `PROXIES_DE_CONFIANZA` y `FIRMA_PROXY_NETLIFY`.

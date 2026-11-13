@@ -113,6 +113,7 @@ Los `.env` están ignorados por Git; cada paquete versiona un `.env.example` con
 | `CORS_ORIGENES`    | Opcional                           | Orígenes permitidos, separados por comas                                                                                                    |
 | `PROXIES_DE_CONFIANZA` | Opcional, `0`                  | Proxies delante de la API: de ahí sale la IP del visitante que cuenta el límite de pedidos                                                  |
 | `FIRMA_PROXY_NETLIFY` | Sin definir                     | Con valor, la API exige la firma de Netlify. En local no se define: el proxy de Vite no firma los pedidos                                   |
+| `VAPID_CLAVE_PUBLICA`, `VAPID_CLAVE_PRIVADA`, `VAPID_CONTACTO` | Opcionales | Avisos push al celular. Sin ellas no se manda ningún push; se generan con `pnpm --filter back exec web-push generate-vapid-keys` |
 
 **`front/.env`**
 
@@ -207,6 +208,8 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 | `CORS_ORIGENES`    | URL del sitio de Netlify, por ejemplo `https://mifr.netlify.app`                    |
 | `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `docs/DESPLIEGUE.md`)|
 | `FIRMA_PROXY_NETLIFY` | Secreto aleatorio de 32 caracteres o más, el mismo que la variable homónima de Netlify |
+| `VAPID_CLAVE_PUBLICA`, `VAPID_CLAVE_PRIVADA` | Las claves VAPID generadas con `web-push generate-vapid-keys` (ver `docs/DESPLIEGUE.md`) |
+| `VAPID_CONTACTO` | `mailto:` con el email del centro |
 
 `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 

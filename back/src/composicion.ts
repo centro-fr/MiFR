@@ -2,6 +2,9 @@ import type { PrismaClient } from "@prisma/client";
 import { GestionNotificacionesService } from "./modules/gestion-notificaciones/gestion-notificaciones.service.js";
 import { NotificacionRepository } from "./modules/gestion-notificaciones/notificacion/notificacion.repository.js";
 import { NotificacionService } from "./modules/gestion-notificaciones/notificacion/notificacion.service.js";
+import type { IServicioWebPush } from "./modules/gestion-notificaciones/suscripcion-push/interface/i-servicio-web-push.js";
+import { SuscripcionPushRepository } from "./modules/gestion-notificaciones/suscripcion-push/suscripcion-push.repository.js";
+import { SuscripcionPushService } from "./modules/gestion-notificaciones/suscripcion-push/suscripcion-push.service.js";
 import { PlanificadorNotificacionesService } from "./modules/gestion-notificaciones/planificador-notificaciones/planificador-notificaciones.service.js";
 import { DetectorInactividadService } from "./modules/reportes/detector-inactividad/detector-inactividad.service.js";
 import { GeneradorInformesService } from "./modules/reportes/generador-informes/generador-informes.service.js";
@@ -75,6 +78,8 @@ export interface PiezasDeInfraestructura {
   prisma: PrismaClient;
   googleAuth: IAutenticacionGoogleAuth;
   jwtService: JwtService;
+  // Sin claves VAPID (desarrollo) no se manda ningún push: las suscripciones se guardan igual.
+  push?: { servicio: IServicioWebPush; clavePublica: string };
 }
 
 // Lo que arma el composition root: las dependencias de la API; IInfoInscripciones, con la que los
@@ -98,7 +103,7 @@ export function construirDependencias(piezas: PiezasDeInfraestructura): AppDepen
   return construirSistema(piezas).dependencias;
 }
 
-export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInfraestructura): Sistema {
+export function construirSistema({ prisma, googleAuth, jwtService, push }: PiezasDeInfraestructura): Sistema {
   const rolService = new RolService(new RolRepository(prisma));
   const usuarioService = new UsuarioService(new UsuarioRepository(prisma), rolService);
   const autenticacion = new SesionService(usuarioService, googleAuth, jwtService, rolService);
@@ -162,7 +167,15 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     unidadDeTrabajo,
     new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
-  const notificacionService = new NotificacionService(new NotificacionRepository(prisma));
+  const suscripcionPushService = new SuscripcionPushService(
+    new SuscripcionPushRepository(prisma),
+    push?.servicio ?? null,
+    push?.clavePublica ?? null,
+  );
+  const notificacionService = new NotificacionService(
+    new NotificacionRepository(prisma),
+    suscripcionPushService,
+  );
   const planificadorNotificaciones = new PlanificadorNotificacionesService(cuotaService, notificacionService);
   const gestionPersonas = new GestionPersonasService(
     profesorService,
@@ -212,6 +225,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
       gestionNotificaciones: new GestionNotificacionesService(
         notificacionService,
         planificadorNotificaciones,
+        suscripcionPushService,
       ),
       gestionInsignias: new GestionInsigniasService(insigniaService, cierreMensualInsignias),
       reportes: new ReportesService(

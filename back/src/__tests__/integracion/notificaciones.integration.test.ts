@@ -9,7 +9,13 @@ import { crearEntornoDeIntegracion } from "./entorno.js";
 // Casos PI-67 y PI-68: los avisos de vencimiento de cuota (US-25) sobre los datos de db:seed:demo.
 // Valentina Herrera ya pagó su primera cuota del Intermedio (5 días de gracia); Mateo Romero, menor a
 // cargo de su tutora Paula, está pre-inscripto en el Personalizado 2 días.
-const entorno = crearEntornoDeIntegracion();
+// El servicio de push es la frontera externa: se simula y se ve qué le llega. Los casos sin
+// dispositivos suscriptos no lo usan.
+const servicioPush = { enviar: vi.fn() };
+const entorno = crearEntornoDeIntegracion({
+  servicio: servicioPush,
+  clavePublica: "clave-publica-de-prueba",
+});
 const { prisma, planificadorNotificaciones } = entorno;
 const DNI_VALENTINA = "39222333";
 const DNI_MATEO = "52111222";
@@ -19,6 +25,7 @@ const EMAIL_LUCIA = "lucia.gomez@example.com";
 let datos: DatosDemoCargados;
 
 beforeEach(async () => {
+  servicioPush.enviar.mockReset().mockResolvedValue("ENTREGADO");
   await reiniciarBase(prisma);
   datos = await cargarDatosDemo(prisma);
 });
@@ -193,5 +200,76 @@ describe("PI-68: las notificaciones propias por la API", () => {
     expect(marcadas.body).toEqual({ marcadas: 2 });
     expect(await prisma.notificaciones.count({ where: { leida: false } })).toBe(1);
     expect((await request(entorno.app).get("/api/v1/notificaciones/mias")).status).toBe(401);
+  });
+});
+
+const ENDPOINT_DEL_CELULAR = "https://fcm.googleapis.com/fcm/send/celular-de-valentina";
+const CLAVES = { p256dh: "B".repeat(87), auth: "a".repeat(22) };
+
+function suscribir(email: string, endpoint = ENDPOINT_DEL_CELULAR) {
+  return pedir(email, "post", "/notificaciones/push/suscripciones", { endpoint, keys: CLAVES });
+}
+
+describe("PI-92: los avisos de cuota llegan al celular por push", () => {
+  it("la alumna suscribe su celular y le llega el aviso con el texto completo, una sola vez", async () => {
+    const clave = await pedir(EMAIL_VALENTINA, "get", "/notificaciones/push/clave-publica");
+    expect(clave.body).toEqual({ clave_publica: "clave-publica-de-prueba" });
+    expect((await suscribir(EMAIL_VALENTINA)).status).toBe(204);
+    const idCuota = await venceEn(DNI_VALENTINA, -1);
+    const hoy = fechaActualArgentina();
+
+    await planificadorNotificaciones.generarAvisos(hoy);
+    await planificadorNotificaciones.generarAvisos(hoy);
+
+    expect(servicioPush.enviar).toHaveBeenCalledTimes(1);
+    const [destino, contenido] = servicioPush.enviar.mock.calls[0]!;
+    expect(destino).toEqual({ endpoint: ENDPOINT_DEL_CELULAR, keys: CLAVES });
+    const [{ mensaje }] = await prisma.notificaciones.findMany();
+    expect(JSON.parse(contenido as string)).toEqual({
+      titulo: "Cuota por vencer",
+      cuerpo: mensaje,
+      url: "/app/inicio",
+      etiqueta: `cuota-${idCuota}`,
+    });
+  });
+
+  it("el celular que el servicio de push da por vencido se borra, y su aviso queda igual en la campana", async () => {
+    await suscribir(EMAIL_VALENTINA);
+    servicioPush.enviar.mockResolvedValue("VENCIDA");
+    await venceEn(DNI_VALENTINA, -1);
+
+    await planificadorNotificaciones.generarAvisos(fechaActualArgentina());
+
+    expect(await prisma.suscripciones_push.count()).toBe(0);
+    expect(await prisma.notificaciones.count()).toBe(1);
+  });
+
+  it("un celular que pasa a otra cuenta es de esa cuenta, y nadie da de baja el de otro", async () => {
+    await suscribir(EMAIL_VALENTINA);
+    await suscribir(EMAIL_LUCIA);
+
+    const ajena = await pedir(EMAIL_VALENTINA, "post", "/notificaciones/push/suscripciones/baja", {
+      endpoint: ENDPOINT_DEL_CELULAR,
+    });
+    expect(ajena.status).toBe(204);
+    expect(await prisma.suscripciones_push.findMany({ select: { id_usuario: true } })).toEqual([
+      { id_usuario: await idUsuario(EMAIL_LUCIA) },
+    ]);
+
+    await pedir(EMAIL_LUCIA, "post", "/notificaciones/push/suscripciones/baja", {
+      endpoint: ENDPOINT_DEL_CELULAR,
+    });
+    expect(await prisma.suscripciones_push.count()).toBe(0);
+  });
+
+  it("rechaza un endpoint que no es de un servicio de push: la API no le pega a direcciones internas", async () => {
+    const interna = await suscribir(EMAIL_VALENTINA, "https://db:5432/");
+    const sinSesion = await request(entorno.app)
+      .post("/api/v1/notificaciones/push/suscripciones")
+      .send({ endpoint: ENDPOINT_DEL_CELULAR, keys: CLAVES });
+
+    expect(interna.status).toBe(400);
+    expect(sinSesion.status).toBe(401);
+    expect(await prisma.suscripciones_push.count()).toBe(0);
   });
 });

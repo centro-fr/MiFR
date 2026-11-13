@@ -1,17 +1,56 @@
 import { NotFoundError } from "../../../shared/errors/app-error.js";
 import type { Paginacion } from "../../../shared/utils/esquemas-paginacion.js";
+import type { IEnvioPush } from "../suscripcion-push/interface/i-envio-push.js";
+import type { AvisoPush } from "../suscripcion-push/suscripcion-push.types.js";
 import type { IRegistroNotificaciones } from "./interface/i-registro-notificaciones.js";
 import type { NotificacionRepository } from "./notificacion.repository.js";
-import type { NotificacionPropia, NuevaNotificacion, PaginaNotificaciones } from "./notificacion.types.js";
+import type {
+  NotificacionPropia,
+  NuevaNotificacion,
+  PaginaNotificaciones,
+  TipoNotificacion,
+} from "./notificacion.types.js";
+
+// Los avisos que llegan además al celular (arquitectura.md, avisos push), con su título. La bienvenida
+// queda solo en la campana.
+const TITULO_DEL_PUSH: Partial<Record<TipoNotificacion, string>> = {
+  CUOTA_POR_VENCER: "Cuota por vencer",
+  CUOTA_VENCIDA: "Cuota vencida",
+};
+
+// El inicio de quien recibe el aviso de cuota, donde está su cuota (como el botón de la campana).
+const PANTALLA_DE_LA_CUOTA = "/app/inicio";
+
+function avisoPush(notificacion: NuevaNotificacion, titulo: string): AvisoPush {
+  return {
+    titulo,
+    cuerpo: notificacion.mensaje,
+    url: PANTALLA_DE_LA_CUOTA,
+    etiqueta: `cuota-${notificacion.id_cuota}`,
+  };
+}
 
 // Componente Notificacion de la vista arquitectónica (GestionNotificaciones). Guarda los avisos que
 // generan los procesos del subsistema y se los muestra a su destinatario, que es el único que los ve y
-// los marca leídos. Son in-app: no hay envío que pueda fallar (arquitectura.md).
+// los marca leídos. El aviso in-app es la fuente; los de cuota además se mandan al celular por push,
+// sin estado ni reintento (arquitectura.md).
 export class NotificacionService implements IRegistroNotificaciones {
-  constructor(private readonly repositorio: NotificacionRepository) {}
+  constructor(
+    private readonly repositorio: NotificacionRepository,
+    private readonly envioPush: IEnvioPush,
+  ) {}
 
-  registrar(notificaciones: NuevaNotificacion[]): Promise<number> {
-    return this.repositorio.registrar(notificaciones, new Date());
+  async registrar(notificaciones: NuevaNotificacion[]): Promise<number> {
+    const nuevas = await this.repositorio.registrar(notificaciones, new Date());
+    await Promise.all(
+      nuevas.flatMap((notificacion) => {
+        const titulo = TITULO_DEL_PUSH[notificacion.tipo];
+        return titulo
+          ? [this.envioPush.enviarAUsuario(notificacion.id_usuario, avisoPush(notificacion, titulo))]
+          : [];
+      }),
+    );
+    return nuevas.length;
   }
 
   async listarDeUsuario(idUsuario: number, paginacion: Paginacion): Promise<PaginaNotificaciones> {

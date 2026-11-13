@@ -204,7 +204,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    | PI-69, PI-70                                                  | Sí                                                                                     |
 | US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82, PI-86, PI-91 | Sí: el 50 % de lo cobrado (a precio de lista si hubo promoción), el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
 | US-24 | Registro de suplencias entre profesoras                   |   4    | PI-60 a PI-63                                                 | Sí; no editar una suplencia de un período liquidado queda para US-23 (sección 9)       |
-| US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar), PI-67, PI-68                  | Sí: los avisos, su destinatario, que no se dupliquen y las notificaciones propias por la API |
+| US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar), PI-67, PI-68, PI-92                  | Sí: los avisos, su destinatario, que no se dupliquen y las notificaciones propias por la API |
 | US-26 | Resumen diario para la propietaria                        |   4    |                                                               | No aplica: retirada del sistema el 13/11/2026 (PI-65 retirado) |
 | US-27 | Carga de rutina y evolución física                        |   5    |                                                               |                                                                                        |
 | US-28 | Consulta de rutina y progreso físico                      |   5    |                                                               |                                                                                        |
@@ -308,6 +308,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-89         | Contacto y privacidad en el listado de profesoras                    | US-38, US-02        | Servicios          | Fábricas, datos de usuario                                  | Sí           |
 | PI-90         | La foto de perfil de Google                                          | US-01               | Servicios          | Fábricas, sesiones, foto simulada                           | Sí           |
 | PI-91         | Los descuentos de las promociones no reducen los honorarios         | US-23, US-13        | Servicios          | Fábricas, reloj fijo, promoción en la inscripción           | Sí           |
+| PI-92         | Los avisos de cuota llegan al celular por push                      | US-25               | Servicios          | Demostración, servicio de push simulado                     | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026).
 
@@ -1085,6 +1086,19 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (N-05 y N-06).
 
+#### PI-92 — Los avisos de cuota llegan al celular por push
+
+**US:** US-25 · **Precondición:** escenario de demostración cargado. El servicio de push (FCM, APNs) es la frontera externa y se simula: se ve qué le llega y se le hace responder que un dispositivo ya no existe.
+
+1. Valentina pide la clave pública, suscribe su celular y su cuota venció ayer. Se corre el planificador dos veces.
+2. Con la base reiniciada, Valentina suscribe su celular, el servicio de push responde que ya no existe, y se corre el planificador.
+3. Con la base reiniciada, Valentina suscribe su celular y después Lucía suscribe el mismo. Valentina lo da de baja; después lo da de baja Lucía.
+4. Valentina intenta suscribir `https://db:5432/` como endpoint; alguien sin sesión intenta suscribir uno válido.
+
+**Resultado esperado:** en el paso 1 la clave es la configurada, la suscripción responde 204 y al servicio de push le llega un solo aviso, al endpoint y con las claves del celular, con título "Cuota por vencer", el mismo texto que el aviso de la campana, la URL `/app/inicio` y la etiqueta de la cuota: la segunda corrida no lo repite. En el paso 2 la suscripción se borra y el aviso queda igual en la campana. En el paso 3 el celular pasa a Lucía; la baja de Valentina responde 204 pero no lo toca, y la de Lucía lo borra. En el paso 4, 400 (no es un servicio de push: la API no le pega a direcciones internas) y 401, sin guardar nada.
+
+**Automatizado:** Sí (N-07 a N-10).
+
 #### PI-69 — La detección de alumnos inactivos con la cuota al día
 
 **US:** US-22 · **Precondición:** escenario de demostración cargado; la cuota de Valentina Herrera (Intermedio, 5 días de gracia) vence en 10 días; `INASISTENCIAS_CONSECUTIVAS_INACTIVO` en 3 (valor inicial). Las clases del horario de Valentina se cargan en la base, cerradas (`DICTADA`) salvo que se diga otra cosa, con su asistencia.
@@ -1208,7 +1222,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
 |    L    | `back/src/__tests__/integracion/suplencias.integration.test.ts`                 | 15 (L-01 a L-15) | PI-60 a PI-63                     |
 |    M    | `back/src/__tests__/integracion/resumen-diario.integration.test.ts`             | Retirado         | PI-65                             |
-|    N    | `back/src/__tests__/integracion/notificaciones.integration.test.ts`             | 6 (N-01 a N-06)  | PI-67, PI-68                      |
+|    N    | `back/src/__tests__/integracion/notificaciones.integration.test.ts`             | 10 (N-01 a N-10) | PI-67, PI-68, PI-92                      |
 |    O    | `back/src/__tests__/integracion/alumnos-inactivos.integration.test.ts`          | 7 (O-01 a O-07)  | PI-69, PI-70                      |
 |    P    | `back/src/__tests__/integracion/insignias-y-ranking.integration.test.ts`        | 10 (P-01 a P-10) | PI-71 a PI-73                     |
 |    Q    | `back/src/__tests__/integracion/reportes-asistencia-y-ocupacion.integration.test.ts` | 6 (Q-01 a Q-06) | PI-74 a PI-77                |
@@ -1345,6 +1359,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | N-04        | La base rechaza un segundo aviso del mismo tipo para la misma cuota y usuario | PI-67 |
 | N-05        | La alumna ve su aviso al consultar y lo marca leído; otra persona no lo ve ni lo marca (404) | PI-68 |
 | N-06        | Marcar todas deja leídas solo las de quien pide; sin sesión, 401 | PI-68 |
+| N-07        | La alumna suscribe su celular y le llega el aviso de cuota con el texto completo, una sola vez | PI-92 |
+| N-08        | El celular que el servicio de push da por vencido se borra; el aviso queda en la campana | PI-92 |
+| N-09        | Un celular que suscribe otra cuenta pasa a esa cuenta, y nadie da de baja el de otro | PI-92 |
+| N-10        | Un endpoint que no es de un servicio de push responde 400 y sin sesión 401, sin guardar nada | PI-92 |
 | O-01        | Con 3 ausencias seguidas en clases cerradas aparece con su racha, su última asistencia y su contacto; la clase abierta no cuenta | PI-69 |
 | O-02        | No aparece con ausencias cortadas por una asistencia ni con menos clases que el umbral | PI-69 |
 | O-03        | Con la cuota vencida no aparece; en los días de gracia aparece por vencer | PI-69 |
@@ -1653,6 +1671,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | La base sin el check `ck_usuarios_foto_url`                                             | Ninguno: se comprobó con un `INSERT` de `http://` en la base de prueba, que Postgres rechazó                |
 | La liquidación usa lo cobrado aunque la inscripción tenga promoción                    | R-19 a R-21 |
 | El precio de lista se busca con la fecha UTC de la cuota y no con la de Argentina     | R-21 |
+| El push sale de todos los avisos y no solo de los recién insertados                   | N-07 |
+| El endpoint de la suscripción acepta cualquier host                                   | Unitarios de `suscripcion-push.schemas` (N-10 sigue en verde: el puerto 5432 también se rechaza) |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1775,6 +1795,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-91         | 13/11/2026 | Nicolas           | Aprobado           | Pasan R-19 a R-21; también R-01 a R-18, que fallaban desde el merge 6fcb658       |
 | PI-67         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-01 a N-04 con el aviso por cambio de estado, sin DIAS_AVISO_VENCIMIENTO   |
 | PI-68         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-05 y N-06 con el texto nuevo del aviso                                   |
+| PI-92         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-07 a N-10 con el servicio de push simulado                               |
 
 ### 8.3 Defectos
 
@@ -1910,3 +1931,4 @@ Los defectos se numeran D-01, D-02…
 |   2.38  | 13/11/2026 | Caso PI-91 y tests R-19 a R-21: con promoción, lo cobrado se liquida a precio de lista del día de la cuota, en proporción al descuento. Corrige la regla que entró en el merge 6fcb658, que llevaba a lista cualquier pago menor (con promoción o sin ella), por pago y con el precio de la inscripción, y hacía fallar R-01 a R-18 | Nicolas |
 |   2.39  | 13/11/2026 | Se retiran PI-65 y el archivo M (M-01 a M-03): el resumen diario de la propietaria (US-26) se eliminó del sistema, junto con el aviso de clase cancelada. US-26 pasa a no aplicar | Nicolas |
 |   2.40  | 13/11/2026 | PI-67 y PI-68 (N-01 a N-03, N-05) pasan a la regla nueva de US-25: el aviso sale cuando la cuota cambia a por vencer (al entrar en la gracia) o a vencida (al terminarla), con las fechas en el texto. Se retira `DIAS_AVISO_VENCIMIENTO` | Nicolas |
+|   2.41  | 13/11/2026 | Caso PI-92 (los avisos de cuota llegan al celular por push) y tests N-07 a N-10. El entorno de integración acepta un servicio de push simulado | Nicolas |

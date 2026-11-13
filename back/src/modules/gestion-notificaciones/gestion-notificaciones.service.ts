@@ -4,12 +4,15 @@ import type { ILogicaNotificaciones } from "./interface/i-logica-notificaciones.
 import type { NotificacionService } from "./notificacion/notificacion.service.js";
 import type { NotificacionPropia, PaginaNotificaciones } from "./notificacion/notificacion.types.js";
 import type { PlanificadorNotificacionesService } from "./planificador-notificaciones/planificador-notificaciones.service.js";
+import type { SuscripcionPushService } from "./suscripcion-push/suscripcion-push.service.js";
+import type { DatosSuscripcion } from "./suscripcion-push/suscripcion-push.types.js";
 
 // Realiza ILogicaNotificaciones pasando cada operación a su componente.
 export class GestionNotificacionesService implements ILogicaNotificaciones {
   constructor(
     private readonly notificaciones: NotificacionService,
     private readonly planificador: PlanificadorNotificacionesService,
+    private readonly suscripciones: SuscripcionPushService,
   ) {}
 
   // Render duerme el proceso sin tráfico, así que el intervalo no alcanza: los avisos del día se generan
@@ -32,5 +35,17 @@ export class GestionNotificacionesService implements ILogicaNotificaciones {
 
   marcarNotificacionesLeidas(idUsuario: number): Promise<{ marcadas: number }> {
     return this.notificaciones.marcarTodasLeidas(idUsuario);
+  }
+
+  obtenerClavePushPublica(): string | null {
+    return this.suscripciones.clavePublica();
+  }
+
+  suscribirDispositivo(idUsuario: number, datos: DatosSuscripcion): Promise<void> {
+    return this.suscripciones.suscribir(idUsuario, datos);
+  }
+
+  desuscribirDispositivo(idUsuario: number, endpoint: string): Promise<void> {
+    return this.suscripciones.desuscribir(idUsuario, endpoint);
   }
 }

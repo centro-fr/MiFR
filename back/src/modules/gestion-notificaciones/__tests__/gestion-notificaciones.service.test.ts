@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GestionNotificacionesService } from "../gestion-notificaciones.service.js";
 import type { NotificacionService } from "../notificacion/notificacion.service.js";
 import type { PlanificadorNotificacionesService } from "../planificador-notificaciones/planificador-notificaciones.service.js";
+import type { SuscripcionPushService } from "../suscripcion-push/suscripcion-push.service.js";
 
 const PAGINACION = { limit: 20, offset: 0 };
 
@@ -11,6 +12,7 @@ describe("GestionNotificacionesService", () => {
     ReturnType<typeof vi.fn>
   >;
   let planificador: { generarAvisosDelDia: ReturnType<typeof vi.fn> };
+  let suscripciones: Record<"clavePublica" | "suscribir" | "desuscribir", ReturnType<typeof vi.fn>>;
   let gestion: GestionNotificacionesService;
 
   beforeEach(() => {
@@ -20,9 +22,15 @@ describe("GestionNotificacionesService", () => {
       marcarTodasLeidas: vi.fn().mockResolvedValue({ marcadas: 2 }),
     };
     planificador = { generarAvisosDelDia: vi.fn().mockResolvedValue(0) };
+    suscripciones = {
+      clavePublica: vi.fn().mockReturnValue("clave"),
+      suscribir: vi.fn().mockResolvedValue(undefined),
+      desuscribir: vi.fn().mockResolvedValue(undefined),
+    };
     gestion = new GestionNotificacionesService(
       notificaciones as unknown as NotificacionService,
       planificador as unknown as PlanificadorNotificacionesService,
+      suscripciones as unknown as SuscripcionPushService,
     );
   });
 
@@ -50,5 +58,15 @@ describe("GestionNotificacionesService", () => {
     expect(notificaciones.marcarLeida).toHaveBeenCalledWith(3, 7);
     await expect(gestion.marcarNotificacionesLeidas(7)).resolves.toEqual({ marcadas: 2 });
     expect(notificaciones.marcarTodasLeidas).toHaveBeenCalledWith(7);
+  });
+
+  it("las operaciones de push se delegan en SuscripcionPush", async () => {
+    const datos = { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { p256dh: "p", auth: "a" } };
+
+    expect(gestion.obtenerClavePushPublica()).toBe("clave");
+    await gestion.suscribirDispositivo(7, datos);
+    expect(suscripciones.suscribir).toHaveBeenCalledWith(7, datos);
+    await gestion.desuscribirDispositivo(7, datos.endpoint);
+    expect(suscripciones.desuscribir).toHaveBeenCalledWith(7, datos.endpoint);
   });
 });
