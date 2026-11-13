@@ -8,7 +8,8 @@
 
 # Otro
 
-- [ ] Verifica estos [actualizar-schema.mjs] y [montar-honorarios.msj] para que estan y si deberian estar ahi. A mi me parece que no, y si no va fijate como deberia ser la forma correcta de esto.
+- [x] Verifica estos [actualizar-schema.mjs] y [montar-honorarios.msj] para que estan y si deberian estar ahi. A mi me parece que no, y si no va fijate como deberia ser la forma correcta de esto.
+  Eran scripts de un solo uso que editaban el código (la baja lógica de `registros_progreso` en el schema y el montaje de Honorarios en `app.ts` y `composicion.ts`). Ya estaban aplicados: el schema tiene sus migraciones y el back monta Honorarios. Se borraron. La forma correcta es commitear el cambio en el código y, para el schema, la migración que genera `pnpm prisma:migrate`.
 
 
 
@@ -24,7 +25,7 @@
 
 # Antes de desplegar
 
-- [ ] Historial de asistencia de la ficha en el front: el back ya responde `GET /alumnos/:id/asistencias` paginado (`datos`, `total`, `presentes`, `ausentes`, `limit`, `offset`; sin `dia`), pero el front espera una lista y `asistencias-api.ts` se traga el error, así que la ficha sigue mostrando el historial vacío. Falta: el schema de la página, sacar el `catch { return [] }`, que las pestañas manden `asistio` y cuenten con `presentes` y `ausentes`, `PaginacionTabla` de a 10, un estado de error con reintentar, el mock de MSW y sus tests (`alumnos-handlers.test.ts`, `alumno-detalle-page.test.tsx`) y probarlo en Chromium contra el compose.
+- [x] Historial de asistencia de la ficha en el front (falta correr los tests y probarlo en Chromium): el back ya responde `GET /alumnos/:id/asistencias` paginado (`datos`, `total`, `presentes`, `ausentes`, `limit`, `offset`; sin `dia`), pero el front espera una lista y `asistencias-api.ts` se traga el error, así que la ficha sigue mostrando el historial vacío. Falta: el schema de la página, sacar el `catch { return [] }`, que las pestañas manden `asistio` y cuenten con `presentes` y `ausentes`, `PaginacionTabla` de a 10, un estado de error con reintentar, el mock de MSW y sus tests (`alumnos-handlers.test.ts`, `alumno-detalle-page.test.tsx`) y probarlo en Chromium contra el compose.
 - [ ] `PRUEBAS-INTEGRACION.md`: el caso PI-94 (historial de la ficha) con E-28 y E-29, el archivo E en 29 tests, US-10 en la trazabilidad, el registro de ejecución y la versión 2.43. Corregir PI-93: la profesora de Valentina es Carla, no Lucía.
 - [ ] Correr `pnpm test:integration` completo y la skill `auditar-cambios` sobre el panel del alumno y el historial: se integraron con los unitarios y la suite de alumnos (PI-93 y PI-94).
 - [ ] Avisar al equipo que regenere su base local (`prisma migrate reset` y los seeds): las cargadas antes del 20/10 no tienen `REPORTES_RANKING_VER` para el alumno y el tutor (ni `PLANES_VER` y `ALUMNOS_EDITAR` para la profesora), y el ranking del portal les responde 403.
