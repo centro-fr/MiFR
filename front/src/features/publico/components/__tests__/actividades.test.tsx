@@ -24,4 +24,20 @@ describe("Actividades", () => {
     expect(combat).toHaveTextContent("Mar · Jue");
     expect(combat).toHaveTextContent("Días: martes y jueves");
   });
+
+  it("con una sola actividad muestra solo esa, y un nombre muy largo puede cortarse en varias líneas", () => {
+    const nombre = "Acondicionamientofisicointegralparaadultosmayores";
+    render(<Actividades actividades={[{ ...ACTIVIDADES_DEL_CENTRO[0], nombre }]} />);
+
+    const titulo = screen.getByRole("heading", { name: nombre });
+    expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(1);
+    expect(titulo.className).toContain("[overflow-wrap:anywhere]");
+  });
+
+  it("sin actividades no deja la lista vacía: invita a consultar", () => {
+    render(<Actividades actividades={[]} />);
+
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+    expect(screen.getByText(/te contamos qué actividades hay/)).toBeInTheDocument();
+  });
 });

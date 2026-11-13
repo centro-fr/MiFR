@@ -66,6 +66,8 @@
 
 /* Tokens estáticos del tema (no dependen de la clase .dark). */
 @theme {
+  /* Salida rápida y frenada larga: lo que se mueve responde al instante y se asienta suave. */
+  --ease-fuerte: cubic-bezier(0.23, 1, 0.32, 1);
   --color-dark: #181c26;
   --color-canvas: #0b0f19;
   --color-surface-low: #0f172a;
@@ -147,6 +149,13 @@
 /* El menú de la página pública lleva a anclas de la misma página: el salto se hace deslizando. */
 html:has(.pagina-publica) {
   scroll-behavior: smooth;
+  /* Los enlaces y botones ya muestran que se tocaron: el destello gris de iOS y Android sobra. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sin la espera del doble toque: el enlace responde apenas se levanta el dedo. */
+.pagina-publica :is(a, button) {
+  touch-action: manipulation;
 }
 
 @keyframes pulse-glow {

@@ -15,13 +15,11 @@
 
 # Página pública: pulido visual
 
-- [ ] Instalar las skills de diseño y revisarlas antes de usarlas (bajan y ejecutan código de terceros): `npx skills add emilkowalski/skills`, `npx skills add Leonxlnx/taste-skill` y `npx impeccable install`.
-- [ ] Entrada de la portada coreografiada: el título línea por línea, la foto con un zoom suave y al final el botón "Quiero empezar", en menos de un segundo y sin movimiento para quien pidió reducirlo.
-- [ ] Pulir las 7 transiciones con la curva genérica `ease`: curvas más naturales, una respuesta chica al tocar los botones y efectos de hover solo en computadoras (en el celular quedan "pegados").
-- [ ] Que se sienta nativa en el celular (se abre mucho desde Instagram y WhatsApp): la portada que salta cuando se esconde la barra del navegador, el destello gris al tocar, el contenido debajo del notch y el color de la barra de estado.
-- [ ] Revisar dónde sumar movimiento y dónde no: por ejemplo, que las tarjetas de actividades aparezcan al hacer scroll.
-- [ ] Probarla con datos extremos: nombres de actividades muy largos, una sola actividad o ninguna.
-- [ ] Pulido general: tipografía, espacios y estados de los botones. Con taste-skill e impeccable, una revisión "anti-genérica" completa en un navegador real.
+Hecho el 13/11/2026 con las guías de `choreograph` y `mobile-native` (emilkowalski/skills), leídas desde el repositorio sin correr `npx`: la entrada de la portada en menos de un segundo, la curva `ease-fuerte`, la respuesta al tocar los botones, sin destello gris ni demora al tocar, la barra de estado del color de la página, los retrasos no uniformes al hacer scroll y la sección de actividades con nombres largos, una sola o ninguna.
+
+- [ ] Probar en un celular real (iPhone y Android, abriendo el enlace desde Instagram y WhatsApp): la respuesta al tocar, la barra de estado y que nada quede pegado. La emulación de Chrome no reproduce estos problemas.
+- [ ] Revisión completa con taste-skill (Leonxlnx/taste-skill) e impeccable (pbakaus/impeccable) cuando esté la foto real del centro: las dos son flujos completos con sus propios scripts, e impeccable además baja un motor en Rust (`npx impeccable install`); revisar ese código antes de correrlo.
+- [ ] Las actividades tienen efecto al pasar el mouse pero no son enlaces: decidir si llevan a algo (los horarios o el contacto) o si se saca el efecto, que sugiere que se pueden tocar.
 
 # Antes de desplegar
 

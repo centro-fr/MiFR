@@ -10,10 +10,10 @@ import { cn } from "@/utils/cn";
 import { CONTENEDOR_PUBLICO } from "./estilos-publicos";
 import { NOMBRE_DEL_CENTRO } from "./marca-centro";
 
-const ACCESO = "inline-flex h-11 items-center text-sm font-bold text-white transition-colors hover:text-primary";
+const ACCESO = "inline-flex h-11 items-center text-sm font-bold text-white transition-colors duration-150 ease-fuerte hover:text-primary";
 
 const SUBRAYADO_AL_PASAR =
-  "bg-[linear-gradient(var(--color-primary),var(--color-primary))] bg-size-[0_2px] bg-left-bottom bg-no-repeat pb-1 transition-[background-size,color] duration-200 hover:bg-size-[100%_2px] hover:text-white";
+  "bg-[linear-gradient(var(--color-primary),var(--color-primary))] bg-size-[0_2px] bg-left-bottom bg-no-repeat pb-1 transition-[background-size,color] duration-200 ease-fuerte hover:bg-size-[100%_2px] hover:text-white";
 
 // Con sesión iniciada, el mismo enlace lleva al panel en lugar de volver a pedir el login.
 function AccesoAlSistema() {
@@ -66,7 +66,7 @@ export function EncabezadoPublico() {
     <header
       ref={raiz}
       className={cn(
-        "fixed inset-x-0 top-0 z-20 transition-[background-color,box-shadow] duration-300",
+        "fixed inset-x-0 top-0 z-20 transition-[background-color,box-shadow] duration-300 ease-fuerte",
         conFondo && "bg-publico-tinta shadow-[0_1px_0_var(--color-publico-borde)]",
       )}
     >
