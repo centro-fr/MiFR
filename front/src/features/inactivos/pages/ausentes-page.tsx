@@ -3,13 +3,15 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
-  SlidersHorizontal,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { AppleMailIcon } from "@/components/icons/apple-mail-icon";
 import { ApplePhoneIcon } from "@/components/icons/apple-phone-icon";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
+import { BOTON_FILA } from "@/components/ui/estilos-lista";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
@@ -223,10 +225,10 @@ export function AusentesPage() {
         {/* Encabezado Principal */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Ausentes
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-normal">
               Busca los alumnos ausentes que queres contactar
             </p>
           </div>
@@ -253,20 +255,15 @@ export function AusentesPage() {
             </div>
 
             {/* Botón de filtros para mobile */}
-            <button
-              type="button"
-              aria-label="Filtros adicionales"
-              onClick={() => setMostrarFiltrosMobile((v) => !v)}
-              className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                (mostrarFiltrosMobile || hayFiltrosActivos) && "border-primary text-primary",
-              )}
-            >
-              <SlidersHorizontal className="size-4" />
-            </button>
+            <BotonFiltrosMovil
+              abierto={mostrarFiltrosMobile}
+              activos={hayFiltrosActivos}
+              onAlternar={() => setMostrarFiltrosMobile((v) => !v)}
+              idPanel="filtros-del-listado"
+            />
 
             {/* Selects secundarios en píldoras (mismo alto h-10 y bordes rounded-lg que el buscador) */}
-            <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+            <div id="filtros-del-listado" className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
               {/* Select Plan */}
               <SelectorDesplegable
                 id="filtro-plan"
@@ -319,31 +316,13 @@ export function AusentesPage() {
         </section>
 
         {/* Pestañas de estado para mobile */}
-        <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-          {PESTANAS.map((pestana) => {
-            const activa = tabActual === pestana.id;
-            const conteo = conteosPorTab[pestana.id];
-
-            return (
-              <button
-                key={pestana.id}
-                type="button"
-                onClick={() => setTabActual(pestana.id)}
-                className={cn(
-                  "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-                  activa
-                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-                )}
-              >
-                <span>{pestana.etiqueta}</span>
-                <span className={cn(activa ? "text-primary font-black" : "text-slate-500")}>
-                  {conteo}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <PestanasFiltro
+          className="lg:hidden"
+          etiqueta="Estado de la gestión"
+          opciones={PESTANAS.map((pestana) => ({ id: pestana.id, etiqueta: pestana.etiqueta, conteo: conteosPorTab[pestana.id] }))}
+          valor={tabActual}
+          onCambiar={setTabActual}
+        />
 
         {/* Feedback de Carga / Error / Vacío */}
         {consultaInactivos.isPending ? (
@@ -413,7 +392,7 @@ export function AusentesPage() {
           <>
             {/* VISTA MOBILE: Lista agrupada limpia y en tonos neutros igual que en Listado */}
             <div className="space-y-3 lg:hidden">
-              <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-800 dark:divide-slate-700/60">
+              <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs divide-y divide-slate-100 dark:border-slate-700/80 dark:bg-slate-900 dark:divide-slate-800">
                 {alumnosPaginados.map((alumno) => {
                 const contacto = obtenerContactoPrioritario(alumno);
                 const enlaceWa = generarEnlaceWhatsApp(contacto.telefono, generarMensajeReintegro(alumno));
@@ -428,7 +407,7 @@ export function AusentesPage() {
                 return (
                   <div
                     key={alumno.id_inscripcion}
-                    className="flex flex-wrap items-center justify-between gap-3 p-3.5 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-700/40"
+                    className="flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-pink-700 dark:bg-pink-950/70 dark:text-pink-200">
@@ -454,7 +433,8 @@ export function AusentesPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 ml-auto">
+                    {/* Abajo y juntos, alineados con el texto, como en las demás listas del celular */}
+                    <div className="flex flex-wrap items-center gap-2 pl-13">
                       {/* Canales de Contacto Directos con Iconos Reales */}
                       <div className="flex items-center gap-1.5">
                         {enlaceWa ? (
@@ -529,10 +509,10 @@ export function AusentesPage() {
                             </Button>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               onClick={() => void handleIgnorar(alumno)}
                               disabled={registrar.isPending}
-                              className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className={BOTON_FILA}
                             >
                               Ignorar
                             </Button>
@@ -551,10 +531,10 @@ export function AusentesPage() {
                             </Button>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               onClick={() => void handleIgnorar(alumno)}
                               disabled={registrar.isPending}
-                              className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className={BOTON_FILA}
                             >
                               Ignorar
                             </Button>
@@ -795,10 +775,10 @@ export function AusentesPage() {
                                   </Button>
                                   <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="outline"
                                     onClick={() => void handleIgnorar(alumno)}
                                     disabled={registrar.isPending}
-                                    className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                                    className={BOTON_FILA}
                                   >
                                     Ignorar
                                   </Button>
@@ -817,10 +797,10 @@ export function AusentesPage() {
                                   </Button>
                                   <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="outline"
                                     onClick={() => void handleIgnorar(alumno)}
                                     disabled={registrar.isPending}
-                                    className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+                                    className={BOTON_FILA}
                                   >
                                     Ignorar
                                   </Button>

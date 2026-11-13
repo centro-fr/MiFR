@@ -33,7 +33,7 @@ export function PantallaExito({ yaAbono, onCargarOtro, onVerFicha }: PantallaExi
           type="button"
           variant="outline"
           onClick={onCargarOtro}
-          className="h-11 px-5 rounded-xl text-xs sm:text-sm font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+          className="h-11 px-5 rounded-xl text-xs sm:text-sm font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:text-white"
         >
           Cargar otro alumno
         </Button>

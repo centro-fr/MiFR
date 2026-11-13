@@ -231,8 +231,8 @@ export function SemanaDeClases({ idProfesora }: { idProfesora: string }) {
   return (
     <>
       <div>
-        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">{saludoSegunHorario(user?.nombre)}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{saludoSegunHorario(user?.nombre)}</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
           {nombreDelDia(hoy)} {diaYMes(hoy)}
           {!consultaHoy.isPending &&
             !consultaHoy.isError &&

@@ -12,8 +12,10 @@ interface Comun {
   alumno: string;
   /** "Transferencia" o "Alta nueva". */
   concepto: string;
-  /** Qué cuota paga la transferencia ("Primera cuota") o el plan del alta; null si no se sabe. */
-  cuotaOPlan: string | null;
+  /** El plan que se paga; null si el back no lo informa. */
+  plan: string | null;
+  /** Qué cuota se paga: "Primera cuota", "Renovación" o "Cuota vencida". */
+  cuota: string;
   /** Cuándo se informó la transferencia, o hasta cuándo guarda el lugar la reserva del alta. */
   cuando: string | null;
   /** Cuota o plan y fecha en una línea. */
@@ -65,8 +67,17 @@ function enUnaLinea(...partes: (string | null)[]): string {
   return partes.filter(Boolean).join(" · ");
 }
 
+// Sin el tipo del back (las de "Mis transferencias"), lo más común: una renovación.
+function cuotaDeTransferencia(transferencia: Transferencia): string {
+  return transferencia.tipo ? etiquetaTipo(transferencia.tipo) : "Renovación";
+}
+
 function datoDeTransferencia(transferencia: Transferencia): string {
-  return enUnaLinea(transferencia.tipo ? etiquetaTipo(transferencia.tipo) : null, cuandoDeTransferencia(transferencia));
+  return enUnaLinea(
+    transferencia.plan ?? null,
+    transferencia.tipo ? etiquetaTipo(transferencia.tipo) : null,
+    cuandoDeTransferencia(transferencia),
+  );
 }
 
 function datoDeAlta(alta: PreInscripcionPendiente): string {
@@ -81,30 +92,34 @@ export function detalleDeAlta(alta: PreInscripcionPendiente): string {
   return `${ALTA_NUEVA} · ${datoDeAlta(alta)}`;
 }
 
+// Un alumno puede tener varios planes y una pre-inscripción en cada uno: la transferencia paga el
+// alta de su propia inscripción. Sin el id (un back anterior), se reconoce por el alumno.
+function pagaLaPreInscripcion(transferencia: Transferencia, alta: PreInscripcionPendiente): boolean {
+  if (transferencia.idInscripcion != null) return String(transferencia.idInscripcion) === alta.idInscripcion;
+  return String(transferencia.alumno.id) === alta.idAlumno;
+}
+
 /**
- * Une las dos listas, la más reciente primero. Si la primera cuota de un alta ya llegó por
- * transferencia, figura una sola vez, como transferencia: al verificarla se completa el alta. Un
- * pre-inscripto solo puede estar pagando su primera cuota, así que alcanza con que tenga una
+ * Une las dos listas, la más reciente primero, con una fila por pago: un alumno con dos planes
+ * aparece una vez por cada uno y se verifica de a uno. Si la primera cuota de un alta ya llegó por
+ * transferencia, figura una sola vez, como transferencia: al verificarla se completa el alta. Una
+ * pre-inscripción solo puede estar pagando su primera cuota, así que alcanza con que tenga una
  * transferencia pendiente (no depende de que el back informe el tipo).
  */
 export function armarBandeja(transferencias: Transferencia[], altas: PreInscripcionPendiente[]): PendientePorVerificar[] {
-  const conPrimeraCuotaInformada = new Set(transferencias.map((t) => String(t.alumno.id)));
-  const preInscriptos = new Set(altas.map((alta) => alta.idAlumno));
   const conTipo = (t: Transferencia): Transferencia =>
-    t.tipo || !preInscriptos.has(String(t.alumno.id)) ? t : { ...t, tipo: "PRIMERA_CUOTA" };
+    t.tipo || !altas.some((alta) => pagaLaPreInscripcion(t, alta)) ? t : { ...t, tipo: "PRIMERA_CUOTA" };
 
   const deTransferencias: PendientePorVerificar[] = transferencias.map((original) => {
     const transferencia = conTipo(original);
-    const tipoTexto = transferencia.tipo ? etiquetaTipo(transferencia.tipo) : null;
-    const cuotaOPlan = tipoTexto ?? transferencia.plan ?? "Renovación";
-
     return {
       tipo: "TRANSFERENCIA",
       clave: `transferencia-${transferencia.id}`,
       idAlumno: transferencia.alumno.id,
       alumno: `${transferencia.alumno.nombre} ${transferencia.alumno.apellido}`,
       concepto: TRANSFERENCIA,
-      cuotaOPlan,
+      plan: transferencia.plan ?? null,
+      cuota: cuotaDeTransferencia(transferencia),
       cuando: cuandoDeTransferencia(transferencia),
       dato: datoDeTransferencia(transferencia),
       detalle: detalleDeTransferencia(transferencia),
@@ -115,14 +130,16 @@ export function armarBandeja(transferencias: Transferencia[], altas: PreInscripc
   });
 
   const deAltas: PendientePorVerificar[] = altas
-    .filter((alta) => !conPrimeraCuotaInformada.has(alta.idAlumno))
+    .filter((alta) => !transferencias.some((transferencia) => pagaLaPreInscripcion(transferencia, alta)))
     .map((alta) => ({
       tipo: "ALTA",
       clave: `alta-${alta.idInscripcion}`,
       idAlumno: Number(alta.idAlumno),
       alumno: `${alta.nombre} ${alta.apellido}`,
       concepto: ALTA_NUEVA,
-      cuotaOPlan: alta.nombrePlan,
+      plan: alta.nombrePlan,
+      // El alta se completa con el primer pago.
+      cuota: etiquetaTipo("PRIMERA_CUOTA"),
       cuando: cuandoDeAlta(alta),
       dato: datoDeAlta(alta),
       detalle: detalleDeAlta(alta),

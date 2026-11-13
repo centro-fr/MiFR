@@ -1,5 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Moon, Sun } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useThemeStore } from "@/stores/theme-store";
 import { cn } from "@/utils/cn";
 
@@ -16,7 +17,7 @@ export const ThemeToggle = forwardRef<HTMLButtonElement, ThemeToggleProps>(
     const esOscuro = tema === "oscuro";
     const etiqueta = esOscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
 
-    return (
+    const boton = (
       <button
         ref={ref}
         type="button"
@@ -28,7 +29,6 @@ export const ThemeToggle = forwardRef<HTMLButtonElement, ThemeToggleProps>(
         }}
         aria-pressed={esOscuro}
         aria-label={etiqueta}
-        title={etiqueta}
         className={cn(
           "flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors",
           "text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-slate-300 dark:hover:bg-white/10",
@@ -43,6 +43,15 @@ export const ThemeToggle = forwardRef<HTMLButtonElement, ThemeToggleProps>(
         )}
         {!compacto && <span className="flex-1 text-left">{esOscuro ? "Tema claro" : "Tema oscuro"}</span>}
       </button>
+    );
+
+    if (!compacto) return boton;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{boton}</TooltipTrigger>
+        <TooltipContent>{etiqueta}</TooltipContent>
+      </Tooltip>
     );
   },
 );

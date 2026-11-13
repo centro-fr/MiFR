@@ -12,7 +12,7 @@ import {
 import { cn } from "@/utils/cn";
 import { useAlumnoElegido } from "../hooks/use-alumno-elegido";
 import { usePlanElegido } from "../hooks/use-plan-elegido";
-import { etiquetaDelPlan, hayOtroPlanConAlerta } from "../utils/plan-del-panel";
+import { estadoAlertaOtroPlan, etiquetaDelPlan } from "../utils/plan-del-panel";
 import { PuntoAlerta } from "./selector-de-plan";
 
 /**
@@ -32,7 +32,7 @@ export function SelectorDeAlumno({ sobreFondoOscuro = false }: { sobreFondoOscur
   }, [esperandoPlanesDe, elegido, consulta.isFetching, planes.length]);
 
   if (alumnos.length < 2 || !elegido) return null;
-  const otroConAlerta = planElegido ? hayOtroPlanConAlerta(planes, planElegido.id_inscripcion) : false;
+  const estadoOtroPlan = planElegido ? estadoAlertaOtroPlan(planes, planElegido.id_inscripcion) : "AL_DIA";
   return (
     <DropdownMenu open={abierto} onOpenChange={setAbierto}>
       <DropdownMenuTrigger asChild>
@@ -56,7 +56,7 @@ export function SelectorDeAlumno({ sobreFondoOscuro = false }: { sobreFondoOscur
               <span className="hidden md:inline font-normal opacity-75"> · {etiquetaDelPlan(planElegido)}</span>
             )}
           </span>
-          {otroConAlerta && <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-amber-400" />}
+          <PuntoAlerta estado={estadoOtroPlan} />
           <ChevronDown aria-hidden="true" className="size-4 shrink-0 opacity-70" />
         </button>
       </DropdownMenuTrigger>

@@ -116,12 +116,6 @@ function ItemSimple({ item, alNavegar }: PropsItem) {
           <Icono aria-hidden="true" />
           <span className="flex-1 truncate">{item.etiqueta}</span>
           <Contador valor={item.contador} />
-          {item.esActivo && (
-            <span
-              aria-hidden="true"
-              className="size-1.5 rounded-full bg-primary shrink-0 ml-auto group-data-[collapsible=icon]:hidden"
-            />
-          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -533,50 +527,55 @@ function BarraSuperior({
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border md:border-border max-md:border-sidebar-border bg-bg-light max-md:bg-sidebar max-md:text-white pl-1.5 pr-3 sm:pl-2 sm:pr-4 dark:bg-canvas">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 max-md:text-white max-md:hover:bg-white/10 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
-        <Separator orientation="vertical" className="h-4 hidden md:block" />
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="ml-1 md:hidden">
           <LogoMarca />
-          {tieneLosDos ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Cambiar vista de rol"
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-white hover:bg-white/10 transition-colors cursor-pointer border border-white/20 bg-white/5"
-                >
-                  <span>{rolActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
-                  <ChevronDown className="size-3.5 text-slate-300" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
-                <DropdownMenuItem
-                  onClick={() => onCambiarRol("PROPIETARIA")}
-                  className={cn(
-                    "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
-                    rolActivo === "PROPIETARIA" && "bg-primary/20 text-white font-bold",
-                  )}
-                >
-                  Propietaria
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onCambiarRol("PROFESORA")}
-                  className={cn(
-                    "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
-                    rolActivo === "PROFESORA" && "bg-primary/20 text-white font-bold",
-                  )}
-                >
-                  Profesora
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <span className="text-sm font-extrabold text-white">MiFR Centro</span>
-          )}
         </div>
+        <SidebarTrigger className="-ml-0.5 size-8 min-h-8 rounded-lg text-slate-600 hover:text-slate-900 max-md:ml-0 max-md:text-white max-md:hover:bg-white/10 dark:text-slate-300 dark:hover:text-white [&_svg]:size-5" />
+        <Separator orientation="vertical" className="h-4 hidden md:block" />
+        {!tieneLosDos && (
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="text-sm font-extrabold text-white">MiFR Centro</span>
+          </div>
+        )}
         <MigasDePan migas={migas} />
       </div>
       {centro}
+      {!centro && tieneLosDos && (
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Cambiar vista de rol"
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-colors cursor-pointer"
+              >
+                <span>{rolActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
+                <ChevronDown className="size-4 shrink-0 text-slate-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
+              <DropdownMenuItem
+                onClick={() => onCambiarRol("PROPIETARIA")}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+                  rolActivo === "PROPIETARIA" && "bg-primary/20 text-white font-bold",
+                )}
+              >
+                Propietaria
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onCambiarRol("PROFESORA")}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-white/10 hover:text-white",
+                  rolActivo === "PROFESORA" && "bg-primary/20 text-white font-bold",
+                )}
+              >
+                Profesora
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
       <div className="flex flex-1 shrink-0 items-center justify-end gap-2">
         <div className="max-md:hidden">
           <CampanaNotificaciones />

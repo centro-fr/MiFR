@@ -232,8 +232,8 @@ export function TomaDeAsistencia({ datos, volver, propietaria, guardando, error,
       <EnlaceVolver to={volver}>Volver a mis clases</EnlaceVolver>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[22px] leading-7 font-extrabold tracking-tight">{clase.horario.actividad.nombre}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{clase.horario.actividad.nombre}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {esHoy ? "Hoy" : "El día de la clase"} de {rangoHorario(clase)}
           </p>
         </div>
@@ -286,7 +286,7 @@ export function TomaDeAsistencia({ datos, volver, propietaria, guardando, error,
       {abierta && (
         <>
           <p className="text-xs text-muted-foreground">
-            Se guarda al tocar. Si no la cerrás, se cierra sola un rato después de terminar la clase.
+            Se guarda al tocar. Si no se marca nada, se pondrán todos como presentes. Si no la cerrás, se cierra sola un rato después de terminar la clase.
           </p>
           <ConfirmarCierre sinMarcar={sinMarcar} guardando={guardando} alConfirmar={alCerrar} />
         </>

@@ -30,7 +30,7 @@ import { fechaActualArgentina } from "@/utils/fecha";
 import { BOTON_MODAL, BOTON_MODAL_PRINCIPAL, CABECERA_MODAL, DESCRIPCION_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 
 const CONTROL =
-  "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
+  "min-h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
 const ETIQUETA = "text-sm font-bold text-slate-800 dark:text-slate-200";
 
 interface TextosDelAlcance {

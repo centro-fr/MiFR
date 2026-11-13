@@ -47,7 +47,7 @@ export function OwnerDashboardPage() {
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             {saludoSegunHorario(user?.nombre)}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Resumen al {diaDeHoy()}</p>
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">Resumen al {diaDeHoy()}</p>
         </header>
 
         <IndicadoresDashboard />

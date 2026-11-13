@@ -52,10 +52,19 @@ export function etiquetaDelPlan(plan: PlanDelAlumno): string {
   return plan.actividades.length > 0 ? plan.actividades.join(" + ") : plan.nombre;
 }
 
+/** Devuelve el estado de cuota más urgente entre los planes distintos al elegido. */
+export function estadoAlertaOtroPlan(
+  planes: PlanDelAlumno[],
+  idElegido?: number,
+): PlanDelAlumno["estado_cuota"] {
+  const otros = planes.filter((p) => p.id_inscripcion !== idElegido);
+  if (otros.some((p) => p.estado_cuota === "VENCIDA")) return "VENCIDA";
+  if (otros.some((p) => p.estado_cuota === "EN_GRACIA")) return "EN_GRACIA";
+  return "AL_DIA";
+}
+
 /** Indica si algún otro plan (distinto al elegido) tiene cuota por vencer o vencida. */
 export function hayOtroPlanConAlerta(planes: PlanDelAlumno[], idElegido?: number): boolean {
-  return planes.some(
-    (p) => p.id_inscripcion !== idElegido && (p.estado_cuota === "VENCIDA" || p.estado_cuota === "EN_GRACIA"),
-  );
+  return estadoAlertaOtroPlan(planes, idElegido) !== "AL_DIA";
 }
 

@@ -252,16 +252,20 @@ export function RankingSeccion({ alumno }: { alumno?: AlumnoVisto }) {
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <div role="group" aria-label="Tipo de ranking" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div
+          role="group"
+          aria-label="Tipo de ranking"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-card p-1 dark:border-slate-700"
+        >
           <button
             type="button"
             aria-pressed={tipoRanking === "mensual"}
             onClick={() => setTipoRanking("mensual")}
             className={cn(
-              "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+              "h-9 rounded-md px-3 text-sm font-semibold transition-colors md:h-7",
               tipoRanking === "mensual"
-                ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+                ? "bg-slate-100 text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white",
             )}
           >
             Mensual
@@ -271,10 +275,10 @@ export function RankingSeccion({ alumno }: { alumno?: AlumnoVisto }) {
             aria-pressed={tipoRanking === "anual"}
             onClick={() => setTipoRanking("anual")}
             className={cn(
-              "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+              "h-9 rounded-md px-3 text-sm font-semibold transition-colors md:h-7",
               tipoRanking === "anual"
-                ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
+                ? "bg-slate-100 text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white",
             )}
           >
             Anual

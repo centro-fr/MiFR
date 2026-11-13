@@ -206,7 +206,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                         }}
                         placeholder="33000"
                         className={cn(
-                          "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                          "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
                           errores.precio && "border-rose-500",
                         )}
                       />
@@ -233,7 +233,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                           setErrores((actuales) => ({ ...actuales, fecha_vigencia_desde: undefined }));
                         }}
                         className={cn(
-                          "h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
+                          "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
                           errores.fecha_vigencia_desde && "border-rose-500",
                         )}
                       />
@@ -258,7 +258,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                     value={nota}
                     onChange={(e) => setNota(e.target.value)}
                     placeholder="Ej: aumento de noviembre"
-                    className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                    className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                   />
                 </div>
 

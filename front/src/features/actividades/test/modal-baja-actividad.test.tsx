@@ -13,7 +13,7 @@ describe('US-03: ModalBajaActividad', () => {
     activa: true
   };
 
-  test('Debe llamar a onConfirm y NO llamar a onClose al hacer clic en Confirmar baja', () => {
+  test('Debe llamar a onConfirm y NO llamar a onClose al hacer clic en Dar de baja', () => {
     const mockOnConfirm = vi.fn();
     const mockOnClose = vi.fn();
 
@@ -27,7 +27,7 @@ describe('US-03: ModalBajaActividad', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar baja/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dar de baja' }));
 
     expect(mockOnConfirm).toHaveBeenCalledOnce();
     expect(mockOnClose).not.toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe('US-03: ModalBajaActividad', () => {
     expect(screen.getByText(mensajeError)).toBeInTheDocument();
   });
 
-  test('Debe deshabilitar el botón y mostrar "Dando de baja..." mientras dandoDeBaja sea true', () => {
+  test('Debe deshabilitar el botón y mostrar "Dando de baja…" mientras dandoDeBaja sea true', () => {
     render(
       <ModalBajaActividad 
         actividad={actividadFalsa}
@@ -60,7 +60,7 @@ describe('US-03: ModalBajaActividad', () => {
       />
     );
 
-    const boton = screen.getByRole('button', { name: /Dando de baja\.\.\./i });
+    const boton = screen.getByRole('button', { name: 'Dando de baja…' });
     expect(boton).toBeDisabled();
   });
 

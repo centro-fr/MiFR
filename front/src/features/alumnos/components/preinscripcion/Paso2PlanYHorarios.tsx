@@ -395,7 +395,7 @@ export function Paso2PlanYHorarios({
           max={limitesFecha.max}
           value={fechaInicio}
           onChange={onChangeFechaInicio}
-          className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
+          className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
         />
       </div>
     </div>

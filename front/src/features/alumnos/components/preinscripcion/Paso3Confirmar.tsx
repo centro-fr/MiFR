@@ -277,7 +277,7 @@ export function Paso3Confirmar({
                     monto: Number(e.target.value),
                   })
                 }
-                className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
+                className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Precio del plan: ${precioPlan.toLocaleString("es-AR")}
@@ -304,7 +304,7 @@ export function Paso3Confirmar({
                         monto: Number(e.target.value),
                       })
                     }
-                    className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
+                    className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Precio del plan: ${precioPlan.toLocaleString("es-AR")}
@@ -325,7 +325,7 @@ export function Paso3Confirmar({
                         fechaHoraTransferencia: e.target.value,
                       })
                     }
-                    className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
+                    className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
                   />
                 </div>
               </div>
@@ -344,7 +344,7 @@ export function Paso3Confirmar({
                       titularCuenta: e.target.value,
                     })
                   }
-                  className="h-11 rounded-xl border-slate-200 dark:border-slate-800"
+                  className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
                 />
               </div>
             </div>

@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { apiClient } from "@/api/client";
+import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
@@ -27,6 +31,11 @@ const PESTANAS_FORMA: { id: FiltroFormaCobro; etiqueta: string }[] = [
 
 interface PanelListadoCobrosProps {
   onVerComprobante: (idPago: number) => void;
+}
+
+/** "#000123": el número del comprobante, el mismo en la tabla y en la lista del celular. */
+function numeroDeRecibo(idPago: number): string {
+  return `#${String(idPago).padStart(6, "0")}`;
 }
 
 export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps) {
@@ -153,19 +162,14 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
             />
           </div>
 
-          <button
-            type="button"
-            aria-label="Filtros adicionales"
-            onClick={() => setMostrarFiltrosMobile((v) => !v)}
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              (mostrarFiltrosMobile || hayFiltrosActivos) && "border-primary text-primary",
-            )}
-          >
-            <SlidersHorizontal className="size-4" />
-          </button>
+          <BotonFiltrosMovil
+            abierto={mostrarFiltrosMobile}
+            activos={hayFiltrosActivos}
+            onAlternar={() => setMostrarFiltrosMobile((v) => !v)}
+            idPanel="filtros-del-listado"
+          />
 
-          <div
+          <div id="filtros-del-listado"
             className={cn(
               "flex flex-wrap items-center gap-2.5 w-full xl:w-auto",
               !mostrarFiltrosMobile && "hidden xl:flex",
@@ -195,32 +199,16 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
       </section>
 
       {/* Pestañas de forma de pago para mobile */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-        {PESTANAS_FORMA.map((pestana) => {
-          const activa = filtroForma === pestana.id;
-          return (
-            <button
-              key={pestana.id}
-              type="button"
-              onClick={() => {
-                setFiltroForma(pestana.id);
-                setPagina(0);
-              }}
-              className={cn(
-                "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-                activa
-                  ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-              )}
-            >
-              <span>{pestana.etiqueta}</span>
-              <span className={cn(activa ? "text-primary font-black" : "text-slate-500")}>
-                {conteosPorForma[pestana.id]}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <PestanasFiltro
+        className="lg:hidden"
+        etiqueta="Forma de pago"
+        opciones={PESTANAS_FORMA.map((pestana) => ({ id: pestana.id, etiqueta: pestana.etiqueta, conteo: conteosPorForma[pestana.id] }))}
+        valor={filtroForma}
+        onCambiar={(id) => {
+          setFiltroForma(id);
+          setPagina(0);
+        }}
+      />
 
       {/* Tarjeta unificada de tabla con pestañas integradas en desktop */}
       <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
@@ -326,7 +314,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                       ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
                       : nombrePropietaria;
                     const textoForma = cobro.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia";
-                    const nroReciboTexto = `#${String(cobro.id_pago).padStart(6, "0")}`;
+                    const nroReciboTexto = numeroDeRecibo(cobro.id_pago);
 
                     return (
                       <tr
@@ -385,7 +373,7 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
                             variant="outline"
                             onClick={() => onVerComprobante(cobro.id_pago)}
                             aria-label={`Ver comprobante de ${nombreAlumno}`}
-                            className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                            className={BOTON_FILA}
                           >
                             Ver comprobante
                           </Button>
@@ -397,58 +385,44 @@ export function PanelListadoCobros({ onVerComprobante }: PanelListadoCobrosProps
               </table>
             </div>
 
-            <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+            <ul aria-label="Cobros" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
               {cobrosPaginados.map((cobro) => {
                 const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
-                const nombreQuienCobro = cobro.profesora_cobra
-                  ? `${cobro.profesora_cobra.nombre} ${cobro.profesora_cobra.apellido}`
-                  : nombrePropietaria;
-                const textoForma = cobro.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia";
-                const nroReciboTexto = `#${String(cobro.id_pago).padStart(6, "0")}`;
-
                 return (
-                  <div
+                  <FilaMovil
                     key={cobro.id_pago}
-                    className="flex items-center justify-between gap-3 px-4 py-3.5"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                        {inicialesDe(cobro.alumno.nombre, cobro.alumno.apellido)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        {cobro.alumno.id_alumno ? (
-                          <Link
-                            to={`/app/alumnos/${cobro.alumno.id_alumno}`}
-                            className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
-                          >
-                            {nombreAlumno}
-                          </Link>
-                        ) : (
-                          <span className="text-sm font-bold text-slate-900 dark:text-white truncate block">
-                            {nombreAlumno}
-                          </span>
-                        )}
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          {nroReciboTexto} · {cobro.plan.nombre} · {nombreQuienCobro} · {formatearFecha(cobro.fecha_pago)}
-                          {filtroForma === "TODOS" ? ` · ${textoForma}` : ""}
-                          {cobro.promocion ? ` · Promoción: ${cobro.promocion.nombre}` : ""}
-                          {` · ${formatearPrecio(cobro.monto)}`}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onVerComprobante(cobro.id_pago)}
-                      aria-label={`Ver comprobante de ${nombreAlumno}`}
-                      className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                    >
-                      Ver comprobante
-                    </Button>
-                  </div>
+                    avatar={nombreAlumno}
+                    titulo={
+                      cobro.alumno.id_alumno ? (
+                        <Link to={`/app/alumnos/${cobro.alumno.id_alumno}`} className="hover:text-primary dark:hover:text-pink-300">
+                          {nombreAlumno}
+                        </Link>
+                      ) : (
+                        nombreAlumno
+                      )
+                    }
+                    detalle={[
+                      <span key="recibo" className="tabular-nums">
+                        Recibo {numeroDeRecibo(cobro.id_pago)}
+                      </span>,
+                      cobro.plan.nombre,
+                      formatearPrecio(cobro.monto),
+                    ]}
+                    acciones={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onVerComprobante(cobro.id_pago)}
+                        aria-label={`Ver comprobante de ${nombreAlumno}`}
+                        className={BOTON_FILA}
+                      >
+                        Ver comprobante
+                      </Button>
+                    }
+                  />
                 );
               })}
-            </div>
+            </ul>
 
             {cobrosFiltrados.length > TAMANO_PAGINA && (
               <div className="p-3 border-t border-slate-100 dark:border-slate-800">

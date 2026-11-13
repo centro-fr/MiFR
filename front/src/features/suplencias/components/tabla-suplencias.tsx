@@ -1,3 +1,5 @@
+import { BOTON_FILA, BOTON_FILA_PELIGRO, LISTA_MOVIL } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,8 +19,6 @@ interface Props {
   onEliminar: (suplencia: Suplencia) => void;
 }
 
-const BOTON =
-  "h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200";
 const CABECERA = "px-4 py-3.5 font-bold text-slate-600 dark:text-slate-400";
 const CELDA = "px-4 py-4 align-middle";
 
@@ -47,16 +47,16 @@ function Acciones({
   const fecha = fechaCorta(suplencia.fechaClase.slice(0, 10));
   return (
     <div className={cn("flex justify-end gap-2", enUnaLinea ? "flex-nowrap" : "flex-wrap")}>
-      <Button type="button" variant="outline" aria-haspopup="dialog" onClick={() => onEditar(suplencia)} aria-label={`Editar la suplencia del ${fecha}`} className={BOTON}>
+      <Button type="button" variant="outline" aria-haspopup="dialog" onClick={() => onEditar(suplencia)} aria-label={`Editar la suplencia del ${fecha}`} className={BOTON_FILA}>
         Editar
       </Button>
       <Button
         type="button"
-        variant="ghost"
+        variant="outline"
         aria-haspopup="dialog"
         onClick={() => onEliminar(suplencia)}
         aria-label={`Eliminar la suplencia del ${fecha}`}
-        className="h-8 min-h-0 rounded-lg px-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        className={BOTON_FILA_PELIGRO}
       >
         Eliminar
       </Button>
@@ -70,33 +70,21 @@ export function TablaSuplencias({ suplencias, montos, editables, onEditar, onEli
     (editables && mesSigueAbierto(suplencia.fechaClase.slice(0, 7))) && suplencia.estadoClase !== "CANCELADA";
   return (
     <>
-      <ul aria-label="Suplencias del mes" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
+      <ul aria-label="Suplencias del mes" className={cn(LISTA_MOVIL, "xl:hidden")}>
         {suplencias.map((suplencia) => (
-          <li key={suplencia.idClase}>
-            <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm dark:bg-surface-low">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-muted-foreground tabular-nums">
-                    {fechaCorta(suplencia.fechaClase.slice(0, 10))} · {horario(suplencia)}
-                  </p>
-                  <p className="mt-0.5 break-words text-lg font-extrabold text-dark dark:text-white">{suplencia.actividad.nombre}</p>
-                </div>
-                {suplencia.estadoClase === "CANCELADA" && <Cancelada />}
-              </div>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">Faltó</dt>
-                <dd className="text-right">{nombreCompleto(suplencia.titular)}</dd>
-                <dt className="text-muted-foreground">La cubrió</dt>
-                <dd className="text-right font-bold">{nombreCompleto(suplencia.suplente)}</dd>
-                <dt className="text-muted-foreground">Le paga</dt>
-                <dd className="text-right font-bold tabular-nums">
-                  <Monto suplencia={suplencia} monto={montos.get(suplencia.idClase)} />
-                </dd>
-              </dl>
-              {suplencia.motivo && <p className="text-sm text-muted-foreground">{suplencia.motivo}</p>}
-              {puedeEditar(suplencia) && <Acciones suplencia={suplencia} onEditar={onEditar} onEliminar={onEliminar} />}
-            </Card>
-          </li>
+          <FilaMovil
+            key={suplencia.idClase}
+            titulo={suplencia.actividad.nombre}
+            insignia={suplencia.estadoClase === "CANCELADA" ? <Cancelada /> : undefined}
+            detalle={[
+              `${fechaCorta(suplencia.fechaClase.slice(0, 10))} · ${horario(suplencia)}`,
+              `Faltó ${nombreCompleto(suplencia.titular)}`,
+              `La cubrió ${nombreCompleto(suplencia.suplente)}`,
+              <Monto key="monto" suplencia={suplencia} monto={montos.get(suplencia.idClase)} />,
+              suplencia.motivo,
+            ]}
+            acciones={puedeEditar(suplencia) ? <Acciones suplencia={suplencia} onEditar={onEditar} onEliminar={onEliminar} /> : undefined}
+          />
         ))}
       </ul>
 

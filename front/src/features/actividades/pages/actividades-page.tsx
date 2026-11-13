@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,9 @@ import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantall
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BOTON_FILA, BOTON_FILA_PELIGRO, BOTON_FILA_REINCORPORAR, LISTA_MOVIL, clasePanelFiltros } from "@/components/ui/estilos-lista";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
 import {
   Table,
   TableBody,
@@ -41,19 +45,13 @@ function textoModalidad(modalidad: ModalidadActividad): string {
   return modalidad === "GRUPAL" ? "Grupal" : "Personalizada";
 }
 
-// Colores oficiales de front/AGENTS.md: Grupal -> azul (#3B82F6), Personalizada -> violeta (#8B5CF6)
-function badgeModalidadClase(modalidad: ModalidadActividad): string {
-  return modalidad === "GRUPAL"
-    ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300"
-    : "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300";
-}
-
 function textoCupoActividad(cupo: number | null): string {
   if (cupo === null) return "Sin límite";
   return cupo === 1 ? "1 alumno" : `${cupo} alumnos`;
 }
 
 export function ActividadesPage() {
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const { data: actividades = [], isPending, isError, error, refetch } = useActividades({ incluirBajas: true });
   const { data: horarios = [] } = useQuery({
     queryKey: HORARIOS_QUERY_KEY,
@@ -265,10 +263,10 @@ export function ActividadesPage() {
         {/* Encabezado principal */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Actividades
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+            <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
               Las clases que da el centro y cuántos alumnos entran en cada una.
             </p>
           </div>
@@ -297,10 +295,18 @@ export function ActividadesPage() {
                 placeholder="Buscar por nombre o descripción..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                className="h-10 w-full rounded-lg border-slate-200 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 shadow-2xs transition-colors focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
               />
             </div>
 
+            <BotonFiltrosMovil
+              abierto={filtrosAbiertos}
+              activos={filtroModalidad !== "TODAS"}
+              onAlternar={() => setFiltrosAbiertos((v) => !v)}
+              idPanel="filtros-actividades"
+            />
+
+            <div id="filtros-actividades" className={clasePanelFiltros(filtrosAbiertos)}>
             {/* Select Modalidad en píldora idéntico a image.png */}
             <SelectorDesplegable
               id="filtro-modalidad"
@@ -320,42 +326,21 @@ export function ActividadesPage() {
             {hayFiltrosActivos && (
               <BotonLimpiarFiltros onLimpiar={limpiarFiltros} />
             )}
+            </div>
           </div>
         </section>
 
         {/* Pestañas de estado para mobile / tablet */}
-        <div className="flex xl:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-          <button
-            type="button"
-            onClick={() => setPestana("VIGENTES")}
-            className={cn(
-              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-              pestana === "VIGENTES"
-                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-            )}
-          >
-            Vigentes{" "}
-            <span className={cn(pestana === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
-              {conteoVigentes}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPestana("BAJAS")}
-            className={cn(
-              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-              pestana === "BAJAS"
-                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-            )}
-          >
-            Dados de baja{" "}
-            <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
-              {conteoBajas}
-            </span>
-          </button>
-        </div>
+        <PestanasFiltro
+          className="xl:hidden"
+          etiqueta="Estado de las actividades"
+          opciones={[
+            { id: "VIGENTES", etiqueta: "Vigentes", conteo: conteoVigentes },
+            { id: "BAJAS", etiqueta: "Dados de baja", conteo: conteoBajas },
+          ]}
+          valor={pestana}
+          onCambiar={setPestana}
+        />
 
         {/* Contenido de lista */}
         {isPending ? (
@@ -377,98 +362,57 @@ export function ActividadesPage() {
           </div>
         ) : (
           <>
-            {/* Mobile Cards */}
+            {/* Mobile: lista de filas, como Alumnos y Cobros */}
             <div className="space-y-3 pb-8 xl:hidden">
-              <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+              <ul aria-label="Actividades" className={LISTA_MOVIL}>
                 {listaPaginada.map((actividad) => {
-                const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
-                return (
-                  <Card
-                    key={actividad.id}
-                    onClick={() => {
-                      if (actividad.activo) abrirEdicion(actividad);
-                    }}
-                    className={cn(
-                      "w-full min-w-0 overflow-hidden rounded-lg border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900 space-y-3 transition-colors hover:bg-pink-50/40 dark:hover:bg-slate-800/40",
-                      actividad.activo
-                        ? "cursor-pointer"
-                        : "opacity-70 bg-slate-50/40 dark:bg-slate-900/40",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2 min-w-0">
-                      <div className="min-w-0 flex-1">
-                        <h2 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
-                          {actividad.nombre}
-                        </h2>
-                        {actividad.descripcion && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-medium">
-                            {actividad.descripcion}
-                          </p>
-                        )}
-                      </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold shrink-0",
-                          badgeModalidadClase(actividad.modalidad),
-                        )}
-                      >
-                        {textoModalidad(actividad.modalidad)}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <div>
-                        <span className="text-slate-400 dark:text-slate-500 block font-medium">Cupo por clase</span>
-                        <span className="font-extrabold text-slate-900 dark:text-white">
-                          {textoCupoActividad(actividad.cupoMaximo)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 dark:text-slate-500 block font-medium">Horarios</span>
-                        <span className="font-extrabold text-slate-900 dark:text-white">
-                          {cantHorarios > 0 ? `${cantHorarios} por semana` : "—"}
-                        </span>
-                      </div>
-                      <div className="col-span-2 pt-1 border-t border-slate-50 dark:border-slate-800/60">
-                        <span className="text-slate-400 dark:text-slate-500 inline-block font-medium mr-2">Pide peso y talla:</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {actividad.requiereMedidas ? "Sí" : "No"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      {actividad.activo ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirEdicion(actividad);
-                          }}
-                          className="w-full h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                        >
-                          Editar
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={reactivar.isPending}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReactivar(actividad);
-                          }}
-                          className="w-full h-8 min-h-0 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
-                        >
-                          Reincorporar
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
-              </div>
+                  const cantHorarios = horariosPorActividad.get(Number(actividad.id)) ?? 0;
+                  const detalle = [
+                    textoModalidad(actividad.modalidad),
+                    `Cupo ${textoCupoActividad(actividad.cupoMaximo)}`,
+                    cantHorarios > 0 ? `${cantHorarios} horarios por semana` : "Sin horarios",
+                    actividad.requiereMedidas ? "Pide peso y talla" : null,
+                  ];
+                  return (
+                    <FilaMovil
+                      key={actividad.id}
+                      titulo={actividad.nombre}
+                      detalle={detalle}
+                      atenuada={!actividad.activo}
+                      onAbrir={actividad.activo ? () => abrirEdicion(actividad) : undefined}
+                      acciones={
+                        actividad.activo ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => abrirEdicion(actividad)} className={BOTON_FILA}>
+                              Editar
+                              <span className="sr-only"> {actividad.nombre}</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => abrirConfirmacionBaja(actividad)}
+                              className={BOTON_FILA_PELIGRO}
+                            >
+                              Dar de baja
+                              <span className="sr-only"> {actividad.nombre}</span>
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={reactivar.isPending}
+                            onClick={() => handleReactivar(actividad)}
+                            className={BOTON_FILA_REINCORPORAR}
+                          >
+                            Reincorporar
+                          </Button>
+                        )
+                      }
+                    />
+                  );
+                })}
+              </ul>
 
               {listaFiltrada.length > TAMANO_PAGINA && (
                 <PaginacionTabla
@@ -553,17 +497,32 @@ export function ActividadesPage() {
                         {/* Botón de acción */}
                         <TableCell className="px-6 py-4 text-right align-middle">
                           {actividad.activo ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                abrirEdicion(actividad);
-                              }}
-                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                            >
-                              Editar
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  abrirEdicion(actividad);
+                                }}
+                                className={BOTON_FILA}
+                              >
+                                Editar
+                                <span className="sr-only"> {actividad.nombre}</span>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  abrirConfirmacionBaja(actividad);
+                                }}
+                                className={BOTON_FILA_PELIGRO}
+                              >
+                                Dar de baja
+                                <span className="sr-only"> {actividad.nombre}</span>
+                              </Button>
+                            </div>
                           ) : (
                             <Button
                               type="button"
@@ -573,7 +532,7 @@ export function ActividadesPage() {
                                 e.stopPropagation();
                                 handleReactivar(actividad);
                               }}
-                              className="h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                              className={BOTON_FILA_REINCORPORAR}
                             >
                               Reincorporar
                             </Button>

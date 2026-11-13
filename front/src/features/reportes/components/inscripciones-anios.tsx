@@ -1,4 +1,5 @@
 import { Lightbulb } from "lucide-react";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeccionReporte, TD, TD_NUMERO, TH, TH_NUMERO } from "@/features/reportes/components/piezas-reporte";
@@ -36,24 +37,12 @@ interface PropsControles {
 function Controles({ metrica, onMetrica, anios, elegidos, anioElegido, onAlternarAnio }: PropsControles) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div role="group" aria-label="Qué comparar" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-        {(Object.keys(METRICAS) as Metrica[]).map((opcion) => (
-          <button
-            key={opcion}
-            type="button"
-            aria-pressed={opcion === metrica}
-            onClick={() => onMetrica(opcion)}
-            className={cn(
-              "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-              opcion === metrica
-                ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-            )}
-          >
-            {METRICAS[opcion].nombre}
-          </button>
-        ))}
-      </div>
+      <PestanasFiltro
+        etiqueta="Qué comparar"
+        opciones={(Object.keys(METRICAS) as Metrica[]).map((opcion) => ({ id: opcion, etiqueta: METRICAS[opcion].nombre }))}
+        valor={metrica}
+        onCambiar={onMetrica}
+      />
       <div role="group" aria-label="Años" className="flex gap-1.5">
         {anios.map((anio) => {
           const activo = elegidos.includes(anio);

@@ -113,10 +113,10 @@ function EncabezadoRutina({ alumno }: { alumno: AlumnoConsultable }) {
   const autora = vigente && nombres.get(vigente.idProfesora);
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
+      <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
         {alumno.propio ? "Tu rutina" : `Rutina de ${alumno.nombre}`}
       </h1>
-      {autora && <p className="mt-0.5 text-sm text-muted-foreground">La armó {autora}</p>}
+      {autora && <p className="mt-1.5 text-sm text-muted-foreground">La armó {autora}</p>}
     </div>
   );
 }

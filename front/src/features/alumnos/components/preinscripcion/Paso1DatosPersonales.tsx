@@ -49,7 +49,7 @@ export function Paso1DatosPersonales({
     "aria-invalid": errores[campo] ? true : undefined,
     "aria-describedby": errores[campo] ? idDelError(campo) : undefined,
     className: cn(
-      "h-11 rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-primary/20",
+      "h-10 rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-primary/20",
       className,
       errores[campo] && CLASE_CON_ERROR,
     ),

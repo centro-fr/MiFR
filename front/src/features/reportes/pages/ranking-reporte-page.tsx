@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { ListaInsignias } from "@/components/insignias/insignia-medalla";
 import { MenuExportar } from "@/components/menu-exportar";
@@ -195,51 +196,21 @@ export function RankingReportePage() {
     <PaginaReportes
       titulo="Ranking"
       subtitulo={detalle}
+      accionesEnFiltros={false}
       acciones={<MenuExportar disabled={!ranking || ranking.datos.length === 0} preparando={preparando} onExportar={(formato) => void exportar(formato)} />}
     >
       <div className="min-w-0 space-y-6">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label="Tipo de ranking" className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-            <button
-              type="button"
-              aria-pressed={tipoRanking === "mensual"}
-              onClick={() => setTipoRanking("mensual")}
-              className={cn(
-                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-                tipoRanking === "mensual"
-                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-              )}
-            >
-              Mensual
-            </button>
-            <button
-              type="button"
-              aria-pressed={tipoRanking === "anual"}
-              onClick={() => setTipoRanking("anual")}
-              className={cn(
-                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-                tipoRanking === "anual"
-                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-              )}
-            >
-              Anual
-            </button>
-            <button
-              type="button"
-              aria-pressed={tipoRanking === "general"}
-              onClick={() => setTipoRanking("general")}
-              className={cn(
-                "min-h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
-                tipoRanking === "general"
-                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-950 dark:text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
-              )}
-            >
-              General
-            </button>
-          </div>
+          <PestanasFiltro
+            etiqueta="Tipo de ranking"
+            opciones={[
+              { id: "mensual", etiqueta: "Mensual" },
+              { id: "anual", etiqueta: "Anual" },
+              { id: "general", etiqueta: "General" },
+            ]}
+            valor={tipoRanking}
+            onCambiar={setTipoRanking}
+          />
 
           {tipoRanking === "mensual" && (
             <SelectorDeMes mes={mes} mesActual={hoy.slice(0, 7)} onCambiar={setMes} />

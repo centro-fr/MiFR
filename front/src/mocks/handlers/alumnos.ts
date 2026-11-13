@@ -36,44 +36,30 @@ function alumnoDe(alumno: AlumnoMock): AlumnoApi {
   };
 }
 
+function resumenDeInscripcion(inscripcion: InscripcionMock) {
+  const resumen = inscripcionConDatos(inscripcion);
+  return {
+    id_alumno: inscripcion.id_alumno,
+    id_inscripcion: resumen.id_inscripcion,
+    estado: resumen.estado,
+    id_plan: resumen.id_plan,
+    nombre_plan: resumen.plan.nombre,
+    id_profesora: resumen.id_profesora,
+    nombre_profesora: `${resumen.profesora.usuario.nombre} ${resumen.profesora.usuario.apellido}`,
+    ids_horarios: resumen.horarios.map((h) => h.id_horario),
+  };
+}
+
 // AlumnoEnListado del back: el resumen de su inscripción vigente más reciente y su situación de
-// cuota, o null.
+// cuota, o null, y todas sus inscripciones vigentes, cada una con su situación.
 function alumnoEnListado(alumno: AlumnoMock) {
-  const [vigente] = vigentesDe(alumno.id_alumno);
-  const resumen = vigente && inscripcionConDatos(vigente);
+  const vigentes = vigentesDe(alumno.id_alumno);
+  const [vigente] = vigentes;
   return {
     ...alumnoDe(alumno),
-    inscripcion: resumen
-      ? {
-          id_alumno: alumno.id_alumno,
-          id_inscripcion: resumen.id_inscripcion,
-          estado: resumen.estado,
-          id_plan: resumen.id_plan,
-          nombre_plan: resumen.plan.nombre,
-          id_profesora: resumen.id_profesora,
-          nombre_profesora: `${resumen.profesora.usuario.nombre} ${resumen.profesora.usuario.apellido}`,
-          ids_horarios: resumen.horarios.map((h) => h.id_horario),
-        }
-      : null,
-    situacion_cuota: (() => {
-      const activas = db.inscripciones.filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "ACTIVA");
-      if (activas.length === 0) return vigente ? situacionCuotaDe(vigente) : null;
-      const prioridad = {
-        VENCIDA: 0,
-        CLASE_SUELTA_VENCIDA: 1,
-        PENDIENTE_DE_PAGO: 2,
-        POR_VENCER: 3,
-        AL_DIA: 4,
-        CLASE_SUELTA_VIGENTE: 5,
-      } as const;
-      return activas
-        .map((i) => situacionCuotaDe(i))
-        .sort((a, b) => prioridad[a.estado] - prioridad[b.estado])[0];
-    })(),
-    planes_activos: db.inscripciones
-      .filter((i) => i.id_alumno === alumno.id_alumno && i.estado === "ACTIVA")
-      .map((i) => db.planes.find((p) => p.id_plan === i.id_plan)?.nombre ?? "")
-      .filter(Boolean),
+    inscripcion: vigente ? resumenDeInscripcion(vigente) : null,
+    situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
+    inscripciones: vigentes.map((inscripcion) => ({ ...resumenDeInscripcion(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) })),
   };
 }
 

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { Can } from "@/components/guards/can";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,9 @@ import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { CrearPlanDialog } from "@/features/planes/components/crear-plan-dialog";
 import { EditarPlanDialog } from "@/features/planes/components/editar-plan-dialog";
 import { ListaPlanes, ListaPlanesCargando } from "@/features/planes/components/lista-planes";
+import { ModalBajaPlan } from "@/features/planes/components/modales-plan";
 import { ActualizarPrecioDialog, HistorialPreciosDialog } from "@/features/planes/components/precios-plan-dialogs";
-import { usePlanes, useReactivarPlan } from "@/features/planes/hooks/use-planes";
+import { useDarDeBajaPlan, usePlanes, useReactivarPlan } from "@/features/planes/hooks/use-planes";
 import { estaVigente } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { PromocionesPanel } from "@/features/promociones/components/promociones-panel";
@@ -26,10 +28,10 @@ function Encabezado({ onNuevoPlan }: { onNuevoPlan: () => void }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
           Planes
         </h1>
-        <p className="text-sm text-muted-foreground mt-1 font-medium leading-relaxed">
+        <p className="text-sm text-muted-foreground mt-1.5 font-medium leading-relaxed">
           Lo que se le ofrece a cada alumno, cuánto cuesta y las promociones del momento.
         </p>
       </div>
@@ -62,6 +64,7 @@ export function PlanesPage() {
   const enPromociones = pathname.endsWith("/promociones");
   const { data: planes, isPending, isError, error, refetch } = usePlanes();
   const reactivarMutation = useReactivarPlan();
+  const darDeBajaMutation = useDarDeBajaPlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState("");
   const [pestanaEstado, setPestanaEstado] = useState<PestanaEstadoPlan>("VIGENTES");
@@ -69,6 +72,7 @@ export function PlanesPage() {
   const [planPrecio, setPlanPrecio] = useState<Plan | null>(null);
   const [planHistorial, setPlanHistorial] = useState<Plan | null>(null);
   const [planEdicion, setPlanEdicion] = useState<Plan | null>(null);
+  const [planBaja, setPlanBaja] = useState<Plan | null>(null);
 
   const cerrarModalNuevo = () => {
     setPlanNuevo(false);
@@ -86,6 +90,17 @@ export function PlanesPage() {
         toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar el plan."));
       },
     });
+  };
+
+  const confirmarBajaPlan = async () => {
+    if (!planBaja) return;
+    try {
+      await darDeBajaMutation.mutateAsync(planBaja.id);
+      toast.info(`Plan "${planBaja.nombre}" dado de baja`);
+      setPlanBaja(null);
+    } catch {
+      // El error se muestra en el modal de baja
+    }
   };
 
   const todosLosPlanes = useMemo(() => planes ?? [], [planes]);
@@ -194,38 +209,16 @@ export function PlanesPage() {
             </section>
 
             {/* Pestañas de estado para mobile */}
-            <div className="flex lg:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-              <button
-                type="button"
-                onClick={() => setPestanaEstado("VIGENTES")}
-                className={cn(
-                  "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-                  pestanaEstado === "VIGENTES"
-                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-                )}
-              >
-                Vigentes{" "}
-                <span className={cn(pestanaEstado === "VIGENTES" ? "text-primary font-black" : "text-slate-500")}>
-                  {planesVigentes.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPestanaEstado("BAJAS")}
-                className={cn(
-                  "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-                  pestanaEstado === "BAJAS"
-                    ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-                )}
-              >
-                Dados de baja{" "}
-                <span className={cn(pestanaEstado === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
-                  {planesBaja.length}
-                </span>
-              </button>
-            </div>
+            <PestanasFiltro
+              className="lg:hidden"
+              etiqueta="Estado de los planes"
+              opciones={[
+                { id: "VIGENTES", etiqueta: "Vigentes", conteo: planesVigentes.length },
+                { id: "BAJAS", etiqueta: "Dados de baja", conteo: planesBaja.length },
+              ]}
+              valor={pestanaEstado}
+              onCambiar={setPestanaEstado}
+            />
 
             {isPending ? (
               <ListaPlanesCargando />
@@ -275,6 +268,10 @@ export function PlanesPage() {
                 onActualizarPrecio={setPlanPrecio}
                 onEditarPlan={setPlanEdicion}
                 onVerHistorial={setPlanHistorial}
+                onDarDeBajaPlan={(plan) => {
+                  darDeBajaMutation.reset();
+                  setPlanBaja(plan);
+                }}
                 onReactivarPlan={handleReactivarPlan}
                 reactivandoPlan={reactivarMutation.isPending}
               />
@@ -299,6 +296,15 @@ export function PlanesPage() {
               plan={planEdicion}
               onClose={() => setPlanEdicion(null)}
             />
+            {planBaja && (
+              <ModalBajaPlan
+                nombre={planBaja.nombre}
+                dandoDeBaja={darDeBajaMutation.isPending}
+                error={darDeBajaMutation.isError ? mensajeDeErrorApi(darDeBajaMutation.error, "No se pudo dar de baja el plan.") : null}
+                onClose={() => setPlanBaja(null)}
+                onConfirm={() => void confirmarBajaPlan()}
+              />
+            )}
           </>
         )}
       </div>

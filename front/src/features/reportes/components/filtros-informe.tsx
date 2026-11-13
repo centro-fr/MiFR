@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
+import { useAccionesReportes } from "@/features/reportes/components/pagina-reportes";
 import { BuscadorAlumno, type AlumnoElegido } from "@/features/reportes/components/buscador-alumno";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { BotonLimpiarFiltros } from "@/features/reportes/components/piezas-reporte";
@@ -13,7 +15,7 @@ import { fechaActualArgentina } from "@/utils/fecha";
 // resto de los reportes. El período se aplica recién cuando las dos fechas son válidas.
 
 const CONTROL =
-  "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer";
+  "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer";
 const CONTROL_FECHA = cn(CONTROL, "pr-11 md:text-sm font-semibold");
 const ETIQUETA = "text-xs font-bold text-slate-700 dark:text-slate-300";
 const FECHA_COMPLETA = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,6 +52,8 @@ export function FiltrosInforme({ onAplicar }: PropsFiltros) {
   const actividades = useActividadesParaFiltro();
   const error = problemaDelPeriodo(borrador);
   const hayFiltros = JSON.stringify(borrador) !== JSON.stringify(borradorInicial(hoy));
+  const [abierto, setAbierto] = useState(false);
+  const idPanel = useId();
 
   function aplicar(siguiente: Borrador) {
     setBorrador(siguiente);
@@ -75,113 +79,121 @@ export function FiltrosInforme({ onAplicar }: PropsFiltros) {
   }
 
   const cambiar = (cambios: Partial<Borrador>) => aplicar({ ...borrador, ...cambios });
+  const acciones = useAccionesReportes();
 
   return (
     <div role="group" aria-label="Filtros del informe" className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="informe-desde" className={ETIQUETA}>
-            Desde
-          </label>
-          <CampoFecha
-            id="informe-desde"
-            etiquetaCalendario="Abrir calendario para el inicio del período"
-            max={hoy}
-            value={borrador.desde}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? "informe-periodo-error" : undefined}
-            onChange={(desde) => cambiar({ desde })}
-            className={CONTROL_FECHA}
-          />
+      <div className="flex items-center justify-between gap-3 xl:hidden">
+        <BotonFiltrosMovil abierto={abierto} activos={hayFiltros} onAlternar={() => setAbierto((v) => !v)} idPanel={idPanel} conTexto />
+        {acciones && <div className="flex shrink-0 items-center gap-2 [&_button]:h-10 [&_button]:min-h-0 [&_button]:grow-0">{acciones}</div>}
+      </div>
+      <div id={idPanel} className={cn("space-y-4", !abierto && "hidden xl:block")}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="informe-desde" className={ETIQUETA}>
+              Desde
+            </label>
+            <CampoFecha
+              id="informe-desde"
+              etiquetaCalendario="Abrir calendario para el inicio del período"
+              max={hoy}
+              value={borrador.desde}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "informe-periodo-error" : undefined}
+              onChange={(desde) => cambiar({ desde })}
+              className={CONTROL_FECHA}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="informe-hasta" className={ETIQUETA}>
+              Hasta
+            </label>
+            <CampoFecha
+              id="informe-hasta"
+              etiquetaCalendario="Abrir calendario para el fin del período"
+              value={borrador.hasta}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "informe-periodo-error" : undefined}
+              onChange={(hasta) => cambiar({ hasta })}
+              className={CONTROL_FECHA}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="informe-profesora" className={ETIQUETA}>
+              Profesor/a
+            </label>
+            <SelectorDesplegable
+              id="informe-profesora"
+              aria-label="Profesor/a"
+              valor={borrador.idProfesora}
+              todos="Todo el equipo"
+              opciones={
+                profesoras.data?.map((p) => ({
+                  valor: String(p.id),
+                  texto: `${p.nombre} ${p.apellido}`,
+                })) ?? []
+              }
+              onChange={(val) => cambiar({ idProfesora: val })}
+              variante="formulario"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="informe-actividad" className={ETIQUETA}>
+              Actividad
+            </label>
+            <SelectorDesplegable
+              id="informe-actividad"
+              aria-label="Actividad"
+              valor={borrador.idActividad}
+              todos="Todas las actividades"
+              opciones={
+                actividades.data?.map((a) => ({
+                  valor: String(a.id),
+                  texto: a.nombre,
+                })) ?? []
+              }
+              onChange={(val) => cambiar({ idActividad: val })}
+              variante="formulario"
+            />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
+            <label htmlFor="informe-alumno" className={ETIQUETA}>
+              Alumno (opcional)
+            </label>
+            <BuscadorAlumno
+              id="informe-alumno"
+              elegido={borrador.alumno}
+              onElegir={(alumno) => cambiar({ alumno })}
+              className={CONTROL}
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="informe-hasta" className={ETIQUETA}>
-            Hasta
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <input
+              type="checkbox"
+              checked={borrador.incluirBajas}
+              onChange={(evento) => cambiar({ incluirBajas: evento.target.checked })}
+              className="size-4.5 rounded shrink-0 accent-primary"
+            />
+            Incluir alumnos dados de baja
           </label>
-          <CampoFecha
-            id="informe-hasta"
-            etiquetaCalendario="Abrir calendario para el fin del período"
-            value={borrador.hasta}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? "informe-periodo-error" : undefined}
-            onChange={(hasta) => cambiar({ hasta })}
-            className={CONTROL_FECHA}
-          />
-        </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="informe-profesora" className={ETIQUETA}>
-            Profesor/a
-          </label>
-          <SelectorDesplegable
-            id="informe-profesora"
-            aria-label="Profesor/a"
-            valor={borrador.idProfesora}
-            todos="Todo el equipo"
-            opciones={
-              profesoras.data?.map((p) => ({
-                valor: String(p.id),
-                texto: `${p.nombre} ${p.apellido}`,
-              })) ?? []
-            }
-            onChange={(val) => cambiar({ idProfesora: val })}
-            variante="formulario"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="informe-actividad" className={ETIQUETA}>
-            Actividad
-          </label>
-          <SelectorDesplegable
-            id="informe-actividad"
-            aria-label="Actividad"
-            valor={borrador.idActividad}
-            todos="Todas las actividades"
-            opciones={
-              actividades.data?.map((a) => ({
-                valor: String(a.id),
-                texto: a.nombre,
-              })) ?? []
-            }
-            onChange={(val) => cambiar({ idActividad: val })}
-            variante="formulario"
-          />
-        </div>
-
-        <div className="sm:col-span-2 lg:col-span-4 flex flex-col gap-1.5">
-          <label htmlFor="informe-alumno" className={ETIQUETA}>
-            Alumno (opcional)
-          </label>
-          <BuscadorAlumno
-            id="informe-alumno"
-            elegido={borrador.alumno}
-            onElegir={(alumno) => cambiar({ alumno })}
-            className={CONTROL}
-          />
+          <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={() => aplicar(borradorInicial(hoy))} />
         </div>
       </div>
 
+      {/* Fuera del panel: con los filtros cerrados en el celular, el aviso del período se sigue viendo. */}
       {error && (
         <p id="informe-periodo-error" role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
           {error}
         </p>
       )}
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-          <input
-            type="checkbox"
-            checked={borrador.incluirBajas}
-            onChange={(evento) => cambiar({ incluirBajas: evento.target.checked })}
-            className="size-4.5 rounded shrink-0 accent-primary"
-          />
-          Incluir alumnos dados de baja
-        </label>
-
-        <BotonLimpiarFiltros hayFiltros={hayFiltros} onLimpiar={() => aplicar(borradorInicial(hoy))} />
-      </div>
     </div>
   );
 }

@@ -154,7 +154,7 @@ function Saludo({ panel }: { panel: PanelAlumno }) {
   const ganadas = insignias.data?.insignias.filter((insignia) => insignia.obtenida) ?? [];
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
+      <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
         {saludoSegunHorario(user?.nombre ?? panel.alumno.nombre)}
       </h1>
       {propio && ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}

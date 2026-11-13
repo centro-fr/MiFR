@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
+import { Button } from "@/components/ui/button";
+import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { cn } from "@/utils/cn";
 import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
+import type { PagoApi } from "@/features/cobros/schemas/cobro-efectivo.schema";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import { formatearPrecio } from "@/utils/moneda";
 import { formatearFechaCobro } from "@/features/cobros/utils/formato-cobros";
@@ -11,10 +16,27 @@ interface Props {
   alumno: AlumnoDetalle;
 }
 
+// El pago trae el plan; si no (pagos de la sesión o un back anterior), se lo busca entre las
+// inscripciones de la ficha.
+function planDelPago(pago: PagoApi, planesPorInscripcion: Map<number, string>): string {
+  if (pago.nombre_plan) return pago.nombre_plan;
+  return (pago.id_inscripcion !== undefined && planesPorInscripcion.get(pago.id_inscripcion)) || "—";
+}
+
 export function HistorialCobrosAlumno({ alumno }: Props) {
   const { data: pagos = [], isLoading, isError, error, isFetching, refetch } = useHistorialPagos({
     idAlumno: alumno.id_alumno,
   });
+  const planesPorInscripcion = useMemo(
+    () =>
+      new Map(
+        [...alumno.inscripciones, ...alumno.inscripciones_de_la_baja].map((inscripcion) => [
+          inscripcion.id_inscripcion,
+          inscripcion.plan.nombre,
+        ]),
+      ),
+    [alumno.inscripciones, alumno.inscripciones_de_la_baja],
+  );
 
   const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<number | null>(null);
 
@@ -47,7 +69,27 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul aria-label="Cobros del alumno" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
+            {pagos.map((pago) => (
+              <FilaMovil
+                key={pago.id_pago}
+                titulo={`#${String(pago.id_pago).padStart(6, "0")} · ${formatearPrecio(pago.monto)}`}
+                detalle={[
+                  formatearFechaCobro(pago.fecha_pago),
+                  planDelPago(pago, planesPorInscripcion),
+                  pago.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia",
+                  !pago.rendido && pago.forma_pago === "EFECTIVO" ? "Pendiente de rendición" : null,
+                ]}
+                acciones={
+                  <Button type="button" variant="outline" onClick={() => setComprobanteSeleccionado(pago.id_pago)} className={BOTON_FILA}>
+                    Ver recibo
+                  </Button>
+                }
+              />
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
@@ -56,6 +98,9 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
                   </th>
                   <th scope="col" className="px-4 py-3.5">
                     Fecha
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Plan
                   </th>
                   <th scope="col" className="px-4 py-3.5">
                     Forma de pago
@@ -82,6 +127,9 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-600 dark:text-slate-300">
                       {formatearFechaCobro(pago.fecha_pago)}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {planDelPago(pago, planesPorInscripcion)}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
                       {pago.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia"}
@@ -117,6 +165,7 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

@@ -124,7 +124,7 @@ export function ConfirmarBajaMedicion({ idAlumno, medicion, onClose }: PropsBaja
   return (
     <Confirmacion
       abierto={medicion !== null}
-      titulo="¿Dar de baja la medición?"
+      titulo="¿Seguro que desea realizar la baja?"
       descripcion={
         <>
           {medicion && <LaMedicion medicion={medicion} />}

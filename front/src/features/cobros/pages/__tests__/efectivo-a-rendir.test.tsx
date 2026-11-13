@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -165,7 +165,7 @@ describe("PanelEfectivoARendir (US-19)", () => {
     expect(screen.getAllByText("Hace 18 d")[0]).toBeInTheDocument();
   });
 
-  it("registra la rendición directamente al hacer clic en 'Rendir' en un cobro sin abrir modal", async () => {
+  it("registra la rendición de un cobro después de confirmarla", async () => {
     mockMutateRendirCobro.mockResolvedValueOnce({
       rendidos: [101],
       cantidad: 1,
@@ -180,7 +180,9 @@ describe("PanelEfectivoARendir (US-19)", () => {
     })[0];
     fireEvent.click(botonRendirIndividual);
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Rendir pasa el efectivo a caja: primero se confirma.
+    expect(mockMutateRendirCobro).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rendir" }));
 
     await waitFor(() => {
       expect(mockMutateRendirCobro).toHaveBeenCalledWith(

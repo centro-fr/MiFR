@@ -163,8 +163,8 @@ export function inscripcionesSemilla(): InscripcionMock[] {
     // Benjamín López, segundo menor a cargo de Mariana López.
     inscripcion(28, { id_alumno: 28, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 9),
     // Segundo plan vigente para probar selector de planes (alumno 3 y menor 28 de tutora).
-    inscripcion(29, { id_alumno: 3, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 32),
-    inscripcion(30, { id_alumno: 28, id_plan: 5, id_profesora: 2, ids_horarios: [26, 27], estado: "ACTIVA" }, 10),
+    inscripcion(34, { id_alumno: 3, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 32),
+    inscripcion(35, { id_alumno: 28, id_plan: 5, id_profesora: 2, ids_horarios: [26, 27], estado: "ACTIVA" }, 10),
     // Alumnos que además son tutores (Carlos y Paula) y la hija de Paula.
     inscripcion(29, { id_alumno: 29, id_plan: 2, id_profesora: 1, ids_horarios: [1, 3, 5], estado: "ACTIVA" }, 12),
     inscripcion(30, { id_alumno: 30, id_plan: 1, id_profesora: 2, ids_horarios: [22, 24], estado: "ACTIVA" }, 6),
@@ -255,10 +255,12 @@ function transferenciaResuelta(datos: DatosTransferencia, resolucion: Pick<PagoM
 
 // US-17: una por cada tramo del plazo (más de 24 h, entre 12 y 24 h, menos de 12 h), una con un
 // monto distinto del precio vigente, una primera cuota (da el alta definitiva al aprobarla) y dos
-// ya resueltas. Valentina (3) también tiene una rechazada: no cuenta como cuota paga.
+// ya resueltas. Valentina (3) también tiene una rechazada: no cuenta como cuota paga, y otra pendiente
+// por su segundo plan (34): la bandeja muestra una fila por plan.
 function transferenciasSemilla(): PagoMock[] {
   return [
     transferenciaPendiente({ id_pago: 8, id_inscripcion: 3, monto: PRECIOS[1], horasDesdeLaCarga: 26, titular_cuenta_origen: "Herrera Valentina" }),
+    transferenciaPendiente({ id_pago: 13, id_inscripcion: 34, monto: PRECIOS[0], horasDesdeLaCarga: 20, titular_cuenta_origen: "Herrera Valentina" }),
     transferenciaPendiente({
       id_pago: 9,
       id_inscripcion: 4,

@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
 import { Button } from "@/components/ui/button";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +55,7 @@ function BotonAccion({ item, onAccion }: { item: PendientePorVerificar; onAccion
       variant="outline"
       onClick={onAccion}
       aria-label={`${accionDe(item)}: ${item.alumno}`}
-      className="min-h-11 w-22 shrink-0 rounded-lg px-3 text-xs font-bold pointer-fine:min-h-9"
+      className={BOTON_FILA}
     >
       {accionDe(item)}
     </Button>
@@ -67,7 +69,8 @@ function Tabla({ items, onAccion }: { items: PendientePorVerificar[]; onAccion: 
         <tr>
           <th scope="col" className="px-6 py-3.5">Alumno</th>
           <th scope="col" className="px-4 py-3.5">A verificar</th>
-          <th scope="col" className="px-4 py-3.5">Cuota / Plan</th>
+          <th scope="col" className="px-4 py-3.5">Plan</th>
+          <th scope="col" className="px-4 py-3.5">Cuota</th>
           <th scope="col" className="px-4 py-3.5">Fecha</th>
           <th scope="col" className="px-4 py-3.5">Monto</th>
           <th scope="col" className="px-6 py-3.5 text-right">Acciones</th>
@@ -88,7 +91,8 @@ function Tabla({ items, onAccion }: { items: PendientePorVerificar[]; onAccion: 
               </div>
             </td>
             <td className="px-4 py-3.5 font-medium text-slate-700 dark:text-slate-200">{item.concepto}</td>
-            <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">{item.cuotaOPlan ?? "—"}</td>
+            <td className="px-4 py-3.5 font-medium text-slate-700 dark:text-slate-200">{item.plan ?? "—"}</td>
+            <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">{item.cuota}</td>
             <td className="px-4 py-3.5 text-slate-600 tabular-nums first-letter:uppercase dark:text-slate-300">{item.cuando ?? "—"}</td>
             <td className="px-4 py-3.5 font-bold tabular-nums text-slate-900 dark:text-white">{formatearPrecio(item.monto)}</td>
             <td className="px-6 py-3.5 text-right">
@@ -103,15 +107,19 @@ function Tabla({ items, onAccion }: { items: PendientePorVerificar[]; onAccion: 
 
 function Fila({ item, onAccion }: { item: PendientePorVerificar; onAccion: () => void }) {
   return (
-    <li className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-b-0 dark:border-slate-800">
-      <Iniciales nombre={item.alumno} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{item.alumno}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{item.detalle}</p>
-      </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900 dark:text-white">{formatearPrecio(item.monto)}</span>
-      <BotonAccion item={item} onAccion={onAccion} />
-    </li>
+    <FilaMovil
+      avatar={item.alumno}
+      titulo={item.alumno}
+      detalle={[
+        item.concepto,
+        [item.plan, item.cuota].filter(Boolean).join(" · "),
+        item.cuando,
+        <span key="monto" className="font-semibold tabular-nums text-slate-700 dark:text-slate-200">
+          {formatearPrecio(item.monto)}
+        </span>,
+      ]}
+      acciones={<BotonAccion item={item} onAccion={onAccion} />}
+    />
   );
 }
 
@@ -152,7 +160,7 @@ export function BandejaPorVerificar({ bandeja, limite, variante = "lista" }: Pro
   const abrir = (item: PendientePorVerificar) =>
     item.tipo === "TRANSFERENCIA" ? verificar.abrir(item.transferencia) : cobrar.abrir(item.alta);
   const lista = (
-    <ul aria-label="Pagos por verificar" className={cn(variante === "tabla" && "px-4 lg:hidden")}>
+    <ul aria-label="Pagos por verificar" className={cn(LISTA_MOVIL_EN_TARJETA, variante === "tabla" && "lg:hidden")}>
       {visibles.map((item) => (
         <Fila key={item.clave} item={item} onAccion={() => abrir(item)} />
       ))}

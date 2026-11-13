@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Search,
-  SlidersHorizontal,
 } from "lucide-react";
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { usePanelActivo } from "@/components/layout/use-panel-activo";
 import { Input } from "@/components/ui/input";
+import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
@@ -324,10 +327,10 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
       {/* ENCABEZADO */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl xl:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
             {tituloSeccion}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-normal">
             {descripcionSeccion}
           </p>
         </div>
@@ -358,20 +361,15 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
               </div>
 
               {/* Botón de filtros para mobile */}
-              <button
-                type="button"
-                aria-label="Filtros adicionales"
-                onClick={() => setMostrarFiltrosMobile((v) => !v)}
-                className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-                  (mostrarFiltrosMobile || hayFiltrosCuotasActivos) && "border-primary text-primary",
-                )}
-              >
-                <SlidersHorizontal className="size-4" />
-              </button>
+              <BotonFiltrosMovil
+                abierto={mostrarFiltrosMobile}
+                activos={hayFiltrosCuotasActivos}
+                onAlternar={() => setMostrarFiltrosMobile((v) => !v)}
+                idPanel="filtros-del-listado"
+              />
 
               {/* Selects secundarios en píldoras */}
-              <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+              <div id="filtros-del-listado" className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
                 <SelectorDesplegable
                   id="filtro-plan-cobros"
                   etiqueta="Plan"
@@ -408,35 +406,13 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
           </section>
 
           {/* Pestañas de estado para mobile */}
-          <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-            {PESTANAS_CUOTA.map((pestana) => {
-              const activa = filtroCuota === pestana.id;
-              const conteo = conteosPorCuota[pestana.id];
-
-              return (
-                <button
-                  key={pestana.id}
-                  type="button"
-                  onClick={() =>
-                    setFiltroCuota(
-                      pestana.id !== "TODOS" && filtroCuota === pestana.id ? "TODOS" : pestana.id,
-                    )
-                  }
-                  className={cn(
-                    "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-                    activa
-                      ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-                  )}
-                >
-                  <span>{pestana.etiqueta}</span>
-                  <span className={cn(activa ? "text-primary font-black" : "text-slate-500")}>
-                    {conteo}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <PestanasFiltro
+            className="lg:hidden"
+            etiqueta="Estado de la cuota"
+            opciones={PESTANAS_CUOTA.map((pestana) => ({ id: pestana.id, etiqueta: pestana.etiqueta, conteo: conteosPorCuota[pestana.id] }))}
+            valor={filtroCuota}
+            onCambiar={(id) => setFiltroCuota(id !== "TODOS" && filtroCuota === id ? "TODOS" : id)}
+          />
 
           {/* TABLA DE CUOTAS */}
           {cargandoAlumnos ? (
@@ -599,7 +575,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                                     variant="outline"
                                     onClick={() => abrirCobro(alumno, "EFECTIVO")}
                                     aria-label={`Cobrar Efectivo de ${nombreCompleto}`}
-                                    className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                    className={BOTON_FILA}
                                   >
                                     Cobrar Efectivo
                                   </Button>
@@ -608,7 +584,7 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                                     variant="outline"
                                     onClick={() => abrirCobro(alumno, "TRANSFERENCIA")}
                                     aria-label={`Cobrar Transferencia de ${nombreCompleto}`}
-                                    className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                                    className={BOTON_FILA}
                                   >
                                     Cobrar Transferencia
                                   </Button>
@@ -621,62 +597,55 @@ function PanelDeCobros({ soloACargo, idProfesoraACargo }: PanelDeCobrosProps) {
                     </table>
                   </div>
 
-                  {/* Mobile Rows */}
-                  <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+                  {/* Mobile Rows: contenido arriba, acciones abajo */}
+                  <ul aria-label="Cuotas a cobrar" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
                     {alumnosFiltrados.map((alumno) => {
                       const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`;
-                      const vencimientoCorto = formatearFechaCorta(
-                        alumno.situacion_cuota?.fecha_vencimiento
-                      );
+                      const vencimientoCorto = formatearFechaCorta(alumno.situacion_cuota?.fecha_vencimiento);
                       const estadoTexto = etiquetaEstadoCuota(alumno.situacion_cuota?.estado);
+                      const detalle = [
+                        alumno.nombre_plan,
+                        `Vence ${vencimientoCorto}`,
+                        formatearPrecio(alumno.precio_vigente),
+                        filtroCuota === "TODOS" ? estadoTexto : null,
+                      ];
 
                       return (
-                        <div
+                        <FilaMovil
                           key={alumno.id_alumno}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                              {inicialesDe(alumno.nombre, alumno.apellido)}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <Link
-                                to={`/app/alumnos/${alumno.id_alumno}`}
-                                className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
+                          avatar={nombreCompleto}
+                          titulo={
+                            <Link to={`/app/alumnos/${alumno.id_alumno}`} className="hover:text-primary dark:hover:text-pink-300">
+                              {nombreCompleto}
+                            </Link>
+                          }
+                          detalle={detalle}
+                          acciones={
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => abrirCobro(alumno, "EFECTIVO")}
+                                aria-label={`Cobrar Efectivo de ${nombreCompleto}`}
+                                className={BOTON_FILA}
                               >
-                                {nombreCompleto}
-                              </Link>
-                              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                                {alumno.nombre_plan} · Vence {vencimientoCorto} · {formatearPrecio(alumno.precio_vigente)}
-                                {filtroCuota === "TODOS" && estadoTexto ? ` · ${estadoTexto}` : ""}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => abrirCobro(alumno, "EFECTIVO")}
-                              aria-label={`Cobrar Efectivo de ${nombreCompleto}`}
-                              className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                            >
-                              Cobrar Efectivo
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => abrirCobro(alumno, "TRANSFERENCIA")}
-                              aria-label={`Cobrar Transferencia de ${nombreCompleto}`}
-                              className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                            >
-                              Cobrar Transferencia
-                            </Button>
-                          </div>
-                        </div>
+                                Cobrar Efectivo
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => abrirCobro(alumno, "TRANSFERENCIA")}
+                                aria-label={`Cobrar Transferencia de ${nombreCompleto}`}
+                                className={BOTON_FILA}
+                              >
+                                Cobrar Transferencia
+                              </Button>
+                            </>
+                          }
+                        />
                       );
                     })}
-                  </div>
+                  </ul>
                 </>
               )}
             </div>

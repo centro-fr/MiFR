@@ -28,7 +28,7 @@ vi.mock("@/api/client", () => ({
                 alumno: { id_alumno: 1, nombre: "Camila", apellido: "Pérez" },
                 plan: { id_plan: 1, nombre: "Plan Danza" },
                 profesora_cobra: null, // Cobrado por la Propietaria
-                promocion: { id_promocion: 1, codigo: "VERANO26", nombre: "Verano 2026" },
+                promocion: { id_promocion: 1, nombre: "Verano 2026" },
               },
               {
                 id_pago: 102,

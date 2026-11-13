@@ -92,7 +92,7 @@ export default function LoginMocksPanel({ errorCode, isLoading, onSelect }: Prop
                 readOnly
                 disabled
                 value={`${perfil.nombre} ${perfil.apellido}`}
-                className="h-11 rounded-xl"
+                className="h-10 rounded-xl"
               />
             </div>
 

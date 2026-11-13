@@ -1,6 +1,7 @@
 import { Can } from "@/components/guards/can";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BOTON_FILA, LISTA_MOVIL } from "@/components/ui/estilos-lista";
 import { BadgeEstadoLiquidacion } from "@/features/honorarios/components/badge-estado-liquidacion";
 import { cantidadDeAlumnos, formatearAjuste, inicialesDe, nombreCompleto } from "@/features/honorarios/utils/formato-honorarios";
 import type { LiquidacionResumen } from "@/types/honorarios";
@@ -13,8 +14,6 @@ interface Props {
   onAbonar: (liquidacion: LiquidacionResumen) => void;
 }
 
-const BOTON =
-  "h-8 min-h-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200";
 // Mismo formato que la tabla del listado de alumnos: encabezado chico en gris, filas separadas por una
 // línea y el avatar rosa con iniciales.
 const NUMERO = "px-4 py-3.5 tabular-nums whitespace-nowrap";
@@ -42,7 +41,7 @@ function Acciones({ liquidacion, onVerDetalle, onAbonar }: Omit<Props, "liquidac
     <div className="flex flex-wrap justify-end gap-2">
       {liquidacion.estado === "CERRADA" && (
         <Can permission="HONORARIOS_LIQUIDAR">
-          <Button type="button" variant="outline" onClick={() => onAbonar(liquidacion)} aria-label={`Marcar como abonado a ${nombre}`} className={BOTON}>
+          <Button type="button" variant="outline" onClick={() => onAbonar(liquidacion)} aria-label={`Marcar como abonado a ${nombre}`} className={BOTON_FILA}>
             Marcar abonado
           </Button>
         </Can>
@@ -53,7 +52,7 @@ function Acciones({ liquidacion, onVerDetalle, onAbonar }: Omit<Props, "liquidac
         aria-haspopup="dialog"
         onClick={() => onVerDetalle(liquidacion)}
         aria-label={`Ver el detalle de ${nombre}`}
-        className={BOTON}
+        className={BOTON_FILA}
       >
         Ver detalle
       </Button>
@@ -61,36 +60,30 @@ function Acciones({ liquidacion, onVerDetalle, onAbonar }: Omit<Props, "liquidac
   );
 }
 
+// En el celular, las columnas de la tabla una debajo de la otra: total, alumnos y suplencias.
+function detalleDeLaFila({ montoTotal, desglose }: LiquidacionResumen): string[] {
+  const total = `Total ${formatearPrecio(montoTotal)}`;
+  if (!desglose) return [total];
+  return [total, cantidadDeAlumnos(desglose.cantidadAlumnos), `Suplencias ${formatearAjuste(desglose.subtotalSuplencias)}`];
+}
+
 /**
- * Una fila por profesor/a. Si no entra la tabla, una tarjeta por cada una. Se decide por el ancho del
+ * Una fila por profesor/a. Si no entra la tabla, una lista de filas como la de Alumnos. Se decide por el ancho del
  * contenido y no de la pantalla: con el menú lateral abierto, una tablet deja el lugar de un celular.
  */
 export function TablaHonorarios({ liquidaciones, onVerDetalle, onAbonar }: Props) {
   return (
     <div className="@container">
-      <ul aria-label="Honorarios por profesor/a" className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:hidden">
+      <ul aria-label="Honorarios por profesor/a" className={cn(LISTA_MOVIL, "@4xl:hidden")}>
         {liquidaciones.map((liquidacion) => (
-          <li key={liquidacion.id}>
-            <Card className="flex flex-col gap-3 rounded-lg border-border bg-white p-4 shadow-sm dark:bg-surface-low">
-              <div className="flex items-center gap-3">
-                <Avatar liquidacion={liquidacion} />
-                <p className="min-w-0 flex-1 break-words font-extrabold text-dark dark:text-white">{nombreCompleto(liquidacion.profesora)}</p>
-                <BadgeEstadoLiquidacion estado={liquidacion.estado} />
-              </div>
-              <p className="text-2xl font-black tracking-tight text-dark tabular-nums dark:text-white">{formatearPrecio(liquidacion.montoTotal)}</p>
-              {liquidacion.desglose && (
-                <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
-                  <dt className="text-muted-foreground">Por {cantidadDeAlumnos(liquidacion.desglose.cantidadAlumnos)}</dt>
-                  <dd className="text-right font-semibold tabular-nums">{formatearPrecio(liquidacion.desglose.subtotalAlumnos)}</dd>
-                  <dt className="text-muted-foreground">Suplencias</dt>
-                  <dd className={cn("text-right font-semibold tabular-nums", colorDelAjuste(liquidacion.desglose.subtotalSuplencias))}>
-                    {formatearAjuste(liquidacion.desglose.subtotalSuplencias)}
-                  </dd>
-                </dl>
-              )}
-              <Acciones liquidacion={liquidacion} onVerDetalle={onVerDetalle} onAbonar={onAbonar} />
-            </Card>
-          </li>
+          <FilaMovil
+            key={liquidacion.id}
+            avatar={nombreCompleto(liquidacion.profesora)}
+            titulo={nombreCompleto(liquidacion.profesora)}
+            insignia={<BadgeEstadoLiquidacion estado={liquidacion.estado} />}
+            detalle={detalleDeLaFila(liquidacion)}
+            acciones={<Acciones liquidacion={liquidacion} onVerDetalle={onVerDetalle} onAbonar={onAbonar} />}
+          />
         ))}
       </ul>
 

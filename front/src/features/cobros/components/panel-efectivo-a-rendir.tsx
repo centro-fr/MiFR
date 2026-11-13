@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
+import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
+import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
@@ -110,6 +115,9 @@ export function PanelEfectivoARendir() {
     setFiltroProfesora("TODAS");
   };
 
+  // Rendir mueve el efectivo a caja y no se deshace desde acá: se confirma antes.
+  const [cobroARendir, setCobroARendir] = useState<CobroSinRendir | null>(null);
+
   const handleRendirCobro = async (cobro: CobroSinRendir) => {
     await rendirCobro.mutateAsync(
       {
@@ -118,6 +126,7 @@ export function PanelEfectivoARendir() {
       },
       {
         onSuccess: (res) => {
+          setCobroARendir(null);
           toast.success("Cobro rendido exitosamente", {
             description: `Se rindieron ${formatearPrecio(res.total)} en caja.`,
           });
@@ -154,20 +163,15 @@ export function PanelEfectivoARendir() {
           </div>
 
           {/* Botón de filtros para mobile */}
-          <button
-            type="button"
-            aria-label="Filtros adicionales"
-            onClick={() => setMostrarFiltrosMobile((v) => !v)}
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300",
-              (mostrarFiltrosMobile || hayFiltrosActivos) && "border-primary text-primary",
-            )}
-          >
-            <SlidersHorizontal className="size-4" />
-          </button>
+          <BotonFiltrosMovil
+            abierto={mostrarFiltrosMobile}
+            activos={hayFiltrosActivos}
+            onAlternar={() => setMostrarFiltrosMobile((v) => !v)}
+            idPanel="filtros-del-listado"
+          />
 
           {/* Select Profesora en píldora */}
-          <div className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
+          <div id="filtros-del-listado" className={cn("flex flex-wrap items-center gap-2.5 w-full xl:w-auto", !mostrarFiltrosMobile && "hidden xl:flex")}>
             <SelectorDesplegable
               id="filtro-profesora-rendicion"
               etiqueta="Profesora"
@@ -189,39 +193,16 @@ export function PanelEfectivoARendir() {
       </section>
 
       {/* Pestañas de estado para mobile */}
-      <div className="flex lg:hidden items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-        <button
-          type="button"
-          onClick={() => setVista("PENDIENTES")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            vista === "PENDIENTES"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-          )}
-        >
-          <span>Pendientes</span>
-          <span className={cn(vista === "PENDIENTES" ? "text-primary font-black" : "text-slate-500")}>
-            {cantidadPendiente}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setVista("HISTORIAL")}
-          className={cn(
-            "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-            vista === "HISTORIAL"
-              ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-          )}
-        >
-          <span>Historial</span>
-          <span className={cn(vista === "HISTORIAL" ? "text-primary font-black" : "text-slate-500")}>
-            {cantidadHistorial}
-          </span>
-        </button>
-      </div>
+      <PestanasFiltro
+        className="lg:hidden"
+        etiqueta="Efectivo pendiente o rendido"
+        opciones={[
+          { id: "PENDIENTES", etiqueta: "Pendientes", conteo: cantidadPendiente },
+          { id: "HISTORIAL", etiqueta: "Historial", conteo: cantidadHistorial },
+        ]}
+        valor={vista}
+        onCambiar={setVista}
+      />
 
       {/* Tarjeta unificada de tabla con pestañas integradas en desktop */}
       <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
@@ -378,9 +359,9 @@ export function PanelEfectivoARendir() {
                               type="button"
                               variant="outline"
                               disabled={procesando}
-                              onClick={() => void handleRendirCobro(cobro)}
+                              onClick={() => setCobroARendir(cobro)}
                               aria-label={`Rendir cobro de ${nombreAlumno}`}
-                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              className={BOTON_FILA}
                             >
                               Rendir
                             </Button>
@@ -392,49 +373,39 @@ export function PanelEfectivoARendir() {
                 </table>
               </div>
 
-              {/* Mobile Rows */}
-              <div className="divide-y divide-slate-100 lg:hidden dark:divide-slate-800">
+              {/* Mobile Rows: contenido arriba, acciones abajo */}
+              <ul aria-label="Efectivo a rendir" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
                 {cobrosFiltrados.map((cobro) => {
                   const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
                   const nombreProfesora = `${cobro.profesora.nombre} ${cobro.profesora.apellido}`;
                   const dias = cobro.dias_sin_rendir;
                   const textoSinRendir = dias === 0 ? "Hoy" : `Hace ${dias} d`;
-
                   return (
-                    <div
+                    <FilaMovil
                       key={cobro.id_pago}
-                      className="flex items-center justify-between gap-3 px-4 py-3.5"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                          {inicialesDe(cobro.alumno.nombre, cobro.alumno.apellido)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            to={`/app/alumnos/${cobro.alumno.id_alumno}`}
-                            className="text-sm font-bold text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300 truncate block"
-                          >
-                            {nombreAlumno}
-                          </Link>
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                            {cobro.plan} · {nombreProfesora} · {formatearFechaCorta(cobro.fecha_pago)} · {textoSinRendir} · {formatearPrecio(cobro.monto)}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={procesando}
-                        onClick={() => void handleRendirCobro(cobro)}
-                        aria-label={`Rendir cobro de ${nombreAlumno}`}
-                        className="h-8 shrink-0 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
-                      >
-                        Rendir
-                      </Button>
-                    </div>
+                      avatar={nombreAlumno}
+                      titulo={
+                        <Link to={`/app/alumnos/${cobro.alumno.id_alumno}`} className="hover:text-primary dark:hover:text-pink-300">
+                          {nombreAlumno}
+                        </Link>
+                      }
+                      detalle={[cobro.plan, `Cobró ${nombreProfesora}`, `${formatearFechaCorta(cobro.fecha_pago)} · ${textoSinRendir}`, formatearPrecio(cobro.monto)]}
+                      acciones={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={procesando}
+                          onClick={() => setCobroARendir(cobro)}
+                          aria-label={`Rendir cobro de ${nombreAlumno}`}
+                          className={BOTON_FILA}
+                        >
+                          Rendir
+                        </Button>
+                      }
+                    />
                   );
                 })}
-              </div>
+              </ul>
             </>
           )
         ) : errorHistorial ? (
@@ -451,6 +422,19 @@ export function PanelEfectivoARendir() {
           />
         )}
       </div>
+
+      {cobroARendir && (
+        <ConfirmarAccion
+          titulo={`¿Rendir el cobro de ${cobroARendir.alumno.nombre} ${cobroARendir.alumno.apellido}?`}
+          descripcion={`${formatearPrecio(cobroARendir.monto)} cobrados por ${cobroARendir.profesora.nombre} ${cobroARendir.profesora.apellido} pasan a caja.`}
+          textoConfirmar="Rendir"
+          textoConfirmando="Rindiendo…"
+          confirmando={procesando}
+          peligro={false}
+          onConfirmar={() => void handleRendirCobro(cobroARendir)}
+          onCancelar={() => setCobroARendir(null)}
+        />
+      )}
     </div>
   );
 }

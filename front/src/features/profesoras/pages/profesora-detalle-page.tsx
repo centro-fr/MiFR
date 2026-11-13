@@ -96,10 +96,6 @@ export function ProfesoraDetallePage() {
     () => todosHorarios.filter((h) => h.id_profesora === idProfesora),
     [todosHorarios, idProfesora],
   );
-  const nombresActividades = useMemo(
-    () => Array.from(new Set(horarios.map((h) => h.actividad.nombre))),
-    [horarios],
-  );
   const especialidades = parsearEspecialidades(profesora?.especialidad);
 
   // Clases agrupadas y ordenadas por día de la semana (1 = Lunes .. 7 = Domingo) y hora
@@ -221,7 +217,7 @@ export function ProfesoraDetallePage() {
         <header className="flex flex-col justify-between gap-4 @4xl:flex-row @4xl:items-center">
           <div className="flex min-w-0 items-center gap-4">
             <AvatarFicha iniciales={iniciales(datosUsuario.nombre, datosUsuario.apellido)} activo={profesora.activa} />
-            <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 @xl:text-3xl dark:text-white">{nombreCompleto}</h1>
+            <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{nombreCompleto}</h1>
           </div>
 
           <div className="flex items-center gap-2 @3xl:gap-2.5">
@@ -229,9 +225,9 @@ export function ProfesoraDetallePage() {
               type="button"
               variant="outline"
               onClick={() => setEditando(true)}
-              className={cn(BOTON_ACCION, "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200")}
+              className={cn(BOTON_ACCION, "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white")}
             >
-              <PenSquare aria-hidden="true" className="mr-2 hidden size-4 text-slate-600 @xs:block dark:text-slate-300" />
+              <PenSquare aria-hidden="true" className="mr-2 hidden size-4 @xs:block" />
               Editar datos
             </Button>
             {profesora.activa ? (
@@ -242,7 +238,7 @@ export function ProfesoraDetallePage() {
                   setErrorBaja(null);
                   setModalBajaAbierto(true);
                 }}
-                className={cn(BOTON_ACCION, "border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400")}
+                className={cn(BOTON_ACCION, "border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-800/80 dark:text-rose-400 dark:hover:bg-rose-950/40 dark:hover:border-rose-700 dark:hover:text-rose-300")}
               >
                 <UserMinus aria-hidden="true" className="mr-2 hidden size-4 @xs:block" />
                 Dar de baja
@@ -258,7 +254,7 @@ export function ProfesoraDetallePage() {
                     onError: (err) => toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar al/a la profesor/a.")),
                   });
                 }}
-                className={cn(BOTON_ACCION, "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400")}
+                className={cn(BOTON_ACCION, "border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800/80 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-300")}
               >
                 <UserPlus aria-hidden="true" className="mr-2 hidden size-4 @xs:block" />
                 Reincorporar
@@ -352,7 +348,6 @@ export function ProfesoraDetallePage() {
           <ModalBajaProfesora
             profesora={profesora}
             cantidadHorarios={horarios.length}
-            actividadesNombres={nombresActividades}
             dandoDeBaja={darDeBajaMutation.isPending}
             errorBaja={errorBaja}
             onClose={() => setModalBajaAbierto(false)}

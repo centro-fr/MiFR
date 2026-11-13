@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { SeccionReporte } from "@/features/reportes/components/piezas-reporte";
 import { formatearPorcentaje } from "@/features/reportes/utils/formato-informe";
 import { armarMapaDeOcupacion, DIAS_DEL_MAPA, type CeldaDelMapa, type NivelDeCelda } from "@/features/reportes/utils/mapa-ocupacion";
@@ -115,24 +116,12 @@ export function OcupacionPorDia({ horarios }: { horarios: HorarioOcupado[] }) {
 
   return (
     <div>
-      <div role="group" aria-label="Día" className="grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/5">
-        {dias.map((opcion) => (
-          <button
-            key={opcion}
-            type="button"
-            aria-pressed={opcion === dia}
-            onClick={() => setElegido(opcion)}
-            className={cn(
-              "min-h-11 rounded-md text-sm transition-colors",
-              opcion === dia
-                ? "bg-white font-bold text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
-                : "font-medium text-slate-500 dark:text-slate-400",
-            )}
-          >
-            {DIAS_CORTOS[opcion]}
-          </button>
-        ))}
-      </div>
+      <PestanasFiltro
+        etiqueta="Día"
+        opciones={dias.map((opcion) => ({ id: String(opcion), etiqueta: DIAS_CORTOS[opcion] }))}
+        valor={String(dia)}
+        onCambiar={(id) => setElegido(Number(id))}
+      />
       <ul aria-label={`Ocupación del ${DIAS[dia].toLowerCase()}`} className="mt-1">
         {celdas.map((celda) => (
           <li key={celda.hora} className="flex items-center gap-3 border-b border-slate-100 py-2.5 last:border-b-0 dark:border-slate-800">

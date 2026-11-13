@@ -58,13 +58,13 @@ function SelectorRolMovil() {
         <button
           type="button"
           aria-label="Cambiar vista de rol"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-bold text-white hover:bg-white/10 transition-colors cursor-pointer border border-white/20 bg-white/5"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:border-slate-600 transition-colors cursor-pointer"
         >
           <span>{panelActivo === "PROPIETARIA" ? "Propietaria" : "Profesora"}</span>
-          <ChevronDown className="size-3.5 text-slate-300" />
+          <ChevronDown className="size-4 shrink-0 text-slate-400" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
+      <DropdownMenuContent align="center" className="min-w-36 rounded-xl p-1 bg-slate-900 border-slate-800 text-white shadow-xl">
         <DropdownMenuItem
           onClick={() => cambiarRol("PROPIETARIA")}
           className={cn(
@@ -105,9 +105,8 @@ function BarraSuperior({ titulo, volverA, centro }: Pick<Props, "titulo" | "volv
           <LogoFr className="size-7" />
         )}
         <span className="truncate text-base font-bold">{titulo}</span>
-        <SelectorRolMovil />
       </div>
-      {centro}
+      {centro || <SelectorRolMovil />}
       <div className="flex flex-1 items-center justify-end gap-0.5">
         <CampanaNotificaciones sobreFondoOscuro />
         <ThemeToggle

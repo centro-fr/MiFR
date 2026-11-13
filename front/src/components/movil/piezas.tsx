@@ -17,8 +17,8 @@ export function EncabezadoPantalla({ titulo, detalle, accion }: { titulo: string
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-[22px] leading-7 font-extrabold tracking-tight text-foreground md:text-2xl md:font-black xl:text-3xl">{titulo}</h1>
-        {detalle && <p className="mt-0.5 text-sm text-muted-foreground">{detalle}</p>}
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{titulo}</h1>
+        {detalle && <p className="mt-1.5 text-sm text-muted-foreground">{detalle}</p>}
       </div>
       {accion}
     </div>
@@ -55,14 +55,14 @@ interface PropsSegmentado<T extends string> {
   tipo?: "tab" | "radio";
 }
 
-/** Dos o más opciones excluyentes en una pastilla gris (Todos/Deben, Efectivo/Transferencia). */
+/** Dos o más opciones excluyentes en una pastilla segmentada (Todos/Deben, Efectivo/Transferencia). */
 export function ControlSegmentado<T extends string>({ opciones, valor, onCambiar, etiqueta, tipo = "tab" }: PropsSegmentado<T>) {
   return (
     <div
       role={tipo === "tab" ? "tablist" : "radiogroup"}
       aria-label={etiqueta}
       style={{ gridTemplateColumns: `repeat(${opciones.length}, minmax(0, 1fr))` }}
-      className="grid gap-0.5 rounded-xl bg-slate-200/70 p-[3px] dark:bg-white/10"
+      className="grid gap-1 rounded-lg border border-slate-300 bg-card p-1 dark:border-slate-700"
     >
       {opciones.map((opcion) => {
         const elegida = opcion.id === valor;
@@ -75,10 +75,10 @@ export function ControlSegmentado<T extends string>({ opciones, valor, onCambiar
             aria-checked={tipo === "radio" ? elegida : undefined}
             onClick={() => onCambiar(opcion.id)}
             className={cn(
-              "h-9 rounded-lg text-sm transition-colors",
+              "h-9 rounded-md text-sm transition-colors",
               elegida
-                ? "bg-card font-bold text-foreground shadow-xs"
-                : "font-medium text-muted-foreground hover:text-foreground",
+                ? "bg-slate-100 font-bold text-slate-900 shadow-2xs dark:bg-slate-800 dark:text-white"
+                : "font-medium text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white",
             )}
           >
             {opcion.etiqueta}

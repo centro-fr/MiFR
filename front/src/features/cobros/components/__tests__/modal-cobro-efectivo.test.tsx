@@ -23,7 +23,6 @@ vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
 const mockPromociones = [
   {
     id: "1",
-    codigo: "VERANO26",
     nombre: "Verano 2026",
     tipoDescuento: "PORCENTAJE" as const,
     valor: 20,
@@ -35,7 +34,6 @@ const mockPromociones = [
   },
   {
     id: "2",
-    codigo: "OTROPLAN",
     nombre: "Promo Exclusiva Plan 2",
     tipoDescuento: "MONTO_FIJO" as const,
     valor: 5000,

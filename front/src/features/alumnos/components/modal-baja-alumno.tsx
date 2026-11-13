@@ -41,7 +41,7 @@ interface Props {
 }
 
 // US-08: la baja es lógica y conserva el historial. El motivo se guarda en inscripciones.motivo_baja.
-export function ModalBajaAlumno({ nombre, inscripciones = [], dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
+export function ModalBajaAlumno({ nombre: _nombre, inscripciones = [], dandoDeBaja, errorBaja, onClose, onConfirm }: Props) {
   const tieneVariosPlanes = inscripciones.length >= 2;
   const [alcance, setAlcance] = useState<"" | "UNO" | "TODOS">("");
   const [idInscripcion, setIdInscripcion] = useState<number>(inscripciones[0]?.id_inscripcion ?? 0);
@@ -86,7 +86,7 @@ export function ModalBajaAlumno({ nombre, inscripciones = [], dandoDeBaja, error
       <AlertDialogContent className={cn(CONTENIDO_MODAL, "max-w-md")}>
         <AlertDialogHeader className={CABECERA_MODAL}>
           <AlertDialogTitle className={TITULO_MODAL}>
-            ¿Dar de baja a {nombre}?
+            ¿Seguro que desea realizar la baja?
           </AlertDialogTitle>
           <AlertDialogDescription className={DESCRIPCION_MODAL}>
             El alumno quedará inactivo pero se conservará todo su historial de cuotas y asistencias. Va a

@@ -10,7 +10,7 @@ import {
 import { cn } from "@/utils/cn";
 import type { PlanDelAlumno } from "../schemas/panel-alumno";
 import { usePlanElegido } from "../hooks/use-plan-elegido";
-import { etiquetaDelPlan, hayOtroPlanConAlerta } from "../utils/plan-del-panel";
+import { estadoAlertaOtroPlan, etiquetaDelPlan } from "../utils/plan-del-panel";
 
 function diaYMes(fecha: string): string {
   const [, mes, dia] = fecha.slice(0, 10).split("-");
@@ -45,7 +45,7 @@ export function SelectorDePlan({ sobreFondoOscuro = false }: { sobreFondoOscuro?
   if (planes.length < 2 || !elegido) return null;
 
   const tituloElegido = etiquetaDelPlan(elegido);
-  const otroConAlerta = hayOtroPlanConAlerta(planes, elegido.id_inscripcion);
+  const estadoOtroPlan = estadoAlertaOtroPlan(planes, elegido.id_inscripcion);
 
   return (
     <DropdownMenu>
@@ -65,9 +65,9 @@ export function SelectorDePlan({ sobreFondoOscuro = false }: { sobreFondoOscuro?
             className={cn("size-4 shrink-0", sobreFondoOscuro ? "text-pink-300" : "text-primary dark:text-pink-300")}
           />
           <span className="truncate">{tituloElegido}</span>
-          {otroConAlerta && (
+          {estadoOtroPlan !== "AL_DIA" && (
             <>
-              <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-amber-400" />
+              <PuntoAlerta estado={estadoOtroPlan} />
               <span className="sr-only">(tenés otro plan con cuota pendiente)</span>
             </>
           )}

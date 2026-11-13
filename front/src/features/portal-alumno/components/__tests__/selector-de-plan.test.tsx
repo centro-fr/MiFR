@@ -40,11 +40,26 @@ describe("SelectorDePlan", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("muestra el botón con la actividad elegida y aviso si otro plan está vencido", () => {
+  it("muestra el botón con la actividad elegida y aviso rojo si otro plan está vencido", () => {
     mockUsePlanElegido.mockReturnValue({ planes: [PLAN_1, PLAN_2], elegido: PLAN_1, elegirPlan: vi.fn() });
-    render(<SelectorDePlan />);
+    const { container } = render(<SelectorDePlan />);
     expect(screen.getByRole("button", { name: /Viendo el plan Funcional/i })).toBeInTheDocument();
     expect(screen.getByText(/otro plan con cuota pendiente/i)).toBeInTheDocument();
+    expect(container.querySelector(".bg-red-500")).toBeInTheDocument();
+  });
+
+  it("muestra aviso amarillo si el otro plan está en gracia", () => {
+    const planEnGracia: PlanDelAlumno = { ...PLAN_2, estado_cuota: "EN_GRACIA" };
+    mockUsePlanElegido.mockReturnValue({ planes: [PLAN_1, planEnGracia], elegido: PLAN_1, elegirPlan: vi.fn() });
+    const { container } = render(<SelectorDePlan />);
+    expect(container.querySelector(".bg-amber-400")).toBeInTheDocument();
+  });
+
+  it("no muestra punto si el otro plan está al día", () => {
+    const planAlDia: PlanDelAlumno = { ...PLAN_2, estado_cuota: "AL_DIA" };
+    mockUsePlanElegido.mockReturnValue({ planes: [PLAN_1, planAlDia], elegido: PLAN_1, elegirPlan: vi.fn() });
+    const { container } = render(<SelectorDePlan />);
+    expect(container.querySelector(".bg-red-500, .bg-amber-400")).toBeNull();
   });
 });
 

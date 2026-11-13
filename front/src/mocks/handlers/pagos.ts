@@ -202,6 +202,11 @@ function transferenciaEnRevision(pago: PagoMock) {
   };
 }
 
+function nombrePlanDeInscripcion(idInscripcion: number): string | null {
+  const inscripcion = db.inscripciones.find((i) => i.id_inscripcion === idInscripcion);
+  return (inscripcion && db.planes.find((p) => p.id_plan === inscripcion.id_plan)?.nombre) ?? null;
+}
+
 function idAlumnoDe(pago: PagoMock): number | undefined {
   return db.inscripciones.find((i) => i.id_inscripcion === pago.id_inscripcion)?.id_alumno;
 }
@@ -298,7 +303,6 @@ export const pagosHandlers = [
       plan: plan?.nombre ?? "Plan",
       promocion: promocionObj
         ? {
-            codigo: promocionObj.codigo,
             nombre: promocionObj.nombre,
             tipo_descuento: promocionObj.tipo_descuento,
             valor: promocionObj.valor,
@@ -340,7 +344,7 @@ export const pagosHandlers = [
     // Ordenar los más recientes primero
     pagos.sort((a, b) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime());
 
-    return HttpResponse.json(pagos);
+    return HttpResponse.json(pagos.map((pago) => ({ ...pago, nombre_plan: nombrePlanDeInscripcion(pago.id_inscripcion) })));
   }),
 
   http.post("*/api/v1/pagos/efectivo", async ({ request }) => {

@@ -53,8 +53,8 @@ export function GrupoMenuPage({ ruta, alternativa }: Props) {
   return (
     <OwnerLayout>
       <header>
-        <h1 className="text-2xl font-black tracking-tight text-dark xl:text-3xl dark:text-white">{grupo.etiqueta}</h1>
-        {grupo.descripcion && <p className="mt-1 text-sm font-medium text-muted-foreground">{grupo.descripcion}</p>}
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{grupo.etiqueta}</h1>
+        {grupo.descripcion && <p className="mt-1.5 text-sm font-medium text-muted-foreground">{grupo.descripcion}</p>}
       </header>
       <ul aria-label={`Opciones de ${grupo.etiqueta}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {grupo.hijos.map((opcion) => (

@@ -47,9 +47,10 @@ function alta(cambios: Partial<PreInscripcionPendiente> = {}): PreInscripcionPen
 }
 
 describe("bandeja Por verificar", () => {
-  it("describe la transferencia con su tipo y la fecha y hora de Argentina", () => {
-    expect(detalleDeTransferencia(transferencia())).toBe("Transferencia · Renovación · 18/10 09:40");
-    expect(detalleDeTransferencia(transferencia({ tipo: null }))).toBe("Transferencia · 18/10 09:40");
+  it("describe la transferencia con su plan, su tipo y la fecha y hora de Argentina", () => {
+    expect(detalleDeTransferencia(transferencia())).toBe("Transferencia · Intermedio · Renovación · 18/10 09:40");
+    expect(detalleDeTransferencia(transferencia({ tipo: null }))).toBe("Transferencia · Intermedio · 18/10 09:40");
+    expect(detalleDeTransferencia(transferencia({ plan: null }))).toBe("Transferencia · Renovación · 18/10 09:40");
   });
 
   it("describe el alta con su plan y hasta cuándo guarda el lugar", () => {
@@ -69,8 +70,8 @@ describe("bandeja Por verificar", () => {
     expect(bandeja.map((item) => item.clave)).toEqual(["transferencia-2", "alta-50", "transferencia-1"]);
     expect(bandeja[1]).toMatchObject({ tipo: "ALTA", alumno: "Lautaro Díaz", monto: 25000 });
     // Para la tabla, la cuota o el plan y la fecha van por separado.
-    expect(bandeja[0]).toMatchObject({ concepto: "Transferencia", cuotaOPlan: "Renovación", cuando: "18/10 07:00" });
-    expect(bandeja[1]).toMatchObject({ concepto: "Alta nueva", cuotaOPlan: "Básico", cuando: "reserva hasta el 20/10" });
+    expect(bandeja[0]).toMatchObject({ concepto: "Transferencia", plan: "Intermedio", cuota: "Renovación", cuando: "18/10 07:00" });
+    expect(bandeja[1]).toMatchObject({ concepto: "Alta nueva", plan: "Básico", cuota: "Primera cuota", cuando: "reserva hasta el 20/10" });
   });
 
   it("muestra una sola vez el alta cuya primera cuota ya llegó por transferencia", () => {
@@ -81,6 +82,49 @@ describe("bandeja Por verificar", () => {
 
     expect(bandeja.map((item) => item.clave)).toEqual(["transferencia-7", "alta-51"]);
     // Sin el tipo del back, la transferencia de un pre-inscripto es su primera cuota.
-    expect(bandeja[0].detalle).toBe("Transferencia · Primera cuota · 18/10 09:40");
+    expect(bandeja[0].detalle).toBe("Transferencia · Intermedio · Primera cuota · 18/10 09:40");
+  });
+
+  it("sin plan ni tipo, la transferencia queda sin plan y como renovación", () => {
+    const [item] = armarBandeja([transferencia({ plan: null, tipo: null })], []);
+
+    expect(item).toMatchObject({ plan: null, cuota: "Renovación" });
+  });
+
+  it("muestra una fila por plan cuando el alumno informó una transferencia por cada uno", () => {
+    const bandeja = armarBandeja(
+      [
+        transferencia({ id: 8, idInscripcion: 3, plan: "Plan Intermedio" }),
+        transferencia({ id: 13, idInscripcion: 34, plan: "Plan Básico", cargadaEl: "2026-10-18T13:00:00.000Z" }),
+      ],
+      [],
+    );
+
+    expect(bandeja.map((item) => item.clave)).toEqual(["transferencia-13", "transferencia-8"]);
+    expect(bandeja.map(({ plan, cuota }) => ({ plan, cuota }))).toEqual([
+      { plan: "Plan Básico", cuota: "Renovación" },
+      { plan: "Plan Intermedio", cuota: "Renovación" },
+    ]);
+  });
+
+  it("con el id de la inscripción, la transferencia de un plan no esconde el alta de otro plan del mismo alumno", () => {
+    const bandeja = armarBandeja(
+      [transferencia({ id: 7, tipo: null, idInscripcion: 3, alumno: { id: 20, nombre: "Lautaro", apellido: "Díaz" } })],
+      [alta({ idInscripcion: "50", idAlumno: "20" })],
+    );
+
+    expect(bandeja.map((item) => item.clave)).toEqual(["transferencia-7", "alta-50"]);
+    // Paga otra inscripción, que ya estaba activa: no es la primera cuota del alta.
+    expect(bandeja[0].detalle).toBe("Transferencia · Intermedio · 18/10 09:40");
+  });
+
+  it("con el id de la inscripción, muestra una sola vez el alta que esa transferencia paga", () => {
+    const bandeja = armarBandeja(
+      [transferencia({ id: 7, tipo: null, idInscripcion: 50, alumno: { id: 20, nombre: "Lautaro", apellido: "Díaz" } })],
+      [alta({ idInscripcion: "50", idAlumno: "20" })],
+    );
+
+    expect(bandeja.map((item) => item.clave)).toEqual(["transferencia-7"]);
+    expect(bandeja[0].detalle).toBe("Transferencia · Intermedio · Primera cuota · 18/10 09:40");
   });
 });

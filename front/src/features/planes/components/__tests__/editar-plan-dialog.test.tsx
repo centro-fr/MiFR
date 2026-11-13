@@ -65,7 +65,7 @@ describe("EditarPlanDialog", () => {
   it("renderiza únicamente los campos editables (nombre, precio y descripción) y omite modalidad y actividad", () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
-    expect(screen.getByRole("heading", { name: "Editar plan Kids" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Editar plan" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toHaveValue("Kids");
     expect(screen.getByLabelText(/Precio \*/i)).toHaveValue("22.000");
     expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
@@ -79,7 +79,7 @@ describe("EditarPlanDialog", () => {
     expect(screen.queryByLabelText(/Clases por semana/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Días de gracia/i)).not.toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: "Dar de baja el plan" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dar de baja el plan" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
   });
@@ -109,14 +109,6 @@ describe("EditarPlanDialog", () => {
     expect(screen.getByText("Ingresá el nombre del plan.")).toBeInTheDocument();
     expect(mockActualizarAsync).not.toHaveBeenCalled();
     expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
-  });
-
-  it("abre el modal de baja al presionar 'Dar de baja el plan'", () => {
-    render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Dar de baja el plan" }));
-
-    expect(screen.getByText(/¿Dar de baja "Kids"\?/i)).toBeInTheDocument();
   });
 
   it("envía las modificaciones de nombre al hacer clic en Guardar cambios", async () => {

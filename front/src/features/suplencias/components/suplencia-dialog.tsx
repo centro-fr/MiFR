@@ -93,7 +93,7 @@ export function SuplenciaDialog({
               disabled={Boolean(suplencia)}
               value={formulario.watch("fechaClase") ?? ""}
               onChange={(v) => formulario.setValue("fechaClase", v, { shouldValidate: true })}
-              className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+              className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
             />
           </Campo>
 

@@ -1,6 +1,7 @@
 import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { cn } from "@/utils/cn";
 
 // Exportar un informe (honorarios, asistencia): el PDF sale del diálogo de impresión del navegador
 // ("Guardar como PDF") y la planilla es un CSV que abre Excel.
@@ -12,16 +13,20 @@ interface PropsMenuExportar {
   disabled: boolean;
   preparando: FormatoExportacion | null;
   onExportar: (formato: FormatoExportacion) => void;
+  className?: string;
 }
 
-export function MenuExportar({ disabled, preparando, onExportar }: PropsMenuExportar) {
+export function MenuExportar({ disabled, preparando, onExportar, className }: PropsMenuExportar) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
           disabled={disabled || preparando !== null}
-          className="min-h-11 grow rounded-xl bg-primary px-4 text-sm font-extrabold sm:grow-0 text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary-dark"
+          className={cn(
+            "min-h-11 grow rounded-xl bg-primary px-4 text-sm font-extrabold sm:grow-0 text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary-dark",
+            className,
+          )}
         >
           {preparando ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Download aria-hidden="true" className="size-4" />}
           {preparando ? "Preparando…" : "Exportar"}

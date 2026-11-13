@@ -10,6 +10,7 @@ import {
   type EstadoAlumno,
   type FichaAlumnoApi,
   type InscripcionDeAlumno,
+  type InscripcionEnListado,
   type InscripcionVigenteApi,
   type PaginaAlumnosApi,
   type RespuestaAlumnos,
@@ -71,7 +72,23 @@ function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | 
   );
 }
 
-function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota, planes_activos }: PaginaAlumnosApi["datos"][number]): AlumnoResumen {
+type AlumnoEnListadoApi = PaginaAlumnosApi["datos"][number];
+
+// Un back sin `inscripciones` solo informa la más reciente: con eso se arma la lista.
+function inscripcionesDelListado({ inscripcion, situacion_cuota, inscripciones }: AlumnoEnListadoApi): InscripcionEnListado[] {
+  const vigentes = inscripciones ?? (inscripcion ? [{ ...inscripcion, situacion_cuota }] : []);
+  return vigentes.map((vigente) => ({
+    id_inscripcion: vigente.id_inscripcion,
+    id_plan: vigente.id_plan,
+    plan: vigente.nombre_plan,
+    id_profesora: vigente.id_profesora,
+    profesora: vigente.nombre_profesora,
+    situacion_cuota: aSituacionCuota(vigente.situacion_cuota),
+  }));
+}
+
+function aAlumnoResumen(api: AlumnoEnListadoApi): AlumnoResumen {
+  const { id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota } = api;
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
@@ -79,10 +96,11 @@ function aAlumnoResumen({ id_alumno, usuario, responsable, estado, inscripcion, 
     telefono: usuario.telefono ?? responsable?.telefono ?? null,
     email: usuario.email ?? responsable?.email ?? null,
     estado: ESTADO_EN_PANTALLA[estado],
+    id_inscripcion: inscripcion?.id_inscripcion ?? null,
     plan: inscripcion?.nombre_plan ?? null,
-    planes_activos,
     profesora: inscripcion?.nombre_profesora ?? null,
     situacion_cuota: aSituacionCuota(situacion_cuota),
+    inscripciones: inscripcionesDelListado(api),
   };
 }
 

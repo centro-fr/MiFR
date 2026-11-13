@@ -186,7 +186,7 @@ export function EditorDiaRutina({ formulario, indiceDia, puedeQuitar, onQuitar, 
           defaultValue={formulario.getValues(`dias.${indiceDia}.nombre`)}
           aria-label="Nombre del día"
           placeholder={`Día ${indiceDia + 1}`}
-          className="h-9 w-44 rounded-lg border-slate-200 bg-white text-sm font-bold shadow-2xs dark:border-slate-700 dark:bg-slate-800"
+          className="h-10 w-44 rounded-lg border-slate-200 bg-white text-sm font-bold shadow-2xs dark:border-slate-700 dark:bg-slate-800"
         />
         {puedeQuitar && (
           <button

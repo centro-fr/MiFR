@@ -1,14 +1,17 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { OwnerLayout } from "@/components/layout/owner-layout";
+import { PestanasFiltro } from "@/components/ui/pestanas-filtro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { PaginacionTabla } from "@/components/ui/paginacion-tabla";
+import { FilaMovil } from "@/components/ui/fila-movil";
+import { BOTON_FILA, BOTON_FILA_PELIGRO, BOTON_FILA_REINCORPORAR, LISTA_MOVIL } from "@/components/ui/estilos-lista";
 import {
   Table,
   TableBody,
@@ -17,9 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ModalBajaProfesora } from "@/features/profesoras/components/modal-baja-profesora";
 import { ModalFormProfesora } from "@/features/profesoras/components/modal-form-profesora";
 import {
   useCrearProfesora,
+  useDarDeBajaProfesora,
   useHorariosActivos,
   useProfesoras,
   useReactivarProfesora,
@@ -60,8 +65,11 @@ export function ProfesorasPage() {
 
   const crearMutation = useCrearProfesora();
   const reactivarMutation = useReactivarProfesora();
+  const darDeBajaMutation = useDarDeBajaProfesora();
 
   const [formAbierto, setFormAbierto] = useState(false);
+  const [profBaja, setProfBaja] = useState<Profesora | null>(null);
+  const [errorBaja, setErrorBaja] = useState<string | null>(null);
   const [pestana, setPestana] = useState<PestanaEstado>("ACTIVAS");
   const [busqueda, setBusqueda] = useState("");
   const [pagina, setPagina] = useState(0);
@@ -91,6 +99,25 @@ export function ProfesorasPage() {
       },
       onError: (err) => {
         toast.error(mensajeDeErrorApi(err, "No se pudo reincorporar al/a la profesor/a."));
+      },
+    });
+  };
+
+  const abrirBaja = (prof: Profesora) => {
+    setErrorBaja(null);
+    setProfBaja(prof);
+  };
+
+  const confirmarBaja = () => {
+    if (!profBaja) return;
+    setErrorBaja(null);
+    darDeBajaMutation.mutate(profBaja.id, {
+      onSuccess: () => {
+        toast.info(`Profesor/a "${profBaja.nombreCompleto}" dado/a de baja`);
+        setProfBaja(null);
+      },
+      onError: (err) => {
+        setErrorBaja(mensajeDeErrorApi(err, "No se pudo dar de baja al/a la profesor/a."));
       },
     });
   };
@@ -127,10 +154,10 @@ export function ProfesorasPage() {
         {/* ENCABEZADO */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl xl:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
               Profesores
             </h1>
-            <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+            <p className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-normal">
               Buscá un profesor y abrí su ficha
             </p>
           </div>
@@ -168,38 +195,16 @@ export function ProfesorasPage() {
         </section>
 
         {/* PESTAÑAS DE ESTADO PARA MOBILE */}
-        <div className="flex sm:hidden items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-          <button
-            type="button"
-            onClick={() => setPestana("ACTIVAS")}
-            className={cn(
-              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-              pestana === "ACTIVAS"
-                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-            )}
-          >
-            Activas{" "}
-            <span className={cn(pestana === "ACTIVAS" ? "text-primary font-black" : "text-slate-500")}>
-              {conteoActivas}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPestana("BAJAS")}
-            className={cn(
-              "flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all",
-              pestana === "BAJAS"
-                ? "bg-white text-slate-900 shadow-2xs dark:bg-slate-900 dark:text-white"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400",
-            )}
-          >
-            Dados de baja{" "}
-            <span className={cn(pestana === "BAJAS" ? "text-primary font-black" : "text-slate-500")}>
-              {conteoBajas}
-            </span>
-          </button>
-        </div>
+        <PestanasFiltro
+          className="sm:hidden"
+          etiqueta="Estado de los profesores"
+          opciones={[
+            { id: "ACTIVAS", etiqueta: "Activas", conteo: conteoActivas },
+            { id: "BAJAS", etiqueta: "Dados de baja", conteo: conteoBajas },
+          ]}
+          valor={pestana}
+          onCambiar={setPestana}
+        />
 
         {/* CONTENIDO PRINCIPAL */}
         {isPending ? (
@@ -428,7 +433,7 @@ export function ProfesorasPage() {
                                   e.stopPropagation();
                                   handleReincorporar(prof);
                                 }}
-                                className="h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                                className={BOTON_FILA_REINCORPORAR}
                               >
                                 Reincorporar
                               </Button>
@@ -440,10 +445,24 @@ export function ProfesorasPage() {
                                 e.stopPropagation();
                                 navigate(`/app/profesoras/${prof.id}`);
                               }}
-                              className="h-8 rounded-lg border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-primary dark:border-white/10 dark:bg-transparent dark:text-slate-200"
+                              className={BOTON_FILA}
                             >
                               Ver perfil
                             </Button>
+                            {prof.activa && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  abrirBaja(prof);
+                                }}
+                                className={BOTON_FILA_PELIGRO}
+                              >
+                                Dar de baja
+                                <span className="sr-only"> {prof.nombreCompleto}</span>
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -465,91 +484,61 @@ export function ProfesorasPage() {
               )}
             </div>
 
-            {/* VISTA MÓVIL (TARJETAS) */}
+            {/* VISTA MÓVIL: lista de filas, como Alumnos y Cobros */}
             <div className="sm:hidden flex flex-col gap-3">
-              {listaPaginada.map((prof) => {
-                const clases = horariosPorProfesora.get(prof.id) ?? [];
-                const conteoHorarios = clases.length;
-                const especialidades = parsearEspecialidades(prof.especialidad);
-
-                return (
-                  <div
-                    key={prof.id}
-                    onClick={() => navigate(`/app/profesoras/${prof.id}`)}
-                    className={cn(
-                      "group cursor-pointer flex flex-col justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 shadow-xs gap-3.5 transition-colors hover:border-pink-300 dark:hover:border-pink-500",
-                      !prof.activa && "opacity-75 bg-muted/30",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-pink-700 dark:bg-pink-950/70 dark:text-pink-200">
-                          {prof.nombre.charAt(0)}
-                          {prof.apellido.charAt(0)}
-                        </span>
-                        <div className="min-w-0">
-                          <Link
-                            to={`/app/profesoras/${prof.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors block truncate"
-                          >
-                            {prof.nombreCompleto}
-                            <span className="sr-only"> · Ver ficha</span>
-                          </Link>
-                        </div>
-                      </div>
-                      <ChevronRight className="size-4 text-slate-300 shrink-0 group-hover:text-primary dark:text-slate-600" />
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-                      {especialidades.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 mr-1">
-                            Especialidad:
-                          </span>
-                          {especialidades.map((esp) => (
-                            <span
-                              key={esp}
-                              className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300"
-                            >
-                              {esp}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 pt-1">
-                        <span>Clases semanales:</span>
-                        {conteoHorarios > 0 ? (
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {conteoHorarios} {conteoHorarios === 1 ? "clase" : "clases"}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Sin clases</span>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground">
-                        Incorporación: {formatearFecha(prof.fechaAlta)}
-                      </p>
-                      {!prof.activa && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <ul aria-label="Profesores" className={LISTA_MOVIL}>
+                {listaPaginada.map((prof) => {
+                  const conteoHorarios = (horariosPorProfesora.get(prof.id) ?? []).length;
+                  const especialidades = parsearEspecialidades(prof.especialidad);
+                  const detalle = [
+                    especialidades.length > 0 ? especialidades.join(", ") : "Sin especialidad",
+                    conteoHorarios > 0 ? `${conteoHorarios} ${conteoHorarios === 1 ? "clase" : "clases"}` : "Sin clases a cargo",
+                    `Desde ${formatearFecha(prof.fechaAlta)}`,
+                  ];
+                  return (
+                    <FilaMovil
+                      key={prof.id}
+                      avatar={prof.nombreCompleto}
+                      titulo={
+                        <Link
+                          to={`/app/profesoras/${prof.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                        >
+                          {prof.nombreCompleto}
+                          <span className="sr-only"> · Ver ficha</span>
+                        </Link>
+                      }
+                      detalle={detalle}
+                      atenuada={!prof.activa}
+                      onAbrir={() => navigate(`/app/profesoras/${prof.id}`)}
+                      acciones={
+                        !prof.activa ? (
                           <Button
                             type="button"
                             variant="outline"
                             disabled={reactivarMutation.isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReincorporar(prof);
-                            }}
-                            className="w-full h-8 rounded-lg border-emerald-200 bg-emerald-50/70 px-3 text-xs font-bold text-emerald-700 shadow-2xs hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                            onClick={() => handleReincorporar(prof)}
+                            className={BOTON_FILA_REINCORPORAR}
                           >
                             Reincorporar
                           </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => navigate(`/app/profesoras/${prof.id}`)} className={BOTON_FILA}>
+                              Ver perfil
+                            </Button>
+                            <Button type="button" variant="outline" onClick={() => abrirBaja(prof)} className={BOTON_FILA_PELIGRO}>
+                              Dar de baja
+                              <span className="sr-only"> {prof.nombreCompleto}</span>
+                            </Button>
+                          </div>
+                        )
+                      }
+                    />
+                  );
+                })}
+              </ul>
 
               {listaFiltrada.length > TAMANO_PAGINA && (
                 <PaginacionTabla
@@ -575,6 +564,17 @@ export function ProfesorasPage() {
             }
             onClose={() => setFormAbierto(false)}
             onSave={handleGuardarNueva}
+          />
+        )}
+        {/* MODAL DE BAJA */}
+        {profBaja && (
+          <ModalBajaProfesora
+            profesora={profBaja}
+            cantidadHorarios={(horariosPorProfesora.get(profBaja.id) ?? []).length}
+            dandoDeBaja={darDeBajaMutation.isPending}
+            errorBaja={errorBaja}
+            onClose={() => setProfBaja(null)}
+            onConfirm={confirmarBaja}
           />
         )}
       </div>

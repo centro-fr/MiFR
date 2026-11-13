@@ -181,8 +181,8 @@ export function CargandoOpciones() {
   return (
     <div role="status" aria-live="polite" className="flex flex-col gap-3">
       <span className="sr-only">Cargando planes y horarios…</span>
-      <Skeleton className="h-11 rounded-xl" />
-      <Skeleton className="h-11 rounded-xl" />
+      <Skeleton className="h-10 rounded-xl" />
+      <Skeleton className="h-10 rounded-xl" />
       <Skeleton className="h-32 rounded-xl" />
     </div>
   );

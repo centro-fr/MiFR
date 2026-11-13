@@ -51,10 +51,33 @@ const INSCRIPCION = {
   ],
 };
 
-function simularRespuestas(inscripciones: unknown[], alumnos: unknown[]) {
-  vi.mocked(apiClient.get).mockImplementation(async (url: string) =>
-    url === "/inscripciones" ? { data: inscripciones } : { data: { datos: alumnos, total: alumnos.length } },
-  );
+// La ficha de un alumno activo que suma un plan: trae sus inscripciones vigentes con el estado.
+function ficha(alumno: typeof ALUMNO_MENOR, inscripciones: { id_inscripcion: number; estado: string }[]) {
+  return {
+    ...alumno,
+    estado: "ACTIVO",
+    inscripciones: inscripciones.map(({ id_inscripcion, estado }) => ({
+      id_inscripcion,
+      estado,
+      fecha_inicio: "2026-10-08T00:00:00.000Z",
+      id_profesora: 1,
+      id_promocion: null,
+      plan: { id_plan: 3, nombre: "Personalizado 2 días", tipo: "MENSUAL" },
+      plan_precio: { precio: "45000" },
+      profesora: { usuario: { nombre: "Carla", apellido: "Ruiz" } },
+      horarios: [],
+      reserva: null,
+      situacion_cuota: null,
+    })),
+  };
+}
+
+function simularRespuestas(inscripciones: unknown[], alumnos: unknown[], fichas: Record<string, unknown> = {}) {
+  vi.mocked(apiClient.get).mockImplementation(async (url: string) => {
+    if (url === "/inscripciones") return { data: inscripciones };
+    if (url === "/alumnos") return { data: { datos: alumnos, total: alumnos.length } };
+    return { data: fichas[url] };
+  });
 }
 
 describe("listarPreInscripcionesPendientes", () => {
@@ -89,9 +112,32 @@ describe("listarPreInscripcionesPendientes", () => {
     });
   });
 
+  it("suma la pre-inscripción del plan nuevo de un alumno activo, con los datos de su ficha", async () => {
+    simularRespuestas([INSCRIPCION], [], { "/alumnos/2": ficha(ALUMNO_MENOR, [{ id_inscripcion: 2, estado: "PREINSCRIPTA" }]) });
+
+    const pendientes = await listarPreInscripcionesPendientes();
+
+    expect(apiClient.get).toHaveBeenCalledWith("/alumnos/2");
+    expect(pendientes).toMatchObject([{ idInscripcion: "2", idAlumno: "2", nombre: "Mateo", nombrePlan: "Personalizado 2 días" }]);
+  });
+
+  it("pide una sola ficha por alumno aunque tenga varias pre-inscripciones", async () => {
+    simularRespuestas([INSCRIPCION, { ...INSCRIPCION, id_inscripcion: 5 }], [], {
+      "/alumnos/2": ficha(ALUMNO_MENOR, [
+        { id_inscripcion: 2, estado: "PREINSCRIPTA" },
+        { id_inscripcion: 5, estado: "PREINSCRIPTA" },
+      ]),
+    });
+
+    const pendientes = await listarPreInscripcionesPendientes();
+
+    expect(vi.mocked(apiClient.get).mock.calls.filter(([url]) => url === "/alumnos/2")).toHaveLength(1);
+    expect(pendientes.map((p) => p.idInscripcion)).toEqual(["2", "5"]);
+  });
+
   // Se activó entre una consulta y la otra: ya no está pendiente.
-  it("omite la inscripción si su alumno ya no figura como INACTIVO", async () => {
-    simularRespuestas([INSCRIPCION], []);
+  it("omite la inscripción que la ficha del alumno ya muestra activa", async () => {
+    simularRespuestas([INSCRIPCION], [], { "/alumnos/2": ficha(ALUMNO_MENOR, [{ id_inscripcion: 2, estado: "ACTIVA" }]) });
 
     await expect(listarPreInscripcionesPendientes()).resolves.toEqual([]);
   });

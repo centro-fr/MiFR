@@ -203,7 +203,7 @@ describe("RegistroAsistencia (US-20)", () => {
       ]),
     );
 
-    expect(screen.getAllByText("Sin transferencia confirmada").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Sin cuota paga").length).toBeGreaterThan(0);
   });
 
   it("muestra las observaciones del alumno", () => {
