@@ -162,6 +162,7 @@ describe("PagoRepository", () => {
       ...filaPago,
       monto: 30000,
       alumno: { id_alumno: 5, nombre: "Valentina", apellido: "Herrera" },
+      id_inscripcion: 12,
       plan: "Intermedio",
       tipo_plan: "MENSUAL",
       monto_esperado: 28000,
@@ -172,7 +173,7 @@ describe("PagoRepository", () => {
       prisma.pagos.findMany.mockResolvedValue([{ ...filaPago, cuota: { inscripcion: { alumno } } }]);
     });
 
-    it("listarParaRevisar trae el plan, la cuota y el vencimiento de la cuota anterior", async () => {
+    it("listarParaRevisar trae la inscripción, el plan, la cuota y el vencimiento de la cuota anterior", async () => {
       prisma.pagos.findMany.mockResolvedValue([
         { ...filaPago, cuota: cuotaDelPago(3) },
         { ...filaPago, id_pago: 8, cuota: cuotaDelPago(1) },

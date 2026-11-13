@@ -36,8 +36,12 @@ const CAMPOS_QUE_EDITA_LA_PROFESORA = new Set([
 // memoria. El tope evita que un listado sin acotar lea la tabla entera.
 export const TOPE_FILTRO_ESTADO_CUOTA = 500;
 
-type SituacionDelAlumno = Pick<AlumnoEnListado, "inscripcion" | "situacion_cuota">;
-const SIN_INSCRIPCION_VIGENTE: SituacionDelAlumno = { inscripcion: null, situacion_cuota: null };
+type SituacionDelAlumno = Pick<AlumnoEnListado, "inscripcion" | "situacion_cuota" | "inscripciones">;
+const SIN_INSCRIPCION_VIGENTE: SituacionDelAlumno = {
+  inscripcion: null,
+  situacion_cuota: null,
+  inscripciones: [],
+};
 
 function aSituacionCuota(habilitacion: HabilitacionDeInscripcion | undefined): SituacionCuota | null {
   if (!habilitacion) return null;
@@ -202,21 +206,31 @@ export class GestionPersonasService implements ILogicaPersonas {
     };
   }
 
-  // La inscripción vigente más reciente de cada alumno y su situación de cuota, en dos consultas.
+  // Las inscripciones vigentes de cada alumno con su situación de cuota, en dos consultas. Las de
+  // cada alumno llegan de la más reciente a la más vieja: la primera es la que lo representa en el
+  // listado (y en el filtro por estado de cuota).
   private async situacionPorAlumno(idsAlumnos: number[]): Promise<Map<number, SituacionDelAlumno>> {
     const resumenes = await this.inscripciones.resumirInscripcionesVigentes(idsAlumnos);
     const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
       resumenes.map(({ id_inscripcion }) => id_inscripcion),
     );
-    return new Map(
-      resumenes.map((resumen) => [
-        resumen.id_alumno,
-        {
+    const situaciones = new Map<number, SituacionDelAlumno>();
+    for (const resumen of resumenes) {
+      const conSituacion = {
+        ...resumen,
+        situacion_cuota: aSituacionCuota(habilitaciones.get(resumen.id_inscripcion)),
+      };
+      const delAlumno = situaciones.get(resumen.id_alumno);
+      if (delAlumno) delAlumno.inscripciones.push(conSituacion);
+      else {
+        situaciones.set(resumen.id_alumno, {
           inscripcion: resumen,
-          situacion_cuota: aSituacionCuota(habilitaciones.get(resumen.id_inscripcion)),
-        },
-      ]),
-    );
+          situacion_cuota: conSituacion.situacion_cuota,
+          inscripciones: [conSituacion],
+        });
+      }
+    }
+    return situaciones;
   }
 
   // undefined: ve a todos (propietaria). Si no, el id de la profesora de su usuario, o null si no

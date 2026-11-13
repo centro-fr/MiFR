@@ -31,14 +31,17 @@ export interface SituacionCuota {
 }
 export type InscripcionConSituacion = InscripcionConDatos & { situacion_cuota: SituacionCuota | null };
 
-// US-10: cada fila del listado trae su plan y profesora vigentes, y la ficha sus inscripciones
-// vigentes con los horarios. Los dos salen de Inscripcion, en el otro subsistema; la situación de
+// US-10: cada fila del listado trae su plan y profesora vigentes (los de la inscripción más reciente)
+// y, como un alumno puede tener un plan por actividad, todas sus vigentes con su situación de cuota,
+// para mostrarlo y cobrarlo una vez por plan. La ficha trae sus inscripciones vigentes con los horarios. Los dos salen de Inscripcion, en el otro subsistema; la situación de
 // cuota, de Cuota. La ficha de un alumno dado de baja trae además las inscripciones de su última
 // baja, con lo que debía al irse (US-08). El historial de cuotas y pagos es un dato financiero: solo
 // lo ve la propietaria, y a una profesora le llega null.
+export type ResumenConSituacion = ResumenInscripcionAlumno & { situacion_cuota: SituacionCuota | null };
 export type AlumnoEnListado = Alumno & {
   inscripcion: ResumenInscripcionAlumno | null;
   situacion_cuota: SituacionCuota | null;
+  inscripciones: ResumenConSituacion[];
 };
 export type PaginaListadoAlumnos = Omit<PaginaAlumnos, "datos"> & { datos: AlumnoEnListado[] };
 export type FichaAlumno = Alumno & {

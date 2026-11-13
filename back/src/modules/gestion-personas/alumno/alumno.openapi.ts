@@ -92,6 +92,13 @@ const alumnoEnListadoSchema = alumnoSchema
     situacion_cuota: situacionCuotaSchema.nullable().openapi({
       description: "La de la inscripción de `inscripcion`; null si no tiene una vigente",
     }),
+    inscripciones: z
+      .array(resumenInscripcionSchema.extend({ situacion_cuota: situacionCuotaSchema.nullable() }))
+      .openapi({
+        description:
+          "Todas las inscripciones vigentes, de la más reciente a la más vieja, cada una con su situación de " +
+          "cuota: un alumno puede tener varios planes y se cobra cada uno por separado. Vacía si no tiene",
+      }),
   })
   .openapi("AlumnoEnListado");
 

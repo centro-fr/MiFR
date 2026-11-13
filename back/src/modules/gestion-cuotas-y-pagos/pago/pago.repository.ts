@@ -227,6 +227,7 @@ export class PagoRepository {
     return filas.map(({ cuota, ...fila }) => ({
       ...aPago(fila),
       alumno: { id_alumno: cuota.inscripcion.alumno.id_alumno, ...cuota.inscripcion.alumno.usuario },
+      id_inscripcion: cuota.id_inscripcion,
       plan: cuota.inscripcion.plan.nombre,
       tipo_plan: cuota.inscripcion.plan.tipo,
       numero_cuota: cuota.numero_cuota,

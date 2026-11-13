@@ -189,14 +189,14 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44, PI-45                      | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25                                           | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
-| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36, PI-45, PI-51, PI-52 | Sí                                                                              |
+| US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36, PI-45, PI-51, PI-52, PI-91 | Sí                                                                              |
 | US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    | PI-59                                                         | Sí                                                                                     |
 | US-14 | Renovación o cambio de plan                               |   5    |                                                               |                                                                                        |
 | US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
-| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43, PI-53, PI-54                             | Sí                                                                                     |
-| US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43                                                  | Sí                                                                                     |
+| US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43, PI-53, PI-54, PI-92 | Sí                                                                                     |
+| US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43, PI-92 | Sí                                                                                     |
 | US-18 | Cálculo del estado de habilitación del alumno             |   3    | PI-39, PI-45, PI-47, PI-51, PI-53                             | Sí: el parámetro `VENCIDOS_PUEDEN_ASISTIR` y el estado en la ficha, el listado y la lista de asistencia |
 | US-19 | Control de efectivo pendiente de rendición                |   4    |                                                               |                                                                                        |
 | US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49, PI-55, PI-56                             | Sí                                                                                     |
@@ -307,6 +307,8 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-88         | Edición y reincorporación de profesoras                              | US-38, US-02        | Servicios          | Fábricas, sesiones, baja lógica                             | Sí           |
 | PI-89         | Contacto y privacidad en el listado de profesoras                    | US-38, US-02        | Servicios          | Fábricas, datos de usuario                                  | Sí           |
 | PI-90         | La foto de perfil de Google                                          | US-01               | Servicios          | Fábricas, sesiones, foto simulada                           | Sí           |
+| PI-91         | El listado de alumnos con todas las inscripciones vigentes           | US-10               | Servicios          | Demostración, `crearInscripcionDePrueba`                   | Sí           |
+| PI-92         | Las transferencias de dos planes del mismo alumno                    | US-16, US-17        | Servicios          | Demostración, `crearInscripcionDePrueba`                   | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026).
 
@@ -1186,7 +1188,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 ## 7. Tests automatizados
 
-337 tests en veintiún archivos:
+340 tests en veintiún archivos:
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1197,7 +1199,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 25 (E-01 a E-25) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 39 (G-01 a G-39) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64, PI-66 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 22 (H-01 a H-22) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 25 (H-01 a H-25) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52, PI-91, PI-92 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
@@ -1301,6 +1303,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-20        | El listado de transferencias trae el plan, el monto esperado y el tipo (primera cuota y renovación), con el filtro por tipo y por días de carga, el orden y el total | PI-43 |
 | H-21        | La transferencia cargada después del vencimiento de la cuota anterior es de una cuota vencida                                                                    | PI-43 |
 | H-22        | La transferencia la informa la profesora a cargo y queda pendiente para la propietaria; el alumno y otra profesora reciben 403 sin guardar nada                      | PI-43 |
+| H-23        | El alumno con dos planes trae los dos en `inscripciones`, cada uno con su situación de cuota, y lo representa el más reciente                                     | PI-91 |
+| H-24        | El alumno con un plan trae una inscripción y el dado de baja ninguna                                                                                             | PI-91 |
+| H-25        | Cada plan informa su transferencia, el listado las distingue por `id_inscripcion` y aprobar una deja pendiente la otra                                            | PI-92 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |
@@ -1490,6 +1495,29 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (A-49, A-50).
 
+#### PI-91 — El listado de alumnos con todas las inscripciones vigentes
+
+**US:** US-10 · **Precondición:** escenario de demostración; Valentina Herrera suma al Intermedio (con su primera cuota paga) una inscripción activa en el Básico con Carla, los sábados de 10 a 11, sin cuotas.
+
+1. La propietaria pide `GET /alumnos`.
+2. Da de baja a Sofía Medina y pide `GET /alumnos?incluirBajas=true`.
+
+**Resultado esperado:** en el paso 1 responde 200 y la fila de Valentina conserva en `inscripcion` y `situacion_cuota` la inscripción más reciente (el Intermedio, al día), y en `inscripciones` trae las dos, de la más reciente a la más vieja, cada una con su situación: el Intermedio al día y el Básico, de Carla Ruiz, pendiente de pago. En el paso 2 la baja responde 200, Valentina sin el Básico trae una sola inscripción y Sofía, dada de baja, ninguna.
+
+**Automatizado:** Sí (H-23, H-24).
+
+#### PI-92 — Las transferencias de dos planes del mismo alumno
+
+**US:** US-16, US-17 · **Precondición:** la de PI-91: Valentina con el Intermedio y el Básico, los dos a cargo de Carla.
+
+1. Carla informa una transferencia de $30.000 por el Intermedio y otra de $25.000 por el Básico.
+2. La propietaria pide `GET /pagos/transferencias?estado=PENDIENTE`.
+3. La propietaria aprueba la del Básico.
+
+**Resultado esperado:** en el paso 1 las dos responden 201: la transferencia pendiente de un plan no frena la del otro. En el paso 2 el total es 2 y cada una trae su `id_inscripcion` y su plan. En el paso 3 responde 200 y en la base la del Básico queda CONFIRMADA y la del Intermedio sigue PENDIENTE.
+
+**Automatizado:** Sí (H-25).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1634,6 +1662,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El login reescribe la foto aunque sea la misma                                          | Un unitario de `SesionService`                                                                              |
 | El login pisa la foto guardada cuando Google no manda una                               | Un unitario de `SesionService`                                                                              |
 | La base sin el check `ck_usuarios_foto_url`                                             | Ninguno: se comprobó con un `INSERT` de `http://` en la base de prueba, que Postgres rechazó                |
+| `resumirInscripcionesVigentes` vuelve a quedarse con una sola inscripción por alumno      | H-23 y un unitario del repositorio                                                                         |
+| El listado de transferencias deja de mandar `id_inscripcion`                              | H-25 y un unitario del repositorio                                                                         |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1690,6 +1720,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 20/10/2026 | Ranking, insignias y los informes de asistencia y ocupación (PI-71 a PI-77) | 261 | 261 aprobados | 51,8 s | Pasaron también los 2179 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. Las migraciones `agregar_insignias` y `agregar_checks_insignias` se aplicaron sobre la base nueva. De las 9 fallas provocadas, 7 las detectaron los de integración en la primera versión; los resúmenes que contaban clases abiertas, después de sumar una clase abierta con marcas, y la falta en el logro de racha, los unitarios del calculador |
 | 09/11/2026 | Edición, reincorporación y contacto del plantel de profesoras (PI-88, PI-89) | 335 | 335 aprobados | 145,7 s | Pasaron también los 2651 tests unitarios; chequeo de tipos, formato y build correctos. Las 4 fallas provocadas fueron detectadas |
 | 10/11/2026 | La foto de perfil de Google en el login y en `/auth/me` (PI-90)       | 337 | 337 aprobados | 181,2 s | Pasaron también los 2662 tests unitarios, con cobertura del 100 %; chequeo de tipos, formato y build correctos. Las migraciones `agregar_foto_usuario` y `agregar_checks_foto_usuario` se aplicaron sobre la base de prueba. Las 3 fallas provocadas fueron detectadas; el check de la base se comprobó con un `INSERT` inválido |
+| 13/11/2026 | El listado de alumnos con todas sus inscripciones y las transferencias por inscripción (PI-91, PI-92) | 340 | 327 aprobados, 13 fallidos | 140,6 s | Pasan los 3 tests nuevos y los 2679 unitarios; los archivos del cambio quedan con cobertura del 100 %. Fallan 2 de J y 11 de R, que fallan igual con el código anterior al cambio (ver sección 9). Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1751,6 +1782,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-88         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasan T-01 a T-04; sin defectos                                                  |
 | PI-89         | 09/11/2026 | Francisco Andrade | Aprobado           | Pasa T-05; sin defectos                                                          |
 | PI-90         | 10/11/2026 | Francisco Andrade | Aprobado           | Pasan A-49 y A-50; sin defectos                                                  |
+| PI-91         | 13/11/2026 | Francisco Andrade | Aprobado           | Pasan H-23 y H-24; sin defectos                                                  |
+| PI-92         | 13/11/2026 | Francisco Andrade | Aprobado           | Pasa H-25; sin defectos                                                          |
 
 ### 8.3 Defectos
 
@@ -1807,6 +1840,7 @@ Los defectos se numeran D-01, D-02…
 | PI-74 | El cierre automático sin ninguna marca manual no registra ausentes (US-21): esa clase no figura como dictada en el informe de asistencia ni cuenta para la racha | Abierto |
 | PI-78 | La regla del 50 % de lo cobrado (US-23) se implementó con una propuesta que falta confirmar con el equipo: la base son los pagos confirmados dentro del mes; las inscripciones que cuentan son las activas y las dadas de baja que cobraron; la atribución es a la profesora de la inscripción; las suplencias se aplican sobre el honorario por cuotas. Las devoluciones no están definidas: hoy no restan | Abierto |
 | PI-79 | Los datos de demostración (`cargarDatosDemo`) cargan tarifas de monto fijo para alumnos, que la regla nueva ya no usa: la demostración mostraría advertencias de tarifa no aplicable. Hay que pasarlas a porcentaje | Abierto |
+| PI-47 a PI-50, PI-78 a PI-82 | En la corrida del 13/11/2026 fallan J (2 tests de cierre y corrección de días) y R (11 tests de liquidaciones, por ejemplo un honorario de $32.500 donde se esperaban $20.500) también con el código anterior a PI-91 y PI-92. Falta ver si dependen del día real de la corrida | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -1881,3 +1915,4 @@ Los defectos se numeran D-01, D-02…
 |   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
 |   2.34  | 09/11/2026 | Casos PI-88 (edición y reincorporación de profesoras) y PI-89 (contacto y privacidad del listado), con T-01 a T-05; US-38 pasa a automatizada. Se completa la tabla de tests con los archivos L, R, S y U | Francisco Andrade |
 |   2.35  | 10/11/2026 | Caso PI-90 (la foto de perfil de Google en el login y en `/auth/me`) y tests A-49 y A-50; US-01 la suma. El fake de Google recibe la foto como `email` + barra vertical + `foto` y las migraciones agregan `usuarios.foto_url` con su check | Francisco Andrade |
+|   2.36  | 13/11/2026 | Casos PI-91 (el listado de alumnos trae en `inscripciones` todas las vigentes, cada una con su situación de cuota) y PI-92 (una transferencia por plan, con su `id_inscripcion`), con H-23 a H-25; US-10, US-16 y US-17 los suman | Francisco Andrade |

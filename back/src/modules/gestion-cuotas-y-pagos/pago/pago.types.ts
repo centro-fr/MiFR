@@ -37,6 +37,7 @@ export type TipoTransferencia = "PRIMERA_CUOTA" | "RENOVACION" | "CUOTA_VENCIDA"
 // Lo que trae el repositorio para revisar una transferencia: el plan y la cuota que paga, y el
 // vencimiento de la cuota anterior, del que sale el tipo.
 export type TransferenciaParaRevisar = TransferenciaConAlumno & {
+  id_inscripcion: number;
   plan: string;
   tipo_plan: TipoPlan;
   numero_cuota: number;
@@ -48,6 +49,7 @@ export type TransferenciaParaRevisar = TransferenciaConAlumno & {
 // revisar quedan marcadas ("vencidas en verificación"), aunque siguen pendientes. El plan, el monto
 // esperado y el tipo son los del momento en que se informó, no la situación actual del alumno.
 export type TransferenciaEnRevision = TransferenciaConAlumno & {
+  id_inscripcion: number;
   plan: string;
   monto_esperado: number;
   tipo: TipoTransferencia;

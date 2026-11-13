@@ -569,21 +569,16 @@ export class InscripcionRepository {
       },
       orderBy: [{ fecha_inicio: "desc" }, { id_inscripcion: "desc" }],
     });
-    const resumenPorAlumno = new Map<number, ResumenInscripcionAlumno>();
-    for (const fila of filas) {
-      if (resumenPorAlumno.has(fila.id_alumno)) continue;
-      resumenPorAlumno.set(fila.id_alumno, {
-        id_alumno: fila.id_alumno,
-        id_inscripcion: fila.id_inscripcion,
-        estado: fila.estado,
-        id_plan: fila.id_plan,
-        nombre_plan: fila.plan.nombre,
-        id_profesora: fila.id_profesora,
-        nombre_profesora: `${fila.profesora.usuario.nombre} ${fila.profesora.usuario.apellido}`,
-        ids_horarios: fila.horarios.map(({ id_horario }) => id_horario),
-      });
-    }
-    return [...resumenPorAlumno.values()];
+    return filas.map((fila) => ({
+      id_alumno: fila.id_alumno,
+      id_inscripcion: fila.id_inscripcion,
+      estado: fila.estado,
+      id_plan: fila.id_plan,
+      nombre_plan: fila.plan.nombre,
+      id_profesora: fila.id_profesora,
+      nombre_profesora: `${fila.profesora.usuario.nombre} ${fila.profesora.usuario.apellido}`,
+      ids_horarios: fila.horarios.map(({ id_horario }) => id_horario),
+    }));
   }
 
   async contarInscriptosVigentes(idsHorarios: number[]): Promise<Map<number, number>> {

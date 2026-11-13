@@ -51,6 +51,10 @@ const transferenciaSchema = pagoSchema.extend({ alumno: alumnoSchema }).openapi(
 // También lo muestra el resumen diario de la propietaria (US-26).
 export const transferenciaEnRevisionSchema = transferenciaSchema
   .extend({
+    id_inscripcion: z.number().int().openapi({
+      description:
+        "La inscripción que paga: un alumno con varios planes informa una transferencia por cada uno",
+    }),
     plan: z.string().openapi({ description: "El plan de la cuota que paga" }),
     monto_esperado: z
       .number()
