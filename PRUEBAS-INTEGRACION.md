@@ -202,7 +202,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-20 | Registro de asistencia por clase                          |   3    | PI-47, PI-48, PI-49, PI-55, PI-56                             | Sí                                                                                     |
 | US-21 | Registro automático de inasistencias                      |   3    | PI-39, PI-49, PI-50, PI-53, PI-56                             | Sí                                                                                     |
 | US-22 | Detección de alumnos inactivos con cuota al día           |   4    | PI-69, PI-70                                                  | Sí                                                                                     |
-| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82, PI-86 | Sí: el 50 % de lo cobrado, el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
+| US-23 | Informe mensual automático de honorarios                  |   4    | PI-57 (lo cobrado en el período), PI-63 (las clases suplidas), PI-66 (las inscripciones a cargo), PI-78 a PI-82, PI-86, PI-91 | Sí: el 50 % de lo cobrado (a precio de lista si hubo promoción), el desglose, los estados, los períodos, los permisos y las tarifas; la exportación a PDF y Excel no está en el back |
 | US-24 | Registro de suplencias entre profesoras                   |   4    | PI-60 a PI-63                                                 | Sí; no editar una suplencia de un período liquidado queda para US-23 (sección 9)       |
 | US-25 | Aviso automático de vencimiento de cuota                  |   4    | PI-57 (las cuotas para avisar), PI-67, PI-68                  | Sí: los avisos, su destinatario, que no se dupliquen y las notificaciones propias por la API |
 | US-26 | Resumen diario para la propietaria                        |   4    | PI-65                                                         | Parcial: los tres bloques por la API (`GET /resumen-diario`); la notificación diaria `RESUMEN_DIARIO` espera a `Notificacion` (US-25) |
@@ -307,8 +307,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-88         | Edición y reincorporación de profesoras                              | US-38, US-02        | Servicios          | Fábricas, sesiones, baja lógica                             | Sí           |
 | PI-89         | Contacto y privacidad en el listado de profesoras                    | US-38, US-02        | Servicios          | Fábricas, datos de usuario                                  | Sí           |
 | PI-90         | La foto de perfil de Google                                          | US-01               | Servicios          | Fábricas, sesiones, foto simulada                           | Sí           |
+| PI-91         | Los descuentos de las promociones no reducen los honorarios         | US-23, US-13        | Servicios          | Fábricas, reloj fijo, promoción en la inscripción           | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026).
 
 ### 6.2 Detalle
 
@@ -1209,7 +1210,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    O    | `back/src/__tests__/integracion/alumnos-inactivos.integration.test.ts`          | 7 (O-01 a O-07)  | PI-69, PI-70                      |
 |    P    | `back/src/__tests__/integracion/insignias-y-ranking.integration.test.ts`        | 10 (P-01 a P-10) | PI-71 a PI-73                     |
 |    Q    | `back/src/__tests__/integracion/reportes-asistencia-y-ocupacion.integration.test.ts` | 6 (Q-01 a Q-06) | PI-74 a PI-77                |
-|    R    | `back/src/__tests__/integracion/honorarios.integration.test.ts`                 | 18 (R-01 a R-18) | PI-78 a PI-82, PI-86              |
+|    R    | `back/src/__tests__/integracion/honorarios.integration.test.ts`                 | 21 (R-01 a R-21) | PI-78 a PI-82, PI-86, PI-91       |
 |    S    | `back/src/__tests__/integracion/reportes-inscripciones.integration.test.ts`     | 3 (S-01 a S-03)  | PI-87                             |
 |    T    | `back/src/modules/gestion-personas/profesor/__tests__/profesor.integration.test.ts` | 5 (T-01 a T-05) | PI-88, PI-89                   |
 |    U    | `back/src/__tests__/integracion/rutinas-y-progreso.integration.test.ts`          | 48 (U-01 a U-48) | PI-83 a PI-85                     |
@@ -1492,6 +1493,18 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (A-49, A-50).
 
+#### PI-91 — Los descuentos de las promociones no reducen los honorarios
+
+**US:** US-23, US-13 · **Precondición:** la de PI-78. Sosa, alumna de Rita con el plan Inicial ($25.000 de lista), tiene la promoción VERANO20 (20 %): su cuota es de $20.000. Rita tiene una tarifa del 50 % general.
+
+1. Sosa paga la cuota completa el 02/09 y la propietaria genera septiembre.
+2. Con la base reiniciada, Sosa paga la cuota en dos partes de $10.000, el 02/09 y el 02/10, y la propietaria genera septiembre y octubre.
+3. Con la base reiniciada, el plan cuesta $25.000 hasta el 14/09 y $30.000 desde el 15/09; la cuota de Sosa se generó el 15/09 a las 02:00 UTC (todavía 14/09 en Argentina) y la paga el 20/09.
+
+**Resultado esperado:** en el paso 1 Rita cobra $12.500, el 50 % de los $25.000 de lista y no de los $20.000 pagados; Lucía sigue en $20.500, porque sin promoción se liquida lo cobrado aunque sea menos que la lista. En el paso 2 cada mes liquida $6.250: cada pago se lleva a lista en la proporción del descuento, sin contar la lista dos veces. En el paso 3 Rita cobra $12.500: rige el precio de lista del día de la cuota en Argentina, como en el comprobante.
+
+**Automatizado:** Sí (R-19 a R-21).
+
 ### 7.1 Verificación de que los tests detectan fallas
 
 Se rompió a propósito cada regla, se comprobó que algún test fallara y se restauró el código:
@@ -1636,6 +1649,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El login reescribe la foto aunque sea la misma                                          | Un unitario de `SesionService`                                                                              |
 | El login pisa la foto guardada cuando Google no manda una                               | Un unitario de `SesionService`                                                                              |
 | La base sin el check `ck_usuarios_foto_url`                                             | Ninguno: se comprobó con un `INSERT` de `http://` en la base de prueba, que Postgres rechazó                |
+| La liquidación usa lo cobrado aunque la inscripción tenga promoción                    | R-19 a R-21 |
+| El precio de lista se busca con la fecha UTC de la cuota y no con la de Argentina     | R-21 |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1755,6 +1770,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-90         | 10/11/2026 | Francisco Andrade | Aprobado           | Pasan A-49 y A-50; sin defectos                                                  |
 | PI-50         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-10 con la regla de la clase sin marcas (todos presentes)                  |
 | PI-55         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-14 con la regla de la clase sin marcas (todos presentes)                  |
+| PI-91         | 13/11/2026 | Nicolas           | Aprobado           | Pasan R-19 a R-21; también R-01 a R-18, que fallaban desde el merge 6fcb658       |
 
 ### 8.3 Defectos
 
@@ -1887,3 +1903,4 @@ Los defectos se numeran D-01, D-02…
 |   2.35  | 10/11/2026 | Caso PI-90 (la foto de perfil de Google en el login y en `/auth/me`) y tests A-49 y A-50; US-01 la suma. El fake de Google recibe la foto como `email` + barra vertical + `foto` y las migraciones agregan `usuarios.foto_url` con su check | Francisco Andrade |
 |   2.36  | 13/11/2026 | Se retiran PI-46 y los tests B-19 y B-20: la página pública usa datos fijos del front y se borra `GET /publico/actividades` con el subsistema DifusionPublica. US-32 pasa a no aplicar. Se cierra el punto abierto sobre el límite de pedidos | Nicolas |
 |   2.37  | 13/11/2026 | PI-50 y PI-55 (J-10 y J-14) pasan a la regla del 12/11/2026: una clase que cierra sin ninguna marca se da por dictada con todos presentes. Fallaban desde ese cambio | Nicolas |
+|   2.38  | 13/11/2026 | Caso PI-91 y tests R-19 a R-21: con promoción, lo cobrado se liquida a precio de lista del día de la cuota, en proporción al descuento. Corrige la regla que entró en el merge 6fcb658, que llevaba a lista cualquier pago menor (con promoción o sin ella), por pago y con el precio de la inscripción, y hacía fallar R-01 a R-18 | Nicolas |

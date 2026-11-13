@@ -182,14 +182,33 @@ export class CuotaRepository {
   }
 
   // Suma en la base, de una consulta: una inscripción sin cobros en el período no figura.
-  // Regla de negocio: los descuentos de promociones no afectan los honorarios docentes; se usa el precio de lista.
+  // Los descuentos de promociones no afectan los honorarios: si la inscripción tiene promoción, cada pago
+  // se lleva a precio de lista en la proporción en que la promoción redujo la cuota. Proporcional y no
+  // por cuota, para que una cuota pagada en partes, aun en meses distintos, no cuente la lista dos veces.
+  // El precio de lista es el del plan el día en que se generó la cuota, como en el comprobante.
   async cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>> {
     const filas = await this.prisma.$queryRaw<{ id_inscripcion: number; total: Prisma.Decimal }[]>`
-      SELECT c.id_inscripcion, SUM(GREATEST(p.monto, pp.precio)) AS total
+      SELECT c.id_inscripcion,
+        ROUND(SUM(
+          CASE WHEN i.id_promocion IS NOT NULL AND c.monto > 0 AND lista.precio > c.monto
+            THEN p.monto * lista.precio / c.monto
+            ELSE p.monto
+          END
+        ), 2) AS total
       FROM pagos p
       JOIN cuotas c ON c.id_cuota = p.id_cuota
       JOIN inscripciones i ON i.id_inscripcion = c.id_inscripcion
-      JOIN plan_precios pp ON pp.id_plan_precio = i.id_plan_precio
+      LEFT JOIN LATERAL (
+        SELECT pp.precio
+        FROM plan_precios pp
+        WHERE pp.id_plan = i.id_plan
+          AND pp.fecha_vigencia_desde
+            <= (c.fecha_generacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
+          AND (pp.fecha_vigencia_hasta IS NULL OR pp.fecha_vigencia_hasta
+            >= (c.fecha_generacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date)
+        ORDER BY pp.fecha_vigencia_desde DESC
+        LIMIT 1
+      ) lista ON true
       WHERE p.estado = 'CONFIRMADO'
         AND c.id_inscripcion = ANY(${idsInscripciones})
         AND p.fecha_pago >= ${desde}
