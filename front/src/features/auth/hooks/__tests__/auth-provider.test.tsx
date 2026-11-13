@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../auth-provider";
 import { useAuth } from "../use-auth";
 import * as authApi from "@/features/auth/api/auth-api";
-import { clearSessionToken, getStoredAvatarUrl } from "@/features/auth/api/session-token";
+import { clearSessionToken, getStoredAvatarUrl, setSessionToken } from "@/features/auth/api/session-token";
 
 vi.mock("@/features/auth/api/auth-api", () => ({
   getMe: vi.fn(),
@@ -94,6 +94,7 @@ describe("AuthProvider con perfil de Google", () => {
   });
 
   it("al restaurar la sesión con getMe asocia la foto almacenada", async () => {
+    setSessionToken("jwt-guardado");
     window.sessionStorage.setItem("mifr:user-avatar:v1", "https://lh3.googleusercontent.com/foto-guardada.jpg");
     vi.mocked(authApi.getMe).mockResolvedValue({
       id_usuario: 1,
@@ -117,6 +118,7 @@ describe("AuthProvider con perfil de Google", () => {
   });
 
   it("al hacer logout limpia la foto almacenada en sessionStorage", async () => {
+    setSessionToken("jwt-guardado");
     window.sessionStorage.setItem("mifr:user-avatar:v1", "https://lh3.googleusercontent.com/foto.jpg");
     vi.mocked(authApi.getMe).mockResolvedValue({
       id_usuario: 1,
@@ -144,5 +146,37 @@ describe("AuthProvider con perfil de Google", () => {
 
     expect(screen.getByTestId("user-name")).toHaveTextContent("Sin usuario");
     expect(getStoredAvatarUrl()).toBeNull();
+  });
+
+  it("sin token guardado no pide /auth/me: arranca sin usuario y sin pantalla de carga", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ConsumidorAuth />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("user-name")).toHaveTextContent("Sin usuario");
+    expect(authApi.getMe).not.toHaveBeenCalled();
+  });
+
+  it("descarta un usuario guardado sin su token, sin pedir /auth/me", () => {
+    window.sessionStorage.setItem(
+      "mifr:session-user:v1",
+      JSON.stringify({ id_usuario: 1, email: "valen@example.com", nombre: "Valentina", apellido: "López", roles: ["ALUMNO"], permisos: [] }),
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ConsumidorAuth />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("user-name")).toHaveTextContent("Sin usuario");
+    expect(window.sessionStorage.getItem("mifr:session-user:v1")).toBeNull();
+    expect(authApi.getMe).not.toHaveBeenCalled();
   });
 });
