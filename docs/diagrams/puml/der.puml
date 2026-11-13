@@ -137,6 +137,7 @@ package "SERVICIO ENTRENAMIENTO" {
       cupo_maximo : SMALLINT <color:#6B7280><size:11>> 0; NULL = toma el de la actividad</size></color>
     * fecha_alta : DATE
       fecha_baja : DATE
+      fecha_baja_programada : DATE <color:#6B7280><size:11>con alumnos: no admite nuevos; cada uno sale al terminar su gracia</size></color>
   }
   entity "planes" as planes <<Servicio>> {
     * <color:#DAA520><&key></color> id_plan : SERIAL <color:#DAA520>PK</color>
@@ -261,6 +262,19 @@ package "INSCRIPCIONES Y CLASES" {
       observaciones : VARCHAR(500)
     * fecha_alta : TIMESTAMP
       fecha_baja : TIMESTAMP
+  }
+  entity "cambios_plan_programados" as cambios_plan_programados <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_cambio_plan : SERIAL <color:#DAA520>PK</color>
+    --
+    * <color:#9CA3AF><&link-intact></color> id_inscripcion : INTEGER <color:#9CA3AF>FK</color>, <color:#9CA3AF>UK</color>
+    * <color:#9CA3AF><&link-intact></color> id_plan : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_profesora : INTEGER <color:#9CA3AF>FK</color>
+    * fecha_aplicacion : DATE <color:#6B7280><size:11>el día siguiente al último de gracia</size></color>
+    * fecha_alta : TIMESTAMP
+  }
+  entity "cambio_plan_horarios" as cambio_plan_horarios <<Inscripciones>> {
+    * <color:#DAA520><&key></color> id_cambio_plan : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
+    * <color:#DAA520><&key></color> id_horario : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
   }
   entity "inscripcion_horarios" as inscripcion_horarios <<Inscripciones>> {
     * <color:#DAA520><&key></color> id_inscripcion : INTEGER <color:#DAA520>PK</color>, <color:#9CA3AF>FK</color>
@@ -447,6 +461,11 @@ plan_precios ||--o{ inscripciones : "id_plan_precio"
 profesoras ||--o{ inscripciones : "id_profesora"
 promociones |o--o{ inscripciones : "id_promocion"
 inscripciones ||--|{ inscripcion_horarios : "id_inscripcion"
+inscripciones ||--o| cambios_plan_programados : "id_inscripcion"
+planes ||--o{ cambios_plan_programados : "id_plan"
+profesoras ||--o{ cambios_plan_programados : "id_profesora"
+cambios_plan_programados ||--|{ cambio_plan_horarios : "id_cambio_plan"
+horarios ||--o{ cambio_plan_horarios : "id_horario"
 horarios ||--o{ inscripcion_horarios : "id_horario"
 horarios ||--o{ clases : "id_horario"
 profesoras ||--o{ clases : "id_prof_dictante"

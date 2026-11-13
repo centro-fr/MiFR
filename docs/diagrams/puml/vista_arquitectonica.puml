@@ -245,6 +245,7 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     component "Suplencia"        as Suplencia
     component "Asistencia"       as Asistencia
     component "CierreAsistencia" as CierreAsistencia <<process>>
+    component "AplicadorProgramados" as AplicadorProgramados <<process>>
     interface "IInfoHorarios"      as R_GIC_InfoHorarios
     interface "IInfoProfesores"    as R_GIC_InfoProfesoresInsc
     interface "IInfoAlumnos"       as R_GIC_InfoAlumnos
@@ -277,10 +278,13 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
     Asistencia       ..> Clase
     CierreAsistencia ..> Asistencia
     CierreAsistencia ..> Clase
+    AplicadorProgramados ..> Inscripcion
+    AplicadorProgramados -down-( R_GIC_InfoHorarios
     Inscripcion -[hidden]right-> Clase
     Clase       -[hidden]right-> Suplencia
     Clase       -[hidden]down-> Asistencia
     Suplencia   -[hidden]down-> CierreAsistencia
+    CierreAsistencia -[hidden]right-> AplicadorProgramados
     Asistencia  -[hidden]down-> GestionInscripcionesYClases
   }
   interface "ILogicaInscripcionesYClases" as I_LogicaInscripcionesYClases
