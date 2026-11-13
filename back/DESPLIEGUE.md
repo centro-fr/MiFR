@@ -63,8 +63,9 @@ El modo sale de `NODE_ENV` en `back/.env`: con `development` se publica Swagger,
    | `DATABASE_URL` | La cadena directa de Neon del paso 1 |
    | `GOOGLE_CLIENT_ID` | El mismo client ID que usa el front |
    | `CORS_ORIGENES` | La URL de Netlify, por ejemplo `https://mifr.netlify.app` |
+   | `PROXIES_DE_CONFIANZA` | `2` para empezar; se calibra en el paso 7 |
 
-   `JWT_SECRET` lo genera Render solo, con un valor aleatorio. Ningún secreto se escribe en el repositorio. Con `NODE_ENV=production` la API no arranca si falta `GOOGLE_CLIENT_ID` o `CORS_ORIGENES`, o si `JWT_SECRET` tiene menos de 32 caracteres: el log del deploy dice cuál.
+   `JWT_SECRET` lo genera Render solo, con un valor aleatorio. Ningún secreto se escribe en el repositorio. Con `NODE_ENV=production` la API no arranca si falta `GOOGLE_CLIENT_ID`, `CORS_ORIGENES` o `PROXIES_DE_CONFIANZA`, o si `JWT_SECRET` tiene menos de 32 caracteres: el log del deploy dice cuál.
 3. En el primer deploy, el contenedor aplica todas las migraciones sobre la base vacía.
 4. Probar `https://<servicio>.onrender.com/health`: tiene que responder `{"status":"ok"}`.
 5. Anotar la URL que asignó Render. Si no es `https://mifr-api.onrender.com`, corregirla en la regla de `/api/*` de `netlify.toml`. Los subdominios de `onrender.com` son de quien los registra primero: comprobar en el dashboard de Render que el servicio con esa URL es el del proyecto, porque Netlify le reenvía los tokens de sesión y de Google. Si después se renombra o se borra el servicio, `netlify.toml` se corrige en el mismo cambio. Lo más firme es un dominio propio (por ejemplo `api.<dominio>` con un CNAME a Render).
@@ -116,13 +117,29 @@ Con un monitor gratuito, por ejemplo UptimeRobot, crear un chequeo HTTP a `https
 - **Directo a Render**, no a través de Netlify, para no gastar tráfico del sitio.
 - De paso, el monitor avisa por email si la API se cae.
 
+### 7. Calibrar PROXIES_DE_CONFIANZA
+
+La API limita los pedidos por IP (`shared/middlewares/limite-pedidos.ts`). Detrás de Netlify y de Render, la IP que ve Express es la del último proxy, y la del visitante llega en `X-Forwarded-For`. `PROXIES_DE_CONFIANZA` le dice a Express cuántos de esos saltos son de confianza:
+
+- **Muy bajo:** todos los visitantes aparecen con la IP de un proxy y comparten un mismo tope. Una persona que abusa deja sin servicio a las demás.
+- **Muy alto:** Express toma una IP que escribió el propio visitante en `X-Forwarded-For`, y cambiándola en cada pedido esquiva el límite.
+
+Cada línea del log de la API termina con la IP que usó Express. Para calibrar:
+
+1. Averiguar la IP pública propia, por ejemplo en <https://ifconfig.me>.
+2. Abrir `https://<sitio>.netlify.app/` y buscar en el log de Render la línea de `GET /api/v1/publico/actividades`.
+3. Si la IP del final no es la propia, cambiar `PROXIES_DE_CONFIANZA` en Render y repetir: con un valor bajo aparece la IP de un proxy, con uno alto, la que se mande en `X-Forwarded-For`.
+4. Con el valor correcto, `curl -H "X-Forwarded-For: 1.2.3.4" https://<sitio>.netlify.app/api/v1/publico/actividades` tiene que seguir mostrando la IP propia en el log, no `1.2.3.4`.
+
+Queda un hueco conocido: la URL de Render también se puede llamar directo, sin pasar por Netlify, y en ese camino hay un proxy menos. Quien llame así puede elegir su IP en `X-Forwarded-For`. Se cierra haciendo que la API acepte solo pedidos que vengan de Netlify; está anotado como pendiente.
+
 ## Seguridad
 
 - **La protección está en la API, no en el camino.** Aunque el front pase por Netlify, la URL de Render sigue siendo pública. Lo que protege es que la API valida todo por su cuenta: verifica el JWT en cada pedido, relee en la base el estado y los roles del usuario, controla los permisos por ruta, valida cada entrada con Zod y manda cabeceras de seguridad con `helmet`.
 - **CORS no es control de acceso.** Solo decide qué sitios pueden leer las respuestas desde un navegador; con `curl` se puede llamar a la API igual.
 - **Sin CSRF hoy.** El token viaja en el header `Authorization`, que el navegador no manda solo. Si más adelante el token pasa a una cookie `httpOnly` (lo que pide AGENTS.md), tener todo en el mismo origen permite usar `SameSite=Lax` sin cookies entre dominios.
 - **Dónde guarda el token el front.** Si lo guarda en `localStorage`, un XSS en el front podría robarlo. Se mitiga con una Content-Security-Policy en `netlify.toml`, que permita Google Identity Services (`accounts.google.com`), y más adelante con la cookie `httpOnly`. Le corresponde al equipo de front; `netlify.toml` ya trae las cabeceras básicas.
-- **Límite de pedidos.** Si se agrega limitación por IP, hay que configurar `trust proxy` en Express: la IP que ve la API es la del proxy de Render o de Netlify, y la del cliente llega en `X-Forwarded-For`.
+- **Límite de pedidos.** La API corta con 429 a la IP que pasa de 600 pedidos por minuto, de 60 por minuto a `/publico` o de 50 inicios de sesión cada 15 minutos. Los topes viven en memoria del proceso, así que valen con una sola instancia, que es lo que da el plan gratuito. `/health` no tiene tope, para el monitor del paso 6. La IP sale de `PROXIES_DE_CONFIANZA` (paso 7).
 
 ## Migraciones en producción
 
@@ -141,3 +158,4 @@ Con un monitor gratuito, por ejemplo UptimeRobot, crear un chequeo HTTP a `https
 - [ ] URL de Render verificada en la regla de `/api/*` de `netlify.toml`, y comprobado en el dashboard que ese servicio es del proyecto.
 - [ ] Sitio de Netlify creado; `https://<sitio>/api/v1/auth/me` sin token responde 401 (llega a la API).
 - [ ] Monitor de `/health` cada 10 minutos.
+- [ ] `PROXIES_DE_CONFIANZA` calibrada: el log de Render muestra la IP propia en un pedido hecho a través de Netlify.
