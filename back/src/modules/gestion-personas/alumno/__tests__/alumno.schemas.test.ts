@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   actualizarAlumnoSchema,
   crearAlumnoSchema,
+  historialAsistenciaQuerySchema,
   listarAlumnoQuerySchema,
   panelAlumnoQuerySchema,
 } from "../alumno.schemas.js";
@@ -150,5 +151,28 @@ describe("panelAlumnoQuerySchema", () => {
 
   it.each(["0", "-0", "01", "1e1", " 7 ", "", "abc"])("rechaza el id %j", (id_alumno) => {
     expect(panelAlumnoQuerySchema.safeParse({ id_alumno }).success).toBe(false);
+  });
+});
+
+describe("historialAsistenciaQuerySchema", () => {
+  it("pagina de a 10 por defecto y convierte el filtro de asistencia", () => {
+    expect(historialAsistenciaQuerySchema.parse({})).toEqual({ limit: 10, offset: 0 });
+    expect(historialAsistenciaQuerySchema.parse({ asistio: "true", limit: "100", offset: "30" })).toEqual({
+      asistio: true,
+      limit: 100,
+      offset: 30,
+    });
+    expect(historialAsistenciaQuerySchema.parse({ asistio: "false" })).toMatchObject({ asistio: false });
+  });
+
+  it.each([
+    { asistio: "si" },
+    { asistio: "" },
+    { limit: "0" },
+    { limit: "101" },
+    { limit: "1e1" },
+    { offset: "-1" },
+  ])("rechaza %j", (query) => {
+    expect(historialAsistenciaQuerySchema.safeParse(query).success).toBe(false);
   });
 });

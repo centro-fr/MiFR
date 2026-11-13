@@ -542,3 +542,120 @@ describe("PI-93: el panel del alumno (US-29)", () => {
     expect(deLaProfesora.status).toBe(403);
   });
 });
+
+describe("PI-94: el historial de asistencia de la ficha (US-10)", () => {
+  const VALENTINA = "valentina.herrera@example.com";
+
+  // Tres clases dictadas (la del 14/09 la dicta Lucía como suplente) y una todavía abierta, que no cuenta.
+  async function cargarHistorialDeValentina() {
+    const idAlumno = datosDemo.idAlumno.get(DNI_VALENTINA)!;
+    const { id_inscripcion, horarios } = await prisma.inscripciones.findFirstOrThrow({
+      where: { id_alumno: idAlumno, estado: "ACTIVA" },
+      include: { horarios: true },
+    });
+    const clases = [
+      {
+        fecha: "2026-09-07",
+        asistio: true,
+        dictante: CARLA,
+        estado: "DICTADA" as const,
+        observaciones: null,
+      },
+      {
+        fecha: "2026-09-14",
+        asistio: false,
+        dictante: LUCIA,
+        estado: "DICTADA" as const,
+        observaciones: "Avisó",
+      },
+      {
+        fecha: "2026-09-21",
+        asistio: true,
+        dictante: CARLA,
+        estado: "DICTADA" as const,
+        observaciones: null,
+      },
+      {
+        fecha: "2026-09-28",
+        asistio: false,
+        dictante: CARLA,
+        estado: "PROGRAMADA" as const,
+        observaciones: null,
+      },
+    ];
+    for (const { fecha, asistio, dictante, estado, observaciones } of clases) {
+      const { id_clase } = await prisma.clases.create({
+        data: {
+          id_horario: horarios[0]!.id_horario,
+          id_prof_dictante: datosDemo.idProfesora.get(dictante)!,
+          fecha_clase: new Date(`${fecha}T00:00:00Z`),
+          estado,
+        },
+      });
+      await prisma.asistencias.create({
+        data: {
+          id_clase,
+          id_alumno: idAlumno,
+          id_inscripcion,
+          asistio,
+          observaciones,
+          fecha_registro: new Date(),
+        },
+      });
+    }
+    return idAlumno;
+  }
+
+  it("la propietaria pagina el historial de las clases dictadas, de la más nueva, y filtra presentes o ausentes", async () => {
+    const idAlumno = await cargarHistorialDeValentina();
+
+    const primera = await comoMarina("get", `/alumnos/${idAlumno}/asistencias?limit=2`);
+    const segunda = await comoMarina("get", `/alumnos/${idAlumno}/asistencias?limit=2&offset=2`);
+    const ausentes = await comoMarina("get", `/alumnos/${idAlumno}/asistencias?asistio=false`);
+
+    expect(primera.status).toBe(200);
+    expect(primera.body).toMatchObject({ total: 3, presentes: 2, ausentes: 1, limit: 2, offset: 0 });
+    expect(primera.body.datos.map(({ fecha }: { fecha: string }) => fecha)).toEqual([
+      "2026-09-21",
+      "2026-09-14",
+    ]);
+    expect(primera.body.datos[0]).toMatchObject({
+      profesora: "Carla Ruiz",
+      asistio: true,
+      observaciones: null,
+    });
+    expect(primera.body.datos[0].hora_inicio).toMatch(/^\d{2}:\d{2}$/);
+    expect(segunda.body.datos.map(({ fecha }: { fecha: string }) => fecha)).toEqual(["2026-09-07"]);
+    expect(ausentes.body).toMatchObject({ total: 1, presentes: 2, ausentes: 1 });
+    expect(ausentes.body.datos).toEqual([
+      expect.objectContaining({
+        fecha: "2026-09-14",
+        profesora: "Lucía Gómez",
+        asistio: false,
+        observaciones: "Avisó",
+      }),
+    ]);
+  });
+
+  it("la profesora a cargo lo ve; la que no lo tiene a cargo recibe 403, exista o no, y la alumna no tiene acceso", async () => {
+    const idAlumno = await cargarHistorialDeValentina();
+
+    const aCargo = await como(await entorno.iniciarSesion(CARLA), "get", `/alumnos/${idAlumno}/asistencias`);
+    const lucia = await entorno.iniciarSesion(LUCIA);
+    const ajeno = await como(lucia, "get", `/alumnos/${idAlumno}/asistencias`);
+    const inexistenteParaLucia = await como(lucia, "get", "/alumnos/999999/asistencias");
+    const inexistente = await comoMarina("get", "/alumnos/999999/asistencias");
+    const deLaAlumna = await como(
+      await entorno.iniciarSesion(VALENTINA),
+      "get",
+      `/alumnos/${idAlumno}/asistencias`,
+    );
+
+    expect(aCargo.status).toBe(200);
+    expect(aCargo.body.total).toBe(3);
+    expect(ajeno.status).toBe(403);
+    expect(inexistenteParaLucia.status).toBe(403);
+    expect(inexistente.status).toBe(404);
+    expect(deLaAlumna.status).toBe(403);
+  });
+});

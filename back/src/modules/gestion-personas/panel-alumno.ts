@@ -1,6 +1,7 @@
 import { instanteArgentino } from "../../shared/utils/fecha-argentina.js";
 import type { MarcaDelAlumno } from "../gestion-inscripciones-y-clases/asistencia/asistencia.types.js";
 import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
+import { diaComoTexto, horaComoTexto, nombreCompleto } from "./formato-respuesta.js";
 import type { SituacionCuota } from "./interface/i-logica-personas.js";
 
 // El panel del alumno (US-29): lo arma la fachada de GestionPersonas porque cruza Alumno con la
@@ -48,19 +49,6 @@ export interface PanelAlumno {
   plan: PlanDelPanel | null;
   proximas_clases: ClaseDelPanel[];
   historial_asistencias: MarcaDelPanel[];
-}
-
-function nombreCompleto({ nombre, apellido }: { nombre: string; apellido: string }): string {
-  return `${nombre} ${apellido}`;
-}
-
-// Las columnas DATE llegan a las 00:00 UTC y las TIME el 01/01/1970 en UTC: se leen tal cual.
-function diaComoTexto(dia: Date): string {
-  return dia.toISOString().slice(0, 10);
-}
-
-function horaComoTexto(hora: Date): string {
-  return hora.toISOString().slice(11, 16);
 }
 
 type HorarioDeLaInscripcion = InscripcionConDatos["horarios"][number];

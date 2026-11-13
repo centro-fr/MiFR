@@ -5,6 +5,7 @@ import type { ILogicaAlumnos } from "../interface/i-logica-personas.js";
 import type {
   ActualizarAlumnoInput,
   CrearAlumnoInput,
+  HistorialAsistenciaQuery,
   ListarAlumnoQuery,
   PanelAlumnoQuery,
 } from "./alumno.schemas.js";
@@ -22,6 +23,15 @@ export function createAlumnoController(logica: ILogicaAlumnos) {
     async obtener(req: Request, res: Response) {
       const alumno = await logica.obtenerAlumnoPorId(Number(req.params.id), solicitanteDe(req));
       res.json(alumno);
+    },
+
+    async asistencias(req: Request, res: Response) {
+      const pagina = await logica.listarAsistenciasAlumno(
+        Number(req.params.id),
+        req.query as unknown as HistorialAsistenciaQuery,
+        solicitanteDe(req),
+      );
+      res.json(pagina);
     },
 
     async crear(req: Request, res: Response) {

@@ -12,6 +12,7 @@ import {
   actualizarAlumnoSchema,
   alumnoIdParamSchema,
   crearAlumnoSchema,
+  historialAsistenciaQuerySchema,
   listarAlumnoQuerySchema,
   panelAlumnoQuerySchema,
 } from "./alumno.schemas.js";
@@ -168,6 +169,30 @@ const reglasDeEdad =
   "Un menor de 18 años lleva tutor y no lleva email (entra al sistema su tutor); un mayor lleva email " +
   "y no lleva tutor. El tutor se indica con `{ id_usuario }` o con sus datos: si ya existe un usuario con " +
   "ese DNI o email, se reutiliza.";
+
+const historialAsistenciaSchema = z
+  .object({
+    datos: z.array(
+      z.object({
+        id_clase: z.number().int(),
+        fecha: fechaSchema,
+        hora_inicio: z.string().openapi({ example: "18:00" }),
+        hora_fin: z.string().openapi({ example: "19:00" }),
+        actividad: z.string(),
+        profesora: z
+          .string()
+          .openapi({ description: "Quien dictó la clase: con una suplencia, la suplente" }),
+        asistio: z.boolean(),
+        observaciones: z.string().nullable(),
+      }),
+    ),
+    total: z.number().int().openapi({ description: "Marcas que cumplen el filtro" }),
+    presentes: z.number().int().openapi({ description: "Presentes de todo el historial" }),
+    ausentes: z.number().int().openapi({ description: "Ausentes de todo el historial" }),
+    limit: z.number().int(),
+    offset: z.number().int(),
+  })
+  .openapi("HistorialAsistenciaAlumno");
 
 const panelAlumnoRespuestaSchema = z
   .object({
@@ -326,6 +351,23 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     request: { params: alumnoIdParamSchema },
     responses: {
       200: respuestaJson("Ficha del alumno", fichaAlumnoSchema),
+      ...respuestasDeError(400, 401, 403, 404),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/alumnos/{id}/asistencias",
+    tags,
+    security,
+    summary: "Historial de asistencia de un alumno",
+    description:
+      `Requiere el permiso \`ALUMNOS_VER\`. ${aCargo} Con un alumno que no tiene a cargo, o que no existe, la ` +
+      "profesora recibe 403. Trae las marcas de las clases dictadas, de la más nueva a la más vieja, paginadas; " +
+      "`asistio` filtra presentes o ausentes. `presentes` y `ausentes` cuentan todo el historial.",
+    request: { params: alumnoIdParamSchema, query: historialAsistenciaQuerySchema },
+    responses: {
+      200: respuestaJson("Historial de asistencia", historialAsistenciaSchema),
       ...respuestasDeError(400, 401, 403, 404),
     },
   });

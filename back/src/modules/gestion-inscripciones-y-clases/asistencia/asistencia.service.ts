@@ -12,8 +12,9 @@ import type {
   AsistenciaDeProfesora,
   EstadoAsistencia,
   EstadoSeguimientoInactividad,
+  ConsultaHistorialAlumno,
   FiltroAsistenciasDictadas,
-  MarcaDelAlumno,
+  HistorialDelAlumno,
   InscriptoConAsistencia,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
@@ -148,7 +149,7 @@ export class AsistenciaService implements IInfoAsistencia {
     return this.repositorio.historialDeAlumnos(idsAlumnos);
   }
 
-  ultimasDelAlumno(idAlumno: number, cantidad: number): Promise<MarcaDelAlumno[]> {
-    return this.repositorio.ultimasDelAlumno(idAlumno, cantidad);
+  historialDelAlumno(idAlumno: number, consulta: ConsultaHistorialAlumno): Promise<HistorialDelAlumno> {
+    return this.repositorio.historialDelAlumno(idAlumno, consulta);
   }
 }

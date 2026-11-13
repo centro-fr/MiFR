@@ -4,9 +4,10 @@ import type {
   AsistenciaDeAlumno,
   AsistenciaDeProfesora,
   EstadoSeguimientoInactividad,
+  ConsultaHistorialAlumno,
   FiltroAsistenciasDictadas,
+  HistorialDelAlumno,
   MarcaDeSeguimiento,
-  MarcaDelAlumno,
   RachaDeInasistencia,
   SeguimientoInactividad,
 } from "../asistencia.types.js";
@@ -43,7 +44,7 @@ export interface IInfoAsistencia {
   // Todas las marcas de clases dictadas de cada alumno, en orden cronológico, de una sola consulta.
   // Un alumno sin marcas figura con la lista vacía.
   historialDeAlumnos(idsAlumnos: number[]): Promise<Map<number, MarcaDeHistorial[]>>;
-  // Las últimas marcas de clases dictadas de un alumno, de la más nueva a la más vieja, con la
-  // actividad y quién la dictó (US-29). Con tope: el historial crece con cada clase.
-  ultimasDelAlumno(idAlumno: number, cantidad: number): Promise<MarcaDelAlumno[]>;
+  // Las marcas de clases dictadas de un alumno, de la más nueva a la más vieja, con el horario, la
+  // actividad y quién la dictó (US-10, US-29). Paginado: el historial crece con cada clase.
+  historialDelAlumno(idAlumno: number, consulta: ConsultaHistorialAlumno): Promise<HistorialDelAlumno>;
 }

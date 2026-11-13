@@ -5,10 +5,16 @@ import type {
   InscripcionConDatos,
   ResumenInscripcionAlumno,
 } from "../../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
-import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "../alumno/alumno.schemas.js";
+import type {
+  ActualizarAlumnoInput,
+  CrearAlumnoInput,
+  HistorialAsistenciaQuery,
+  ListarAlumnoQuery,
+} from "../alumno/alumno.schemas.js";
 import type { Alumno, AlumnoConsultable, PaginaAlumnos } from "../alumno/alumno.types.js";
 import type { ActualizarProfesoraInput, CrearProfesoraInput } from "../profesor/profesor.schemas.js";
 import type { Profesora } from "../profesor/profesor.types.js";
+import type { PaginaHistorialAsistencia } from "../historial-asistencia.js";
 import type { PanelAlumno } from "../panel-alumno.js";
 
 // Las partes de ILogicaPersonas, una por componente: cada controller depende solo de la suya.
@@ -57,6 +63,12 @@ export interface ILogicaAlumnos {
   crearAlumno(input: CrearAlumnoInput, solicitante: Solicitante): Promise<AlumnoDadoDeAlta>;
   listarAlumnos(consulta: ListarAlumnoQuery, solicitante: Solicitante): Promise<PaginaListadoAlumnos>;
   obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno>;
+  // US-10: el historial de asistencia de la ficha, paginado, con el mismo alcance que la ficha.
+  listarAsistenciasAlumno(
+    id: number,
+    consulta: HistorialAsistenciaQuery,
+    solicitante: Solicitante,
+  ): Promise<PaginaHistorialAsistencia>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput, solicitante: Solicitante): Promise<Alumno>;
   listarAlumnosConsultables(solicitante: Solicitante): Promise<AlumnoConsultable[]>;
   // US-29: sin id, el alumno de quien pide (o su primer menor a cargo); con id, uno de los suyos.

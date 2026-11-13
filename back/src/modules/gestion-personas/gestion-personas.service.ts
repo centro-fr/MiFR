@@ -14,7 +14,12 @@ import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscr
 import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "./alumno/alumno.service.js";
-import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno/alumno.schemas.js";
+import type {
+  ActualizarAlumnoInput,
+  CrearAlumnoInput,
+  HistorialAsistenciaQuery,
+  ListarAlumnoQuery,
+} from "./alumno/alumno.schemas.js";
 import type { Alumno, AlumnoConsultable, FiltroAlumno, PaginaAlumnos } from "./alumno/alumno.types.js";
 import type {
   AlumnoDadoDeAlta,
@@ -25,6 +30,7 @@ import type {
   PaginaListadoAlumnos,
   SituacionCuota,
 } from "./interface/i-logica-personas.js";
+import { paginaDelHistorial, type PaginaHistorialAsistencia } from "./historial-asistencia.js";
 import {
   historialDelPanel,
   MARCAS_EN_EL_HISTORIAL,
@@ -183,6 +189,18 @@ export class GestionPersonasService implements ILogicaPersonas {
     return this.alumnos.listarConsultables(solicitante.idUsuario);
   }
 
+  // US-10: el mismo alcance que la ficha. A una profesora se le comprueba que lo tenga a cargo antes de
+  // buscarlo, así un alumno que no existe le responde 403 igual que uno ajeno.
+  async listarAsistenciasAlumno(
+    id: number,
+    consulta: HistorialAsistenciaQuery,
+    solicitante: Solicitante,
+  ): Promise<PaginaHistorialAsistencia> {
+    await this.verificarQueLoTieneACargo(await this.inscripciones.listarVigentesDeAlumno(id), solicitante);
+    await this.alumnos.obtenerPorId(id);
+    return paginaDelHistorial(await this.asistencias.historialDelAlumno(id, consulta), consulta);
+  }
+
   // US-29: el alumno ve su panel y el tutor el de un menor a cargo. Un alumno ajeno responde 404,
   // igual que uno que no existe (seguridad.md, regla 3).
   async obtenerPanelAlumno(
@@ -192,15 +210,15 @@ export class GestionPersonasService implements ILogicaPersonas {
   ): Promise<PanelAlumno> {
     const alumno = alumnoDelPanel(await this.alumnos.listarConsultables(solicitante.idUsuario), idAlumno);
     if (!alumno) throw new NotFoundError("Alumno no encontrado");
-    const [inscripciones, marcas] = await Promise.all([
+    const [inscripciones, historial] = await Promise.all([
       this.inscripciones.listarVigentesDeAlumno(alumno.id_alumno),
-      this.asistencias.ultimasDelAlumno(alumno.id_alumno, MARCAS_EN_EL_HISTORIAL),
+      this.asistencias.historialDelAlumno(alumno.id_alumno, { limit: MARCAS_EN_EL_HISTORIAL, offset: 0 }),
     ]);
     const inscripcion = inscripcionDelPanel(inscripciones);
     const panel = {
       id_alumno: alumno.id_alumno,
       alumno: { nombre: alumno.nombre, apellido: alumno.apellido },
-      historial_asistencias: historialDelPanel(marcas),
+      historial_asistencias: historialDelPanel(historial.datos),
     };
     if (!inscripcion) return { ...panel, plan: null, proximas_clases: [] };
 

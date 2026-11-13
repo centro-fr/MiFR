@@ -282,36 +282,93 @@ describe("AsistenciaRepository", () => {
       );
     });
 
-    it("ultimasDelAlumno trae las últimas marcas de clases dictadas, de la más nueva, con la actividad y quien dictó", async () => {
-      const dia = new Date("2026-10-12T00:00:00Z");
-      prisma.asistencias.findMany.mockResolvedValue([
-        {
-          asistio: false,
-          clase: {
-            id_clase: 9,
-            fecha_clase: dia,
-            horario: { actividad: { nombre: "Funcional" } },
-            profesora: { usuario: { nombre: "Carla", apellido: "Ruiz" } },
-          },
-        },
-      ]);
+    describe("historialDelAlumno", () => {
+      const DIA = new Date("2026-10-12T00:00:00Z");
+      const INICIO = new Date("1970-01-01T18:00:00Z");
+      const FIN = new Date("1970-01-01T19:00:00Z");
+      const DE_CLASES_DICTADAS = { id_alumno: 5, clase: { estado: "DICTADA" } };
 
-      await expect(repositorio.ultimasDelAlumno(5, 20)).resolves.toEqual([
-        {
-          id_clase: 9,
-          fecha_clase: dia,
-          actividad: "Funcional",
-          profesora: { nombre: "Carla", apellido: "Ruiz" },
-          asistio: false,
+      beforeEach(() => {
+        prisma.asistencias.groupBy.mockResolvedValue([
+          { asistio: true, _count: { _all: 7 } },
+          { asistio: false, _count: { _all: 2 } },
+        ]);
+      });
+
+      it("trae una página de marcas de clases dictadas, de la más nueva, con el horario, la actividad y quien dictó", async () => {
+        prisma.asistencias.findMany.mockResolvedValue([
+          {
+            asistio: false,
+            observaciones: "Avisó",
+            clase: {
+              id_clase: 9,
+              fecha_clase: DIA,
+              horario: { hora_inicio: INICIO, hora_fin: FIN, actividad: { nombre: "Funcional" } },
+              profesora: { usuario: { nombre: "Carla", apellido: "Ruiz" } },
+            },
+          },
+        ]);
+
+        await expect(repositorio.historialDelAlumno(5, { limit: 10, offset: 20 })).resolves.toEqual({
+          datos: [
+            {
+              id_clase: 9,
+              fecha_clase: DIA,
+              hora_inicio: INICIO,
+              hora_fin: FIN,
+              actividad: "Funcional",
+              profesora: { nombre: "Carla", apellido: "Ruiz" },
+              asistio: false,
+              observaciones: "Avisó",
+            },
+          ],
+          total: 9,
+          presentes: 7,
+          ausentes: 2,
+        });
+        expect(prisma.asistencias.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: DE_CLASES_DICTADAS,
+            orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
+            skip: 20,
+            take: 10,
+          }),
+        );
+        expect(prisma.asistencias.groupBy).toHaveBeenCalledWith(
+          expect.objectContaining({ by: ["asistio"], where: DE_CLASES_DICTADAS }),
+        );
+      });
+
+      it.each([
+        [true, 7],
+        [false, 2],
+      ])(
+        "con asistio=%s filtra la página y el total, y los conteos siguen siendo de todo el historial",
+        async (asistio, total) => {
+          await expect(repositorio.historialDelAlumno(5, { asistio, limit: 10, offset: 0 })).resolves.toEqual(
+            {
+              datos: [],
+              total,
+              presentes: 7,
+              ausentes: 2,
+            },
+          );
+          expect(prisma.asistencias.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { ...DE_CLASES_DICTADAS, asistio } }),
+          );
         },
-      ]);
-      expect(prisma.asistencias.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id_alumno: 5, clase: { estado: "DICTADA" } },
-          orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
-          take: 20,
-        }),
       );
+
+      it("sin marcas cuenta cero", async () => {
+        prisma.asistencias.groupBy.mockResolvedValue([]);
+
+        await expect(repositorio.historialDelAlumno(5, { limit: 10, offset: 0 })).resolves.toEqual({
+          datos: [],
+          total: 0,
+          presentes: 0,
+          ausentes: 0,
+        });
+      });
     });
 
     it("historialDeAlumnos no consulta la base sin alumnos", async () => {

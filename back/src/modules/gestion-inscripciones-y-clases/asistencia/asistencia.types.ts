@@ -71,12 +71,30 @@ export interface AsistenciaDeProfesora {
   clases_asistidas: number;
 }
 
-// Una marca de una clase dictada como la ve el alumno en su panel (US-29): qué clase, de qué actividad,
-// quién la dictó y si fue.
+// Una marca de una clase dictada del historial del alumno (US-10, US-29): qué clase, en qué horario,
+// de qué actividad, quién la dictó y si fue.
 export interface MarcaDelAlumno {
   id_clase: number;
   fecha_clase: Date;
+  hora_inicio: Date;
+  hora_fin: Date;
   actividad: string;
   profesora: { nombre: string; apellido: string };
   asistio: boolean;
+  observaciones: string | null;
+}
+
+export interface ConsultaHistorialAlumno {
+  // Sin valor, presentes y ausentes.
+  asistio?: boolean;
+  limit: number;
+  offset: number;
+}
+
+// total es el de lo filtrado; presentes y ausentes, los de todo el historial.
+export interface HistorialDelAlumno {
+  datos: MarcaDelAlumno[];
+  total: number;
+  presentes: number;
+  ausentes: number;
 }

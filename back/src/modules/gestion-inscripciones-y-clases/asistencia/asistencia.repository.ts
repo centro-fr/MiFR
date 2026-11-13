@@ -7,8 +7,10 @@ import type {
   Asistencia,
   AsistenciaDeAlumno,
   AsistenciaDeProfesora,
+  ConsultaHistorialAlumno,
   EstadoSeguimientoInactividad,
   FiltroAsistenciasDictadas,
+  HistorialDelAlumno,
   MarcaDelAlumno,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
@@ -20,6 +22,36 @@ export interface MarcaDeAsistencia {
   idClase: number;
   idUsuario: number;
   fechaRegistro: Date;
+}
+
+const MARCA_DEL_HISTORIAL = {
+  asistio: true,
+  observaciones: true,
+  clase: {
+    select: {
+      id_clase: true,
+      fecha_clase: true,
+      horario: { select: { hora_inicio: true, hora_fin: true, actividad: { select: { nombre: true } } } },
+      profesora: { select: { usuario: { select: { nombre: true, apellido: true } } } },
+    },
+  },
+} satisfies Prisma.asistenciasSelect;
+
+function aMarcaDelAlumno({
+  asistio,
+  observaciones,
+  clase,
+}: Prisma.asistenciasGetPayload<{ select: typeof MARCA_DEL_HISTORIAL }>): MarcaDelAlumno {
+  return {
+    id_clase: clase.id_clase,
+    fecha_clase: clase.fecha_clase,
+    hora_inicio: clase.horario.hora_inicio,
+    hora_fin: clase.horario.hora_fin,
+    actividad: clase.horario.actividad.nombre,
+    profesora: clase.profesora.usuario,
+    asistio,
+    observaciones,
+  };
 }
 
 // El FROM y el WHERE comunes a los resúmenes de asistencia, con las uniones que agregue cada uno.
@@ -267,29 +299,29 @@ export class AsistenciaRepository {
   }
 
   // La profesora es la que dictó la clase, que con una suplencia no es la del horario.
-  async ultimasDelAlumno(idAlumno: number, cantidad: number): Promise<MarcaDelAlumno[]> {
-    const marcas = await this.prisma.asistencias.findMany({
-      where: { id_alumno: idAlumno, clase: { estado: "DICTADA" } },
-      select: {
-        asistio: true,
-        clase: {
-          select: {
-            id_clase: true,
-            fecha_clase: true,
-            horario: { select: { actividad: { select: { nombre: true } } } },
-            profesora: { select: { usuario: { select: { nombre: true, apellido: true } } } },
-          },
-        },
-      },
-      orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
-      take: cantidad,
-    });
-    return marcas.map(({ asistio, clase }) => ({
-      id_clase: clase.id_clase,
-      fecha_clase: clase.fecha_clase,
-      actividad: clase.horario.actividad.nombre,
-      profesora: clase.profesora.usuario,
-      asistio,
-    }));
+  async historialDelAlumno(
+    idAlumno: number,
+    { asistio, limit, offset }: ConsultaHistorialAlumno,
+  ): Promise<HistorialDelAlumno> {
+    const deClasesDictadas = { id_alumno: idAlumno, clase: { estado: "DICTADA" as const } };
+    const [marcas, conteos] = await Promise.all([
+      this.prisma.asistencias.findMany({
+        where: asistio === undefined ? deClasesDictadas : { ...deClasesDictadas, asistio },
+        select: MARCA_DEL_HISTORIAL,
+        orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.asistencias.groupBy({ by: ["asistio"], where: deClasesDictadas, _count: { _all: true } }),
+    ]);
+    const cuantas = (valor: boolean) => conteos.find((conteo) => conteo.asistio === valor)?._count._all ?? 0;
+    const presentes = cuantas(true);
+    const ausentes = cuantas(false);
+    return {
+      datos: marcas.map(aMarcaDelAlumno),
+      total: asistio === undefined ? presentes + ausentes : asistio ? presentes : ausentes,
+      presentes,
+      ausentes,
+    };
   }
 }

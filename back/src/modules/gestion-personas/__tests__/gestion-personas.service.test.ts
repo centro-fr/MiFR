@@ -67,7 +67,9 @@ function crearMocks() {
       listarDeLaUltimaBaja: vi.fn().mockResolvedValue([{ id_inscripcion: 8, id_profesora: ID_PROFESORA }]),
       contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
     },
-    asistencias: { ultimasDelAlumno: vi.fn().mockResolvedValue([]) },
+    asistencias: {
+      historialDelAlumno: vi.fn().mockResolvedValue({ datos: [], total: 0, presentes: 0, ausentes: 0 }),
+    },
     cuotas: {
       habilitacionDeInscripciones: vi.fn().mockResolvedValue(
         new Map([
@@ -385,6 +387,73 @@ describe("GestionPersonasService", () => {
     });
   });
 
+  describe("listarAsistenciasAlumno (US-10)", () => {
+    const CONSULTA = { asistio: false, limit: 10, offset: 10 };
+
+    it("devuelve la página del historial con las fechas y horas como texto y quien dictó cada clase", async () => {
+      mocks.asistencias.historialDelAlumno.mockResolvedValue({
+        datos: [
+          {
+            id_clase: 7,
+            fecha_clase: new Date("2026-10-05T00:00:00Z"),
+            hora_inicio: new Date("1970-01-01T18:00:00Z"),
+            hora_fin: new Date("1970-01-01T19:00:00Z"),
+            actividad: "Funcional",
+            profesora: { nombre: "Carla", apellido: "Ruiz" },
+            asistio: false,
+            observaciones: "Avisó",
+          },
+        ],
+        total: 11,
+        presentes: 30,
+        ausentes: 11,
+      });
+
+      await expect(servicio.listarAsistenciasAlumno(4, CONSULTA, PROFESORA)).resolves.toEqual({
+        datos: [
+          {
+            id_clase: 7,
+            fecha: "2026-10-05",
+            hora_inicio: "18:00",
+            hora_fin: "19:00",
+            actividad: "Funcional",
+            profesora: "Carla Ruiz",
+            asistio: false,
+            observaciones: "Avisó",
+          },
+        ],
+        total: 11,
+        presentes: 30,
+        ausentes: 11,
+        limit: 10,
+        offset: 10,
+      });
+      expect(mocks.asistencias.historialDelAlumno).toHaveBeenCalledWith(4, CONSULTA);
+    });
+
+    it("la profesora no ve el historial de un alumno que no tiene a cargo, ni si existe", async () => {
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([{ id_inscripcion: 9, id_profesora: 99 }]);
+      await expect(servicio.listarAsistenciasAlumno(4, CONSULTA, PROFESORA)).rejects.toThrow(ForbiddenError);
+
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+      await expect(servicio.listarAsistenciasAlumno(999, CONSULTA, PROFESORA)).rejects.toThrow(
+        ForbiddenError,
+      );
+      expect(mocks.alumnos.obtenerPorId).not.toHaveBeenCalled();
+      expect(mocks.asistencias.historialDelAlumno).not.toHaveBeenCalled();
+    });
+
+    it("a la propietaria un alumno que no existe le responde 404, sin consultar asistencias", async () => {
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+      mocks.alumnos.obtenerPorId.mockRejectedValue(new NotFoundError("Alumno no encontrado"));
+
+      await expect(servicio.listarAsistenciasAlumno(999, CONSULTA, PROPIETARIA)).rejects.toThrow(
+        NotFoundError,
+      );
+      expect(mocks.asistencias.historialDelAlumno).not.toHaveBeenCalled();
+    });
+  });
+
   describe("actualizarAlumno", () => {
     it("la propietaria modifica cualquier dato", async () => {
       await servicio.actualizarAlumno(4, { nombre: "Ana", fecha_nacimiento: new Date() }, PROPIETARIA);
@@ -510,20 +579,28 @@ describe("GestionPersonasService", () => {
       mocks.alumnos.listarConsultables.mockResolvedValue([MENOR, PROPIA]);
       mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([INSCRIPCION]);
       mocks.inscripciones.contarLugaresOcupados.mockResolvedValue(new Map([[31, 5]]));
-      mocks.asistencias.ultimasDelAlumno.mockResolvedValue([
-        {
-          id_clase: 7,
-          fecha_clase: new Date("2026-10-05T00:00:00Z"),
-          actividad: "Funcional",
-          profesora: { nombre: "Carla", apellido: "Ruiz" },
-          asistio: true,
-        },
-      ]);
+      mocks.asistencias.historialDelAlumno.mockResolvedValue({
+        datos: [
+          {
+            id_clase: 7,
+            fecha_clase: new Date("2026-10-05T00:00:00Z"),
+            hora_inicio: new Date("1970-01-01T18:00:00Z"),
+            hora_fin: new Date("1970-01-01T19:00:00Z"),
+            actividad: "Funcional",
+            profesora: { nombre: "Carla", apellido: "Ruiz" },
+            asistio: true,
+            observaciones: null,
+          },
+        ],
+        total: 1,
+        presentes: 1,
+        ausentes: 0,
+      });
 
       const panel = await servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA);
 
       expect(mocks.alumnos.listarConsultables).toHaveBeenCalledWith(40);
-      expect(mocks.asistencias.ultimasDelAlumno).toHaveBeenCalledWith(4, 20);
+      expect(mocks.asistencias.historialDelAlumno).toHaveBeenCalledWith(4, { limit: 20, offset: 0 });
       expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
       expect(panel).toMatchObject({
         id_alumno: 4,
@@ -563,7 +640,7 @@ describe("GestionPersonasService", () => {
         NotFoundError,
       );
       expect(mocks.inscripciones.listarVigentesDeAlumno).not.toHaveBeenCalled();
-      expect(mocks.asistencias.ultimasDelAlumno).not.toHaveBeenCalled();
+      expect(mocks.asistencias.historialDelAlumno).not.toHaveBeenCalled();
     });
 
     it("sin inscripción vigente no hay plan ni próximas clases, y no se consulta la cuota", async () => {

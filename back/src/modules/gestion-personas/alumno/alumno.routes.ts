@@ -7,6 +7,7 @@ import {
   actualizarAlumnoSchema,
   alumnoIdParamSchema,
   crearAlumnoSchema,
+  historialAsistenciaQuerySchema,
   listarAlumnoQuerySchema,
   panelAlumnoQuerySchema,
 } from "./alumno.schemas.js";
@@ -37,6 +38,12 @@ export function createAlumnoRoutes(logica: ILogicaAlumnos, acceso: ControlDeAcce
     acceso.permiso("ALUMNOS_VER"),
     validate({ params: alumnoIdParamSchema }),
     controller.obtener,
+  );
+  router.get(
+    "/:id/asistencias",
+    acceso.permiso("ALUMNOS_VER"),
+    validate({ params: alumnoIdParamSchema, query: historialAsistenciaQuerySchema }),
+    controller.asistencias,
   );
   router.patch(
     "/:id",
