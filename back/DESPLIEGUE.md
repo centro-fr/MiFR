@@ -130,9 +130,9 @@ La API limita los pedidos por IP (`shared/middlewares/limite-pedidos.ts`). Detr�
 Cada línea del log de la API termina con la IP que usó Express. Para calibrar:
 
 1. Averiguar la IP pública propia, por ejemplo en <https://ifconfig.me>.
-2. Abrir `https://<sitio>.netlify.app/` y buscar en el log de Render la línea de `GET /api/v1/publico/actividades`.
+2. Correr `curl https://<sitio>.netlify.app/api/v1/auth/me` (responde 401, pero pasa por Netlify y queda en el log) y buscar en el log de Render la línea de `GET /api/v1/auth/me`.
 3. Si la IP del final no es la propia, cambiar `PROXIES_DE_CONFIANZA` en Render y repetir: con un valor bajo aparece la IP de un proxy, con uno alto, la que se mande en `X-Forwarded-For`.
-4. Con el valor correcto, `curl -H "X-Forwarded-For: 1.2.3.4" https://<sitio>.netlify.app/api/v1/publico/actividades` tiene que seguir mostrando la IP propia en el log, no `1.2.3.4`.
+4. Con el valor correcto, `curl -H "X-Forwarded-For: 1.2.3.4" https://<sitio>.netlify.app/api/v1/auth/me` tiene que seguir mostrando la IP propia en el log, no `1.2.3.4`.
 
 Llamar directo a la URL de Render, con un proxy menos en el camino, no sirve para esquivar el límite: la API rechaza con 403 cualquier pedido a `/api` que no traiga la firma de Netlify, antes de contarlo.
 
@@ -144,7 +144,7 @@ Llamar directo a la URL de Render, con un proxy menos en el camino, no sirve par
 - **Sin CSRF hoy.** El token viaja en el header `Authorization`, que el navegador no manda solo. Si más adelante el token pasa a una cookie `httpOnly` (lo que pide AGENTS.md), tener todo en el mismo origen permite usar `SameSite=Lax` sin cookies entre dominios.
 - **Dónde guarda el token el front.** Vive en memoria y en `sessionStorage`, así que un XSS en el front podría leerlo. Lo mitiga la Content-Security-Policy de `netlify.toml`: el sitio solo ejecuta sus propios scripts y el de Google Identity Services, y solo se conecta con su mismo origen y con Google, así que un código inyectado no corre ni puede mandar el token afuera. Lo definitivo es la cookie `httpOnly`.
 - **Cabeceras del sitio.** `netlify.toml` manda además HSTS, `Permissions-Policy` (sin cámara, micrófono, ubicación ni pagos) y `Cross-Origin-Opener-Policy: same-origin-allow-popups`, que necesita el popup de Google. Si se suma un servicio externo (otra CDN de imágenes, un script de analítica), hay que agregar su origen a la CSP o el navegador lo bloquea: se ve en la consola como `violates the following Content Security Policy directive`.
-- **Límite de pedidos.** La API corta con 429 a la IP que pasa de 600 pedidos por minuto, de 60 por minuto a `/publico` o de 50 inicios de sesión cada 15 minutos. Los topes viven en memoria del proceso, así que valen con una sola instancia, que es lo que da el plan gratuito. `/health` no tiene tope, para el monitor del paso 6. La IP sale de `PROXIES_DE_CONFIANZA` (paso 7).
+- **Límite de pedidos.** La API corta con 429 a la IP que pasa de 600 pedidos por minuto o de 50 inicios de sesión cada 15 minutos. Los topes viven en memoria del proceso, así que valen con una sola instancia, que es lo que da el plan gratuito. `/health` no tiene tope, para el monitor del paso 6. La IP sale de `PROXIES_DE_CONFIANZA` (paso 7).
 
 ## Migraciones en producción
 
