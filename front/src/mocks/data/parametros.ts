@@ -39,13 +39,6 @@ export function parametrosSemilla(): ParametroMock[] {
       fecha_actualizacion: CARGA_INICIAL,
     },
     {
-      clave: "DIAS_AVISO_VENCIMIENTO",
-      tipo_dato: "ENTERO",
-      valor: 3,
-      descripcion: "Días antes del vencimiento de la cuota en los que el alumno o su tutor reciben el aviso",
-      fecha_actualizacion: null,
-    },
-    {
       clave: "INASISTENCIAS_CONSECUTIVAS_INACTIVO",
       tipo_dato: "ENTERO",
       valor: 3,
