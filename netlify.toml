@@ -24,9 +24,29 @@
   to = "/index.html"
   status = 200
 
+# Cabeceras de seguridad del sitio. Las de la API las pone helmet en el back, pero solo cubren las
+# respuestas JSON: la página la sirve Netlify y necesita las suyas.
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # Lo que el sistema no usa queda bloqueado. Copiar al portapapeles y compartir la imagen del
+    # ranking (navigator.share) siguen permitidos para el propio sitio.
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    # El popup de Google Identity Services le devuelve la credencial a la página: same-origin lo cortaría.
+    # Es la misma que usa Vite en desarrollo (vite.config.ts).
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+    # Si un XSS llegara a inyectar código, esto le impide cargar scripts de otro origen y mandar el
+    # token a otro servidor. Cada origen externo está por algo:
+    #   accounts.google.com/gsi  botón y popup de inicio de sesión con Google (script, estilos, iframe y llamadas)
+    #   fonts.googleapis.com / fonts.gstatic.com  tipografías
+    #   tile.openstreetmap.org  teselas del mapa de la página pública
+    #   *.googleusercontent.com  foto de perfil de Google
+    #   cdn.jsdelivr.net / raw.githubusercontent.com  imágenes de los ejercicios de las rutinas
+    #   blob:  imagen del ranking que se arma en el navegador para compartir
+    # style-src lleva 'unsafe-inline' porque Leaflet, Radix y los avisos insertan estilos en línea; un estilo
+    # no ejecuta código. Al sumar un servicio externo nuevo hay que agregar su origen acá.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.googleusercontent.com https://cdn.jsdelivr.net https://raw.githubusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
