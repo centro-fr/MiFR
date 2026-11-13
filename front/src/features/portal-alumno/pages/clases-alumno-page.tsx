@@ -31,7 +31,7 @@ function TablaClases({ clases }: { clases: ClaseProxima[] }) {
         </thead>
         <tbody className="divide-y divide-border">
           {clases.map((clase) => (
-            <tr key={`${clase.id}-${clase.fecha}`}>
+            <tr key={`${clase.id_horario}-${clase.fecha}`}>
               <td className="px-5 py-3 font-semibold whitespace-nowrap">{fechaCorta(clase.fecha)}</td>
               <td className="px-5 py-3 whitespace-nowrap tabular-nums">
                 {clase.hora_inicio.slice(0, 5)} a {clase.hora_fin.slice(0, 5)}
@@ -88,7 +88,7 @@ function Contenido() {
   return (
     <ul aria-label="Próximas clases" className={cn(CAJA, "overflow-hidden")}>
       {clases.map((clase) => (
-        <FilaClase key={`${clase.id}-${clase.fecha}`} clase={clase} />
+        <FilaClase key={`${clase.id_horario}-${clase.fecha}`} clase={clase} />
       ))}
     </ul>
   );

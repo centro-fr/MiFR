@@ -24,7 +24,8 @@
 
 # Antes de desplegar
 
-- [ ] `GET /alumnos/mi-panel`: el portal del alumno lo pide, pero el back no tiene la ruta (solo existe en los mocks) y responde 403.
+- [ ] `GET /alumnos/:id/asistencias`: la ficha del alumno lo pide, pero el back no tiene la ruta (solo existe en los mocks); `asistencias-api.ts` se traga el error y muestra el historial vacío.
+- [ ] Regenerar las bases locales ya cargadas (`prisma migrate reset` y los seeds): no tienen `REPORTES_RANKING_VER` para el alumno y el tutor, y el ranking del portal les responde 403.
 - [ ] Cargar las actividades reales del centro en `front/src/features/publico/utils/actividades-del-centro.ts`.
 - [ ] Actualizar `docs/diagrams/enterprise_architect/MiFR.eap` a mano: sin DifusionPublica ni ResumenDiarioPropietaria, con SuscripcionPush.
 - [ ] Probar los avisos push en un celular real (Android y iPhone con la app agregada a inicio) después del deploy: ver `docs/DESPLIEGUE.md`, paso 9.

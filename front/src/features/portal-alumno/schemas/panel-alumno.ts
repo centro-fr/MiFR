@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { estadoCuotaSchema } from "@/features/alumnos/schemas/alumno";
 
-const estadoCuotaSchema = z.enum(["AL_DIA", "EN_GRACIA", "VENCIDA"]);
+// GET /alumnos/mi-panel (alumno.openapi.ts del back, US-29). La cuota usa los mismos estados que la
+// ficha del alumno; sin cuota paga (PENDIENTE_DE_PAGO) no hay vencimiento.
 const estadoAsistenciaSchema = z.enum(["PRESENTE", "AUSENTE"]);
 
 export const panelAlumnoSchema = z.object({
@@ -15,12 +17,12 @@ export const panelAlumnoSchema = z.object({
     clases_por_semana: z.number().int().nullable(),
     profesora: z.string(),
     estado_cuota: estadoCuotaSchema,
-    fecha_vencimiento: z.string(),
-    dias_restantes: z.number().int(),
+    fecha_vencimiento: z.string().nullable(),
+    dias_restantes: z.number().int().nullable(),
   }).nullable(),
   proximas_clases: z.array(
     z.object({
-      id: z.number().int(),
+      id_horario: z.number().int(),
       fecha: z.string(),
       hora_inicio: z.string(),
       hora_fin: z.string(),
@@ -31,7 +33,7 @@ export const panelAlumnoSchema = z.object({
   ),
   historial_asistencias: z.array(
     z.object({
-      id: z.number().int(),
+      id_clase: z.number().int(),
       fecha: z.string(),
       actividad: z.string(),
       profesora: z.string(),
