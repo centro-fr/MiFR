@@ -399,7 +399,7 @@ package "NOTIFICACIONES E INSIGNIAS" {
   entity "suscripciones_push" as suscripciones_push <<Notificaciones>> {
     * <color:#DAA520><&key></color> id_suscripcion : SERIAL <color:#DAA520>PK</color>
     --
-    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color>
+    * <color:#9CA3AF><&link-intact></color> id_usuario : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>ON DELETE CASCADE: se borra con su usuario</size></color>
     * endpoint : VARCHAR(1000) <color:#9CA3AF>UK</color> <color:#6B7280><size:11>URL del servicio de push del navegador; un dispositivo, un endpoint</size></color>
     * clave_p256dh : VARCHAR(200)
     * clave_auth : VARCHAR(100)

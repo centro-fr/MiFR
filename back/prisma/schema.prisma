@@ -52,9 +52,10 @@ model usuarios {
   asistencias_registradas  asistencias[]
   suplencias_registradas   suplencias[]
   notificaciones           notificaciones[]
+  suscripciones_push       suscripciones_push[]
   seguimientos_inactividad seguimientos_inactividad[]
-  progreso_corregido     registros_progreso[]       @relation("registro_progreso_modifica")
-  progreso_dado_de_baja  registros_progreso[]       @relation("registro_progreso_baja")
+  progreso_corregido       registros_progreso[]       @relation("registro_progreso_modifica")
+  progreso_dado_de_baja    registros_progreso[]       @relation("registro_progreso_baja")
 }
 
 model roles {
@@ -185,7 +186,7 @@ model planes {
   fecha_alta             DateTime  @default(now()) @db.Date
   fecha_baja             DateTime? @db.Date
 
-  actividad_exclusiva actividades?       @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
+  actividad_exclusiva actividades?        @relation(fields: [id_actividad_exclusiva], references: [id_actividad], onDelete: NoAction, onUpdate: NoAction, map: "FK_planes_actividad_exclusiva")
   precios             plan_precios[]
   inscripciones       inscripciones[]
   promociones         promocion_planes[]
@@ -369,8 +370,8 @@ model clases {
   fecha_cierre_asist DateTime?    @db.Timestamp(6)
   observaciones      String?      @db.VarChar(255)
 
-  horario     horarios      @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_horarios")
-  profesora   profesoras    @relation(fields: [id_prof_dictante], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_profesoras")
+  horario     horarios               @relation(fields: [id_horario], references: [id_horario], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_horarios")
+  profesora   profesoras             @relation(fields: [id_prof_dictante], references: [id_profesora], onDelete: NoAction, onUpdate: NoAction, map: "FK_clases_profesoras")
   asistencias asistencias[]
   suplencias  suplencias[]
   honorarios  liquidacion_detalles[]
@@ -586,6 +587,22 @@ enum estado_envio_notificacion {
   ERROR
 }
 
+// Un dispositivo suscripto a los avisos push de cuota (arquitectura.md). El endpoint lo da el servicio de
+// push del navegador y es único: si otra cuenta suscribe el mismo dispositivo, la fila pasa a esa cuenta.
+// La FK borra en cascada: una suscripción no tiene historia que conservar y no traba el borrado de la cuenta.
+model suscripciones_push {
+  id_suscripcion Int      @id(map: "PK_suscripciones_push") @default(autoincrement())
+  id_usuario     Int
+  endpoint       String   @unique(map: "UK_suscripciones_push_endpoint") @db.VarChar(1000)
+  clave_p256dh   String   @db.VarChar(200)
+  clave_auth     String   @db.VarChar(100)
+  fecha_alta     DateTime @default(now()) @db.Timestamp(6)
+
+  usuario usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "FK_suscripciones_push_usuarios")
+
+  @@index([id_usuario], map: "IXFK_suscripciones_push_usuarios")
+}
+
 // Los avisos son in-app (arquitectura.md): nacen ENVIADA y solo cambia leida. El único hace que
 // generar dos veces el aviso de una cuota no lo duplique (US-25).
 model notificaciones {
@@ -629,8 +646,8 @@ model insignias {
 model alumno_insignias {
   id_alumno       Int
   id_insignia     Int
-  periodo         String    @default("") @db.VarChar(7)
-  fecha_obtencion DateTime  @default(now()) @db.Timestamp(6)
+  periodo         String   @default("") @db.VarChar(7)
+  fecha_obtencion DateTime @default(now()) @db.Timestamp(6)
 
   alumno   alumnos   @relation(fields: [id_alumno], references: [id_alumno], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_alumnos")
   insignia insignias @relation(fields: [id_insignia], references: [id_insignia], onDelete: NoAction, onUpdate: NoAction, map: "FK_alumno_insignias_insignias")
@@ -718,10 +735,10 @@ model liquidacion_detalles {
   // < 0 si DESCUENTO_AUSENCIA
   monto          Decimal                      @db.Decimal(10, 2)
 
-  liquidacion liquidaciones      @relation(fields: [id_liquidacion], references: [id_liquidacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_liquidaciones")
-  tarifa      tarifas_honorario  @relation(fields: [id_tarifa], references: [id_tarifa], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_tarifas_honorario")
-  inscripcion inscripciones?     @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_inscripciones")
-  clase       clases?            @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_clases")
+  liquidacion liquidaciones     @relation(fields: [id_liquidacion], references: [id_liquidacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_liquidaciones")
+  tarifa      tarifas_honorario @relation(fields: [id_tarifa], references: [id_tarifa], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_tarifas_honorario")
+  inscripcion inscripciones?    @relation(fields: [id_inscripcion], references: [id_inscripcion], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_inscripciones")
+  clase       clases?           @relation(fields: [id_clase], references: [id_clase], onDelete: NoAction, onUpdate: NoAction, map: "FK_liquidacion_detalles_clases")
 
   @@index([id_clase], map: "IXFK_liquidacion_detalles_clases")
   @@index([id_inscripcion], map: "IXFK_liquidacion_detalles_inscripciones")
