@@ -2,6 +2,8 @@
 
 Tareas técnicas, secuenciales y verificables para la épica **Difusión y Analítica de Negocio** (US-32).
 
+> **Sin efecto desde el 13/11/2026.** La página pública muestra datos fijos del front y no tiene backend: ver la decisión al comienzo de `spec.md`. Las tareas quedan como registro del plan original.
+
 ---
 
 ## Fase 1: Backend – Consulta Pública y Caché

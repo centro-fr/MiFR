@@ -211,7 +211,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                               |                                                                                        |
 | US-30 | Ranking de asistencia entre alumnos                       |   5    | PI-72, PI-73 (el Podio del mes sale del ranking)              | Sí                                                                                     |
 | US-31 | Insignias y racha de asistencia                           |   5    | PI-71, PI-73                                                  | Sí                                                                                     |
-| US-32 | Panel público de disponibilidad                           |   5    | PI-46                                                         | Parcial: las actividades y sus días; los horarios, los cupos y la próxima clase quedan con sesión (decidido el 12/10/2026); la promoción, pendiente |
+| US-32 | Panel público de disponibilidad                           |   5    |                                                               | No aplica: desde el 13/11/2026 la página pública usa datos fijos del front y no hay endpoint (PI-46 retirado) |
 | US-33 | Informe de asistencia                                     |   5    | PI-74, PI-75                                                  | Parcial: el informe por la API; la exportación a PDF y Excel no está en el back        |
 | US-34 | Informe de cuotas vencidas                                |   5    |                                                               |                                                                                        |
 | US-35 | Reportes de inscriptos por mes                            |   5    | PI-87                                                         | Sí: altas, bajas y activos por mes, motivos de baja y permanencia; la comparación entre años la arma el front pidiendo un año por vez |
@@ -272,7 +272,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-43         | La transferencia informada y su revisión por la API                 | US-07, US-16, US-17 | Servicios          | Demostración                                               | Sí           |
 | PI-44         | Reactivar a quien nunca pagó                                        | US-07, US-08        | Servicios          | Demostración                                               | Sí           |
 | PI-45         | La situación de cuota en la ficha y el listado de alumnos           | US-08, US-10, US-18 | Servicios          | Demostración                                               | Sí           |
-| PI-46         | Las actividades públicas del centro                                 | US-32, US-04        | Servicios          | Demostración                                               | Sí           |
+| PI-46         | Las actividades públicas del centro                                 | US-32, US-04        | Servicios          | Demostración                                               | Retirado    |
 | PI-47         | Las clases del día y su lista de asistencia                         | US-20, US-18        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-48         | Marcar asistencia                                                   | US-20               | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
 | PI-49         | Cerrar la asistencia con el botón                                   | US-21, US-20        | Servicios          | Demostración, `crearInscripcionDePrueba`, reloj fijo       | Sí           |
@@ -883,6 +883,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-46 — Las actividades públicas del centro
 
+> **Retirado el 13/11/2026.** La página pública pasó a mostrar datos fijos del front y `GET /publico/actividades` se borró junto con el subsistema DifusionPublica, para que un visitante no despierte la API ni la base. Se conserva el caso como historial.
+
 **US:** US-32, US-04 · **Precondición:** escenario de demostración cargado (ocho actividades con horarios; Combat se da martes y jueves, y Training lunes, miércoles y viernes).
 
 1. Un visitante, sin sesión, consulta `GET /publico/actividades`, `GET /publico/disponibilidad` y `GET /horarios`.
@@ -890,7 +892,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Resultado esperado:** en el paso 1 las actividades responden 200 con `Cache-Control: public, max-age=60` y las ocho actividades, cada una con su descripción, su modalidad, los días en que se da y las clases por semana (Funcional, de lunes a viernes, con 11). La respuesta no trae horas, profesoras, cupos ni datos de alumnos. `GET /publico/disponibilidad` ya no existe (404) y la grilla de horarios exige sesión (401). En el paso 2 Combat deja de ofrecerse y Training figura los lunes y los miércoles, con 2 clases.
 
-**Automatizado:** Sí (B-19 y B-20).
+**Automatizado:** Retirado (B-19 y B-20 se borraron).
 
 #### PI-47 — Las clases del día y su lista de asistencia
 
@@ -1237,8 +1239,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | B-16        | La baja de una actividad sin alumnos da de baja también sus horarios, que no se borran                                                                                        | PI-06 |
 | B-17        | Una actividad con un plan vigente exclusivo no se da de baja (409 con el nombre del plan); la actividad, su horario y el plan quedan igual                                   | PI-06 |
 | B-18        | Con su plan exclusivo dado de baja, la actividad se da de baja aunque haya planes vigentes para cualquier actividad                                                         | PI-06 |
-| B-19        | Un visitante sin sesión ve las actividades con sus días y sus clases por semana, sin horas, profesoras, cupos ni datos de alumnos; la grilla de horarios exige sesión      | PI-46 |
-| B-20        | Una actividad sin horarios vigentes deja de ofrecerse y la baja de un horario se refleja en sus días y sus clases                                                          | PI-46 |
+| B-19        | Retirado el 13/11/2026. Un visitante sin sesión ve las actividades con sus días y sus clases por semana, sin horas, profesoras, cupos ni datos de alumnos; la grilla de horarios exige sesión      | PI-46 |
+| B-20        | Retirado el 13/11/2026. Una actividad sin horarios vigentes deja de ofrecerse y la baja de un horario se refleja en sus días y sus clases                                                          | PI-46 |
 | B-21        | Una clase puede terminar a las 23:00, el cierre del centro, y no después                                                                                                    | PI-05 |
 | C-01 a C-03 | Volver a correr la carga no pisa permisos quitados, repone los críticos de la propietaria y no duplica nada                                                                     | PI-09 |
 | D-01 a D-04 | Alta de plan con un único precio vigente desde hoy; actividad exclusiva dada de baja; nombre repetido sin distinguir mayúsculas; restricciones del DER en la base               | PI-11 |
@@ -1794,7 +1796,7 @@ Los defectos se numeran D-01, D-02…
 | PI-29 | ¿El DNI se autoedita? Resuelto: no; el DNI y la fecha de nacimiento los cambia quien tiene `USUARIOS_EDITAR` | Cerrado |
 | PI-37 | ¿Dónde se guardan el peso y la talla de la pre-inscripción y cómo se sabe qué actividad los pide? Resuelto: en un `registros_progreso` inicial a nombre de la profesora a cargo, y con la columna nueva `actividades.requiere_medidas` (cambio del DER decidido el 11/10/2026) | Cerrado |
 | PI-38 | ¿La reserva de cupo de una pre-inscripción vence (el diseño del front decía 72 hs y lista de espera)? Resuelto: vence sola, contada desde el inicio de clases y no desde el alta, con un plazo en días que configura la propietaria (`DIAS_RESERVA_PREINSCRIPCION`, 3 por defecto). Se calcula al consultar, sin proceso programado. Sin lista de espera: el lugar vuelve a figurar disponible | Cerrado |
-| PI-46 | Las actividades públicas no tienen límite de pedidos por IP: hoy ningún endpoint lo tiene (tampoco el login). Detrás del proxy de Render hace falta `trust proxy` para que el límite no caiga sobre la IP del proxy. Mientras tanto, la respuesta se puede reusar un minuto (`Cache-Control`). Falta decidir si se agrega `express-rate-limit` para toda la API | Abierto |
+| PI-46 | Las actividades públicas no tienen límite de pedidos por IP: hoy ningún endpoint lo tiene (tampoco el login). Detrás del proxy de Render hace falta `trust proxy` para que el límite no caiga sobre la IP del proxy. Mientras tanto, la respuesta se puede reusar un minuto (`Cache-Control`). Falta decidir si se agrega `express-rate-limit` para toda la API. Resuelto el 13/11/2026: toda `/api` tiene límite por IP con `express-rate-limit` (`limite-pedidos.ts`), `trust proxy` sale de `PROXIES_DE_CONFIANZA`, y la API solo acepta pedidos firmados por Netlify. El endpoint público se retiró | Cerrado |
 | PI-41 | ¿Dónde se guarda el texto libre de una baja con el motivo "Otro" (US-08)? `observaciones` es de la inscripción y se pisaría. Resuelto: columna nueva `inscripciones.detalle_baja` (VARCHAR(200), opcional), solo con el motivo `OTRO` (`ck_inscripciones_x2`); cambio del DER decidido el 11/10/2026 | Cerrado |
 | PI-48 | La propietaria corrige solo las clases que ya existen. Resuelto: `GET /clases?fecha=` (solo la propietaria, hasta hoy) crea las clases de ese día con los horarios que regían; ver PI-55 | Cerrado |
 | PI-47 | ¿Los pre-inscriptos aparecen en la lista de asistencia? Resuelto (12/10/2026): no; todavía no pagaron y no habilitan a asistir (US-07), así que no se los marca ni se les registra una falta. Su reserva sigue ocupando cupo | Cerrado |
@@ -1881,3 +1883,4 @@ Los defectos se numeran D-01, D-02…
 |   2.33  | 05/11/2026 | Caso PI-87 (altas, bajas, activos, motivos y permanencia del reporte de Inscripciones, US-35) y archivo S con S-01 a S-03; US-35 pasa a automatizada | Francisco Andrade |
 |   2.34  | 09/11/2026 | Casos PI-88 (edición y reincorporación de profesoras) y PI-89 (contacto y privacidad del listado), con T-01 a T-05; US-38 pasa a automatizada. Se completa la tabla de tests con los archivos L, R, S y U | Francisco Andrade |
 |   2.35  | 10/11/2026 | Caso PI-90 (la foto de perfil de Google en el login y en `/auth/me`) y tests A-49 y A-50; US-01 la suma. El fake de Google recibe la foto como `email` + barra vertical + `foto` y las migraciones agregan `usuarios.foto_url` con su check | Francisco Andrade |
+|   2.36  | 13/11/2026 | Se retiran PI-46 y los tests B-19 y B-20: la página pública usa datos fijos del front y se borra `GET /publico/actividades` con el subsistema DifusionPublica. US-32 pasa a no aplicar. Se cierra el punto abierto sobre el límite de pedidos | nicolasandr |

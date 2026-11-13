@@ -1,5 +1,7 @@
 # Especificación Funcional: Difusión y Analítica de Negocio
 
+> **Decisión vigente (13/11/2026): la página pública muestra datos fijos.** Las actividades del centro, con su descripción, su modalidad y sus días, viven en el código del front y se publican con él: la página no llama a la API. Así un visitante, o un bot que la visite seguido, no despierta la API de Render ni la base de Neon, cuyas horas gratuitas son limitadas, y la página carga al instante aunque la API esté dormida. A cambio, un cambio de actividades requiere editar el front y volver a publicarlo, y deja de cumplirse que el panel se actualice solo (sección 7 y criterios de aceptación). Los cupos, los horarios, la próxima clase y la promoción vigente no se publican. `GET /publico/actividades` y el subsistema DifusionPublica del back se retiraron.
+
 ## 1. Origen
 
 Esta especificación consolida las User Stories de la épica **Difusión y Analítica de Negocio**:

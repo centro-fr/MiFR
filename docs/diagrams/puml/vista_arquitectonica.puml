@@ -67,7 +67,6 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   interface "ILogicaNotificaciones"         as RP_Notificaciones
   interface "ILogicaInsignias"              as RP_Insignias
   interface "ILogicaInformes"               as RP_Informes
-  interface "ILogicaDifusionPublica"        as RP_DifusionPublica
 
   UsuarioPresWeb               -down-( RP_Usuarios
   ServicioEntrenamientoPresWeb -down-( RP_ServicioEntrenamiento
@@ -79,7 +78,6 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   NotificacionesPresWeb        -down-( RP_Notificaciones
   InsigniasPresWeb             -down-( RP_Insignias
   InformesPresWeb              -down-( RP_Informes
-  PanelPublicoPresWeb          -down-( RP_DifusionPublica
 
   UsuarioPresWeb               -[hidden]right-> ServicioEntrenamientoPresWeb
   ServicioEntrenamientoPresWeb -[hidden]right-> PersonasPresWeb
@@ -91,6 +89,12 @@ package "Capa Presentacion" as CapaPresentacion <<subsystem>> #FDE6D6 {
   NotificacionesPresWeb        -[hidden]right-> InsigniasPresWeb
   InsigniasPresWeb             -[hidden]right-> InformesPresWeb
   InformesPresWeb              -[hidden]right-> PanelPublicoPresWeb
+
+  note bottom of PanelPublicoPresWeb
+    Página pública con datos fijos del front:
+    no consume la API, así un visitante no
+    despierta la API ni la base.
+  end note
 }
 
 ' ============================================================
@@ -405,20 +409,6 @@ CapaPersistente -down-( R_Materializar
 ' ============================================================
 package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem>> #DDF7EC {
 
-  ' ---------------- DifusionPublica ----------------
-  package "DifusionPublica" as DifusionPublica <<subsystem>> #F3FDF8 {
-    component "PanelDisponibilidad" as PanelDisponibilidad #EEFBF4
-    interface "IInfoHorarios"      as R_DP_InfoHorarios
-    interface "IInfoInscripciones" as R_DP_InfoInscripciones
-    interface "IInfoPlanes"        as R_DP_InfoPlanes
-
-    PanelDisponibilidad -right-( R_DP_InfoHorarios
-    PanelDisponibilidad -right-( R_DP_InfoInscripciones
-    PanelDisponibilidad -right-( R_DP_InfoPlanes
-  }
-  interface "ILogicaDifusionPublica" as I_LogicaDifusionPublica
-  DifusionPublica -down- I_LogicaDifusionPublica
-
   ' ---------------- Calculos del negocio ----------------
   package "Calculos del negocio" as CalculosDelNegocio <<subsystem>> #F3FDF8 {
     component "CalculadorRachaRanking"     as CalcRacha #EEFBF4
@@ -479,8 +469,7 @@ package "Capa Logica de Negocio No Persistente" as CapaNoPersistente <<subsystem
   Reportes -down-( R_RE_InfoCuotas
   Reportes -down-( R_RE_InfoPagos
 
-  DifusionPublica -[hidden]right-> CalculosDelNegocio
-  DifusionPublica -[hidden]down-> Reportes
+  CalculosDelNegocio -[hidden]down-> Reportes
 }
 
 ' ============================================================
