@@ -53,13 +53,6 @@ export function parametrosSemilla(): ParametroMock[] {
       fecha_actualizacion: null,
     },
     {
-      clave: "HORA_RESUMEN_DIARIO",
-      tipo_dato: "TEXTO",
-      valor: "20:00",
-      descripcion: "Hora a partir de la cual se genera la notificación del resumen diario a la propietaria (HH:MM)",
-      fecha_actualizacion: null,
-    },
-    {
       clave: "DIA_CIERRE_HONORARIOS",
       tipo_dato: "ENTERO",
       valor: 5,

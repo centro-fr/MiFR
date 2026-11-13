@@ -135,15 +135,6 @@ export const db: BaseMock = {
       leida: false,
     },
     {
-      id_notificacion: 3,
-      id_usuario: 1,
-      tipo: "CLASE_CANCELADA",
-      id_cuota: null,
-      mensaje: "La clase de prueba fue modificada. Revisá tu cronograma.",
-      fecha_generacion: new Date().toISOString(),
-      leida: false,
-    },
-    {
       id_notificacion: 4,
       id_usuario: 4,
       tipo: "CUOTA_POR_VENCER",

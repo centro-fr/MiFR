@@ -86,8 +86,3 @@ export function generarAvisosDeCuota(): void {
     }
   }
 }
-
-/** Desactivada: ya no se generan notificaciones de resumen diario en la campanita */
-export function generarResumenDiario(_armarMensaje?: () => string): void {
-  // La notificación de resumen diario fue eliminada; el resumen sigue disponible en el dashboard.
-}

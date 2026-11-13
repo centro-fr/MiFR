@@ -1,4 +1,4 @@
-import { BellRing, CalendarClock, CalendarX, ClipboardList, PartyPopper, type LucideIcon } from "lucide-react";
+import { BellRing, CalendarClock, CalendarX, PartyPopper, type LucideIcon } from "lucide-react";
 import { rolesConAcceso } from "@/components/layout/owner-navigation";
 import type { Notificacion, TipoNotificacion } from "@/features/notificaciones/schemas/notificaciones";
 import type { RoleCode } from "@/types/auth";
@@ -17,9 +17,7 @@ const TONO_URGENTE = "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-ro
 export const PRESENTACION_POR_TIPO: Record<TipoNotificacion, PresentacionDelTipo> = {
   CUOTA_POR_VENCER: { etiqueta: "Cuota por vencer", icono: CalendarClock, tono: TONO_ATENCION },
   CUOTA_VENCIDA: { etiqueta: "Cuota vencida", icono: CalendarX, tono: TONO_URGENTE },
-  RESUMEN_DIARIO: { etiqueta: "Resumen del día", icono: ClipboardList, tono: TONO_INFORMATIVO },
   BIENVENIDA: { etiqueta: "Bienvenida", icono: PartyPopper, tono: TONO_INFORMATIVO },
-  CLASE_CANCELADA: { etiqueta: "Clase cancelada", icono: CalendarX, tono: TONO_URGENTE },
   OTRO: { etiqueta: "Aviso", icono: BellRing, tono: TONO_INFORMATIVO },
 };
 
@@ -28,12 +26,10 @@ export interface DestinoDeNotificacion {
   etiqueta: string;
 }
 
-// La pantalla donde se resuelve cada aviso. Los de cuota llevan al inicio de quien los recibe, donde está su cuota; el
-// resumen, al Dashboard, donde está el detalle del día.
+// La pantalla donde se resuelve cada aviso. Los de cuota llevan al inicio de quien los recibe, donde está su cuota.
 const DESTINO_POR_TIPO: Partial<Record<TipoNotificacion, DestinoDeNotificacion>> = {
   CUOTA_POR_VENCER: { to: "/app/inicio", etiqueta: "Ver mi cuota" },
   CUOTA_VENCIDA: { to: "/app/inicio", etiqueta: "Ver mi cuota" },
-  RESUMEN_DIARIO: { to: "/app/dashboard", etiqueta: "Ver el resumen" },
 };
 
 /** null si el aviso no tiene pantalla propia o si esa pantalla no está en el menú de quien lo ve. */

@@ -2,7 +2,7 @@
 // (docker mifr-db) estaba vacía al 20/10/2026: los avisos los genera el mock como el back, al
 // consultarlos (mocks/avisos.ts).
 
-export type TipoNotificacionMock = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA" | "RESUMEN_DIARIO" | "BIENVENIDA" | "CLASE_CANCELADA";
+export type TipoNotificacionMock = "CUOTA_POR_VENCER" | "CUOTA_VENCIDA" | "BIENVENIDA";
 
 export interface NotificacionMock {
   id_notificacion: number;

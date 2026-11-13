@@ -8,7 +8,6 @@ import {
   type PaginaNotificaciones,
 } from "@/features/notificaciones/schemas/notificaciones";
 import { parametroSchema, type Parametro } from "@/features/notificaciones/schemas/parametros";
-import { resumenDiarioSchema, type ResumenDiario } from "@/features/notificaciones/schemas/resumen-diario";
 
 /** Las de quien pide: primero las no leídas y, en cada grupo, de la más nueva a la más vieja. */
 export async function listarMisNotificaciones(paginacion: { limit: number; offset: number }): Promise<PaginaNotificaciones> {
@@ -26,12 +25,6 @@ export async function marcarNotificacionLeida(idNotificacion: number): Promise<N
 export async function marcarTodasLeidas(): Promise<number> {
   const { data } = await apiClient.post("/notificaciones/leidas");
   return notificacionesMarcadasSchema.parse(data).marcadas;
-}
-
-/** Lo pendiente del día (US-26). El back lo calcula al pedirlo; solo para la propietaria. */
-export async function obtenerResumenDiario(): Promise<ResumenDiario> {
-  const { data } = await apiClient.get("/resumen-diario");
-  return resumenDiarioSchema.parse(data);
 }
 
 /** Todos los parámetros, también los que todavía tienen su valor inicial. */
