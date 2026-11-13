@@ -42,7 +42,7 @@ function Puesto({ posicion }: { posicion: number }) {
   );
 }
 
-function FilaRanking({ fila, resaltarBaja }: { fila: FilaDelRanking; resaltarBaja: boolean }) {
+function FilaRanking({ fila, resaltarBaja, etiquetaPropia }: { fila: FilaDelRanking; resaltarBaja: boolean; etiquetaPropia: string | null }) {
   const nombre = `${fila.nombre} ${fila.apellido}`;
   const baja = resaltarBaja && porcentaje(fila) < 60;
   return (
@@ -51,7 +51,7 @@ function FilaRanking({ fila, resaltarBaja }: { fila: FilaDelRanking; resaltarBaj
       <AvatarIniciales nombre={nombre} tamano="chico" />
       <span className={cn("min-w-0 flex-1 truncate", fila.es_propia ? "font-bold" : "font-semibold")}>
         {nombre}
-        {fila.es_propia && " (vos)"}
+        {fila.es_propia && etiquetaPropia && ` (${etiquetaPropia})`}
       </span>
       <span className={cn("font-bold tabular-nums", baja && "text-red-700 dark:text-red-400")}>{porcentaje(fila)}%</span>
     </li>
@@ -59,15 +59,15 @@ function FilaRanking({ fila, resaltarBaja }: { fila: FilaDelRanking; resaltarBaj
 }
 
 /** Celular: lista. Si el puesto del alumno quedó fuera de la página, se agrega al final para que se vea. */
-function ListaRanking({ ranking, esProfesora }: { ranking: RankingAsistencia; esProfesora: boolean }) {
+function ListaRanking({ ranking, esProfesora, etiquetaPropia }: { ranking: RankingAsistencia; esProfesora: boolean; etiquetaPropia: string | null }) {
   const propia = ranking.propias[0];
   const propiaFuera = propia && !ranking.datos.some((fila) => fila.id_alumno === propia.id_alumno);
   return (
     <ol aria-label="Ranking de asistencia" className={cn(CAJA, "overflow-hidden")}>
       {ranking.datos.map((fila) => (
-        <FilaRanking key={fila.id_alumno} fila={fila} resaltarBaja={esProfesora} />
+        <FilaRanking key={fila.id_alumno} fila={fila} resaltarBaja={esProfesora} etiquetaPropia={etiquetaPropia} />
       ))}
-      {propiaFuera && <FilaRanking fila={{ ...propia, es_propia: true }} resaltarBaja={false} />}
+      {propiaFuera && <FilaRanking fila={{ ...propia, es_propia: true }} resaltarBaja={false} etiquetaPropia={etiquetaPropia} />}
     </ol>
   );
 }
@@ -138,7 +138,7 @@ function TarjetaInsignia({ insignia }: { insignia: FichaInsignias["insignias"][n
   );
 }
 
-function MisInsignias() {
+function MisInsignias({ alumno }: { alumno: AlumnoVisto }) {
   const panel = usePanelAlumno();
   const consulta = useInsignias(panel.data?.id_alumno);
   if (panel.isError || consulta.isError) {
@@ -154,7 +154,7 @@ function MisInsignias() {
   return (
     <section aria-labelledby="titulo-insignias" className="flex flex-col gap-2">
       <h2 id="titulo-insignias" className="text-base font-bold">
-        Tus insignias
+        {alumno.propio ? "Tus insignias" : `Insignias de ${alumno.nombre}`}
       </h2>
       <ul className="grid grid-cols-3 gap-2 xl:grid-cols-6">
         {consulta.data.insignias.map((insignia) => (
@@ -198,14 +198,38 @@ function BotonCompartir({ onClick }: { onClick: () => void }) {
   );
 }
 
-function subtitulo(ranking: RankingAsistencia | undefined, esProfesora: boolean): string | undefined {
-  if (esProfesora) return "Asistencia de tus alumnos";
-  if (!ranking) return undefined;
-  const propia = ranking.propias[0];
-  return propia ? `Vas ${propia.posicion}.º con ${porcentaje(propia)}% de asistencia` : "Todavía no entrás en el ranking";
+/** De quién es el ranking que se mira: el alumno de la sesión o el menor que eligió el tutor. */
+export interface AlumnoVisto {
+  id: number;
+  nombre: string;
+  propio: boolean;
 }
 
-export function RankingSeccion({ esProfesora }: { esProfesora: boolean }) {
+function subtitulo(ranking: RankingAsistencia | undefined, alumno: AlumnoVisto | undefined): string | undefined {
+  if (!alumno) return "Asistencia de tus alumnos";
+  if (!ranking) return undefined;
+  const propia = ranking.propias[0];
+  if (alumno.propio) {
+    return propia ? `Vas ${propia.posicion}.º con ${porcentaje(propia)}% de asistencia` : "Todavía no entrás en el ranking";
+  }
+  return propia ? `${alumno.nombre} va ${propia.posicion}.º con ${porcentaje(propia)}% de asistencia` : `${alumno.nombre} todavía no entra en el ranking`;
+}
+
+/**
+ * Al tutor el back le marca como propios a todos sus menores: se deja marcado solo el que está mirando, para
+ * resaltarlo, ubicar su puesto y compartirlo.
+ */
+function soloDelAlumno(ranking: RankingAsistencia, alumno: AlumnoVisto): RankingAsistencia {
+  return {
+    ...ranking,
+    datos: ranking.datos.map((fila) => ({ ...fila, es_propia: fila.id_alumno === alumno.id })),
+    propias: ranking.propias.filter((fila) => fila.id_alumno === alumno.id),
+  };
+}
+
+/** `alumno`: a quién se mira en el portal del alumno; sin él, es el ranking de la profesora. */
+export function RankingSeccion({ alumno }: { alumno?: AlumnoVisto }) {
+  const esProfesora = alumno === undefined;
   const vistaAmplia = useVistaAmplia();
   const hoy = fechaActualArgentina();
   const anioActual = Number(hoy.slice(0, 4));
@@ -213,17 +237,17 @@ export function RankingSeccion({ esProfesora }: { esProfesora: boolean }) {
   const [mes, setMes] = useState(() => hoy.slice(0, 7));
   const [anio, setAnio] = useState(() => anioActual);
   const [compartiendo, setCompartiendo] = useState(false);
-
   const filtroPeriodo = tipoRanking === "mensual" ? periodoDelMes(mes, hoy) : periodoDelAnio(String(anio), hoy);
   const consulta = useRankingAsistencia(filtroPeriodo);
-  const ranking = consulta.data;
+  const ranking = consulta.data && alumno ? soloDelAlumno(consulta.data, alumno) : consulta.data;
   const propia = esProfesora ? undefined : ranking?.propias[0];
+  const etiquetaPropia = alumno?.propio ? "vos" : null;
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
       <EncabezadoPantalla
         titulo={ranking ? tituloDelRanking(ranking.periodo, hoy) : "Ranking"}
-        detalle={subtitulo(ranking, esProfesora)}
+        detalle={subtitulo(ranking, alumno)}
         accion={propia && <BotonCompartir onClick={() => setCompartiendo(true)} />}
       />
 
@@ -277,12 +301,12 @@ export function RankingSeccion({ esProfesora }: { esProfesora: boolean }) {
       ) : ranking.datos.length === 0 ? (
         <AvisoVacio>Todavía no hay ranking: se necesitan al menos {ranking.minimo_clases} clases previstas en el período.</AvisoVacio>
       ) : vistaAmplia ? (
-        <TablaRanking ranking={ranking} conCriterio={false} />
+        <TablaRanking ranking={ranking} conCriterio={false} etiquetaPropia={etiquetaPropia} />
       ) : (
-        <ListaRanking ranking={ranking} esProfesora={esProfesora} />
+        <ListaRanking ranking={ranking} esProfesora={esProfesora} etiquetaPropia={etiquetaPropia} />
       )}
 
-      {!esProfesora && <MisInsignias />}
+      {alumno && <MisInsignias alumno={alumno} />}
 
       {ranking && propia && (
         <DialogoCompartirRanking datos={datosParaCompartir(propia, ranking)} abierto={compartiendo} onCerrar={() => setCompartiendo(false)} />

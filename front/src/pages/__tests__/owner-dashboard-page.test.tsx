@@ -89,7 +89,7 @@ describe("OwnerDashboardPage", () => {
   it("saluda y muestra los indicadores del día", () => {
     renderizar();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Hola, Marina" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /^¡(Buen día|Buenas tardes|Buenas noches), Marina!$/ })).toBeInTheDocument();
     expect(screen.getByText("Resumen al 18 de octubre")).toBeInTheDocument();
     const indicadores = screen.getByLabelText("Indicadores");
     expect(indicadores).toHaveTextContent("Altas en octubre7");

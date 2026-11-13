@@ -11,20 +11,22 @@ const ESTADISTICAS_DEMO: Record<number, { previstas: number; asistidas: number; 
   13: { previstas: 6, asistidas: 4, racha: 1 },
   14: { previstas: 4, asistidas: 2, racha: 0 },
   27: { previstas: 12, asistidas: 12, racha: 26 },
+  28: { previstas: 8, asistidas: 7, racha: 5 },
 };
 
-function alumnoPropioDeSesion(): number | null {
+/** El alumno de la sesión o, para un tutor, todos sus menores a cargo. */
+function alumnosDeLaSesion(): number[] {
   const usuario = db.usuarios.find((item) => item.id_usuario === db.idUsuarioSesion);
-  if (!usuario) return null;
+  if (!usuario) return [];
   const persona = db.usuariosPersonas.find((item) => item.email === usuario.email);
   const ids = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
-  return (
-    db.alumnos.find(
+  return db.alumnos
+    .filter(
       (alumno) =>
         ids.includes(alumno.id_usuario) ||
         (alumno.id_usuario_responsable !== null && ids.includes(alumno.id_usuario_responsable)),
-    )?.id_alumno ?? null
-  );
+    )
+    .map((alumno) => alumno.id_alumno);
 }
 
 function personaPublica(idAlumno: number) {
@@ -39,7 +41,7 @@ export const rankingAsistenciaHandlers = [
     const usuario = usuarioDeLaSesion(request);
     if (!usuario) return errorApi(401, "UNAUTHORIZED", "Sesión no válida");
 
-    const propio = alumnoPropioDeSesion();
+    const propios = alumnosDeLaSesion();
     const url = new URL(request.url);
     const desdeQuery = url.searchParams.get("desde");
     const hastaQuery = url.searchParams.get("hasta");
@@ -54,7 +56,6 @@ export const rankingAsistenciaHandlers = [
     const seed = (periodo.desde + periodo.hasta).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
     const esGeneral = periodo.desde <= "2000-01-01";
     const esAnual = !esGeneral && periodo.desde.endsWith("01-01");
-
     const filas = Object.entries(ESTADISTICAS_DEMO)
       .filter(([id]) => db.alumnos.some((alumno) => alumno.id_alumno === Number(id) && alumno.estado === "ACTIVO"))
       .map(([id, datos]) => {
@@ -96,7 +97,7 @@ export const rankingAsistenciaHandlers = [
           clases_asistidas: asistidas,
           racha_actual: racha,
           insignias: insigniasObtenidasDe(idNum),
-          es_propia: idNum === propio,
+          es_propia: propios.includes(idNum),
         };
       })
       .sort((a, b) => b.porcentaje_asistencia - a.porcentaje_asistencia || b.clases_asistidas - a.clases_asistidas || `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`, "es"))

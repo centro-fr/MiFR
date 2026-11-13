@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { MisInsignias } from "@/features/portal-alumno/components/mis-insignias";
+import { useAlumnoElegido } from "@/features/portal-alumno/hooks/use-alumno-elegido";
 import { usePanelAlumno } from "@/features/portal-alumno/hooks/use-panel-alumno";
 import { listarProfesoras } from "@/features/profesoras/api/profesoras-api";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -61,18 +62,25 @@ function useDatosDeLaProfesora(user: AuthUser): { datos: DatosDelPerfil; consult
 
 function useDatosDelAlumno(user: AuthUser): { datos: DatosDelPerfil; consulta: Consulta } {
   const consulta = usePanelAlumno();
-  const plan = consulta.data?.plan;
+  const { elegido } = useAlumnoElegido();
+  const planes = consulta.data?.planes ?? [];
+  // El tutor ve los planes del menor que eligió en la barra superior.
+  const deQuien = elegido && !elegido.propio ? ` de ${elegido.nombre}` : "";
   return {
     consulta,
     datos: {
-      rol: "Alumno/a",
+      rol: deQuien ? "Tutor/a" : "Alumno/a",
       email: user.email,
-      resumen: plan
-        ? [
-            { etiqueta: "Plan", valor: plan.nombre },
-            { etiqueta: "Profesor/a", valor: plan.profesora },
-          ]
-        : [{ etiqueta: "Plan", valor: "Sin plan vigente" }],
+      resumen:
+        planes.length > 0
+          ? planes.flatMap((plan, indice) => {
+              const sufijo = planes.length > 1 ? ` (${indice + 1})` : "";
+              return [
+                { etiqueta: `Plan${deQuien}${sufijo}`, valor: plan.nombre },
+                { etiqueta: `Profesor/a${sufijo}`, valor: plan.profesora },
+              ];
+            })
+          : [{ etiqueta: `Plan${deQuien}`, valor: "Sin plan vigente" }],
     },
   };
 }

@@ -42,7 +42,7 @@ const PERFIL_POR_ROL: Record<RoleCode, { etiqueta: string; email: string }> = {
   PROPIETARIA: { etiqueta: "Propietaria + Profesora", email: "marina.sosa@example.com" },
   PROFESORA: { etiqueta: "Profesora", email: "lucia.gomez@example.com" },
   ALUMNO: { etiqueta: "Alumno", email: "camila.perez@example.com" },
-  TUTOR: { etiqueta: "Tutor", email: "mariana.lopez@example.com" },
+  TUTOR: { etiqueta: "Tutor + 2 alumnos a cargo", email: "mariana.lopez@example.com" },
 };
 
 async function seleccionarPerfil(rol: RoleCode) {

@@ -28,7 +28,7 @@ describe("obtenerPanelAlumno (US-29)", () => {
     const panel = await obtenerPanelAlumno();
 
     expect(panel.alumno.nombre).toBe(nombre);
-    expect(panel.plan?.nombre ?? null).toBe(planEsperado);
+    expect(panel.planes[0]?.nombre ?? null).toBe(planEsperado);
   });
 
   it("mantiene el historial vacío cuando todavía no hay asistencias", async () => {

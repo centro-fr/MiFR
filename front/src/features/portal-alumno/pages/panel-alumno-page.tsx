@@ -7,12 +7,16 @@ import { AvisoVacio, CAJA } from "@/components/movil/piezas";
 import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Skeleton } from "@/components/ui/skeleton";
 import { nombreDelMes } from "@/features/asistencia/utils/semana";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { saludoSegunHorario } from "@/utils/saludo";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { cn } from "@/utils/cn";
 import { useInsignias } from "../hooks/use-insignias";
-import { usePanelAlumno } from "../hooks/use-panel-alumno";
+import { usePlanElegido } from "../hooks/use-plan-elegido";
 import { useRankingAsistencia } from "../hooks/use-ranking-asistencia";
-import type { PanelAlumno } from "../schemas/panel-alumno";
+import { useAlumnoElegido } from "../hooks/use-alumno-elegido";
+import type { PanelAlumno, PlanDelAlumno } from "../schemas/panel-alumno";
+import { puestoDe } from "../utils/puesto-propio";
 import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-panel";
 
 // US-29: inicio del alumno. Su cuota, la próxima clase, cómo viene con la asistencia y
@@ -20,7 +24,7 @@ import { diaCorto, numeroDelDia, cuandoEsLaClase } from "../utils/fechas-del-pan
 
 const SIN_FILTROS = {};
 
-const ESTADO_CUOTA: Record<NonNullable<PanelAlumno["plan"]>["estado_cuota"], { texto: string; clases: string }> = {
+const ESTADO_CUOTA: Record<PlanDelAlumno["estado_cuota"], { texto: string; clases: string }> = {
   AL_DIA: { texto: "Al día", clases: "text-foreground" },
   EN_GRACIA: { texto: "Por vencer", clases: "text-amber-800 dark:text-amber-300" },
   VENCIDA: { texto: "Vencida", clases: "text-red-700 dark:text-red-400" },
@@ -28,10 +32,10 @@ const ESTADO_CUOTA: Record<NonNullable<PanelAlumno["plan"]>["estado_cuota"], { t
 
 function diaYMesCorto(fecha: string): string {
   const [, mes, dia] = fecha.slice(0, 10).split("-");
-  return `${dia}/${mes}`;
+  return dia && mes ? `${dia}/${mes}` : "—";
 }
 
-function TarjetaCuota({ plan }: { plan: PanelAlumno["plan"] }) {
+function TarjetaCuota({ plan }: { plan: PlanDelAlumno | undefined }) {
   if (!plan) return <AvisoVacio>No tenés un plan vigente. Consultá en el centro.</AvisoVacio>;
   const estado = ESTADO_CUOTA[plan.estado_cuota];
   const frecuencia =
@@ -96,7 +100,7 @@ function Indicadores({ panel }: { panel: PanelAlumno }) {
   // Las clases del mes salen del ranking del mes, así coinciden con lo que se ve en Ranking.
   const ranking = useRankingAsistencia(SIN_FILTROS);
   const hoy = fechaActualArgentina();
-  const propia = ranking.data?.propias[0];
+  const propia = puestoDe(ranking.data, panel.id_alumno);
   const delMes = panel.historial_asistencias.filter((registro) => registro.fecha.slice(0, 7) === hoy.slice(0, 7));
   const asistidas = propia?.clases_asistidas ?? delMes.filter((registro) => registro.estado === "PRESENTE").length;
   const previstas = propia?.clases_previstas ?? delMes.length;
@@ -125,33 +129,41 @@ function Indicadores({ panel }: { panel: PanelAlumno }) {
   );
 }
 
-function AccesoAlRanking() {
+function AccesoAlRanking({ panel }: { panel: PanelAlumno }) {
   const consulta = useRankingAsistencia(SIN_FILTROS);
-  const propia = consulta.data?.propias[0];
+  const { elegido } = useAlumnoElegido();
+  const propia = puestoDe(consulta.data, panel.id_alumno);
+  const quien = elegido && !elegido.propio ? `${panel.alumno.nombre} va` : "Vas";
   return (
     <Link to="/app/ranking" className={cn(CAJA, "flex h-full items-center gap-3 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5")}>
       <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
         <Trophy className="size-4.5" />
       </span>
-      <span className="flex-1 font-bold">{propia ? `Vas ${propia.posicion}.º en el ranking` : "Mirá el ranking del mes"}</span>
+      <span className="flex-1 font-bold">{propia ? `${quien} ${propia.posicion}.º en el ranking` : "Mirá el ranking del mes"}</span>
       <ChevronRight aria-hidden="true" className="size-4.5 text-muted-foreground" />
     </Link>
   );
 }
 
+/** Saluda a quien inició sesión; al alumno le muestra sus insignias (el tutor elige el menor arriba). */
 function Saludo({ panel }: { panel: PanelAlumno }) {
+  const { user } = useAuth();
+  const { elegido } = useAlumnoElegido();
+  const propio = elegido?.propio ?? true;
   const insignias = useInsignias(panel.id_alumno);
   const ganadas = insignias.data?.insignias.filter((insignia) => insignia.obtenida) ?? [];
   return (
     <div>
-      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">Hola, {panel.alumno.nombre}</h1>
-      {ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}
+      <h1 className="text-[22px] leading-7 font-extrabold tracking-tight md:text-2xl md:font-black xl:text-3xl">
+        {saludoSegunHorario(user?.nombre ?? panel.alumno.nombre)}
+      </h1>
+      {propio && ganadas.length > 0 && <ListaInsignias insignias={ganadas} className="mt-2" />}
     </div>
   );
 }
 
 function Contenido() {
-  const consulta = usePanelAlumno();
+  const { consulta, elegido, vista } = usePlanElegido();
   if (consulta.isPending) {
     return (
       <div aria-busy="true" aria-label="Cargando tu inicio" className="flex flex-col gap-4">
@@ -170,17 +182,18 @@ function Contenido() {
     );
   }
   const panel = consulta.data;
+  const proximaClase = vista?.proximas_clases[0] ?? panel.proximas_clases[0];
   // En el celular, una columna; con lugar, la cuota y la próxima clase lado a lado, y abajo los números.
   return (
     <>
       <Saludo panel={panel} />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-        <TarjetaCuota plan={panel.plan} />
-        <ProximaClase clase={panel.proximas_clases[0]} />
+        <TarjetaCuota plan={elegido} />
+        <ProximaClase clase={proximaClase} />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Indicadores panel={panel} />
-        <AccesoAlRanking />
+        <AccesoAlRanking panel={panel} />
       </div>
     </>
   );

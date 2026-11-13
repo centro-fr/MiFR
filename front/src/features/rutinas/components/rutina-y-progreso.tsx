@@ -154,10 +154,9 @@ export function RutinaYProgreso({ idAlumno, nombreAlumno, admiteCargas }: PropsR
                 const estaExpandida = rutina.id === rutinaActivaId;
                 const diaIdx = diaSeleccionadoPorRutina[rutina.id] ?? 0;
                 const diaActual = rutina.dias[diaIdx] ?? rutina.dias[0];
-                const cantDias = rutina.dias.length;
                 const periodoTexto = rutina.hasta
-                  ? `${formatearFechaCorta(rutina.desde)} al ${formatearFechaCorta(rutina.hasta)} · ${cantDias} día${cantDias > 1 ? "s" : ""}`
-                  : `Desde el ${formatearFechaCorta(rutina.desde)} · ${cantDias} día${cantDias > 1 ? "s" : ""}`;
+                  ? `${formatearFechaCorta(rutina.desde)} al ${formatearFechaCorta(rutina.hasta)}`
+                  : `Desde el ${formatearFechaCorta(rutina.desde)}`;
 
                 return (
                   <div key={rutina.id} className="py-3 first:pt-1 last:pb-1">

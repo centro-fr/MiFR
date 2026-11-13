@@ -63,7 +63,16 @@ function aTabla(ranking: RankingAsistencia, detalle: string): TablaExportable {
  * La tabla del ranking: la usa este reporte y, sola, la sección Ranking de profesora y alumno en escritorio.
  * `conCriterio`: el criterio de quién entra es para la propietaria; a los demás no se les muestra.
  */
-export function TablaRanking({ ranking, conCriterio = true }: { ranking: RankingAsistencia; conCriterio?: boolean }) {
+export function TablaRanking({
+  ranking,
+  conCriterio = true,
+  etiquetaPropia = "vos",
+}: {
+  ranking: RankingAsistencia;
+  conCriterio?: boolean;
+  /** Al lado del nombre de la fila propia; null para resaltarla sin texto (el tutor mirando a un menor). */
+  etiquetaPropia?: string | null;
+}) {
   const [pagina, setPagina] = useState(0);
   const TAMANO_PAGINA = 10;
   const total = ranking.datos.length;
@@ -104,7 +113,7 @@ export function TablaRanking({ ranking, conCriterio = true }: { ranking: Ranking
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <span className="font-semibold whitespace-nowrap text-slate-900 dark:text-white">
                       {fila.nombre} {fila.apellido}
-                      {fila.es_propia && " (vos)"}
+                      {fila.es_propia && etiquetaPropia && ` (${etiquetaPropia})`}
                     </span>
                     <ListaInsignias insignias={fila.insignias} tamano={22} className="gap-1" />
                   </div>

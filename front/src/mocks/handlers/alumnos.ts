@@ -324,18 +324,23 @@ function esSoloProfesora(request: Request): boolean {
   return roles.includes("PROFESORA") && !roles.includes("PROPIETARIA");
 }
 
-function alumnoDeLaSesion(request: Request): AlumnoMock | undefined {
+function idsDeLaSesion(request: Request): number[] {
   const usuario = usuarioDeLaSesion(request);
-  if (!usuario) return undefined;
+  if (!usuario) return [];
   const persona = db.usuariosPersonas.find(
     (u) => (usuario.email && u.email === usuario.email) || u.id_usuario === usuario.id_usuario,
   );
-  const idsCandidatos = [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
-  return db.alumnos.find(
-    (alumno) =>
-      idsCandidatos.includes(alumno.id_usuario) ||
-      (alumno.id_usuario_responsable !== null && idsCandidatos.includes(alumno.id_usuario_responsable)),
-  );
+  return [usuario.id_usuario, ...(persona ? [persona.id_usuario] : [])];
+}
+
+/** El alumno es quien inició sesión o un menor a su cargo. */
+function esDeLaSesion(request: Request, alumno: AlumnoMock): boolean {
+  const ids = idsDeLaSesion(request);
+  return ids.includes(alumno.id_usuario) || (alumno.id_usuario_responsable !== null && ids.includes(alumno.id_usuario_responsable));
+}
+
+function alumnoDeLaSesion(request: Request): AlumnoMock | undefined {
+  return db.alumnos.find((alumno) => esDeLaSesion(request, alumno));
 }
 
 function diaDeSemana(fecha: Date): number {
@@ -349,26 +354,51 @@ function nombreProfesora(idProfesora: number): string {
   return usuario ? `${usuario.nombre} ${usuario.apellido}` : "Profesora sin asignar";
 }
 
-function panelAlumnoDe(alumno: AlumnoMock) {
-  const persona = datosPersonales(alumno.id_usuario);
-  const [inscripcion] = vigentesDe(alumno.id_alumno);
-  const plan = inscripcion ? db.planes.find((item) => item.id_plan === inscripcion.id_plan) : undefined;
-  const situacion = inscripcion ? situacionCuotaDe(inscripcion) : null;
-  const estadoCuota =
-    situacion?.estado === "POR_VENCER"
-      ? "EN_GRACIA"
-      : situacion?.estado === "AL_DIA"
-        ? "AL_DIA"
-        : "VENCIDA";
-  const horarios = inscripcion
-    ? inscripcion.ids_horarios
-        .map((id) => db.horarios.find((horario) => horario.id_horario === id))
-        .filter((horario): horario is HorarioMock => horario !== undefined && horario.fecha_baja === null)
-    : [];
-  const hoy = new Date();
-  const proximasClases = [];
+function actividadesDeInscripcion(inscripcion: InscripcionMock, plan: { id_actividad_exclusiva: number | null }): string[] {
+  if (plan.id_actividad_exclusiva) {
+    const exclusiva = db.actividades.find((a) => a.id_actividad === plan.id_actividad_exclusiva);
+    if (exclusiva) return [exclusiva.nombre];
+  }
+  const nombres = new Set<string>();
+  for (const idHorario of inscripcion.ids_horarios) {
+    const horario = db.horarios.find((h) => h.id_horario === idHorario);
+    const actividad = horario && db.actividades.find((a) => a.id_actividad === horario.id_actividad);
+    if (actividad) nombres.add(actividad.nombre);
+  }
+  return [...nombres];
+}
 
-  for (let offset = 0; offset < 14 && proximasClases.length < 4; offset += 1) {
+function planDelPanel(inscripcion: InscripcionMock) {
+  const plan = db.planes.find((item) => item.id_plan === inscripcion.id_plan);
+  const situacion = situacionCuotaDe(inscripcion);
+  if (!plan || !situacion) return null;
+  const estadoCuota =
+    situacion.estado === "POR_VENCER"
+      ? ("EN_GRACIA" as const)
+      : situacion.estado === "AL_DIA"
+        ? ("AL_DIA" as const)
+        : ("VENCIDA" as const);
+  return {
+    id_inscripcion: inscripcion.id_inscripcion,
+    nombre: plan.nombre,
+    tipo: plan.tipo,
+    clases_por_semana: plan.clases_por_semana,
+    profesora: nombreProfesora(inscripcion.id_profesora),
+    actividades: actividadesDeInscripcion(inscripcion, plan),
+    estado_cuota: estadoCuota,
+    fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? "",
+    dias_restantes: situacion.dias_restantes ?? 0,
+  };
+}
+
+function proximasClasesDe(inscripcion: InscripcionMock) {
+  const horarios = inscripcion.ids_horarios
+    .map((id) => db.horarios.find((horario) => horario.id_horario === id))
+    .filter((horario): horario is HorarioMock => horario !== undefined && horario.fecha_baja === null);
+  const hoy = new Date();
+  const clases = [];
+
+  for (let offset = 0; offset < 14 && clases.length < 4; offset += 1) {
     const fecha = new Date(hoy);
     fecha.setHours(12, 0, 0, 0);
     fecha.setDate(hoy.getDate() + offset);
@@ -377,8 +407,9 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       if (horario.dia_semana !== diaDeSemana(fecha)) continue;
       const actividad = db.actividades.find((item) => item.id_actividad === horario.id_actividad);
       if (!actividad) continue;
-      proximasClases.push({
+      clases.push({
         id: Number(fechaTexto.replaceAll("-", "")) * 100 + horario.id_horario,
+        id_inscripcion: inscripcion.id_inscripcion,
         fecha: fechaTexto,
         hora_inicio: horario.hora_inicio,
         hora_fin: horario.hora_fin,
@@ -388,6 +419,16 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       });
     }
   }
+  return clases;
+}
+
+function panelAlumnoDe(alumno: AlumnoMock) {
+  const persona = datosPersonales(alumno.id_usuario);
+  const vigentes = vigentesDe(alumno.id_alumno);
+  const planes = vigentes.map(planDelPanel).filter((p): p is NonNullable<typeof p> => p !== null);
+  const proximasClases = vigentes
+    .flatMap(proximasClasesDe)
+    .sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`));
 
   const historialAsistencias = db.asistencias
     .filter((registro) => registro.id_alumno === alumno.id_alumno)
@@ -398,6 +439,7 @@ function panelAlumnoDe(alumno: AlumnoMock) {
       if (!clase || !horario || !actividad) return null;
       return {
         id: registro.id_clase,
+        id_inscripcion: registro.id_inscripcion,
         fecha: clase.fecha_clase.slice(0, 10),
         actividad: actividad.nombre,
         profesora: nombreProfesora(horario.id_profesora),
@@ -410,18 +452,8 @@ function panelAlumnoDe(alumno: AlumnoMock) {
   return {
     id_alumno: alumno.id_alumno,
     alumno: { nombre: persona.nombre, apellido: persona.apellido },
-    plan: plan && situacion
-      ? {
-          nombre: plan.nombre,
-          tipo: plan.tipo,
-          clases_por_semana: plan.clases_por_semana,
-          profesora: nombreProfesora(inscripcion.id_profesora),
-          estado_cuota: estadoCuota,
-          fecha_vencimiento: situacion.fecha_vencimiento?.slice(0, 10) ?? "",
-          dias_restantes: situacion.dias_restantes ?? 0,
-        }
-      : null,
-    proximas_clases: proximasClases.sort((a, b) => `${a.fecha}${a.hora_inicio}`.localeCompare(`${b.fecha}${b.hora_inicio}`)),
+    planes,
+    proximas_clases: proximasClases,
     historial_asistencias: historialAsistencias,
   };
 }
@@ -541,6 +573,14 @@ export const alumnosHandlers = [
   // endpoint del backend cuando esté disponible.
   http.get("*/api/v1/alumnos/mi-panel", async ({ request }) => {
     await delay(300);
+    // Con ?id_alumno= el tutor pide el de uno de sus menores; solo si es propio o está a su cargo.
+    const pedido = Number(new URL(request.url).searchParams.get("id_alumno"));
+    if (pedido) {
+      const alumno = db.alumnos.find((item) => item.id_alumno === pedido);
+      if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno");
+      if (!esDeLaSesion(request, alumno)) return errorApi(403, "FORBIDDEN", "No tiene permisos para ver este alumno");
+      return HttpResponse.json(panelAlumnoDe(alumno));
+    }
     const alumno = alumnoDeLaSesion(request) ?? db.alumnos.find((item) => item.estado !== "BAJA");
     if (!alumno) return errorApi(404, "NOT_FOUND", "No se encontró el alumno asociado");
     return HttpResponse.json(panelAlumnoDe(alumno));

@@ -35,7 +35,7 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
   persona(101, "Sofía", "Medina", { dni: "38111222", email: "sofia.medina@example.com", telefono: "351 411-2233", fecha_nacimiento: "1996-08-14", direccion: "Av. Colón 1234" }),
   // Menor a cargo de su tutora: sin email, como pide el back para los menores.
   persona(102, "Mateo", "Romero", { dni: "52111222", fecha_nacimiento: "2015-11-03", direccion: "Bv. San Juan 543" }),
-  persona(103, "Paula", "Romero", { dni: "31222333", email: "paula.romero@example.com", telefono: "351 555-6677", fecha_nacimiento: "1984-06-21" }),
+  persona(103, "Paula", "Romero", { dni: "31222333", email: "paula.romero@example.com", telefono: "351 555-6677", fecha_nacimiento: "1984-06-21" }, "ACTIVO"),
   persona(104, "Valentina", "Herrera", { dni: "39222333", email: "valentina.herrera@example.com", telefono: "351 666-7788", fecha_nacimiento: "1998-03-25", direccion: "Ituzaingó 789" }, "ACTIVO"),
   persona(105, "Camila", "Pérez", { dni: "35123456", email: "camila.perez@example.com", telefono: "11 5555-0101", fecha_nacimiento: "1992-04-18", direccion: "Av. San Martín 123" }, "ACTIVO"),
   persona(106, "Micaela", "García", { dni: "32987654", email: "micaela.garcia@example.com", telefono: "11 5555-0401", fecha_nacimiento: "1990-01-15" }),
@@ -70,6 +70,10 @@ export const USUARIOS_PERSONAS_SEMILLA: UsuarioPersonaMock[] = [
   persona(128, "Carlos", "Fernández", { dni: "31888999", email: "carlos.fernandez@example.com", telefono: "+5491133334444", fecha_nacimiento: "1983-05-20", direccion: "Av. San Juan 740" }, "ACTIVO"),
   // Alumno Lucas Benítez (129)
   persona(129, "Lucas", "Benítez", { dni: "39777888", email: "lucas.benitez@example.com", telefono: "+5491177778888", fecha_nacimiento: "1997-11-23", direccion: "Bv. Chacabuco 320" }, "ACTIVO"),
+  // Segundo menor a cargo de Mariana López (126): la tutora elige de quién ver la rutina (US-28).
+  persona(130, "Benjamín", "López", { dni: "55321987", fecha_nacimiento: "2016-02-10", direccion: "Mitre 202" }, "ACTIVO"),
+  // Segunda hija de Paula Romero, que además entrena: alumna y tutora de dos menores.
+  persona(131, "Sol", "Romero", { dni: "56987123", fecha_nacimiento: "2017-08-30", direccion: "Bv. San Juan 543" }, "ACTIVO"),
 ];
 
 type DatosPersona = Partial<Omit<UsuarioPersonaMock, "id_usuario" | "nombre" | "apellido" | "estado">> & { fecha_nacimiento: string };
@@ -278,5 +282,37 @@ export const ALUMNOS_SEMILLA: AlumnoMock[] = [
     fecha_apto_medico: "2026-03-01T00:00:00.000Z",
     cont_emerg_nombre: "Mirta Benítez",
     cont_emerg_telefono: "+5491177778889",
+  }),
+  alumno(28, 130, {
+    estado: "ACTIVO",
+    id_usuario_responsable: 126,
+    apto_medico: true,
+    fecha_apto_medico: "2026-03-10T00:00:00.000Z",
+    cont_emerg_nombre: "Mariana López",
+    cont_emerg_telefono: "11 4455-1226",
+  }),
+  // Carlos Fernández entrena y es tutor de Mateo Fernández (alumno 26).
+  alumno(29, 128, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-04-01T00:00:00.000Z",
+    cont_emerg_nombre: "Rosa Fernández",
+    cont_emerg_telefono: "11 4455-9015",
+  }),
+  // Paula Romero entrena y es tutora de Mateo Romero (alumno 2) y de Sol Romero.
+  alumno(30, 131, {
+    estado: "ACTIVO",
+    id_usuario_responsable: 103,
+    apto_medico: true,
+    fecha_apto_medico: "2026-04-15T00:00:00.000Z",
+    cont_emerg_nombre: "Paula Romero",
+    cont_emerg_telefono: "351 555-6677",
+  }),
+  alumno(31, 103, {
+    estado: "ACTIVO",
+    apto_medico: true,
+    fecha_apto_medico: "2026-04-15T00:00:00.000Z",
+    cont_emerg_nombre: "Jorge Romero",
+    cont_emerg_telefono: "351 555-6678",
   }),
 ];

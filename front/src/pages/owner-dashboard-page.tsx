@@ -1,5 +1,6 @@
 import { OwnerLayout } from "@/components/layout/owner-layout";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { saludoSegunHorario } from "@/utils/saludo";
 import { ClasesDeHoy } from "@/features/dashboard/components/clases-de-hoy";
 import { IndicadoresDashboard } from "@/features/dashboard/components/indicadores-dashboard";
 import { OcupacionDashboard } from "@/features/dashboard/components/ocupacion-dashboard";
@@ -44,7 +45,7 @@ export function OwnerDashboardPage() {
       <div className="flex w-full min-w-0 flex-col gap-5">
         <header>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white">
-            Hola{user ? `, ${user.nombre}` : ""}
+            {saludoSegunHorario(user?.nombre)}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Resumen al {diaDeHoy()}</p>
         </header>

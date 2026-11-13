@@ -11,6 +11,7 @@ interface EjercicioMock {
 export interface RutinaMock {
   id_rutina: number;
   id_alumno: number;
+  id_inscripcion?: number;
   id_profesora: number;
   nombre: string;
   fecha_desde: string;
@@ -43,7 +44,8 @@ const ejercicio = (nombre: string, series: number, repeticiones: string, notas: 
 // Valentina Herrera (alumno 3, de Lucía) tiene historial completo; Martín Morales (alumno 13, de
 // Marina) solo la medición de la pre-inscripción y ninguna rutina. Para US-28, que se prueba entrando
 // como alumno o tutor: Camila Pérez (alumno 4, usuaria de prueba) tiene rutina y dos mediciones, y
-// Lucía Benítez (alumno 12, menor a cargo de la tutora Mariana López) solo rutina. El resto, nada.
+// la tutora Mariana López tiene dos menores a cargo: Lucía Benítez (alumno 12) con solo rutina y
+// Benjamín López (alumno 28) con rutina y dos mediciones. El resto, nada.
 export function rutinasSemilla(): RutinaMock[] {
   return [
     {
@@ -76,8 +78,25 @@ export function rutinasSemilla(): RutinaMock[] {
       activa: true,
     },
     {
+      id_rutina: 5,
+      id_alumno: 28,
+      id_profesora: 2,
+      nombre: "Fuerza y equilibrio",
+      fecha_desde: "2026-10-15",
+      fecha_hasta: "2026-12-20",
+      contenido: {
+        dias: [
+          { nombre: "Piernas", ejercicios: [ejercicio("Estocadas", 3, "10"), ejercicio("Sentadilla búlgara", 3, "8", "Sin peso")] },
+          { nombre: "Zona media", ejercicios: [ejercicio("Plancha frontal", 3, "20 s"), ejercicio("Plancha lateral", 2, "15 s")] },
+        ],
+      },
+      observaciones: null,
+      activa: true,
+    },
+    {
       id_rutina: 1,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       nombre: "Adaptación",
       fecha_desde: "2026-06-01",
@@ -94,6 +113,7 @@ export function rutinasSemilla(): RutinaMock[] {
     {
       id_rutina: 2,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       nombre: "Fuerza – etapa 1",
       fecha_desde: "2026-10-01",
@@ -127,6 +147,7 @@ export function registrosProgresoSemilla(): RegistroProgresoMock[] {
     {
       id_registro: 4,
       id_alumno: 3,
+      id_inscripcion: 3,
       id_profesora: 1,
       fecha: "2026-10-14",
       observaciones: "Tomada en ayunas",
@@ -135,5 +156,7 @@ export function registrosProgresoSemilla(): RegistroProgresoMock[] {
     { id_registro: 5, id_alumno: 13, id_profesora: 3, fecha: "2026-09-15", observaciones: null, medidas: [peso(81.2), cm("TALLA", 178)] },
     { id_registro: 6, id_alumno: 4, id_profesora: 1, fecha: "2026-09-01", observaciones: null, medidas: [peso(58.5), cm("CINTURA", 70)] },
     { id_registro: 7, id_alumno: 4, id_profesora: 1, fecha: "2026-10-20", observaciones: null, medidas: [peso(57.8), cm("CINTURA", 68.5)] },
+    { id_registro: 8, id_alumno: 28, id_profesora: 2, fecha: "2026-09-10", observaciones: "Medición inicial", medidas: [peso(31.5), cm("TALLA", 132)] },
+    { id_registro: 9, id_alumno: 28, id_profesora: 2, fecha: "2026-11-05", observaciones: null, medidas: [peso(32.1), cm("TALLA", 134)] },
   ].map((registro) => ({ ...registro, ...sinCorregir }));
 }
