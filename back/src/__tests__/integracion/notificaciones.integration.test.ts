@@ -61,8 +61,8 @@ function avisos() {
 }
 
 describe("PI-67: los avisos de vencimiento de cuota", () => {
-  it("avisa por vencer dentro de los días previos, vencida al pasar la gracia, y una sola vez por cuota", async () => {
-    const idCuota = await venceEn(DNI_VALENTINA, 2);
+  it("avisa por vencer al entrar en la gracia, vencida al terminarla, y una sola vez por cuota", async () => {
+    const idCuota = await venceEn(DNI_VALENTINA, -1);
     const valentina = await idUsuario(EMAIL_VALENTINA);
     const hoy = fechaActualArgentina();
 
@@ -83,15 +83,15 @@ describe("PI-67: los avisos de vencimiento de cuota", () => {
     expect((await avisos()).map(({ tipo }) => tipo)).toEqual(["CUOTA_POR_VENCER", "CUOTA_VENCIDA"]);
   });
 
-  it("no avisa al día, en los días de gracia, con una transferencia pendiente ni después de renovar", async () => {
+  it("no avisa al día ni el día del vencimiento, con una transferencia pendiente ni después de renovar", async () => {
     const hoy = fechaActualArgentina();
     await venceEn(DNI_VALENTINA, 10);
     expect(await planificadorNotificaciones.generarAvisos(hoy)).toBe(0);
 
-    await venceEn(DNI_VALENTINA, -3);
+    await venceEn(DNI_VALENTINA, 0);
     expect(await planificadorNotificaciones.generarAvisos(hoy)).toBe(0);
 
-    await venceEn(DNI_VALENTINA, 1);
+    await venceEn(DNI_VALENTINA, -1);
     const informada = await pedir("carla.ruiz@example.com", "post", "/pagos/transferencia", {
       id_inscripcion: datos.idInscripcion.get(DNI_VALENTINA),
       monto: 30000,
@@ -106,31 +106,28 @@ describe("PI-67: los avisos de vencimiento de cuota", () => {
     expect(await avisos()).toEqual([]);
   });
 
-  it("el aviso de un menor va a su tutora, y DIAS_AVISO_VENCIMIENTO cambia desde cuándo se avisa", async () => {
+  it("el aviso de un menor va a su tutora, con el texto completo de la cuota", async () => {
     const cobro = await pedir(EMAIL_MULTIROL_DEMO, "post", "/pagos/efectivo", {
       id_inscripcion: datos.idInscripcion.get(DNI_MATEO),
       monto: 45000,
     });
     expect(cobro.status).toBe(201);
-    const idCuota = await venceEn(DNI_MATEO, 5);
+    const idCuota = await venceEn(DNI_MATEO, -1);
     const hoy = fechaActualArgentina();
 
-    expect(await planificadorNotificaciones.generarAvisos(hoy)).toBe(0);
-    await prisma.parametros_sistema.update({
-      where: { clave: "DIAS_AVISO_VENCIMIENTO" },
-      data: { valor: "7" },
-    });
     expect(await planificadorNotificaciones.generarAvisos(hoy)).toBe(1);
 
     expect(await avisos()).toEqual([
       expect.objectContaining({ id_usuario: await idUsuario(EMAIL_PAULA), id_cuota: idCuota }),
     ]);
     const [{ mensaje }] = await prisma.notificaciones.findMany();
-    expect(mensaje).toContain("La cuota de Mateo Romero del plan Personalizado 2 días vence el");
+    expect(mensaje).toMatch(
+      /^La cuota de Mateo Romero del plan Personalizado 2 días venció el \d\d\/\d\d\/\d{4}: hay tiempo de renovarla hasta el \d\d\/\d\d\/\d{4}\.$/,
+    );
   });
 
   it("la base rechaza un segundo aviso del mismo tipo para la misma cuota y usuario", async () => {
-    const idCuota = await venceEn(DNI_VALENTINA, 2);
+    const idCuota = await venceEn(DNI_VALENTINA, -1);
     const fila = {
       id_usuario: await idUsuario(EMAIL_VALENTINA),
       tipo: "CUOTA_POR_VENCER" as const,
@@ -150,7 +147,7 @@ describe("PI-68: las notificaciones propias por la API", () => {
     // Un día fijo propio: el planificador genera una vez por día y otros tests usan el de hoy.
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2031-03-10T15:00:00Z"));
-    await venceEn(DNI_VALENTINA, 1);
+    await venceEn(DNI_VALENTINA, -1);
 
     const mias = await pedir(EMAIL_VALENTINA, "get", "/notificaciones/mias");
 
@@ -160,7 +157,8 @@ describe("PI-68: las notificaciones propias por la API", () => {
     expect(aviso).toMatchObject({
       tipo: "CUOTA_POR_VENCER",
       leida: false,
-      mensaje: "Tu cuota del plan Intermedio vence el 11/03/2031.",
+      mensaje:
+        "Tu cuota del plan Intermedio venció el 09/03/2031: hay tiempo de renovarla hasta el 14/03/2031.",
     });
 
     const deLucia = await pedir(EMAIL_LUCIA, "get", "/notificaciones/mias");

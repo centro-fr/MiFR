@@ -163,11 +163,7 @@ export function construirSistema({ prisma, googleAuth, jwtService }: PiezasDeInf
     new SuplenciaService(new SuplenciaRepository(prisma), claseService, profesorService, unidadDeTrabajo),
   );
   const notificacionService = new NotificacionService(new NotificacionRepository(prisma));
-  const planificadorNotificaciones = new PlanificadorNotificacionesService(
-    cuotaService,
-    parametrosService,
-    notificacionService,
-  );
+  const planificadorNotificaciones = new PlanificadorNotificacionesService(cuotaService, notificacionService);
   const gestionPersonas = new GestionPersonasService(
     profesorService,
     horarioService,

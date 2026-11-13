@@ -64,6 +64,12 @@ function cuotaSinPagar(situacion: SituacionDeCuotas): CuotaDeLaSituacion | null 
 // cobrarla (decisión de SPRINT-3.md): cubre desde el pago, o desde el vencimiento vigente si el
 // alumno paga por adelantado, hasta el vencimiento que calcula ICalculoVencimiento. No guarda si
 // está paga o vencida: eso lo calcula ICalculoHabilitacion al consultarla.
+// Los estados que generan aviso (US-25). Al día no se avisa; las de clase suelta no llegan acá.
+const TIPO_DE_AVISO_POR_ESTADO: Partial<Record<EstadoHabilitacion, TipoAvisoCuota>> = {
+  POR_VENCER: "CUOTA_POR_VENCER",
+  VENCIDA: "CUOTA_VENCIDA",
+};
+
 export class CuotaService implements IInfoCuotas {
   constructor(
     private readonly repositorio: CuotaRepository,
@@ -169,10 +175,12 @@ export class CuotaService implements IInfoCuotas {
     return new Map(idsInscripciones.map((id) => [id, cobrado.get(id) ?? 0]));
   }
 
-  async paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]> {
-    const situaciones = await this.repositorio.situacionParaAvisos(sumarDias(fecha, diasPrevios));
+  // Las cuotas que hoy están por vencer o vencidas: el aviso sale cuando la cuota cambia a ese estado
+  // (US-25). Una que vence hoy todavía está al día, así que alcanza con las que vencen hasta hoy.
+  async paraAvisoDeVencimiento(fecha: Date): Promise<CuotaParaAviso[]> {
+    const situaciones = await this.repositorio.situacionParaAvisos(fecha);
     return situaciones.flatMap((situacion) => {
-      const aviso = this.avisoPara(situacion, fecha, diasPrevios);
+      const aviso = this.avisoPara(situacion, fecha);
       return aviso ? [aviso] : [];
     });
   }
@@ -217,11 +225,11 @@ export class CuotaService implements IInfoCuotas {
     }));
   }
 
-  private avisoPara(situacion: SituacionParaAviso, fecha: Date, diasPrevios: number): CuotaParaAviso | null {
+  private avisoPara(situacion: SituacionParaAviso, fecha: Date): CuotaParaAviso | null {
     const cuota = cuotaVigente(situacion);
     if (cuota === null || tienePagoPendiente(situacion)) return null;
     const vencimiento = cuota.fecha_vencimiento;
-    const { estado, diasRestantes } = this.habilitaciones.calcular({
+    const { estado } = this.habilitaciones.calcular({
       tipoPlan: situacion.tipo_plan,
       vencimiento,
       diasGracia: situacion.dias_gracia,
@@ -229,29 +237,16 @@ export class CuotaService implements IInfoCuotas {
       vencidosPuedenAsistir: true,
       hoy: fecha,
     });
-    // Con una cuota paga siempre hay vencimiento, y con vencimiento siempre hay días restantes.
-    const tipo = tipoDeAviso(estado, diasRestantes as number, diasPrevios, situacion.dias_gracia);
-    if (tipo === null) return null;
+    const tipo = TIPO_DE_AVISO_POR_ESTADO[estado];
+    if (tipo === undefined) return null;
     return {
       tipo,
       id_cuota: cuota.id_cuota,
       id_inscripcion: situacion.id_inscripcion,
       fecha_vencimiento: vencimiento,
+      fin_de_gracia: sumarDias(vencimiento, situacion.dias_gracia),
       nombre_plan: situacion.nombre_plan,
       alumno: situacion.alumno,
     };
   }
-}
-
-// Sin días de gracia el aviso de vencida sale el mismo día del vencimiento (US-25), aunque la
-// habilitación lo dé AL_DIA hasta terminar ese día: al siguiente ya no puede asistir sin renovar.
-function tipoDeAviso(
-  estado: EstadoHabilitacion,
-  diasRestantes: number,
-  diasPrevios: number,
-  diasGracia: number,
-): TipoAvisoCuota | null {
-  if (estado === "VENCIDA" || (diasGracia === 0 && diasRestantes === 0)) return "CUOTA_VENCIDA";
-  if (estado === "AL_DIA" && diasRestantes <= diasPrevios) return "CUOTA_POR_VENCER";
-  return null;
 }

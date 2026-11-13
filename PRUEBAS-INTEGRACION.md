@@ -1061,14 +1061,14 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 #### PI-67 — Los avisos de vencimiento de cuota
 
-**US:** US-25 · **Precondición:** escenario de demostración cargado (Valentina Herrera en el Intermedio, con 5 días de gracia y su primera cuota cobrada; Mateo Romero, menor a cargo de Paula Romero, pre-inscripto en el Personalizado 2 días); `DIAS_AVISO_VENCIMIENTO` en 3 (valor inicial). El planificador se corre con el día de hoy (`PlanificadorNotificaciones.generarAvisos`), como lo hacen el intervalo y la consulta de las notificaciones.
+**US:** US-25 · **Precondición:** escenario de demostración cargado (Valentina Herrera en el Intermedio, con 5 días de gracia y su primera cuota cobrada; Mateo Romero, menor a cargo de Paula Romero, pre-inscripto en el Personalizado 2 días, también con 5 días de gracia). El planificador se corre con el día de hoy (`PlanificadorNotificaciones.generarAvisos`), como lo hacen el intervalo y la consulta de las notificaciones.
 
-1. La cuota de Valentina vence en 2 días: se corre el planificador dos veces. Después vence hace 6 días (pasada la gracia) y se vuelve a correr.
-2. Con la base reiniciada, la cuota vence en 10 días; después, hace 3 días (en la gracia); después, mañana con una transferencia informada por Carla sin revisar; por último, con esa transferencia aprobada (renovó). Se corre el planificador en cada paso.
-3. Con la base reiniciada, Marina cobra en efectivo la primera cuota de Mateo, que vence en 5 días. Se corre el planificador; se cambia `DIAS_AVISO_VENCIMIENTO` a 7 y se vuelve a correr.
+1. La cuota de Valentina venció ayer (entra en la gracia): se corre el planificador dos veces. Después vence hace 6 días (pasada la gracia) y se vuelve a correr.
+2. Con la base reiniciada, la cuota vence en 10 días; después, hoy; después, venció ayer pero con una transferencia informada por Carla sin revisar; por último, con esa transferencia aprobada (renovó). Se corre el planificador en cada paso.
+3. Con la base reiniciada, Marina cobra en efectivo la primera cuota de Mateo, que venció ayer. Se corre el planificador.
 4. Se inserta dos veces, directo en la base, el mismo aviso (usuario, cuota y tipo).
 
-**Resultado esperado:** en el paso 1 la primera corrida guarda un `CUOTA_POR_VENCER` para Valentina, con su cuota, `ENVIADA` y sin leer; la segunda no guarda nada; con la cuota vencida se suma un `CUOTA_VENCIDA`. En el paso 2 no se guarda ningún aviso: al día, en la gracia, con la transferencia pendiente ni después de renovar. En el paso 3 no hay aviso con 3 días previos y sí con 7, para Paula y no para Mateo, con el nombre del alumno y del plan en el mensaje. En el paso 4 la base rechaza el segundo (`P2002`) y queda uno solo.
+**Resultado esperado:** en el paso 1 la primera corrida guarda un `CUOTA_POR_VENCER` para Valentina, con su cuota, `ENVIADA` y sin leer; la segunda no guarda nada; con la cuota vencida se suma un `CUOTA_VENCIDA`. En el paso 2 no se guarda ningún aviso: al día, el día del vencimiento (todavía al día), con la transferencia pendiente ni después de renovar. En el paso 3 hay un `CUOTA_POR_VENCER` para Paula y no para Mateo, con el texto completo: "La cuota de Mateo Romero del plan Personalizado 2 días venció el …: hay tiempo de renovarla hasta el …". En el paso 4 la base rechaza el segundo (`P2002`) y queda uno solo.
 
 **Automatizado:** Sí (N-01 a N-04).
 
@@ -1076,12 +1076,12 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **US:** US-25 · **Precondición:** escenario de demostración cargado; reloj fijo en un día propio del caso (el planificador genera a lo sumo una vez por día y por proceso).
 
-1. La cuota de Valentina vence mañana. Valentina pide sus notificaciones (`GET /notificaciones/mias`).
+1. La cuota de Valentina venció ayer. Valentina pide sus notificaciones (`GET /notificaciones/mias`).
 2. Lucía pide las suyas y trata de marcar como leída la de Valentina; Valentina marca una que no existe.
 3. Valentina marca la suya (`POST /notificaciones/{id}/leida`) y después todas (`POST /notificaciones/leidas`).
 4. Con la base reiniciada, Valentina tiene dos notificaciones sin leer y Lucía una; Valentina marca todas. Después, un pedido sin sesión.
 
-**Resultado esperado:** en el paso 1 responde 200 con el aviso del día recién generado (`CUOTA_POR_VENCER`, sin leer, "Tu cuota del plan Intermedio vence el …"), `total` y `no_leidas` en 1. En el paso 2 Lucía no ve ninguna y recibe 404, igual que Valentina con la inexistente; el aviso sigue sin leer. En el paso 3 responde 200 con el aviso leído y después `{ marcadas: 0 }`. En el paso 4 se marcan 2 y la de Lucía sigue sin leer; sin sesión, 401.
+**Resultado esperado:** en el paso 1 responde 200 con el aviso del día recién generado (`CUOTA_POR_VENCER`, sin leer, "Tu cuota del plan Intermedio venció el 09/03/2031: hay tiempo de renovarla hasta el 14/03/2031."), `total` y `no_leidas` en 1. En el paso 2 Lucía no ve ninguna y recibe 404, igual que Valentina con la inexistente; el aviso sigue sin leer. En el paso 3 responde 200 con el aviso leído y después `{ marcadas: 0 }`. En el paso 4 se marcan 2 y la de Lucía sigue sin leer; sin sesión, 401.
 
 **Automatizado:** Sí (N-05 y N-06).
 
@@ -1339,9 +1339,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | M-01        | Retirado el 13/11/2026. El resumen junta la transferencia pendiente que pasó las 24 horas, el efectivo sin rendir y la cuota vencida, con el monto estimado al precio de hoy | PI-65 |
 | M-02        | Retirado el 13/11/2026. Con todo resuelto el resumen sale sin novedades; una cuota en los días de gracia no cuenta como vencida | PI-65 |
 | M-03        | Retirado el 13/11/2026. Solo la propietaria ve el resumen: una profesora recibe 403 y sin sesión 401 | PI-65 |
-| N-01        | El planificador avisa por vencer dentro de los días previos y vencida al pasar la gracia, una sola vez por cuota y tipo | PI-67 |
-| N-02        | Sin aviso al día, en los días de gracia, con una transferencia pendiente ni después de renovar | PI-67 |
-| N-03        | El aviso de un menor le llega a su tutora; `DIAS_AVISO_VENCIMIENTO` cambia desde cuándo se avisa | PI-67 |
+| N-01        | El planificador avisa por vencer al entrar en la gracia y vencida al terminarla, una sola vez por cuota y tipo | PI-67 |
+| N-02        | Sin aviso al día ni el día del vencimiento, con una transferencia pendiente ni después de renovar | PI-67 |
+| N-03        | El aviso de un menor le llega a su tutora, con el texto completo de la cuota | PI-67 |
 | N-04        | La base rechaza un segundo aviso del mismo tipo para la misma cuota y usuario | PI-67 |
 | N-05        | La alumna ve su aviso al consultar y lo marca leído; otra persona no lo ve ni lo marca (404) | PI-68 |
 | N-06        | Marcar todas deja leídas solo las de quien pide; sin sesión, 401 | PI-68 |
@@ -1773,6 +1773,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-50         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-10 con la regla de la clase sin marcas (todos presentes)                  |
 | PI-55         | 13/11/2026 | Nicolas           | Aprobado           | Pasa J-14 con la regla de la clase sin marcas (todos presentes)                  |
 | PI-91         | 13/11/2026 | Nicolas           | Aprobado           | Pasan R-19 a R-21; también R-01 a R-18, que fallaban desde el merge 6fcb658       |
+| PI-67         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-01 a N-04 con el aviso por cambio de estado, sin DIAS_AVISO_VENCIMIENTO   |
+| PI-68         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-05 y N-06 con el texto nuevo del aviso                                   |
 
 ### 8.3 Defectos
 
@@ -1907,3 +1909,4 @@ Los defectos se numeran D-01, D-02…
 |   2.37  | 13/11/2026 | PI-50 y PI-55 (J-10 y J-14) pasan a la regla del 12/11/2026: una clase que cierra sin ninguna marca se da por dictada con todos presentes. Fallaban desde ese cambio | Nicolas |
 |   2.38  | 13/11/2026 | Caso PI-91 y tests R-19 a R-21: con promoción, lo cobrado se liquida a precio de lista del día de la cuota, en proporción al descuento. Corrige la regla que entró en el merge 6fcb658, que llevaba a lista cualquier pago menor (con promoción o sin ella), por pago y con el precio de la inscripción, y hacía fallar R-01 a R-18 | Nicolas |
 |   2.39  | 13/11/2026 | Se retiran PI-65 y el archivo M (M-01 a M-03): el resumen diario de la propietaria (US-26) se eliminó del sistema, junto con el aviso de clase cancelada. US-26 pasa a no aplicar | Nicolas |
+|   2.40  | 13/11/2026 | PI-67 y PI-68 (N-01 a N-03, N-05) pasan a la regla nueva de US-25: el aviso sale cuando la cuota cambia a por vencer (al entrar en la gracia) o a vencida (al terminarla), con las fechas en el texto. Se retira `DIAS_AVISO_VENCIMIENTO` | Nicolas |

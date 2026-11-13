@@ -1,7 +1,6 @@
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { CuotaParaAviso } from "../../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type { IInfoCuotas } from "../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
-import type { IInfoParametros } from "../../gestion-servicio-entrenamiento/parametros-sistema/interface/i-info-parametros.js";
 import type { IRegistroNotificaciones } from "../notificacion/interface/i-registro-notificaciones.js";
 import type { NuevaNotificacion } from "../notificacion/notificacion.types.js";
 
@@ -16,7 +15,6 @@ export class PlanificadorNotificacionesService {
 
   constructor(
     private readonly cuotas: IInfoCuotas,
-    private readonly parametros: IInfoParametros,
     private readonly notificaciones: IRegistroNotificaciones,
   ) {}
 
@@ -30,15 +28,14 @@ export class PlanificadorNotificacionesService {
 
   // Devuelve cuántos avisos nuevos guardó: los que ya existían no cuentan.
   async generarAvisos(hoy: Date): Promise<number> {
-    const diasPrevios = await this.parametros.obtener("DIAS_AVISO_VENCIMIENTO");
-    const cuotas = await this.cuotas.paraAvisoDeVencimiento(hoy, diasPrevios);
-    return this.notificaciones.registrar(cuotas.map((cuota) => avisoDeCuota(cuota, hoy)));
+    const cuotas = await this.cuotas.paraAvisoDeVencimiento(hoy);
+    return this.notificaciones.registrar(cuotas.map(avisoDeCuota));
   }
 }
 
 // El tutor es el usuario del sistema de un menor (US-06): sus avisos le llegan a él. Un alumno que cumple
 // 18 años conserva el tutor hasta que se edita su ficha, y puede no tener cuenta propia (email NULL).
-function avisoDeCuota(cuota: CuotaParaAviso, hoy: Date): NuevaNotificacion {
+function avisoDeCuota(cuota: CuotaParaAviso): NuevaNotificacion {
   const { alumno } = cuota;
   const deQuien =
     alumno.id_usuario_responsable === null ? "Tu cuota" : `La cuota de ${alumno.nombre} ${alumno.apellido}`;
@@ -46,14 +43,17 @@ function avisoDeCuota(cuota: CuotaParaAviso, hoy: Date): NuevaNotificacion {
     id_usuario: alumno.id_usuario_responsable ?? alumno.id_usuario,
     tipo: cuota.tipo,
     id_cuota: cuota.id_cuota,
-    mensaje: `${deQuien} del plan ${cuota.nombre_plan} ${cuandoVence(cuota, hoy)}.`,
+    mensaje: `${deQuien} del plan ${cuota.nombre_plan} ${queLePasa(cuota)}.`,
   };
 }
 
-function cuandoVence({ tipo, fecha_vencimiento }: CuotaParaAviso, hoy: Date): string {
-  const fecha = formatoArgentino(fecha_vencimiento);
-  if (fecha_vencimiento.getTime() === hoy.getTime()) return `vence hoy, ${fecha}`;
-  return tipo === "CUOTA_VENCIDA" ? `venció el ${fecha}` : `vence el ${fecha}`;
+// El texto completo, con las fechas: se entiende desde la pantalla de bloqueo del celular sin tener que
+// entrar al sistema (arquitectura.md, avisos push).
+function queLePasa({ tipo, fecha_vencimiento, fin_de_gracia }: CuotaParaAviso): string {
+  const vencio = `venció el ${formatoArgentino(fecha_vencimiento)}`;
+  return tipo === "CUOTA_POR_VENCER"
+    ? `${vencio}: hay tiempo de renovarla hasta el ${formatoArgentino(fin_de_gracia)}`
+    : `${vencio} y ya pasaron los días de gracia`;
 }
 
 // Las fechas de las columnas DATE llegan a las 00:00 UTC: el día UTC es el día argentino.

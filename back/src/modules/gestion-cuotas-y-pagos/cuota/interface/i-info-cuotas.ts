@@ -24,7 +24,8 @@ export interface IInfoCuotas {
 
   cobradoEnPeriodo(idsInscripciones: number[], desde: Date, hasta: Date): Promise<Map<number, number>>;
 
-  paraAvisoDeVencimiento(fecha: Date, diasPrevios: number): Promise<CuotaParaAviso[]>;
+  // Las cuotas mensuales que esa fecha están por vencer o vencidas, con el tipo de aviso que corresponde.
+  paraAvisoDeVencimiento(fecha: Date): Promise<CuotaParaAviso[]>;
 
   // US-34: listado completo de cuotas vencidas hoy con datos de contacto del alumno y monto exigible.
   cuotasVencidasDetalladas(hoy: Date): Promise<CuotaVencidaDetallada[]>;

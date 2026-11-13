@@ -20,7 +20,6 @@ const VALOR_POR_CLAVE: Record<ClaveParametro, z.ZodType<string | number | boolea
   VENCIDOS_PUEDEN_ASISTIR: z.boolean({ error: "Debe ser verdadero o falso" }),
   MINUTOS_CIERRE_ASISTENCIA: enteroNoNegativoSchema(1440),
   DIAS_RESERVA_PREINSCRIPCION: enteroNoNegativoSchema(365),
-  DIAS_AVISO_VENCIMIENTO: enteroNoNegativoSchema(30),
   // Con 0 todos los alumnos serían inactivos.
   INASISTENCIAS_CONSECUTIVAS_INACTIVO: enteroNoNegativoSchema(30).refine(
     (valor) => valor > 0,

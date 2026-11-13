@@ -69,6 +69,8 @@ export interface CuotaParaAviso {
   id_cuota: number;
   id_inscripcion: number;
   fecha_vencimiento: Date;
+  // El último día de gracia: hasta entonces la cuota está por vencer.
+  fin_de_gracia: Date;
   nombre_plan: string;
   alumno: SituacionParaAviso["alumno"];
 }
