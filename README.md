@@ -102,6 +102,7 @@ Los `.env` están ignorados por Git; cada paquete versiona un `.env.example` con
 | `JWT_EXPIRES_IN`   | Opcional, `8h`                     | Vigencia del token                                                                                                                          |
 | `PORT`             | Opcional, `3000`                   | Puerto de la API                                                                                                                            |
 | `CORS_ORIGENES`    | Opcional                           | Orígenes permitidos, separados por comas                                                                                                    |
+| `PROXIES_DE_CONFIANZA` | Opcional, `0`                  | Proxies delante de la API: de ahí sale la IP del visitante que cuenta el límite de pedidos                                                  |
 
 **`front/.env`**
 
@@ -193,6 +194,7 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 | `JWT_SECRET`       | Lo genera Render con un valor aleatorio                                             |
 | `JWT_EXPIRES_IN`   | `8h` (lo fija `render.yaml`)                                                        |
 | `CORS_ORIGENES`    | URL del sitio de Netlify, por ejemplo `https://mifr.netlify.app`                    |
+| `PROXIES_DE_CONFIANZA` | Empezar con `2` y calibrarlo después del primer deploy (ver `DESPLIEGUE.md`)    |
 
 `LOGIN_DESARROLLO` no se define: con `true` la API no arranca en producción.
 

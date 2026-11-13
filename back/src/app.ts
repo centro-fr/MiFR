@@ -25,6 +25,7 @@ import type { IAutorizacion } from "./modules/gestion-usuarios/rol/interface/i-a
 import type { IAutenticacion } from "./modules/gestion-usuarios/sesion/interface/i-autenticacion.js";
 import { crearControlDeAcceso } from "./shared/middlewares/auth.js";
 import { errorHandler, notFoundHandler } from "./shared/middlewares/error-handler.js";
+import { crearLimiteDePedidos, type LimitesDePedidos } from "./shared/middlewares/limite-pedidos.js";
 import { createDocumentacionRoutes } from "./shared/openapi/documentacion.routes.js";
 import type { DocumentoOpenApi } from "./shared/openapi/registro.js";
 import { requestLogger } from "./shared/middlewares/logger.js";
@@ -54,10 +55,25 @@ export interface AppOpciones {
   origenesPermitidos?: string[];
   // Habilita POST /auth/desarrollo (login sin Google). index.ts lo impide en producción.
   loginDesarrollo?: boolean;
+  // Sin límites no se corta ningún pedido: los tests de integración inician muchas sesiones seguidas.
+  limitesDePedidos?: LimitesDePedidos;
+  // Cuántos proxies hay delante de la API: de ahí sale req.ip, que es lo que cuenta el límite de pedidos.
+  proxiesDeConfianza?: number;
+}
+
+// Van antes que cualquier ruta, así un pedido que excede el tope no llega a la base. /health queda
+// afuera porque la consulta el monitor que mantiene despierta la API. Un pedido a /publico o al login
+// cuenta también para el tope general.
+function montarLimitesDePedidos(api: Router, limites: LimitesDePedidos): void {
+  api.use(crearLimiteDePedidos(limites.api));
+  api.use("/publico", crearLimiteDePedidos(limites.publico));
+  api.use(["/auth/google", "/auth/desarrollo"], crearLimiteDePedidos(limites.inicioSesion));
 }
 
 export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Express {
   const app = express();
+  // Un número y no true: con true cualquiera elige su IP mandando X-Forwarded-For.
+  app.set("trust proxy", opciones.proxiesDeConfianza ?? 0);
 
   // Cabeceras de seguridad (nosniff, X-Frame-Options, CSP, HSTS) y sin X-Powered-By.
   app.use(helmet());
@@ -69,6 +85,7 @@ export function createApp(deps: AppDependencies, opciones: AppOpciones = {}): Ex
 
   // Prefijo versionado del SDD: un cambio incompatible de contrato se publica como /api/v2.
   const api = Router();
+  if (opciones.limitesDePedidos) montarLimitesDePedidos(api, opciones.limitesDePedidos);
   if (opciones.documentacionApi) {
     api.use("/docs", createDocumentacionRoutes(opciones.documentacionApi));
   }

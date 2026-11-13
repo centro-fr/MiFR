@@ -55,6 +55,8 @@ services:
       DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
       PORT: 3000
       CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:5173,http://localhost:3001}
+      # El navegador llega por el puerto publicado o por el proxy de Vite, que no agrega X-Forwarded-For.
+      PROXIES_DE_CONFIANZA: ${PROXIES_DE_CONFIANZA:-0}
     # Con back/.env de desarrollo la API trae el login sin Google: se publica solo en la propia
     # máquina, no en la red local. Adentro del contenedor escucha en todas las interfaces (HOST del Dockerfile).
     ports:

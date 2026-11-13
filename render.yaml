@@ -20,6 +20,10 @@ services:
         sync: false
       - key: CORS_ORIGENES
         sync: false
+      # Proxies delante de la API (Netlify y el balanceador de Render). Se calibra después del primer
+      # deploy: ver "Calibrar PROXIES_DE_CONFIANZA" en back/DESPLIEGUE.md.
+      - key: PROXIES_DE_CONFIANZA
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
