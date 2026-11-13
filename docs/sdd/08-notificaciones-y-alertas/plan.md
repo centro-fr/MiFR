@@ -1,5 +1,7 @@
 # Plan Técnico: Notificaciones y Alertas
 
+> **Cambios del 13/11/2026.** US-26 (resumen diario) y el aviso de clase cancelada se retiraron, y los avisos de cuota suman push al celular: ver `spec.md`. Lo que sigue sobre US-26 queda como registro.
+
 ## 1. Decisiones Técnicas y Arquitectura
 
 ### 1.1. Backend y Tareas Programadas

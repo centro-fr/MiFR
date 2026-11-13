@@ -1,5 +1,7 @@
 # US-26 – Resumen diario para la propietaria
 
+> **Retirada el 13/11/2026.** El resumen diario de la propietaria se eliminó del sistema: no se genera la notificación diaria, no existe `GET /resumen-diario` ni el parámetro `HORA_RESUMEN_DIARIO`, y el tipo `RESUMEN_DIARIO` salió del enumerado de `notificaciones`. Se conserva la spec como registro.
+
 ## 1. Información general
 
 - **Épica:** Notificaciones y Alertas

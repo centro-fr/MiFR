@@ -56,7 +56,7 @@ Como sistema, quiero enviar un aviso automático al alumno cuando su cuota esté
 
 ## 7. Reglas de negocio
 
-- Los avisos son **solo dentro del sistema** (campana, bandeja e inicio del alumno). Email y WhatsApp quedaron fuera (decidido el 18/10/2026): sumarlos es un cambio de diseño y del DER.
+- Los avisos se ven **dentro del sistema** (campana, bandeja e inicio del alumno) y, desde el 13/11/2026, también como push en el celular (ver al final de esta sección). Email y WhatsApp quedaron fuera (decidido el 18/10/2026): sumarlos es un cambio de diseño y del DER.
 - **Aviso de cuota por vencer:** sale al entrar en los `DIAS_AVISO_VENCIMIENTO` días previos al vencimiento, mientras la cuota está al día.
 - **Aviso de cuota vencida:** sale al superar los días de gracia del plan. Durante los días de gracia no se avisa. Con 0 días de gracia sale el mismo día del vencimiento.
 - Un alumno **al día** (sin vencimiento cercano) **no recibe aviso**.
@@ -69,6 +69,8 @@ Como sistema, quiero enviar un aviso automático al alumno cuando su cuota esté
 - El alumno puede ver el estado de su cuota sin necesidad del aviso.
 - Los avisos quedan registrados para trazabilidad.
 - El proceso corre una vez por día: con un intervalo dentro del servidor mientras está despierto y, además, cuando el usuario consulta sus notificaciones.
+
+- **Push al celular (decidido el 13/11/2026).** Además de la campana, los avisos de cuota por vencer y vencida llegan al celular como notificación push (Web Push), a quien activó los avisos en ese dispositivo desde su perfil. Es una copia del aviso del sistema: si el push no llega, el aviso sigue en la campana. El texto lleva el dato completo (de quién es la cuota, el plan y la fecha) para entenderse desde la pantalla de bloqueo; al tocarlo abre el sistema. En iPhone requiere iOS 16.4 o posterior y tener MiFR agregado a la pantalla de inicio. Email y WhatsApp siguen afuera.
 
 ## 8. Criterios de aceptación
 

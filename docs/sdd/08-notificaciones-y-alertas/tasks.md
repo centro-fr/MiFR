@@ -1,5 +1,7 @@
 # Tareas de Implementación: Notificaciones y Alertas
 
+> **Cambios del 13/11/2026.** US-26 (resumen diario) y el aviso de clase cancelada se retiraron, y los avisos de cuota suman push al celular: ver `spec.md`. Lo que sigue sobre US-26 queda como registro.
+
 Tareas técnicas, secuenciales y verificables para la épica **Notificaciones y Alertas** (US-25 y US-26).
 
 ---

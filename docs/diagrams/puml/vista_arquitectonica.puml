@@ -294,27 +294,26 @@ package "Capa de Logica de Negocio Persistente" as CapaPersistente <<subsystem>>
   package "GestionNotificaciones" as GestionNotificaciones <<subsystem>> {
     component "Notificacion"               as Notificacion
     component "PlanificadorNotificaciones" as PlanificadorNotificaciones <<process>>
-    component "ResumenDiarioPropietaria"   as ResumenDiarioPropietaria <<process>>
+    component "SuscripcionPush"            as SuscripcionPush
     interface "IInfoUsuarios"   as R_GN_InfoUsuarios
     interface "IInfoClases"     as R_GN_InfoClases
     interface "IInfoParametros" as R_GN_InfoParametros
-    interface "IInfoPagos"      as R_GN_InfoPagos
     interface "IInfoCuotas"     as R_GN_InfoCuotas
     interface "IRegistroNotificaciones" as I_RegistroNotificaciones
+    interface "IEnvioPush"              as I_EnvioPush
+    interface "IServicioWebPush"        as R_GN_WebPush
 
     Notificacion               -down- I_RegistroNotificaciones
     Notificacion               -right-( R_GN_InfoUsuarios
     PlanificadorNotificaciones -right-( R_GN_InfoClases
     PlanificadorNotificaciones -up-( R_GN_InfoParametros
     PlanificadorNotificaciones -up-( R_GN_InfoCuotas
-    ResumenDiarioPropietaria   -up-( R_GN_InfoPagos
-    ResumenDiarioPropietaria   -up-( R_GN_InfoCuotas
-    ResumenDiarioPropietaria   -up-( R_GN_InfoParametros
-    ResumenDiarioPropietaria   -( R_GN_InfoUsuarios
+    SuscripcionPush            -up- I_EnvioPush
+    Notificacion               -right-( I_EnvioPush
+    SuscripcionPush            -down-( R_GN_WebPush
     PlanificadorNotificaciones ..> Notificacion
-    ResumenDiarioPropietaria   ..> Notificacion
     Notificacion -[hidden]down-> PlanificadorNotificaciones
-    PlanificadorNotificaciones -[hidden]right-> ResumenDiarioPropietaria
+    PlanificadorNotificaciones -[hidden]right-> SuscripcionPush
   }
   interface "IAutenticacion"        as R_GN_Aut
   interface "IAutorizacion"         as R_GN_Autz
@@ -492,6 +491,13 @@ package "Capa Administracion de Datos" as CapaDatos <<subsystem>> #F6DADA {
 component "Google Auth" as GoogleAuth <<external>>
 interface "IAutenticacionGoogleAuth" as I_GoogleAuth
 GoogleAuth -up- I_GoogleAuth
+
+' Los servicios de push de cada navegador (FCM en Android y Chrome, APNs en iPhone, Mozilla en Firefox),
+' con el estándar Web Push: reciben el aviso cifrado y lo entregan al celular.
+component "Servicio Web Push" as ServicioWebPush <<external>>
+interface "IServicioWebPush" as I_ServicioWebPush
+ServicioWebPush -up- I_ServicioWebPush
+GoogleAuth -[hidden]right-> ServicioWebPush
 
 ' ============================================================
 ' Ubicacion relativa de las capas
