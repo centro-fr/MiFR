@@ -327,7 +327,13 @@ describe("InsigniaService", () => {
         porcentaje_asistencia: 100,
         racha_actual: 3,
         insignias: [
-          { codigo: "MES_PERFECTO", nombre: "MES_PERFECTO", descripcion: null, tipo: "MES_PERFECTO", valor_umbral: MES_PERFECTO.valor_umbral },
+          {
+            codigo: "MES_PERFECTO",
+            nombre: "MES_PERFECTO",
+            descripcion: null,
+            tipo: "MES_PERFECTO",
+            valor_umbral: MES_PERFECTO.valor_umbral,
+          },
           { codigo: "RACHA_3", nombre: "RACHA_3", descripcion: null, tipo: "RACHA", valor_umbral: 3 },
         ],
         es_propia: false,

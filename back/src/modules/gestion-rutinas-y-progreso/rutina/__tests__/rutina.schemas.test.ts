@@ -99,6 +99,8 @@ describe("actualizarRutinaSchema", () => {
   });
 
   it("rechaza una fecha de fin anterior al inicio cuando vienen las dos", () => {
-    expect(actualizarRutinaSchema.safeParse({ fecha_desde: "2026-11-10", fecha_hasta: "2026-11-01" }).success).toBe(false);
+    expect(
+      actualizarRutinaSchema.safeParse({ fecha_desde: "2026-11-10", fecha_hasta: "2026-11-01" }).success,
+    ).toBe(false);
   });
 });

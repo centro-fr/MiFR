@@ -57,7 +57,8 @@ export class RutinaRepository {
     if (cambios.nombre !== undefined) data.nombre = cambios.nombre;
     if (cambios.fecha_desde !== undefined) data.fecha_desde = cambios.fecha_desde;
     if (cambios.fecha_hasta !== undefined) data.fecha_hasta = cambios.fecha_hasta;
-    if (cambios.contenido !== undefined) data.contenido = cambios.contenido as unknown as Prisma.InputJsonValue;
+    if (cambios.contenido !== undefined)
+      data.contenido = cambios.contenido as unknown as Prisma.InputJsonValue;
     if (cambios.observaciones !== undefined) data.observaciones = cambios.observaciones;
 
     const fila = await this.prisma.rutinas.update({

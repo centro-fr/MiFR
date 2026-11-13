@@ -76,7 +76,10 @@ describe("ActividadRepository", () => {
   it("maximoInscriptosEnHorarios busca los horarios vigentes y calcula el mayor número de inscriptos", async () => {
     prisma.horarios.findMany.mockResolvedValue([
       { id_horario: 1, inscripciones: [{ id_inscripcion: 10 }, { id_inscripcion: 11 }] },
-      { id_horario: 2, inscripciones: [{ id_inscripcion: 12 }, { id_inscripcion: 13 }, { id_inscripcion: 14 }] },
+      {
+        id_horario: 2,
+        inscripciones: [{ id_inscripcion: 12 }, { id_inscripcion: 13 }, { id_inscripcion: 14 }],
+      },
     ]);
 
     const maximo = await repositorio.maximoInscriptosEnHorarios(3);

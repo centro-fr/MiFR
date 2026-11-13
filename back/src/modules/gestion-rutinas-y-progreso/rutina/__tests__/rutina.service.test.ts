@@ -295,19 +295,26 @@ describe("RutinaService", () => {
     });
 
     it("rechaza con 400 una fecha de fin anterior al inicio guardado", async () => {
-      expect(await estado(service.actualizar(1, { fecha_hasta: fecha("2026-10-31") }, PROPIETARIA))).toBe(400);
+      expect(await estado(service.actualizar(1, { fecha_hasta: fecha("2026-10-31") }, PROPIETARIA))).toBe(
+        400,
+      );
       expect(repositorio.actualizar).not.toHaveBeenCalled();
     });
 
     it("rechaza con 400 un inicio posterior al fin guardado", async () => {
-      expect(await estado(service.actualizar(1, { fecha_desde: fecha("2026-12-01") }, PROPIETARIA))).toBe(400);
+      expect(await estado(service.actualizar(1, { fecha_desde: fecha("2026-12-01") }, PROPIETARIA))).toBe(
+        400,
+      );
       expect(repositorio.actualizar).not.toHaveBeenCalled();
     });
 
     it("acepta mover el inicio si se borra la fecha de fin en el mismo pedido", async () => {
       await service.actualizar(1, { fecha_desde: fecha("2026-12-01"), fecha_hasta: null }, PROPIETARIA);
 
-      expect(repositorio.actualizar).toHaveBeenCalledWith(1, { fecha_desde: fecha("2026-12-01"), fecha_hasta: null });
+      expect(repositorio.actualizar).toHaveBeenCalledWith(1, {
+        fecha_desde: fecha("2026-12-01"),
+        fecha_hasta: null,
+      });
     });
   });
 });

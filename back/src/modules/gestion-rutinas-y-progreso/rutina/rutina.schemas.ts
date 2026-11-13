@@ -64,7 +64,10 @@ export const actualizarRutinaSchema = z
   })
   .refine(
     ({ fecha_desde, fecha_hasta }) =>
-      fecha_desde === undefined || fecha_hasta === undefined || fecha_hasta === null || fecha_hasta >= fecha_desde,
+      fecha_desde === undefined ||
+      fecha_hasta === undefined ||
+      fecha_hasta === null ||
+      fecha_hasta >= fecha_desde,
     {
       message: "La fecha de fin no puede ser anterior a la de inicio",
       path: ["fecha_hasta"],

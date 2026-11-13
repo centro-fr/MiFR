@@ -10,7 +10,13 @@ export function createRutinaController(logica: ILogicaRutinas) {
     },
 
     async actualizar(req: Request, res: Response): Promise<void> {
-      res.json(await logica.actualizarRutina(Number(req.params.id), req.body as ActualizarRutinaInput, solicitanteDe(req)));
+      res.json(
+        await logica.actualizarRutina(
+          Number(req.params.id),
+          req.body as ActualizarRutinaInput,
+          solicitanteDe(req),
+        ),
+      );
     },
 
     async eliminar(req: Request, res: Response): Promise<void> {

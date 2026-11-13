@@ -43,14 +43,20 @@ export class RutinaService {
     const existentes = await this.repositorio.listarDeAlumno(input.id_alumno);
     const nombreNormalizado = input.nombre.trim().toLowerCase();
     if (existentes.some((r) => r.nombre.trim().toLowerCase() === nombreNormalizado)) {
-      throw new ValidationError(`Ya existe una rutina con el nombre "${input.nombre.trim()}" para este alumno`);
+      throw new ValidationError(
+        `Ya existe una rutina con el nombre "${input.nombre.trim()}" para este alumno`,
+      );
     }
 
     const { id_profesora: _omitida, ...datos } = input;
     return this.repositorio.crear({ ...datos, id_profesora: idProfesora });
   }
 
-  async actualizar(idRutina: number, input: ActualizarRutinaInput, solicitante: Solicitante): Promise<Rutina> {
+  async actualizar(
+    idRutina: number,
+    input: ActualizarRutinaInput,
+    solicitante: Solicitante,
+  ): Promise<Rutina> {
     const rutina = await this.repositorio.buscarPorId(idRutina);
     if (!rutina) {
       if (solicitante.esPropietaria) throw new NotFoundError("Rutina no encontrada");
@@ -62,8 +68,14 @@ export class RutinaService {
     if (input.nombre) {
       const existentes = await this.repositorio.listarDeAlumno(rutina.id_alumno);
       const nombreNormalizado = input.nombre.trim().toLowerCase();
-      if (existentes.some((r) => r.id_rutina !== idRutina && r.nombre.trim().toLowerCase() === nombreNormalizado)) {
-        throw new ValidationError(`Ya existe una rutina con el nombre "${input.nombre.trim()}" para este alumno`);
+      if (
+        existentes.some(
+          (r) => r.id_rutina !== idRutina && r.nombre.trim().toLowerCase() === nombreNormalizado,
+        )
+      ) {
+        throw new ValidationError(
+          `Ya existe una rutina con el nombre "${input.nombre.trim()}" para este alumno`,
+        );
       }
     }
 

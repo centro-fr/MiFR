@@ -18,7 +18,11 @@ export class GestionRutinasYProgresoService implements ILogicaRutinasYProgreso {
     return this.rutinas.crear(input, solicitante);
   }
 
-  actualizarRutina(idRutina: number, input: ActualizarRutinaInput, solicitante: Solicitante): Promise<Rutina> {
+  actualizarRutina(
+    idRutina: number,
+    input: ActualizarRutinaInput,
+    solicitante: Solicitante,
+  ): Promise<Rutina> {
     return this.rutinas.actualizar(idRutina, input, solicitante);
   }
 
