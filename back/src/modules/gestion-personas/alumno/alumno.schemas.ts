@@ -123,3 +123,8 @@ export type CrearAlumnoInput = z.infer<typeof crearAlumnoSchema>;
 export type ActualizarAlumnoInput = z.infer<typeof actualizarAlumnoSchema>;
 export type TutorInput = z.infer<typeof tutorSchema>;
 export type ListarAlumnoQuery = z.infer<typeof listarAlumnoQuerySchema>;
+
+// US-29: sin id_alumno, el panel del alumno de quien pide; el tutor elige uno de sus menores.
+export const panelAlumnoQuerySchema = z.object({ id_alumno: idDesdeTextoSchema.optional() });
+
+export type PanelAlumnoQuery = z.infer<typeof panelAlumnoQuerySchema>;

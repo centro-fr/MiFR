@@ -208,7 +208,7 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-26 | Resumen diario para la propietaria                        |   4    |                                                               | No aplica: retirada del sistema el 13/11/2026 (PI-65 retirado) |
 | US-27 | Carga de rutina y evolución física                        |   5    |                                                               |                                                                                        |
 | US-28 | Consulta de rutina y progreso físico                      |   5    |                                                               |                                                                                        |
-| US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    |                                                               |                                                                                        |
+| US-29 | Consulta de estado de plan, asistencias y próximas clases |   5    | PI-93                                                         | Sí: el plan con la cuota de la ficha, las próximas clases, el historial, el panel del menor para su tutor y el alcance; la pantalla está en el front |
 | US-30 | Ranking de asistencia entre alumnos                       |   5    | PI-72, PI-73 (el Podio del mes sale del ranking)              | Sí                                                                                     |
 | US-31 | Insignias y racha de asistencia                           |   5    | PI-71, PI-73                                                  | Sí                                                                                     |
 | US-32 | Panel público de disponibilidad                           |   5    |                                                               | No aplica: desde el 13/11/2026 la página pública usa datos fijos del front y no hay endpoint (PI-46 retirado) |
@@ -309,8 +309,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-90         | La foto de perfil de Google                                          | US-01               | Servicios          | Fábricas, sesiones, foto simulada                           | Sí           |
 | PI-91         | Los descuentos de las promociones no reducen los honorarios         | US-23, US-13        | Servicios          | Fábricas, reloj fijo, promoción en la inscripción           | Sí           |
 | PI-92         | Los avisos de cuota llegan al celular por push                      | US-25               | Servicios          | Demostración, servicio de push simulado                     | Sí           |
+| PI-93         | El panel del alumno: plan, próximas clases y asistencias            | US-29               | Interfaces         | Demostración, `crearClase`, primer pago en efectivo         | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026). PI-93 es el panel del portal del alumno (13/11/2026).
 
 ### 6.2 Detalle
 
@@ -1099,6 +1100,18 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (N-07 a N-10).
 
+#### PI-93 — El panel del alumno: plan, próximas clases y asistencias
+
+**US:** US-29 · **Precondición:** escenario de demostración cargado. Valentina Herrera tiene el Intermedio con Lucía; se carga una clase de su horario del 07/09/2026, dictada por Carla, con Valentina ausente.
+
+1. Valentina pide su panel (`GET /alumnos/mi-panel`) y Marina pide su ficha.
+2. Marina registra en efectivo el primer pago de Mateo (menor, a cargo de Paula). Paula pide el panel sin `id_alumno` y con el de Mateo.
+3. Valentina pide el panel con el `id_alumno` de Mateo. Lucía pide un panel.
+
+**Resultado esperado:** en el paso 1 el panel trae el nombre de Valentina, el Intermedio con Lucía a cargo y el mismo estado de cuota que la ficha; entre una y cinco próximas clases ordenadas por fecha y hora; y en el historial la clase del 07/09 como `AUSENTE`, con Carla, que fue quien la dictó. En el paso 2 Paula ve el panel de Mateo con su plan Personalizado 2 días y la cuota `AL_DIA`, igual con el `id_alumno`. En el paso 3, 404 para Valentina (un alumno ajeno responde igual que uno que no existe) y 403 para Lucía, que no es alumna ni tutora.
+
+**Automatizado:** Sí (E-26 y E-27).
+
 #### PI-69 — La detección de alumnos inactivos con la cuota al día
 
 **US:** US-22 · **Precondición:** escenario de demostración cargado; la cuota de Valentina Herrera (Intermedio, 5 días de gracia) vence en 10 días; `INASISTENCIAS_CONSECUTIVAS_INACTIVO` en 3 (valor inicial). Las clases del horario de Valentina se cargan en la base, cerradas (`DICTADA`) salvo que se diga otra cosa, con su asistencia.
@@ -1213,7 +1226,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    B    | `back/src/__tests__/integracion/actividades-y-horarios.integration.test.ts`     | 21 (B-01 a B-21) | PI-04, PI-05, PI-06, PI-46        |
 |    C    | `back/src/shared/db/__tests__/catalogo-seguridad.integration.test.ts`           | 3 (C-01 a C-03)  | PI-09                             |
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
-|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 25 (E-01 a E-25) | PI-15 a PI-18, PI-25, PI-26, PI-31 |
+|    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 27 (E-01 a E-27) | PI-15 a PI-18, PI-25, PI-26, PI-31, PI-93 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 39 (G-01 a G-39) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64, PI-66 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 22 (H-01 a H-22) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52 |
@@ -1273,6 +1286,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | E-21 a E-23 | La profesora no elige un tutor por id (403); un tutor con DNI y email de la misma cuenta se reusa y la profesora ve solo su nombre; DNI de una cuenta y email de otra (409) | PI-31 |
 | E-24        | El alta sin DNI, sin contacto de emergencia o con un tutor nuevo sin DNI responde 400 sin guardar nada | PI-15 |
 | E-25        | La base rechaza un alumno sin contacto de emergencia aunque no pase por la API (23502) | PI-15 |
+| E-26        | La alumna ve su plan con la cuota de su ficha, sus próximas clases en orden y su historial, con quien dictó cada clase | PI-93 |
+| E-27        | La tutora ve el panel de su menor una vez que pagó; la alumna no ve el de otro (404) y la profesora no tiene panel (403) | PI-93 |
 | F-01 a F-03 | Activación de un mayor (rol `ALUMNO`, idempotente) y de un menor (rol `TUTOR` a su tutora); baja que corta el acceso y reactivación que lo devuelve                             | PI-19 |
 | G-01 a G-03 | Inscripción preinscripta, precio vigente, filtros, validación de reglas, duplicados y cupo                                                                                   | PI-20 |
 | G-04, G-05  | Alta definitiva idempotente, rol `ALUMNO`, login, revalidación de cupo y activación ausente de la API (404)                                                                   | PI-21 |
@@ -1796,6 +1811,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-67         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-01 a N-04 con el aviso por cambio de estado, sin DIAS_AVISO_VENCIMIENTO   |
 | PI-68         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-05 y N-06 con el texto nuevo del aviso                                   |
 | PI-92         | 13/11/2026 | Nicolas           | Aprobado           | Pasan N-07 a N-10 con el servicio de push simulado                               |
+| PI-93         | 13/11/2026 | Nicolas           | Aprobado           | Pasan E-26 y E-27; aceptar un alumno ajeno hace fallar E-27                      |
 
 ### 8.3 Defectos
 
@@ -1932,3 +1948,4 @@ Los defectos se numeran D-01, D-02…
 |   2.39  | 13/11/2026 | Se retiran PI-65 y el archivo M (M-01 a M-03): el resumen diario de la propietaria (US-26) se eliminó del sistema, junto con el aviso de clase cancelada. US-26 pasa a no aplicar | Nicolas |
 |   2.40  | 13/11/2026 | PI-67 y PI-68 (N-01 a N-03, N-05) pasan a la regla nueva de US-25: el aviso sale cuando la cuota cambia a por vencer (al entrar en la gracia) o a vencida (al terminarla), con las fechas en el texto. Se retira `DIAS_AVISO_VENCIMIENTO` | Nicolas |
 |   2.41  | 13/11/2026 | Caso PI-92 (los avisos de cuota llegan al celular por push) y tests N-07 a N-10. El entorno de integración acepta un servicio de push simulado | Nicolas |
+|   2.42  | 13/11/2026 | Caso PI-93 (el panel del alumno, `GET /alumnos/mi-panel`) y tests E-26 y E-27. US-29 pasa a tener cobertura | Nicolas |

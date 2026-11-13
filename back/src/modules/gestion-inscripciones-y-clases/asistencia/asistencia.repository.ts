@@ -9,6 +9,7 @@ import type {
   AsistenciaDeProfesora,
   EstadoSeguimientoInactividad,
   FiltroAsistenciasDictadas,
+  MarcaDelAlumno,
   MarcaDeSeguimiento,
   MarcarAsistenciaInput,
   RachaDeInasistencia,
@@ -263,5 +264,32 @@ export class AsistenciaRepository {
           })),
       ]),
     );
+  }
+
+  // La profesora es la que dictó la clase, que con una suplencia no es la del horario.
+  async ultimasDelAlumno(idAlumno: number, cantidad: number): Promise<MarcaDelAlumno[]> {
+    const marcas = await this.prisma.asistencias.findMany({
+      where: { id_alumno: idAlumno, clase: { estado: "DICTADA" } },
+      select: {
+        asistio: true,
+        clase: {
+          select: {
+            id_clase: true,
+            fecha_clase: true,
+            horario: { select: { actividad: { select: { nombre: true } } } },
+            profesora: { select: { usuario: { select: { nombre: true, apellido: true } } } },
+          },
+        },
+      },
+      orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
+      take: cantidad,
+    });
+    return marcas.map(({ asistio, clase }) => ({
+      id_clase: clase.id_clase,
+      fecha_clase: clase.fecha_clase,
+      actividad: clase.horario.actividad.nombre,
+      profesora: clase.profesora.usuario,
+      asistio,
+    }));
   }
 }

@@ -39,6 +39,7 @@ function crearLogicaMock() {
     obtenerAlumnoPorId: vi.fn(),
     actualizarAlumno: vi.fn(),
     listarAlumnosConsultables: vi.fn(),
+    obtenerPanelAlumno: vi.fn(),
   };
 }
 
@@ -138,6 +139,46 @@ describe("rutas de alumnos", () => {
 
     expect(respuesta.status).toBe(403);
     expect(logica.listarAlumnosConsultables).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/mi-panel devuelve el panel de quien pide, sin id y sin pedir permisos", async () => {
+    logica.obtenerPanelAlumno.mockResolvedValue({ id_alumno: 4 });
+
+    const respuesta = await request(app)
+      .get("/api/v1/alumnos/mi-panel")
+      .set("Authorization", "Bearer alumno");
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual({ id_alumno: 4 });
+    expect(logica.obtenerPanelAlumno).toHaveBeenCalledWith(
+      { idUsuario: ROLES_POR_TOKEN.alumno!.usuarioId, esPropietaria: false },
+      undefined,
+    );
+    expect(logica.obtenerAlumnoPorId).not.toHaveBeenCalled();
+  });
+
+  it("GET /alumnos/mi-panel pasa el menor que elige el tutor y rechaza un id inválido", async () => {
+    logica.obtenerPanelAlumno.mockResolvedValue({ id_alumno: 6 });
+
+    const elegido = await request(app)
+      .get("/api/v1/alumnos/mi-panel?id_alumno=6")
+      .set("Authorization", "Bearer tutor");
+    const invalido = await request(app)
+      .get("/api/v1/alumnos/mi-panel?id_alumno=-1")
+      .set("Authorization", "Bearer tutor");
+
+    expect(elegido.status).toBe(200);
+    expect(logica.obtenerPanelAlumno).toHaveBeenCalledWith(expect.anything(), 6);
+    expect(invalido.status).toBe(400);
+  });
+
+  it("GET /alumnos/mi-panel responde 403 a quien no es alumno ni tutor", async () => {
+    const respuesta = await request(app)
+      .get("/api/v1/alumnos/mi-panel")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.obtenerPanelAlumno).not.toHaveBeenCalled();
   });
 
   it("devuelve la ficha de un alumno", async () => {

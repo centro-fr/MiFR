@@ -2,7 +2,12 @@ import type { Request, Response } from "express";
 import { solicitanteDe } from "../../../shared/middlewares/auth.js";
 import { auditar } from "../../../shared/utils/auditoria.js";
 import type { ILogicaAlumnos } from "../interface/i-logica-personas.js";
-import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from "./alumno.schemas.js";
+import type {
+  ActualizarAlumnoInput,
+  CrearAlumnoInput,
+  ListarAlumnoQuery,
+  PanelAlumnoQuery,
+} from "./alumno.schemas.js";
 
 export function createAlumnoController(logica: ILogicaAlumnos) {
   return {
@@ -41,6 +46,11 @@ export function createAlumnoController(logica: ILogicaAlumnos) {
 
     async listarMios(req: Request, res: Response) {
       res.json(await logica.listarAlumnosConsultables(solicitanteDe(req)));
+    },
+
+    async panel(req: Request, res: Response) {
+      const { id_alumno } = req.query as unknown as PanelAlumnoQuery;
+      res.json(await logica.obtenerPanelAlumno(solicitanteDe(req), id_alumno));
     },
   };
 }

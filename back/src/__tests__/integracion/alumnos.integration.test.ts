@@ -470,3 +470,75 @@ describe("PI-31: el tutor en el alta de un menor", () => {
     expect(await contarFilas()).toEqual(antes);
   });
 });
+
+describe("PI-93: el panel del alumno (US-29)", () => {
+  const VALENTINA = "valentina.herrera@example.com";
+  const PAULA = "paula.romero@example.com";
+
+  async function panel(email: string, consulta = "") {
+    return como(await entorno.iniciarSesion(email), "get", `/alumnos/mi-panel${consulta}`);
+  }
+
+  it("la alumna ve su plan con la cuota de su ficha, sus próximas clases en orden y su historial", async () => {
+    const idAlumno = datosDemo.idAlumno.get(DNI_VALENTINA)!;
+    const { horarios } = await prisma.inscripciones.findFirstOrThrow({
+      where: { id_alumno: idAlumno, estado: "ACTIVA" },
+      include: { horarios: true },
+    });
+    const { id_clase } = await prisma.clases.create({
+      data: {
+        id_horario: horarios[0]!.id_horario,
+        id_prof_dictante: datosDemo.idProfesora.get(CARLA)!,
+        fecha_clase: new Date("2026-09-07T00:00:00Z"),
+        estado: "DICTADA",
+      },
+    });
+    const { id_inscripcion } = await prisma.inscripciones.findFirstOrThrow({
+      where: { id_alumno: idAlumno },
+    });
+    await prisma.asistencias.create({
+      data: { id_clase, id_alumno: idAlumno, id_inscripcion, asistio: false, fecha_registro: new Date() },
+    });
+
+    const respuesta = await panel(VALENTINA);
+    const ficha = await comoMarina("get", `/alumnos/${idAlumno}`);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toMatchObject({
+      id_alumno: idAlumno,
+      alumno: { nombre: "Valentina", apellido: "Herrera" },
+      plan: { nombre: "Intermedio", estado_cuota: ficha.body.inscripciones[0].situacion_cuota.estado },
+      historial_asistencias: [{ id_clase, fecha: "2026-09-07", profesora: "Carla Ruiz", estado: "AUSENTE" }],
+    });
+    const clases = respuesta.body.proximas_clases as { fecha: string; hora_inicio: string }[];
+    expect(clases.length).toBeGreaterThan(0);
+    expect(clases.length).toBeLessThanOrEqual(5);
+    const inicios = clases.map(({ fecha, hora_inicio }) => `${fecha} ${hora_inicio}`);
+    expect(inicios).toEqual([...inicios].sort());
+  });
+
+  it("la tutora ve el panel de su menor una vez que pagó; la alumna no ve el de otro y la profesora no tiene panel", async () => {
+    const idMateo = datosDemo.idAlumno.get(DNI_MATEO)!;
+    // La tutora queda habilitada con el primer pago de su menor (US-07).
+    const cobro = await comoMarina("post", "/pagos/efectivo").send({
+      id_inscripcion: datosDemo.idInscripcion.get(DNI_MATEO),
+      monto: 45000,
+    });
+    expect(cobro.status).toBe(201);
+
+    const deLaTutora = await panel(PAULA);
+    const elegido = await panel(PAULA, `?id_alumno=${idMateo}`);
+    const ajeno = await panel(VALENTINA, `?id_alumno=${idMateo}`);
+    const deLaProfesora = await panel(LUCIA);
+
+    expect(deLaTutora.status).toBe(200);
+    expect(deLaTutora.body).toMatchObject({
+      id_alumno: idMateo,
+      alumno: { nombre: "Mateo", apellido: "Romero" },
+      plan: { nombre: "Personalizado 2 días", estado_cuota: "AL_DIA" },
+    });
+    expect(elegido.body.id_alumno).toBe(idMateo);
+    expect(ajeno.status).toBe(404);
+    expect(deLaProfesora.status).toBe(403);
+  });
+});

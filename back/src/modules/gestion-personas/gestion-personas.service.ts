@@ -1,8 +1,15 @@
-import { ConflictError, ForbiddenError, ValidationError } from "../../shared/errors/app-error.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "../../shared/errors/app-error.js";
+import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../shared/utils/solicitante.types.js";
 import type { EstadoHabilitacion } from "../calculos-del-negocio/calculador-habilitacion/calculador-habilitacion.types.js";
 import type { HabilitacionDeInscripcion } from "../gestion-cuotas-y-pagos/cuota/cuota.types.js";
 import type { IInfoCuotas } from "../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
+import type { IInfoAsistencia } from "../gestion-inscripciones-y-clases/asistencia/interface/i-info-asistencia.js";
 import type { IInfoInscripciones } from "../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { InscripcionConDatos } from "../gestion-inscripciones-y-clases/inscripcion/inscripcion.types.js";
 import type { IInfoHorarios } from "../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
@@ -18,6 +25,13 @@ import type {
   PaginaListadoAlumnos,
   SituacionCuota,
 } from "./interface/i-logica-personas.js";
+import {
+  historialDelPanel,
+  MARCAS_EN_EL_HISTORIAL,
+  planDelPanel,
+  proximasClases,
+  type PanelAlumno,
+} from "./panel-alumno.js";
 import type { ProfesorService } from "./profesor/profesor.service.js";
 import type { ActualizarProfesoraInput, CrearProfesoraInput } from "./profesor/profesor.schemas.js";
 import type { Profesora } from "./profesor/profesor.types.js";
@@ -60,6 +74,18 @@ function inscripcionesConSituacion(
   }));
 }
 
+// Sin id, el alumno de quien pide o, si es solo tutor, su primer menor a cargo.
+function alumnoDelPanel(consultables: AlumnoConsultable[], idAlumno?: number): AlumnoConsultable | undefined {
+  if (idAlumno !== undefined) return consultables.find((alumno) => alumno.id_alumno === idAlumno);
+  return consultables.find(({ propio }) => propio) ?? consultables[0];
+}
+
+// La activa más nueva; si todavía no pagó, la pre-inscripción más nueva.
+function inscripcionDelPanel(inscripciones: InscripcionConDatos[]): InscripcionConDatos | undefined {
+  const masNuevaPrimero = [...inscripciones].sort((a, b) => b.id_inscripcion - a.id_inscripcion);
+  return masNuevaPrimero.find(({ estado }) => estado === "ACTIVA") ?? masNuevaPrimero[0];
+}
+
 // Los alumnos a cargo de una profesora, los filtros por plan, profesora y actividad, y el plan de
 // cada alumno salen de las inscripciones, que son de otro subsistema (IInfoInscripciones), y la
 // situación de cuota de Cuota (IInfoCuotas). Por eso las reglas de US-09 y US-10 que los cruzan con
@@ -71,6 +97,7 @@ export class GestionPersonasService implements ILogicaPersonas {
     private readonly alumnos: AlumnoService,
     private readonly inscripciones: IInfoInscripciones,
     private readonly cuotas: IInfoCuotas,
+    private readonly asistencias: IInfoAsistencia,
   ) {}
 
   crearProfesora(input: CrearProfesoraInput): Promise<Profesora> {
@@ -154,6 +181,38 @@ export class GestionPersonasService implements ILogicaPersonas {
 
   listarAlumnosConsultables(solicitante: Solicitante): Promise<AlumnoConsultable[]> {
     return this.alumnos.listarConsultables(solicitante.idUsuario);
+  }
+
+  // US-29: el alumno ve su panel y el tutor el de un menor a cargo. Un alumno ajeno responde 404,
+  // igual que uno que no existe (seguridad.md, regla 3).
+  async obtenerPanelAlumno(
+    solicitante: Solicitante,
+    idAlumno?: number,
+    ahora = new Date(),
+  ): Promise<PanelAlumno> {
+    const alumno = alumnoDelPanel(await this.alumnos.listarConsultables(solicitante.idUsuario), idAlumno);
+    if (!alumno) throw new NotFoundError("Alumno no encontrado");
+    const [inscripciones, marcas] = await Promise.all([
+      this.inscripciones.listarVigentesDeAlumno(alumno.id_alumno),
+      this.asistencias.ultimasDelAlumno(alumno.id_alumno, MARCAS_EN_EL_HISTORIAL),
+    ]);
+    const inscripcion = inscripcionDelPanel(inscripciones);
+    const panel = {
+      id_alumno: alumno.id_alumno,
+      alumno: { nombre: alumno.nombre, apellido: alumno.apellido },
+      historial_asistencias: historialDelPanel(marcas),
+    };
+    if (!inscripcion) return { ...panel, plan: null, proximas_clases: [] };
+
+    const [habilitaciones, ocupados] = await Promise.all([
+      this.cuotas.habilitacionDeInscripciones([inscripcion.id_inscripcion]),
+      this.inscripciones.contarLugaresOcupados(inscripcion.horarios.map(({ horario }) => horario.id_horario)),
+    ]);
+    return {
+      ...panel,
+      plan: planDelPanel(inscripcion, aSituacionCuota(habilitaciones.get(inscripcion.id_inscripcion))),
+      proximas_clases: proximasClases(inscripcion, fechaActualArgentina(ahora), ahora, ocupados),
+    };
   }
 
   // Los alumnos que dejan ver los filtros por inscripción y lo que tiene a cargo quien pide (US-10):

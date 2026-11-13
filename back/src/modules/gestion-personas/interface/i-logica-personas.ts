@@ -9,6 +9,7 @@ import type { ActualizarAlumnoInput, CrearAlumnoInput, ListarAlumnoQuery } from 
 import type { Alumno, AlumnoConsultable, PaginaAlumnos } from "../alumno/alumno.types.js";
 import type { ActualizarProfesoraInput, CrearProfesoraInput } from "../profesor/profesor.schemas.js";
 import type { Profesora } from "../profesor/profesor.types.js";
+import type { PanelAlumno } from "../panel-alumno.js";
 
 // Las partes de ILogicaPersonas, una por componente: cada controller depende solo de la suya.
 // No son interfaces nuevas del diagrama; la que provee el subsistema es la unión.
@@ -58,6 +59,8 @@ export interface ILogicaAlumnos {
   obtenerAlumnoPorId(id: number, solicitante: Solicitante): Promise<FichaAlumno>;
   actualizarAlumno(id: number, input: ActualizarAlumnoInput, solicitante: Solicitante): Promise<Alumno>;
   listarAlumnosConsultables(solicitante: Solicitante): Promise<AlumnoConsultable[]>;
+  // US-29: sin id, el alumno de quien pide (o su primer menor a cargo); con id, uno de los suyos.
+  obtenerPanelAlumno(solicitante: Solicitante, idAlumno?: number): Promise<PanelAlumno>;
 }
 
 // Interfaz del subsistema GestionPersonas para las operaciones expuestas a la API.

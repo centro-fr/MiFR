@@ -70,3 +70,13 @@ export interface AsistenciaDeProfesora {
   clases_previstas: number;
   clases_asistidas: number;
 }
+
+// Una marca de una clase dictada como la ve el alumno en su panel (US-29): qué clase, de qué actividad,
+// quién la dictó y si fue.
+export interface MarcaDelAlumno {
+  id_clase: number;
+  fecha_clase: Date;
+  actividad: string;
+  profesora: { nombre: string; apellido: string };
+  asistio: boolean;
+}

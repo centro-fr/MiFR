@@ -7,6 +7,7 @@ import {
 } from "../../../shared/errors/app-error.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoCuotas } from "../../gestion-cuotas-y-pagos/cuota/interface/i-info-cuotas.js";
+import type { IInfoAsistencia } from "../../gestion-inscripciones-y-clases/asistencia/interface/i-info-asistencia.js";
 import type { IInfoInscripciones } from "../../gestion-inscripciones-y-clases/inscripcion/interface/i-info-inscripciones.js";
 import type { IInfoHorarios } from "../../gestion-servicio-entrenamiento/horario/interface/i-info-horarios.js";
 import type { AlumnoService } from "../alumno/alumno.service.js";
@@ -64,7 +65,9 @@ function crearMocks() {
         .mockResolvedValue([{ id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" }]),
       listarVigentesDeAlumno: vi.fn().mockResolvedValue([{ id_inscripcion: 9, id_profesora: ID_PROFESORA }]),
       listarDeLaUltimaBaja: vi.fn().mockResolvedValue([{ id_inscripcion: 8, id_profesora: ID_PROFESORA }]),
+      contarLugaresOcupados: vi.fn().mockResolvedValue(new Map()),
     },
+    asistencias: { ultimasDelAlumno: vi.fn().mockResolvedValue([]) },
     cuotas: {
       habilitacionDeInscripciones: vi.fn().mockResolvedValue(
         new Map([
@@ -89,6 +92,7 @@ describe("GestionPersonasService", () => {
       mocks.alumnos as unknown as AlumnoService,
       mocks.inscripciones as unknown as IInfoInscripciones,
       mocks.cuotas as unknown as IInfoCuotas,
+      mocks.asistencias as unknown as IInfoAsistencia,
     );
   });
 
@@ -471,6 +475,130 @@ describe("GestionPersonasService", () => {
         { nombre: "Ana", tutor: { id_usuario: 20 } },
         PROFESORA,
       );
+    });
+  });
+
+  describe("obtenerPanelAlumno (US-29)", () => {
+    const ALUMNA = { idUsuario: 40, esPropietaria: false };
+    const PROPIA = { id_alumno: 4, nombre: "Valentina", apellido: "Herrera", estado: "ACTIVO", propio: true };
+    const MENOR = { id_alumno: 6, nombre: "Mateo", apellido: "Romero", estado: "ACTIVO", propio: false };
+    // Lunes 12/10/2026 a las 10:00 de Argentina.
+    const AHORA = new Date("2026-10-12T13:00:00Z");
+    const LUNES_A_LAS_18 = {
+      fecha_desde: new Date("2026-09-01T00:00:00Z"),
+      fecha_hasta: null,
+      horario: {
+        id_horario: 31,
+        dia_semana: 1,
+        hora_inicio: new Date("1970-01-01T18:00:00Z"),
+        hora_fin: new Date("1970-01-01T19:00:00Z"),
+        cupo_maximo: null,
+        fecha_baja: null,
+        actividad: { nombre: "Funcional", cupo_maximo: 12 },
+        profesora: { usuario: { nombre: "Lucía", apellido: "Gómez" } },
+      },
+    };
+    const INSCRIPCION = {
+      id_inscripcion: 9,
+      estado: "ACTIVA",
+      plan: { nombre: "Intermedio", tipo: "MENSUAL", clases_por_semana: 2 },
+      profesora: { usuario: { nombre: "Lucía", apellido: "Gómez" } },
+      horarios: [LUNES_A_LAS_18],
+    };
+
+    it("sin id arma el panel del alumno de quien pide, con su plan, sus próximas clases y su historial", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([MENOR, PROPIA]);
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([INSCRIPCION]);
+      mocks.inscripciones.contarLugaresOcupados.mockResolvedValue(new Map([[31, 5]]));
+      mocks.asistencias.ultimasDelAlumno.mockResolvedValue([
+        {
+          id_clase: 7,
+          fecha_clase: new Date("2026-10-05T00:00:00Z"),
+          actividad: "Funcional",
+          profesora: { nombre: "Carla", apellido: "Ruiz" },
+          asistio: true,
+        },
+      ]);
+
+      const panel = await servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA);
+
+      expect(mocks.alumnos.listarConsultables).toHaveBeenCalledWith(40);
+      expect(mocks.asistencias.ultimasDelAlumno).toHaveBeenCalledWith(4, 20);
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+      expect(panel).toMatchObject({
+        id_alumno: 4,
+        alumno: { nombre: "Valentina", apellido: "Herrera" },
+        plan: { nombre: "Intermedio", profesora: "Lucía Gómez", estado_cuota: HABILITACION.estado },
+        historial_asistencias: [
+          { id_clase: 7, fecha: "2026-10-05", profesora: "Carla Ruiz", estado: "PRESENTE" },
+        ],
+      });
+      expect(panel.proximas_clases[0]).toEqual({
+        id_horario: 31,
+        fecha: "2026-10-12",
+        hora_inicio: "18:00",
+        hora_fin: "19:00",
+        actividad: "Funcional",
+        profesora: "Lucía Gómez",
+        cupo_disponible: 7,
+      });
+    });
+
+    it("el tutor ve el panel del menor que elige; sin id, el de su primer menor", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([MENOR]);
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+
+      await expect(servicio.obtenerPanelAlumno(ALUMNA, 6, AHORA)).resolves.toMatchObject({ id_alumno: 6 });
+      await expect(servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA)).resolves.toMatchObject({
+        id_alumno: 6,
+      });
+    });
+
+    it("un alumno ajeno responde 404, como uno que no existe, sin consultar sus datos", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([PROPIA]);
+
+      await expect(servicio.obtenerPanelAlumno(ALUMNA, 99, AHORA)).rejects.toBeInstanceOf(NotFoundError);
+      mocks.alumnos.listarConsultables.mockResolvedValue([]);
+      await expect(servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA)).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
+      expect(mocks.inscripciones.listarVigentesDeAlumno).not.toHaveBeenCalled();
+      expect(mocks.asistencias.ultimasDelAlumno).not.toHaveBeenCalled();
+    });
+
+    it("sin inscripción vigente no hay plan ni próximas clases, y no se consulta la cuota", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([PROPIA]);
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+
+      await expect(servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA)).resolves.toMatchObject({
+        plan: null,
+        proximas_clases: [],
+      });
+      expect(mocks.cuotas.habilitacionDeInscripciones).not.toHaveBeenCalled();
+    });
+
+    it("usa la inscripción activa más nueva antes que una pre-inscripción", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([PROPIA]);
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([
+        {
+          ...INSCRIPCION,
+          id_inscripcion: 12,
+          estado: "PREINSCRIPTA",
+          plan: { ...INSCRIPCION.plan, nombre: "Nuevo" },
+        },
+        INSCRIPCION,
+      ]);
+
+      await servicio.obtenerPanelAlumno(ALUMNA, undefined, AHORA);
+
+      expect(mocks.cuotas.habilitacionDeInscripciones).toHaveBeenCalledWith([9]);
+    });
+
+    it("sin fecha usa el momento actual", async () => {
+      mocks.alumnos.listarConsultables.mockResolvedValue([PROPIA]);
+      mocks.inscripciones.listarVigentesDeAlumno.mockResolvedValue([]);
+
+      await expect(servicio.obtenerPanelAlumno(ALUMNA)).resolves.toMatchObject({ id_alumno: 4 });
     });
   });
 });

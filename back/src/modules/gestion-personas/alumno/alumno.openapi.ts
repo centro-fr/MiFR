@@ -13,6 +13,7 @@ import {
   alumnoIdParamSchema,
   crearAlumnoSchema,
   listarAlumnoQuerySchema,
+  panelAlumnoQuerySchema,
 } from "./alumno.schemas.js";
 import {
   inscripcionSchema,
@@ -168,6 +169,45 @@ const reglasDeEdad =
   "y no lleva tutor. El tutor se indica con `{ id_usuario }` o con sus datos: si ya existe un usuario con " +
   "ese DNI o email, se reutiliza.";
 
+const panelAlumnoRespuestaSchema = z
+  .object({
+    id_alumno: z.number().int(),
+    alumno: z.object({ nombre: z.string(), apellido: z.string() }),
+    plan: z
+      .object({
+        nombre: z.string(),
+        tipo: z.enum(["MENSUAL", "CLASE_SUELTA"]),
+        clases_por_semana: z.number().int().nullable(),
+        profesora: z.string(),
+        estado_cuota: z.enum(ESTADOS_HABILITACION),
+        fecha_vencimiento: z.string().nullable().openapi({ description: "AAAA-MM-DD; null sin cuota paga" }),
+        dias_restantes: z.number().int().nullable().openapi({ description: "Negativo si ya venció" }),
+      })
+      .nullable()
+      .openapi({ description: "null sin una inscripción vigente" }),
+    proximas_clases: z.array(
+      z.object({
+        id_horario: z.number().int(),
+        fecha: z.string().openapi({ example: "2026-10-12" }),
+        hora_inicio: z.string().openapi({ example: "18:00" }),
+        hora_fin: z.string().openapi({ example: "19:00" }),
+        actividad: z.string(),
+        profesora: z.string(),
+        cupo_disponible: z.number().int().nullable(),
+      }),
+    ),
+    historial_asistencias: z.array(
+      z.object({
+        id_clase: z.number().int(),
+        fecha: z.string(),
+        actividad: z.string(),
+        profesora: z.string().openapi({ description: "Quien dictó la clase" }),
+        estado: z.enum(["PRESENTE", "AUSENTE"]),
+      }),
+    ),
+  })
+  .openapi("PanelAlumno");
+
 export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
   const tags = ["Alumnos"];
   const security = SEGURIDAD_BEARER;
@@ -211,6 +251,25 @@ export function registrarDocumentacionAlumnos(registro: OpenAPIRegistry): void {
     responses: {
       200: respuestaJson("Alumnos consultables", z.array(alumnoConsultableSchema)),
       ...respuestasDeError(401, 403),
+    },
+  });
+
+  registro.registerPath({
+    method: "get",
+    path: "/alumnos/mi-panel",
+    tags,
+    security,
+    summary: "Panel del alumno: plan, cuota, próximas clases e historial (US-29)",
+    description:
+      "Requiere el rol `ALUMNO` o `TUTOR`. Sin `id_alumno`, el panel del alumno de quien pide o, si solo es " +
+      "tutor, el de su primer menor a cargo; con `id_alumno`, uno de los que devuelve `GET /alumnos/mios`. Un " +
+      "alumno ajeno responde 404, igual que uno que no existe. El plan es el de la inscripción activa más nueva " +
+      "(o la pre-inscripción, si todavía no pagó), con el estado de cuota de US-18. Las próximas clases son las " +
+      "de sus horarios en los próximos 14 días, hasta 5; el historial, sus últimas 20 marcas de clases dictadas.",
+    request: { query: panelAlumnoQuerySchema },
+    responses: {
+      200: respuestaJson("El panel del alumno", panelAlumnoRespuestaSchema),
+      ...respuestasDeError(400, 401, 403, 404),
     },
   });
 

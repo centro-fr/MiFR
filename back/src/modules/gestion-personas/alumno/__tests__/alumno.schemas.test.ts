@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { actualizarAlumnoSchema, crearAlumnoSchema, listarAlumnoQuerySchema } from "../alumno.schemas.js";
+import {
+  actualizarAlumnoSchema,
+  crearAlumnoSchema,
+  listarAlumnoQuerySchema,
+  panelAlumnoQuerySchema,
+} from "../alumno.schemas.js";
 
 const mayor = {
   nombre: "Ana",
@@ -134,5 +139,16 @@ describe("listarAlumnoQuerySchema", () => {
     { estado_cuota: "" },
   ])("rechaza %j", (query) => {
     expect(listarAlumnoQuerySchema.safeParse(query).success).toBe(false);
+  });
+});
+
+describe("panelAlumnoQuerySchema", () => {
+  it("acepta el pedido sin alumno y convierte el id a número", () => {
+    expect(panelAlumnoQuerySchema.parse({})).toEqual({});
+    expect(panelAlumnoQuerySchema.parse({ id_alumno: "7" })).toEqual({ id_alumno: 7 });
+  });
+
+  it.each(["0", "-0", "01", "1e1", " 7 ", "", "abc"])("rechaza el id %j", (id_alumno) => {
+    expect(panelAlumnoQuerySchema.safeParse({ id_alumno }).success).toBe(false);
   });
 });

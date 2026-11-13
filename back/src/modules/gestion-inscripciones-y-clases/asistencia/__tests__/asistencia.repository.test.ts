@@ -282,6 +282,38 @@ describe("AsistenciaRepository", () => {
       );
     });
 
+    it("ultimasDelAlumno trae las últimas marcas de clases dictadas, de la más nueva, con la actividad y quien dictó", async () => {
+      const dia = new Date("2026-10-12T00:00:00Z");
+      prisma.asistencias.findMany.mockResolvedValue([
+        {
+          asistio: false,
+          clase: {
+            id_clase: 9,
+            fecha_clase: dia,
+            horario: { actividad: { nombre: "Funcional" } },
+            profesora: { usuario: { nombre: "Carla", apellido: "Ruiz" } },
+          },
+        },
+      ]);
+
+      await expect(repositorio.ultimasDelAlumno(5, 20)).resolves.toEqual([
+        {
+          id_clase: 9,
+          fecha_clase: dia,
+          actividad: "Funcional",
+          profesora: { nombre: "Carla", apellido: "Ruiz" },
+          asistio: false,
+        },
+      ]);
+      expect(prisma.asistencias.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id_alumno: 5, clase: { estado: "DICTADA" } },
+          orderBy: [{ clase: { fecha_clase: "desc" } }, { clase: { horario: { hora_inicio: "desc" } } }],
+          take: 20,
+        }),
+      );
+    });
+
     it("historialDeAlumnos no consulta la base sin alumnos", async () => {
       await expect(repositorio.historialDeAlumnos([])).resolves.toEqual(new Map());
       expect(prisma.asistencias.findMany).not.toHaveBeenCalled();

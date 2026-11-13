@@ -183,6 +183,7 @@ export function construirSistema({ prisma, googleAuth, jwtService, push }: Pieza
     alumnoService,
     inscripcionService,
     cuotaService,
+    asistenciaService,
   );
 
   const insigniaService = new InsigniaService(
