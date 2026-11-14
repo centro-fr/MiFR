@@ -82,20 +82,22 @@ const situacionCuotaSchema = z
       "que debía el alumno al irse",
   });
 
+const cambioProgramadoSchema = z
+  .object({
+    id_inscripcion: z.number().int(),
+    id_plan: z.number().int(),
+    nombre_plan: z.string(),
+    id_profesora: z.number().int(),
+    nombre_profesora: z.string(),
+    ids_horarios: z.array(z.number().int()),
+    fecha_aplicacion: fechaSchema,
+  })
+  .nullable()
+  .openapi({ description: "El cambio de plan que espera al fin de la gracia (US-14); null si no hay" });
+
 const inscripcionConSituacionSchema = inscripcionSchema.extend({
   situacion_cuota: situacionCuotaSchema.nullable(),
-  cambio_programado: z
-    .object({
-      id_inscripcion: z.number().int(),
-      id_plan: z.number().int(),
-      nombre_plan: z.string(),
-      id_profesora: z.number().int(),
-      nombre_profesora: z.string(),
-      ids_horarios: z.array(z.number().int()),
-      fecha_aplicacion: fechaSchema,
-    })
-    .nullable()
-    .openapi({ description: "El cambio de plan que espera al fin de la gracia (US-14); null si no hay" }),
+  cambio_programado: cambioProgramadoSchema,
 });
 
 const alumnoEnListadoSchema = alumnoSchema
@@ -107,7 +109,12 @@ const alumnoEnListadoSchema = alumnoSchema
       description: "La de la inscripción de `inscripcion`; null si no tiene una vigente",
     }),
     inscripciones: z
-      .array(resumenInscripcionSchema.extend({ situacion_cuota: situacionCuotaSchema.nullable() }))
+      .array(
+        resumenInscripcionSchema.extend({
+          situacion_cuota: situacionCuotaSchema.nullable(),
+          cambio_programado: cambioProgramadoSchema,
+        }),
+      )
       .openapi({
         description:
           "Todas las inscripciones vigentes, de la más reciente a la más vieja, cada una con su situación de " +

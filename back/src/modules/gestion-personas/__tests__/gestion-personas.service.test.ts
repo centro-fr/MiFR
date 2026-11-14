@@ -153,7 +153,13 @@ describe("GestionPersonasService", () => {
           inscripcion: { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" },
           situacion_cuota: SITUACION,
           inscripciones: [
-            { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico", situacion_cuota: SITUACION },
+            {
+              id_alumno: 4,
+              id_inscripcion: 9,
+              nombre_plan: "Básico",
+              situacion_cuota: SITUACION,
+              cambio_programado: null,
+            },
           ],
         },
       ]);
@@ -179,12 +185,19 @@ describe("GestionPersonasService", () => {
       expect(alumno.inscripcion).toEqual({ id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico" });
       expect(alumno.situacion_cuota).toEqual(SITUACION);
       expect(alumno.inscripciones).toEqual([
-        { id_alumno: 4, id_inscripcion: 9, nombre_plan: "Básico", situacion_cuota: SITUACION },
+        {
+          id_alumno: 4,
+          id_inscripcion: 9,
+          nombre_plan: "Básico",
+          situacion_cuota: SITUACION,
+          cambio_programado: null,
+        },
         {
           id_alumno: 4,
           id_inscripcion: 7,
           nombre_plan: "Intermedio",
           situacion_cuota: { ...SITUACION, estado: "AL_DIA" },
+          cambio_programado: null,
         },
       ]);
     });

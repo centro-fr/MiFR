@@ -58,7 +58,11 @@ function alumnoEnListado(alumno: AlumnoMock) {
     ...alumnoDe(alumno),
     inscripcion: vigente ? resumenDeInscripcion(vigente) : null,
     situacion_cuota: vigente ? situacionCuotaDe(vigente) : null,
-    inscripciones: vigentes.map((inscripcion) => ({ ...resumenDeInscripcion(inscripcion), situacion_cuota: situacionCuotaDe(inscripcion) })),
+    inscripciones: vigentes.map((inscripcion) => ({
+      ...resumenDeInscripcion(inscripcion),
+      situacion_cuota: situacionCuotaDe(inscripcion),
+      cambio_programado: cambioProgramadoDe(inscripcion.id_inscripcion),
+    })),
   };
 }
 

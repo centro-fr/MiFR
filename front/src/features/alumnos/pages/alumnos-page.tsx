@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { obtenerAlumno, type FiltrosAlumnos } from "@/features/alumnos/api/alumnos-api";
 import { useAlumnos, useDarDeBajaAlumno, useListaCompletaAlumnos } from "@/features/alumnos/hooks/use-alumnos";
+import { InsigniaCambioProgramado } from "@/features/alumnos/components/insignia-cambio-programado";
 import { BadgeSituacionCuota } from "@/features/alumnos/components/badge-situacion-cuota";
 import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
 import type { AlumnoResumen } from "@/features/alumnos/schemas/alumno";
@@ -828,7 +829,12 @@ function ListadoDeAlumnos({ soloACargo, idProfesoraACargo }: ListadoDeAlumnosPro
 
                         {/* Plan */}
                         <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                          {alumno.plan ?? "Sin plan"}
+                          <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <span>{alumno.plan ?? "Sin plan"}</span>
+                            {alumno.cambio_programado && (
+                              <InsigniaCambioProgramado cambio={alumno.cambio_programado} soloIcono />
+                            )}
+                          </div>
                         </td>
 
                         {/* Cuota */}

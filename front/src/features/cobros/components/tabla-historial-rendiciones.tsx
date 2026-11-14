@@ -11,6 +11,14 @@ interface Props {
   cargando: boolean;
 }
 
+function formatearFechaCorta(fechaIso: string): string {
+  const d = new Date(fechaIso);
+  if (isNaN(d.getTime())) return "—";
+  const dia = String(d.getDate()).padStart(2, "0");
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dia}/${mes}`;
+}
+
 function formatearFechaHora(fechaIso: string): string {
   const d = new Date(fechaIso);
   if (isNaN(d.getTime())) return "—";
@@ -68,7 +76,10 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
                 Profesor/a
               </th>
               <th scope="col" className="px-4 py-3.5">
-                Fecha rendición
+                Fecha cobro
+              </th>
+              <th scope="col" className="px-4 py-3.5">
+                Fecha entrega dinero
               </th>
               <th scope="col" className="px-6 py-3.5 text-right">
                 Monto rendido
@@ -103,6 +114,9 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
                   </td>
                   <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
                     {nombreProfesora}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
+                    {formatearFechaCorta(rendicion.fecha_pago)}
                   </td>
                   <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
                     {formatearFechaHora(rendicion.fecha_rendicion)}
@@ -140,7 +154,7 @@ export function TablaHistorialRendiciones({ rendiciones, cargando }: Props) {
                     {nombreAlumno}
                   </Link>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    {rendicion.plan} · {nombreProfesora} · {formatearFechaHora(rendicion.fecha_rendicion)}
+                    {rendicion.plan} · {nombreProfesora} · Cobrado {formatearFechaCorta(rendicion.fecha_pago)} · Entregado {formatearFechaHora(rendicion.fecha_rendicion)}
                   </p>
                 </div>
               </div>

@@ -49,7 +49,10 @@ export type InscripcionConSituacion = InscripcionConDatos & {
 // cuota, de Cuota. La ficha de un alumno dado de baja trae además las inscripciones de su última
 // baja, con lo que debía al irse (US-08). El historial de cuotas y pagos es un dato financiero: solo
 // lo ve la propietaria, y a una profesora le llega null.
-export type ResumenConSituacion = ResumenInscripcionAlumno & { situacion_cuota: SituacionCuota | null };
+export type ResumenConSituacion = ResumenInscripcionAlumno & {
+  situacion_cuota: SituacionCuota | null;
+  cambio_programado: CambioPlanProgramado | null;
+};
 export type AlumnoEnListado = Alumno & {
   inscripcion: ResumenInscripcionAlumno | null;
   situacion_cuota: SituacionCuota | null;

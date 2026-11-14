@@ -300,14 +300,18 @@ export class GestionPersonasService implements ILogicaPersonas {
   // listado (y en el filtro por estado de cuota).
   private async situacionPorAlumno(idsAlumnos: number[]): Promise<Map<number, SituacionDelAlumno>> {
     const resumenes = await this.inscripciones.resumirInscripcionesVigentes(idsAlumnos);
-    const habilitaciones = await this.cuotas.habilitacionDeInscripciones(
-      resumenes.map(({ id_inscripcion }) => id_inscripcion),
-    );
+    const idsInscripciones = resumenes.map(({ id_inscripcion }) => id_inscripcion);
+    const [habilitaciones, cambios] = await Promise.all([
+      this.cuotas.habilitacionDeInscripciones(idsInscripciones),
+      this.inscripciones.buscarCambiosProgramados(idsInscripciones),
+    ]);
     const situaciones = new Map<number, SituacionDelAlumno>();
     for (const resumen of resumenes) {
       const conSituacion = {
         ...resumen,
         situacion_cuota: aSituacionCuota(habilitaciones.get(resumen.id_inscripcion)),
+        cambio_programado:
+          cambios.find(({ id_inscripcion }) => id_inscripcion === resumen.id_inscripcion) ?? null,
       };
       const delAlumno = situaciones.get(resumen.id_alumno);
       if (delAlumno) delAlumno.inscripciones.push(conSituacion);

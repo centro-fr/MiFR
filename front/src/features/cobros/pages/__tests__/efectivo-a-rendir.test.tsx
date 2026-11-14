@@ -153,20 +153,23 @@ describe("PanelEfectivoARendir (US-19)", () => {
     mockCargandoHistorial = false;
   });
 
-  it("renderiza la tabla de cobros pendientes con alumnos, planes y profesoras", () => {
+  it("renderiza la tabla de cobros pendientes por profesor con cantidad y total sin desplegable ni badge de días", () => {
     renderPanel();
 
-    expect(screen.getAllByText("Mateo Fernández")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("Bautista Gómez")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("Plan Básico")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("Plan Intermedio")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Lucía García")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Carla Ruiz")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("Hace 18 d")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("$ 25.000")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("$ 30.000")[0]).toBeInTheDocument();
+
+    // No debe haber badge de +15 días ni botón/desplegable para ver alumnos
+    expect(screen.queryByText("+15 días")).not.toBeInTheDocument();
+    expect(screen.queryByText("+15 d")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ver alumnos/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ocultar alumnos/i)).not.toBeInTheDocument();
   });
 
-  it("registra la rendición de un cobro después de confirmarla", async () => {
-    mockMutateRendirCobro.mockResolvedValueOnce({
+  it("registra la rendición de todo el efectivo de una profesora", async () => {
+    mockMutateRendirLote.mockResolvedValueOnce({
       rendidos: [101],
       cantidad: 1,
       total: 25000,
@@ -175,19 +178,19 @@ describe("PanelEfectivoARendir (US-19)", () => {
 
     renderPanel();
 
-    const botonRendirIndividual = screen.getAllByRole("button", {
-      name: /Rendir cobro de Mateo Fernández/i,
+    const botonRendirTodoLucia = screen.getAllByRole("button", {
+      name: /Rendir todo el efectivo de Lucía García/i,
     })[0];
-    fireEvent.click(botonRendirIndividual);
+    fireEvent.click(botonRendirTodoLucia);
 
-    // Rendir pasa el efectivo a caja: primero se confirma.
-    expect(mockMutateRendirCobro).not.toHaveBeenCalled();
-    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rendir" }));
+    // Requiere confirmación
+    expect(mockMutateRendirLote).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rendir todo" }));
 
     await waitFor(() => {
-      expect(mockMutateRendirCobro).toHaveBeenCalledWith(
+      expect(mockMutateRendirLote).toHaveBeenCalledWith(
         {
-          idPago: 101,
+          id_profesora: 1,
           observaciones: undefined,
         },
         expect.anything()
@@ -195,12 +198,13 @@ describe("PanelEfectivoARendir (US-19)", () => {
     });
   });
 
-  it("permite conmutar a la pestaña 'Historial rendido' y ver rendiciones previas", () => {
+  it("permite conmutar a la pestaña 'Historial rendido' y ver rendiciones previas con fecha de entrega", () => {
     renderPanel();
 
     const botonHistorial = screen.getByRole("button", { name: /Historial rendido/i });
     fireEvent.click(botonHistorial);
 
+    expect(screen.getByText("Fecha entrega dinero")).toBeInTheDocument();
     expect(screen.getAllByText("Sofía López")[0]).toBeInTheDocument();
     expect(screen.getAllByText("Lucía García")[0]).toBeInTheDocument();
   });
@@ -208,12 +212,18 @@ describe("PanelEfectivoARendir (US-19)", () => {
   it("filtra por búsqueda por nombre de profesora o alumno", () => {
     renderPanel();
 
+    const tabla = screen.getByRole("table");
     const inputBuscar = screen.getByPlaceholderText(/Buscar por profesor\/a o alumno.../i);
     fireEvent.change(inputBuscar, { target: { value: "Carla" } });
 
-    // Bautista Gómez (alumno de Carla Ruiz) visible, Mateo Fernández oculto
-    expect(screen.getAllByText("Bautista Gómez")[0]).toBeInTheDocument();
-    expect(screen.queryByText("Mateo Fernández")).not.toBeInTheDocument();
+    // Carla Ruiz visible en la tabla, Lucía García oculta
+    expect(within(tabla).getAllByText("Carla Ruiz")[0]).toBeInTheDocument();
+    expect(within(tabla).queryByText("Lucía García")).not.toBeInTheDocument();
+
+    // Búsqueda por nombre de alumno encuentra a la profesora que le cobró
+    fireEvent.change(inputBuscar, { target: { value: "Mateo" } });
+    expect(within(tabla).getAllByText("Lucía García")[0]).toBeInTheDocument();
+    expect(within(tabla).queryByText("Carla Ruiz")).not.toBeInTheDocument();
   });
 
   it("muestra estado de caja al día cuando no hay efectivo pendiente", () => {

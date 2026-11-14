@@ -24,6 +24,7 @@ import { AlumnoEdicionForm } from "@/features/alumnos/components/alumno-edicion-
 import { ModalBajaAlumno } from "@/features/alumnos/components/modal-baja-alumno";
 import { ModalCambiarPlan } from "@/features/alumnos/components/modal-cambiar-plan";
 import { AvisoCambioProgramado } from "@/features/alumnos/components/aviso-cambio-programado";
+import { InsigniaCambioProgramado } from "@/features/alumnos/components/insignia-cambio-programado";
 import { ModalReactivarAlumno } from "@/features/alumnos/components/modal-reactivar-alumno";
 import { esAlumnoNoEncontrado, useAlumno, useDarDeBajaAlumno } from "@/features/alumnos/hooks/use-alumnos";
 import { useInsignias } from "@/features/portal-alumno/hooks/use-insignias";
@@ -403,7 +404,18 @@ export function AlumnoDetallePage() {
             <section aria-label="Resumen del alumno" className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4 gap-4">
               <TarjetaResumen
                 etiqueta="Plan"
-                valor={(alumno.inscripciones?.length ?? 0) > 1 ? `${planNombre} (+${(alumno.inscripciones?.length ?? 0) - 1})` : planNombre}
+                valor={
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="truncate">
+                      {(alumno.inscripciones?.length ?? 0) > 1
+                        ? `${planNombre} (+${(alumno.inscripciones?.length ?? 0) - 1})`
+                        : planNombre}
+                    </span>
+                    {alumno.inscripcion?.cambio_programado && (
+                      <InsigniaCambioProgramado cambio={alumno.inscripcion.cambio_programado} />
+                    )}
+                  </span>
+                }
                 detalle={
                   (alumno.inscripciones?.length ?? 0) > 1
                     ? (alumno.inscripciones ?? []).map((i) => i.plan.nombre).join(" · ")
@@ -792,8 +804,11 @@ function PlanYHorarios({
                 <span className="w-32 shrink-0 @xl:w-36 text-slate-500 dark:text-slate-400 font-normal">
                   Plan
                 </span>
-                <span className="min-w-0 font-semibold text-slate-900 dark:text-white wrap-anywhere">
-                  {inscripciones.length > 1 ? inscripcion.plan.nombre : planNombre}
+                <span className="flex min-w-0 flex-wrap items-center gap-2 font-semibold text-slate-900 dark:text-white wrap-anywhere">
+                  <span>{inscripciones.length > 1 ? inscripcion.plan.nombre : planNombre}</span>
+                  {inscripcion.cambio_programado && (
+                    <InsigniaCambioProgramado cambio={inscripcion.cambio_programado} />
+                  )}
                 </span>
               </div>
               <div className="flex items-center py-3.5">

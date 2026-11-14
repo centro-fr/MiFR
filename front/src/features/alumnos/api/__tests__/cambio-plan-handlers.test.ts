@@ -1,6 +1,6 @@
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { obtenerAlumno } from "@/features/alumnos/api/alumnos-api";
+import { listarAlumnos, obtenerAlumno } from "@/features/alumnos/api/alumnos-api";
 import { actualizarHorarios, cambiarPlan, cancelarCambioPlan } from "@/features/alumnos/api/inscripciones-api";
 import { clearSessionToken, setSessionToken } from "@/features/auth/api/session-token";
 import { cancelarBajaProgramadaHorario, darDeBajaHorario } from "@/features/horarios/api/horarios-api";
@@ -52,6 +52,23 @@ describe("cambio de plan programado (US-14)", () => {
     const ficha = await obtenerAlumno(inscripcion.id_alumno);
     const enFicha = ficha.inscripciones?.find((i) => i.id_inscripcion === inscripcion.id_inscripcion);
     expect(enFicha?.cambio_programado).toMatchObject({ id_plan: plan.id_plan, fecha_aplicacion: programadoPara });
+
+    const listado = await listarAlumnos({
+      busqueda: "",
+      estado: "TODOS",
+      id_plan: "",
+      id_profesora: "",
+      id_actividad: "",
+      incluir_bajas: false,
+      limit: 100,
+      offset: 0,
+    });
+    const enListado = listado.items.find((a) => a.id_alumno === inscripcion.id_alumno);
+    const inscripcionEnListado = enListado?.inscripciones?.find((i) => i.id_inscripcion === inscripcion.id_inscripcion);
+    expect(inscripcionEnListado?.cambio_programado).toMatchObject({
+      id_plan: plan.id_plan,
+      fecha_aplicacion: programadoPara,
+    });
 
     await cancelarCambioPlan(inscripcion.id_inscripcion);
     expect(db.cambiosPlan).toHaveLength(0);

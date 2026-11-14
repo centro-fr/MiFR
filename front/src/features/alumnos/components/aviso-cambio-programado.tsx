@@ -29,9 +29,9 @@ export function AvisoCambioProgramado({ idInscripcion, cambio }: Props) {
     });
 
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs font-medium text-blue-950 sm:flex-row sm:items-center sm:justify-between dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
+    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-700 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
       <p>
-        El {fecha} pasa al plan <strong className="font-bold">{cambio.nombre_plan}</strong> con{" "}
+        El {fecha} pasa al plan <strong className="font-bold text-slate-900 dark:text-white">{cambio.nombre_plan}</strong> con{" "}
         {cambio.nombre_profesora}, al terminar la gracia de la cuota actual.
       </p>
       {hasRole("PROPIETARIA") && (
@@ -39,7 +39,7 @@ export function AvisoCambioProgramado({ idInscripcion, cambio }: Props) {
           type="button"
           variant="outline"
           onClick={() => setConfirmando(true)}
-          className="h-10 shrink-0 rounded-xl border-blue-200 bg-white px-3.5 text-xs font-bold text-blue-900 dark:border-blue-800 dark:bg-transparent dark:text-blue-200"
+          className="h-9 shrink-0 rounded-xl border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Cancelar cambio
         </Button>

@@ -308,5 +308,13 @@ export function pagosSemilla(): PagoMock[] {
     pagoConfirmado(125, 25, PRECIOS[0], 12),
     pagoConfirmado(126, 26, PRECIOS[2], 21),
     pagoConfirmado(127, 27, PRECIOS[1], 10),
+    pagoConfirmado(128, 28, PRECIOS[0], 9),
+    pagoConfirmado(129, 29, PRECIOS[1], 12),
+    pagoConfirmado(130, 30, PRECIOS[0], 6),
+    pagoConfirmado(131, 31, PRECIOS[1], 15),
+    pagoConfirmado(132, 32, PRECIOS[0], 5),
+    pagoConfirmado(133, 33, PRECIOS[1], 20),
+    pagoConfirmado(134, 34, PRECIOS[0]),
+    pagoConfirmado(135, 35, PRECIOS[4], 10),
   ];
 }

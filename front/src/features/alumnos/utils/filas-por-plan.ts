@@ -29,6 +29,7 @@ function filaDeLaInscripcion(alumno: AlumnoResumen, inscripcion: InscripcionEnLi
     plan: inscripcion.plan,
     profesora: inscripcion.profesora,
     situacion_cuota: inscripcion.situacion_cuota,
+    cambio_programado: inscripcion.cambio_programado ?? null,
   };
 }
 

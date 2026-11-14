@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
-import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
+import { LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
 import { FilaMovil } from "@/components/ui/fila-movil";
 import { ConfirmarAccion } from "@/components/ui/confirmar-accion";
 import { BotonFiltrosMovil } from "@/components/ui/boton-filtros-movil";
@@ -13,26 +12,19 @@ import { TablaSkeleton, EstadoErrorCarga } from "@/components/ui/estados-pantall
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BotonLimpiarFiltros } from "@/components/ui/boton-limpiar-filtros";
 import { inicialesDe } from "@/features/alumnos/utils/formato-ficha";
+import { useProfesoras } from "@/features/profesoras/hooks/use-profesoras";
 import { cn } from "@/utils/cn";
 import { formatearPrecio } from "@/utils/moneda";
 import { normalizarParaBuscar } from "@/utils/texto";
 import {
   useEfectivoPendiente,
   useHistorialRendiciones,
-  useRendirCobro,
+  useRendirLote,
 } from "../hooks/use-rendiciones";
-import type { CobroSinRendir } from "../schemas/rendicion";
+import type { TotalDeProfesora } from "../schemas/rendicion";
 import { TablaHistorialRendiciones } from "./tabla-historial-rendiciones";
 
 type VistaRendicion = "PENDIENTES" | "HISTORIAL";
-
-function formatearFechaCorta(fechaIso: string): string {
-  const d = new Date(fechaIso);
-  if (isNaN(d.getTime())) return "—";
-  const dia = String(d.getDate()).padStart(2, "0");
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dia}/${mes}`;
-}
 
 export function PanelEfectivoARendir() {
   const [vista, setVista] = useState<VistaRendicion>("PENDIENTES");
@@ -53,10 +45,17 @@ export function PanelEfectivoARendir() {
     isError: errorHistorial,
     refetch: recargarHistorial,
   } = useHistorialRendiciones();
+  const { data: listaProfesoras } = useProfesoras();
 
   // Mutations
-  const rendirCobro = useRendirCobro();
-  const procesando = rendirCobro.isPending;
+  const rendirLote = useRendirLote();
+  const procesando = rendirLote.isPending;
+
+  // Set de IDs de profesoras activas
+  const profesorasActivasSet = useMemo(() => {
+    if (!listaProfesoras) return null;
+    return new Set(listaProfesoras.filter((p) => p.activa).map((p) => p.id));
+  }, [listaProfesoras]);
 
   // Opciones de profesoras para el filtro en píldora
   const opcionesProfesoras = useMemo(() => {
@@ -70,25 +69,36 @@ export function PanelEfectivoARendir() {
     return Array.from(mapa.entries()).map(([id, nombre]) => ({ id: String(id), nombre }));
   }, [efectivoData, historialData]);
 
-  // Cobros pendientes filtrados
-  const cobrosFiltrados = useMemo(() => {
-    const lista = efectivoData?.cobros ?? [];
-    return lista.filter((cobro) => {
-      if (filtroProfesora !== "TODAS" && String(cobro.profesora.id_profesora) !== filtroProfesora) {
+  // Profesoras con cobros pendientes filtradas
+  const profesorasFiltradas = useMemo(() => {
+    const todasLasProfesoras = efectivoData?.profesoras ?? [];
+    const todosLosCobros = efectivoData?.cobros ?? [];
+
+    // Considerar únicamente profesoras activas si la lista ya está disponible
+    const activas = profesorasActivasSet
+      ? todasLasProfesoras.filter((p) => profesorasActivasSet.has(p.id_profesora))
+      : todasLasProfesoras;
+
+    return activas.filter((prof) => {
+      if (filtroProfesora !== "TODAS" && String(prof.id_profesora) !== filtroProfesora) {
         return false;
       }
       if (busqueda.trim()) {
         const query = normalizarParaBuscar(busqueda);
-        const nombreProf = normalizarParaBuscar(`${cobro.profesora.nombre} ${cobro.profesora.apellido}`);
-        const nombreAl = normalizarParaBuscar(`${cobro.alumno.nombre} ${cobro.alumno.apellido}`);
-        const dni = cobro.alumno.dni ?? "";
-        if (!nombreProf.includes(query) && !nombreAl.includes(query) && !dni.includes(busqueda.trim())) {
-          return false;
-        }
+        const nombreProf = normalizarParaBuscar(`${prof.nombre} ${prof.apellido}`);
+        if (nombreProf.includes(query)) return true;
+
+        // Si algún alumno cobrado por la profesora coincide con la búsqueda
+        const cobrosProf = todosLosCobros.filter((c) => c.profesora.id_profesora === prof.id_profesora);
+        return cobrosProf.some((c) => {
+          const nombreAl = normalizarParaBuscar(`${c.alumno.nombre} ${c.alumno.apellido}`);
+          const dni = c.alumno.dni ?? "";
+          return nombreAl.includes(query) || dni.includes(busqueda.trim());
+        });
       }
       return true;
     });
-  }, [efectivoData, busqueda, filtroProfesora]);
+  }, [efectivoData, profesorasActivasSet, filtroProfesora, busqueda]);
 
   // Historial filtrado
   const historialFiltrado = useMemo(() => {
@@ -115,20 +125,22 @@ export function PanelEfectivoARendir() {
     setFiltroProfesora("TODAS");
   };
 
-  // Rendir mueve el efectivo a caja y no se deshace desde acá: se confirma antes.
-  const [cobroARendir, setCobroARendir] = useState<CobroSinRendir | null>(null);
+  // Estado de confirmación de rendición de la profesora
+  const [profesoraARendir, setProfesoraARendir] = useState<TotalDeProfesora | null>(null);
 
-  const handleRendirCobro = async (cobro: CobroSinRendir) => {
-    await rendirCobro.mutateAsync(
+  const handleRendirLote = async (profesora: TotalDeProfesora) => {
+    await rendirLote.mutateAsync(
       {
-        idPago: cobro.id_pago,
+        id_profesora: profesora.id_profesora,
         observaciones: undefined,
       },
       {
         onSuccess: (res) => {
-          setCobroARendir(null);
-          toast.success("Cobro rendido exitosamente", {
-            description: `Se rindieron ${formatearPrecio(res.total)} en caja.`,
+          setProfesoraARendir(null);
+          toast.success("Rendición registrada exitosamente", {
+            description: `Se rindió el efectivo de ${profesora.nombre} ${profesora.apellido} (${formatearPrecio(
+              res.total
+            )}) en caja.`,
           });
         },
         onError: () => {
@@ -268,7 +280,7 @@ export function PanelEfectivoARendir() {
                 onReintentar={() => void recargarPendientes()}
               />
             </div>
-          ) : cobrosFiltrados.length === 0 ? (
+          ) : profesorasFiltradas.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-5 py-14 text-center">
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 {hayFiltrosActivos
@@ -286,28 +298,19 @@ export function PanelEfectivoARendir() {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
+              {/* Desktop Table: Solo muestra por profesor la cantidad de cobros, total a rendir y acciones */}
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-slate-100 bg-white text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                     <tr>
                       <th scope="col" className="px-6 py-3.5">
-                        Alumno
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Plan
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
                         Profesor/a
                       </th>
                       <th scope="col" className="px-4 py-3.5">
-                        Fecha cobro
+                        Cobros en mano
                       </th>
                       <th scope="col" className="px-4 py-3.5">
-                        Sin rendir
-                      </th>
-                      <th scope="col" className="px-4 py-3.5">
-                        Monto
+                        Total a rendir
                       </th>
                       <th scope="col" className="px-6 py-3.5 text-right">
                         Acciones
@@ -315,55 +318,39 @@ export function PanelEfectivoARendir() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {cobrosFiltrados.map((cobro) => {
-                      const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
-                      const nombreProfesora = `${cobro.profesora.nombre} ${cobro.profesora.apellido}`;
-                      const dias = cobro.dias_sin_rendir;
-                      const textoSinRendir = dias === 0 ? "Hoy" : `Hace ${dias} d`;
+                    {profesorasFiltradas.map((prof) => {
+                      const nombreProf = `${prof.nombre} ${prof.apellido}`.trim() || "Profesor/a";
 
                       return (
                         <tr
-                          key={cobro.id_pago}
+                          key={prof.id_profesora}
                           className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
                         >
                           <td className="px-6 py-3.5">
                             <div className="flex items-center gap-3">
-                              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
-                                {inicialesDe(cobro.alumno.nombre, cobro.alumno.apellido)}
+                              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-primary dark:bg-pink-950/60 dark:text-pink-300">
+                                {inicialesDe(prof.nombre, prof.apellido)}
                               </span>
-                              <Link
-                                to={`/app/alumnos/${cobro.alumno.id_alumno}`}
-                                className="font-bold text-sm text-slate-900 hover:text-primary transition-colors dark:text-white dark:hover:text-pink-300"
-                              >
-                                {nombreAlumno}
-                              </Link>
+                              <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                {nombreProf}
+                              </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                            {cobro.plan}
-                          </td>
                           <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                            {nombreProfesora}
+                            {prof.cantidad === 1 ? "1 cobro" : `${prof.cantidad} cobros`}
                           </td>
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                            {formatearFechaCorta(cobro.fecha_pago)}
-                          </td>
-                          <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-slate-300">
-                            {textoSinRendir}
-                          </td>
-                          <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
-                            {formatearPrecio(cobro.monto)}
+                          <td className="px-4 py-3.5 font-extrabold text-base text-slate-900 dark:text-white">
+                            {formatearPrecio(prof.total)}
                           </td>
                           <td className="px-6 py-3.5 text-right">
                             <Button
                               type="button"
-                              variant="outline"
                               disabled={procesando}
-                              onClick={() => setCobroARendir(cobro)}
-                              aria-label={`Rendir cobro de ${nombreAlumno}`}
-                              className={BOTON_FILA}
+                              onClick={() => setProfesoraARendir(prof)}
+                              aria-label={`Rendir todo el efectivo de ${nombreProf}`}
+                              className="h-8 min-h-0 shrink-0 rounded-lg bg-primary px-3 text-xs font-semibold text-white shadow-2xs hover:bg-primary-dark"
                             >
-                              Rendir
+                              Rendir todo
                             </Button>
                           </td>
                         </tr>
@@ -373,33 +360,33 @@ export function PanelEfectivoARendir() {
                 </table>
               </div>
 
-              {/* Mobile Rows: contenido arriba, acciones abajo */}
+              {/* Mobile Rows: Lista por profesor con su total y acción */}
               <ul aria-label="Efectivo a rendir" className={cn(LISTA_MOVIL_EN_TARJETA, "lg:hidden")}>
-                {cobrosFiltrados.map((cobro) => {
-                  const nombreAlumno = `${cobro.alumno.nombre} ${cobro.alumno.apellido}`;
-                  const nombreProfesora = `${cobro.profesora.nombre} ${cobro.profesora.apellido}`;
-                  const dias = cobro.dias_sin_rendir;
-                  const textoSinRendir = dias === 0 ? "Hoy" : `Hace ${dias} d`;
+                {profesorasFiltradas.map((prof) => {
+                  const nombreProf = `${prof.nombre} ${prof.apellido}`.trim() || "Profesor/a";
+
                   return (
                     <FilaMovil
-                      key={cobro.id_pago}
-                      avatar={nombreAlumno}
+                      key={prof.id_profesora}
+                      avatar={nombreProf}
                       titulo={
-                        <Link to={`/app/alumnos/${cobro.alumno.id_alumno}`} className="hover:text-primary dark:hover:text-pink-300">
-                          {nombreAlumno}
-                        </Link>
+                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          {nombreProf}
+                        </span>
                       }
-                      detalle={[cobro.plan, `Cobró ${nombreProfesora}`, `${formatearFechaCorta(cobro.fecha_pago)} · ${textoSinRendir}`, formatearPrecio(cobro.monto)]}
+                      detalle={[
+                        prof.cantidad === 1 ? "1 cobro en mano" : `${prof.cantidad} cobros en mano`,
+                        formatearPrecio(prof.total),
+                      ]}
                       acciones={
                         <Button
                           type="button"
-                          variant="outline"
                           disabled={procesando}
-                          onClick={() => setCobroARendir(cobro)}
-                          aria-label={`Rendir cobro de ${nombreAlumno}`}
-                          className={BOTON_FILA}
+                          onClick={() => setProfesoraARendir(prof)}
+                          aria-label={`Rendir todo el efectivo de ${nombreProf}`}
+                          className="h-8 min-h-0 shrink-0 rounded-lg bg-primary px-3 text-xs font-semibold text-white shadow-2xs hover:bg-primary-dark"
                         >
-                          Rendir
+                          Rendir todo
                         </Button>
                       }
                     />
@@ -423,16 +410,17 @@ export function PanelEfectivoARendir() {
         )}
       </div>
 
-      {cobroARendir && (
+      {/* Confirmar rendición de la profesora */}
+      {profesoraARendir && (
         <ConfirmarAccion
-          titulo={`¿Rendir el cobro de ${cobroARendir.alumno.nombre} ${cobroARendir.alumno.apellido}?`}
-          descripcion={`${formatearPrecio(cobroARendir.monto)} cobrados por ${cobroARendir.profesora.nombre} ${cobroARendir.profesora.apellido} pasan a caja.`}
-          textoConfirmar="Rendir"
+          titulo={`¿Rendir todo el efectivo de ${profesoraARendir.nombre} ${profesoraARendir.apellido}?`}
+          descripcion={`Se rendirán ${formatearPrecio(profesoraARendir.total)} en caja correspondientes a los ${profesoraARendir.cantidad} cobro(s) en mano de ${profesoraARendir.nombre} ${profesoraARendir.apellido}.`}
+          textoConfirmar="Rendir todo"
           textoConfirmando="Rindiendo…"
           confirmando={procesando}
           peligro={false}
-          onConfirmar={() => void handleRendirCobro(cobroARendir)}
-          onCancelar={() => setCobroARendir(null)}
+          onConfirmar={() => void handleRendirLote(profesoraARendir)}
+          onCancelar={() => setProfesoraARendir(null)}
         />
       )}
     </div>

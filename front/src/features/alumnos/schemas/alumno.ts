@@ -144,7 +144,14 @@ export const paginaAlumnosApiSchema = z.object({
     alumnoApiSchema.extend({
       inscripcion: resumenInscripcionApiSchema.nullable(),
       situacion_cuota: situacionCuotaOpcionalSchema,
-      inscripciones: z.array(resumenInscripcionApiSchema.extend({ situacion_cuota: situacionCuotaOpcionalSchema })).optional(),
+      inscripciones: z
+        .array(
+          resumenInscripcionApiSchema.extend({
+            situacion_cuota: situacionCuotaOpcionalSchema,
+            cambio_programado: cambioPlanProgramadoApiSchema.nullable().optional(),
+          }),
+        )
+        .optional(),
     }),
   ),
   total: z.number().int(),
@@ -178,6 +185,7 @@ export interface InscripcionEnListado {
   id_profesora: number;
   profesora: string;
   situacion_cuota: SituacionCuota | null;
+  cambio_programado?: CambioPlanProgramado | null;
 }
 
 export interface AlumnoResumen {
@@ -194,6 +202,7 @@ export interface AlumnoResumen {
   profesora: string | null;
   /** La de la inscripción de la fila; null si no tiene una. */
   situacion_cuota: SituacionCuota | null;
+  cambio_programado?: CambioPlanProgramado | null;
   /** Todas sus inscripciones vigentes, la más reciente primero. */
   inscripciones?: InscripcionEnListado[];
 }

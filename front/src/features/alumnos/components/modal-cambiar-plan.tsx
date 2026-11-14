@@ -32,6 +32,13 @@ interface Props {
 
 const CINCO_MINUTOS = 5 * 60_000;
 
+/** Indica si la inscripción tiene su cuota al día o dentro de los días de gracia (el cambio se programa). */
+function tieneGraciaVigente(inscripcion: InscripcionDeAlumno): boolean {
+  if (inscripcion.estado !== "ACTIVA") return false;
+  const estado = inscripcion.situacion_cuota?.estado;
+  return estado === "AL_DIA" || estado === "POR_VENCER" || estado === "CLASE_SUELTA_VIGENTE";
+}
+
 export function ModalCambiarPlan({
   nombre,
   inscripcion,
@@ -239,12 +246,13 @@ export function ModalCambiarPlan({
 
         <div className={CUERPO_MODAL}>
           {(tienePlanVigente || inscripcionActiva.cambio_programado) && (
-            <Alert className="rounded-xl border-blue-200 bg-blue-50/70 p-3 text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
+            <Alert className="rounded-xl border-slate-200 bg-slate-50 p-3 text-slate-700 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300">
               <AlertDescription className="text-xs font-medium leading-relaxed">
                 {inscripcionActiva.cambio_programado
                   ? `Ya tiene programado el cambio a ${inscripcionActiva.cambio_programado.nombre_plan} para el ${fechaCalendarioCorta(inscripcionActiva.cambio_programado.fecha_aplicacion)}: uno nuevo lo reemplaza.`
-                  : "Con el plan vigente, el cambio de plan se aplica al terminar la gracia de la cuota actual."}{" "}
-                Cambiar solo los horarios, con el mismo plan, es inmediato y dentro de la misma profesora y actividad.
+                  : tieneGraciaVigente(inscripcionActiva)
+                    ? "Con el plan vigente, el cambio de plan se aplica al terminar la gracia de la cuota actual. Cambiar solo los horarios es inmediato."
+                    : "La cuota actual no está vigente: el cambio de plan se aplicará en el momento."}
               </AlertDescription>
             </Alert>
           )}

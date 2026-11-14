@@ -74,9 +74,19 @@ function aSituacionCuota(situacion: SituacionCuotaApi | null): SituacionCuota | 
 
 type AlumnoEnListadoApi = PaginaAlumnosApi["datos"][number];
 
+function aCambioProgramado(cambio: InscripcionVigenteApi["cambio_programado"]) {
+  if (!cambio) return null;
+  return {
+    id_plan: cambio.id_plan,
+    nombre_plan: cambio.nombre_plan,
+    nombre_profesora: cambio.nombre_profesora,
+    fecha_aplicacion: aFechaCalendario(cambio.fecha_aplicacion),
+  };
+}
+
 // Un back sin `inscripciones` solo informa la más reciente: con eso se arma la lista.
 function inscripcionesDelListado({ inscripcion, situacion_cuota, inscripciones }: AlumnoEnListadoApi): InscripcionEnListado[] {
-  const vigentes = inscripciones ?? (inscripcion ? [{ ...inscripcion, situacion_cuota }] : []);
+  const vigentes = inscripciones ?? (inscripcion ? [{ ...inscripcion, situacion_cuota, cambio_programado: null }] : []);
   return vigentes.map((vigente) => ({
     id_inscripcion: vigente.id_inscripcion,
     id_plan: vigente.id_plan,
@@ -84,11 +94,13 @@ function inscripcionesDelListado({ inscripcion, situacion_cuota, inscripciones }
     id_profesora: vigente.id_profesora,
     profesora: vigente.nombre_profesora,
     situacion_cuota: aSituacionCuota(vigente.situacion_cuota),
+    cambio_programado: aCambioProgramado(vigente.cambio_programado),
   }));
 }
 
 function aAlumnoResumen(api: AlumnoEnListadoApi): AlumnoResumen {
   const { id_alumno, usuario, responsable, estado, inscripcion, situacion_cuota } = api;
+  const inscripciones = inscripcionesDelListado(api);
   return {
     id_alumno,
     nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
@@ -100,7 +112,8 @@ function aAlumnoResumen(api: AlumnoEnListadoApi): AlumnoResumen {
     plan: inscripcion?.nombre_plan ?? null,
     profesora: inscripcion?.nombre_profesora ?? null,
     situacion_cuota: aSituacionCuota(situacion_cuota),
-    inscripciones: inscripcionesDelListado(api),
+    cambio_programado: inscripciones[0]?.cambio_programado ?? null,
+    inscripciones,
   };
 }
 
