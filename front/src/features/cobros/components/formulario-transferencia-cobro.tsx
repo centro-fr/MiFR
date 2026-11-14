@@ -20,6 +20,7 @@ import { informarTransferenciaCobroSchema } from "@/features/cobros/schemas/tran
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { TRANSFERENCIAS_QUERY_KEY, useInformarTransferencia } from "@/features/transferencias/hooks/use-transferencias";
 import { formatearPrecio } from "@/utils/moneda";
+import { soloDecimal } from "@/utils/entrada-numerica";
 
 type Errores = Partial<Record<"monto" | "titular", string>>;
 
@@ -134,7 +135,7 @@ export function FormularioTransferenciaCobro({
             inputMode="decimal"
             value={monto}
             onChange={(evento) => {
-              onMontoChange(evento.target.value);
+              onMontoChange(soloDecimal(evento.target.value));
               setErrores((previos) => ({ ...previos, monto: undefined }));
             }}
             aria-invalid={errores.monto !== undefined}

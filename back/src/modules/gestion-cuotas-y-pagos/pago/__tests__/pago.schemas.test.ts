@@ -62,8 +62,19 @@ describe("schemas de pagos", () => {
       );
     });
 
+    it("sin fecha y hora usa el momento en que se registra", () => {
+      const { fecha_hora_transferencia: _sinFecha, ...sinFecha } = transferencia;
+      expect(informarTransferenciaSchema.parse(sinFecha).fecha_hora_transferencia).toEqual(
+        new Date("2026-10-09T15:00:00Z"),
+      );
+      expect(registrarTransferenciaRecibidaSchema.parse(sinFecha).fecha_hora_transferencia).toEqual(
+        new Date("2026-10-09T15:00:00Z"),
+      );
+    });
+
     it.each([
-      ["sin fecha", { fecha_hora_transferencia: undefined }],
+      ["con la fecha en null", { fecha_hora_transferencia: null }],
+      ["con la fecha vacía", { fecha_hora_transferencia: "" }],
       ["con una fecha sin hora", { fecha_hora_transferencia: "2026-10-09" }],
       ["con una fecha futura", { fecha_hora_transferencia: "2026-10-10T10:00:00-03:00" }],
       ["con una fecha que no existe", { fecha_hora_transferencia: "2026-02-30T10:00:00-03:00" }],

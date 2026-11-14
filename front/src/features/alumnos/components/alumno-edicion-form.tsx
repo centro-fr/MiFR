@@ -16,6 +16,7 @@ import {
   type EdicionAlumnoValores,
 } from "@/features/alumnos/schemas/alumno";
 import { mensajeDeErrorApi } from "@/api/errores";
+import { MAXIMO_DIGITOS_TELEFONO, registroFiltrado, soloDigitos, soloDigitosDeTelefono } from "@/utils/entrada-numerica";
 
 function obtenerPrimerErrorDeFormulario(errors: FieldErrors<EdicionAlumnoValores>): string | undefined {
   return (
@@ -125,7 +126,7 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
             </Campo>
             <Campo etiqueta="DNI" error={errores.usuario?.dni?.message}>
               <Input
-                {...formulario.register("usuario.dni")}
+                {...registroFiltrado(formulario.register("usuario.dni"), (valor) => soloDigitos(valor, 8))}
                 inputMode="numeric"
                 maxLength={8}
                 aria-invalid={Boolean(errores.usuario?.dni)}
@@ -150,10 +151,10 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Campo etiqueta="Teléfono" error={errores.usuario?.telefono?.message}>
             <Input
-              {...formulario.register("usuario.telefono")}
+              {...registroFiltrado(formulario.register("usuario.telefono"), soloDigitosDeTelefono)}
               autoComplete="tel"
-              inputMode="tel"
-              maxLength={20}
+              inputMode="numeric"
+              maxLength={MAXIMO_DIGITOS_TELEFONO}
               aria-invalid={Boolean(errores.usuario?.telefono)}
             />
           </Campo>
@@ -191,10 +192,10 @@ export function AlumnoEdicionForm({ alumno, esPropietaria, onCancelar, onGuardad
           </Campo>
           <Campo etiqueta="Teléfono de emergencia" error={errores.cont_emerg_telefono?.message}>
             <Input
-              {...formulario.register("cont_emerg_telefono")}
-              inputMode="tel"
+              {...registroFiltrado(formulario.register("cont_emerg_telefono"), soloDigitosDeTelefono)}
+              inputMode="numeric"
               autoComplete="off"
-              maxLength={20}
+              maxLength={MAXIMO_DIGITOS_TELEFONO}
               aria-invalid={Boolean(errores.cont_emerg_telefono)}
             />
           </Campo>

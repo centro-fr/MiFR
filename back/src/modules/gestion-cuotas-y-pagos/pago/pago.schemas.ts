@@ -11,12 +11,16 @@ const observaciones = textoOpcionalSchema(255, { multilinea: true }).optional();
 const confirmar_monto_distinto = z.boolean().default(false);
 
 // El momento en que se hizo la transferencia, con su zona horaria (ISO 8601). No puede ser
-// futuro: todavía no pasó.
+// futuro: todavía no pasó. Sin ella, vale el momento en que se registra: quien la carga en el
+// acto (la propietaria al verla en su cuenta, o la pre-inscripción) no depende del reloj del
+// dispositivo.
 const fecha_hora_transferencia = z
   .string({ error: "La fecha y hora debe tener formato ISO 8601" })
   .datetime({ offset: true, message: "La fecha y hora debe tener formato ISO 8601, con zona horaria" })
   .transform((valor) => new Date(valor))
-  .refine((fecha) => fecha <= new Date(), { message: "La transferencia no puede ser futura" });
+  .refine((fecha) => fecha <= new Date(), { message: "La transferencia no puede ser futura" })
+  .optional()
+  .transform((fecha) => fecha ?? new Date());
 
 export const registrarEfectivoSchema = z.object({
   id_inscripcion: idSchema,

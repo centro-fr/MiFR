@@ -32,6 +32,7 @@ import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import type { FormaPrimerPago, PreInscripcionPendiente } from "@/types/alta-definitiva";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { soloDecimal } from "@/utils/entrada-numerica";
 
 type Errores = Partial<Record<keyof PrimerPagoFormValues, string>>;
 
@@ -262,7 +263,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
                 inputMode="decimal"
                 placeholder="Ej: 25000"
                 value={valores.monto}
-                onChange={(evento) => cambiar({ monto: evento.target.value })}
+                onChange={(evento) => cambiar({ monto: soloDecimal(evento.target.value) })}
                 aria-invalid={errores.monto !== undefined}
                 aria-describedby={describedBy}
                 className={CLASE_INPUT}

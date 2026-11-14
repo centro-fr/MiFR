@@ -1,21 +1,37 @@
 import { useMemo } from "react";
-import { Input } from "@/components/ui/input";
+import { Clock } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import type { CotizacionCobro } from "@/features/cobros/api/cobros-api";
+import {
+  CampoTitularCuenta,
+  SelectorFormaDeCobro,
+  type EtiquetasFormaDeCobro,
+  type FormaDeCobro,
+} from "@/features/cobros/components/campos-cobro";
+import { ResumenCobro, SelectorPromocion } from "@/features/cobros/components/resumen-cobro";
+import type { Promocion } from "@/types/promocion";
 import { cn } from "@/utils/cn";
 import { diaDesdeNumero, horaDesdeApi } from "@/features/horarios/utils/cronograma";
 import type { AlumnoFormData } from "../../schemas/alumno.schema";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
-import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
+import { FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
 
 export interface DatosCobroPreinscripcion {
   yaAbono: boolean;
-  formaPago: "EFECTIVO" | "TRANSFERENCIA";
-  monto: number;
-  fechaHoraTransferencia: string;
+  formaPago: FormaDeCobro;
+  /** Id de la promoción elegida, o SIN_PROMOCION. */
+  idPromocion: string;
   titularCuenta: string;
 }
+
+const FORMAS: FormaDeCobro[] = ["EFECTIVO", "TRANSFERENCIA"];
+
+const ETIQUETAS: EtiquetasFormaDeCobro = {
+  EFECTIVO: { titulo: "Efectivo" },
+  TRANSFERENCIA: { titulo: "Transferencia" },
+};
 
 interface Paso3ConfirmarProps {
   datosAlumno: AlumnoFormData;
@@ -27,6 +43,10 @@ interface Paso3ConfirmarProps {
   onEditarPlanYHorarios: () => void;
   datosCobro: DatosCobroPreinscripcion;
   onChangeDatosCobro: (nuevosDatos: DatosCobroPreinscripcion) => void;
+  cotizacion: CotizacionCobro;
+  promociones: Promocion[];
+  onSeleccionarPromocion: (idPromocion: string) => void;
+  esPropietaria: boolean;
 }
 
 export function Paso3Confirmar({
@@ -39,8 +59,11 @@ export function Paso3Confirmar({
   onEditarPlanYHorarios,
   datosCobro,
   onChangeDatosCobro,
+  cotizacion,
+  promociones,
+  onSeleccionarPromocion,
+  esPropietaria,
 }: Paso3ConfirmarProps) {
-  const precioPlan = plan?.precio_vigente?.precio ?? 0;
 
   // Actividad de los horarios
   const nombreActividad = horariosSeleccionados[0]?.actividad.nombre ?? "";
@@ -166,7 +189,6 @@ export function Paso3Confirmar({
               onChangeDatosCobro({
                 ...datosCobro,
                 yaAbono: true,
-                monto: datosCobro.monto || precioPlan,
               })
             }
             className={cn(
@@ -191,163 +213,39 @@ export function Paso3Confirmar({
         </div>
       </div>
 
-      {/* 3. PANEL DE PAGO (SI YA ABONÓ) */}
+      {/* 3. PANEL DE COBRO (SI YA ABONÓ): lo mismo que "Cobrar" del listado */}
       {datosCobro.yaAbono && (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4 animate-in fade-in duration-200">
-          <div className="space-y-2.5">
-            <Label className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-              ¿Cómo abonó?
-            </Label>
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 p-4 sm:p-5 space-y-5 animate-in fade-in duration-200">
+          <ResumenCobro
+            nombreAlumno={`${datosAlumno.nombre} ${datosAlumno.apellido}`.trim()}
+            nombrePlan={plan?.nombre ?? ""}
+            cotizacion={cotizacion}
+          />
+          <SelectorPromocion promociones={promociones} seleccionada={datosCobro.idPromocion} onChange={onSeleccionarPromocion} />
+          <SelectorFormaDeCobro
+            formas={FORMAS}
+            valor={datosCobro.formaPago}
+            onChange={(formaPago) => onChangeDatosCobro({ ...datosCobro, formaPago })}
+            leyenda="Forma de cobro"
+            etiquetas={ETIQUETAS}
+          />
 
-            <div className={FILA_DE_CAMPOS_MODAL}>
-              {/* Radio: Efectivo */}
-              <button
-                type="button"
-                onClick={() =>
-                  onChangeDatosCobro({
-                    ...datosCobro,
-                    formaPago: "EFECTIVO",
-                  })
-                }
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                  datosCobro.formaPago === "EFECTIVO"
-                    ? "border-slate-900 bg-slate-50 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white shadow-xs font-bold"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
-                )}
-              >
-                <div
-                  className={cn(
-                    "size-4 rounded-full border flex items-center justify-center shrink-0",
-                    datosCobro.formaPago === "EFECTIVO"
-                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
-                      : "border-slate-300 dark:border-slate-600",
-                  )}
-                >
-                  {datosCobro.formaPago === "EFECTIVO" && <div className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
-                </div>
-                <span className="text-xs sm:text-sm">Efectivo</span>
-              </button>
-
-              {/* Radio: Transferencia */}
-              <button
-                type="button"
-                onClick={() =>
-                  onChangeDatosCobro({
-                    ...datosCobro,
-                    formaPago: "TRANSFERENCIA",
-                  })
-                }
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                  datosCobro.formaPago === "TRANSFERENCIA"
-                    ? "border-slate-900 bg-slate-50 text-slate-900 dark:border-white dark:bg-white/10 dark:text-white shadow-xs font-bold"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300",
-                )}
-              >
-                <div
-                  className={cn(
-                    "size-4 rounded-full border flex items-center justify-center shrink-0",
-                    datosCobro.formaPago === "TRANSFERENCIA"
-                      ? "border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white"
-                      : "border-slate-300 dark:border-slate-600",
-                  )}
-                >
-                  {datosCobro.formaPago === "TRANSFERENCIA" && <div className="size-1.5 rounded-full bg-white dark:bg-slate-900" />}
-                </div>
-                <span className="text-xs sm:text-sm">Transferencia</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Si eligió Efectivo */}
-          {datosCobro.formaPago === "EFECTIVO" && (
-            <div className={cn(CAMPO_MODAL, "max-w-sm")}>
-              <Label htmlFor="monto-efectivo" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Monto cobrado <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="monto-efectivo"
-                type="number"
-                min={0}
-                value={datosCobro.monto || ""}
-                onChange={(e) =>
-                  onChangeDatosCobro({
-                    ...datosCobro,
-                    monto: Number(e.target.value),
-                  })
-                }
-                className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Precio del plan: ${precioPlan.toLocaleString("es-AR")}
-              </p>
-            </div>
-          )}
-
-          {/* Si eligió Transferencia */}
           {datosCobro.formaPago === "TRANSFERENCIA" && (
-            <div className="space-y-4">
-              <div className={FILA_DE_CAMPOS_MODAL}>
-                <div className={CAMPO_MODAL}>
-                  <Label htmlFor="monto-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Monto cobrado <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="monto-transf"
-                    type="number"
-                    min={0}
-                    value={datosCobro.monto || ""}
-                    onChange={(e) =>
-                      onChangeDatosCobro({
-                        ...datosCobro,
-                        monto: Number(e.target.value),
-                      })
-                    }
-                    className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Precio del plan: ${precioPlan.toLocaleString("es-AR")}
-                  </p>
-                </div>
-
-                <div className={CAMPO_MODAL}>
-                  <Label htmlFor="fecha-hora-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Fecha y hora <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="fecha-hora-transf"
-                    type="datetime-local"
-                    value={datosCobro.fechaHoraTransferencia}
-                    onChange={(e) =>
-                      onChangeDatosCobro({
-                        ...datosCobro,
-                        fechaHoraTransferencia: e.target.value,
-                      })
-                    }
-                    className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
-                  />
-                </div>
-              </div>
-
-              <div className={CAMPO_MODAL}>
-                <Label htmlFor="titular-transf" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Titular de la cuenta <span className="text-muted-foreground font-normal">(opcional)</span>
-                </Label>
-                <Input
-                  id="titular-transf"
-                  placeholder="Quien hizo la transferencia, si no es el alumno"
-                  value={datosCobro.titularCuenta}
-                  onChange={(e) =>
-                    onChangeDatosCobro({
-                      ...datosCobro,
-                      titularCuenta: e.target.value,
-                    })
-                  }
-                  className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
-                />
-              </div>
-            </div>
+            <>
+              <CampoTitularCuenta
+                valor={datosCobro.titularCuenta}
+                etiqueta="Titular cuenta"
+                onChange={(titularCuenta) => onChangeDatosCobro({ ...datosCobro, titularCuenta })}
+              />
+              {!esPropietaria && (
+                <p className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-300">
+                  <Clock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span>
+                    Queda <strong>pendiente de verificación</strong> hasta que la propietaria la controle en el extracto.
+                  </span>
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

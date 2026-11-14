@@ -30,6 +30,7 @@ import { nombreRepetido } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { soloImporteConMiles } from "@/utils/entrada-numerica";
 
 interface PropsEditarPlanDialog {
   plan: Plan | null;
@@ -198,7 +199,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                     id="plan-precio"
                     name="precio"
                     value={valores.precio}
-                    onChange={(e) => cambiar({ precio: e.target.value })}
+                    onChange={(e) => cambiar({ precio: soloImporteConMiles(e.target.value) })}
                     placeholder="35000"
                     className={cn(
                       "h-10 rounded-xl pl-8 font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",

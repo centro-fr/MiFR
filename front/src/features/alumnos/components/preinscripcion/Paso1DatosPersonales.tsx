@@ -9,6 +9,7 @@ import { esMenorDeEdad, obtenerLimitesFechaNacimiento } from "../../utils/edad";
 import { cn } from "@/utils/cn";
 import type { AlumnoFormData } from "../../schemas/alumno.schema";
 import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
+import { soloDigitosDeTelefono } from "@/utils/entrada-numerica";
 
 const CLASE_CON_ERROR = "border-destructive focus-visible:ring-destructive";
 const MAXIMO_DIGITOS_DNI = 8;
@@ -75,29 +76,6 @@ export function Paso1DatosPersonales({
           fecha_nacimiento: "",
         }),
         [campo]: valor,
-      },
-    });
-  };
-
-  // Manejo de Nombre y apellido del tutor en un solo campo para coincidir con la UI
-  const nombreTutorCompleto = [datos.tutor?.nombre, datos.tutor?.apellido].filter(Boolean).join(" ");
-  const handleNombreApellidoTutor = (valor: string) => {
-    const partes = valor.trimStart().split(/\s+/);
-    const primerNombre = partes[0] || "";
-    const restoApellido = partes.length > 1 ? partes.slice(1).join(" ") : primerNombre;
-    onChange({
-      ...datos,
-      tutor: {
-        ...(datos.tutor || {
-          nombre: "",
-          apellido: "",
-          dni: "",
-          telefono: "",
-          email: "",
-          fecha_nacimiento: "",
-        }),
-        nombre: primerNombre,
-        apellido: restoApellido,
       },
     });
   };
@@ -185,9 +163,10 @@ export function Paso1DatosPersonales({
           <Input
             id="alumno-telefono"
             type="tel"
-            placeholder="Ej: 351 411-2233"
+            inputMode="numeric"
+            placeholder="Ej: 3514112233"
             value={datos.telefono || ""}
-            onChange={(e) => actualizarCampo("telefono", e.target.value)}
+            onChange={(e) => actualizarCampo("telefono", soloDigitosDeTelefono(e.target.value))}
             {...propsDeCampo("telefono")}
           />
           <MensajeError campo="telefono" errores={errores} />
@@ -234,37 +213,52 @@ export function Paso1DatosPersonales({
           <Input
             id="cont-emerg-telefono"
             type="tel"
-            placeholder="351 555-6677"
+            inputMode="numeric"
+            placeholder="Ej: 3515556677"
             value={datos.cont_emerg_telefono || ""}
-            onChange={(e) => actualizarCampo("cont_emerg_telefono", e.target.value)}
+            onChange={(e) => actualizarCampo("cont_emerg_telefono", soloDigitosDeTelefono(e.target.value))}
             {...propsDeCampo("cont_emerg_telefono")}
           />
           <MensajeError campo="cont_emerg_telefono" errores={errores} />
         </div>
       </div>
 
-      {/* 5. RESPONSABLE (ES MENOR) - Solo aparece si es menor el alumno */}
+      {/* 5. TUTOR (ES MENOR) - Solo aparece si es menor el alumno */}
       {menorDeEdad && (
         <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center">
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Responsable (es menor)
+              Tutor (Es menor)
             </span>
           </div>
 
           <div className={FILA_DE_CAMPOS_MODAL}>
             <div className={CAMPO_MODAL}>
               <Label htmlFor="tutor-nombre" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-                Nombre y apellido <span className="text-destructive">*</span>
+                Nombre <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="tutor-nombre"
-                placeholder="Ej: Paula Romero"
-                value={nombreTutorCompleto}
-                onChange={(e) => handleNombreApellidoTutor(e.target.value)}
+                placeholder="Ej: Paula"
+                value={datos.tutor?.nombre || ""}
+                onChange={(e) => actualizarTutor("nombre", e.target.value)}
                 {...propsDeCampo("tutor.nombre")}
               />
               <MensajeError campo="tutor.nombre" errores={errores} />
+            </div>
+
+            <div className={CAMPO_MODAL}>
+              <Label htmlFor="tutor-apellido" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Apellido <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="tutor-apellido"
+                placeholder="Ej: Romero"
+                value={datos.tutor?.apellido || ""}
+                onChange={(e) => actualizarTutor("apellido", e.target.value)}
+                {...propsDeCampo("tutor.apellido")}
+              />
+              <MensajeError campo="tutor.apellido" errores={errores} />
             </div>
 
             <div className={CAMPO_MODAL}>
@@ -290,9 +284,10 @@ export function Paso1DatosPersonales({
               <Input
                 id="tutor-telefono"
                 type="tel"
-                placeholder="Ej: 351 555-6677"
+                inputMode="numeric"
+                placeholder="Ej: 3515556677"
                 value={datos.tutor?.telefono || ""}
-                onChange={(e) => actualizarTutor("telefono", e.target.value)}
+                onChange={(e) => actualizarTutor("telefono", soloDigitosDeTelefono(e.target.value))}
                 {...propsDeCampo("tutor.telefono")}
               />
               <MensajeError campo="tutor.telefono" errores={errores} />

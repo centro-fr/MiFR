@@ -9,6 +9,13 @@ import {
 } from "@/features/rutinas/data/catalogo-ejercicios";
 import type { EjercicioFormValues, RutinaFormValues } from "@/features/rutinas/schemas/rutina-form";
 import { MiniaturaEjercicio } from "@/features/rutinas/components/miniatura-ejercicio";
+import { registroFiltrado, soloDigitos } from "@/utils/entrada-numerica";
+
+// Las repeticiones pueden ser un rango ("8-10"): dígitos y un guion entre ellos.
+function soloRepeticiones(valor: string): string {
+  const [desde, ...hasta] = valor.replace(/[^\d-]/g, "").split("-");
+  return hasta.length === 0 ? desde : `${desde}-${hasta.join("")}`;
+}
 
 interface PropsCatalogo {
   catalogo: EjercicioSugerido[] | null;
@@ -148,8 +155,8 @@ function FilaEjercicio({ formulario, indiceDia, indice, catalogo, onQuitar }: Pr
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <Input placeholder="Series" {...formulario.register(`${ruta}.series`)} className={`${CAMPO_EJERCICIO} w-20 px-2 text-center`} />
-        <Input placeholder="Reps" {...formulario.register(`${ruta}.repeticiones`)} className={`${CAMPO_EJERCICIO} w-20 px-2 text-center`} />
+        <Input placeholder="Series" inputMode="numeric" {...registroFiltrado(formulario.register(`${ruta}.series`), (valor) => soloDigitos(valor, 2))} className={`${CAMPO_EJERCICIO} w-20 px-2 text-center`} />
+        <Input placeholder="Reps" inputMode="numeric" {...registroFiltrado(formulario.register(`${ruta}.repeticiones`), soloRepeticiones)} className={`${CAMPO_EJERCICIO} w-20 px-2 text-center`} />
         <Input placeholder="Peso/nota" {...formulario.register(`${ruta}.notas`)} className={`${CAMPO_EJERCICIO} w-28 px-2.5`} />
         <button
           type="button"

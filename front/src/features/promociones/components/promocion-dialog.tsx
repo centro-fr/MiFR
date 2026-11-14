@@ -19,6 +19,7 @@ import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { registroFiltrado, soloDecimal } from "@/utils/entrada-numerica";
 
 interface Props {
   abierto: boolean;
@@ -115,7 +116,7 @@ export function PromocionDialog({ abierto, promocion, planes, guardando, error, 
               >
                 <Input
                   id="promocion-valor"
-                  {...formulario.register("valor")}
+                  {...registroFiltrado(formulario.register("valor"), (valor) => soloDecimal(valor))}
                   inputMode="decimal"
                   className="h-10 rounded-xl"
                   placeholder={tipo === "PORCENTAJE" ? "20" : "5000"}

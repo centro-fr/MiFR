@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FilaDeDetalle, FilaDeTotal, ListaDeDetalle } from "@/components/detalle/lista-de-detalle";
 import { Dialog } from "@/components/ui/dialog";
 import {
   BotonModalSecundario,
@@ -8,7 +7,6 @@ import {
   ModalContenido,
   ModalCuerpo,
   ModalPie,
-  ModalSeccion,
 } from "@/components/ui/estructura-modal";
 import type { SituacionCuota } from "@/features/alumnos/schemas/alumno";
 import {
@@ -18,11 +16,11 @@ import {
 } from "@/features/cobros/components/campos-cobro";
 import { FormularioCobroEfectivo } from "@/features/cobros/components/formulario-cobro-efectivo";
 import { FormularioTransferenciaCobro } from "@/features/cobros/components/formulario-transferencia-cobro";
-import { formatearPrecio } from "@/utils/moneda";
 import { calcularCotizacionCobro, type CotizacionCobro } from "@/features/cobros/api/cobros-api";
 import type { Promocion } from "@/types/promocion";
 import type { Plan } from "@/types/plan";
-import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
+import { ResumenCobro, SelectorPromocion } from "@/features/cobros/components/resumen-cobro";
+import { SIN_PROMOCION, idDePromocion, promocionesAplicables } from "@/features/cobros/utils/promociones-cobro";
 import { usePermissions } from "@/features/seguridad/hooks/use-permissions";
 import { usePromociones } from "@/features/promociones/hooks/use-promociones";
 
@@ -78,64 +76,6 @@ const TEXTO_ESTADO_CUOTA: Record<SituacionCuota["estado"], string> = {
   PENDIENTE_DE_PAGO: "Pendiente de pago",
 };
 
-function ResumenCobro({ alumno, inscripcion }: Pick<Props, "alumno" | "inscripcion">) {
-  const cotizacion = inscripcion.cotizacion;
-  const precioLista = cotizacion?.precio_lista ?? inscripcion.precio_vigente;
-  const monto = cotizacion?.monto ?? inscripcion.precio_vigente;
-  return (
-    <ModalSeccion titulo="Detalle cobro">
-      <ListaDeDetalle>
-        <FilaDeDetalle etiqueta="Alumno">
-          {alumno.nombre} {alumno.apellido}
-        </FilaDeDetalle>
-        <FilaDeDetalle etiqueta="Plan">{inscripcion.nombre_plan}</FilaDeDetalle>
-        {inscripcion.situacion_cuota && (
-          <FilaDeDetalle etiqueta="Cuota">{TEXTO_ESTADO_CUOTA[inscripcion.situacion_cuota.estado]}</FilaDeDetalle>
-        )}
-        <FilaDeDetalle etiqueta="Precio de lista">{formatearPrecio(precioLista)}</FilaDeDetalle>
-        {cotizacion && cotizacion.descuento > 0 && (
-          <FilaDeDetalle etiqueta="Descuento">
-            {cotizacion.promocion?.nombre ?? "Descuento"} · −{formatearPrecio(cotizacion.descuento)}
-          </FilaDeDetalle>
-        )}
-        <FilaDeTotal etiqueta="Total a cobrar">{formatearPrecio(monto)}</FilaDeTotal>
-      </ListaDeDetalle>
-    </ModalSeccion>
-  );
-}
-
-function SelectorPromocion({
-  promociones,
-  seleccionada,
-  onChange,
-}: {
-  promociones: Promocion[];
-  seleccionada: string;
-  onChange: (id: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor="promocion-cobro" className="text-sm font-bold text-slate-800 dark:text-slate-200">
-        Descuento
-      </label>
-      <SelectorDesplegable
-        id="promocion-cobro"
-        aria-label="Descuento"
-        valor={seleccionada}
-        opciones={[
-          { valor: "SIN_PROMOCION", texto: "Sin promoción" },
-          ...promociones.map((promocion) => ({
-            valor: promocion.id,
-            texto: `${promocion.nombre} · ${promocion.tipoDescuento === "PORCENTAJE" ? `${promocion.valor}% OFF` : `${formatearPrecio(promocion.valor)} OFF`}`,
-          })),
-        ]}
-        onChange={onChange}
-        variante="formulario"
-      />
-    </div>
-  );
-}
-
 /**
  * Cobro de la cuota desde el listado de alumnos o cobros de la profesora: en efectivo o por
  * transferencia.
@@ -163,31 +103,24 @@ export function ModalRegistrarCobro({
     setForma(formaInicial);
   }, [formaInicial]);
   const [monto, setMonto] = useState(String(inscripcion.precio_vigente));
-  const [promocionSeleccionada, setPromocionSeleccionada] = useState("SIN_PROMOCION");
+  const [promocionSeleccionada, setPromocionSeleccionada] = useState(SIN_PROMOCION);
   // La cotización llega de forma asíncrona y debe sincronizar el selector local del formulario.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPromocionSeleccionada(cotizacion?.promocion ? String(cotizacion.promocion.id_promocion) : "SIN_PROMOCION");
+    setPromocionSeleccionada(cotizacion?.promocion ? String(cotizacion.promocion.id_promocion) : SIN_PROMOCION);
   }, [cotizacion?.promocion]);
 
   const idPlan = inscripcion.id_plan;
-  const promocionesDisponibles = useMemo(() => {
-    return promocionesBase.filter((promocion) => {
-      if (promocionSeleccionada !== "SIN_PROMOCION" && String(promocion.id) === String(promocionSeleccionada)) {
-        return true;
-      }
-      if (!promocion.activo || promocion.estado !== "ACTIVA") return false;
-      if (!idPlan) return true;
-      if (!promocion.planes || promocion.planes.length === 0) return true;
-      return promocion.planes.some((plan) => plan.id === String(idPlan));
-    });
-  }, [promocionesBase, idPlan, promocionSeleccionada]);
+  const promocionesDisponibles = useMemo(
+    () => promocionesAplicables(promocionesBase, idPlan, promocionSeleccionada),
+    [promocionesBase, idPlan, promocionSeleccionada],
+  );
 
   const cotizacionActual = calcularCotizacionCobro(
     {
       id: inscripcion.id_inscripcion,
       precioLista: inscripcion.precio_vigente,
-      idPromocion: promocionSeleccionada === "SIN_PROMOCION" ? null : Number(promocionSeleccionada),
+      idPromocion: idDePromocion(promocionSeleccionada) ?? null,
       idPlan: inscripcion.id_plan ?? 0,
     },
     promocionesBase,
@@ -198,7 +131,6 @@ export function ModalRegistrarCobro({
     setMonto(String(cotizacionActual.monto));
   }, [cotizacionActual.monto]);
 
-  const inscripcionConCotizacion = { ...inscripcion, cotizacion: cotizacionActual };
   const titulo =
     forma === "EFECTIVO"
       ? "Registrar cobro en efectivo"
@@ -213,7 +145,7 @@ export function ModalRegistrarCobro({
   const datosDelFormulario = {
     idInscripcion: inscripcion.id_inscripcion,
     precioVigente: cotizacionActual.monto,
-    idPromocion: promocionSeleccionada === "SIN_PROMOCION" ? undefined : Number(promocionSeleccionada),
+    idPromocion: idDePromocion(promocionSeleccionada),
     monto,
     onMontoChange: setMonto,
     onCancelar: onClose,
@@ -222,7 +154,12 @@ export function ModalRegistrarCobro({
 
   const encabezado = (
     <>
-      <ResumenCobro alumno={alumno} inscripcion={inscripcionConCotizacion} />
+      <ResumenCobro
+        nombreAlumno={nombreCompletoAlumno}
+        nombrePlan={inscripcion.nombre_plan}
+        estadoCuota={inscripcion.situacion_cuota ? TEXTO_ESTADO_CUOTA[inscripcion.situacion_cuota.estado] : undefined}
+        cotizacion={cotizacionActual}
+      />
       <SelectorPromocion
         promociones={promocionesDisponibles}
         seleccionada={promocionSeleccionada}

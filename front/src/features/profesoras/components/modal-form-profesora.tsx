@@ -14,6 +14,7 @@ import {
 } from "@/features/profesoras/schemas/profesora";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { soloDigitosDeTelefono } from "@/utils/entrada-numerica";
 
 interface Props {
   guardando: boolean;
@@ -153,9 +154,10 @@ export function ModalFormProfesora({
               <Input
                 id="telefono"
                 type="tel"
+                inputMode="numeric"
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                placeholder="Ej: 11 2345-6789"
+                onChange={(e) => setTelefono(soloDigitosDeTelefono(e.target.value))}
+                placeholder="Ej: 1123456789"
                 disabled={guardando}
                 className="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-xs sm:text-sm"
               />

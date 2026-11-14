@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { mensajeDeErrorApi } from "@/api/errores";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { calcularEdad, esMenorDeEdad } from "../utils/edad";
-import { fechaActualArgentina } from "@/utils/fecha";
 import { MEDIDAS_VACIAS, medidasCorporalesSchema, type MedidasCorporalesForm } from "../schemas/medidas-corporales";
 import { clasesRequeridasDelPlan, horariosDelPlan, profesorasDelPlan } from "../utils/plan-y-profesora";
 import { alumnoFormSchema, type AlumnoFormData } from "../schemas/alumno.schema";
@@ -19,6 +18,16 @@ import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { DatosCobroPreinscripcion } from "../components/preinscripcion/Paso3Confirmar";
+import { usePromociones } from "@/features/promociones/hooks/use-promociones";
+import { calcularCotizacionCobro } from "@/features/cobros/api/cobros-api";
+import { SIN_PROMOCION, idDePromocion, promocionesAplicables } from "@/features/cobros/utils/promociones-cobro";
+
+const COBRO_INICIAL: DatosCobroPreinscripcion = {
+  yaAbono: false,
+  formaPago: "EFECTIVO",
+  idPromocion: SIN_PROMOCION,
+  titularCuenta: "",
+};
 
 export type PasoPreinscripcion = 1 | 2 | 3;
 
@@ -111,19 +120,13 @@ export function usePreinscripcion({
   const [idProfesoraElegida, setIdProfesora] = useState<number | null>(null);
   const idProfesora = esSoloProfesora ? idProfesoraInicial : idProfesoraElegida;
   const [idsHorarios, setIdsHorarios] = useState<number[]>([]);
-  const [fechaInicio, setFechaInicio] = useState<string>(fechaActualArgentina);
   const [medidas, setMedidas] = useState<MedidasCorporalesForm>(MEDIDAS_VACIAS);
   const [erroresMedidas, setErroresMedidas] = useState<Partial<Record<keyof MedidasCorporalesForm, string>>>({});
   const [observacionesInscripcion, setObservacionesInscripcion] = useState<string>("");
 
   // Formulario Paso 3 (Cobro)
-  const [datosCobro, setDatosCobro] = useState<DatosCobroPreinscripcion>({
-    yaAbono: false,
-    formaPago: "EFECTIVO",
-    monto: 0,
-    fechaHoraTransferencia: new Date().toISOString().slice(0, 16),
-    titularCuenta: "",
-  });
+  const [datosCobro, setDatosCobro] = useState<DatosCobroPreinscripcion>(COBRO_INICIAL);
+  const { data: promociones = [] } = usePromociones();
 
   // Estado de envío
   const [enviando, setEnviando] = useState(false);
@@ -134,6 +137,30 @@ export function usePreinscripcion({
 
   // Plan y Profesora seleccionados
   const planSeleccionado = useMemo(() => planes.find((p) => p.id_plan === idPlan) ?? null, [planes, idPlan]);
+
+  // Total a cobrar de la primera cuota: el precio del plan con la promoción elegida. Igual que en "Cobrar".
+  const cotizarCobro = useCallback(
+    (idPromocionElegida: string) =>
+      calcularCotizacionCobro(
+        {
+          id: 0,
+          precioLista: planSeleccionado?.precio_vigente?.precio ?? 0,
+          idPromocion: idDePromocion(idPromocionElegida) ?? null,
+          idPlan: idPlan ?? 0,
+        },
+        promociones,
+      ),
+    [planSeleccionado, idPlan, promociones],
+  );
+  const cotizacionCobro = useMemo(() => cotizarCobro(datosCobro.idPromocion), [cotizarCobro, datosCobro.idPromocion]);
+  const promocionesDelPlan = useMemo(
+    () => promocionesAplicables(promociones, idPlan ?? undefined, datosCobro.idPromocion),
+    [promociones, idPlan, datosCobro.idPromocion],
+  );
+
+  const seleccionarPromocion = useCallback((idPromocionElegida: string) => {
+    setDatosCobro((prev) => ({ ...prev, idPromocion: idPromocionElegida }));
+  }, []);
   const clasesRequeridas = clasesRequeridasDelPlan(planSeleccionado);
 
   const profesorasCompatibles = useMemo(
@@ -219,12 +246,11 @@ export function usePreinscripcion({
       setIdPlan(id);
       setIdsHorarios([]);
       const nuevoPlan = planes.find((p) => p.id_plan === id) ?? null;
-      if (nuevoPlan?.precio_vigente?.precio) {
-        setDatosCobro((prev) => ({
-          ...prev,
-          monto: nuevoPlan.precio_vigente?.precio ?? 0,
-        }));
-      }
+      // Otro plan, otro precio: la promoción elegida puede no aplicarle.
+      setDatosCobro((prev) => ({
+        ...prev,
+        idPromocion: SIN_PROMOCION,
+      }));
       setIdProfesora((actual) =>
         actual !== null && profesorasDelPlan(profesoras, horarios, nuevoPlan).some((p) => Number(p.id) === actual) ? actual : null,
       );
@@ -255,14 +281,6 @@ export function usePreinscripcion({
       toast.error("Todos los horarios deben pertenecer a la misma actividad.");
       return false;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio)) {
-      toast.error("Ingresá una fecha de inicio válida (dd/mm/aaaa).");
-      return false;
-    }
-    if (fechaInicio < fechaActualArgentina()) {
-      toast.error("La fecha de inicio no puede ser anterior a hoy.");
-      return false;
-    }
     if (actividadQuePideMedidas) {
       const resultado = medidasCorporalesSchema.safeParse(medidas);
       if (!resultado.success) {
@@ -273,7 +291,7 @@ export function usePreinscripcion({
       }
     }
     return true;
-  }, [idPlan, idProfesora, idsHorarios, clasesRequeridas, horarios, fechaInicio, actividadQuePideMedidas, medidas]);
+  }, [idPlan, idProfesora, idsHorarios, clasesRequeridas, horarios, actividadQuePideMedidas, medidas]);
 
   const avanzarPaso = useCallback(() => {
     if (paso === 1) {
@@ -304,16 +322,9 @@ export function usePreinscripcion({
     setIdProfesora(null);
     setIdsHorarios([]);
     setObservacionesInscripcion("");
-    setFechaInicio(fechaActualArgentina());
     setMedidas(MEDIDAS_VACIAS);
     setErroresMedidas({});
-    setDatosCobro({
-      yaAbono: false,
-      formaPago: "EFECTIVO",
-      monto: 0,
-      fechaHoraTransferencia: new Date().toISOString().slice(0, 16),
-      titularCuenta: "",
-    });
+    setDatosCobro(COBRO_INICIAL);
   }, [idAlumnoCreado, idInscripcionCreada, invalidarAlumnos]);
 
   // Confirmar y guardar la pre-inscripción (con o sin cobro)
@@ -323,7 +334,11 @@ export function usePreinscripcion({
       return;
     }
 
-    if (datosCobro.yaAbono && (!datosCobro.monto || datosCobro.monto <= 0)) {
+    const esTransferencia = datosCobro.formaPago === "TRANSFERENCIA";
+    // En efectivo o transferencia, la primera cuota se cobra siempre por el total: no se carga a mano.
+    const montoCobrado = cotizacionCobro.monto;
+    const idPromocionCobro = idDePromocion(datosCobro.idPromocion);
+    if (datosCobro.yaAbono && (!montoCobrado || montoCobrado <= 0)) {
       toast.error("El monto cobrado debe ser mayor a cero.");
       return;
     }
@@ -376,7 +391,7 @@ export function usePreinscripcion({
         id_profesora: idProfesora,
         ids_horarios: idsHorarios,
         sin_cargo: false,
-        fecha_inicio: fechaInicio,
+        // Sin fecha_inicio: el back la pone en el día en que la recibe, con su propio reloj.
         observaciones: observacionesInscripcion.trim() || null,
         medidas: actividadQuePideMedidas ? medidasCorporalesSchema.parse(medidas) : undefined,
       });
@@ -386,27 +401,25 @@ export function usePreinscripcion({
         if (datosCobro.formaPago === "EFECTIVO") {
           await registrarPrimerPagoEnEfectivo({
             id_inscripcion: inscripcion.id_inscripcion,
-            monto: datosCobro.monto,
-            confirmar_monto_distinto: true,
+            id_promocion: idPromocionCobro,
+            monto: montoCobrado,
+            confirmar_monto_distinto: false,
           });
-        } else if (datosCobro.formaPago === "TRANSFERENCIA") {
-          const fechaHoraIso = datosCobro.fechaHoraTransferencia
-            ? new Date(datosCobro.fechaHoraTransferencia).toISOString()
-            : new Date().toISOString();
-
+        } else if (esTransferencia) {
+          // Sin fecha y hora: el back registra el momento en que la recibe, con su propio reloj.
           if (esPropietaria) {
             await registrarTransferenciaRecibida({
               id_inscripcion: inscripcion.id_inscripcion,
-              monto: datosCobro.monto,
-              confirmar_monto_distinto: true,
-              fecha_hora_transferencia: fechaHoraIso,
+              id_promocion: idPromocionCobro,
+              monto: montoCobrado,
+              confirmar_monto_distinto: false,
               titular_cuenta_origen: datosCobro.titularCuenta?.trim() || undefined,
             });
           } else {
             await informarTransferenciaPrimerPago({
               id_inscripcion: inscripcion.id_inscripcion,
-              monto: datosCobro.monto,
-              fecha_hora_transferencia: fechaHoraIso,
+              id_promocion: idPromocionCobro,
+              monto: montoCobrado,
               titular_cuenta_origen: datosCobro.titularCuenta?.trim() || undefined,
               observaciones: observacionesInscripcion.trim() || undefined,
             });
@@ -443,9 +456,9 @@ export function usePreinscripcion({
     idsHorarios,
     clasesRequeridas,
     datosCobro,
+    cotizacionCobro.monto,
     datosAlumno,
     menorDeEdad,
-    fechaInicio,
     actividadQuePideMedidas,
     medidas,
     observacionesInscripcion,
@@ -482,12 +495,14 @@ export function usePreinscripcion({
     limpiarHorarios,
     clasesRequeridas,
     horariosDisponibles,
-    fechaInicio,
-    setFechaInicio,
     observacionesInscripcion,
     setObservacionesInscripcion,
     datosCobro,
     setDatosCobro,
+    cotizacionCobro,
+    promocionesDelPlan,
+    seleccionarPromocion,
+    esPropietaria,
     enviando,
     avanzarPaso,
     retrocederPaso,

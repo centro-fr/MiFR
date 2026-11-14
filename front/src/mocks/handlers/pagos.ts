@@ -26,11 +26,16 @@ const efectivoSchema = z.object({
   observaciones: z.string().max(255).optional(),
 });
 
+// Igual que el back (pago.schemas.ts): sin fecha y hora, vale el momento en que se registra.
+const fechaHoraTransferencia = z
+  .string()
+  .datetime({ offset: true })
+  .refine((valor) => new Date(valor) <= new Date(), { message: "La transferencia no puede ser futura" })
+  .optional()
+  .transform((valor) => valor ?? new Date().toISOString());
+
 const transferenciaRecibidaSchema = efectivoSchema.extend({
-  fecha_hora_transferencia: z
-    .string()
-    .datetime({ offset: true })
-    .refine((valor) => new Date(valor) <= new Date(), { message: "La transferencia no puede ser futura" }),
+  fecha_hora_transferencia: fechaHoraTransferencia,
   titular_cuenta_origen: z.string().trim().min(1).max(80).optional(),
 });
 
@@ -38,10 +43,7 @@ const informarTransferenciaSchema = z.object({
   id_inscripcion: z.number().int().positive(),
   id_promocion: z.number().int().positive().optional(),
   monto,
-  fecha_hora_transferencia: z
-    .string()
-    .datetime({ offset: true })
-    .refine((valor) => new Date(valor) <= new Date(), { message: "La transferencia no puede ser futura" }),
+  fecha_hora_transferencia: fechaHoraTransferencia,
   titular_cuenta_origen: z.string().trim().min(1).max(80).optional(),
   observaciones: z.string().max(255).optional(),
 });

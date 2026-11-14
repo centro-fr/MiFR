@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MENSAJE_EMAIL_GMAIL, esEmailDeGmail } from "@/utils/email";
 import { esMenorDeEdad } from "@/features/alumnos/utils/edad";
 
 export const telefonoRegex = /^\+?[\d(][\d ()-]*$/;
@@ -23,7 +24,13 @@ export type ProfesoraApi = z.infer<typeof profesoraApiSchema>;
 export const crearProfesoraSchema = z.object({
   nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(60),
   apellido: z.string().trim().min(2, "El apellido debe tener al menos 2 caracteres").max(60),
-  email: z.string().trim().toLowerCase().email("Ingresá un correo electrónico válido").max(120),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Ingresá un correo electrónico válido")
+    .max(120)
+    .refine(esEmailDeGmail, MENSAJE_EMAIL_GMAIL),
   telefono: z
     .string()
     .trim()

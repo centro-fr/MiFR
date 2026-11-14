@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MENSAJE_EMAIL_GMAIL, esEmailDeGmail } from "@/utils/email";
 
 // ---------- Contrato de /api/v1/alumnos (back: alumno.openapi.ts e inscripcion.openapi.ts) ----------
 
@@ -371,7 +372,10 @@ const edicionAlumnoBaseSchema = z.object({
       .regex(PATRON_DNI, "El DNI debe contener solo números")
       .refine((dni) => dni === "" || (dni.length >= 7 && dni.length <= 8), "El DNI tiene 7 u 8 dígitos"),
     telefono: telefonoSchema(),
-    email: z.union([z.string().trim().email("Ingresá un email válido").max(120), z.literal("")]),
+    email: z.union([
+      z.string().trim().email("Ingresá un email válido").max(120).refine(esEmailDeGmail, MENSAJE_EMAIL_GMAIL),
+      z.literal(""),
+    ]),
     fecha_nacimiento: z.string().date("Ingresá una fecha válida"),
     direccion: z.string().trim().max(120, "La dirección no puede superar los 120 caracteres"),
   }),

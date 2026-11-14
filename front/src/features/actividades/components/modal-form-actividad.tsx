@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas, soloDigitos } from "@/utils/entrada-numerica";
 
 interface Props {
   actividad: Actividad | null;
@@ -267,7 +268,9 @@ export function ModalFormActividad({
               max={modalidad === "PERSONALIZADA" ? CUPO_MAXIMO_PERSONALIZADA : CUPO_MAXIMO_GRUPAL}
               placeholder={modalidad === "GRUPAL" ? "Sin límite" : "Requerido"}
               value={cupo}
-              onChange={(e) => setCupo(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+              onChange={(e) => setCupo(soloDigitos(e.target.value, 2))}
+              onKeyDown={(e) => bloquearTeclasNoNumericas(e)}
+              onPaste={(e) => bloquearPegadoNoNumerico(e)}
               className={cn(
                 "h-10 w-36 rounded-xl border px-3.5 py-2 font-bold text-slate-900 dark:text-slate-100 transition-colors focus:border-primary",
                 errores.cupoMaximo

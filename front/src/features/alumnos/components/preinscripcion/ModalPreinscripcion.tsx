@@ -14,6 +14,7 @@ import { Paso3Confirmar } from "./Paso3Confirmar";
 import { PantallaExito } from "./PantallaExito";
 import { CamposMedidas } from "./CamposMedidas";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { usePlanes } from "../../hooks/use-planes";
 import { listarHorarios, listarProfesoras } from "@/features/horarios/api/horarios-api";
 import { usePreinscripcion, type ResultadoPreinscripcion } from "../../hooks/use-preinscripcion";
@@ -64,7 +65,6 @@ export function ModalPreinscripcion({
     paso,
     setPaso,
     exito,
-    idInscripcionCreada,
     idAlumnoCreado,
     datosAlumno,
     setDatosAlumno,
@@ -86,10 +86,12 @@ export function ModalPreinscripcion({
     toggleHorario,
     limpiarHorarios,
     clasesRequeridas,
-    fechaInicio,
-    setFechaInicio,
     datosCobro,
     setDatosCobro,
+    cotizacionCobro,
+    promocionesDelPlan,
+    seleccionarPromocion,
+    esPropietaria,
     enviando,
     avanzarPaso,
     retrocederPaso,
@@ -99,7 +101,10 @@ export function ModalPreinscripcion({
     planes,
     profesoras,
     horarios,
+    onExito,
   });
+
+  const navigate = useNavigate();
 
   const cerrarModal = (nuevoEstado: boolean) => {
     if (!nuevoEstado) {
@@ -138,12 +143,10 @@ export function ModalPreinscripcion({
               yaAbono={datosCobro.yaAbono}
               onCargarOtro={reiniciar}
               onVerFicha={() => {
+                // Se toma antes de cerrar: cerrar reinicia el formulario y borra el id del alumno creado.
+                const idAlumno = idAlumnoCreado;
                 cerrarModal(false);
-                onExito?.({
-                  idInscripcion: idInscripcionCreada!,
-                  idAlumno: idAlumnoCreado ?? undefined,
-                  cobrarAhora: false,
-                });
+                if (idAlumno !== null) navigate(`/app/alumnos/${idAlumno}`);
               }}
             />
           </div>
@@ -181,8 +184,6 @@ export function ModalPreinscripcion({
                     onToggleHorario={toggleHorario}
                     onLimpiarHorarios={limpiarHorarios}
                     clasesRequeridas={clasesRequeridas}
-                    fechaInicio={fechaInicio}
-                    onChangeFechaInicio={setFechaInicio}
                   />
 
                   {actividadQuePideMedidas && (
@@ -208,6 +209,10 @@ export function ModalPreinscripcion({
                   onEditarPlanYHorarios={() => setPaso(2)}
                   datosCobro={datosCobro}
                   onChangeDatosCobro={setDatosCobro}
+                  cotizacion={cotizacionCobro}
+                  promociones={promocionesDelPlan}
+                  onSeleccionarPromocion={seleccionarPromocion}
+                  esPropietaria={esPropietaria}
                 />
               )}
             </div>

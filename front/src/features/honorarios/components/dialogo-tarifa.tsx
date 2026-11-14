@@ -28,6 +28,7 @@ import type { AlcanceTarifa, TarifaHonorario } from "@/types/honorarios";
 import { cn } from "@/utils/cn";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { BOTON_MODAL, BOTON_MODAL_PRINCIPAL, CABECERA_MODAL, DESCRIPCION_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { registroFiltrado, soloDecimal } from "@/utils/entrada-numerica";
 
 const CONTROL =
   "min-h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-base font-bold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-rose-500 dark:border-white/15 dark:bg-white/5 dark:text-white";
@@ -159,7 +160,7 @@ function FormularioTarifa({ alcance, periodo, tarifas, onListo }: PropsFormulari
             placeholder={textos.placeholder}
             aria-invalid={Boolean(errores.valor)}
             aria-describedby={errores.valor ? "tarifa-valor-error" : undefined}
-            {...formulario.register("valor")}
+            {...registroFiltrado(formulario.register("valor"), (valor) => soloDecimal(valor))}
             className={cn(CONTROL, esPorcentaje ? "pr-8" : "pl-8")}
           />
         </div>

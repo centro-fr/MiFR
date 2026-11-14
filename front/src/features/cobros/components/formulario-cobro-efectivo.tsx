@@ -16,6 +16,7 @@ import {
   type RegistrarCobroEfectivoFormValues,
 } from "@/features/cobros/schemas/cobro-efectivo.schema";
 import { formatearPrecio } from "@/utils/moneda";
+import { soloDecimal } from "@/utils/entrada-numerica";
 
 type Errores = Partial<Record<keyof RegistrarCobroEfectivoFormValues, string>>;
 
@@ -144,7 +145,7 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
             inputMode="decimal"
             value={monto}
             onChange={(evento) => {
-              onMontoChange(evento.target.value);
+              onMontoChange(soloDecimal(evento.target.value));
               setErrores((previos) => ({ ...previos, monto: undefined }));
             }}
             aria-invalid={errores.monto !== undefined}

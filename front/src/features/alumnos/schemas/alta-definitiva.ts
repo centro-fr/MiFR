@@ -55,7 +55,7 @@ export interface RegistrarEfectivoBody {
 
 // Cuerpo de POST /pagos/transferencia-recibida (registrarTransferenciaRecibidaSchema).
 export interface RegistrarTransferenciaRecibidaBody extends RegistrarEfectivoBody {
-  /** ISO 8601 con zona horaria: "2026-10-09T10:30:00-03:00". */
-  fecha_hora_transferencia: string;
+  /** ISO 8601 con zona horaria: "2026-10-09T10:30:00-03:00". Sin ella, el back usa el momento en que la recibe. */
+  fecha_hora_transferencia?: string;
   titular_cuenta_origen?: string;
 }

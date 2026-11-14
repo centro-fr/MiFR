@@ -109,7 +109,8 @@ export interface InformarTransferenciaPrimerPagoBody {
   id_inscripcion: number;
   monto: number;
   id_promocion?: number;
-  fecha_hora_transferencia: string;
+  /** Sin ella, el back usa el momento en que la recibe. */
+  fecha_hora_transferencia?: string;
   titular_cuenta_origen?: string;
   observaciones?: string;
 }

@@ -31,6 +31,7 @@ import {
 import { estaVigente } from "@/features/planes/utils/planes";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas, soloDigitos } from "@/utils/entrada-numerica";
 
 interface PropsCrearPlanDialog {
   abierto: boolean;
@@ -247,7 +248,9 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                   min={0}
                   max={MAXIMO_DIAS_GRACIA}
                   value={valores.diasGracia}
-                  onChange={(e) => cambiar({ diasGracia: e.target.value })}
+                  onChange={(e) => cambiar({ diasGracia: soloDigitos(e.target.value, 3) })}
+                  onKeyDown={(e) => bloquearTeclasNoNumericas(e)}
+                  onPaste={(e) => bloquearPegadoNoNumerico(e)}
                   className={cn(
                     "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold",
                     errores.diasGracia && "border-rose-500 focus-visible:ring-rose-500"

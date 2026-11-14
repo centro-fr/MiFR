@@ -22,6 +22,7 @@ import { formatearPrecio } from "@/utils/moneda";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { soloImporteConMiles } from "@/utils/entrada-numerica";
 
 function hoyEnArgentina(): string {
   const partes = new Intl.DateTimeFormat("en-CA", {
@@ -201,7 +202,7 @@ export function ActualizarPrecioDialog({ plan, onClose }: PropsActualizarPrecio)
                         required
                         value={precio}
                         onChange={(event) => {
-                          setPrecio(event.target.value);
+                          setPrecio(soloImporteConMiles(event.target.value));
                           setErrores((actuales) => ({ ...actuales, precio: undefined }));
                         }}
                         placeholder="33000"

@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/utils/cn";
 import type { MedidasCorporalesForm } from "../../schemas/medidas-corporales";
 import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
+import { soloDecimal } from "@/utils/entrada-numerica";
 
 interface CamposMedidasProps {
   /** Actividad elegida que pide las medidas, para explicar por qué aparecen. */
@@ -41,7 +42,7 @@ export function CamposMedidas({ medidas, onChange, errores }: CamposMedidasProps
               inputMode="decimal"
               placeholder={ejemplo}
               value={medidas[campo]}
-              onChange={(e) => onChange({ ...medidas, [campo]: e.target.value })}
+              onChange={(e) => onChange({ ...medidas, [campo]: soloDecimal(e.target.value) })}
               aria-invalid={errores[campo] ? true : undefined}
               aria-describedby={errores[campo] ? `${id}-error` : undefined}
               className={cn(errores[campo] && "border-destructive focus-visible:ring-destructive")}

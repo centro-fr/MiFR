@@ -22,6 +22,7 @@ import type { Medicion } from "@/types/rutinas";
 import { fechaActualArgentina } from "@/utils/fecha";
 import { cn } from "@/utils/cn";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas } from "@/utils/entrada-numerica";
 
 interface PropsDialogoMedicion {
   abierto: boolean;
@@ -112,6 +113,9 @@ export function DialogoMedicion({
             id={`medida-${codigo}`}
             type="number"
             step="0.1"
+            min={0}
+            onKeyDown={(e) => bloquearTeclasNoNumericas(e, true)}
+            onPaste={(e) => bloquearPegadoNoNumerico(e, true)}
             placeholder={def.unidad === "%" ? "20" : "60"}
             {...register(`medidas.${codigo}`)}
             className="h-10 rounded-xl border-slate-200 bg-white pr-10 font-medium dark:border-slate-800 dark:bg-slate-900"

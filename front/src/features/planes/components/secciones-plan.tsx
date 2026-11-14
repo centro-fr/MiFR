@@ -16,6 +16,7 @@ import { ETIQUETA_TIPO_PLAN } from "@/features/planes/utils/planes";
 import type { Actividad } from "@/types/actividad";
 import type { TipoPlan } from "@/types/plan";
 import { cn } from "@/utils/cn";
+import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas, soloDigitos, soloImporteConMiles } from "@/utils/entrada-numerica";
 
 export interface PropsSeccion {
   valores: PlanFormValues;
@@ -123,7 +124,7 @@ export function SeccionDatos(props: PropsSeccion) {
                 inputMode="decimal"
                 value={valores.precio}
                 readOnly={editando}
-                onChange={(evento) => onChange({ precio: evento.target.value })}
+                onChange={(evento) => onChange({ precio: soloImporteConMiles(evento.target.value) })}
                 placeholder="28.000"
                 className={cn(CLASE_CONTROL, "pl-7", editando && "bg-slate-50 text-slate-600 dark:bg-white/5")}
               />
@@ -229,7 +230,9 @@ export function SeccionFrecuencia({ valores, errores, onChange }: PropsSeccion) 
               min={0}
               max={MAXIMO_DIAS_GRACIA}
               value={valores.diasGracia}
-              onChange={(evento) => onChange({ diasGracia: evento.target.value })}
+              onChange={(evento) => onChange({ diasGracia: soloDigitos(evento.target.value, 3) })}
+              onKeyDown={(evento) => bloquearTeclasNoNumericas(evento)}
+              onPaste={(evento) => bloquearPegadoNoNumerico(evento)}
               className={CLASE_CONTROL}
             />
           )}

@@ -49,6 +49,7 @@ import {
   type ActualizarDatosProfesoraInput,
 } from "@/features/profesoras/schemas/profesora";
 import { CAMPO_MODAL, FILA_DE_CAMPOS_MODAL } from "@/components/ui/estilos-modal";
+import { soloDigitosDeTelefono } from "@/utils/entrada-numerica";
 
 // Fechas DATE: viajan como medianoche UTC. Se toma el día tal cual; pasarlas a hora local las corre
 // al día anterior en Argentina.
@@ -500,9 +501,11 @@ function ModalEdicionProfesora({
               </Label>
               <Input
                 id="edit-telefono"
+                type="tel"
+                inputMode="numeric"
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                placeholder="Ej: 11 4455-6677"
+                onChange={(e) => setTelefono(soloDigitosDeTelefono(e.target.value))}
+                placeholder="Ej: 1144556677"
                 disabled={guardando}
                 className="h-10 rounded-xl"
               />

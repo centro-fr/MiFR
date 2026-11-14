@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ComponentProps } from "react";
+import { useRef, useState, type ComponentProps } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/utils/cn";
 
 type PropsDelInput = Omit<ComponentProps<"input">, "type" | "value" | "onChange" | "min" | "max">;
@@ -36,6 +37,21 @@ const MESES = [
 ];
 
 const DIAS_SEMANA = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+
+/** Alto del calendario abierto más su separación del campo, en px. */
+const ALTO_DEL_CALENDARIO = 390;
+
+/**
+ * El popover se da vuelta hacia arriba si abajo no entra, pero no se corre en vertical: con el campo
+ * a mitad de una pantalla baja no entra de ningún lado. En ese caso se lleva el campo arriba de todo
+ * (desplazando el modal o la página) para que el calendario se abra entero debajo.
+ */
+function hacerLugarParaElCalendario(campo: HTMLElement) {
+  const { top, bottom } = campo.getBoundingClientRect();
+  const entraAbajo = window.innerHeight - bottom >= ALTO_DEL_CALENDARIO;
+  const entraArriba = top >= ALTO_DEL_CALENDARIO;
+  if (!entraAbajo && !entraArriba) campo.scrollIntoView({ block: "start" });
+}
 
 /** "21082000" → "21/08/2000"; las barras aparecen a medida que se escribe. */
 function conBarras(digitos: string): string {
@@ -158,7 +174,7 @@ export function CampoFecha({
 }: CampoFechaProps) {
   const [texto, setTexto] = useState(() => textoDelValor(value));
   const [abierto, setAbierto] = useState(false);
-  const contenedorRef = useRef<HTMLDivElement>(null);
+  const campoRef = useRef<HTMLDivElement>(null);
   const inputNativo = useRef<HTMLInputElement>(null);
 
   const partesValor = FECHA_ISO.exec(value);
@@ -172,35 +188,15 @@ export function CampoFecha({
     setTexto(textoDelValor(value));
   }
 
-  useEffect(() => {
-    if (partesValor) {
+  // Al abrir, el calendario muestra el mes de la fecha cargada (si hay una completa).
+  const cambiarAbierto = (abrir: boolean) => {
+    if (abrir && partesValor) {
       setVistaAnio(Number(partesValor[1]));
       setVistaMes(Number(partesValor[2]));
     }
-  }, [value]);
-
-  useEffect(() => {
-    if (!abierto) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      if (contenedorRef.current && !contenedorRef.current.contains(event.target as Node)) {
-        setAbierto(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setAbierto(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [abierto]);
+    if (abrir && campoRef.current) hacerLugarParaElCalendario(campoRef.current);
+    setAbierto(abrir);
+  };
 
   const escribir = (escrito: string) => {
     const nuevo = conBarras(escrito.replace(/\D/g, "").slice(0, DIGITOS_DE_UNA_FECHA));
@@ -255,140 +251,143 @@ export function CampoFecha({
   } = props;
 
   return (
-    <div ref={contenedorRef} className="relative">
-      <Input
-        ref={inputVisibleRef}
-        type="text"
-        id={id ? `${id}-visible` : undefined}
-        inputMode="numeric"
-        autoComplete="off"
-        placeholder="dd/mm/aaaa"
-        maxLength={10}
-        value={texto}
-        disabled={disabled}
-        onChange={(e) => escribir(e.target.value)}
-        className={cn("pr-11 font-semibold", className)}
-        {...restoProps}
-      />
-      <button
-        type="button"
-        onClick={() => setAbierto((prev) => !prev)}
-        disabled={disabled}
-        aria-label={etiquetaCalendario}
-        aria-expanded={abierto}
-        className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-primary dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-      >
-        <CalendarDays aria-hidden="true" className="size-4" />
-      </button>
-
-      {/* Input nativo para compatibilidad total con pruebas (getByLabelText, .value ISO, fireEvent.change) */}
-      <input
-        ref={inputNativo}
-        id={id}
-        name={name}
-        aria-label={ariaLabel}
-        required={required}
-        disabled={disabled}
-        type="date"
-        tabIndex={-1}
-        min={min}
-        max={max}
-        value={FECHA_ISO.test(value) ? value : ""}
-        onFocus={() => inputVisibleRef.current?.focus()}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
-        className="pointer-events-none absolute inset-0 size-full opacity-0"
-      />
-
-      {abierto && (
-        <div
-          role="dialog"
-          aria-label="Calendario de selección de fecha"
-          className="absolute top-full left-0 z-50 mt-2 w-[290px] rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl animate-in fade-in-0 zoom-in-95 dark:border-slate-800 dark:bg-slate-900"
-        >
-          {/* Header del mes */}
-          <div className="flex items-center justify-between pb-2.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={mesAnterior}
-              className="size-8 rounded-lg text-slate-600 hover:bg-primary/10 hover:text-primary dark:text-slate-300 dark:hover:bg-primary/20"
-              aria-label="Mes anterior"
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="text-sm font-extrabold text-slate-800 dark:text-white">
-              {MESES[vistaMes - 1]} {vistaAnio}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={mesSiguiente}
-              className="size-8 rounded-lg text-slate-600 hover:bg-primary/10 hover:text-primary dark:text-slate-300 dark:hover:bg-primary/20"
-              aria-label="Mes siguiente"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-
-          {/* Días de la semana */}
-          <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
-            {DIAS_SEMANA.map((dia) => (
-              <div key={dia} className="py-1">
-                {dia}
-              </div>
-            ))}
-          </div>
-
-          {/* Días del mes */}
-          <div className="grid grid-cols-7 gap-1">
-            {celdas.map((celda) => (
-              <button
-                key={celda.iso}
-                type="button"
-                disabled={celda.deshabilitado}
-                onClick={() => seleccionarFecha(celda.iso)}
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-xl text-xs font-semibold transition-all",
-                  celda.enMesActual
-                    ? "text-slate-700 dark:text-slate-200"
-                    : "text-slate-300 dark:text-slate-600",
-                  celda.esSeleccionado &&
-                    "bg-primary font-bold text-white shadow-sm shadow-primary/40 hover:bg-primary-dark",
-                  !celda.esSeleccionado &&
-                    celda.esHoy &&
-                    "border border-primary text-primary font-bold",
-                  !celda.esSeleccionado &&
-                    !celda.deshabilitado &&
-                    "hover:bg-primary/10 hover:text-primary cursor-pointer",
-                  celda.deshabilitado && "opacity-30 cursor-not-allowed hover:bg-transparent"
-                )}
-              >
-                {celda.dia}
-              </button>
-            ))}
-          </div>
-
-          {/* Footer del calendario */}
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
+    <Popover open={abierto} onOpenChange={cambiarAbierto}>
+      <PopoverAnchor asChild>
+        <div ref={campoRef} className="relative">
+          <Input
+            ref={inputVisibleRef}
+            type="text"
+            id={id ? `${id}-visible` : undefined}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="dd/mm/aaaa"
+            maxLength={10}
+            value={texto}
+            disabled={disabled}
+            onChange={(e) => escribir(e.target.value)}
+            className={cn("pr-11 font-semibold", className)}
+            {...restoProps}
+          />
+          <PopoverTrigger asChild>
             <button
               type="button"
-              onClick={seleccionarHoy}
-              className="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+              disabled={disabled}
+              aria-label={etiquetaCalendario}
+              className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-primary dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              Hoy
+              <CalendarDays aria-hidden="true" className="size-4" />
             </button>
-            <button
-              type="button"
-              onClick={() => setAbierto(false)}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-            >
-              Cerrar
-            </button>
-          </div>
+          </PopoverTrigger>
+
+          {/* Input nativo para compatibilidad total con pruebas (getByLabelText, .value ISO, fireEvent.change) */}
+          <input
+            ref={inputNativo}
+            id={id}
+            name={name}
+            aria-label={ariaLabel}
+            required={required}
+            disabled={disabled}
+            type="date"
+            tabIndex={-1}
+            min={min}
+            max={max}
+            value={FECHA_ISO.test(value) ? value : ""}
+            onFocus={() => inputVisibleRef.current?.focus()}
+            onChange={(e) => e.target.value && onChange(e.target.value)}
+            className="pointer-events-none absolute inset-0 size-full opacity-0"
+          />
         </div>
-      )}
-    </div>
+      </PopoverAnchor>
+
+      <PopoverContent
+        align="start"
+        aria-label="Calendario de selección de fecha"
+        // Último recurso en pantallas muy bajas: si no entra ni arriba ni abajo, se desplaza adentro.
+        className="max-h-[var(--radix-popover-content-available-height)] w-[290px] overflow-y-auto overscroll-contain p-3.5"
+      >
+        {/* Header del mes */}
+        <div className="flex items-center justify-between pb-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={mesAnterior}
+            className="size-8 rounded-lg text-slate-600 hover:bg-primary/10 hover:text-primary dark:text-slate-300 dark:hover:bg-primary/20"
+            aria-label="Mes anterior"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="text-sm font-extrabold text-slate-800 dark:text-white">
+            {MESES[vistaMes - 1]} {vistaAnio}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={mesSiguiente}
+            className="size-8 rounded-lg text-slate-600 hover:bg-primary/10 hover:text-primary dark:text-slate-300 dark:hover:bg-primary/20"
+            aria-label="Mes siguiente"
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+
+        {/* Días de la semana */}
+        <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] font-bold text-slate-400 dark:text-slate-500">
+          {DIAS_SEMANA.map((dia) => (
+            <div key={dia} className="py-1">
+              {dia}
+            </div>
+          ))}
+        </div>
+
+        {/* Días del mes */}
+        <div className="grid grid-cols-7 gap-1">
+          {celdas.map((celda) => (
+            <button
+              key={celda.iso}
+              type="button"
+              disabled={celda.deshabilitado}
+              onClick={() => seleccionarFecha(celda.iso)}
+              className={cn(
+                "flex size-8 items-center justify-center rounded-xl text-xs font-semibold transition-all",
+                celda.enMesActual
+                  ? "text-slate-700 dark:text-slate-200"
+                  : "text-slate-300 dark:text-slate-600",
+                celda.esSeleccionado &&
+                  "bg-primary font-bold text-white shadow-sm shadow-primary/40 hover:bg-primary-dark",
+                !celda.esSeleccionado &&
+                  celda.esHoy &&
+                  "border border-primary text-primary font-bold",
+                !celda.esSeleccionado &&
+                  !celda.deshabilitado &&
+                  "hover:bg-primary/10 hover:text-primary cursor-pointer",
+                celda.deshabilitado && "opacity-30 cursor-not-allowed hover:bg-transparent"
+              )}
+            >
+              {celda.dia}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer del calendario */}
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={seleccionarHoy}
+            className="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbierto(false)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          >
+            Cerrar
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/utils/cn';
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
+import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas, soloDigitos } from "@/utils/entrada-numerica";
+import { CampoHora } from "@/components/formulario/campo-hora";
 
 interface HorarioModalFormProps {
   isOpen: boolean;
@@ -274,14 +276,14 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 <Label htmlFor="horario-inicio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Empieza <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                <CampoHora
                   id="horario-inicio"
                   aria-label="Hora Inicio"
-                  type="time"
+                  etiquetaSelector="Elegir la hora en que empieza"
                   min="07:00"
                   max="22:00"
                   value={horaInicio}
-                  onChange={(e) => setHoraInicio(e.target.value)}
+                  onChange={setHoraInicio}
                   disabled={claseFija}
                   className={cn(
                     "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
@@ -295,14 +297,14 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
                 <Label htmlFor="horario-fin" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   Termina <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                <CampoHora
                   id="horario-fin"
                   aria-label="Hora Fin"
-                  type="time"
+                  etiquetaSelector="Elegir la hora en que termina"
                   min="08:00"
                   max="23:00"
                   value={horaFin}
-                  onChange={(e) => setHoraFin(e.target.value)}
+                  onChange={setHoraFin}
                   disabled={claseFija}
                   className={cn(
                     "h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
@@ -326,9 +328,11 @@ export const HorarioModalForm: React.FC<HorarioModalFormProps> = ({
               max="32767"
               value={cupoPropio ?? ''}
               onChange={(e) => {
-                const digitos = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
+                const digitos = soloDigitos(e.target.value, 5);
                 setCupoPropio(digitos ? parseInt(digitos, 10) : null);
               }}
+              onKeyDown={(e) => bloquearTeclasNoNumericas(e)}
+              onPaste={(e) => bloquearPegadoNoNumerico(e)}
               className="w-32 h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
               placeholder={cupoActividadTexto}
             />
