@@ -1,41 +1,33 @@
 import { useMemo, useState } from "react";
-import { mensajeDeErrorApi } from "@/api/errores";
-import { EstadoErrorCarga } from "@/components/ui/estados-pantalla";
 import { Button } from "@/components/ui/button";
 import { BOTON_FILA, LISTA_MOVIL_EN_TARJETA } from "@/components/ui/estilos-lista";
 import { FilaMovil } from "@/components/ui/fila-movil";
 import { cn } from "@/utils/cn";
-import { useHistorialPagos } from "@/features/cobros/hooks/use-cobros";
 import { ModalComprobante } from "@/features/cobros/components/modal-comprobante";
-import type { PagoApi } from "@/features/cobros/schemas/cobro-efectivo.schema";
 import type { AlumnoDetalle } from "@/features/alumnos/schemas/alumno";
 import { formatearPrecio } from "@/utils/moneda";
-import { formatearFechaCobro } from "@/features/cobros/utils/formato-cobros";
+import { formatearFecha } from "@/features/alumnos/utils/formato-ficha";
 
 interface Props {
   alumno: AlumnoDetalle;
 }
 
-// El pago trae el plan; si no (pagos de la sesión o un back anterior), se lo busca entre las
-// inscripciones de la ficha.
-function planDelPago(pago: PagoApi, planesPorInscripcion: Map<number, string>): string {
-  if (pago.nombre_plan) return pago.nombre_plan;
-  return (pago.id_inscripcion !== undefined && planesPorInscripcion.get(pago.id_inscripcion)) || "—";
-}
+type CobroDelHistorial = NonNullable<AlumnoDetalle["historial_cuotas"]>[number]["pagos"][number] & {
+  id_inscripcion: number;
+  plan: string;
+};
 
 export function HistorialCobrosAlumno({ alumno }: Props) {
-  const { data: pagos = [], isLoading, isError, error, isFetching, refetch } = useHistorialPagos({
-    idAlumno: alumno.id_alumno,
-  });
-  const planesPorInscripcion = useMemo(
+  const pagos = useMemo<CobroDelHistorial[]>(
     () =>
-      new Map(
-        [...alumno.inscripciones, ...alumno.inscripciones_de_la_baja].map((inscripcion) => [
-          inscripcion.id_inscripcion,
-          inscripcion.plan.nombre,
-        ]),
+      (alumno.historial_cuotas ?? []).flatMap((cuota) =>
+        cuota.pagos.map((pago) => ({
+          ...pago,
+          id_inscripcion: cuota.id_inscripcion,
+          plan: cuota.plan,
+        })),
       ),
-    [alumno.inscripciones, alumno.inscripciones_de_la_baja],
+    [alumno.historial_cuotas],
   );
 
   const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<number | null>(null);
@@ -47,19 +39,7 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
       </h2>
 
       <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-2xs dark:border-slate-700/80 dark:bg-slate-900">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-14 text-sm font-semibold text-slate-500 dark:text-slate-400">
-            <span className="mr-2 size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            Cargando cobros…
-          </div>
-        ) : isError ? (
-          <EstadoErrorCarga
-            className="border-0 shadow-none"
-            mensaje={mensajeDeErrorApi(error, "No se pudieron cargar los cobros.")}
-            reintentando={isFetching}
-            onReintentar={() => void refetch()}
-          />
-        ) : pagos.length === 0 ? (
+        {pagos.length === 0 ? (
           <div className="p-10 text-center">
             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
               No hay cobros registrados todavía
@@ -76,10 +56,9 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
                 key={pago.id_pago}
                 titulo={`#${String(pago.id_pago).padStart(6, "0")} · ${formatearPrecio(pago.monto)}`}
                 detalle={[
-                  formatearFechaCobro(pago.fecha_pago),
-                  planDelPago(pago, planesPorInscripcion),
+                  formatearFecha(pago.fecha_pago),
+                  pago.plan,
                   pago.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia",
-                  !pago.rendido && pago.forma_pago === "EFECTIVO" ? "Pendiente de rendición" : null,
                 ]}
                 acciones={
                   <Button type="button" variant="outline" onClick={() => setComprobanteSeleccionado(pago.id_pago)} className={BOTON_FILA}>
@@ -126,10 +105,10 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
                       #{String(pago.id_pago).padStart(6, "0")}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-600 dark:text-slate-300">
-                      {formatearFechaCobro(pago.fecha_pago)}
+                      {formatearFecha(pago.fecha_pago)}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
-                      {planDelPago(pago, planesPorInscripcion)}
+                      {pago.plan}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-slate-700 dark:text-slate-200">
                       {pago.forma_pago === "EFECTIVO" ? "Efectivo" : "Transferencia"}
@@ -141,14 +120,12 @@ export function HistorialCobrosAlumno({ alumno }: Props) {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 shadow-2xs dark:border-emerald-800/40 dark:bg-emerald-950/40 dark:text-emerald-300">
                           <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                          Confirmado
+                          {pago.estado === "CONFIRMADO"
+                            ? "Confirmado"
+                            : pago.estado === "RECHAZADO"
+                              ? "Rechazado"
+                              : "Pendiente de verificación"}
                         </span>
-                        {!pago.rendido && pago.forma_pago === "EFECTIVO" && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 shadow-2xs dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-300">
-                            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
-                            Pendiente de rendición
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td className="px-6 py-3.5 whitespace-nowrap text-right">

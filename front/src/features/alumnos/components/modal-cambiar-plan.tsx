@@ -282,7 +282,7 @@ export function ModalCambiarPlan({
           )}
         </div>
 
-        <div className={cn(PIE_MODAL, "-mx-6 -mb-5 mt-2")}>
+        <div className={cn(PIE_MODAL, "mt-2")}>
           <Button
             type="button"
             variant="outline"

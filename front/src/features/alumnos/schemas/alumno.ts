@@ -72,6 +72,25 @@ export type SituacionCuotaApi = z.infer<typeof situacionCuotaApiSchema>;
 // de cargar en vez de solo no mostrarla.
 const situacionCuotaOpcionalSchema = situacionCuotaApiSchema.nullable().default(null);
 
+const pagoDelHistorialApiSchema = z.object({
+  id_pago: z.number().int(),
+  forma_pago: z.enum(["EFECTIVO", "TRANSFERENCIA"]),
+  estado: z.enum(["PENDIENTE", "CONFIRMADO", "RECHAZADO"]),
+  monto: precioApiSchema,
+  fecha_pago: z.string(),
+  motivo_rechazo: z.string().nullable(),
+});
+
+const cuotaDelHistorialApiSchema = z.object({
+  id_cuota: z.number().int(),
+  id_inscripcion: z.number().int(),
+  plan: z.string(),
+  numero_cuota: z.number().int(),
+  fecha_vencimiento: z.string(),
+  monto: precioApiSchema,
+  pagos: z.array(pagoDelHistorialApiSchema),
+});
+
 // Inscripcion del back, solo con lo que muestra la ficha.
 export const cambioPlanProgramadoApiSchema = z.object({
   id_inscripcion: z.number().int(),
@@ -123,6 +142,7 @@ export type InscripcionVigenteApi = z.infer<typeof inscripcionVigenteApiSchema>;
 export const fichaAlumnoApiSchema = alumnoApiSchema.extend({
   inscripciones: z.array(inscripcionVigenteApiSchema),
   inscripciones_de_la_baja: z.array(inscripcionVigenteApiSchema).default([]),
+  historial_cuotas: z.array(cuotaDelHistorialApiSchema).nullable().default(null),
 });
 
 export type FichaAlumnoApi = z.infer<typeof fichaAlumnoApiSchema>;
@@ -286,6 +306,8 @@ export interface AlumnoDetalle {
   inscripciones: InscripcionDeAlumno[];
   /** Solo si está de baja: las inscripciones que cerró su última baja, con la cuota a ese día. */
   inscripciones_de_la_baja: InscripcionDeAlumno[];
+  /** Historial financiero que solo recibe la propietaria. */
+  historial_cuotas: z.infer<typeof cuotaDelHistorialApiSchema>[] | null;
 }
 
 // ---------- Formulario de edición (US-09) ----------

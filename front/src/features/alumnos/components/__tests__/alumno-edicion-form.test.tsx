@@ -35,6 +35,7 @@ function crearAlumno(): AlumnoDetalle {
     inscripcion: null,
     inscripciones: [],
     inscripciones_de_la_baja: [],
+    historial_cuotas: null,
   };
 }
 

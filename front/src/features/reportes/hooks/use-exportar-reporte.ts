@@ -29,12 +29,14 @@ export function useExportarReporte<Datos>({ preparar, csv }: Exportacion<Datos>)
     window.addEventListener(
       "afterprint",
       () => {
+        document.body.classList.remove("preparando-informe-impresion");
         setImpresion(null);
         document.title = tituloOriginal;
       },
       { once: true },
     );
-    window.print();
+    document.body.classList.add("preparando-informe-impresion");
+    window.requestAnimationFrame(() => window.print());
   }
 
   async function exportar(formato: FormatoExportacion) {

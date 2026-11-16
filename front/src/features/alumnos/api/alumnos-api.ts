@@ -216,6 +216,7 @@ export function aAlumnoDetalle(api: FichaAlumnoApi): AlumnoDetalle {
     inscripciones: api.inscripciones.map(aInscripcion),
     inscripcion: api.inscripciones[0] ? aInscripcion(api.inscripciones[0]) : null,
     inscripciones_de_la_baja: api.inscripciones_de_la_baja.map(aInscripcion),
+    historial_cuotas: api.historial_cuotas,
   };
 }
 

@@ -112,7 +112,7 @@ describe("useHorarios", () => {
 
     await waitFor(() => expect(result.current.cargando).toBe(false));
 
-    vi.mocked(darDeBajaHorario).mockResolvedValue("Sin advertencias");
+    vi.mocked(darDeBajaHorario).mockResolvedValue({ advertencia: "Sin advertencias", programada: false });
 
     // Borramos el horario oficial (ID 1)
     await act(async () => {

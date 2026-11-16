@@ -86,6 +86,7 @@ function fichaDe(alumno: AlumnoMock) {
     ...alumnoDe(alumno),
     inscripciones: vigentesDe(alumno.id_alumno).map(conSituacion),
     inscripciones_de_la_baja: inscripcionesDeLaBaja(alumno).map(conSituacion),
+    historial_cuotas: null,
   };
 }
 
