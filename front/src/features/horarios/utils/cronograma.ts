@@ -18,14 +18,17 @@ export function numeroDeDia(dia: DiaSemana): number {
   return DIAS_POR_NUMERO.indexOf(dia) + 1;
 }
 
-// El back serializa las horas sobre el 1970-01-01 en UTC: "1970-01-01T09:00:00.000Z" → "09:00".
+// El back serializa las horas sobre el 1970-01-01 en UTC: "1970-01-01T09:00:00.000Z" → "09:00", o como "09:00:00" / "09:00".
 export function horaDesdeApi(valor: string): string {
-  return valor.slice(11, 16);
+  if (valor.length >= 16 && valor.includes("T")) {
+    return valor.slice(11, 16);
+  }
+  return valor.slice(0, 5);
 }
 
 export function timeToMinutes(hora: string): number {
   const [horas, minutos] = hora.split(":").map(Number);
-  return horas * 60 + minutos;
+  return (horas || 0) * 60 + (minutos || 0);
 }
 
 export function minutosAHora(minutos: number): string {

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { calcularEdad, esMenorDeEdad, obtenerLimitesFechaNacimiento } from "../utils/edad";
-import { MENSAJE_EMAIL_GMAIL, esEmailDeGmail } from "@/utils/email";
 
 export const nombrePersona = z
   .string()
@@ -55,8 +54,7 @@ export const emailPersona = z
   .trim()
   .toLowerCase()
   .email("Formato de correo electrónico inválido")
-  .max(120, "Máximo 120 caracteres")
-  .refine(esEmailDeGmail, MENSAJE_EMAIL_GMAIL);
+  .max(120, "Máximo 120 caracteres");
 
 export const fechaNacimientoRegex = z
   .string()
@@ -104,8 +102,7 @@ export const tutorFormSchema = z
       .toLowerCase()
       .min(1, "El correo del tutor es obligatorio para acceder al sistema")
       .email("Formato de correo electrónico inválido")
-      .max(120, "Máximo 120 caracteres")
-      .refine(esEmailDeGmail, MENSAJE_EMAIL_GMAIL),
+      .max(120, "Máximo 120 caracteres"),
     fecha_nacimiento: z
       .string()
       .trim()

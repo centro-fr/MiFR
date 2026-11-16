@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { MENSAJE_EMAIL_GMAIL, esEmailDeGmail } from "@/utils/email";
 import { esMenorDeEdad } from "@/features/alumnos/utils/edad";
 
 export const telefonoRegex = /^\+?[\d(][\d ()-]*$/;
@@ -29,8 +28,7 @@ export const crearProfesoraSchema = z.object({
     .trim()
     .toLowerCase()
     .email("Ingresá un correo electrónico válido")
-    .max(120)
-    .refine(esEmailDeGmail, MENSAJE_EMAIL_GMAIL),
+    .max(120),
   telefono: z
     .string()
     .trim()

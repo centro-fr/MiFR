@@ -83,9 +83,6 @@ export function ModalCambiarPlan({
     setIdProfesora(item.id_profesora);
     setIdsHorarios(item.horarios.map((h) => h.id_horario));
   };
-  const [fechaInicio, setFechaInicio] = useState<string>(
-    inscripcion.fecha_inicio || "",
-  );
 
   const planSeleccionado = useMemo(
     () => planes.find((p) => p.id_plan === idPlan) ?? null,
@@ -276,8 +273,6 @@ export function ModalCambiarPlan({
               onToggleHorario={toggleHorario}
               onLimpiarHorarios={() => setIdsHorarios([])}
               clasesRequeridas={clasesRequeridas}
-              fechaInicio={fechaInicio}
-              onChangeFechaInicio={setFechaInicio}
             />
           )}
         </div>

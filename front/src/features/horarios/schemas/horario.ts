@@ -58,9 +58,15 @@ const horaFin = z
 
 export const horarioFormSchema = z
   .object({
-    // El back exige enteros positivos (idSchema): solo dígitos para no mandar NaN.
-    actividadId: z.string().regex(/^\d+$/, "Elegí una actividad."),
-    profesoraId: z.string().regex(/^\d+$/, "Elegí una profesora."),
+    // El back exige enteros positivos (idSchema): solo dígitos para no mandar NaN. Acepta string o number.
+    actividadId: z
+      .union([z.string(), z.number()])
+      .transform(String)
+      .refine((valor) => /^\d+$/.test(valor), "Elegí una actividad."),
+    profesoraId: z
+      .union([z.string(), z.number()])
+      .transform(String)
+      .refine((valor) => /^\d+$/.test(valor), "Elegí una profesora."),
     diaSemana: z.enum(["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"]),
     horaInicio,
     horaFin,
@@ -69,7 +75,7 @@ export const horarioFormSchema = z
       .int("El cupo tiene que ser un número entero.")
       .positive("El cupo tiene que ser mayor a cero.")
       .max(32767, "El cupo es demasiado grande.")
-      .nullable(),
+      .nullish(),
   })
   .refine((datos) => datos.horaFin > datos.horaInicio, {
     message: "La hora de fin debe ser posterior a la hora de inicio.",

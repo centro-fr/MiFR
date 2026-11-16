@@ -1,14 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Label } from "@/components/ui/label";
-import { obtenerLimitesFechaNacimiento } from "../../utils/edad";
 import { actividadesDelPlan, clasesRequeridasDelPlan } from "../../utils/plan-y-profesora";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
-import { CAMPO_MODAL } from "@/components/ui/estilos-modal";
 
 interface Paso2PlanYHorariosProps {
   planes: PlanApiRespuesta[];
@@ -23,9 +20,6 @@ interface Paso2PlanYHorariosProps {
   onToggleHorario: (idHorario: number) => void;
   onLimpiarHorarios?: () => void;
   clasesRequeridas: number;
-  /** Solo donde se elige cuándo empieza (cambio de plan). La pre-inscripción empieza el día en que se carga. */
-  fechaInicio?: string;
-  onChangeFechaInicio?: (fecha: string) => void;
 }
 
 const DIAS_COLUMNAS = [
@@ -56,11 +50,7 @@ export function Paso2PlanYHorarios({
   onToggleHorario,
   onLimpiarHorarios,
   clasesRequeridas,
-  fechaInicio,
-  onChangeFechaInicio,
 }: Paso2PlanYHorariosProps) {
-  const limitesFecha = obtenerLimitesFechaNacimiento();
-
   const planActual = useMemo(
     () => planes.find((p) => p.id_plan === idPlanSeleccionado) ?? null,
     [planes, idPlanSeleccionado],
@@ -383,24 +373,6 @@ export function Paso2PlanYHorarios({
           </div>
         )}
       </div>
-
-      {/* 5. FECHA DE INICIO: "Empieza el" */}
-      {fechaInicio !== undefined && onChangeFechaInicio && (
-        <div className={cn(CAMPO_MODAL, "max-w-xs")}>
-          <Label htmlFor="fecha-inicio" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-            Empieza el
-          </Label>
-          <CampoFecha
-            id="fecha-inicio"
-            etiquetaCalendario="Abrir calendario para elegir cuándo empieza"
-            min={new Date().toISOString().slice(0, 10)}
-            max={limitesFecha.max}
-            value={fechaInicio}
-            onChange={onChangeFechaInicio}
-            className="h-10 rounded-xl border-slate-200 dark:border-slate-800"
-          />
-        </div>
-      )}
     </div>
   );
 }
