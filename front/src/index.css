@@ -433,20 +433,13 @@ body.preparando-informe-impresion > #root {
 }
 
 @media print {
-  @page {
-    margin: 0;
-  }
   body:has(> .informe-impresion) > :not(.informe-impresion) {
     display: none !important;
   }
   body:has(> .informe-impresion) {
-    height: auto !important;
-    min-height: 0 !important;
     background: #fff;
   }
   .informe-impresion {
     display: block;
-    height: auto !important;
-    min-height: 0 !important;
   }
 }
