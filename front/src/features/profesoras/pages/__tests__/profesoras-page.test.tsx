@@ -166,7 +166,7 @@ describe("ProfesorasPage (US-38)", () => {
     fireEvent.change(screen.getByPlaceholderText("Ej: Laura"), { target: { value: "Laura" } });
     fireEvent.change(screen.getByPlaceholderText("Ej: García"), { target: { value: "García" } });
     fireEvent.change(screen.getByPlaceholderText("ejemplo@gmail.com"), { target: { value: "laura@example.com" } });
-    fireEvent.change(screen.getByPlaceholderText("Ej: 11 2345-6789"), { target: { value: "1144556677" } });
+    fireEvent.change(screen.getByPlaceholderText("Ej: 1123456789"), { target: { value: "1144556677" } });
     fireEvent.change(screen.getByLabelText(/Fecha de nacimiento/i), { target: { value: "1994-06-15" } });
 
     // Seleccionar actividades con el selector
