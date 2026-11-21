@@ -138,7 +138,7 @@ export function FormularioCobroEfectivo({ idInscripcion, idPromocion, precioVige
       <ModalCuerpo>
       {encabezado}
       {esSoloProfesora && <AvisoRendicion />}
-      <Campo id="monto-cobro" etiqueta="Monto" error={errores.monto}>
+      <Campo id="monto-cobro" etiqueta="Monto" error={errores.monto} obligatorio>
         {(describedBy) => (
           <Input
             id="monto-cobro"

@@ -46,7 +46,7 @@ export function SelectorPromocion({ promociones, seleccionada, onChange }: Selec
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor="promocion-cobro" className="text-sm font-bold text-slate-800 dark:text-slate-200">
-        Descuento
+        Descuento <span className="font-normal text-muted-foreground">(opcional)</span>
       </label>
       <SelectorDesplegable
         id="promocion-cobro"

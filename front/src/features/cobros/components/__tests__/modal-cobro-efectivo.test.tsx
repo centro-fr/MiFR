@@ -96,7 +96,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
     expect(screen.getByText("Plan Básico")).toBeInTheDocument();
     expect(screen.getByText("Vencida")).toBeInTheDocument();
 
-    const inputMonto = screen.getByLabelText(/^Monto$/i);
+    const inputMonto = screen.getByLabelText(/^Monto \* \(obligatorio\)$/i);
     expect(inputMonto).toHaveValue("25000");
   });
 
@@ -154,7 +154,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
       />,
     );
 
-    const inputMonto = screen.getByLabelText(/^Monto$/i);
+    const inputMonto = screen.getByLabelText(/^Monto \* \(obligatorio\)$/i);
     fireEvent.change(inputMonto, { target: { value: "20000" } });
 
     // Debe mostrar la advertencia de monto distinto

@@ -22,11 +22,12 @@ interface CampoProps {
   error?: string;
   ayuda?: string;
   obligatorio?: boolean;
+  opcional?: boolean;
   children: (describedBy: string | undefined) => ReactNode;
 }
 
 /** Etiqueta, control, ayuda y error, enlazados para el lector de pantalla. */
-export function Campo({ id, etiqueta, error, ayuda, obligatorio = false, children }: CampoProps) {
+export function Campo({ id, etiqueta, error, ayuda, obligatorio = false, opcional = false, children }: CampoProps) {
   const describedBy = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
   return (
     <div className="flex flex-col gap-1.5">
@@ -38,6 +39,7 @@ export function Campo({ id, etiqueta, error, ayuda, obligatorio = false, childre
             <span className="sr-only"> (obligatorio)</span>
           </>
         )}
+        {opcional && <span className="font-normal text-muted-foreground"> (opcional)</span>}
       </Label>
       {children(describedBy)}
       {ayuda && (
@@ -66,7 +68,11 @@ interface SelectorFormaDeCobroProps {
 export function SelectorFormaDeCobro({ formas, valor, onChange, leyenda, etiquetas }: SelectorFormaDeCobroProps) {
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">{leyenda}</legend>
+      <legend className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">
+        {leyenda}
+        <span className="text-rose-600" aria-hidden="true"> *</span>
+        <span className="sr-only"> (obligatorio)</span>
+      </legend>
       <RadioGroup value={valor} onValueChange={(v) => onChange(v as FormaDeCobro)} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {formas.map((forma) => {
           const tieneDetalle = Boolean(etiquetas[forma].detalle);
@@ -139,7 +145,7 @@ interface CampoTitularProps {
 
 export function CampoTitularCuenta({ valor, etiqueta = "Titular de la cuenta", error, onChange }: CampoTitularProps) {
   return (
-    <Campo id="titular-cuenta" etiqueta={etiqueta} error={error}>
+    <Campo id="titular-cuenta" etiqueta={etiqueta} error={error} opcional>
       {(describedBy) => (
         <Input
           id="titular-cuenta"

@@ -128,7 +128,7 @@ export function FormularioTransferenciaCobro({
     <ModalFormulario onSubmit={confirmar}>
       <ModalCuerpo>
       {encabezado}
-      <Campo id="monto-transferencia" etiqueta="Monto" error={errores.monto}>
+      <Campo id="monto-transferencia" etiqueta="Monto" error={errores.monto} obligatorio>
         {(describedBy) => (
           <Input
             id="monto-transferencia"
