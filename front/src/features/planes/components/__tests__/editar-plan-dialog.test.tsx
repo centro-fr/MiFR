@@ -62,13 +62,13 @@ describe("EditarPlanDialog", () => {
     mockRegistrarPrecioAsync.mockResolvedValue({ id_plan_precio: 99, precio: 26000 });
   });
 
-  it("renderiza únicamente los campos editables (nombre, precio y descripción) y omite modalidad y actividad", () => {
+  it("renderiza únicamente los campos editables (nombre, precio y fecha de vigencia) y omite descripción, modalidad y actividad", () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
     expect(screen.getByRole("heading", { name: "Editar plan" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Nombre \*/i)).toHaveValue("Kids");
     expect(screen.getByLabelText(/Precio \*/i)).toHaveValue("22.000");
-    expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toHaveValue("Para chicos de 6 a 12 años");
+    expect(screen.queryByLabelText(/Descripción/i)).not.toBeInTheDocument();
 
     // Modalidad de cobro y Actividad ya no son editables ni se muestran en el formulario
     expect(screen.queryByText("Abono mensual")).not.toBeInTheDocument();
@@ -155,24 +155,35 @@ describe("EditarPlanDialog", () => {
     expect(mockActualizarAsync).not.toHaveBeenCalled();
   });
 
-  it("permite modificar la descripción y guardarla", async () => {
+  it("permite programar un cambio de precio con fecha de vigencia futura y muestra el aviso", async () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
-    const textareaDesc = screen.getByLabelText(/Descripción \(opcional\)/i);
-    fireEvent.change(textareaDesc, { target: { value: "Nueva descripción para el grupo" } });
+    fireEvent.change(screen.getByLabelText(/Precio \*/i), { target: { value: "26000" } });
+    fireEvent.change(screen.getByLabelText(/Rige desde \*/i), { target: { value: "2099-05-01" } });
+
+    expect(screen.getByText(/Las cuotas ya cobradas no cambian/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => {
-      expect(mockActualizarAsync).toHaveBeenCalledTimes(1);
-      expect(mockActualizarAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: "2",
-          cambios: expect.objectContaining({
-            descripcion: "Nueva descripción para el grupo",
-          }),
-        })
-      );
+      expect(mockRegistrarPrecioAsync).toHaveBeenCalledWith({
+        id: "2",
+        cuerpo: {
+          precio: 26000,
+          fecha_vigencia_desde: "2099-05-01",
+        },
+      });
     });
+  });
+
+  it("rechaza una fecha de vigencia anterior a hoy cuando se cambia el precio", () => {
+    render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
+
+    fireEvent.change(screen.getByLabelText(/Precio \*/i), { target: { value: "26000" } });
+    fireEvent.change(screen.getByLabelText(/Rige desde \*/i), { target: { value: "2020-01-01" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
   });
 });

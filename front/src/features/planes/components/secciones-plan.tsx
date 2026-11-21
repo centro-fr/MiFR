@@ -1,11 +1,9 @@
 import { Info, TriangleAlert } from "lucide-react";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
-import { Textarea } from "@/components/ui/textarea";
 import { BadgeModalidad } from "@/features/planes/components/badges-plan";
 import { CampoPlan, SeccionPlan } from "@/features/planes/components/campo-plan";
 import { CLASE_CONTROL } from "@/features/planes/components/estilos";
 import {
-  LARGO_MAXIMO_DESCRIPCION,
   LARGO_MAXIMO_NOMBRE,
   MAXIMO_DIAS_GRACIA,
   type ErroresPlanForm,
@@ -89,19 +87,6 @@ export function SeccionDatos(props: PropsSeccion) {
             onChange={(evento) => onChange({ nombre: evento.target.value })}
             placeholder="Por ejemplo: Plan Básico"
             className={CLASE_CONTROL}
-          />
-        )}
-      </CampoPlan>
-      <CampoPlan id="plan-descripcion" etiqueta="Descripción / qué incluye" error={errores.descripcion} ayuda={`${valores.descripcion.length}/${LARGO_MAXIMO_DESCRIPCION}`}>
-        {(control) => (
-          <Textarea
-            {...control}
-            rows={3}
-            value={valores.descripcion}
-            maxLength={LARGO_MAXIMO_DESCRIPCION}
-            onChange={(evento) => onChange({ descripcion: evento.target.value })}
-            placeholder="Por ejemplo: acceso a 2 clases semanales en disciplinas grupales."
-            className="rounded-xl border-slate-200 text-sm dark:border-white/15"
           />
         )}
       </CampoPlan>

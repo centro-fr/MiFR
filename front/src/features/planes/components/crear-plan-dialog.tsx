@@ -14,14 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
-import { Textarea } from "@/components/ui/textarea";
 import { useActividades } from "@/features/actividades/hooks/use-actividades";
 import { useCrearPlan, usePlanes } from "@/features/planes/hooks/use-planes";
 import {
   aCuerpoCreacion,
   crearPlanFormSchema,
   erroresDe,
-  LARGO_MAXIMO_DESCRIPCION,
   LARGO_MAXIMO_NOMBRE,
   MAXIMO_DIAS_GRACIA,
   type ErroresPlanForm,
@@ -312,35 +310,6 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
                 </p>
               )}
             </div>
-          </div>
-
-          {/* Descripción (opcional) */}
-          <div className={CAMPO_MODAL}>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="nuevo-plan-descripcion" className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
-              </Label>
-              <span className="text-[11px] text-muted-foreground">
-                {valores.descripcion.length}/{LARGO_MAXIMO_DESCRIPCION}
-              </span>
-            </div>
-            <Textarea
-              id="nuevo-plan-descripcion"
-              value={valores.descripcion}
-              maxLength={LARGO_MAXIMO_DESCRIPCION}
-              onChange={(e) => cambiar({ descripcion: e.target.value })}
-              placeholder="Detalles sobre lo que incluye, niveles recomendados, etc."
-              rows={2}
-              className={cn(
-                "rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 resize-none",
-                errores.descripcion && "border-rose-500 focus-visible:ring-rose-500"
-              )}
-            />
-            {errores.descripcion && (
-              <p role="alert" className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                {errores.descripcion}
-              </p>
-            )}
           </div>
 
           </div>
