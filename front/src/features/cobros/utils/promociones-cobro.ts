@@ -3,9 +3,12 @@ import type { Promocion } from "@/types/promocion";
 // Valor del selector de descuento cuando no se aplica ninguna promoción.
 export const SIN_PROMOCION = "SIN_PROMOCION";
 
-/** El id de la promoción elegida en el selector, o undefined si es "Sin promoción". */
-export function idDePromocion(seleccionada: string): number | undefined {
-  return seleccionada === SIN_PROMOCION ? undefined : Number(seleccionada);
+/**
+ * El id de la promoción elegida en el selector, o null si es "Sin promoción". El back toma un id_promocion
+ * ausente como "la promoción que guardó la inscripción", así que "Sin promoción" se manda explícita.
+ */
+export function idDePromocion(seleccionada: string): number | null {
+  return seleccionada === SIN_PROMOCION ? null : Number(seleccionada);
 }
 
 /** Promociones vigentes para el plan, más la ya elegida aunque haya dejado de estarlo. */

@@ -26,7 +26,7 @@ type Errores = Partial<Record<"monto" | "titular", string>>;
 
 interface Props {
   idInscripcion: number;
-  idPromocion?: number;
+  idPromocion?: number | null;
   precioVigente: number;
   /** El monto lo guarda el modal: así no se pierde al pasar de efectivo a transferencia y volver. */
   monto: string;

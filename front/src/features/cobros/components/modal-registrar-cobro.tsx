@@ -120,7 +120,7 @@ export function ModalRegistrarCobro({
     {
       id: inscripcion.id_inscripcion,
       precioLista: inscripcion.precio_vigente,
-      idPromocion: idDePromocion(promocionSeleccionada) ?? null,
+      idPromocion: idDePromocion(promocionSeleccionada),
       idPlan: inscripcion.id_plan ?? 0,
     },
     promocionesBase,

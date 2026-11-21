@@ -46,7 +46,7 @@ describe("ModalConfirmarAlta", () => {
 
     expect(onConfirm).toHaveBeenCalledWith({
       formaPago: "EFECTIVO",
-      cuerpo: { id_inscripcion: 1, monto: 25000, confirmar_monto_distinto: false },
+      cuerpo: { id_inscripcion: 1, monto: 25000, confirmar_monto_distinto: false, id_promocion: null },
     });
   });
 

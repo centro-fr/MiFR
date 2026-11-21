@@ -846,10 +846,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 1. Lucía, la profesora a cargo, registra en efectivo la primera cuota de Sofía (`POST /pagos/efectivo`, $25.000).
 2. Sofía, ya activa, pide el comprobante (`GET /pagos/:id/comprobante`).
 3. Con la base reiniciada, Valentina (alumna) y Carla (profesora que no está a cargo de Sofía) intentan registrar el mismo cobro.
+4. Con la base reiniciada, la inscripción de Sofía guarda una promoción vigente del 20 % para el Básico. Lucía cobra $25.000 sin `id_promocion` y después con `id_promocion: null`.
 
-**Resultado esperado:** el paso 1 responde 201 con el pago `CONFIRMADO`, a nombre de Lucía y pendiente de rendición; la inscripción queda `ACTIVA`, Sofía y su usuario `ACTIVO`, con el rol `ALUMNO`, y la cuota 1 con ese pago. El paso 2 responde 200 con el número del pago, el monto, el plan, la cuota y quién cobró. En el paso 3 los dos pedidos responden 403 y la base no cambia.
+**Resultado esperado:** el paso 1 responde 201 con el pago `CONFIRMADO`, a nombre de Lucía y pendiente de rendición; la inscripción queda `ACTIVA`, Sofía y su usuario `ACTIVO`, con el rol `ALUMNO`, y la cuota 1 con ese pago. El paso 2 responde 200 con el número del pago, el monto, el plan, la cuota y quién cobró. En el paso 3 los dos pedidos responden 403 y la base no cambia. En el paso 4, sin `id_promocion` el cobro aplica la promoción de la inscripción y responde 409 `MONTO_DISTINTO`; con `null` cobra el precio de lista y responde 201.
 
-**Automatizado:** Sí (H-10 y H-11).
+**Automatizado:** Sí (H-10, H-11 y H-26).
 
 #### PI-43 — La transferencia informada y su revisión por la API
 
@@ -1247,7 +1248,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 29 (E-01 a E-29) | PI-15 a PI-18, PI-25, PI-26, PI-31, PI-93, PI-94 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
 |    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 44 (G-01 a G-44) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64, PI-66, PI-97 a PI-99 |
-|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 25 (H-01 a H-25) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52, PI-95, PI-96 |
+|    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 26 (H-01 a H-26) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52, PI-95, PI-96 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
 |    K    | `back/src/__tests__/integracion/parametros.integration.test.ts`                 | 18 (K-01 a K-18) | PI-53, PI-54                      |
@@ -1363,6 +1364,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | H-23        | El alumno con dos planes trae los dos en `inscripciones`, cada uno con su situación de cuota, y lo representa el más reciente                                     | PI-95 |
 | H-24        | El alumno con un plan trae una inscripción y el dado de baja ninguna                                                                                             | PI-95 |
 | H-25        | Cada plan informa su transferencia, el listado las distingue por `id_inscripcion` y aprobar una deja pendiente la otra                                            | PI-96 |
+| H-26        | Con `id_promocion: null` el cobro usa el precio de lista aunque la inscripción tenga una promoción; sin el campo la aplica y responde 409                         | PI-42 |
 | I-01        | La carga deja cada parámetro del catálogo con su tipo, su valor inicial y su fecha de actualización                                                                         | PI-39 |
 | I-02, I-03  | Volver a correr la carga no pisa un valor cambiado y repone uno que falta                                                                                                    | PI-39 |
 | I-04        | La base rechaza un tipo de dato fuera del DER                                                                                                                                | PI-39 |

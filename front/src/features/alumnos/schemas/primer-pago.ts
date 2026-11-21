@@ -116,13 +116,13 @@ export type CuerpoPrimerPago =
 export function aCuerpoPrimerPago(
   idInscripcion: string,
   datos: PrimerPagoValidado,
-  idPromocion?: number,
+  idPromocion: number | null,
 ): CuerpoPrimerPago {
   const base: RegistrarEfectivoBody = {
     id_inscripcion: Number(idInscripcion),
     monto: montoDesdeTexto(datos.monto),
     confirmar_monto_distinto: datos.confirmarMontoDistinto,
-    ...(idPromocion !== undefined && { id_promocion: idPromocion }),
+    id_promocion: idPromocion,
   };
   if (datos.formaPago === "EFECTIVO") return { formaPago: "EFECTIVO", cuerpo: base };
   return {

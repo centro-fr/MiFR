@@ -133,6 +133,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         id_inscripcion: 3,
+        id_promocion: null,
         monto: 25000,
         confirmar_monto_distinto: false,
         observaciones: undefined,
@@ -179,6 +180,7 @@ describe("ModalCobroEfectivo (US-15)", () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         id_inscripcion: 3,
+        id_promocion: null,
         monto: 20000,
         confirmar_monto_distinto: true,
         observaciones: undefined,

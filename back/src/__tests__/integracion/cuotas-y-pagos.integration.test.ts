@@ -320,6 +320,39 @@ describe("PI-42: el cobro en efectivo por la API", () => {
     });
   });
 
+  // La inscripción toma sola la promoción vigente al crearse: sin id_promocion el cobro la aplica,
+  // y con null quien cobra elige no aplicarla.
+  it("con id_promocion null cobra el precio de lista aunque la inscripción tenga una promoción", async () => {
+    const hoy = fechaActualArgentina();
+    const { id_plan } = await prisma.inscripciones.findUniqueOrThrow({
+      where: { id_inscripcion: idInscripcion },
+    });
+    const { id_promocion } = await prisma.promociones.create({
+      data: {
+        nombre: "Verano",
+        tipo_descuento: "PORCENTAJE",
+        valor: 20,
+        fecha_desde: new Date(hoy.getTime() - UN_DIA_EN_MS),
+        fecha_hasta: new Date(hoy.getTime() + UN_DIA_EN_MS),
+        activo: true,
+        planes: { create: { id_plan } },
+      },
+    });
+    await prisma.inscripciones.update({ where: { id_inscripcion: idInscripcion }, data: { id_promocion } });
+    const cuerpo = { id_inscripcion: idInscripcion, monto: 25000 };
+
+    const conLaDeLaInscripcion = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, cuerpo);
+    expect(conLaDeLaInscripcion.status).toBe(409);
+    expect(conLaDeLaInscripcion.body.error.code).toBe("MONTO_DISTINTO");
+
+    const sinPromocion = await pedir("post", "/pagos/efectivo", EMAIL_LUCIA, {
+      ...cuerpo,
+      id_promocion: null,
+    });
+    expect(sinPromocion.status).toBe(201);
+    expect(sinPromocion.body).toMatchObject({ estado: "CONFIRMADO", monto: 25000 });
+  });
+
   it("un alumno y una profesora que no está a cargo no cobran: 403 y no queda nada guardado", async () => {
     const antes = await estadoDelAlta();
     const cuerpo = { id_inscripcion: idInscripcion, monto: 25000 };

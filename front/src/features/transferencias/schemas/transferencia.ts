@@ -48,7 +48,8 @@ export interface MiPlanRespuesta {
 
 export const informarTransferenciaFormSchema = z.object({
   id_inscripcion: z.number({ error: (issue) => (issue.input === undefined ? "Inscripción no válida" : undefined) }).int().positive(),
-  id_promocion: z.number().int().positive().optional(),
+  // Con null, sin promoción; sin el campo, la que guardó la inscripción.
+  id_promocion: z.number().int().positive().nullable().optional(),
   monto: z
     .number({ error: (issue) => (issue.input === undefined ? "Ingresá el monto de la transferencia" : undefined) })
     .positive("El monto debe ser mayor a 0")

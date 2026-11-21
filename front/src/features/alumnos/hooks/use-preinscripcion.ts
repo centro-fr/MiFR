@@ -145,7 +145,7 @@ export function usePreinscripcion({
         {
           id: 0,
           precioLista: planSeleccionado?.precio_vigente?.precio ?? 0,
-          idPromocion: idDePromocion(idPromocionElegida) ?? null,
+          idPromocion: idDePromocion(idPromocionElegida),
           idPlan: idPlan ?? 0,
         },
         promociones,

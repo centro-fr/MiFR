@@ -108,7 +108,8 @@ export async function registrarTransferenciaRecibida(cuerpo: RegistrarTransferen
 export interface InformarTransferenciaPrimerPagoBody {
   id_inscripcion: number;
   monto: number;
-  id_promocion?: number;
+  /** Con null, sin promoción; sin el campo, la que guardó la inscripción. */
+  id_promocion?: number | null;
   /** Sin ella, el back usa el momento en que la recibe. */
   fecha_hora_transferencia?: string;
   titular_cuenta_origen?: string;

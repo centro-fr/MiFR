@@ -93,6 +93,14 @@ describe("CuotaService", () => {
       expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, 8);
     });
 
+    it("cobra sin promoción aunque la inscripción haya guardado una, si se elige ninguna", async () => {
+      mocks.planes.precioACobrar.mockResolvedValue({ precio_lista: 30000, descuento: 0, monto: 30000 });
+      const conPromocion = { ...inscripcion, id_promocion: 4 } as unknown as InscripcionACobrar;
+
+      await expect(servicio.prepararCobro(conPromocion, null)).resolves.toMatchObject({ monto: 30000 });
+      expect(mocks.planes.precioACobrar).toHaveBeenCalledWith(1, HOY, null);
+    });
+
     it("la primera cuota cubre desde hoy, con el precio vigente y el vencimiento calculado", async () => {
       await expect(servicio.prepararCobro(inscripcion)).resolves.toEqual({
         inscripcion,

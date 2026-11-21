@@ -50,7 +50,8 @@ export interface RegistrarEfectivoBody {
   id_inscripcion: number;
   monto: number;
   confirmar_monto_distinto: boolean;
-  id_promocion?: number;
+  /** Con null, sin promoción; sin el campo, la que guardó la inscripción. */
+  id_promocion?: number | null;
 }
 
 // Cuerpo de POST /pagos/transferencia-recibida (registrarTransferenciaRecibidaSchema).

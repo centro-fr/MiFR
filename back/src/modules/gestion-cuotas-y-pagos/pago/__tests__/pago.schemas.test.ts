@@ -28,6 +28,10 @@ describe("schemas de pagos", () => {
       expect(registrarEfectivoSchema.parse({ ...efectivo, id_promocion: 4 }).id_promocion).toBe(4);
     });
 
+    it("acepta null para cobrar sin promoción", () => {
+      expect(registrarEfectivoSchema.parse({ ...efectivo, id_promocion: null }).id_promocion).toBeNull();
+    });
+
     it("completa confirmar_monto_distinto en false y descarta campos desconocidos", () => {
       expect(registrarEfectivoSchema.parse({ ...efectivo, estado: "CONFIRMADO" })).toEqual({
         ...efectivo,
@@ -46,6 +50,8 @@ describe("schemas de pagos", () => {
       ["con observaciones sin letras", { observaciones: "-0" }],
       ["con observaciones de más de 255 caracteres", { observaciones: "a".repeat(256) }],
       ["con confirmar_monto_distinto en texto", { confirmar_monto_distinto: "true" }],
+      ["con id_promocion 0", { id_promocion: 0 }],
+      ["con id_promocion en texto", { id_promocion: "4" }],
     ])("rechaza un cobro %s", (_caso, cambio) => {
       expect(registrarEfectivoSchema.safeParse({ ...efectivo, ...cambio }).success).toBe(false);
     });
@@ -54,6 +60,15 @@ describe("schemas de pagos", () => {
   describe("informarTransferenciaSchema", () => {
     it("acepta una promoción opcional", () => {
       expect(informarTransferenciaSchema.parse({ ...transferencia, id_promocion: 4 }).id_promocion).toBe(4);
+    });
+
+    it("acepta null para cobrar sin promoción", () => {
+      expect(
+        informarTransferenciaSchema.parse({ ...transferencia, id_promocion: null }).id_promocion,
+      ).toBeNull();
+      expect(
+        registrarTransferenciaRecibidaSchema.parse({ ...transferencia, id_promocion: null }).id_promocion,
+      ).toBeNull();
     });
 
     it("convierte la fecha y hora con zona horaria", () => {

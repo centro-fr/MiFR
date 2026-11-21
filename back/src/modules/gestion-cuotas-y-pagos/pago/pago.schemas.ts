@@ -9,6 +9,10 @@ const monto = montoSchema("monto");
 const observaciones = textoOpcionalSchema(255, { multilinea: true }).optional();
 // US-15 y US-17: un monto distinto del esperado pasa solo si quien lo carga lo confirma.
 const confirmar_monto_distinto = z.boolean().default(false);
+// Sin el campo se cobra con la promoción que guardó la inscripción; con null, sin promoción. El null
+// hace falta porque la inscripción toma sola la promoción vigente al crearse, y quien cobra puede no
+// aplicarla.
+const id_promocion = idSchema.nullable().optional();
 
 // El momento en que se hizo la transferencia, con su zona horaria (ISO 8601). No puede ser
 // futuro: todavía no pasó. Sin ella, vale el momento en que se registra: quien la carga en el
@@ -24,7 +28,7 @@ const fecha_hora_transferencia = z
 
 export const registrarEfectivoSchema = z.object({
   id_inscripcion: idSchema,
-  id_promocion: idSchema.optional(),
+  id_promocion,
   monto,
   confirmar_monto_distinto,
   observaciones,
@@ -33,7 +37,7 @@ export const registrarEfectivoSchema = z.object({
 // Sin comprobante adjunto (decisión de SPRINT-3.md): la propietaria lo busca en su extracto.
 export const informarTransferenciaSchema = z.object({
   id_inscripcion: idSchema,
-  id_promocion: idSchema.optional(),
+  id_promocion,
   monto,
   fecha_hora_transferencia,
   titular_cuenta_origen: textoOpcionalSchema(80).optional(),

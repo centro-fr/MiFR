@@ -82,10 +82,17 @@ describe("aCuerpoPrimerPago", () => {
   it("arma el cuerpo de POST /pagos/efectivo", () => {
     const datos = crearPrimerPagoSchema(CONTEXTO).parse(valores({ monto: "25000,50", confirmarMontoDistinto: true }));
 
-    expect(aCuerpoPrimerPago("7", datos)).toEqual({
+    expect(aCuerpoPrimerPago("7", datos, 3)).toEqual({
       formaPago: "EFECTIVO",
-      cuerpo: { id_inscripcion: 7, monto: 25000.5, confirmar_monto_distinto: true },
+      cuerpo: { id_inscripcion: 7, monto: 25000.5, confirmar_monto_distinto: true, id_promocion: 3 },
     });
+  });
+
+  // Sin el campo, el back aplicaría la promoción que la inscripción tomó sola al crearse.
+  it("manda id_promocion null cuando se cobra sin promoción", () => {
+    const datos = crearPrimerPagoSchema(CONTEXTO).parse(valores());
+
+    expect(aCuerpoPrimerPago("7", datos, null).cuerpo).toHaveProperty("id_promocion", null);
   });
 
   // El back exige ISO 8601 con zona horaria: la hora del input es la de Argentina.
@@ -94,9 +101,9 @@ describe("aCuerpoPrimerPago", () => {
       valores({ formaPago: "TRANSFERENCIA", fechaHoraTransferencia: "2026-10-09T10:30" }),
     );
 
-    expect(aCuerpoPrimerPago("7", datos)).toEqual({
+    expect(aCuerpoPrimerPago("7", datos, null)).toEqual({
       formaPago: "TRANSFERENCIA",
-      cuerpo: { id_inscripcion: 7, monto: 25000, confirmar_monto_distinto: false, fecha_hora_transferencia: "2026-10-09T10:30:00-03:00" },
+      cuerpo: { id_inscripcion: 7, monto: 25000, confirmar_monto_distinto: false, id_promocion: null, fecha_hora_transferencia: "2026-10-09T10:30:00-03:00" },
     });
   });
 });

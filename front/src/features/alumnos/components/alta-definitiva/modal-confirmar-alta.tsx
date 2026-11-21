@@ -182,7 +182,7 @@ export function ModalConfirmarAlta({ pendiente, formas, confirmando, error, onCl
       aCuerpoPrimerPago(
         pendiente.idInscripcion,
         resultado.data,
-        promocionSeleccionada === "SIN_PROMOCION" ? undefined : Number(promocionSeleccionada),
+        promocionSeleccionada === "SIN_PROMOCION" ? null : Number(promocionSeleccionada),
       ),
     );
   };

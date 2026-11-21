@@ -118,7 +118,8 @@ export async function registrarCobroEfectivo(cuerpo: RegistrarCobroEfectivoBody)
 
 export interface RegistrarCobroTransferenciaRecibidaBody {
   id_inscripcion: number;
-  id_promocion?: number;
+  /** Con null, sin promoción; sin el campo, la que guardó la inscripción. */
+  id_promocion?: number | null;
   monto: number;
   fecha_hora_transferencia: string;
   titular_cuenta_origen?: string;
