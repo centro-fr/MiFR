@@ -44,7 +44,7 @@ describe("CrearPlanDialog", () => {
     expect(screen.getByLabelText(/Días de gracia \*/i)).toHaveValue(5);
     expect(screen.getByLabelText("Actividad")).toBeInTheDocument();
     expect(screen.getByLabelText(/Precio inicial \*/i)).toHaveValue("");
-    expect(screen.getByLabelText(/Descripción \(opcional\)/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Descripción/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Crear plan" })).toBeInTheDocument();
   });
