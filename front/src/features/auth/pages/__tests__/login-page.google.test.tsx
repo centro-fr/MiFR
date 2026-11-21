@@ -47,15 +47,15 @@ function renderLogin() {
 describe("LoginPage con Google (US-01)", () => {
   it("cuenta de Google válida: envía al login el ID token que entregó Google e ingresa", async () => {
     const login = renderLogin();
-    fireEvent.click(screen.getAllByRole("button", { name: /google entrega credencial/i })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /google entrega credencial/i }));
     expect(await screen.findByText("Panel de la propietaria")).toBeInTheDocument();
     expect(login).toHaveBeenCalledWith("id-token-de-google");
   });
 
-  it("login cancelado a mitad del proceso: muestra 'Inicio cancelado' y no genera sesión", () => {
+  it("login cancelado a mitad del proceso: avisa que se cerró la ventana de Google y no genera sesión", () => {
     const login = renderLogin();
-    fireEvent.click(screen.getAllByRole("button", { name: /cierra el popup/i })[0]);
-    expect(screen.getAllByRole("alert")[0]).toHaveTextContent("Inicio cancelado");
+    fireEvent.click(screen.getByRole("button", { name: /cierra el popup/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Cerraste la ventana de Google");
     expect(login).not.toHaveBeenCalled();
     expect(getSessionToken()).toBeNull();
     expect(screen.queryByText("Panel de la propietaria")).not.toBeInTheDocument();

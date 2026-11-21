@@ -8,13 +8,10 @@ import { Ubicacion } from "@/features/publico/components/ubicacion";
 import { TITULO_DE_LA_HOME, urlDelSitio } from "@/features/publico/utils/sitio";
 import { useColorDeLaBarra } from "@/features/publico/hooks/use-color-de-la-barra";
 import { useTituloDelDocumento } from "@/hooks/use-titulo-del-documento";
+import { FUENTE_DE_TITULARES } from "@/components/marca/fuente-de-titulares";
 
-// Archivo (los titulares, en su ancho expandido) solo la usa esta página: se pide acá y no en
-// index.html, así el resto del sistema no la descarga. React la sube al <head> y no la duplica.
 // El de --color-publico-tinta: la barra del navegador en el celular sigue al fondo de la página.
 const COLOR_DE_LA_PAGINA = "#0f172a";
-
-const FUENTE_DE_TITULARES = "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,800&display=swap";
 
 // Página pública (sin sesión): el punto de entrada del sitio y desde donde se llega al login.
 // Tiene colores propios, fijos, que no siguen el tema claro/oscuro del sistema.

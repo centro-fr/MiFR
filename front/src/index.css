@@ -118,6 +118,9 @@
   --animate-nav-in: fade-in 0.18s ease-out both;
   /* Modal centrado: entrada con leve escala y elevación */
   --animate-modal-in: modal-in 0.22s ease-out both;
+  /* Login: la franja magenta entra desde la derecha y después sube la tarjeta */
+  --animate-login-franja: login-franja 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both;
+  --animate-login-tarjeta: login-tarjeta 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both;
 }
 
 /* Tokens shadcn: `inline` para que las utilidades (bg-background,
@@ -167,6 +170,26 @@ html:has(.pagina-publica) {
   50% {
     opacity: 0.85;
     transform: scale(1.05);
+  }
+}
+
+@keyframes login-franja {
+  from {
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+  to {
+    clip-path: polygon(58% 0, 100% 0, 100% 100%, 38% 100%);
+  }
+}
+
+@keyframes login-tarjeta {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

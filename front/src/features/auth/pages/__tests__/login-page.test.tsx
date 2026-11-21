@@ -9,7 +9,7 @@ import { LoginPage } from "@/features/auth/pages/login-page";
 import { crearSesion, crearUsuario } from "@/test/sesion-de-prueba";
 import type { RoleCode } from "@/types/auth";
 
-// Estas pruebas cubren el selector de perfiles del login de desarrollo con autenticación mock.
+// Estas pruebas cubren el selector de cuentas de prueba del login con autenticación mock.
 vi.hoisted(() => {
   vi.stubEnv("VITE_USE_MOCKS", "true");
   vi.stubEnv("VITE_LOGIN_DESARROLLO", "true");
@@ -38,56 +38,81 @@ function renderLogin(login: AuthContextValue["login"]) {
   );
 }
 
-const PERFIL_POR_ROL: Record<RoleCode, { etiqueta: string; email: string }> = {
-  PROPIETARIA: { etiqueta: "Propietaria + Profesora", email: "marina.sosa@example.com" },
-  PROFESORA: { etiqueta: "Profesora", email: "lucia.gomez@example.com" },
-  ALUMNO: { etiqueta: "Alumno", email: "camila.perez@example.com" },
-  TUTOR: { etiqueta: "Tutor + 2 alumnos a cargo", email: "mariana.lopez@example.com" },
+const CUENTA_POR_ROL: Record<RoleCode, { nombre: RegExp; email: string }> = {
+  PROPIETARIA: { nombre: /Marina Sosa/, email: "marina.sosa@example.com" },
+  PROFESORA: { nombre: /Lucía Gómez/, email: "lucia.gomez@example.com" },
+  ALUMNO: { nombre: /Camila Pérez/, email: "camila.perez@example.com" },
+  TUTOR: { nombre: /Mariana López/, email: "mariana.lopez@example.com" },
 };
 
-async function seleccionarPerfil(rol: RoleCode) {
-  const selector = await screen.findByLabelText("Rol");
-  const opcion = await screen.findByRole("option", { name: PERFIL_POR_ROL[rol].etiqueta });
-  fireEvent.change(selector, { target: { value: opcion.getAttribute("value") ?? "" } });
+async function abrirSelector() {
+  fireEvent.click(await screen.findByRole("button", { name: "Continuar con Google" }));
+  return screen.findByRole("dialog", { name: "Elegí una cuenta" });
 }
 
-// US-01: selector de perfil mock y estados del flujo de autenticación de desarrollo.
+async function elegirCuenta(rol: RoleCode) {
+  await abrirSelector();
+  fireEvent.click(await screen.findByRole("button", { name: CUENTA_POR_ROL[rol].nombre }));
+}
+
+// US-01: selector de cuentas mock y estados del flujo de autenticación de desarrollo.
 describe("LoginPage (US-01)", () => {
-  it("con mocks muestra el selector de perfiles y ningún mensaje de error", async () => {
+  it("con mocks muestra la tarjeta de ingreso, sin selector abierto ni mensajes de error", async () => {
     renderLogin(vi.fn());
-    expect(await screen.findByLabelText("Rol")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Entrar" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Entrá a MiFR" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("el selector ofrece una cuenta por perfil con su etiqueta", async () => {
+    renderLogin(vi.fn());
+    const selector = await abrirSelector();
+    expect(selector).toHaveTextContent("Propietaria + Profesora");
+    expect(selector).toHaveTextContent("Tutor + 2 alumnos a cargo");
   });
 
   it.each([
     ["PROPIETARIA", "Panel de la propietaria"],
     ["PROFESORA", "Inicio"],
     ["ALUMNO", "Inicio"],
-  ] as [RoleCode, string][])("al elegir el perfil %s ingresa a su pantalla de inicio", async (rol, pantalla) => {
+  ] as [RoleCode, string][])("al elegir la cuenta de %s ingresa a su pantalla de inicio", async (rol, pantalla) => {
     const login = vi.fn().mockResolvedValue(crearUsuario([rol]));
     renderLogin(login);
-    await seleccionarPerfil(rol);
-    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
+    await elegirCuenta(rol);
     expect(await screen.findByText(pantalla)).toBeInTheDocument();
-    expect(login).toHaveBeenCalledWith(PERFIL_POR_ROL[rol].email);
+    expect(login).toHaveBeenCalledWith(CUENTA_POR_ROL[rol].email);
   });
 
-  it("mientras autentica deshabilita el botón y todavía no redirige", async () => {
+  it("mientras autentica cierra el selector, muestra que está conectando y todavía no redirige", async () => {
     renderLogin(vi.fn(() => new Promise<never>(() => {})));
-    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
-    expect(await screen.findByRole("button", { name: "Entrando…" })).toBeDisabled();
+    await elegirCuenta("PROPIETARIA");
+    expect(await screen.findByRole("status")).toHaveTextContent("Conectando con Google…");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText("Panel de la propietaria")).not.toBeInTheDocument();
   });
 
   it("si falla el ingreso, informa el error y permite reintentar", async () => {
-    const login = vi.fn().mockRejectedValueOnce(errorHttp(500, "ERROR_SERVIDOR")).mockResolvedValueOnce(crearUsuario(["PROFESORA"]));
+    const login = vi
+      .fn()
+      .mockRejectedValueOnce(errorHttp(500, "ERROR_SERVIDOR"))
+      .mockResolvedValueOnce(crearUsuario(["PROFESORA"]));
     renderLogin(login);
-    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo iniciar sesión con ese perfil.");
+    await elegirCuenta("PROFESORA");
+    expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos iniciar sesión");
 
-    fireEvent.click(await screen.findByRole("button", { name: "Entrar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reintentar con Google" }));
+    fireEvent.click(await screen.findByRole("button", { name: CUENTA_POR_ROL.PROFESORA.nombre }));
     expect(await screen.findByText("Inicio")).toBeInTheDocument();
     expect(login).toHaveBeenCalledTimes(2);
+  });
+
+  it("si cierra el selector sin elegir, avisa que se canceló y no inicia sesión", async () => {
+    const login = vi.fn();
+    renderLogin(login);
+    await abrirSelector();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Cerraste la ventana de Google");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(login).not.toHaveBeenCalled();
   });
 });

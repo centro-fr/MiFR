@@ -1,15 +1,20 @@
-import { useState, type FormEvent } from "react";
-import { FlaskConical } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
+import { GoogleAuthButton } from "@/features/auth/components/google-auth-button";
+import { LoginEscena } from "@/features/auth/components/login-escena";
+import { AvisoDelLogin, TarjetaDeIngreso } from "@/features/auth/components/login-tarjeta";
+import { avisoDeLogin, etiquetaDelBotonGoogle, type AvisoDeLogin } from "@/features/auth/utils/aviso-de-login";
 import type { AuthErrorCode } from "@/types/auth";
 
 interface Props {
   errorCode: AuthErrorCode | null;
   isLoading: boolean;
-  onSubmit: (email: string) => void;
+  escribiendoEmail: boolean;
+  onElegirCuenta: () => void;
+  onEscribirEmail: () => void;
+  onSubmitEmail: (email: string) => void;
+  /** El selector de cuentas de prueba, cuando está abierto. */
+  children?: ReactNode;
 }
 
 const MENSAJES: Partial<Record<AuthErrorCode, string>> = {
@@ -17,9 +22,18 @@ const MENSAJES: Partial<Record<AuthErrorCode, string>> = {
   USUARIO_INACTIVO: "El usuario está inactivo.",
 };
 
-// Pantalla de login de desarrollo: entra con el email de un usuario de la base, sin Google.
-// Se ve distinta a propósito, para que nadie la confunda con el login real.
-export function LoginDesarrolloPanel({ errorCode, isLoading, onSubmit }: Props) {
+type AvisoVisible = Pick<AvisoDeLogin, "tono" | "titulo" | "texto">;
+
+function avisoDeDesarrollo(code: AuthErrorCode): AvisoVisible {
+  const texto = MENSAJES[code];
+  return texto ? { tono: "error", titulo: "No pudimos iniciar sesión", texto } : avisoDeLogin(code);
+}
+
+const CLASES_ENLACE =
+  "mt-3 inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-[#5b6475] hover:text-dark " +
+  "focus-visible:outline-2 focus-visible:outline-primary";
+
+function FormularioDeEmail({ isLoading, onSubmit }: { isLoading: boolean; onSubmit: (email: string) => void }) {
   const [email, setEmail] = useState("");
 
   const handleSubmit = (e: FormEvent) => {
@@ -28,49 +42,75 @@ export function LoginDesarrolloPanel({ errorCode, isLoading, onSubmit }: Props) 
   };
 
   return (
-    <main className="flex h-dvh items-center justify-center bg-canvas px-4">
-      <Card
-        aria-labelledby="login-desarrollo-titulo"
-        className="w-full max-w-sm gap-4 rounded-2xl border-2 border-dashed border-amber-300 p-6 dark:border-amber-500/40 shadow-sm"
+    <form onSubmit={handleSubmit} className="mt-7">
+      <label htmlFor="login-desarrollo-email" className="block text-sm font-bold text-dark">
+        Email
+      </label>
+      <input
+        id="login-desarrollo-email"
+        type="email"
+        required
+        autoFocus
+        autoComplete="email"
+        spellCheck={false}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="marina.sosa@example.com"
+        className="mt-1.5 h-14 w-full rounded-md border border-[#c3cad5] bg-white px-4 text-base text-dark placeholder:text-[#6b7380] focus-visible:border-dark focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary md:h-[52px] md:text-[15px]"
+      />
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="mt-4 flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-md bg-dark px-5 text-base font-bold text-white transition-colors hover:bg-[#2a2f3a] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-80 md:h-[52px] md:text-[15px]"
       >
-        <CardHeader className="flex items-center gap-2 p-0 text-amber-700 dark:text-amber-300">
-          <FlaskConical aria-hidden="true" className="h-5 w-5" />
-          <CardTitle id="login-desarrollo-titulo" className="text-base font-extrabold">
-            Login de desarrollo
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-0">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Entra sin Google con el email de un usuario dado de alta. Solo funciona con{" "}
-            <code>LOGIN_DESARROLLO=true</code> en el back.
-          </p>
+        {isLoading && <Loader2 aria-hidden="true" className="size-[18px] motion-safe:animate-spin" />}
+        {isLoading ? "Entrando…" : "Entrar"}
+      </button>
+    </form>
+  );
+}
 
-          <form onSubmit={handleSubmit} className="space-y-1.5">
-            <Label htmlFor="login-desarrollo-email">Email</Label>
-            <Input
-              id="login-desarrollo-email"
-              type="email"
-              required
-              autoComplete="email"
-              spellCheck={false}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="marina.sosa@example.com"
-              className="rounded-xl border-slate-300 bg-white dark:border-white/15 dark:bg-white/5"
-            />
+// Login de desarrollo: entra sin Google, eligiendo una cuenta de la semilla (como con mocks) o escribiendo
+// el email de cualquier usuario de la base. Se ve igual que el login real, sin carteles propios.
+export function LoginDesarrolloPanel({
+  errorCode,
+  isLoading,
+  escribiendoEmail,
+  onElegirCuenta,
+  onEscribirEmail,
+  onSubmitEmail,
+  children,
+}: Props) {
+  const aviso = errorCode && !isLoading ? avisoDeDesarrollo(errorCode) : null;
 
-            {errorCode && (
-              <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-                {MENSAJES[errorCode] ?? "No se pudo iniciar sesión. ¿Está activo LOGIN_DESARROLLO en el back?"}
-              </p>
-            )}
+  return (
+    <LoginEscena>
+      <TarjetaDeIngreso descripcion="Usá la cuenta de Google con la que te registraron en el centro.">
+        {aviso && <AvisoDelLogin aviso={aviso} />}
 
-            <Button type="submit" disabled={isLoading} className="mt-2 w-full rounded-xl text-sm font-extrabold">
-              {isLoading ? "Entrando…" : "Entrar (desarrollo)"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </main>
+        {escribiendoEmail ? (
+          <>
+            <FormularioDeEmail isLoading={isLoading} onSubmit={onSubmitEmail} />
+            <button type="button" onClick={onElegirCuenta} className={CLASES_ENLACE}>
+              Elegir una cuenta de prueba
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mt-7">
+              <GoogleAuthButton
+                etiqueta={etiquetaDelBotonGoogle(errorCode, isLoading)}
+                isLoading={isLoading}
+                onClick={onElegirCuenta}
+              />
+            </div>
+            <button type="button" onClick={onEscribirEmail} className={CLASES_ENLACE}>
+              Entrar con otro email
+            </button>
+          </>
+        )}
+      </TarjetaDeIngreso>
+      {children}
+    </LoginEscena>
   );
 }
