@@ -22,6 +22,7 @@ pnpm prisma:migrate   # crear y aplicar migracion
 pnpm prisma:studio    # explorar la base
 pnpm db:seed          # roles, permisos y la primera propietaria (también en producción)
 pnpm db:seed:demo     # datos de prueba, solo contra una base local
+pnpm db:seed:presentacion  # el centro completo de la presentación, solo contra una base local vacía
 pnpm token            # JWT de desarrollo para un usuario, para probar en Swagger
 ```
 

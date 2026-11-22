@@ -317,6 +317,7 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-97         | El cambio de horarios: inscripción activa, misma profesora y actividad | US-09, US-14      | Servicios          | Demostración, `crearHorarioDePrueba`                       | Sí           |
 | PI-98         | Con el plan vigente, el cambio de plan se aplica al terminar la gracia | US-14             | Servicios          | Demostración, reloj fijo, primer pago en efectivo, `AplicadorProgramados` | Sí  |
 | PI-99         | La baja programada de un horario con alumnos                         | US-04, US-08        | Servicios          | Demostración, reloj fijo, primer pago en efectivo, `AplicadorProgramados` | Sí  |
+| PI-100        | Los datos de la presentación recorridos por la API real              | Transversal         | Servicios          | Base reiniciada, `cargarPresentacion`, procesos reales     | Sí           |
 
 PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026). PI-93 es el panel del portal del alumno (13/11/2026). PI-94 es el historial de asistencia de la ficha. PI-97 a PI-99 son el cambio de horarios dentro de lo contratado, el cambio de plan programado y la baja programada de un horario con alumnos (13/11/2026).
 
@@ -1235,9 +1236,21 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (Q-05, Q-06).
 
+#### PI-100 — Los datos de la presentación recorridos por la API real
+
+**US:** transversal · **Precondición:** base reiniciada (catálogo de seguridad, insignias y parámetros) y la carga de `db:seed:presentacion` (`cargarPresentacion`) con el día de la corrida; los procesos de cierre de honorarios, de insignias y de avisos de cuota son los reales del entorno.
+
+1. Se inicia sesión con cada cuenta del selector del login de prueba (`front/src/mocks/data/semilla.ts`).
+2. Se revisan en la base las cuotas, los pagos, las clases y los roles de los tutores.
+3. Marina consulta el listado de alumnos por estado de cuota, las transferencias pendientes, el efectivo a rendir, los reportes, el informe de inactivos, las liquidaciones del mes pasado y las clases de hoy. Camila consulta su panel y Mariana López sus menores.
+
+**Resultado esperado:** todas las cuentas entran. Cada inscripción activa o de baja tiene su primera cuota con un pago confirmado y ninguna pre-inscripción tiene cuotas; los números de cuota son correlativos y cada vencimiento es posterior al anterior; ningún pago, asistencia ni clase queda en el futuro; los tutores quedan activos con el rol TUTOR. El listado trae alumnos al día, por vencer y vencidos; hay al menos dos transferencias pendientes; los reportes responden 200; las liquidaciones de los meses cerrados quedan CERRADA y PAGADA; el informe de inactivos trae a Martín Morales, Daiana Silva y Federico Luna, y el ranking a Lucas Benítez; el panel de la alumna responde y los menores de Mariana incluyen a Benjamín.
+
+**Automatizado:** Sí (V-01 a V-21).
+
 ## 7. Tests automatizados
 
-351 tests en veinte archivos, según la corrida del 13/11/2026 (algunos archivos numeran sus códigos por regla y no por test, así que la tabla no suma lo mismo):
+373 tests en veintiún archivos, según la corrida del 21/11/2026 (algunos archivos numeran sus códigos por regla y no por test, así que la tabla no suma lo mismo):
 
 | Archivo | Ubicación                                                                       | Tests            | Casos                             |
 | :-----: | :------------------------------------------------------------------------------ | :--------------- | :-------------------------------- |
@@ -1262,6 +1275,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    S    | `back/src/__tests__/integracion/reportes-inscripciones.integration.test.ts`     | 3 (S-01 a S-03)  | PI-87                             |
 |    T    | `back/src/modules/gestion-personas/profesor/__tests__/profesor.integration.test.ts` | 5 (T-01 a T-05) | PI-88, PI-89                   |
 |    U    | `back/src/__tests__/integracion/rutinas-y-progreso.integration.test.ts`          | 48 (U-01 a U-48) | PI-83 a PI-85                     |
+|    V    | `back/src/__tests__/integracion/presentacion.integration.test.ts`              | 21 (V-01 a V-21) | PI-100                            |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -1435,6 +1449,10 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | T-02        | Reincorporar una profesora activa responde 409 y no cambia la base | PI-88 |
 | T-03, T-04  | La profesora con `HORARIOS_EDITAR` delegado y la propietaria sin ese permiso reciben 403; la base no cambia | PI-88 |
 | T-05        | La propietaria ve email, teléfono y fecha de nacimiento; otros roles no reciben esos datos y el filtro de bajas se respeta | PI-89 |
+| V-01        | La carga deja el centro entero y lo que derivan los procesos: liquidaciones, insignias y avisos | PI-100 |
+| V-02 a V-12 | Cada cuenta del selector del login de prueba inicia sesión | PI-100 |
+| V-13 a V-16 | Primera cuota paga en cada alta, cuotas correlativas, nada en el futuro y tutores con su rol | PI-100 |
+| V-17 a V-21 | Listado por estado de cuota, transferencias pendientes, reportes y liquidaciones, inactivos y ranking, paneles de alumna y tutora | PI-100 |
 
 #### PI-78 — El cálculo de los honorarios del mes
 
@@ -1789,6 +1807,8 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El proceso saca de un horario a quien está en sus días de gracia                      | G-44 (la primera versión no lo detectaba; se sumó una corrida en la gracia) |
 | El proceso no saca a las pre-inscriptas                                               | G-44 (no sacar a ninguna inscripción ACTIVA era una mutación equivalente: una pre-inscripta nunca tiene la cuota corriendo) |
 | El horario no se da de baja cuando sale el último alumno                              | G-44 |
+| La activación del primer pago no le da el rol al tutor (PI-100)                       | V-10 (la tutora no entra), V-16, V-21                                                                       |
+| Un pago de hoy queda con la hora al azar, aunque sea posterior al momento de la carga (PI-100) | V-15                                                                                               |
 
 Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a correr y no tocaron datos.
 
@@ -1848,6 +1868,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 13/11/2026 | El listado de alumnos con todas sus inscripciones y las transferencias por inscripción (PI-95, PI-96) | 340 | 327 aprobados, 13 fallidos | 140,6 s | Pasan los 3 tests nuevos y los 2679 unitarios; los archivos del cambio quedan con cobertura del 100 %. Fallan 2 de J y 11 de R, que fallan igual con el código anterior al cambio (ver sección 9). Las 2 fallas provocadas fueron detectadas |
 | 13/11/2026 | Integración de `dev` en la rama de PI-95 y PI-96, con la migración `quitar_codigo_promociones` | 338 | 338 aprobados | 127,1 s | Pasaron también los 2653 tests unitarios. El test de PI-91 deja de cargar el código de la promoción, que ya no existe. Las fallas de J y R de la corrida anterior quedaron corregidas en `dev` |
 | 13/11/2026 | Cambio de plan programado y baja programada de un horario con alumnos (PI-97 a PI-99); el historial de la ficha (PI-94) | 351 | 351 aprobados | 136,3 s | Antes de los casos nuevos fallaron G-11, G-12 y G-26, que esperaban las reglas anteriores, y se adaptaron. La migración `programar_cambio_plan_y_baja_horario` se aplicó sobre la base de prueba. Pasaron también los 2794 tests unitarios; chequeo de tipos, formato y build correctos. Las 11 fallas provocadas fueron detectadas, dos después de reforzar G-44 |
+| 21/11/2026 | Datos de la presentación (`db:seed:presentacion`, PI-100) | 373 | 373 aprobados | — | Pasaron también los 2804 tests unitarios; la cobertura global sigue debajo del 100 % por código anterior a este cambio (rutinas, promociones, actividades y asistencia), que también hace fallar el CI desde el 13/11/2026. Chequeo de tipos y formato correctos. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1921,6 +1942,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-94         | 13/11/2026 | Francisco Andrade | Aprobado           | Pasan E-28 y E-29; sin defectos                                                  |
 | PI-23, PI-24, PI-38 | 13/11/2026 | Francisco Andrade | Aprobado     | G-11, G-12 y G-26 adaptados a las reglas nuevas: horarios con la inscripción activa y baja programada |
 | PI-97 a PI-99 | 13/11/2026 | Francisco Andrade | Aprobado           | Pasan G-40 a G-44; sin defectos                                                  |
+| PI-100        | 21/11/2026 | Francisco Andrade | Aprobado           | Pasan V-01 a V-21; sin defectos                                                  |
 
 ### 8.3 Defectos
 
@@ -2064,3 +2086,4 @@ Los defectos se numeran D-01, D-02…
 |   2.43  | 13/11/2026 | Casos PI-95 (el listado de alumnos trae en `inscripciones` todas las vigentes, cada una con su situación de cuota) y PI-96 (una transferencia por plan, con su `id_inscripcion`), con H-23 a H-25; US-10, US-16 y US-17 los suman | Francisco Andrade |
 |   2.44  | 13/11/2026 | Caso PI-94 (el historial de asistencia de la ficha, `GET /alumnos/:id/asistencias`) y tests E-28 y E-29; US-10 lo suma. Se corrige PI-93: la profesora de Valentina es Carla | Francisco Andrade |
 |   2.45  | 13/11/2026 | Casos PI-97 (el cambio de horarios con la inscripción activa y dentro de la misma profesora y actividad), PI-98 (el cambio de plan programado) y PI-99 (la baja programada de un horario con alumnos), con G-40 a G-44; US-14 pasa a automatizada. PI-23, PI-24 y PI-38 (G-11, G-12 y G-26) pasan a las reglas nuevas. El entorno expone `aplicadorProgramados`. Tres puntos abiertos en la sección 9 | Francisco Andrade |
+|   2.46  | 21/11/2026 | Caso PI-100 (los datos de la presentación recorridos por la API real) y tests V-01 a V-21 | Francisco Andrade |
