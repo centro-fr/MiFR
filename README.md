@@ -19,6 +19,47 @@ Las demás secciones del menú muestran "En construcción". Todavía no hay nada
 
 ---
 
+## Probar la presentación
+
+El sistema entero en Docker (base, API y front servido como en Netlify) con un centro de entrenamiento cargado: unos 50 alumnos con meses de cuotas, pagos, clases y asistencias. Se entra sin Google, eligiendo una cuenta de prueba. Solo hace falta **Docker Desktop abierto**; Node y pnpm no son necesarios para esto.
+
+1. Clonar el repositorio (o actualizarlo con `git pull`) y, desde la raíz, crear la configuración de la API si todavía no existe. La de ejemplo ya trae el login sin Google (`LOGIN_DESARROLLO=true`) y `NODE_ENV="development"`:
+
+   ```bash
+   cp back/.env.example back/.env
+   ```
+
+2. Levantar todo. La primera vez construye las imágenes y tarda unos minutos:
+
+   ```bash
+   docker compose --profile completo up -d --build
+   ```
+
+3. Esperar la carga de los datos. El contenedor `mifr-datos-presentacion` corre una vez y termina; cuando muestra `Presentación cargada:` está listo:
+
+   ```bash
+   docker logs -f mifr-datos-presentacion
+   ```
+
+4. Abrir <http://localhost:8080>, tocar **Ir a MiFR** (o ir directo a <http://localhost:8080/login>) y después **Continuar con Google**: en lugar de Google se abre un selector con las cuentas de prueba. **Usar otra cuenta** permite escribir el email de cualquier usuario de la base. Qué conviene mirar con cada cuenta está en [Datos de la presentación](#datos-de-la-presentación).
+
+Para empezar de cero, con las fechas corridas al día de hoy (los datos son relativos al día en que se cargan), o si la carga avisa que la base ya tiene otros datos:
+
+```bash
+docker compose --profile completo down -v    # borra la base local de Docker
+docker compose --profile completo up -d --build
+```
+
+> `down -v` borra el volumen de la base: se pierde todo lo que se haya cargado a mano en ese Docker.
+
+Para comprobar que front, API y base se hablan bien (necesita Node y pnpm): `pnpm install` y `pnpm probar:compose`.
+
+Ojo con el día: las clases del día solo existen de lunes a viernes, así que un sábado o domingo la profesora no ve clases para tomar asistencia. Todo lo demás (cuotas, pagos, reportes, ranking, honorarios) se ve igual cualquier día.
+
+Para apagarlo sin perder los datos: `docker compose --profile completo stop`.
+
+---
+
 ## Desarrollo local
 
 ### Requisitos
@@ -59,7 +100,7 @@ Hay dos formas. Las dos dejan la base en el puerto `55432` con migraciones y dat
 ```bash
 docker compose up -d --build              # base + API; la API aplica las migraciones al arrancar
 pnpm --filter back prisma:generate        # genera el cliente de Prisma que usa el seed
-pnpm --filter back db:seed:demo           # roles, permisos y datos de prueba
+pnpm --filter back db:seed:presentacion   # el centro de la presentación (o db:seed:demo, mínimo)
 pnpm dev:front                            # front en http://localhost:5173
 ```
 
@@ -68,7 +109,7 @@ pnpm dev:front                            # front en http://localhost:5173
 ```bash
 docker compose up -d db                   # solo la base
 pnpm --filter back prisma:migrate         # aplica las migraciones y genera el cliente de Prisma
-pnpm --filter back db:seed:demo           # roles, permisos y datos de prueba
+pnpm --filter back db:seed:presentacion   # el centro de la presentación (o db:seed:demo, mínimo)
 pnpm dev:back                             # terminal 1: API en http://localhost:3000
 pnpm dev:front                            # terminal 2: front en http://localhost:5173
 ```
@@ -126,7 +167,27 @@ Los `.env` están ignorados por Git; cada paquete versiona un `.env.example` con
 
 Con la Opción A, después de cambiar `back/.env` hay que recrear el contenedor: `docker compose up -d api`. Los cambios en `front/.env` necesitan reiniciar `pnpm dev:front`.
 
-### Datos de prueba
+### Datos de la presentación
+
+`db:seed:presentacion` carga un centro completo y consistente para mostrar el sistema: las actividades y la grilla de la página pública (48 clases por semana, de lunes a viernes), 4 profesoras, unos 50 alumnos con meses de historia (cuotas, pagos en efectivo y por transferencia, rendiciones, clases dictadas, suplencias y cancelaciones), rutinas y mediciones de progreso. Las liquidaciones de honorarios de los meses cerrados, las insignias del mes y los avisos de cuota no se escriben a mano: los generan los procesos de la API con la fecha que corresponde. Las fechas son relativas al día de la carga, así que siempre se ve "actual": hay cuotas al día, por vencer y vencidas, transferencias pendientes (una con más de 24 horas), efectivo a rendir, alumnos que dejaron de venir, pre-inscripciones con la reserva vigente, un cambio de plan programado y un aumento de precio para el mes que viene.
+
+Parte de una base vacía. Si ya está cargada no hace nada, y si la base tiene otros datos se niega y explica cómo vaciarla. Con el perfil `completo` de Docker se carga sola. Solo corre contra una base local.
+
+Las cuentas son las mismas que ofrece el selector del login de prueba (con mocks o con `LOGIN_DESARROLLO=true`):
+
+| Email                           | Roles                    | Para ver                                     |
+| :------------------------------ | :----------------------- | :------------------------------------------- |
+| `marina.sosa@example.com`       | PROPIETARIA + PROFESORA  | Dashboard, cobros, honorarios, reportes      |
+| `lucia.gomez@example.com`       | PROFESORA                | Clases del día y asistencia                  |
+| `camila.perez@example.com`      | ALUMNO                   | Panel del alumno, rutina, ranking            |
+| `valentina.herrera@example.com` | ALUMNO (2 planes)        | Dos planes vigentes a la vez                 |
+| `paula.romero@example.com`      | ALUMNO + TUTOR (2 hijos) | Selector de menores, una pre-inscripción     |
+| `carlos.fernandez@example.com`  | ALUMNO + TUTOR (1 hijo)  | Selector de menores                          |
+| `mariana.lopez@example.com`     | TUTOR (2 menores)        | Seguimiento de menores sin plan propio       |
+
+Los datos están en `back/src/shared/db/presentacion/` y el test `presentacion.integration.test.ts` los recorre por la API real.
+
+### Datos de prueba mínimos
 
 `db:seed:demo` es autosuficiente e idempotente: crea roles, permisos y la matriz de accesos si no existen, y carga profesoras, actividades y horarios. Solo corre contra una base local; si `DATABASE_URL` apunta a otro host, se niega.
 
@@ -175,6 +236,9 @@ Antes de subir cambios: `pnpm --filter back test`, `pnpm --filter back test:inte
 | `container name "/mifr-db" is already in use`                | Hay contenedores de otra copia del repositorio. `docker rm mifr-db mifr-api` los saca; los datos de cada copia quedan en su volumen |
 | La pantalla de login pide definir `VITE_GOOGLE_CLIENT_ID`    | No está activo el login de desarrollo ni configurado Google. Ver el paso 1                                                          |
 | El login de desarrollo responde 404                          | Falta `LOGIN_DESARROLLO=true` en `back/.env`, o con la Opción A no se recreó el contenedor                                          |
+| `db:seed:presentacion` dice que la base ya tiene otros datos | La carga parte de una base vacía. Con Docker: `docker compose --profile completo down -v` (borra la base local) y volver a levantar |
+| El front se reinicia: `host not found in upstream "api"`     | El contenedor `front` quedó de una corrida anterior, en otra red. `docker compose --profile completo up -d` lo vuelve a crear       |
+| La cuenta elegida no entra                                   | La base se cargó con `db:seed:demo`, que no tiene todas las cuentas del selector. Cargar la presentación (`db:seed:presentacion`)   |
 
 ### Convenciones
 
@@ -229,7 +293,7 @@ La API usa la misma imagen que el compose local (`back/Dockerfile`) y aplica las
 ### Reglas para producción
 
 - La primera propietaria se carga una sola vez con `db:seed`, apuntando a Neon desde una máquina local (ver `docs/DESPLIEGUE.md`, paso 8).
-- Nunca correr contra Neon `db:seed:demo`, `token`, `prisma migrate dev`, `migrate reset` ni `db push`. Las migraciones las aplica solo el contenedor.
+- Nunca correr contra Neon `db:seed:demo`, `db:seed:presentacion`, `token`, `prisma migrate dev`, `migrate reset` ni `db push`. Las migraciones las aplica solo el contenedor.
 - La URL de Netlify va en `CORS_ORIGENES` y en los orígenes autorizados del client OAuth de Google.
 
 ---
@@ -267,7 +331,8 @@ Desde la raíz, `pnpm dev:back` y `pnpm dev:front` (o `pnpm dev`) levantan cada 
 |         | `prisma:migrate`          | Crea y aplica migraciones en la base local y regenera el cliente                     |
 |         | `prisma:generate`         | Regenera el cliente de Prisma                                                        |
 |         | `prisma:studio`           | Abre Prisma Studio para explorar la base                                             |
-|         | `db:seed:demo`            | Setup completo de desarrollo con datos de prueba                                     |
+|         | `db:seed:presentacion`    | El centro completo de la presentación, con meses de historia                         |
+|         | `db:seed:demo`            | Setup mínimo de desarrollo con datos de prueba                                       |
 |         | `db:seed`                 | Roles, permisos y la primera propietaria (producción)                                |
 |         | `token`                   | Emite un JWT de desarrollo para un usuario                                           |
 | front   | `dev`                     | Servidor de desarrollo en el puerto 5173                                             |

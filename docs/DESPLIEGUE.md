@@ -202,7 +202,7 @@ DATABASE_URL="<cadena directa de Neon>" pnpm --filter back db:seed -- <email-de-
 
 El seed carga los roles, los permisos, las insignias y los parámetros del sistema, y deja como propietaria a esa persona. El email tiene que ser exactamente el de su cuenta de Google.
 
-**Nunca** correr contra Neon `db:seed:demo` (se niega: solo carga en una base local), `pnpm token`, `prisma migrate dev`, `migrate reset` ni `db push`.
+**Nunca** correr contra Neon `db:seed:demo` ni `db:seed:presentacion` (se niegan: solo cargan en una base local), `pnpm token`, `prisma migrate dev`, `migrate reset` ni `db push`.
 
 Volver a correr `db:seed` no pisa la matriz de permisos: la matriz inicial (`MATRIZ_INICIAL` en `rol.catalogo.ts`) se aplica solo a los permisos nuevos, para respetar lo que la propietaria cambió. Por eso, si un cambio le da a un rol un permiso que ya existía, a una base con datos reales le llega con una migración de datos que agregue las filas que faltan en `rol_permisos` (ver `back/.claude/rules/seguridad.md`).
 
