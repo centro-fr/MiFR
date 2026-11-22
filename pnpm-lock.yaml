@@ -10,6 +10,7 @@ overrides:
   deepmerge-ts: ^8.0.0
   body-parser: ^2.4.0
   qs: ^6.16.1
+  effect: ^3.22.1
 
 importers:
 
@@ -111,7 +112,7 @@ importers:
     dependencies:
       '@hookform/resolvers':
         specifier: ^5.9.1
-        version: 5.9.1(@standard-schema/spec@1.1.0)(effect@3.21.0)(react-hook-form@7.89.0(@types/react@19.2.18)(react@19.2.8))(zod@4.6.7)
+        version: 5.9.1(@standard-schema/spec@1.1.0)(effect@3.22.5)(react-hook-form@7.89.0(@types/react@19.2.18)(react@19.2.8))(zod@4.6.7)
       '@radix-ui/react-accordion':
         specifier: ^1.2.21
         version: 1.2.21(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -663,7 +664,7 @@ packages:
       class-transformer: '>=0.4.0'
       class-validator: '>=0.12.0'
       computed-types: ^1.0.0
-      effect: ^3.10.3
+      effect: ^3.22.1
       fluentvalidation-ts: ^3.0.0
       fp-ts: ^2.7.0
       io-ts: ^2.0.0
@@ -2322,8 +2323,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@3.21.0:
-    resolution: {integrity: sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ==}
+  effect@3.22.5:
+    resolution: {integrity: sha512-AdIU4llI19BzhJ4xUBZix7kS8oiYSlCsJ61j3UM3UyJw9ecDrsrrweDFm/Ku1nHbJWMLoynK+1Me4it3Zkmjpw==}
 
   electron-to-chromium@1.5.425:
     resolution: {integrity: sha512-QvPtl41EUOnuT1HBvMKgxXRIaHNcagBPs50u7VULzhZXaGfqTbZyE16LQsctZ/RQHlGu+FOWeDTR4mY6YbeF1g==}
@@ -4190,13 +4191,13 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(effect@3.21.0)(react-hook-form@7.89.0(@types/react@19.2.18)(react@19.2.8))(zod@4.6.7)':
+  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(effect@3.22.5)(react-hook-form@7.89.0(@types/react@19.2.18)(react@19.2.8))(zod@4.6.7)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.89.0(@types/react@19.2.18)(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
-      effect: 3.21.0
+      effect: 3.22.5
       zod: 4.6.7
 
   '@humanfs/core@0.19.2':
@@ -4400,7 +4401,7 @@ snapshots:
     dependencies:
       c12: 3.1.0(magicast@0.3.5)
       deepmerge-ts: 8.0.2
-      effect: 3.21.0
+      effect: 3.22.5
       empathic: 2.0.0
     transitivePeerDependencies:
       - magicast
@@ -5700,7 +5701,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@3.21.0:
+  effect@3.22.5:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
