@@ -80,8 +80,9 @@ function CuentaDePrueba({ perfil, color, onElegir }: { perfil: UsuarioSemilla; c
 }
 
 // Solo en mocks y en el login de desarrollo: imita el selector de cuentas de Google con un usuario por
-// perfil de la semilla (la misma que siembra el back), así se prueba el mismo recorrido que en producción.
-// Se carga diferido para que no viaje en el build real.
+// perfil de la semilla, así se prueba el mismo recorrido que en producción. Esas cuentas existen con los
+// mismos emails y roles en la base de la presentación (db:seed:presentacion del back), así que el
+// selector sirve también contra la API real. Se carga diferido para que no viaje en el build real.
 export default function SelectorCuentasDePrueba({ onCerrar, onElegir, onUsarOtraCuenta }: Props) {
   return (
     <Dialog open onOpenChange={(abierto) => !abierto && onCerrar()}>

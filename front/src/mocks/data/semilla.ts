@@ -31,6 +31,9 @@ export interface HorarioSemilla {
   cupo_maximo: number | null;
 }
 
+// Las cuentas del selector del login de prueba. Si se agrega o cambia una, hay que hacer lo mismo en el
+// elenco de la presentación del back (back/src/shared/db/presentacion/elenco.ts), que las carga con los
+// mismos emails y roles.
 export const USUARIOS_SEMILLA: UsuarioSemilla[] = [
   {
     id_usuario: 1,
