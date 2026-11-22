@@ -61,7 +61,7 @@ async function probarBase() {
     return;
   }
   const { token } = await login.json();
-  informar(login.status === 200 && Boolean(token), `login de la propietaria de prueba (${EMAIL_PROPIETARIA})`, `HTTP ${login.status}: ¿corrió datos-demo?`);
+  informar(login.status === 200 && Boolean(token), `login de la propietaria de prueba (${EMAIL_PROPIETARIA})`, `HTTP ${login.status}: ¿corrió datos-presentacion?`);
   if (!token) return;
 
   const autorizado = { headers: { Authorization: `Bearer ${token}` } };

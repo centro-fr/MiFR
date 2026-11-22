@@ -66,24 +66,25 @@ services:
         condition: service_healthy
 
   # Perfil "completo": el sistema entero en contenedores, como se publica (base, API y front servido
-  # como en Netlify), con los datos de prueba. Para probar todo junto antes de desplegar:
+  # como en Netlify), con los datos de la presentación. Para probar todo junto antes de desplegar:
   #   docker compose --profile completo up -d --build
   #   pnpm probar:compose
   # Sin el perfil, `docker compose up` sigue levantando solo la base y la API para desarrollar.
 
-  # Carga los datos de prueba (roles, permisos, actividades, alumnos de demo) y termina. Corre con la
-  # etapa de build de la imagen de la API, que tiene tsx y las dependencias de desarrollo. Volver a
-  # correrlo no duplica nada.
-  datos-demo:
+  # Carga el centro de la presentación (roles, permisos, grilla, meses de alumnos, cuotas, pagos y
+  # asistencias) y termina. Corre con la etapa de build de la imagen de la API, que tiene tsx y las
+  # dependencias de desarrollo. Con la base ya cargada no hace nada; con otros datos se niega y explica
+  # cómo vaciarla (docker compose --profile completo down -v).
+  datos-presentacion:
     profiles: ["completo"]
     build:
       context: .
       dockerfile: back/Dockerfile
       target: build
-    container_name: mifr-datos-demo
+    container_name: mifr-datos-presentacion
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/mifr?schema=public
-    command: ["pnpm", "--filter", "back", "db:seed:demo"]
+    command: ["pnpm", "--filter", "back", "db:seed:presentacion"]
     restart: "no"
     # Después de la API, que es quien aplica las migraciones al arrancar.
     depends_on:
