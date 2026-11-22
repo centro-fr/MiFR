@@ -150,6 +150,36 @@ describe("PlanService", () => {
     expect(repositorio.actualizar).toHaveBeenCalledWith(1, { clases_por_semana: 3 });
   });
 
+  it("actualizar con reactivar vuelve a dar de alta un plan dado de baja, validando su actividad y su nombre", async () => {
+    const dadoDeBaja = {
+      ...planBase,
+      id_actividad_exclusiva: 4,
+      fecha_baja: new Date("2026-09-30T00:00:00Z"),
+    };
+    repositorio.buscarPorId.mockResolvedValue(dadoDeBaja);
+    repositorio.actualizar.mockResolvedValue({ ...dadoDeBaja, fecha_baja: null });
+
+    await expect(servicio.actualizar(1, { reactivar: true })).resolves.toMatchObject({ fecha_baja: null });
+    expect(actividades.buscarPorId).toHaveBeenCalledWith(4);
+    expect(repositorio.existeVigenteConNombre).toHaveBeenCalledWith("Básico 2 días", 1);
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { fecha_baja: null });
+  });
+
+  it("actualizar con reactivar rechaza con 409 un plan que no está dado de baja", async () => {
+    repositorio.buscarPorId.mockResolvedValue(planBase);
+
+    await expect(servicio.actualizar(1, { reactivar: true })).rejects.toThrow(ConflictError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("actualizar con reactivar no vuelve a dar de alta un plan cuyo nombre ya usa otro vigente", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...planBase, fecha_baja: new Date("2026-09-30T00:00:00Z") });
+    repositorio.existeVigenteConNombre.mockResolvedValue(true);
+
+    await expect(servicio.actualizar(1, { reactivar: true })).rejects.toThrow(ConflictError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
   it("actualizar lanza NotFoundError si el plan está dado de baja", async () => {
     repositorio.buscarPorId.mockResolvedValue({ ...planBase, fecha_baja: new Date() });
 

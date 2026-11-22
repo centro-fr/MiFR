@@ -202,6 +202,15 @@ describe("GestionPersonasService", () => {
       ]);
     });
 
+    it("cada inscripción del listado trae su cambio de plan programado (US-14)", async () => {
+      const cambio = { id_inscripcion: 9, id_plan: 2, nombre_plan: "Intermedio" };
+      mocks.inscripciones.buscarCambiosProgramados.mockResolvedValue([cambio]);
+
+      const [alumno] = (await servicio.listarAlumnos(consulta, PROPIETARIA)).datos;
+
+      expect(alumno.inscripciones[0].cambio_programado).toEqual(cambio);
+    });
+
     it("una inscripción que Cuota no encuentra sale sin situación de cuota", async () => {
       mocks.cuotas.habilitacionDeInscripciones.mockResolvedValue(new Map());
 

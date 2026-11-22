@@ -33,6 +33,7 @@ describe("rutas de rutinas", () => {
     logica = {
       crearRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
       actualizarRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
+      eliminarRutina: vi.fn().mockResolvedValue(undefined),
       listarRutinasDeAlumno: vi.fn().mockResolvedValue([{ id_rutina: 1 }]),
       obtenerRutinaVigente: vi.fn().mockResolvedValue(null),
       obtenerMiRutina: vi.fn().mockResolvedValue({ id_rutina: 1 }),
@@ -86,6 +87,29 @@ describe("rutas de rutinas", () => {
       expect.objectContaining({ nombre: "Rutina Editada" }),
       { idUsuario: 2, esPropietaria: false },
     );
+  });
+
+  it("DELETE /rutinas/:id elimina la rutina con RUTINAS_EDITAR y responde 204", async () => {
+    const respuesta = await request(app).delete("/api/v1/rutinas/3").set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(204);
+    expect(logica.eliminarRutina).toHaveBeenCalledWith(3, { idUsuario: 2, esPropietaria: false });
+  });
+
+  it("DELETE /rutinas/:id responde 403 sin RUTINAS_EDITAR", async () => {
+    const respuesta = await request(app).delete("/api/v1/rutinas/3").set("Authorization", "Bearer alumno");
+
+    expect(respuesta.status).toBe(403);
+    expect(logica.eliminarRutina).not.toHaveBeenCalled();
+  });
+
+  it("DELETE /rutinas/:id responde 400 con un id inválido", async () => {
+    const respuesta = await request(app)
+      .delete("/api/v1/rutinas/01")
+      .set("Authorization", "Bearer profesora");
+
+    expect(respuesta.status).toBe(400);
+    expect(logica.eliminarRutina).not.toHaveBeenCalled();
   });
 
   it("PUT /rutinas/:id responde 403 sin RUTINAS_EDITAR", async () => {

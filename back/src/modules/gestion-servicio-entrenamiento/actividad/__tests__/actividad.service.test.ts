@@ -99,6 +99,30 @@ describe("ActividadService", () => {
     expect(repositorio.actualizar).not.toHaveBeenCalled();
   });
 
+  it("actualizar acepta un cupo que no queda por debajo de los inscriptos", async () => {
+    repositorio.buscarPorId.mockResolvedValue(actividadBase);
+    repositorio.maximoInscriptosEnHorarios.mockResolvedValue(8);
+    repositorio.actualizar.mockResolvedValue({ ...actividadBase, cupo_maximo: 10 });
+
+    await expect(servicio.actualizar(1, { cupo_maximo: 10 })).resolves.toMatchObject({ cupo_maximo: 10 });
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { cupo_maximo: 10 });
+  });
+
+  it("actualizar con reactivar vuelve a activar una actividad dada de baja", async () => {
+    repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, activo: false });
+    repositorio.actualizar.mockResolvedValue(actividadBase);
+
+    await expect(servicio.actualizar(1, { reactivar: true, nombre: "HIIT" })).resolves.toEqual(actividadBase);
+    expect(repositorio.actualizar).toHaveBeenCalledWith(1, { nombre: "HIIT", activo: true });
+  });
+
+  it("actualizar con reactivar rechaza con 409 una actividad que no está dada de baja", async () => {
+    repositorio.buscarPorId.mockResolvedValue(actividadBase);
+
+    await expect(servicio.actualizar(1, { reactivar: true })).rejects.toThrow(ConflictError);
+    expect(repositorio.actualizar).not.toHaveBeenCalled();
+  });
+
   it("actualizar rechaza actividades inactivas", async () => {
     repositorio.buscarPorId.mockResolvedValue({ ...actividadBase, activo: false });
 

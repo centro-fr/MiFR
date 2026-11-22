@@ -11,6 +11,7 @@ const repositorio = {
   crear: vi.fn(),
   buscarPorId: vi.fn(),
   actualizar: vi.fn(),
+  eliminar: vi.fn(),
 };
 const alumnos = { buscarPorId: vi.fn(), buscarPorIdUsuario: vi.fn(), buscarPorIdUsuarioResponsable: vi.fn() };
 const profesoras = { buscarPorId: vi.fn(), buscarPorUsuario: vi.fn() };
@@ -79,6 +80,13 @@ describe("RutinaService", () => {
   });
 
   describe("crear", () => {
+    it("rechaza con 400 un nombre que el alumno ya tiene, sin importar mayúsculas ni espacios", async () => {
+      repositorio.listarDeAlumno.mockResolvedValue([{ ...RUTINA, nombre: "  adaptación fuerza - MES 1 " }]);
+
+      expect(await estado(service.crear({ ...INPUT, id_profesora: 10 }, PROPIETARIA))).toBe(400);
+      expect(repositorio.crear).not.toHaveBeenCalled();
+    });
+
     it("la profesora a cargo del alumno carga la rutina a su nombre", async () => {
       profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
       repositorio.profesoraTieneAlumno.mockResolvedValue(true);
@@ -308,6 +316,39 @@ describe("RutinaService", () => {
       expect(repositorio.actualizar).not.toHaveBeenCalled();
     });
 
+    it("responde 404 a la propietaria si la rutina no existe", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+
+      expect(await estado(service.actualizar(1, { nombre: "Otra" }, PROPIETARIA))).toBe(404);
+    });
+
+    it("responde 403, no 404, a una profesora con una rutina inexistente", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+
+      expect(await estado(service.actualizar(1, { nombre: "Otra" }, PROFESORA))).toBe(403);
+    });
+
+    it("rechaza con 400 el nombre de otra rutina del mismo alumno", async () => {
+      repositorio.listarDeAlumno.mockResolvedValue([
+        CON_FIN,
+        { ...RUTINA, id_rutina: 2, nombre: "Fuerza - Mes 2" },
+      ]);
+
+      expect(await estado(service.actualizar(1, { nombre: " fuerza - mes 2" }, PROPIETARIA))).toBe(400);
+      expect(repositorio.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("acepta volver a guardar la rutina con su propio nombre", async () => {
+      repositorio.listarDeAlumno.mockResolvedValue([
+        CON_FIN,
+        { ...RUTINA, id_rutina: 2, nombre: "Fuerza - Mes 2" },
+      ]);
+
+      await service.actualizar(1, { nombre: CON_FIN.nombre }, PROPIETARIA);
+
+      expect(repositorio.actualizar).toHaveBeenCalledWith(1, { nombre: CON_FIN.nombre });
+    });
+
     it("acepta mover el inicio si se borra la fecha de fin en el mismo pedido", async () => {
       await service.actualizar(1, { fecha_desde: fecha("2026-12-01"), fecha_hasta: null }, PROPIETARIA);
 
@@ -315,6 +356,43 @@ describe("RutinaService", () => {
         fecha_desde: fecha("2026-12-01"),
         fecha_hasta: null,
       });
+    });
+  });
+
+  describe("eliminar", () => {
+    it("la propietaria elimina la rutina", async () => {
+      repositorio.buscarPorId.mockResolvedValue(RUTINA);
+
+      await service.eliminar(1, PROPIETARIA);
+
+      expect(repositorio.eliminar).toHaveBeenCalledWith(1);
+    });
+
+    it("la profesora a cargo del alumno elimina la rutina", async () => {
+      repositorio.buscarPorId.mockResolvedValue(RUTINA);
+      profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+      repositorio.profesoraTieneAlumno.mockResolvedValue(true);
+
+      await service.eliminar(1, PROFESORA);
+
+      expect(repositorio.eliminar).toHaveBeenCalledWith(1);
+    });
+
+    it("responde 403 a la profesora que no tiene al alumno a cargo", async () => {
+      repositorio.buscarPorId.mockResolvedValue(RUTINA);
+      profesoras.buscarPorUsuario.mockResolvedValue({ id_profesora: 10 });
+
+      expect(await estado(service.eliminar(1, PROFESORA))).toBe(403);
+      expect(repositorio.eliminar).not.toHaveBeenCalled();
+    });
+
+    it("responde 404 a la propietaria si la rutina no existe", async () => {
+      expect(await estado(service.eliminar(1, PROPIETARIA))).toBe(404);
+    });
+
+    it("responde 403, no 404, a quien no es propietaria con una rutina inexistente", async () => {
+      expect(await estado(service.eliminar(1, AJENO))).toBe(403);
+      expect(repositorio.eliminar).not.toHaveBeenCalled();
     });
   });
 });

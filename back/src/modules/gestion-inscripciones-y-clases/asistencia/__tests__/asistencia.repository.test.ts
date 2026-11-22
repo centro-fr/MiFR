@@ -127,6 +127,24 @@ describe("AsistenciaRepository", () => {
     expect(prisma.asistencias.createMany).not.toHaveBeenCalled();
   });
 
+  it("completarPresentes crea presentes sin usuario y deja intactos a los ya marcados", async () => {
+    await expect(repositorio.completarPresentes(20, [ana, beto], FECHA)).resolves.toBe(2);
+
+    const presente = { id_clase: 20, asistio: true, id_usuario_registra: null, fecha_registro: FECHA };
+    expect(prisma.asistencias.createMany).toHaveBeenCalledWith({
+      data: [
+        { ...presente, id_alumno: 5, id_inscripcion: 50 },
+        { ...presente, id_alumno: 6, id_inscripcion: 60 },
+      ],
+      skipDuplicates: true,
+    });
+  });
+
+  it("completarPresentes no consulta la base sin inscriptos", async () => {
+    await expect(repositorio.completarPresentes(20, [], FECHA)).resolves.toBe(0);
+    expect(prisma.asistencias.createMany).not.toHaveBeenCalled();
+  });
+
   describe("detección de inactivos (US-22)", () => {
     const MARCA = new Date("2026-10-15T12:00:00Z");
 

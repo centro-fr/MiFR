@@ -24,6 +24,7 @@ function crearMocks() {
       marcarPresentes: vi.fn(),
       tieneMarcasManuales: vi.fn(),
       completarAusentes: vi.fn().mockResolvedValue(2),
+      completarPresentes: vi.fn().mockResolvedValue(3),
       rachasDeInasistencia: vi.fn().mockResolvedValue(new Map()),
       buscarSeguimientos: vi.fn().mockResolvedValue(new Map()),
       ultimasPresenciasRegistradas: vi.fn().mockResolvedValue(new Map()),
@@ -177,6 +178,13 @@ describe("AsistenciaService", () => {
 
     expect(mocks.inscripciones.listarParaAsistencia).toHaveBeenCalledWith(4, FECHA_CLASE);
     expect(mocks.repositorio.completarAusentes).toHaveBeenCalledWith(20, [ana, beto, caro], AHORA);
+  });
+
+  it("completarPresentes registra presentes a los inscriptos vigentes del día de la clase", async () => {
+    await expect(servicio.completarPresentes(clase, AHORA)).resolves.toBe(3);
+
+    expect(mocks.inscripciones.listarParaAsistencia).toHaveBeenCalledWith(4, FECHA_CLASE);
+    expect(mocks.repositorio.completarPresentes).toHaveBeenCalledWith(20, [ana, beto, caro], AHORA);
   });
 
   describe("detección de inactivos (US-22)", () => {

@@ -34,6 +34,7 @@ function crearRepositorioMock() {
     buscarPorId: vi.fn().mockResolvedValue(guardada),
     guardar: vi.fn().mockResolvedValue({ resultado: "ok", promocion: guardada }),
     desactivar: vi.fn().mockResolvedValue({ ...guardada, activo: false }),
+    reactivar: vi.fn().mockResolvedValue(guardada),
     vigenteParaPlan: vi.fn(),
     buscarAplicable: vi.fn(),
   };
@@ -156,6 +157,33 @@ describe("PromocionService", () => {
       repositorio.desactivar.mockResolvedValue(null);
 
       await expect(servicio.desactivar(4)).rejects.toBeInstanceOf(ConflictError);
+    });
+  });
+
+  describe("reactivar", () => {
+    it("vuelve a activar una desactivada", async () => {
+      repositorio.buscarPorId.mockResolvedValue({ ...guardada, activo: false });
+
+      await expect(servicio.reactivar(4)).resolves.toMatchObject({ activo: true });
+      expect(repositorio.reactivar).toHaveBeenCalledWith(4);
+    });
+
+    it("responde 409 si ya estaba activa, sin tocar la base", async () => {
+      await expect(servicio.reactivar(4)).rejects.toBeInstanceOf(ConflictError);
+      expect(repositorio.reactivar).not.toHaveBeenCalled();
+    });
+
+    it("responde 409 si otro pedido la reactivó en el medio", async () => {
+      repositorio.buscarPorId.mockResolvedValue({ ...guardada, activo: false });
+      repositorio.reactivar.mockResolvedValue(null);
+
+      await expect(servicio.reactivar(4)).rejects.toBeInstanceOf(ConflictError);
+    });
+
+    it("responde 404 si no existe", async () => {
+      repositorio.buscarPorId.mockResolvedValue(null);
+
+      await expect(servicio.reactivar(4)).rejects.toBeInstanceOf(NotFoundError);
     });
   });
 

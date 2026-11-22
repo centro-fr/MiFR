@@ -10,7 +10,7 @@ const transaccion = {
 
 const prisma = {
   $transaction: vi.fn((operacion: (tx: typeof transaccion) => unknown) => operacion(transaccion)),
-  rutinas: { findMany: vi.fn(), findFirst: vi.fn() },
+  rutinas: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), update: vi.fn() },
   inscripciones: { findFirst: vi.fn() },
 };
 
@@ -130,6 +130,44 @@ describe("RutinaRepository", () => {
         where: { id_rutina: 1 },
         data: { activa: false, fecha_hasta: dia("2026-10-15") },
       });
+    });
+  });
+
+  describe("buscarPorId, eliminar y actualizar", () => {
+    it("buscarPorId devuelve la rutina o null", async () => {
+      prisma.rutinas.findUnique.mockResolvedValueOnce(fila()).mockResolvedValueOnce(null);
+
+      expect(await repositorio.buscarPorId(1)).toEqual(fila());
+      expect(await repositorio.buscarPorId(2)).toBeNull();
+      expect(prisma.rutinas.findUnique).toHaveBeenCalledWith({ where: { id_rutina: 2 } });
+    });
+
+    it("eliminar borra la rutina por su id", async () => {
+      await repositorio.eliminar(3);
+
+      expect(prisma.rutinas.delete).toHaveBeenCalledWith({ where: { id_rutina: 3 } });
+    });
+
+    it("actualizar manda solo los campos que vinieron, incluido un null", async () => {
+      prisma.rutinas.update.mockResolvedValue(fila({ nombre: "Mes 2" }));
+      const cambios = {
+        nombre: "Mes 2",
+        fecha_desde: dia("2026-11-01"),
+        fecha_hasta: null,
+        contenido: CONTENIDO,
+        observaciones: null,
+      };
+
+      expect(await repositorio.actualizar(1, cambios)).toEqual(fila({ nombre: "Mes 2" }));
+      expect(prisma.rutinas.update).toHaveBeenCalledWith({ where: { id_rutina: 1 }, data: cambios });
+    });
+
+    it("actualizar sin cambios no manda ningún campo", async () => {
+      prisma.rutinas.update.mockResolvedValue(fila());
+
+      await repositorio.actualizar(1, {});
+
+      expect(prisma.rutinas.update).toHaveBeenCalledWith({ where: { id_rutina: 1 }, data: {} });
     });
   });
 });

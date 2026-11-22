@@ -92,6 +92,12 @@ describe("actualizarActividadSchema", () => {
 });
 
 describe("listarActividadQuerySchema", () => {
+  it("convierte incluirBajas de texto a booleano y rechaza otro valor", () => {
+    expect(listarActividadQuerySchema.parse({ incluirBajas: "true" })).toEqual({ incluirBajas: true });
+    expect(listarActividadQuerySchema.parse({ incluirBajas: "false" })).toEqual({ incluirBajas: false });
+    expect(listarActividadQuerySchema.safeParse({ incluirBajas: "1" }).success).toBe(false);
+  });
+
   it("rechaza una búsqueda con caracteres de control o más larga de 60", () => {
     expect(listarActividadQuerySchema.safeParse({ busqueda: "yo\u0000ga" }).success).toBe(false);
     expect(listarActividadQuerySchema.safeParse({ busqueda: "a".repeat(61) }).success).toBe(false);

@@ -32,6 +32,12 @@ describe("ActividadRepository", () => {
     });
   });
 
+  it("listar con incluirBajas trae también las dadas de baja", async () => {
+    await repositorio.listar({ incluirBajas: true });
+
+    expect(prisma.actividades.findMany).toHaveBeenCalledWith({ where: {}, orderBy: { nombre: "asc" } });
+  });
+
   it("listar busca por código o nombre sin distinguir mayúsculas", async () => {
     await repositorio.listar({ busqueda: "pil" });
 

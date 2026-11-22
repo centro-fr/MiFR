@@ -40,6 +40,7 @@ function crearLogicaMock() {
     crearPromocion: vi.fn().mockResolvedValue(promocion),
     actualizarPromocion: vi.fn().mockResolvedValue(promocion),
     desactivarPromocion: vi.fn().mockResolvedValue({ ...promocion, estado: "DESACTIVADA" }),
+    reactivarPromocion: vi.fn().mockResolvedValue(promocion),
   };
 }
 
@@ -104,6 +105,7 @@ describe("rutas de promociones", () => {
     const creada = await como("propietaria", "post", "").send(alta);
     const editada = await como("propietaria", "patch", "/4").send({ valor: 15 });
     const desactivada = await como("propietaria", "post", "/4/desactivar");
+    const reactivada = await como("propietaria", "post", "/4/reactivar");
 
     expect(creada.status).toBe(201);
     expect(logica.crearPromocion).toHaveBeenCalledWith({
@@ -115,11 +117,14 @@ describe("rutas de promociones", () => {
     expect(logica.actualizarPromocion).toHaveBeenCalledWith(4, { valor: 15 });
     expect(desactivada.status).toBe(200);
     expect(logica.desactivarPromocion).toHaveBeenCalledWith(4);
+    expect(reactivada.status).toBe(200);
+    expect(logica.reactivarPromocion).toHaveBeenCalledWith(4);
     const eventos = warn.mock.calls.map(([linea]) => JSON.parse(String(linea)) as Record<string, unknown>);
     expect(eventos.map(({ auditoria }) => auditoria)).toEqual([
       "PROMOCION_CREADA",
       "PROMOCION_MODIFICADA",
       "PROMOCION_DESACTIVADA",
+      "PROMOCION_MODIFICADA",
     ]);
     expect(eventos[0]).toMatchObject({ por: 1, id_promocion: 4, ids_planes: [1] });
   });
@@ -128,6 +133,7 @@ describe("rutas de promociones", () => {
     ["post", ""],
     ["patch", "/4"],
     ["post", "/4/desactivar"],
+    ["post", "/4/reactivar"],
   ] as const)("%s %s es solo de la propietaria: la profesora recibe 403", async (metodo, ruta) => {
     const respuesta = await como("profesora", metodo, ruta).send(alta);
 
@@ -135,6 +141,7 @@ describe("rutas de promociones", () => {
     expect(logica.crearPromocion).not.toHaveBeenCalled();
     expect(logica.actualizarPromocion).not.toHaveBeenCalled();
     expect(logica.desactivarPromocion).not.toHaveBeenCalled();
+    expect(logica.reactivarPromocion).not.toHaveBeenCalled();
   });
 
   it("valida la entrada antes de llegar a la lógica y traduce el 409", async () => {

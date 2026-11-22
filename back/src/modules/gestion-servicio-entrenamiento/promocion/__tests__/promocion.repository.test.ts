@@ -157,6 +157,20 @@ describe("PromocionRepository", () => {
     await expect(repositorio.desactivar(4)).resolves.toBeNull();
   });
 
+  it("reactivar solo cambia una desactivada y la devuelve; null si ya estaba activa", async () => {
+    transaccion.promociones.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    transaccion.promociones.findUniqueOrThrow.mockResolvedValue({ ...fila, activo: true });
+
+    await expect(repositorio.reactivar(4)).resolves.toMatchObject({ activo: true, valor: 20 });
+    expect(transaccion.promociones.updateMany).toHaveBeenCalledWith({
+      where: { id_promocion: 4, activo: false },
+      data: { activo: true },
+    });
+    await expect(repositorio.reactivar(4)).resolves.toBeNull();
+  });
+
   it("vigenteParaPlan busca la activa del plan ese día, la más reciente", async () => {
     prisma.promociones.findFirst
       .mockResolvedValueOnce({ ...fila, planes: undefined })

@@ -230,6 +230,7 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     listar: vi.fn().mockResolvedValue("resultado"),
     obtenerPorId: vi.fn().mockResolvedValue("resultado"),
     desactivar: vi.fn().mockResolvedValue("resultado"),
+    reactivar: vi.fn().mockResolvedValue("resultado"),
   };
   const servicio = new GestionServicioEntrenamientoService(
     actividades as unknown as ActividadService,
@@ -261,6 +262,7 @@ describe("GestionServicioEntrenamientoService delega cada operación al componen
     ["listarPromociones", [{ vigentes: true }], promociones.listar],
     ["obtenerPromocion", [3], promociones.obtenerPorId],
     ["desactivarPromocion", [3], promociones.desactivar],
+    ["reactivarPromocion", [3], promociones.reactivar],
   ] as const)("%s", async (operacion, argumentos, destino) => {
     const metodo = servicio[operacion] as (...args: unknown[]) => Promise<unknown>;
 

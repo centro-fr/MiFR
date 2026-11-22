@@ -12,6 +12,8 @@ function crearFachada() {
     obtenerVigente: vi.fn().mockResolvedValue("vigente"),
     obtenerVigentePropia: vi.fn().mockResolvedValue("mi rutina"),
     listarPropia: vi.fn().mockResolvedValue("mis rutinas"),
+    actualizar: vi.fn().mockResolvedValue("rutina editada"),
+    eliminar: vi.fn().mockResolvedValue(undefined),
   };
   const progreso = {
     registrar: vi.fn().mockResolvedValue("registrado"),
@@ -42,6 +44,16 @@ describe("GestionRutinasYProgresoService", () => {
     expect(rutinas.obtenerVigente).toHaveBeenCalledWith(5, SOLICITANTE);
     expect(rutinas.obtenerVigentePropia).toHaveBeenCalledWith(SOLICITANTE);
     expect(rutinas.listarPropia).toHaveBeenCalledWith(SOLICITANTE);
+  });
+
+  it("pasa la edición y la eliminación de una rutina al componente Rutina", async () => {
+    const { fachada, rutinas } = crearFachada();
+    const cambios = { nombre: "Fuerza - Mes 2" };
+
+    expect(await fachada.actualizarRutina(3, cambios, SOLICITANTE)).toBe("rutina editada");
+    await fachada.eliminarRutina(3, SOLICITANTE);
+    expect(rutinas.actualizar).toHaveBeenCalledWith(3, cambios, SOLICITANTE);
+    expect(rutinas.eliminar).toHaveBeenCalledWith(3, SOLICITANTE);
   });
 
   it("pasa cada operación de progreso al componente Progreso", async () => {
