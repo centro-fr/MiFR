@@ -171,11 +171,21 @@ export interface BloqueDeGrilla {
 // Cada actividad la da siempre la misma profesora: una inscripción es de una actividad y de una
 // profesora, y ninguna profesora tiene dos clases a la misma hora. Los totales por semana son los de
 // la página pública (Funcional 13, Personalizado 8, HIIT 8, Acondicionamiento 5...).
+const LUCIA_TARDE: BloqueDeGrilla[] = [
+  { hora: "12:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+  { hora: "13:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+  { hora: "14:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+  { hora: "15:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+  { hora: "16:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+  { hora: "17:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
+];
+
 const LUNES_MIERCOLES_VIERNES: BloqueDeGrilla[] = [
   { hora: "07:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
   { hora: "08:00", codigoActividad: "ACONDICIONAMIENTO", emailProfesora: SOFIA },
   { hora: "09:00", codigoActividad: "PERSONALIZADO", emailProfesora: CARLA },
   { hora: "10:00", codigoActividad: "HIIT", emailProfesora: MARINA },
+  ...LUCIA_TARDE,
   { hora: "16:00", codigoActividad: "PERSONALIZADO", emailProfesora: CARLA },
   { hora: "17:00", codigoActividad: "POWER", emailProfesora: MARINA },
   { hora: "18:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
@@ -189,6 +199,7 @@ const MARTES_JUEVES: BloqueDeGrilla[] = [
   { hora: "08:00", codigoActividad: "ACONDICIONAMIENTO", emailProfesora: SOFIA },
   { hora: "09:00", codigoActividad: "PERSONALIZADO", emailProfesora: CARLA },
   { hora: "10:00", codigoActividad: "HIIT", emailProfesora: MARINA },
+  ...LUCIA_TARDE,
   { hora: "17:00", codigoActividad: "KID_FIT", emailProfesora: SOFIA },
   { hora: "18:00", codigoActividad: "BOOTYBAND", emailProfesora: CARLA },
   { hora: "19:00", codigoActividad: "GAP", emailProfesora: CARLA },
@@ -196,13 +207,15 @@ const MARTES_JUEVES: BloqueDeGrilla[] = [
   { hora: "21:00", codigoActividad: "FUNCIONAL", emailProfesora: LUCIA },
 ];
 
-// De 1 (lunes) a 5 (viernes): el sábado el centro no abre.
+// De 1 (lunes) a 7 (domingo): incluye los bloques de 12 a 18 hs de Lucía todos los días para la presentación.
 export const GRILLA: Record<number, BloqueDeGrilla[]> = {
   1: LUNES_MIERCOLES_VIERNES,
   2: MARTES_JUEVES,
   3: LUNES_MIERCOLES_VIERNES,
   4: MARTES_JUEVES,
   5: LUNES_MIERCOLES_VIERNES,
+  6: LUCIA_TARDE,
+  7: LUCIA_TARDE,
 };
 
 // El Training del viernes tiene un cupo propio, distinto del de la actividad (CA-07).
@@ -373,6 +386,90 @@ export const TUTORES: TutorDelElenco[] = [
 
 const PUNTUAL_EFECTIVO = { pago: "puntual", forma: "efectivo" } as const;
 const PUNTUAL_TRANSFERENCIA = { pago: "puntual", forma: "transferencia" } as const;
+
+const NOMBRES_LUCIA_TARDE: [string, string][] = [
+  ["Belén", "Tapia"],
+  ["Mauro", "Paredes"],
+  ["Natalia", "Aramayo"],
+  ["Cristian", "Farfán"],
+  ["Yanina", "Aparicio"],
+  ["Rodrigo", "Calisaya"],
+  ["Melina", "Zambrano"],
+  ["Gastón", "Condori"],
+  ["Antonella", "Burgos"],
+  ["Nahuel", "Tejerina"],
+  ["Nadia", "Vilca"],
+  ["Sebastián", "Gallardo"],
+  ["Gisela", "Arias"],
+  ["Bruno", "Velázquez"],
+  ["Tamara", "Figueroa"],
+  ["Darío", "Cárdenas"],
+  ["Cinthia", "Nieva"],
+  ["Lautaro", "Acuña"],
+  ["Jessica", "Salas"],
+  ["Iván", "Ledesma"],
+  ["Karina", "Zárate"],
+  ["Marcos", "Bustamante"],
+  ["Solange", "Ponce"],
+  ["Esteban", "Miranda"],
+  ["Lorena", "Ibáñez"],
+  ["Kevin", "Méndez"],
+  ["Verónica", "Córdoba"],
+  ["Adrián", "Peralta"],
+  ["Priscila", "Duarte"],
+  ["Maximiliano", "Correa"],
+];
+
+const ALUMNOS_POR_HORARIO_LUCIA_TARDE = 5;
+
+function normalizarParaEmail(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+// 5 alumnos activos por cada bloque de LUCIA_TARDE en los 7 días (Full lun-vie + Básico sáb-dom).
+function alumnosDeLuciaTarde(): AlumnoDelElenco[] {
+  return LUCIA_TARDE.flatMap(({ hora }, indiceHora) =>
+    Array.from({ length: ALUMNOS_POR_HORARIO_LUCIA_TARDE }, (_, posicion) => {
+      const indice = indiceHora * ALUMNOS_POR_HORARIO_LUCIA_TARDE + posicion;
+      const [nombre, apellido] = NOMBRES_LUCIA_TARDE[indice];
+      const numero = String(indice + 1).padStart(2, "0");
+      const pago = indice % 2 === 0 ? PUNTUAL_EFECTIVO : PUNTUAL_TRANSFERENCIA;
+      return {
+        nombre,
+        apellido,
+        dni: `451000${numero}`,
+        email: `${normalizarParaEmail(nombre)}.${normalizarParaEmail(apellido)}@example.com`,
+        telefono: `388 490-01${numero}`,
+        fecha_nacimiento: `199${indice % 10}-0${(indice % 9) + 1}-1${indice % 9}`,
+        direccion: `Av. Éxodo ${300 + indice * 15}`,
+        contacto: [`Familiar ${apellido}`, `388 490-02${numero}`] as [string, string],
+        asistencia: 0.78,
+        aptoMedico: true,
+        inscripciones: [
+          {
+            plan: "Full",
+            actividad: "FUNCIONAL",
+            hora,
+            dias: [1, 2, 3, 4, 5],
+            inicioHaceDias: 20,
+            ...pago,
+          },
+          {
+            plan: "Básico",
+            actividad: "FUNCIONAL",
+            hora,
+            dias: [6, 7],
+            inicioHaceDias: 20,
+            ...pago,
+          },
+        ],
+      };
+    }),
+  );
+}
 
 export const ALUMNOS: AlumnoDelElenco[] = [
   // Las cuentas del login de prueba.
@@ -1394,6 +1491,7 @@ export const ALUMNOS: AlumnoDelElenco[] = [
       },
     ],
   },
+  ...alumnosDeLuciaTarde(),
 ];
 
 // Valentina López pasa del Básico al Intermedio cuando termine la gracia de su cuota (US-14).
