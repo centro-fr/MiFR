@@ -158,8 +158,12 @@ describe("EditarPlanDialog", () => {
   it("permite programar un cambio de precio con fecha de vigencia futura y muestra el aviso", async () => {
     render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
 
+    const inputFecha = screen.getByLabelText(/Rige desde \*/i);
+    expect(inputFecha).toBeEnabled();
+
+    // Permite elegir la fecha incluso antes de modificar el precio
+    fireEvent.change(inputFecha, { target: { value: "2099-05-01" } });
     fireEvent.change(screen.getByLabelText(/Precio \*/i), { target: { value: "26000" } });
-    fireEvent.change(screen.getByLabelText(/Rige desde \*/i), { target: { value: "2099-05-01" } });
 
     expect(screen.getByText(/Las cuotas ya cobradas no cambian/i)).toBeInTheDocument();
 

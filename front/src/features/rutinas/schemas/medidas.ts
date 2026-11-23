@@ -15,7 +15,7 @@ interface DefinicionMedida {
 
 export const MEDIDAS: Record<CodigoMedida, DefinicionMedida> = {
   PESO: { etiqueta: "Peso", unidad: "kg", minimo: 2, maximo: 400 },
-  TALLA: { etiqueta: "Talla", unidad: "cm", minimo: 40, maximo: 250 },
+  TALLA: { etiqueta: "Altura", unidad: "cm", minimo: 40, maximo: 250 },
   PECHO: { etiqueta: "Pecho", unidad: "cm", minimo: 20, maximo: 250 },
   CINTURA: { etiqueta: "Cintura", unidad: "cm", minimo: 20, maximo: 250 },
   CADERA: { etiqueta: "Cadera", unidad: "cm", minimo: 20, maximo: 250 },

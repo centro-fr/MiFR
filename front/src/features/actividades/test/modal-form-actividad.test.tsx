@@ -240,7 +240,7 @@ describe('US-03: ModalFormActividad', () => {
     expect(screen.queryByLabelText(/^Personalizada$/i)).not.toBeInTheDocument();
   });
 
-  test('Al editar, permite modificar nombre, descripción, cupo y pide peso y talla', async () => {
+  test('Al editar, permite modificar nombre, descripción, cupo y pide peso y altura', async () => {
     const mockOnSave = vi.fn();
 
     render(
@@ -256,7 +256,7 @@ describe('US-03: ModalFormActividad', () => {
     fireEvent.change(screen.getByLabelText(/Nombre/i), { target: { value: 'Funcional Avanzado' } });
     fireEvent.change(screen.getByLabelText(/Descripción/i), { target: { value: 'Nueva descripción' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '25' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: /Pide peso y talla al inscribirse/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Pide peso y altura al inscribirse/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
 

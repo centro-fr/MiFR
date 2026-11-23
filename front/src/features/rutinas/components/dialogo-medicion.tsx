@@ -181,7 +181,7 @@ export function DialogoMedicion({
               className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:underline cursor-pointer dark:text-slate-400 dark:hover:text-slate-200"
             >
               {mostrarMas ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-              <span>Más medidas: grasa, talla, pecho y pierna</span>
+              <span>Más medidas: grasa, altura, pecho y pierna</span>
             </button>
           </div>
 

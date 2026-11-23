@@ -22,7 +22,7 @@ import {
 import type { RoleCode } from "@/types/auth";
 
 /** Contadores que puede mostrar una sub-opción; el número lo resuelve el layout. */
-export type ContadorMenu = "POR_VERIFICAR";
+export type ContadorMenu = "POR_VERIFICAR" | "EFECTIVO_A_RENDIR";
 
 export interface SubItemMenu {
   etiqueta: string;
@@ -86,6 +86,7 @@ export const ITEMS_PROPIETARIA: ItemMenu[] = [
     icono: Banknote,
     seccion: SECCION_COBROS,
     to: "/app/cobros/efectivo",
+    contador: "EFECTIVO_A_RENDIR",
     descripcion: "Efectivo cobrado por las profesoras pendiente de rendición.",
   },
   {

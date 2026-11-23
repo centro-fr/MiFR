@@ -259,7 +259,6 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                     aria-label="Rige desde *"
                     min={hoy}
                     required={precioCambio}
-                    disabled={!precioCambio}
                     value={fechaVigencia}
                     onChange={(val) => {
                       setFechaVigencia(val);

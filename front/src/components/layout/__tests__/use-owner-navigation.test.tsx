@@ -91,8 +91,14 @@ describe("useOwnerNavigation: contadores", () => {
     expect(porVerificar.contador).toBe(3);
   });
 
+  it("pone en Efectivo a rendir el total de cobros en efectivo pendientes de rendición", () => {
+    const efectivoARendir = buscarItem("/app/dashboard", "Efectivo a rendir", { EFECTIVO_A_RENDIR: 4 });
+    expect(efectivoARendir.contador).toBe(4);
+  });
+
   it("sin dato no hay contador", () => {
     expect(buscarItem("/app/dashboard", "Por verificar").contador).toBeUndefined();
+    expect(buscarItem("/app/dashboard", "Efectivo a rendir").contador).toBeUndefined();
   });
 });
 

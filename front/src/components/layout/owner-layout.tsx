@@ -624,8 +624,10 @@ export function OwnerLayout({ children, submiga, migasPersonalizadas, tituloMovi
 
   const contadores = useContadoresMenu();
   const { items, migas: migasNavegacion } = useOwnerNavigation(contadores, roles, panelActivo);
+  // En Propietaria "Alumnos" es solo título de sección (sin enlace) previo a "Listado";
+  // en Profesora es el ítem navegable que vuelve al listado y debe conservarse.
   const migasBase = submiga
-    ? migasNavegacion.filter((m) => m.etiqueta !== "Alumnos")
+    ? migasNavegacion.filter((m) => !(m.etiqueta === "Alumnos" && !m.to))
     : migasNavegacion;
   const migas = migasPersonalizadas ?? (submiga ? [...migasBase, { etiqueta: submiga }] : migasNavegacion);
   const [abiertoInicial] = useState(leerSidebarAbierto);

@@ -371,7 +371,7 @@ export function ActividadesPage() {
                     textoModalidad(actividad.modalidad),
                     `Cupo ${textoCupoActividad(actividad.cupoMaximo)}`,
                     cantHorarios > 0 ? `${cantHorarios} horarios por semana` : "Sin horarios",
-                    actividad.requiereMedidas ? "Pide peso y talla" : null,
+                    actividad.requiereMedidas ? "Pide peso y altura" : null,
                   ];
                   return (
                     <FilaMovil
@@ -436,7 +436,7 @@ export function ActividadesPage() {
                     <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Modalidad</TableHead>
                     <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Cupo por clase</TableHead>
                     <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Horarios</TableHead>
-                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Pide peso y talla</TableHead>
+                    <TableHead className="px-4 py-3.5 font-semibold text-slate-500 dark:text-slate-400">Pide peso y altura</TableHead>
                     <TableHead className="px-6 py-3.5 text-right font-semibold text-slate-500 dark:text-slate-400">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>

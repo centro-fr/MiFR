@@ -112,6 +112,18 @@ export function RutinaYProgreso({ idAlumno, nombreAlumno, admiteCargas }: PropsR
     return `Se mantiene igual desde la primera medición (${fechaPrim}).`;
   }, [datosMetrica, metricaActiva]);
 
+  // Última altura registrada: se muestra como referencia contextual en la vista de Peso.
+  const ultimaAltura = useMemo(() => {
+    const conAltura = mediciones
+      .map((m) => {
+        const item = m.medidas.find((med) => med.codigo === "TALLA");
+        return item ? { fecha: m.fecha, valor: item.valor } : null;
+      })
+      .filter((x): x is { fecha: string; valor: number } => x !== null)
+      .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return conAltura[0] ?? null;
+  }, [mediciones]);
+
   return (
     <div className="space-y-4">
       {!admiteCargas && (
@@ -361,11 +373,21 @@ export function RutinaYProgreso({ idAlumno, nombreAlumno, admiteCargas }: PropsR
                 })}
               </div>
 
-              {/* Resumen */}
-              {resumenCambio && (
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium pt-1">
-                  {resumenCambio}
-                </p>
+              {/* Resumen y referencia de altura en Peso */}
+              {(resumenCambio || metricaActiva === "PESO") && (
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  {resumenCambio ? <p>{resumenCambio}</p> : <span />}
+                  {metricaActiva === "PESO" && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                      <span>Altura:</span>
+                      <strong className="font-bold text-slate-900 tabular-nums dark:text-white">
+                        {ultimaAltura
+                          ? `${ultimaAltura.valor.toString().replace(".", ",")} ${MEDIDAS.TALLA.unidad}`
+                          : "Sin registrar"}
+                      </strong>
+                    </span>
+                  )}
+                </div>
               )}
 
               {/* Tabla de progreso */}

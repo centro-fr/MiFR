@@ -121,9 +121,13 @@ export function useOwnerNavigation(
 ) {
   const { pathname } = useLocation();
   const porVerificar = contadores.POR_VERIFICAR;
+  const efectivoARendir = contadores.EFECTIVO_A_RENDIR;
   const menu = useMemo(() => itemsDelMenu(roles, rolActivo), [roles, rolActivo]);
   return useMemo(() => {
-    const numeros: ContadoresMenu = { POR_VERIFICAR: porVerificar };
+    const numeros: ContadoresMenu = {
+      POR_VERIFICAR: porVerificar,
+      EFECTIVO_A_RENDIR: efectivoARendir,
+    };
     const todasLasRutas = menu
       .flatMap((i) => [i.to, ...(i.hijos?.map((h) => h.to) ?? [])])
       .filter((t): t is string => Boolean(t));
@@ -137,5 +141,5 @@ export function useOwnerNavigation(
     );
     const rutaInicio = rolActivo ? homePathForRoles([rolActivo]) : homePathForRoles(roles);
     return { items, migas: construirMigas(items, rutaInicio, pathname) };
-  }, [menu, pathname, porVerificar, roles, rolActivo]);
+  }, [menu, pathname, porVerificar, efectivoARendir, roles, rolActivo]);
 }

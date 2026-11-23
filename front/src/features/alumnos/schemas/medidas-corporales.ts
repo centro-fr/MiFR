@@ -25,7 +25,7 @@ function medida(nombre: string, unidad: string, minimo: number, maximo: number) 
 
 export const medidasCorporalesSchema = z.object({
   peso_kg: medida("El peso", "kg", 2, 400),
-  talla_cm: medida("La talla", "cm", 40, 250),
+  talla_cm: medida("La altura", "cm", 40, 250),
 });
 
 export type MedidasCorporalesForm = z.input<typeof medidasCorporalesSchema>;

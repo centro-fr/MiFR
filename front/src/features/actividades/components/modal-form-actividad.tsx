@@ -285,12 +285,12 @@ export function ModalFormActividad({
             )}
           </div>
 
-          {/* Checkbox Pide peso y talla */}
+          {/* Checkbox Pide peso y altura */}
           <div className="flex items-center gap-3 pt-1">
             <button
               type="button"
               role="checkbox"
-              aria-label="Pide peso y talla al inscribirse"
+              aria-label="Pide peso y altura al inscribirse"
               aria-checked={pidePesoTalla}
               onClick={() => setPidePesoTalla(!pidePesoTalla)}
               className={cn(
@@ -304,7 +304,7 @@ export function ModalFormActividad({
             </button>
             <div className="cursor-pointer select-none" onClick={() => setPidePesoTalla(!pidePesoTalla)}>
               <span className="block text-sm font-bold text-slate-900 dark:text-white">
-                Pide peso y talla al inscribirse
+                Pide peso y altura al inscribirse
               </span>
             </div>
           </div>

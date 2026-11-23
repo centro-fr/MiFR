@@ -1,7 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { RoleCode } from "@/types/auth";
 import { OwnerLayout } from "../owner-layout";
+
+let rolesMock: RoleCode[] = ["PROPIETARIA"];
 
 vi.mock("@/features/auth/hooks/use-auth", () => ({
   useAuth: () => ({
@@ -12,9 +15,9 @@ vi.mock("@/features/auth/hooks/use-auth", () => ({
 
 vi.mock("@/features/seguridad/hooks/use-permissions", () => ({
   usePermissions: () => ({
-    roles: ["PROPIETARIA"],
+    roles: rolesMock,
     hasPermission: () => true,
-    hasRole: () => true,
+    hasRole: (rol: RoleCode) => rolesMock.includes(rol),
   }),
 }));
 
@@ -31,7 +34,11 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 describe("OwnerLayout: migas de pan y submiga", () => {
-  it("cuando se pasa submiga en la ficha del alumno, omite la sección Alumnos y muestra Listado y el nombre del alumno", () => {
+  beforeEach(() => {
+    rolesMock = ["PROPIETARIA"];
+  });
+
+  it("cuando se pasa submiga en la ficha del alumno como propietaria, omite la sección Alumnos y muestra Listado y el nombre del alumno", () => {
     render(
       <MemoryRouter initialEntries={["/app/alumnos/5"]}>
         <OwnerLayout submiga="Sofía Medina">
@@ -43,11 +50,29 @@ describe("OwnerLayout: migas de pan y submiga", () => {
     const nav = screen.getByRole("navigation", { name: "Migas de pan" });
     expect(nav).toBeInTheDocument();
 
-    // Debe contener Inicio, Listado y Sofía Medina, pero NO Alumnos
+    // Debe contener Inicio, Listado y Sofía Medina, pero NO la sección Alumnos
     expect(nav).toHaveTextContent("Inicio");
     expect(nav).toHaveTextContent("Listado");
     expect(nav).toHaveTextContent("Sofía Medina");
     expect(nav).not.toHaveTextContent("Alumnos");
+  });
+
+  it("cuando se pasa submiga en la ficha del alumno como profesora, conserva Alumnos con enlace al listado", () => {
+    rolesMock = ["PROFESORA"];
+
+    render(
+      <MemoryRouter initialEntries={["/app/alumnos/5"]}>
+        <OwnerLayout submiga="Sofía Medina">
+          <div>Contenido de prueba</div>
+        </OwnerLayout>
+      </MemoryRouter>,
+    );
+
+    const nav = screen.getByRole("navigation", { name: "Migas de pan" });
+    expect(nav).toHaveTextContent("Inicio");
+    expect(nav).toHaveTextContent("Alumnos");
+    expect(nav).toHaveTextContent("Sofía Medina");
+    expect(within(nav).getByRole("link", { name: "Alumnos" })).toHaveAttribute("href", "/app/alumnos/listado");
   });
 
   it("restaura la posición de scroll del sidebar desde sessionStorage", () => {

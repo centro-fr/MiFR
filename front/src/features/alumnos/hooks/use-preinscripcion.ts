@@ -286,7 +286,7 @@ export function usePreinscripcion({
       if (!resultado.success) {
         const { fieldErrors } = resultado.error.flatten();
         setErroresMedidas({ peso_kg: fieldErrors.peso_kg?.[0], talla_cm: fieldErrors.talla_cm?.[0] });
-        toast.error(`${actividadQuePideMedidas} pide el peso y la talla del alumno.`);
+        toast.error(`${actividadQuePideMedidas} pide el peso y la altura del alumno.`);
         return false;
       }
     }

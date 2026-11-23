@@ -15,10 +15,10 @@ interface CamposMedidasProps {
 
 const CAMPOS = [
   { campo: "peso_kg", id: "medida-peso", etiqueta: "Peso (kg)", ejemplo: "Ej: 65,5" },
-  { campo: "talla_cm", id: "medida-talla", etiqueta: "Talla (cm)", ejemplo: "Ej: 168" },
+  { campo: "talla_cm", id: "medida-talla", etiqueta: "Altura (cm)", ejemplo: "Ej: 168" },
 ] as const;
 
-/** US-05: peso y talla, solo cuando alguna actividad de los horarios elegidos los requiere. */
+/** US-05: peso y altura, solo cuando alguna actividad de los horarios elegidos los requiere. */
 export function CamposMedidas({ medidas, onChange, errores }: CamposMedidasProps) {
   return (
     <section aria-labelledby="titulo-medidas" className="space-y-3 p-4 rounded-xl border border-border/80 bg-muted/20">
@@ -26,7 +26,7 @@ export function CamposMedidas({ medidas, onChange, errores }: CamposMedidasProps
         <Ruler aria-hidden="true" className="size-5 text-primary shrink-0 mt-0.5" />
         <div>
           <h4 id="titulo-medidas" className="text-sm font-semibold text-foreground">
-            Peso y talla
+            Peso y altura
           </h4>
         </div>
       </div>
