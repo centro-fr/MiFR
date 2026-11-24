@@ -2,6 +2,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { cargarPresentacion, type ResumenPresentacion } from "../../shared/db/presentacion/cargar.js";
 import { ALUMNOS, TUTORES } from "../../shared/db/presentacion/elenco.js";
+import { alumnosHistoricos } from "../../shared/db/presentacion/historicos.js";
 import { fechaActualArgentina } from "../../shared/utils/fecha-argentina.js";
 import { reiniciarBase } from "./base-de-prueba.js";
 import { crearEntornoDeIntegracion, type EntornoDeIntegracion } from "./entorno.js";
@@ -51,7 +52,7 @@ afterAll(() => entorno.cerrar());
 describe("datos de la presentación", () => {
   it("cargan el centro entero, con lo que derivan los procesos de la API", () => {
     expect(resumen.profesoras).toBe(4);
-    expect(resumen.alumnos).toBe(ALUMNOS.length);
+    expect(resumen.alumnos).toBe(ALUMNOS.length + alumnosHistoricos(fechaActualArgentina()).length);
     expect(resumen.clases).toBeGreaterThan(200);
     expect(resumen.asistencias).toBeGreaterThan(1000);
     expect(resumen.liquidaciones).toBeGreaterThan(0);
@@ -156,6 +157,23 @@ describe("datos de la presentación", () => {
       expect(JSON.stringify(inactivos.body)).toContain(apellido);
     const ranking = await comoPropietaria("/reportes/ranking-asistencia");
     expect(JSON.stringify(ranking.body).indexOf("Benítez")).toBeGreaterThan(-1);
+  });
+
+  it.each([1, 2])("el reporte de inscripciones de hace %i años tiene altas y bajas", async (aniosAtras) => {
+    const anio = fechaActualArgentina().getUTCFullYear() - aniosAtras;
+    const respuesta = await comoPropietaria(`/reportes/inscripciones?anio=${anio}`);
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.resumen.total_altas).toBeGreaterThan(20);
+    expect(respuesta.body.resumen.total_bajas).toBeGreaterThan(0);
+  });
+
+  it("el mapa de ocupación tiene franjas libres, moderadas, casi llenas y completas", async () => {
+    const respuesta = await comoPropietaria("/reportes/ocupacion");
+    expect(respuesta.status).toBe(200);
+    const { por_nivel } = respuesta.body.resumen;
+    for (const nivel of ["LIBRE", "MODERADO", "CASI_LLENO", "COMPLETO"]) {
+      expect(por_nivel[nivel], nivel).toBeGreaterThan(0);
+    }
   });
 
   it("el panel de la alumna y el de la tutora responden", async () => {

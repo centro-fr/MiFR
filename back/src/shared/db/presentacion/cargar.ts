@@ -32,6 +32,7 @@ import {
   type Azar,
   type PagoPlaneado,
 } from "./historia.js";
+import { alumnosHistoricos, inicioDeLaHistoria } from "./historicos.js";
 import { cargarRutinasYProgreso } from "./rutinas.js";
 
 // Carga en una base vacía (con el catálogo de seguridad, las insignias y los parámetros ya cargados) el
@@ -59,8 +60,6 @@ export interface ResumenPresentacion {
   avisos: number;
 }
 
-// Hace cuánto empezó el centro a usar el sistema: las altas de profesoras, horarios y precios.
-const DIAS_DE_HISTORIA = 240;
 const PROMO_AMIGAS = "Promo amigas";
 // El valor inicial de DIA_CIERRE_HONORARIOS: la carga parte de una base nueva.
 const DIA_CIERRE_HONORARIOS = 5;
@@ -126,7 +125,8 @@ export async function cargarPresentacion(
 }
 
 async function cargarElCentro(prisma: PrismaClient, hoy: Date, ahora: Date): Promise<Contexto> {
-  const altaDelCentro = sumarDias(hoy, -DIAS_DE_HISTORIA);
+  // Desde que el centro empezó a usar el sistema: las altas de profesoras, horarios y precios.
+  const altaDelCentro = inicioDeLaHistoria(hoy);
   await cargarDatosBancarios(prisma);
   const { usuarioDeProfesora, idProfesora } = await cargarProfesoras(prisma, altaDelCentro);
   const horarios = await cargarGrilla(prisma, idProfesora, altaDelCentro);
@@ -142,7 +142,7 @@ async function cargarElCentro(prisma: PrismaClient, hoy: Date, ahora: Date): Pro
     horarios,
     planes,
     promoAmigas,
-    rendiciones: fechasDeRendicion(hoy),
+    rendiciones: fechasDeRendicion(hoy, altaDelCentro),
     idMarina: usuarioDeProfesora.get(MARINA) as number,
   };
 }
@@ -343,12 +343,14 @@ async function cargarTarifas(
   await prisma.tarifas_honorario.createMany({ data: tarifas });
 }
 
-// Las profesoras rinden el efectivo un viernes cada dos semanas. La última rendición fue hace al
-// menos una semana: lo cobrado después queda como efectivo a rendir (US-19).
-function fechasDeRendicion(hoy: Date): Date[] {
+// Las profesoras rinden el efectivo un viernes cada dos semanas, desde que el centro usa el sistema. La
+// última rendición fue hace al menos una semana: lo cobrado después queda como efectivo a rendir (US-19).
+function fechasDeRendicion(hoy: Date, desde: Date): Date[] {
   let ultima = sumarDias(hoy, -7);
   while (diaDeLaSemana(ultima) !== 5) ultima = sumarDias(ultima, -1);
-  return Array.from({ length: 20 }, (_, indice) => sumarDias(ultima, -14 * indice)).reverse();
+  const fechas: Date[] = [];
+  for (let viernes = ultima; viernes >= desde; viernes = sumarDias(viernes, -14)) fechas.push(viernes);
+  return fechas.reverse();
 }
 
 async function cargarAlumnos(contexto: Contexto): Promise<InscripcionCargada[]> {
@@ -364,7 +366,9 @@ async function cargarAlumnos(contexto: Contexto): Promise<InscripcionCargada[]> 
 
   const cargadas: InscripcionCargada[] = [];
   // Primero los adultos: un alumno que también es tutor tiene que existir antes que sus menores.
-  const ordenados = [...ALUMNOS].sort((a, b) => Number(Boolean(a.dniTutor)) - Number(Boolean(b.dniTutor)));
+  const ordenados = [...ALUMNOS, ...alumnosHistoricos(contexto.hoy)].sort(
+    (a, b) => Number(Boolean(a.dniTutor)) - Number(Boolean(b.dniTutor)),
+  );
   for (const alumno of ordenados) {
     cargadas.push(...(await cargarAlumno(contexto, alumno, tutores, roles)));
   }

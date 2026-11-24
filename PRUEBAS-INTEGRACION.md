@@ -1242,11 +1242,11 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 1. Se inicia sesión con cada cuenta del selector del login de prueba (`front/src/mocks/data/semilla.ts`).
 2. Se revisan en la base las cuotas, los pagos, las clases y los roles de los tutores.
-3. Marina consulta el listado de alumnos por estado de cuota, las transferencias pendientes, el efectivo a rendir, los reportes, el informe de inactivos, las liquidaciones del mes pasado y las clases de hoy. Camila consulta su panel y Mariana López sus menores.
+3. Marina consulta el listado de alumnos por estado de cuota, las transferencias pendientes, el efectivo a rendir, los reportes (entre ellos las inscripciones de los dos años anteriores y la ocupación), el informe de inactivos, las liquidaciones del mes pasado y las clases de hoy. Camila consulta su panel y Mariana López sus menores.
 
-**Resultado esperado:** todas las cuentas entran. Cada inscripción activa o de baja tiene su primera cuota con un pago confirmado y ninguna pre-inscripción tiene cuotas; los números de cuota son correlativos y cada vencimiento es posterior al anterior; ningún pago, asistencia ni clase queda en el futuro; los tutores quedan activos con el rol TUTOR. El listado trae alumnos al día, por vencer y vencidos; hay al menos dos transferencias pendientes; los reportes responden 200; las liquidaciones de los meses cerrados quedan CERRADA y PAGADA; el informe de inactivos trae a Martín Morales, Daiana Silva y Federico Luna, y el ranking a Lucas Benítez; el panel de la alumna responde y los menores de Mariana incluyen a Benjamín.
+**Resultado esperado:** todas las cuentas entran. Cada inscripción activa o de baja tiene su primera cuota con un pago confirmado y ninguna pre-inscripción tiene cuotas; los números de cuota son correlativos y cada vencimiento es posterior al anterior; ningún pago, asistencia ni clase queda en el futuro; los tutores quedan activos con el rol TUTOR. El listado trae alumnos al día, por vencer y vencidos; hay al menos dos transferencias pendientes; los reportes responden 200; las liquidaciones de los meses cerrados quedan CERRADA y PAGADA; el informe de inactivos trae a Martín Morales, Daiana Silva y Federico Luna, y el ranking a Lucas Benítez; el panel de la alumna responde y los menores de Mariana incluyen a Benjamín. El reporte de inscripciones de cada uno de los dos años anteriores trae altas y bajas, y el mapa de ocupación tiene horarios libres, moderados, casi llenos y completos.
 
-**Automatizado:** Sí (V-01 a V-21).
+**Automatizado:** Sí (V-01 a V-24).
 
 ## 7. Tests automatizados
 
@@ -1275,7 +1275,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    S    | `back/src/__tests__/integracion/reportes-inscripciones.integration.test.ts`     | 3 (S-01 a S-03)  | PI-87                             |
 |    T    | `back/src/modules/gestion-personas/profesor/__tests__/profesor.integration.test.ts` | 5 (T-01 a T-05) | PI-88, PI-89                   |
 |    U    | `back/src/__tests__/integracion/rutinas-y-progreso.integration.test.ts`          | 48 (U-01 a U-48) | PI-83 a PI-85                     |
-|    V    | `back/src/__tests__/integracion/presentacion.integration.test.ts`              | 21 (V-01 a V-21) | PI-100                            |
+|    V    | `back/src/__tests__/integracion/presentacion.integration.test.ts`              | 24 (V-01 a V-24) | PI-100                            |
 
 | Tests       | Qué verifican                                                                                                                                                                   | Caso  |
 | :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---- |
@@ -1453,6 +1453,8 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | V-02 a V-12 | Cada cuenta del selector del login de prueba inicia sesión | PI-100 |
 | V-13 a V-16 | Primera cuota paga en cada alta, cuotas correlativas, nada en el futuro y tutores con su rol | PI-100 |
 | V-17 a V-21 | Listado por estado de cuota, transferencias pendientes, reportes y liquidaciones, inactivos y ranking, paneles de alumna y tutora | PI-100 |
+| V-22, V-23  | El reporte de inscripciones de cada uno de los dos años anteriores trae altas y bajas | PI-100 |
+| V-24        | El mapa de ocupación tiene horarios libres, moderados, casi llenos y completos | PI-100 |
 
 #### PI-78 — El cálculo de los honorarios del mes
 
@@ -1943,6 +1945,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-23, PI-24, PI-38 | 13/11/2026 | Francisco Andrade | Aprobado     | G-11, G-12 y G-26 adaptados a las reglas nuevas: horarios con la inscripción activa y baja programada |
 | PI-97 a PI-99 | 13/11/2026 | Francisco Andrade | Aprobado           | Pasan G-40 a G-44; sin defectos                                                  |
 | PI-100        | 21/11/2026 | Francisco Andrade | Aprobado           | Pasan V-01 a V-21; sin defectos                                                  |
+| PI-100        | 24/11/2026 | Francisco Andrade | Aprobado con observaciones | Pasan V-22 a V-24 (alumnos históricos de los dos años anteriores y franjas de todos los niveles). Falla V-20, igual que con el código anterior al cambio (sección 9) |
 
 ### 8.3 Defectos
 
@@ -2002,6 +2005,7 @@ Los defectos se numeran D-01, D-02…
 | PI-99 | Un alumno de un horario con la baja programada que paga la cuota siguiente vuelve a tener la cuota corriendo y no sale: el horario no cae mientras siga pagando. Falta decidir si el cobro se frena o si sale al terminar la gracia de la cuota que corría cuando se programó la baja | Abierto |
 | PI-98 | Si el alumno paga la cuota siguiente del plan viejo antes de la fecha del cambio programado, el cambio se aplica igual ese día, con la cuota del plan viejo todavía corriendo. Falta decidir si se corre la fecha o se frena el cobro | Abierto |
 | PI-98 | `AplicadorProgramados` corre solo con el intervalo de `index.ts`: en Render, si el proceso se duerme antes de la hora, no corre. Falta decidir si corre también al consultar (como el planificador de avisos) o con un Cron Job | Abierto |
+| PI-100 | V-20 falla con o sin los alumnos históricos (corrida del 24/11/2026): el informe de inactivos no trae a Daiana Silva (HIIT 10:00, martes y jueves), que el elenco marca con `dejoDeVenir`. Depende del día de la carga; falta ver si es el escenario o el detector | Abierto |
 
 ## 10. Cómo sumar casos
 
@@ -2087,3 +2091,4 @@ Los defectos se numeran D-01, D-02…
 |   2.44  | 13/11/2026 | Caso PI-94 (el historial de asistencia de la ficha, `GET /alumnos/:id/asistencias`) y tests E-28 y E-29; US-10 lo suma. Se corrige PI-93: la profesora de Valentina es Carla | Francisco Andrade |
 |   2.45  | 13/11/2026 | Casos PI-97 (el cambio de horarios con la inscripción activa y dentro de la misma profesora y actividad), PI-98 (el cambio de plan programado) y PI-99 (la baja programada de un horario con alumnos), con G-40 a G-44; US-14 pasa a automatizada. PI-23, PI-24 y PI-38 (G-11, G-12 y G-26) pasan a las reglas nuevas. El entorno expone `aplicadorProgramados`. Tres puntos abiertos en la sección 9 | Francisco Andrade |
 |   2.46  | 21/11/2026 | Caso PI-100 (los datos de la presentación recorridos por la API real) y tests V-01 a V-21 | Francisco Andrade |
+|   2.47  | 24/11/2026 | PI-100 suma los alumnos históricos de la presentación: tests V-22 a V-24 (inscripciones de los dos años anteriores y mapa de ocupación con todos los niveles). Punto abierto sobre V-20 en la sección 9 | Francisco Andrade |
