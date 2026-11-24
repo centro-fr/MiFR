@@ -112,7 +112,6 @@ describe("RegistroAsistencia (US-20)", () => {
 
     fireEvent.click(botonesDe("Mateo").ausente);
     expect(alMarcar).toHaveBeenLastCalledWith(1, false);
-    expect(screen.getByText("Las marcas se guardan al instante.")).toBeInTheDocument();
   });
 
   it("refleja el estado marcado de cada alumno", () => {

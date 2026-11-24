@@ -99,7 +99,7 @@ describe("HonorariosPage", () => {
     mockCalcular.mockResolvedValue({ informe: mockInforme, advertencias: [] });
   });
 
-  it("renderiza el encabezado sin pestañas y lleva a las suplencias del mismo mes con un botón", () => {
+  it("renderiza el encabezado sin pestañas y lleva a suplencias sin fijar mes para mostrar todos los meses por defecto", () => {
     renderizar();
 
     // Encabezado principal
@@ -107,7 +107,7 @@ describe("HonorariosPage", () => {
     expect(screen.getByText(/Revisa el calculo del pago mensual para cada profesor\/a/i)).toBeInTheDocument();
 
     expect(screen.queryByRole("link", { name: /Honorarios del mes/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Suplencias" })).toHaveAttribute("href", "/app/honorarios/suplencias?mes=2026-10");
+    expect(screen.getByRole("link", { name: "Suplencias" })).toHaveAttribute("href", "/app/honorarios/suplencias");
 
     // Sin breadcrumbs locales
     expect(screen.queryByRole("navigation", { name: "Ruta de navegación" })).not.toBeInTheDocument();

@@ -344,13 +344,8 @@ export function RegistroAsistencia({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-extrabold text-foreground">Lista de inscriptos</h2>
-          <p className="text-sm text-muted-foreground">
-            {puedeEditar ? "Las marcas se guardan al instante." : "Esta lista está en modo de solo lectura."}
-          </p>
-          {puedeEditar && clase.estado === "PROGRAMADA" && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Si no se marca nada, se pondrán todos como presentes.
-            </p>
+          {!puedeEditar && (
+            <p className="text-sm text-muted-foreground">Esta lista está en modo de solo lectura.</p>
           )}
         </div>
         {puedeEditar && clase.estado === "PROGRAMADA" && (

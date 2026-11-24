@@ -138,13 +138,13 @@ export function HonorariosPage() {
                 <Settings aria-hidden="true" className="size-4" />
                 Configuración
               </Button>
-              {/* Las suplencias del mes ajustan estos montos: se cargan en su propia pantalla, con el mismo mes. */}
+              {/* Las suplencias ajustan estos montos: se abren con todos los meses visibles por defecto. */}
               <Button
                 asChild
                 variant="outline"
                 className="h-11 rounded-xl border-border bg-white px-4 font-bold text-dark dark:bg-surface-low dark:text-white"
               >
-                <Link to={{ pathname: "/app/honorarios/suplencias", search: `?mes=${periodo}` }}>
+                <Link to="/app/honorarios/suplencias">
                   <Users aria-hidden="true" className="size-4" />
                   Suplencias
                 </Link>
