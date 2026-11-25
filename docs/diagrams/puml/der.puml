@@ -124,6 +124,7 @@ package "SERVICIO ENTRENAMIENTO" {
     * modalidad : ENUM <color:#000000><<GRUPAL|PERSONALIZADA>></color>
       cupo_maximo : SMALLINT <color:#6B7280><size:11>> 0; obligatorio si PERSONALIZADA</size></color>
     * requiere_medidas : BOOLEAN <color:#6B7280><size:11>default false; peso y talla al pre-inscribir</size></color>
+    * solo_menores : BOOLEAN <color:#6B7280><size:11>default false; solo alumnos menores de 18 años</size></color>
     * activo : BOOLEAN
   }
   entity "horarios" as horarios <<Servicio>> {
@@ -149,6 +150,7 @@ package "SERVICIO ENTRENAMIENTO" {
     * dias_gracia : SMALLINT <color:#6B7280><size:11>>= 0; 0 si CLASE_SUELTA</size></color>
       <color:#9CA3AF><&link-intact></color> id_actividad_exclusiva : INTEGER <color:#9CA3AF>FK</color> <color:#6B7280><size:11>ej. Plan Kids</size></color>
     * profesora_unica : BOOLEAN
+    * solo_menores : BOOLEAN <color:#6B7280><size:11>default false; solo alumnos menores de 18 años</size></color>
     * fecha_alta : DATE
       fecha_baja : DATE
   }
