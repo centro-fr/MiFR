@@ -5,6 +5,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/app-error.js";
+import { esMenorDeEdad } from "../../../shared/utils/edad.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IAutorizacion } from "../../gestion-usuarios/rol/interface/i-autorizacion.js";
@@ -29,20 +30,6 @@ import type {
   TutorResuelto,
 } from "./alumno.types.js";
 import type { IInfoAlumnos } from "./interface/i-info-alumnos.js";
-
-// US-06: la edad de corte. Pasa a parametros_sistema cuando exista ese componente.
-const MAYORIA_DE_EDAD = 18;
-
-export function esMenorDeEdad(fechaNacimiento: Date, hoy: Date): boolean {
-  const cumpleMayoria = new Date(
-    Date.UTC(
-      fechaNacimiento.getUTCFullYear() + MAYORIA_DE_EDAD,
-      fechaNacimiento.getUTCMonth(),
-      fechaNacimiento.getUTCDate(),
-    ),
-  );
-  return cumpleMayoria > hoy;
-}
 
 type CamposDeUsuario =
   "nombre" | "apellido" | "dni" | "email" | "telefono" | "fecha_nacimiento" | "direccion";

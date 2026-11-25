@@ -10,7 +10,7 @@ import type { IAutorizacion } from "../../../gestion-usuarios/rol/interface/i-au
 import type { IInfoUsuarios } from "../../../gestion-usuarios/usuario/interface/i-info-usuarios.js";
 import type { UsuarioConRoles } from "../../../gestion-usuarios/usuario/usuario.types.js";
 import type { AlumnoRepository } from "../alumno.repository.js";
-import { AlumnoService, esMenorDeEdad } from "../alumno.service.js";
+import { AlumnoService } from "../alumno.service.js";
 import type { Alumno, DatosPersonales } from "../alumno.types.js";
 
 const HOY = new Date("2026-10-08T00:00:00Z");
@@ -115,23 +115,6 @@ const altaMenor = {
 
 const PROPIETARIA = { idUsuario: 1, esPropietaria: true };
 const PROFESORA = { idUsuario: 2, esPropietaria: false };
-
-describe("esMenorDeEdad", () => {
-  it.each([
-    ["cumple 18 mañana", "2008-10-09", true],
-    ["cumple 18 hoy", "2008-10-08", false],
-    ["ya tiene 18", "2008-10-07", false],
-  ])("%s", (_caso, nacimiento, esperado) => {
-    expect(esMenorDeEdad(new Date(`${nacimiento}T00:00:00Z`), HOY)).toBe(esperado);
-  });
-
-  it("toma el 1 de marzo como cumpleaños de quien nació un 29 de febrero", () => {
-    const nacimiento = new Date("2008-02-29T00:00:00Z");
-
-    expect(esMenorDeEdad(nacimiento, new Date("2026-02-28T00:00:00Z"))).toBe(true);
-    expect(esMenorDeEdad(nacimiento, new Date("2026-03-01T00:00:00Z"))).toBe(false);
-  });
-});
 
 describe("AlumnoService", () => {
   let repositorio: ReturnType<typeof crearRepositorioMock>;
